@@ -1,0 +1,7 @@
+dist/
+node_modules/
+.claude/
+.impeccable/critique/
+.impeccable/config.local.json
+.metrics/
+coverage/

@@ -1,0 +1,263 @@
+import "./check-test-machine.mjs";
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import {
+  chooseResize,
+  chooseSize,
+  defaultSize,
+  describePresets,
+  describeSize,
+  fits,
+  kindSizes,
+  fitsDevice,
+  leastSize,
+  LINUX_LEAST_MEMORY_GIB,
+  parseSizeChanges,
+  presetMemoryChecks,
+  presetSizes,
+  withEarlierSizes,
+} from "../src/core/sizes.ts";
+import { KIND_INFO } from "../src/backends/kinds.ts";
+import { withoutRaiseLargest } from "../src/core/largest-words.ts";
+
+const GiB = 1024;
+
+test("each kind ships three presets, small by default but medium for ios, and a largest size twice large with a 256 GiB disk", () => {
+  const linux = kindSizes("linux");
+  assert.deepEqual(linux.presets, {
+    small: { cores: 2, memoryMiB: 4 * GiB, diskGiB: null },
+    medium: { cores: 4, memoryMiB: 8 * GiB, diskGiB: null },
+    large: { cores: 8, memoryMiB: 16 * GiB, diskGiB: null },
+  });
+  assert.equal(linux.default, "small");
+  assert.deepEqual(linux.largest, { cores: 16, memoryMiB: 32 * GiB, diskGiB: 256 });
+  assert.deepEqual(kindSizes("linux-docker"), linux);
+  assert.deepEqual(kindSizes("linux-headless"), linux, "an earlier ID gives the kind's sizes");
+  const desktop = kindSizes("linux-desktop");
+  assert.deepEqual(defaultSize(desktop), { cores: 4, memoryMiB: 8 * GiB, diskGiB: null });
+  assert.deepEqual(desktop.largest, { cores: 32, memoryMiB: 64 * GiB, diskGiB: 256 });
+  assert.deepEqual(kindSizes("linux-desktop-cpu"), desktop);
+  assert.deepEqual(kindSizes("linux-desktop-wayland-cpu"), desktop);
+  const macos = kindSizes("macos");
+  assert.deepEqual(macos.presets, {
+    small: { cores: 4, memoryMiB: 8 * GiB, diskGiB: null },
+    medium: { cores: 6, memoryMiB: 16 * GiB, diskGiB: null },
+    large: { cores: 8, memoryMiB: 32 * GiB, diskGiB: null },
+  });
+  assert.deepEqual(macos.largest, { cores: 16, memoryMiB: 64 * GiB, diskGiB: 256 });
+  assert.deepEqual(kindSizes("macos-desktop"), macos);
+  assert.deepEqual(kindSizes("ios"), { ...macos, default: "medium" }, "an ios box has room for Xcode beside its device, at the size its measurements were made at (063)");
+  assert.deepEqual(defaultSize(kindSizes("ios")), { cores: 6, memoryMiB: 16 * GiB, diskGiB: null });
+  assert.deepEqual(kindSizes("windows-desktop"), desktop);
+  assert.deepEqual(kindSizes("solaris"), linux, "a kind BB Box has no sizes for takes linux's");
+});
+
+test("the box-sizes setting changes a kind's presets, default and largest", () => {
+  const { changes, problems } = parseSizeChanges(
+    JSON.stringify({ linux: { default: "medium", medium: { diskGiB: 40 }, largest: { cores: 24 } }, "linux-desktop": { small: { memoryMiB: 12 * GiB } } }),
+  );
+  assert.deepEqual(problems, []);
+  const linux = kindSizes("linux", changes);
+  assert.equal(linux.default, "medium");
+  assert.deepEqual(defaultSize(linux), { cores: 4, memoryMiB: 8 * GiB, diskGiB: 40 });
+  assert.deepEqual(linux.largest, { cores: 24, memoryMiB: 32 * GiB, diskGiB: 256 });
+  assert.deepEqual(kindSizes("linux-desktop", changes).presets.small, { cores: 4, memoryMiB: 12 * GiB, diskGiB: null });
+  assert.deepEqual(kindSizes("linux-docker", changes), linux, "an alias takes its kind's sizes (041)");
+  assert.deepEqual(kindSizes("linux-desktop-cpu", changes), kindSizes("linux-desktop-cpu"), "each kind has its own entry");
+  assert.deepEqual(parseSizeChanges(""), { changes: {}, problems: [] });
+  assert.deepEqual(parseSizeChanges(undefined), { changes: {}, problems: [] });
+});
+
+test("an earlier kind ID in box-sizes counts only when the current ID has no entry", () => {
+  const earlier = parseSizeChanges({ "linux-headless": { default: "large" } });
+  assert.equal(kindSizes("linux", earlier.changes).default, "large");
+  const both = parseSizeChanges({ linux: { default: "medium" }, "linux-headless": { default: "large" } });
+  assert.equal(kindSizes("linux", both.changes).default, "medium");
+});
+
+test("a box-sizes entry with a mistake is refused, and the kind keeps the shipped sizes", () => {
+  const problems = (value: unknown) => {
+    const result = parseSizeChanges(value);
+    assert.deepEqual(result.changes, {}, JSON.stringify(value));
+    return result.problems.join(" ");
+  };
+  assert.match(problems("{"), /^Box sizes is not JSON: /);
+  assert.match(problems("[]"), /must be a JSON object with an entry per kind/);
+  assert.match(problems({ linux: 4 }), /^linux must be an object/);
+  assert.match(problems({ linux: { huge: {} } }), /^linux has huge; use default, small, medium, large and largest\./);
+  assert.match(problems({ linux: { default: "tiny" } }), /^linux\.default must be small, medium or large\./);
+  assert.match(problems({ linux: { small: { cores: 0 } } }), /^linux\.small\.cores must be a whole number of at least 1\./);
+  assert.match(problems({ linux: { small: { memoryMiB: 100 } } }), /^linux\.small\.memoryMiB must be a whole number of at least 256\./);
+  assert.match(problems({ linux: { small: { diskGiB: 1.5 } } }), /^linux\.small\.diskGiB must be a whole number of at least 1, or null for the base disk\./);
+  assert.match(problems({ linux: { largest: { diskGiB: null } } }), /^linux\.largest\.diskGiB must be a whole number of at least 1\./);
+  assert.match(problems({ linux: { small: { gpus: 1 } } }), /^linux\.small has gpus; use cores, memoryMiB and diskGiB\./);
+  assert.match(problems({ linux: { large: { cores: 32 } } }), /^linux's large preset, 32 cores, 16 GiB memory, is above its largest size, 16 cores, 32 GiB memory, 256 GiB disk\./);
+  const mixed = parseSizeChanges({ linux: { default: "tiny" }, "linux-desktop": { default: "large" } });
+  assert.deepEqual(mixed.changes, { "linux-desktop": { default: "large" } }, "a good entry still counts");
+  assert.equal(mixed.problems.length, 1);
+});
+
+test("a size request takes parts from its preset, or else the default preset, up to the largest", () => {
+  const sizes = kindSizes("linux");
+  assert.deepEqual(chooseSize("linux", sizes), { ok: true, size: { cores: 2, memoryMiB: 4 * GiB, diskGiB: null } });
+  assert.deepEqual(chooseSize("linux", sizes, { preset: " Large " }), { ok: true, size: { cores: 8, memoryMiB: 16 * GiB, diskGiB: null } });
+  assert.deepEqual(chooseSize("linux", sizes, { memoryGiB: 6 }), { ok: true, size: { cores: 2, memoryMiB: 6 * GiB, diskGiB: null } });
+  assert.deepEqual(chooseSize("linux", sizes, { preset: "medium", cores: 6, diskGiB: 64 }), { ok: true, size: { cores: 6, memoryMiB: 8 * GiB, diskGiB: 64 } });
+  assert.deepEqual(chooseSize("linux", sizes, { cores: 16, memoryGiB: 32, diskGiB: 256 }), { ok: true, size: sizes.largest });
+
+  const refused = (request: Parameters<typeof chooseSize>[2]) => {
+    const choice = chooseSize("linux", sizes, request);
+    assert.ok(!choice.ok, JSON.stringify(request));
+    return choice.message;
+  };
+  assert.equal(
+    refused({ preset: "huge" }),
+    'There is no "huge" size for a linux box. Its presets are small (2 cores, 4 GiB memory, the default), medium (4 cores, 8 GiB memory) and large (8 cores, 16 GiB memory), and the largest is 16 cores, 32 GiB memory, 256 GiB disk.',
+  );
+  assert.match(refused({ cores: 0 }), /whole numbers of at least 1/);
+  assert.match(refused({ memoryGiB: 1.5 }), /whole numbers of at least 1/);
+  assert.match(refused({ cores: 17 }), /^A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 17 cores, 4 GiB memory\. Its presets are small/);
+  assert.match(refused({ diskGiB: 257 }), /not 2 cores, 4 GiB memory, 257 GiB disk/);
+});
+
+test("a size past the kind's largest names the setting that limits it: its Sizes in settings, and the bb box kind set flag for each part past it", () => {
+  const sizes = kindSizes("linux-desktop-cpu");
+  const refused = (request: Parameters<typeof chooseSize>[2]) => {
+    const choice = chooseSize("linux-desktop-cpu", sizes, request);
+    assert.ok(!choice.ok, JSON.stringify(request));
+    return choice.message;
+  };
+  assert.match(
+    refused({ memoryGiB: 96 }),
+    /\. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux desktop \(CPU\), Sizes, or run bb box kind set linux-desktop-cpu --largest-memory-gib <GiB>\.$/,
+  );
+  assert.match(refused({ cores: 64, diskGiB: 512 }), /or run bb box kind set linux-desktop-cpu --largest-cores <cores> --largest-disk-gib <GiB>\.$/);
+  const resized = chooseResize("linux-desktop-cpu", sizes, { cores: 4, memoryMiB: 8 * GiB, diskGiB: 40 }, { cores: 64 });
+  assert.ok(!resized.ok);
+  assert.match(resized.message, /^A linux-desktop-cpu box can be at most .*\. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux desktop \(CPU\), Sizes, or run bb box kind set linux-desktop-cpu --largest-cores <cores>\.$/);
+  assert.equal(withoutRaiseLargest(resized.message), resized.message.slice(0, resized.message.indexOf(" To allow more")));
+  assert.equal(withoutRaiseLargest("The Mac has 2 GiB of memory left."), "The Mac has 2 GiB of memory left.");
+});
+
+test("a custom size of a Linux kind has at least 2 GiB memory, and every preset BB Box ships has that", () => {
+  assert.equal(LINUX_LEAST_MEMORY_GIB, 2);
+  const linux = kindSizes("linux");
+  assert.deepEqual(chooseSize("linux", linux, { memoryGiB: 2 }), { ok: true, size: { cores: 2, memoryMiB: 2 * GiB, diskGiB: null } });
+  assert.deepEqual(chooseSize("linux", linux, { memoryGiB: 1 }), {
+    ok: false,
+    message:
+      "A linux box needs at least 2 GiB memory, not 1 GiB: with less it can run out of memory as it becomes a BB machine. " +
+      "Its presets are small (2 cores, 4 GiB memory, the default), medium (4 cores, 8 GiB memory) and large (8 cores, 16 GiB memory).",
+  });
+  for (const kind of ["linux-desktop-cpu", "linux-arm64", "linux-headless"]) {
+    const choice = chooseSize(kind, kindSizes(kind), { cores: 4, memoryGiB: 1 });
+    assert.ok(!choice.ok && choice.message.startsWith(`A ${kind} box needs at least 2 GiB memory, not 1 GiB`), kind);
+  }
+  assert.equal(chooseSize("macos", kindSizes("macos"), { memoryGiB: 1 }).ok, true, "the floor is for Linux kinds");
+  assert.equal(chooseSize("windows-desktop", kindSizes("windows-desktop"), { memoryGiB: 1 }).ok, true, "the floor is for Linux kinds");
+
+  const linuxKinds = Object.entries(KIND_INFO).filter(([, info]) => info.os === "linux").map(([id]) => id);
+  assert.ok(linuxKinds.length >= 5);
+  for (const kind of linuxKinds) {
+    for (const preset of presetSizes(kindSizes(kind))) assert.ok(preset.memoryMiB >= LINUX_LEAST_MEMORY_GIB * GiB, `${kind}: ${describeSize(preset)}`);
+  }
+});
+
+test("the doctor warns about a preset of a Linux kind that the box-sizes setting makes smaller than 2 GiB memory", () => {
+  assert.deepEqual(presetMemoryChecks({}), []);
+  assert.deepEqual(presetMemoryChecks({ linux: { small: { memoryMiB: 2 * GiB } }, macos: { small: { memoryMiB: GiB } } }), [], "2 GiB is enough, and the floor is for Linux kinds");
+  assert.deepEqual(presetMemoryChecks({ linux: { small: { cores: 1, memoryMiB: GiB } } }), [
+    {
+      id: "sizes.linux.small",
+      name: "Box sizes",
+      status: "warn",
+      detail: "The small linux preset, 1 core, 1 GiB memory, has less than 2 GiB memory, so its boxes can run out of memory as they become BB machines.",
+      fix: "Give it at least 2 GiB memory in BB Box's settings, under Kinds.",
+    },
+  ]);
+  const checks = presetMemoryChecks({ "linux-desktop-cpu": { small: { memoryMiB: 1536 }, medium: { memoryMiB: GiB } }, "windows-desktop": { small: { memoryMiB: GiB } } });
+  assert.deepEqual(
+    checks.map((check) => [check.id, check.detail.split(", has")[0]]),
+    [
+      ["sizes.linux-desktop-cpu.small", "The small linux-desktop-cpu preset, 4 cores, 1.5 GiB memory"],
+      ["sizes.linux-desktop-cpu.medium", "The medium linux-desktop-cpu preset, 8 cores, 1 GiB memory"],
+    ],
+  );
+});
+
+test("sizes are described in words, leaving out the base disk", () => {
+  assert.equal(describeSize({ cores: 1, memoryMiB: 512, diskGiB: null }), "1 core, 512 MiB memory");
+  assert.equal(describeSize({ cores: 4, memoryMiB: 1536, diskGiB: 32 }), "4 cores, 1.5 GiB memory, 32 GiB disk");
+  assert.match(describePresets(kindSizes("linux-desktop")), /^small \(4 cores, 8 GiB memory, the default\), medium \(8 cores, 16 GiB memory\) and large/);
+  assert.equal(fits({ cores: 2, memoryMiB: 4 * GiB, diskGiB: null }, { cores: 2, memoryMiB: 4 * GiB, diskGiB: 8 }), true, "the base disk fits");
+  assert.equal(fits({ cores: 2, memoryMiB: 4 * GiB, diskGiB: 9 }, { cores: 2, memoryMiB: 4 * GiB, diskGiB: 8 }), false);
+});
+
+test("sizes saved before 028 become each kind's default preset, once, and larger presets are never smaller", () => {
+  const six = { cores: 6, memoryMiB: 6 * GiB, diskGiB: 20 };
+  const adopted = withEarlierSizes(undefined, { linux: six });
+  assert.ok(adopted);
+  const { changes, problems } = parseSizeChanges(adopted);
+  assert.deepEqual(problems, []);
+  const linux = kindSizes("linux", changes);
+  assert.deepEqual(defaultSize(linux), six);
+  assert.deepEqual(linux.presets.medium, { cores: 6, memoryMiB: 8 * GiB, diskGiB: 20 });
+  assert.deepEqual(linux.presets.large, { cores: 8, memoryMiB: 16 * GiB, diskGiB: 20 });
+  assert.deepEqual(linux.largest, { cores: 16, memoryMiB: 32 * GiB, diskGiB: 256 });
+  assert.deepEqual(kindSizes("linux-docker", changes), linux);
+
+  // Larger than the largest: the largest grows to it.
+  const big = withEarlierSizes("", { "linux-desktop": { cores: 40, memoryMiB: 8 * GiB, diskGiB: 300 } });
+  const desktop = kindSizes("linux-desktop", parseSizeChanges(big).changes);
+  assert.deepEqual(desktop.largest, { cores: 40, memoryMiB: 64 * GiB, diskGiB: 300 });
+  assert.deepEqual(desktop.presets.large, { cores: 40, memoryMiB: 32 * GiB, diskGiB: 300 });
+
+  // Smaller than shipped: the default preset is that size, and the others stay.
+  const small = kindSizes("linux", parseSizeChanges(withEarlierSizes("", { linux: { cores: 1, memoryMiB: 2 * GiB, diskGiB: null } })).changes);
+  assert.deepEqual(defaultSize(small), { cores: 1, memoryMiB: 2 * GiB, diskGiB: null });
+  assert.deepEqual(small.presets.medium, kindSizes("linux").presets.medium);
+
+  // Nothing to change.
+  assert.equal(withEarlierSizes("", {}), null);
+  assert.equal(withEarlierSizes("", { linux: defaultSize(kindSizes("linux")) }), null, "the shipped default needs no entry");
+  assert.equal(withEarlierSizes('{"linux":{"default":"large"}}', { linux: six }), null, "an entry the operator wrote wins");
+  assert.equal(withEarlierSizes('{"linux-headless":{}}', { linux: six }), null, "under an earlier ID too");
+  assert.equal(withEarlierSizes("{", { linux: six }), null, "a setting that is not JSON is left for its owner to fix");
+  assert.equal(withEarlierSizes("[]", { linux: six }), null);
+
+  // Other entries are kept.
+  const kept = JSON.parse(withEarlierSizes('{"linux-desktop":{"default":"medium"}}', { linux: six })!);
+  assert.deepEqual(kept["linux-desktop"], { default: "medium" });
+  assert.deepEqual(kept.linux.small, { cores: 6, memoryMiB: 6 * GiB, diskGiB: 20 });
+});
+
+test("an android box is never under each device's least size, from what 063 and 068 measured, and the refusal names the device", () => {
+  const android = kindSizes("android");
+  assert.equal(leastSize("linux"), null);
+  assert.deepEqual(leastSize("android", "Pixel 8"), { cores: 4, memoryGiB: 8, because: "its emulator draws the device on the CPU and holds about 3.9 GiB once booted and busy" });
+  assert.deepEqual(leastSize("android", "Pixel Fold"), { cores: 4, memoryGiB: 10, because: "its emulator draws the device on the CPU and holds about 5.5 GiB once booted and busy, which on 8 GiB left less than 1 GiB free" });
+  assert.deepEqual(leastSize("android", "Pixel Tablet"), { cores: 4, memoryGiB: 10, because: "its emulator draws the device on the CPU and holds about 5.5 GiB once booted and busy, which on 8 GiB left less than 1 GiB free" });
+  assert.deepEqual(leastSize("android"), leastSize("android", "Pixel 8"), "without a device, the least any device needs");
+  assert.equal(fitsDevice("android", "Pixel 8", { cores: 4, memoryMiB: 8 * GiB, diskGiB: null }), true);
+  assert.equal(fitsDevice("android", "Pixel Fold", { cores: 4, memoryMiB: 8 * GiB, diskGiB: null }), false);
+  assert.deepEqual(chooseSize("android", android), { ok: true, size: { cores: 8, memoryMiB: 16 * GiB, diskGiB: null } });
+  assert.deepEqual(chooseSize("android", android, { cores: 4, memoryGiB: 8 }, "Pixel 8"), { ok: true, size: { cores: 4, memoryMiB: 8 * GiB, diskGiB: null } });
+  const refusal = (choice: ReturnType<typeof chooseSize>) => (choice.ok ? "" : choice.message);
+  assert.equal(
+    refusal(chooseSize("android", android, { cores: 4, memoryGiB: 8 }, "Pixel Fold")),
+    "An android box with the Pixel Fold needs at least 4 cores and 10 GiB memory, not 4 cores, 8 GiB memory: its emulator draws the device on the CPU and holds about 5.5 GiB once booted and busy, which on 8 GiB left less than 1 GiB free. " +
+      "Its presets are small (8 cores, 16 GiB memory, the default), medium (12 cores, 24 GiB memory) and large (16 cores, 32 GiB memory).",
+  );
+  assert.match(refusal(chooseSize("android", android, { cores: 2 }, "Pixel 8")), /^An android box with the Pixel 8 needs at least 4 cores and 8 GiB memory, not 2 cores, 16 GiB memory:/);
+  assert.match(refusal(chooseSize("android", android, { memoryGiB: 6 })), /^An android box needs at least 4 cores and 8 GiB memory, not 8 cores, 6 GiB memory:/);
+  const current = { cores: 8, memoryMiB: 16 * GiB, diskGiB: 40 };
+  assert.match(refusal(chooseResize("android", android, current, { cores: 3 }, "Pixel 8")), /with the Pixel 8 needs at least 4 cores and 8 GiB memory, not 3 cores, 16 GiB memory, 40 GiB disk/);
+  assert.match(refusal(chooseResize("android", android, current, { memoryGiB: 8 }, "Pixel Tablet")), /with the Pixel Tablet needs at least 4 cores and 10 GiB memory, not 8 cores, 8 GiB memory, 40 GiB disk/);
+  assert.equal(chooseResize("android", android, current, { cores: 12 }).ok, true);
+  assert.equal(chooseResize("android", android, { ...current, cores: 2 }, { memoryGiB: 20 }).ok, true, "a box already under it may still grow its memory");
+  assert.equal(chooseSize("linux", kindSizes("linux"), { cores: 1, memoryGiB: 2 }).ok, true, "other kinds have no such floor");
+  const { problems } = parseSizeChanges({ android: { small: { cores: 2 } } });
+  assert.deepEqual(problems, [
+    "android's small preset is too small. An android box needs at least 4 cores and 8 GiB memory, not 2 cores, 16 GiB memory: its emulator draws the device on the CPU and holds about 3.9 GiB once booted and busy.",
+  ]);
+});

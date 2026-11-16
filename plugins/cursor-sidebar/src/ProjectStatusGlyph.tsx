@@ -1,0 +1,146 @@
+import { Icon, type IconName } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+import { BOARD_FALLBACK, ProjectIconMark } from "./ProjectIconMark";
+import type { ProjectIcon } from "./project-icons";
+import type { ThreadStatusKind } from "./status";
+
+/**
+ * The Project heading's left slot. Always a folder in the same 16px box as
+ * thread discs, so headings never shift. Live work is drawn on the thread
+ * rows; a closed folder instead keeps a small status badge on the glyph, since
+ * its rows are hidden.
+ */
+export type ActivityState = "inactive" | "working" | "complete" | "attention";
+
+export const ACTIVITY_LABELS: Record<ActivityState, string> = {
+  inactive: "Inactive",
+  working: "Working",
+  complete: "Completed",
+  attention: "Needs your input",
+};
+
+/** Map the resolved status precedence onto the glyph's resting states. */
+export function glyphStateForStatus(status: ThreadStatusKind): ActivityState {
+  switch (status) {
+    case "input":
+    case "failed":
+      return "attention";
+    case "working":
+      return "working";
+    default:
+      return "inactive";
+  }
+}
+
+/** Existing BB Icon primitives, or an uploaded image; a chosen icon swaps the folder. */
+export function ProjectStatusGlyph({
+  open,
+  icon,
+  label,
+  status = "idle",
+  className,
+  fallback: fallbackKind = "folder",
+  hiddenWork,
+}: {
+  fallback?: "folder" | typeof BOARD_FALLBACK;
+  hiddenWork?: boolean;
+  /** True when the project section is expanded; picks the open folder. */
+  open?: boolean;
+  /** A chosen project icon; its presence replaces the Folder/FolderOpen pair. */
+  icon?: ProjectIcon | null;
+  label: string;
+  /** The project's aggregated status, badged on the closed folder. */
+  status?: ThreadStatusKind;
+  className?: string;
+}) {
+  // Folder (closed) and FolderOpen are Hugeicons' matched single-weight pair
+  // (Folder01 / Folder02). The heavier stroke keeps both crisp at 14px.
+  const fallback: IconName | typeof BOARD_FALLBACK = fallbackKind === BOARD_FALLBACK ? BOARD_FALLBACK : open ? "FolderOpen" : "Folder";
+  const badge =
+    !open && (status === "input" || status === "failed") ? status : null;
+  const corner = hiddenWork !== undefined;
+  const activity: ActivityState = corner
+    ? badge !== null ? "attention" : hiddenWork ? "working" : "inactive"
+    : status === "working" ? "working" : badge !== null ? "attention" : "inactive";
+  const working = !corner && !open && status === "working";
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      data-activity={activity}
+      data-heading-kind="project"
+      className={cn("cs-project-glyph relative", className)}
+    >
+      {working ? (
+        <Icon
+          name="Loading"
+          aria-hidden="true"
+          strokeWidth={1.5}
+          className="size-4 animate-spin text-[color:var(--bbs-text-secondary)]"
+        />
+      ) : (
+        <ProjectIconMark
+          icon={icon ?? null}
+          fallback={fallback}
+          className="size-3.5"
+          mutedClassName="text-[color:var(--bbs-text-secondary)]"
+        />
+      )}
+      {badge !== null ? <ProjectStatusBadge status={badge} /> : corner && hiddenWork ? <ProjectWorkingBadge /> : null}
+    </span>
+  );
+}
+
+/**
+ * The project's identity at the start of a thread row, for groupings that are
+ * not already under a project heading. Same icon the heading wears (a chosen
+ * glyph, an uploaded image, or the folder) drawn at 14px in a muted tone, so it
+ * reads as context rather than a control. A personal "Chats" thread carries a
+ * chat glyph instead, since it has no project identity to name.
+ */
+export function ProjectRowIcon({
+  icon,
+  label,
+  chats = false,
+}: {
+  icon: ProjectIcon | null;
+  label: string;
+  /** True for a personal-project row: draw a muted chat glyph, not a folder. */
+  chats?: boolean;
+}) {
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={cn(
+        "cs-row-project-icon pointer-events-none flex size-3.5 shrink-0 items-center justify-center",
+        chats ? "text-sidebar-foreground/45" : "text-sidebar-foreground/55",
+      )}
+    >
+      <ProjectIconMark
+        icon={icon}
+        fallback={chats ? "Chat" : "Folder"}
+        className="size-3.5"
+        mutedClassName={chats ? "text-sidebar-foreground/45" : "text-sidebar-foreground/55"}
+      />
+    </span>
+  );
+}
+
+function ProjectWorkingBadge() {
+  return (
+    <span data-badge="working" className="cs-project-badge pointer-events-none absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-sidebar">
+      <Icon name="Loading" aria-hidden="true" strokeWidth={2} className="size-2.5 animate-spin text-[color:var(--bbs-text-secondary)]" />
+    </span>
+  );
+}
+
+function ProjectStatusBadge({ status }: { status: ThreadStatusKind }) {
+  const tone = status === "failed" ? "bg-destructive" : "bg-warning-text";
+  return (
+    <span className="cs-project-badge pointer-events-none absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-sidebar">
+      <span aria-hidden="true" className={cn("size-1.5 rounded-full", tone)} />
+    </span>
+  );
+}

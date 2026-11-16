@@ -1,0 +1,139 @@
+// The flat settings bb draws on Shuttle's settings page. Servers, presets and automations are
+// Shuttle's own settings sections (config.ts).
+import type { PluginSettingDescriptors } from "@get-bb/plugin-sdk";
+import { z } from "zod";
+
+export const SETTINGS = {
+  pauseAutomations: {
+    type: "boolean",
+    label: "Pause automations indefinitely",
+    description: "Stops automatic reviews, auto posting, agent assignment and feedback delivery until you resume. For a timed pause, use Automations below. Lists keep syncing, and buttons still work.",
+    default: false,
+  },
+  syncMinutes: {
+    type: "number",
+    label: "Sync every (minutes)",
+    description: "Minutes between syncs of each server, and between checks of watched PRs for new reviews.",
+    default: 3,
+    experimental_schema: z.number().int().min(1).max(120),
+  },
+  doneDays: {
+    type: "number",
+    label: "Done covers (days)",
+    description: "How far back the Done list of your merged and closed PRs goes.",
+    default: 14,
+    experimental_schema: z.number().int().min(1).max(90),
+  },
+  reviewedDays: {
+    type: "number",
+    label: "Reviewed history covers (days)",
+    description: "How far back Shuttle reads the merged and closed PRs you reviewed, for Reviews › Reviewed by me. PRs it already has stay in the list.",
+    default: 90,
+    experimental_schema: z.number().int().min(1).max(365),
+  },
+  reviewSection: {
+    type: "string",
+    label: "Section for review threads",
+    description: "The sidebar section review threads go to, by name; Shuttle creates it when it does not exist. Empty leaves review threads outside any section.",
+    default: "",
+    experimental_schema: z.string().trim().max(80),
+  },
+  archiveReviewThreads: {
+    type: "boolean",
+    label: "Archive finished review threads",
+    description:
+      "Archive a review thread Shuttle started, with its child threads, once its review is done: its draft posted or discarded, you reviewed the PR, or the PR merged or closed. Posted reviews get a final cleanup turn before archiving. A thread that it or a thread under it is at work in, or that is linked to another PR still open, stays. The next review of the PR brings the thread back, without its child threads. Threads you picked yourself are never archived.",
+    default: true,
+  },
+  reviewCleanupPrompt: {
+    type: "string",
+    label: "Extra instructions for review cleanup",
+    description: "Appended to the final cleanup turn after a review is posted, before Shuttle archives its thread. Use this for custom tools or task trackers, such as closing the review’s Cortex task. Empty keeps the built-in cleanup instructions.",
+    default: "",
+    experimental_multiline: true,
+    experimental_schema: z.string().max(16_000),
+  },
+  defaultProject: {
+    type: "project",
+    label: "Project for review threads",
+    description: "Used when no project's git remote matches the PR's repository. Without one, Shuttle asks.",
+  },
+  autoAgent: {
+    type: "boolean",
+    label: "Auto agent",
+    description:
+      "When one of your PRs has no agent, make the bb thread that opened it the agent: the thread whose id is in the branch name, or whose branch the PR is from. Off by default, so threads that follow their own PRs (such as Loom's) are left alone.",
+    default: false,
+  },
+  inboxRequests: {
+    type: "boolean",
+    label: "New review requests in the Inbox",
+    description: "PRs that ask for your review by name, or mention you, come to the Inbox for their first days. Off, they wait in Reviews.",
+    default: true,
+  },
+  inboxRequestDays: {
+    type: "number",
+    label: "Days a new request stays in the Inbox",
+    description: "After this, a request you have not reviewed waits in Reviews › Asked me.",
+    default: 3,
+    experimental_schema: z.number().int().min(1).max(30),
+  },
+  botAuthors: {
+    type: "string",
+    label: "Bot authors",
+    description: "Accounts Shuttle counts as bots on top of the ones a server marks, as globs separated by commas: Reviews hides their PRs with Hide bots, and an agent hears from them only as Automations, Agents allows.",
+    default: "dependabot*, renovate*, *[bot]",
+    experimental_schema: z.string().trim().max(1000),
+  },
+} satisfies PluginSettingDescriptors;
+
+export interface Settings {
+  pauseAutomations: boolean;
+  syncMinutes: number;
+  doneDays: number;
+  reviewedDays: number;
+  defaultProject: string;
+  reviewSection: string;
+  archiveReviewThreads: boolean;
+  reviewCleanupPrompt: string;
+  autoAgent: boolean;
+  inboxRequests: boolean;
+  inboxRequestDays: number;
+  botAuthors: string[];
+}
+
+export const DEFAULT_BOT_AUTHORS = "dependabot*, renovate*, *[bot]";
+const globs = (text: string) => text.split(",").map((g) => g.trim()).filter(Boolean);
+
+export const DEFAULT_SETTINGS: Settings = {
+  pauseAutomations: false,
+  syncMinutes: 3,
+  doneDays: 14,
+  reviewedDays: 90,
+  defaultProject: "",
+  reviewSection: "",
+  archiveReviewThreads: true,
+  reviewCleanupPrompt: "",
+  autoAgent: false,
+  inboxRequests: true,
+  inboxRequestDays: 3,
+  botAuthors: globs(DEFAULT_BOT_AUTHORS),
+};
+
+export function toSettings(values: Record<string, unknown>): Settings {
+  const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : d);
+  return {
+    pauseAutomations: values.pauseAutomations === true,
+    syncMinutes: num(values.syncMinutes, DEFAULT_SETTINGS.syncMinutes),
+    doneDays: num(values.doneDays, DEFAULT_SETTINGS.doneDays),
+    reviewedDays: num(values.reviewedDays, DEFAULT_SETTINGS.reviewedDays),
+    defaultProject: typeof values.defaultProject === "string" ? values.defaultProject : "",
+    reviewSection: typeof values.reviewSection === "string" ? values.reviewSection.trim() : "",
+    archiveReviewThreads: values.archiveReviewThreads !== false,
+    reviewCleanupPrompt: typeof values.reviewCleanupPrompt === "string" ? values.reviewCleanupPrompt.trim() : "",
+    autoAgent: values.autoAgent === true,
+    inboxRequests: values.inboxRequests !== false,
+    inboxRequestDays: num(values.inboxRequestDays, DEFAULT_SETTINGS.inboxRequestDays),
+    botAuthors: globs(typeof values.botAuthors === "string" ? values.botAuthors : DEFAULT_BOT_AUTHORS),
+  };
+}

@@ -1,0 +1,42 @@
+import { z } from "zod";
+import type { SetupPlan } from "./setup-plan";
+
+const stages = ["tdd", "quality", "simplify", "pr"] as const;
+const checkStages = ["design", "tdd", "quality", "simplify"] as const;
+export const checkNameSchema = z.string().trim().min(1).max(1024);
+const checkNames = z.array(checkNameSchema).max(128);
+
+export const deliveryStagesSchema = z.array(z.enum(stages)).min(1).max(4)
+  .refine(plan => plan.every((stage, index) => index === 0 || stages.indexOf(stage) > stages.indexOf(plan[index - 1]!)),
+    "Delivery stages must be unique and in workflow order.")
+  .refine(plan => !plan.includes("tdd") || plan.includes("quality"),
+    "TDD needs a Quality stage before delivery.");
+
+export const stageChecksSchema = z.object({
+  design: checkNames.optional(), tdd: checkNames.optional(),
+  quality: checkNames.optional(), simplify: checkNames.optional(),
+}).strict();
+
+type TaskPlan = {
+  requiredChecks: string[];
+  deliveryStages?: z.infer<typeof deliveryStagesSchema>;
+  stageChecks?: z.infer<typeof stageChecksSchema>;
+  setup?: SetupPlan;
+};
+
+export function nextDeliveryStage(stage: string, task: TaskPlan | null) {
+  const plan = task?.deliveryStages ?? stages;
+  if (stage === "design") return plan[0] ?? null;
+  const index = plan.findIndex(item => item === stage);
+  return index < 0 ? null : plan[index + 1] ?? null;
+}
+
+export function requiredStageChecks(stage: string, task: TaskPlan | null, stepId?: string | null): string[] {
+  const local = checkStages.includes(stage as typeof checkStages[number])
+    ? task?.stageChecks?.[stage as typeof checkStages[number]] ?? [] : [];
+  if (stage === "design") return local;
+  const step = task?.setup?.steps.find(item => item.id === stepId);
+  const final = task?.setup?.steps.filter(item => item.stage !== "pr").at(-1);
+  const common = !step || step.id === final?.id ? task?.requiredChecks ?? [] : [];
+  return [...new Set([...common, ...local, ...(step?.checks ?? [])])];
+}

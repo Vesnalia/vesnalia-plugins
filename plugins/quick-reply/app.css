@@ -1,0 +1,243 @@
+/*
+ * Quick Reply styles.
+ *
+ * Colors come from BB's theme variables (--popover, --border, --success, …)
+ * so light and dark themes both work. The marks on BB's own elements are
+ * driven purely by the data-lr-* attributes content.ts sets; no element is
+ * inserted into BB's tree.
+ */
+
+/* ---- marks on reply lines ---------------------------------------------- */
+
+[data-lr-unit] {
+  border-radius: 4px;
+  transition: background-color 120ms ease-out;
+}
+
+[data-lr-unit][data-lr-hover] {
+  background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+}
+
+[data-lr-vote="up"] {
+  box-shadow: inset 3px 0 0 var(--success);
+  background-color: color-mix(in oklab, var(--success) 10%, transparent);
+}
+
+[data-lr-vote="down"] {
+  box-shadow: inset 3px 0 0 var(--destructive);
+  background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+}
+
+[data-lr-vote="question"] {
+  box-shadow: inset 3px 0 0 var(--warning);
+  background-color: color-mix(in oklab, var(--warning) 12%, transparent);
+}
+
+/* Paragraphs and list items get a little room so the colored edge does not
+   touch the text. */
+p[data-lr-vote],
+li[data-lr-vote],
+div[data-lr-vote] {
+  padding-left: 0.5rem;
+}
+
+/* Comments are violet so they stand out from the reply text. BB's theme has
+   no blue or purple variable (only success, warning, destructive), so the
+   color is fixed here; oklch at this lightness reads on both light and dark
+   backgrounds, and the tint is mixed with transparent so it follows the
+   theme. Violet rather than blue so a comment does not look like a link or
+   BB's own accents. */
+:root {
+  --lr-comment: oklch(0.62 0.19 290);
+}
+
+/* Clicking the comment opens it for editing (content.ts, onClick). */
+[data-lr-comment]::after {
+  content: attr(data-lr-comment);
+  cursor: pointer;
+  font-style: italic;
+  display: block;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-left: 3px solid var(--lr-comment);
+  border-radius: 0 4px 4px 0;
+  background-color: color-mix(in oklab, var(--lr-comment) 10%, transparent);
+  color: var(--lr-comment);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+  transition: background-color 120ms ease-out;
+}
+
+/* The comment sits inside the marked line, so hovering the line is the
+   closest signal we have; a stronger tint hints that it can be clicked. */
+[data-lr-comment]:hover::after {
+  background-color: color-mix(in oklab, var(--lr-comment) 18%, transparent);
+}
+
+/* ---- floating controls --------------------------------------------------- */
+
+.lr-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.lr-toolbar,
+.lr-editor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: auto;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius, 0.5rem) + 2px);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+}
+
+.lr-toolbar[hidden],
+.lr-editor[hidden] {
+  display: none;
+}
+
+.lr-toolbar {
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+}
+
+.lr-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.lr-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+
+.lr-button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* A pressed button takes its verdict's color, the same as the line's edge. */
+.lr-button[aria-pressed="true"] {
+  background: var(--accent);
+}
+
+.lr-button[data-kind="up"][aria-pressed="true"] {
+  color: var(--success);
+}
+
+.lr-button[data-kind="down"][aria-pressed="true"] {
+  color: var(--destructive);
+}
+
+.lr-button[data-kind="question"][aria-pressed="true"] {
+  color: var(--warning);
+}
+
+.lr-button[data-kind="comment"][aria-pressed="true"] {
+  color: var(--lr-comment);
+}
+
+.lr-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.lr-textarea {
+  width: 100%;
+  min-height: 3.5rem;
+  resize: vertical;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 0.5rem);
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.lr-textarea:focus {
+  border-color: var(--ring);
+}
+
+.lr-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lr-hint {
+  flex: 1;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+/* ---- shared buttons and the bar above the message box -------------------- */
+
+.lr-text-button {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 0.5rem);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.lr-text-button:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.lr-text-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.lr-text-button.lr-primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.lr-text-button.lr-primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--primary) 88%, black);
+}
+
+.lr-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius, 0.5rem) + 4px);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+.lr-bar-summary {
+  flex: 1;
+  min-width: 0;
+  color: var(--muted-foreground);
+}

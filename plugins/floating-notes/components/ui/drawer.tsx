@@ -1,0 +1,123 @@
+/* shadcn/ui-derived */
+import * as React from "react";
+import { Drawer as DrawerPrimitive } from "vaul";
+
+import { cn } from "../../lib/utils";
+import { usePortalScopeProps } from "../../lib/portal-scope";
+import {
+  getOverlayTriggerClassName,
+  preventOverlayTriggerSelection,
+} from "./overlay-trigger.js";
+
+const Drawer = ({
+  shouldScaleBackground = false,
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
+  <DrawerPrimitive.Root
+    shouldScaleBackground={shouldScaleBackground}
+    {...props}
+  />
+);
+Drawer.displayName = "Drawer";
+
+const DrawerTrigger = React.forwardRef<
+  React.ComponentRef<typeof DrawerPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Trigger>
+>(({ className, ...props }, ref) => (
+  <DrawerPrimitive.Trigger
+    ref={ref}
+    className={getOverlayTriggerClassName(className)}
+    onMouseDown={preventOverlayTriggerSelection}
+    {...props}
+  />
+));
+DrawerTrigger.displayName = DrawerPrimitive.Trigger.displayName;
+
+const DrawerPortal = DrawerPrimitive.Portal;
+
+const DrawerClose = DrawerPrimitive.Close;
+
+const DrawerOverlay = React.forwardRef<
+  React.ComponentRef<typeof DrawerPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
+>(({ className, style, ...props }, ref) => (
+  <DrawerPrimitive.Overlay
+    ref={ref}
+    // Portaled outside every plugin mount; re-attach the plugin CSS scope
+    // when rendered from a plugin slot (see portal-scope.ts).
+    {...usePortalScopeProps()}
+    className={cn(
+      "fixed inset-0 bg-black/40 backdrop-blur-[1px]",
+      className,
+    )}
+    // Inline: arbitrary z utilities do not resolve at this portal boundary
+    // (bb wraps plugin utilities in @scope), and this must clear the
+    // floating sheet's [53,64] band while staying under bb dialogs (70).
+    style={{ zIndex: 66, ...style }}
+    {...props}
+  />
+));
+DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
+
+const DrawerContent = React.forwardRef<
+  React.ComponentRef<typeof DrawerPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
+>(({ className, children, style, ...props }, ref) => (
+  <DrawerPortal>
+    <DrawerOverlay />
+    <DrawerPrimitive.Content
+      ref={ref}
+      {...usePortalScopeProps()}
+      className={cn(
+        "fixed inset-x-0 bottom-0 mt-24 flex max-h-[85dvh] flex-col rounded-t-xl border bg-background",
+        className,
+      )}
+      style={{ zIndex: 67, ...style }}
+      {...props}
+    >
+      <DrawerPrimitive.Handle
+        className="mx-auto mt-3 mb-1 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/20"
+      />
+      {children}
+    </DrawerPrimitive.Content>
+  </DrawerPortal>
+));
+DrawerContent.displayName = "DrawerContent";
+
+const DrawerTitle = React.forwardRef<
+  React.ComponentRef<typeof DrawerPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DrawerPrimitive.Title
+    ref={ref}
+    className={cn(
+      "text-lg font-semibold leading-none tracking-tight",
+      className,
+    )}
+    {...props}
+  />
+));
+DrawerTitle.displayName = DrawerPrimitive.Title.displayName;
+
+const DrawerDescription = React.forwardRef<
+  React.ComponentRef<typeof DrawerPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DrawerPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+DrawerDescription.displayName = DrawerPrimitive.Description.displayName;
+
+export {
+  Drawer,
+  DrawerPortal,
+  DrawerOverlay,
+  DrawerTrigger,
+  DrawerClose,
+  DrawerContent,
+  DrawerTitle,
+  DrawerDescription,
+};

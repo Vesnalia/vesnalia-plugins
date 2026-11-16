@@ -1,0 +1,9 @@
+.github/
+.impeccable/
+dist/
+docs/
+node_modules/
+scratch/
+test/
+*.tgz
+vitest.config.ts

@@ -1,0 +1,23 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - name: Build with Git-install dependencies
+        run: |
+          production_dir="$(mktemp -d)"
+          git archive HEAD | tar -x -C "$production_dir"
+          npm ci --prefix "$production_dir" --omit=dev --omit=optional --ignore-scripts --no-audit --no-fund
+          ./node_modules/.bin/bb plugin build "$production_dir"

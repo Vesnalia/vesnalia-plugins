@@ -1,0 +1,331 @@
+// Planning, inputs and pickers.
+import { component, p } from "./spec";
+
+export const PLANNING = [
+  component({
+    name: "Plan",
+    group: "Planning",
+    summary: "Steps of work with files, risk and estimates. With approve, people approve it or change a step; in a waiting picker the answer goes back to you.",
+    props: {
+      steps: p.list("The steps in order", "{title, detail?, files?: string[], risk?: low|medium|high, estimate?, status?: done|current|todo|blocked}[]", { required: true }),
+      title: p.str("Caption"),
+      approve: p.bool("Show Approve and Change buttons that put the answer in the composer"),
+    },
+    children: "none",
+    example: `<Plan approve steps={[\n  { title: "Append-only audit table", files: ["db/migrations/0012_audit.sql"], risk: "medium", estimate: "2h" },\n  { title: "Write an entry from each admin route", estimate: "3h" },\n]} />`,
+    aliases: ["Proposal"],
+  }),
+  component({
+    name: "Steps",
+    group: "Planning",
+    summary: "A checklist of progress: done, current, todo, blocked.",
+    props: { items: p.list("Steps", "{title, detail?, status?: done|current|todo|blocked|failed}[]", { required: true }), orientation: p.oneOf(["vertical", "horizontal"], "Direction", { def: "vertical" }) },
+    children: "none",
+    example: `<Steps items={[{ title: "Build", status: "done" }, { title: "Test", status: "current" }, { title: "Release" }]} />`,
+    aliases: ["StepList"],
+  }),
+  component({
+    name: "Timeline",
+    group: "Planning",
+    summary: "Dated events in order, newest or oldest first.",
+    props: { items: p.list("Events", "{time, title, detail?, tone?, icon?}[]", { required: true }), order: p.oneOf(["oldest", "newest"], "Which end comes first", { def: "oldest" }) },
+    children: "none",
+    example: `<Timeline items={[\n  { time: "09:12", title: "Build 219 uploaded", tone: "good" },\n  { time: "09:40", title: "Crash spike on launch", tone: "bad", detail: "12 reports" },\n]} />`,
+    aliases: ["History", "Events", "Log timeline"],
+  }),
+  component({
+    name: "Decision",
+    group: "Planning",
+    summary: "Options scored against criteria with weights people can tune; the ranking updates live.",
+    props: {
+      options: p.list("Options", "{name, scores: number[] (1-5, one per criterion), pros?: string[], cons?: string[], note?}[]", { required: true }),
+      criteria: p.list("Criterion names, in the order of scores", "string[]", { required: true }),
+      weights: p.list("Starting weights, one per criterion (0-5)", "number[]"),
+      bind: p.bind("Optional state that receives the current ranking", { required: false }),
+    },
+    children: "none",
+    example: `<Decision criteria={["Throughput", "Ops cost", "Fits our stack"]} options={[\n  { name: "Convex scheduled functions", scores: [3, 5, 5] },\n  { name: "pg-boss", scores: [4, 3, 2] },\n  { name: "BullMQ", scores: [5, 2, 2] },\n]} />`,
+    aliases: ["Matrix", "Comparison", "DecisionMatrix"],
+  }),
+  component({
+    name: "Board",
+    group: "Planning",
+    summary: "A kanban board: cards in status columns. Editable boards let people drag cards, add and rename them.",
+    props: {
+      items: p.list("Cards; id defaults to the title", "{id?, title, status, detail?, tone?, tag?, assignee?}[]", { required: true }),
+      columns: p.list("Column order (statuses); default: in order of appearance", "string[]"),
+      editable: p.bool("Drag cards within and between columns, + adds one, double-click renames; Space lifts a card, arrows move it", { def: false }),
+      bind: p.bind("With editable, a <state> that gets the arrangement after each change: {columns: {status: [ids]}, items: [{id, title, status, ...}]}; for iris_ask pickers", { required: false }),
+    },
+    children: "none",
+    example: `<Board columns={["Todo", "Doing", "Done"]} items={[\n  { title: "Parser", status: "Done" },\n  { title: "Streaming", status: "Doing" },\n  { title: "Card chrome", status: "Todo" },\n]} />`,
+    aliases: ["Kanban"],
+  }),
+  component({
+    name: "Roadmap",
+    group: "Planning",
+    summary: "A Gantt chart of dated work in lanes, with milestones and a today line.",
+    props: { items: p.list("Bars and milestones", "{title, start: yyyy-mm-dd, end?: yyyy-mm-dd, lane?, status?, milestone?: boolean}[]", { required: true }) },
+    children: "none",
+    example: `<Roadmap items={[\n  { title: "Engine", start: "2026-11-03", end: "2026-11-06", lane: "Wave 1" },\n  { title: "Components", start: "2026-11-05", end: "2026-11-12", lane: "Wave 1" },\n  { title: "Switch from genui", start: "2026-11-12", milestone: true },\n]} />`,
+    aliases: ["Gantt"],
+  }),
+  component({
+    name: "Estimate",
+    group: "Planning",
+    summary: "Three-point estimates with P50 and P90 totals.",
+    props: { tasks: p.list("Tasks", "{title, low, high, likely?}[]", { required: true }), unit: p.str("Unit", { def: "h" }) },
+    children: "none",
+    example: `<Estimate unit="d" tasks={[{ title: "Engine", low: 2, likely: 3, high: 5 }, { title: "Components", low: 4, likely: 6, high: 9 }]} />`,
+  }),
+  component({
+    name: "Calendar",
+    group: "Planning",
+    summary: "Events on a month grid.",
+    props: { events: p.list("Events", "{date: yyyy-mm-dd, title, tone?}[]", { required: true }), month: p.str("yyyy-mm to show; default: the first event's month") },
+    children: "none",
+    example: `<Calendar month="2026-11" events={[{ date: "2026-11-12", title: "Iris switch", tone: "good" }, { date: "2026-11-20", title: "Release 2.4" }]} />`,
+    aliases: ["Schedule"],
+  }),
+  component({
+    name: "Status",
+    group: "Planning",
+    summary: "Health of several workstreams: on track, at risk, off track, done.",
+    props: { items: p.list("Workstreams", "{name, status: on-track|at-risk|off-track|blocked|not-started|done, progress?: number, owner?, due?, note?}[]", { required: true }) },
+    children: "none",
+    example: `<Status items={[{ name: "Iris engine", status: "on-track", progress: 60 }, { name: "Components", status: "at-risk", note: "Charts slipped a day" }]} />`,
+    aliases: ["Health", "Workstreams"],
+  }),
+];
+
+export const INPUTS = [
+  component({
+    name: "Slider",
+    group: "Inputs",
+    summary: "Pick a number on a range; the card recomputes live.",
+    props: {
+      bind: p.bind(),
+      min: p.num("Lowest", { def: 0 }),
+      max: p.num("Highest", { def: 100 }),
+      step: p.num("Increment", { def: 1 }),
+      label: p.str("Name"),
+      format: p.fmt(),
+    },
+    children: "none",
+    example: `<state seats={10} />\n<Slider bind="seats" min={1} max={50} label="Seats" />`,
+    aliases: ["Range"],
+  }),
+  component({
+    name: "Stepper",
+    group: "Inputs",
+    summary: "A count with minus and plus buttons.",
+    props: { bind: p.bind(), min: p.num("Lowest"), max: p.num("Highest"), step: p.num("Increment", { def: 1 }), label: p.str("Name") },
+    children: "none",
+    example: `<state count={2} />\n<Stepper bind="count" min={0} label="Workers" />`,
+    aliases: ["Counter", "NumberInput"],
+  }),
+  component({
+    name: "Toggle",
+    group: "Inputs",
+    summary: "An on/off switch.",
+    props: { bind: p.bind(), label: p.str("Name", { required: true }), detail: p.str("Second line") },
+    children: "none",
+    example: `<state annual={false} />\n<Toggle bind="annual" label="Bill yearly" />`,
+    aliases: ["Switch", "Checkbox"],
+  }),
+  component({
+    name: "Segmented",
+    group: "Inputs",
+    summary: "Pick one of a few short options.",
+    props: { bind: p.bind(), options: p.list("Options", "(string | {value, label?, icon?})[]", { required: true }), label: p.str("Name") },
+    children: "none",
+    example: `<state plan="Pro" />\n<Segmented bind="plan" options={["Basic", "Pro", "Team"]} />`,
+    aliases: ["Choice", "SegmentedControl", "ToggleGroup"],
+  }),
+  component({
+    name: "Select",
+    group: "Inputs",
+    summary: "Pick one of many options from a menu.",
+    props: { bind: p.bind(), options: p.list("Options", "(string | {value, label?})[]", { required: true }), label: p.str("Name"), placeholder: p.str("Shown when empty") },
+    children: "none",
+    example: `<state region="eu-west" />\n<Select bind="region" options={["us-east", "eu-west", "ap-south"]} label="Region" />`,
+    aliases: ["Dropdown", "Picker"],
+  }),
+  component({
+    name: "Radio",
+    group: "Inputs",
+    summary: "Pick one option, each with a detail line.",
+    props: { bind: p.bind(), options: p.list("Options; badges mark effort, impact or a recommendation", "(string | {value, label?, detail?, icon?, badges?: (string | {label, tone?})[]})[]", { required: true }), label: p.str("Question"), numbered: p.bool("Number the options, for a ranked list") },
+    children: "none",
+    example: `<state scope="view" />\n<Radio bind="scope" label="What gets exported?" options={[{ value: "view", label: "Current view", detail: "What the filters show" }, { value: "all", label: "Everything" }]} />`,
+    aliases: ["RadioGroup"],
+  }),
+  component({
+    name: "Checklist",
+    group: "Inputs",
+    summary: "Pick several options; the state is a list of the picked values. Five or more show how many are picked and an All or None switch.",
+    props: { bind: p.bind(), options: p.list("Options; badges mark effort, impact or a recommendation", "(string | {value, label?, detail?, icon?, badges?: (string | {label, tone?})[]})[]", { required: true }), label: p.str("Question"), numbered: p.bool("Number the options, for a ranked list") },
+    children: "none",
+    example: `<state formats={["CSV"]} />\n<Checklist bind="formats" options={["CSV", "JSON", "XLSX"]} label="Formats" />`,
+    aliases: ["MultiSelect", "Checkboxes"],
+  }),
+  component({
+    name: "Rank",
+    group: "Inputs",
+    summary: "The person puts options in order: drag the grip, or the up and down buttons, or Alt and the arrow keys. The state is the list of values, first is first; it holds the order on screen from the start. For what to build first, priorities, a shortlist.",
+    props: {
+      bind: p.bind(),
+      options: p.list("Options, same shape as Radio", "(string | {value, label?, detail?, icon?, badges?})[]", { required: true }),
+      label: p.str("Question"),
+    },
+    children: "none",
+    example: `<state order={[]} />
+<Rank bind="order" label="What should we build first?" options={[
+  { value: "variants", label: "Variants", detail: "Pick a direction in a live preview" },
+  { value: "color", label: "ColorInput", detail: "A color field with contrast" },
+  { value: "screens", label: "Screens", detail: "A screenshot matrix" },
+]} />
+<Submit label="Send order" />`,
+    aliases: ["Ranking", "Reorder", "SortableList", "Prioritize"],
+  }),
+  component({
+    name: "ColorInput",
+    group: "Inputs",
+    summary: "Pick a color: a swatch that opens the system picker, a hex field, optional presets, and the contrast on each background it will sit on. The state is an opaque hex string like \"#FF7A3D\" (alpha is dropped).",
+    props: {
+      bind: p.bind(),
+      label: p.str("Name"),
+      presets: p.list("Colors to pick with one tap", "(string | {name?, value})[]"),
+      on: p.any("Background(s) to grade contrast on (AA, AA Large or Fails): a color, or [{name, value}] up to 3"),
+    },
+    children: "none",
+    example: `<state warning="#E0A03A" />
+<ColorInput bind="warning" label="Warning" on={[{ name: "Surface", value: "#17110E" }, { name: "Card", value: "#221A15" }]} presets={["#E0A03A", "#F5B94A", "#FF8A3D", "#F2C94C", "#E8743B"]} />`,
+    aliases: ["ColorPicker", "ColorField", "ColorWell"],
+  }),
+  component({
+    name: "Input",
+    group: "Inputs",
+    summary: "A one-line text field.",
+    props: { bind: p.bind(), label: p.str("Name"), placeholder: p.str("Hint"), type: p.oneOf(["text", "number", "email", "url"], "Kind", { def: "text" }) },
+    children: "none",
+    example: `<state name="" />\n<Input bind="name" label="Project name" placeholder="Iris" />`,
+    aliases: ["TextField", "TextInput"],
+  }),
+  component({
+    name: "TextArea",
+    group: "Inputs",
+    summary: "A multi-line text field.",
+    props: { bind: p.bind(), label: p.str("Name"), placeholder: p.str("Hint"), rows: p.num("Visible lines", { def: 3 }) },
+    children: "none",
+    example: `<state note="" />\n<TextArea bind="note" label="Note for the agent" placeholder="Anything the agent should know before it starts" />`,
+    aliases: ["Textarea", "Multiline"],
+  }),
+  component({
+    name: "DateInput",
+    group: "Inputs",
+    summary: "Pick a date (yyyy-mm-dd).",
+    props: { bind: p.bind(), label: p.str("Name"), min: p.str("Earliest yyyy-mm-dd"), max: p.str("Latest yyyy-mm-dd") },
+    children: "none",
+    example: `<state due="2026-11-12" />\n<DateInput bind="due" label="Due" />`,
+    aliases: ["DatePicker", "Date"],
+  }),
+  component({
+    name: "Rating",
+    group: "Inputs",
+    summary: "One to N stars.",
+    props: { bind: p.bind(), max: p.num("Stars", { def: 5 }), label: p.str("Name") },
+    children: "none",
+    example: `<state stars={4} />\n<Rating bind="stars" label="How did it go?" />`,
+    aliases: ["Stars"],
+  }),
+  component({
+    name: "Button",
+    group: "Inputs",
+    summary: "Runs an action: change state, put text in the composer, send it, copy, open a file or URL.",
+    props: {
+      onClick: p.on("What it does: {() => count += 1}, {insert(\"Fix the flaky test\")}, {send(\"Run it again\")}, {openFile(\"src/a.ts\", 12)}, {copy(text)}"),
+      variant: p.oneOf(["primary", "secondary", "ghost", "destructive"], "Weight: one primary per card", { def: "secondary" }),
+      icon: p.icon(),
+      disabled: p.bool("Greyed out"),
+      size: p.oneOf(["sm", "md"], "Size", { def: "md" }),
+    },
+    children: "text",
+    example: `<state count={0} />\n<Button onClick={() => count += 1} icon="plus">Add one ({count})</Button>`,
+    aliases: ["Action"],
+  }),
+];
+
+export const PICKERS = [
+  component({
+    name: "FollowUps",
+    group: "Pickers",
+    summary: "Suggested next prompts after a finished answer. A tap puts the prompt in the composer (or sends it with send).",
+    props: { prompts: p.list("Prompts", "string[]", { required: true }), mode: p.oneOf(["insert", "send"], "insert lets people edit first", { def: "insert" }) },
+    children: "none",
+    example: `<FollowUps prompts={["Fix the three failing tests", "Show coverage for core/", "Open a PR"]} />`,
+    aliases: ["Suggestions", "NextSteps"],
+  }),
+  component({
+    name: "Choices",
+    group: "Pickers",
+    summary: "Optional next steps after a finished turn as tappable cards; the pick goes into the composer. Never for a question you need answered: use iris_ask for that. In an iris_ask picker with a <Submit>, a pick is kept as choice and sent with the other inputs.",
+    props: {
+      options: p.list("Options", "(string | {label, detail?, icon?, prompt?: text written into the composer})[]", { required: true }),
+      title: p.str("Line above the options"),
+    },
+    children: "none",
+    example: `<Choices title="Next steps" options={[{ label: "Fix all three", detail: "About 20 minutes", prompt: "Fix all three failing tests" }, { label: "Only the parser test" }]} />`,
+    aliases: ["Pick", "Buttons"],
+  }),
+  component({
+    name: "Submit",
+    group: "Pickers",
+    summary: "Only inside an iris_ask picker: sends the answer back to you. The answer is every <state> value plus the label.",
+    props: { label: p.str("Button text", { def: "Send answer" }), value: p.any("Answer to send instead of the state values"), variant: p.oneOf(["primary", "secondary"], "Weight", { def: "primary" }) },
+    children: "text",
+    example: `<state runner="Convex" />\n<Radio bind="runner" options={["Convex", "pg-boss", "BullMQ"]} />\n<Submit />`,
+    aliases: ["Send", "Answer"],
+  }),
+  component({
+    name: "Variants",
+    group: "Pickers",
+    summary:
+      "Design directions to flip through: one large preview at a time with a switcher, arrows and keys. The state holds the one on screen, so in an iris_ask picker <Submit /> sends it. For palettes, layouts, copy or mockups to choose between.",
+    props: { bind: p.bind("Optional state holding the shown variant's value", { required: false }), label: p.str("Question above the switcher") },
+    children: "nodes",
+    childrenDoc: "<Variant label=\"...\"> elements, each holding its preview",
+    example: `<state pick="ember" note="" />
+<Variants bind="pick" label="Which palette?">
+  <Variant value="obsidian" label="Obsidian" colors={["#0B0B0D", "#E8E8EA", "#F5A524"]} detail="Near-black with one amber accent">
+    <Swatches backgrounds={[{ name: "Surface", value: "#0B0B0D" }]} colors={[{ name: "Text", value: "#E8E8EA" }, { name: "Accent", value: "#F5A524" }]} />
+  </Variant>
+  <Variant value="ember" label="Ember" colors={["#17110E", "#F2E6DC", "#FF7A3D"]} detail="Warm charcoal with orange highlights">
+    <Swatches backgrounds={[{ name: "Surface", value: "#17110E" }]} colors={[{ name: "Text", value: "#F2E6DC" }, { name: "Accent", value: "#FF7A3D" }]} />
+  </Variant>
+  <Variant value="slate" label="Slate" colors={["#0F1513", "#E3ECE8", "#2BB3A3"]} detail="Green-tinted grays, teal accent">
+    <Swatches backgrounds={[{ name: "Surface", value: "#0F1513" }]} colors={[{ name: "Text", value: "#E3ECE8" }, { name: "Accent", value: "#2BB3A3" }]} />
+  </Variant>
+</Variants>
+<TextArea bind="note" label="Anything to change?" placeholder="Optional" />
+<Submit />`,
+    aliases: ["Directions", "VariantPicker", "DesignOptions"],
+  }),
+  component({
+    name: "Variant",
+    group: "Pickers",
+    summary: "One direction inside Variants: its preview is its children, or html for a sandboxed mock page.",
+    props: {
+      label: p.str("Name on the switcher", { required: true }),
+      value: p.any("What the state holds when it is shown; default the label"),
+      detail: p.str("One line under the preview"),
+      colors: p.list("Up to six colors drawn as dots on its switcher chip", "string[]"),
+      html: p.str("A full HTML page shown sandboxed instead of the children, for a mock UI in this direction's colors and type"),
+    },
+    children: "nodes",
+    example: `<Variants label="Hero copy">
+  <Variant label="Plain"><Heading>Ship cards, not walls of text</Heading></Variant>
+  <Variant label="Bold"><Heading>Your agent, now with a UI</Heading></Variant>
+</Variants>`,
+  }),
+];

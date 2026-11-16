@@ -1,0 +1,77 @@
+// Your feedback on a PR and the review assistant's check of it, shared by the
+// server and Comments.
+import type { Verdict } from "../src/draft";
+import type { FeedbackThread } from "../src/github/types";
+
+// deferred: the author, the PR or the reviewer says it's done later, as in a follow-up PR; only for feedback on the PR.
+export type AssessmentVerdict = "addressed" | "partial" | "not_addressed" | "disputed" | "unclear" | "deferred";
+
+/**
+ * A verdict that leaves nothing for the author to do now: what Request what's left skips, and what an Approve may follow.
+ * Deferred is the agent's proposal: it settles an item only once the reviewer confirmed it (`confirmed`).
+ */
+export const settled = (verdict: AssessmentVerdict, confirmed = false) => verdict === "addressed" || verdict === "deferred" && confirmed;
+
+/** The assistant's verdict on one piece of feedback, for one head commit. */
+export interface AssessmentItem {
+  /** A thread id, or "summary:<n>" for an ask in a review summary. */
+  id: string;
+  verdict: AssessmentVerdict;
+  /** One line: what changed, or what's missing. */
+  evidence: string;
+  /** For a summary ask, the ask itself. */
+  title?: string;
+  /** Where the evidence is in the current diff. */
+  file?: string;
+  line?: number;
+  assessedAt: number;
+  /** Deferred, and the reviewer confirmed the deferral: the review's view says so, from its lifecycle. */
+  confirmed?: true;
+}
+
+/** The assistant's overall check of one head commit. */
+export interface AssessmentRun {
+  headSha: string;
+  summary: string;
+  /** What the assistant would submit; the reviewer decides. */
+  suggestedVerdict: Verdict | null;
+  suggestedBody: string;
+  assessedAt: number;
+}
+
+export interface ReplyDraft { body: string; author: "agent" | "reviewer"; updatedAt: number }
+
+/** One piece of your feedback, as Comments shows it. */
+export interface FeedbackItem {
+  id: string;
+  kind: "thread" | "summary";
+  /** The first line of your comment, or the summary ask. */
+  title: string;
+  thread: (FeedbackThread & { url: string | null }) | null;
+  assessment: AssessmentItem | null;
+  replyDraft: ReplyDraft | null;
+  /** The label the thread's first comment starts with (src/github/threads.ts threadLabel). */
+  label?: string;
+  /** A nit, FYI, optional, or non-blocking thread: it doesn't count toward what's addressed or left. */
+  nonBlocking?: true;
+}
+
+export interface FeedbackView {
+  /** The review your feedback came from: your latest real review. */
+  baseline: { sha: string | null; at: number | null; verdict: Verdict | null };
+  /** The PR's head now. */
+  head: string | null;
+  items: FeedbackItem[];
+  /** The assistant's latest check; `current` when it checked this head. */
+  run: (AssessmentRun & { current: boolean }) | null;
+  /** The draft's summary is the check's suggested summary, so Use as draft has nothing to add. */
+  suggestionInDraft: boolean;
+  /** When your threads were last read from GitHub. */
+  fetchedAt: number | null;
+}
+
+/** The first line of a comment, trimmed for a list. */
+export function firstLine(text: string, max = 140): string {
+  const line = text.split("\n").map((part) => part.trim()).find((part) => part && !part.startsWith(">") && !part.startsWith("```")) ?? "";
+  return line.length > max ? `${line.slice(0, max - 1)}…` : line;
+}

@@ -1,0 +1,12 @@
+{
+  "sdkMajor": 0,
+  "sdkVersion": "0.4.87",
+  "artifactFormatVersion": 1,
+  "pluginId": "git-panel",
+  "pluginVersion": "0.1.0",
+  "builtWith": {
+    "bbVersion": "0.43.1",
+    "pluginSdkVersion": "0.4.87"
+  },
+  "artifactDigest": "bfaaaa010bb4f8548962f46dfc20d4e013a46794d90299868615ab8088c1c5f2"
+}

@@ -1,0 +1,54 @@
+{
+  "name": "plugin-workshop",
+  "version": "0.1.1",
+  "description": "A bb plugin for building and changing bb plugins on a board, with one agent per stage from idea to rollout and an optional autopilot.",
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "plugin-development",
+    "agents",
+    "autopilot",
+    "developer-tools"
+  ],
+  "type": "module",
+  "engines": {
+    "bb": ">=0.46",
+    "bbPluginSdk": ">=0.6.37"
+  },
+  "bb": {
+    "name": "Plugin Workshop",
+    "description": "Build bb plugins from idea to production with one agent per stage — context, feasibility, spec, mockup, implementation, verification and rollout — and an optional autopilot.",
+    "branding": {
+      "icon": "./icons/board.svg",
+      "experimental_icons": {
+        "board": "./icons/board.svg"
+      }
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.37",
+    "@testing-library/react": "^16.0.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "jsdom": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.11"
+  },
+  "license": "MIT"
+}

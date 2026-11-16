@@ -1,0 +1,157 @@
+/* Colour does one job here: it says what an agent is doing. One hue per
+ * lane, mixed into currentColor for text so it reads in light and dark
+ * themes alike; everything else stays on bb's theme tokens. */
+.chat-sidebar {
+  --chat-attention: #e8a317;
+  --chat-working: #3987e5;
+  --chat-done: #1f9d55;
+  --chat-error: #e5484d;
+}
+.chat-sidebar [data-lane="attention"],
+[data-bb-plugin="chat-sidebar"] [data-lane="attention"] {
+  --chat-lane: var(--chat-attention, #e8a317);
+}
+.chat-sidebar [data-lane="working"],
+[data-bb-plugin="chat-sidebar"] [data-lane="working"] {
+  --chat-lane: var(--chat-working, #3987e5);
+}
+.chat-sidebar [data-lane="done"],
+[data-bb-plugin="chat-sidebar"] [data-lane="done"] {
+  --chat-lane: var(--chat-done, #1f9d55);
+}
+.chat-lane-text {
+  color: color-mix(in oklab, var(--chat-lane) 75%, currentColor);
+}
+.chat-lane-dot {
+  background-color: var(--chat-lane, color-mix(in srgb, currentColor 35%, transparent));
+}
+.chat-unread {
+  background-color: var(--chat-working);
+}
+
+/* Row statuses set by other plugins carry a tone. */
+.chat-tone-text[data-tone="running"] {
+  color: color-mix(in oklab, var(--chat-working) 75%, currentColor);
+}
+.chat-tone-text[data-tone="success"] {
+  color: color-mix(in oklab, var(--chat-done) 75%, currentColor);
+}
+.chat-tone-text[data-tone="error"] {
+  color: color-mix(in oklab, var(--chat-error) 80%, currentColor);
+}
+.chat-tone-text[data-tone="default"] {
+  color: var(--muted-foreground, currentColor);
+}
+
+/* Working: a spinning ring, like bb's own. */
+.chat-spinner {
+  border: 1.5px solid color-mix(in srgb, var(--chat-lane) 30%, transparent);
+  border-top-color: var(--chat-lane);
+  animation: chat-spin 0.9s linear infinite;
+}
+@keyframes chat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Working and waiting avatars pulse softly. */
+.chat-pulse {
+  position: relative;
+}
+.chat-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--chat-lane);
+  animation: chat-pulse 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes chat-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* "Back to top" fades and rises in once the list is scrolled down. */
+.chat-to-top {
+  opacity: 0;
+  transform: translateY(6px) scale(0.92);
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.chat-to-top[data-visible] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-to-top {
+    transition: none;
+  }
+  .chat-spinner,
+  .chat-pulse::after {
+    animation: none;
+  }
+}
+
+/* The tab strip fades an edge while there is more to scroll that way. The
+ * fade is wide enough that a half-visible chip reads as "more this way". */
+.chat-tab-strip {
+  --chat-fade: 2.5rem;
+  /* A tab scrolled into view stops clear of the fade, not under it. */
+  scroll-padding-inline: var(--chat-fade);
+}
+.chat-tab-strip[data-fade-end] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--chat-fade)), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--chat-fade)), transparent);
+}
+.chat-tab-strip[data-fade-start] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--chat-fade)), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - var(--chat-fade)), transparent);
+}
+.chat-tab-strip[data-fade-start][data-fade-end] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--chat-fade),
+    #000 calc(100% - var(--chat-fade)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--chat-fade),
+    #000 calc(100% - var(--chat-fade)),
+    transparent
+  );
+}
+
+/* Phone: the tabs and their icon buttons are 32px; an invisible 44px target sits around each. */
+@media (pointer: coarse) and (max-width: 767.98px) {
+  .chat-tab-hit::before {
+    content: "";
+    position: absolute;
+    inset: -0.375rem -0.1875rem;
+  }
+  .chat-tab-hit-square::before {
+    inset: -0.375rem;
+  }
+  .chat-tab-hit-tight {
+    /* Above the tab strip below it, so the halo is not covered. */
+    z-index: 1;
+  }
+  .chat-tab-hit-tight::before {
+    inset: -0.125rem;
+  }
+}

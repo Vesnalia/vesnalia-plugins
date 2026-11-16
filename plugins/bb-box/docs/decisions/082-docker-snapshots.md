@@ -1,0 +1,471 @@
+# 082: A Docker snapshot is a paused commit of the box and a copy of its Docker volume, kept on its engine
+
+Status: accepted, 10 November 2026. Supersedes the anonymous volume in
+[031](031-docker-boxes-are-reached-through-docker-exec.md) for a box made
+after this record. A box made before keeps that volume. Refines the Docker
+pause in [070](070-snapshots.md). The core stays free of provider names
+([001](001-provider-agnostic-core.md)). Items 7 and 8 are built: Hetzner
+Cloud and Namespace Linux boxes take snapshots, and
+[091](091-a-namespace-machine-with-snapshots-lives-while-its-box-has-a-container.md)
+extends this record with what a release ends and how a Namespace machine
+with snapshots lives.
+[096](096-a-docker-volume-a-restores-copy-made-again-is-removed-by-its-note.md)
+supersedes the release rule under "What lives on the engine" for a volume
+a restore's copy made again.
+
+## Context
+
+Docker is the quick-start backend, and its boxes take no snapshots. The
+snapshots guide already fixes restores that make a new guest, forks that
+check an identity reset, and Keep. The core runs all of these against
+optional backend methods, so Docker can fill them in without a change to
+the core.
+
+Four facts make the shape less obvious.
+
+- Docker gives no crash-consistent copy of a running container. A
+  consistent copy means freezing the container, and the freeze lasts as
+  long as the copy.
+- A box's Docker data sits on a volume. `docker commit` leaves volumes out.
+- `docker commit` copies the container's identity, labels and GPU variables
+  into the image. Without blanking them, a copy would come up as its source.
+- Hetzner and Namespace reuse the Docker backend on each host, and those
+  hosts end on their own schedules.
+
+The constraints that stay are the ones already decided. The identity source
+is a value ([070](070-snapshots.md)). A Docker box has no disk of its own
+([028](028-a-box-size-is-chosen-when-it-is-made.md)). Every Linux box has Docker
+([041](041-every-linux-box-has-docker.md)).
+
+Two designs were written from main at `7c629c26`. The lead took one as the
+base and grafted one refusal from the other. Those rulings are below.
+
+## Decision
+
+A Docker snapshot is a committed image of the box's container, plus a copy
+of the box's Docker volume. Both stay on the box's own Docker engine. They
+are named and labelled so they can be found from that engine alone. The
+commit runs last. An image whose labelled volume is present is a complete
+snapshot. Nothing else marks completion.
+
+A snapshot holds the disk and the box's Docker data. It does not hold
+running programs or memory. `/run` and `/dev/shm` are empty at the next
+start, as they are at any start.
+
+### What lives on the engine
+
+| Object | Name | Labels |
+| --- | --- | --- |
+| Snapshot image | `bbbox-snapshot/<install>/<box>:<snapshot>` | `bbbox.snapshot`, the install, the box, the kind, the reset version, when it was taken, the size, the volume name, and the sizes. The box's own `bbbox.*` labels and `BBBOX_IDENTITY` are blank |
+| Snapshot volume | `bbbox-snapshot-<snapshot>-docker` | `bbbox.snapshot`, the install and the box |
+| Keep date | tag `bbbox-kept/<install>/<snapshot>:<yyyy-mm-dd>` | one tag, moved when the date changes |
+| The box's Docker data | `<container>-docker` | `bbbox.volume-of` is the container's name, and `bbbox.install` is the install |
+
+A restored or forked container is named `bbbox-<box>-<8 hex>` and carries
+`bbbox.from-snapshot`. Its volume is `bbbox-<box>-<8 hex>-docker`, the same
+rule: the volume name is the container name with `-docker` on the end.
+
+The questions a later sweep has to answer come from that structure.
+
+- A snapshot is complete when its image exists and the volume that image
+  names exists.
+- It is incomplete when a volume exists with no image, or an image names a
+  volume that is gone. An incomplete snapshot is deleted, and never treated
+  as found.
+- The keep date is the tag. A lost record of snapshots loses no keep date,
+  because the tag is on the engine.
+- Deleting a snapshot frees its volume at once. Its image layer is freed
+  when no container carries `bbbox.from-snapshot` for it and no other
+  snapshot image is built on its layers.
+- A release removes only volumes labelled `bbbox.volume-of` that container,
+  for this install. A snapshot volume is never labelled that way, so a
+  release cannot delete one. [096](096-a-docker-volume-a-restores-copy-made-again-is-removed-by-its-note.md)
+  supersedes this for a volume a restore's copy made again, without
+  labels: a release or maintenance removes it when BB Box's note of the
+  copy, or the copy's labels, name it.
+
+### The lead's rulings
+
+1. The snapshot is the image plus the volume, on the box's own engine. A
+   separate manifest volume was rejected. It would be a second record that
+   has to stay in step with the first.
+2. Before a take pauses a box, it refuses a writable mount BB Box cannot
+   capture with the box. That is anything other than the box's own Docker
+   volume and the mounts Docker makes itself. The refusal names the mount
+   and says how to fix it, for example that shared storage at `/work` has
+   to be moved into the box first.
+3. A fork needs identity reset version 7 for a Linux server and version 9
+   for a Linux desktop, the same versions microsandbox uses. Docker shares
+   those images.
+4. Memory is out. CRIU is not in Ubuntu 24.04. CRIU 4.3 could not dump a
+   box with Docker inside, because `dockerd` holds MPTCP sockets. A plain
+   container's checkpoint also failed to restore on the containerd image
+   store, which is Docker's default for a new install. Snapshots say they
+   hold the disk and the Docker data, and that they do not hold running
+   programs or memory.
+5. Keep follows the core's existing Keep rules. The provider's record of
+   the keep date is the movable tag above.
+6. Hetzner and Namespace come after Docker, in three stages. First,
+   snapshots of live boxes, kept on their host or instance, with Keep off
+   and the reason said. Then one way to carry a snapshot to another engine.
+   Then kept snapshots off the host. A rented host is never kept alive
+   silently to hold a snapshot.
+7. The freeze was measured at 3.5 to 4.9 s on small boxes on overlay2, and
+   up to about 45 s for a 1.8 GB change on the containerd store. A take
+   says how long it will pause before it starts. A two-pass volume copy,
+   which would shorten the freeze, is a follow-up. It is not in the first
+   changes.
+
+### This change
+
+This record's first change is the volume a box keeps its Docker data on.
+Taking, listing, restoring, forking and keeping a snapshot come later, in
+the sequence below. They are not built with this record.
+
+Every privileged Docker box BB Box makes from now on gets a volume named
+`<container>-docker`. The labels are `bbbox.volume-of` set to the
+container's name, and `bbbox.install` set to the install. The volume is
+created before the container, so Docker does not invent an unlabelled
+volume of that name. It is mounted at `/var/lib/docker`.
+
+One function builds the `docker container create` arguments. Acquire uses
+it. A later restore and a later fork use the same function. The function
+takes the box, the install, the container name, the image, the volume name
+or none, the placement, LXCFS, whether the container is privileged, the
+network, the restart policy, and the snapshot id or none. It sets
+`BBBOX_IDENTITY` to the box id of the box that will run. It does not take a
+separate identity. When a snapshot id is set, it adds `bbbox.from-snapshot`.
+Acquire passes none.
+
+The environment variables that function sets are one list:
+`BBBOX_IDENTITY`, `BBBOX_DOCKERD`, `NVIDIA_DRIVER_CAPABILITIES`,
+`CUDA_VISIBLE_DEVICES`, `NVIDIA_VISIBLE_DEVICES`, `BBBOX_GPU_CARD`,
+`BBBOX_GPU`, `BBBOX_GPU_ID` and `OMP_NUM_THREADS`. A later commit blanks
+that same list, so a new variable a box is given is blanked in a snapshot
+image without a second edit.
+
+A release still runs `docker rm --force --volumes`, which removes an older
+box's anonymous volume. It then removes every volume labelled as that
+container for this install, and no other. A volume whose name does not
+match a volume name is left alone, so a label cannot become a flag. If the
+container is already gone and the box id is known, the labelled volumes of
+that container name are still removed, so a release interrupted after the
+container went can finish. At each maintenance pass, the backend also finds
+this install's labelled volumes without a container and removes them. It
+leaves volumes of boxes being made alone, using the engine's shared placement
+reservations. Restored and forked containers use names of the form
+`bbbox-<box>-<8 hex>` and make their volumes before their containers.
+A restore reserves creation under the new container's name until its
+container exists, so cleanup cannot remove the volume in between. Cleanup runs after CPU and LXCFS
+upkeep. Each removal failure is logged and retried on the next pass,
+without stopping cleanup of other volumes.
+
+A box made before this record keeps its anonymous volume. Making it again
+finds the container, leaves it, and removes the named volume this attempt
+created, because that volume is not mounted. A release of that box removes
+the anonymous volume with the container.
+
+If a volume of the box's name already exists and its labels are not this
+container's for this install, the make stops and says to remove that
+volume. It checks the labels again after creation, because Docker returns success
+when the volume already exists. It does not mount or delete a foreign volume.
+Each removal checks its own result; a missing volume cannot hide another
+volume's failure.
+
+On rootless Docker, and when `privileged` is off, there is no volume, as
+today. A take of such a box will be the commit alone.
+
+A local engine, Docker over SSH, and a BB machine's Docker all use this
+path. Hetzner and Namespace Linux boxes are containers made by the same
+Docker backend, so a new box there gets the same volume. Their snapshot
+offer stays off until their own changes.
+
+An image box, which tries a build and is not a box a person keeps, stays
+on an anonymous volume. Removing that container with `--volumes` already
+deletes it. Image boxes use the same container argument builder as ordinary
+boxes. Restore and fork will use that builder in later units.
+
+### How a later take, restore, fork and keep will work
+
+The core already flushes the box, records the operation, checks the count
+and the room, and reads the reset version. The backend then reads the
+sizes, refuses an image of 120 layers or more (Docker stops at 125, measured
+as "max depth exceeded" at commit 124), pauses, copies the volume with a
+helper container that has no network, commits with the pause left off and
+the identity blanked, and unpauses in a finally. The helper is privileged,
+because overlay's `trusted.*` attributes and whiteout devices need it. It
+uses the box's own image, with `--pull never`.
+
+On a box with no Docker volume, the take is the commit alone, while paused.
+
+Only the take pauses a box. After a restart, a paused container is settled
+from its saved take record and the engine. An image means the take finished. No image, and still
+inside the time bound, means it is still running. Past the bound, the
+container is unpaused, the leftover volume is deleted, and the take has
+failed. The sweep uses the same bound. If BB Box's records are lost, it
+removes stale partial volumes but leaves the container paused: the engine
+alone cannot prove who owns the pause.
+
+A restore stops the box with `docker kill`, takes an undo of the stopped
+box, makes a new container from the snapshot at the snapshot's size, with
+the box's identity and the old container's GPU placement, and deletes the
+old container once the new one starts. The old container is the box's own
+container now, found by its labels, not the container the snapshot was taken
+from, which an earlier restore may have deleted. If the box has a GPU and that
+container has none, or the box has two containers on different GPUs, the
+restore is refused and the box is left as it was. A failed start puts the old
+container back. The snapshot's volume is copied into the new container's
+own volume by the same kind of helper a take uses. The snapshot's own
+volume is never mounted by the new box. The new container's restart policy
+is `unless-stopped` from the start, as it is the box. Docker does not
+restart a container stopped by `docker kill`, so the old one stays stopped.
+
+A fork is a new container from the snapshot image, placed again, with its
+own box id in `BBBOX_IDENTITY`, restart policy `no` and a hold,
+`BBBOX_FORK_HOLD=1`. Its first start runs the identity reset and nothing
+else, then waits until BB Box releases it. Once the core's checks pass, the
+policy becomes `unless-stopped` and BB Box releases the hold. Item 4's
+results below say why and how.
+
+Keep adds the date tag and removes any other keep tag for that snapshot.
+The tag is written before BB Box's own record. Stopping keeping removes
+the tag. Delete removes the keep tag, the snapshot tag, and the snapshot
+volume. A release deletes snapshots nobody kept. A kept snapshot stays
+where it is, on that engine.
+
+Room is read with `df` on the filesystem that holds Docker's data. The
+estimate is the changed layer times the image store's factor (1.0 on
+overlay2, about 2.0 on containerd) plus the volume's size. The existing
+room rule applies. There is no price on a person's own engine.
+
+### What was measured
+
+Measured on one Linux guest, released afterwards, while this design was
+written. The guest was a Proxmox QEMU VM with 4 vCPU, 8 GiB of memory and
+an 80 GB ext4 disk (2 GiB written directly in 8.8 s, about 240 MB/s). It
+ran Ubuntu 24.04.5, kernel 6.8.0-149, Docker Engine 29.1.3, and Docker
+29.9.3 inside the box. The stand-in was the `docker:29-dind` image, made
+with the flags a box gets: privileged, `--init`, a tmpfs on `/run`, a
+volume at `/var/lib/docker`, `BBBOX_IDENTITY` and `bbbox.*` labels. Its
+Docker held `postgres:17`, `nginx:alpine`, an image with a deleted file,
+and a running Postgres with 100,000 rows.
+
+| What | How | Result |
+| --- | --- | --- |
+| Flush | `docker exec` of `sync` | 62 ms |
+| Pause and unpause | `docker pause`, `docker unpause` | 46 ms and 64 ms |
+| Volume copy, 759 MB | a privileged helper, `cp -a`, no network | 12.1 s (a tar pipe with xattrs took 18.5 s) |
+| Commit, containerd, 1.07 GB layer, paused | `docker container commit --pause=false` | 33.5 s. The same commit with Docker's own pause took 16.2 s |
+| The whole freeze | pause to unpause, that layer plus about 760 MB of Docker data | 45.6 s |
+| Commit, containerd, 329 MB of 40,000 files | the same commit | 8.0 s |
+| Space, containerd | `docker image ls` | a 1.07 GB layer used 2.6 GB of disk (base 455 MB), about 2.0 times. A 329 MB layer used about 1.75 times |
+| Commit, overlay2, 1.4 GB | `--pause=false`, caches warm, then dropped | 6.3 s, 18.8 s and 39.2 s |
+| Undo commit of a stopped box, overlay2 | `docker container commit` | 24.5 s, and 29.3 s cold |
+| Space, overlay2 | `df` before and after | 1.37 GB more, 1.0 times the layer |
+| Restore | volume copy, create, start until inner `docker info` | 6.5 s, 193 ms and 747 ms |
+| What came back | the file, the 1 GiB file, inner images, a whiteout, Postgres | the files, three images, the deleted file still absent, 100,000 rows |
+| Labels in a commit | `docker image inspect` | the container's labels and environment are inherited, and `--change` overrides them |
+| Environment on create | `docker create --env` of a snapshot image | the new value wins over the image's |
+| Removing an image a container uses | `docker image rm` of its last tag | refused unless forced. Other tags go |
+| Layer limit, overlay2 | create then commit, 140 rounds | "max depth exceeded" at commit 124, which is 125 layers |
+| Reading sizes and room | `inspect --size`, `du` in a helper, `df` in a helper | 71 ms, 344 ms and 334 ms |
+| Stop | `docker stop -t 10` | 310 ms |
+
+Commit time varies with the page cache. A plan should use cold rates:
+about 30 s a GiB on containerd, about 25 s a GiB on overlay2 with many
+small files, and about 15 s a GiB to copy the volume on ext4. Decision
+070's "15 s for 1 GiB changed" is a warm commit, and it is low.
+
+Small overlay2 boxes froze for 3.5 to 4.9 s. The long case, about 45 s,
+was a 1.8 GB change on the containerd store (a 1.07 GB layer plus about
+760 MB of Docker data).
+
+### Alternatives
+
+- Copying the Docker data into the writable layer, then committing again.
+  Rejected. Overlay treats an inner whiteout as its own whiteout. The data
+  also sits in a layer a restore cannot free.
+- Storing the volume as a tar inside an image. Useful later as the way to
+  carry a snapshot to another engine. Rejected as the snapshot itself,
+  because every box made from it would keep a dead copy in a lower layer,
+  and every restore would unpack it.
+- `docker export` and `docker import` of the whole root filesystem.
+  Rejected for a take. It copies everything and drops the image settings.
+  It stays available for flattening an image that is near the layer limit.
+- Committing and copying while the box runs. Rejected. A torn database
+  would come back as if it were sound.
+- Copying the volume under our pause, then committing with Docker's own
+  pause. Rejected. The disk and the Docker data would be seconds apart.
+  Docker would also unpause during the commit if BB Box had stopped.
+- Keeping the snapshot's state only in BB Box's own storage. Rejected. The
+  engine can hold the names, the labels and the keep date, and the guide
+  asks for that.
+- A separate manifest volume, from the other design. Rejected by the lead,
+  as a second record that has to stay in step with the image and the volume.
+
+### The sequence
+
+Each step is merged before the next starts. This record is step 1. Steps
+2 to 11 are not built with it.
+
+1. One way to make a box's container, with a named Docker volume. A release
+   removes the volumes labelled as that box. An existing box keeps its
+   anonymous volume.
+2. Take, list and delete. The offer has no restore, no fork and no Keep.
+   The freeze, settling a pause after a restart, room, a release dropping
+   snapshots nobody kept, the doctor checks, and the guide.
+3. Restore as a new container, with an undo.
+4. Forks. Reset version 7 for a Linux server and 9 for a Linux desktop.
+5. Keep, as the tag, including a fork after the box is released.
+6. The conformance suite's snapshot checks, run live on Docker.
+7. Hetzner: snapshots of live boxes, on the host. Keep off, with the reason.
+   Forks on the same host.
+8. Namespace: snapshots of live boxes, on the instance. Fork and Keep off,
+   with the reasons.
+9. Carry a snapshot to another engine. Namespace forks, and Hetzner forks
+   onto another host.
+10. Hetzner: a kept snapshot on a Hetzner Volume, with its own decision
+    record and a price.
+11. Namespace: a kept snapshot in the workspace registry, once its price is
+    known.
+
+Left for later, and not part of these steps: flattening an image past 110
+layers, a two-pass volume copy that does most of the copy before the
+freeze, and whether cancelling a commit client stops the engine's commit.
+
+## Consequences
+
+- A Docker box made after this record keeps its Docker data on a named,
+  labelled volume. A box made before keeps its anonymous volume, and a
+  release still removes it.
+- Hetzner and Namespace Linux boxes made after this record get the same
+  volume, because they are made by the Docker backend. Their snapshot
+  offer does not change.
+- The core is unchanged. Docker does not offer snapshots until step 2.
+- An image box stays on an anonymous volume.
+- The container settings include the install id, because the volume's
+  install label cannot be set without it. The snapshot id on those
+  settings is plain text until the snapshot module exists.
+- Decision 070's Docker row still says a pause of 15 s for 1 GiB changed.
+  The cold rates above replace that figure for a plan. The row itself is
+  left as it was written.
+
+## Item 2 results
+
+The take, list and delete implementation is measured in [082 results](082-results.md),
+with the restore and the fork after it. Keep remains a later unit.
+
+## Item 4: a fork holds every service until its check passes
+
+A restart policy of `no` stops Docker from starting a fork again by itself.
+It does not stop what the fork's first start runs. A fork's start script
+started Docker inside it at once when it found containers, and that Docker
+started the containers copied from the source with their own restart
+policies. With a reset that said it had worked but had not, a copied
+container running an SSH server served the source's SSH host key from the
+fork's address, before BB Box's check had refused the fork. Anything the
+image starts, and anything a copied container runs, could do the same.
+
+So a fork's first start holds every service until BB Box has checked it:
+
+- BB Box makes the fork with `BBBOX_FORK_HOLD=1` beside its own box ID in
+  `BBBOX_IDENTITY`. A new box, a restore and an image box are made without
+  it, and start as before.
+- The image's start script runs the identity reset, then
+  `/usr/local/libexec/bb-box/fork-hold`. In a fork that has not been
+  released, the hold writes `/run/bb-box/held` and starts nothing until
+  `/var/lib/bb-box/fork-released` holds the fork's own box ID. Only then does
+  the start script go on to Docker, the desktop and the ready file. Docker,
+  the desktop and every copied container wait with it. A Docker box's start
+  script never starts BB's daemon, SSH or Tailscale itself: those run only
+  as BB Box's bootstrap or a copied container starts them, after the hold.
+- BB Box starts the fork, waits for `held`, and runs the core's check while
+  the fork is held. When the check passes, it sets the restart policy to
+  `unless-stopped`, writes the release as root with `docker exec`, and waits
+  for the ready file before it hands the fork over.
+- A fork that fails the check is disarmed and removed without a release. A
+  fork BB Box stops before its check stays held, at each start, until the
+  sweep removes it: the hold is in its container settings and the release
+  is on its disk, and only BB Box writes the release.
+- The release names the box, so a fork of a fork is held again, though its
+  copy carries the first fork's release. A snapshot's image blanks
+  `BBBOX_FORK_HOLD`, as it blanks every value BB Box gives a box, so a
+  restore of a fork's snapshot is not held.
+- The images say they hold forks with the label `bbbox.fork-hold="1"`,
+  which a snapshot's image keeps from its box's. A snapshot of a box made
+  from an image built before the hold has no such label, and does not fork:
+  the fork plan says why, and nothing is copied. This change rebuilds the
+  Docker images. Existing boxes and their snapshots keep their old start
+  script, so make the box again from the rebuilt image to fork it.
+
+The hold is in the image, not in the core: the core already starts a fork
+for its check through the backend's `startForForkCheck`, and arms it for its
+boots with `armFork("boot")` after the check. Measured in
+[082 results](082-results.md#a-fork-held-until-its-check).
+
+## Item 5: Keep, as built
+
+Keep is the tag above, `bbbox-kept/<install>/<snapshot>:<yyyy-mm-dd>`, on
+the snapshot's image. Writing a date records the change in the backend's own
+storage, tags the image, then removes any other keep tag of that snapshot,
+then drops the record. The new tag is written before the old one goes, so a
+change cut short never leaves the snapshot without a keep tag, but it can
+leave two for a while. The new tag is the change's point of no return: once
+it is there, listing gives the new date, and the next maintenance removes the
+other tags. A change whose new tag was never written changed nothing, and
+maintenance drops its record. Two keep tags with no record of a change, as
+after the backend's storage is lost, settle on the later date. So one keep
+tag remains after recovery, whatever step was cut short. That later date is
+the safe side, not always the one asked for: a shortening cut short after
+its new tag, with its record lost too, keeps the snapshot to its old, later
+date. It keeps data longer than asked, never deletes it early, and you can
+shorten it again. Stopping keeping
+records the change and removes the tags. A delete removes the keep tag before the snapshot's own tag, so a
+delete cut short leaves an unkept snapshot, never an image held by a keep
+tag alone. Listing reads the keep date from the image's tags, so a lost
+`snapshots.db` loses no keep date.
+
+Three things differ from the package:
+
+- The offer says the snapshots live with the provider, as microsandbox's
+  and boat.dev's do, not on the host with `outlivesGuest`, as Tart's do.
+  Both shapes keep a snapshot as it is past its box's release. The
+  difference is that BB Box asks the provider before it removes the backend,
+  and refuses while the engine holds any of this install's snapshots, kept
+  or not. On a person's own engine, a kept snapshot left there would take
+  its disk with nothing to delete it. The refusal's words now fit a backend
+  that charges nothing: "on its host", not "on its provider's account".
+- A snapshot's image also carries its box's name and thread,
+  `bbbox.snapshot.box-name` and `bbbox.snapshot.thread`, beside its kind.
+  A snapshot found again after a lost `snapshots.db` keeps its box's kind,
+  which a fork after the release needs, and its name. A snapshot taken
+  before this change has its kind only.
+- A plan for a snapshot whose box is gone reads the engine's space and the
+  snapshot alone, so the core can check a fork of a kept snapshot after its
+  box's release.
+
+Hetzner Cloud and Namespace make their Docker engines with Keep off and the
+reason, `keepOffBecause`: a Hetzner Cloud host is deleted when idle, and a
+Namespace machine at its box's release. When this record was made they
+offered no snapshots. Items 7 and 8 now pass snapshots through, and Keep
+gives that reason on both.
+
+The Keep dialog and the doctor's Kept snapshots check say two numbers for a
+kept snapshot. The first is what releasing its box leaves on the engine: the
+snapshot's layers past the longest run of layers another image there shares,
+and its Docker data. The second is its whole size, which it grows to as the
+images it shares layers with are deleted, such as the box's image after a
+refresh. Both come from the image's layers, `docker image history`'s size of
+each, and the other images' layers. With the containerd image store, each
+layer is kept packed as well as unpacked; its packed size is not listed, so
+BB Box counts the image's packed content in proportion to each layer's
+unpacked size. Docker's own count in `docker system df --verbose` is no use
+here: with the containerd store, it counts the packed layers two images share
+as unique to each, 795 MB for a snapshot whose own change was 139 kB. The
+size a snapshot is listed with is a third number: an estimate of its own
+bytes, from its changed layer and Docker data at its take. Measured in [082 results](082-results.md#keep-verified-live).
+
+A fork of a kept snapshot after its box's release can get its source's old
+address, as Docker hands out the lowest free one. Its check then accepts that
+address only as [decision 088](088-a-fork-may-hold-its-gone-sources-address-when-its-provider-gave-it.md)
+says.

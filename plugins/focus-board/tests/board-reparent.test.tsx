@@ -1,0 +1,805 @@
+// @vitest-environment jsdom
+// Drop ONTO a card nests the dropped thread as a child of the target card.
+// The middle third of a card is the nest zone; the top and bottom thirds keep
+// the insertion-line reorder the board always had, so every pre-nesting
+// gesture stays put. The zone renders as a ring around the card instead of a
+// line, and a gesture the guard refuses (a card onto its own child, a card
+// onto itself) says so in the refusal banner.
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, createEvent, fireEvent, render } from "@testing-library/react";
+import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { Board } from "../components/board";
+import { buildColumns } from "../components/grouping";
+import { thread } from "./thread-fixture";
+
+const NOW = 10_000_000;
+const context = { projects: [{ id: "p1", name: "One" }], providers: [{ id: "pi" }] };
+
+function makeDataTransfer() {
+  const payload = new Map<string, string>();
+  const types: string[] = [];
+  return {
+    get types() {
+      return [...types];
+    },
+    setData(type: string, value: string) {
+      if (!types.includes(type)) types.push(type);
+      payload.set(type, value);
+    },
+    getData(type: string) {
+      return payload.get(type) ?? "";
+    },
+    effectAllowed: "move",
+    dropEffect: "none",
+  };
+}
+
+type BoardProps = Parameters<typeof Board>[0];
+
+function renderBoard(threads: PluginSidebarThread[], overrides: Partial<BoardProps> = {}) {
+  const merged = {
+    doneIds: new Set<string>(),
+    ...overrides,
+  };
+  const props = {
+    columns: buildColumns(
+      threads,
+      "status",
+      context,
+      new Map(),
+      merged.doneIds,
+      NOW,
+      {},
+    ),
+    groupBy: "status" as const,
+    activeThreadId: null,
+    doneIds: merged.doneIds,
+    nestedChildrenByParent: new Map<string, readonly PluginSidebarThread[]>(),
+    childCountByParent: new Map<string, number>(),
+    doneChildrenByParent: new Map<string, readonly PluginSidebarThread[]>(),
+    dimmedIds: new Set<string>(),
+    projectNameFor: () => "One",
+    repoBaseFor: () => null,
+    statusFor: undefined,
+    onOpenThread: vi.fn(),
+    onClosePane: vi.fn(),
+    onNewTask: vi.fn(),
+    rankStore: {},
+    onRankMove: vi.fn(),
+    onDropDone: vi.fn(),
+    onDropUnread: vi.fn(),
+    onDropPinned: vi.fn(),
+    menuActionsFor: () => [],
+    ...overrides,
+  } as unknown as BoardProps;
+  return { props, ...render(<Board {...props} />) };
+}
+
+function cardAnchor(fromId: string): HTMLElement {
+  const anchor = document.querySelector(`[data-thread-card="${fromId}"] a[draggable]`);
+  if (!(anchor instanceof HTMLElement)) throw new Error(`missing draggable card ${fromId}`);
+  return anchor;
+}
+
+/** The ranked slot element a card renders inside — zone math and rings live here. */
+function cardSlot(id: string): HTMLElement {
+  const slot = document.querySelector(`[data-rank-slot="${id}"]`);
+  if (!(slot instanceof HTMLElement)) throw new Error(`missing rank slot ${id}`);
+  return slot;
+}
+
+/** jsdom rects are 0×0; give the slot a 300px-tall box so thirds are real. */
+function withRect(slot: HTMLElement, height = 300): void {
+  slot.getBoundingClientRect = () =>
+    ({ top: 0, left: 0, right: 100, bottom: height, width: 100, height }) as DOMRect;
+}
+
+/**
+ * The full drag: dragstart on the source card's anchor, then dragover and
+ * drop on the target slot at `clientY`. jsdom does not apply `clientY` to
+ * drag events (it stays undefined even when passed), so the property is
+ * forced onto each created event. Returns whether some handler
+ * preventDefault'ed the dragover (the browser's drop permission).
+ */
+function dragOnto(fromId: string, targetId: string, clientY: number) {
+  const dt = makeDataTransfer();
+  fireEvent.dragStart(cardAnchor(fromId), { dataTransfer: dt });
+  const slot = cardSlot(targetId);
+  withRect(slot);
+  const over = createEvent.dragOver(slot, { dataTransfer: dt });
+  Object.defineProperty(over, "clientY", { value: clientY });
+  fireEvent(slot, over);
+  const drop = createEvent.drop(slot, { dataTransfer: dt });
+  Object.defineProperty(drop, "clientY", { value: clientY });
+  fireEvent(slot, drop);
+  return { dropAllowed: over.defaultPrevented };
+}
+
+afterEach(cleanup);
+
+function twoCardFixture(): PluginSidebarThread[] {
+  return [
+    thread({ id: "thr_a", isUnread: true, updatedAt: NOW - 5000 }),
+    thread({ id: "thr_b", isUnread: true, updatedAt: NOW - 1000 }),
+  ];
+}
+
+/** Newest first: thr_x, thr_b, thr_a — every pair non-adjacent is false; the
+ *  point is three cards so a drag between the end cards has a middle card
+ *  between them. */
+function threeCardFixture(): PluginSidebarThread[] {
+  return [
+    thread({ id: "thr_a", isUnread: true, updatedAt: NOW - 9000 }),
+    thread({ id: "thr_b", isUnread: true, updatedAt: NOW - 5000 }),
+    thread({ id: "thr_x", isUnread: true, updatedAt: NOW - 1000 }),
+  ];
+}
+
+describe("drop onto a card to nest it", () => {
+  it("the middle third nests the dropped card under the target", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderBoard(twoCardFixture(), {
+      onReparent,
+      rawParentOf: new Map(),
+    });
+    const { dropAllowed } = dragOnto("thr_a", "thr_b", 150);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_a", "thr_b");
+    expect(props.onRankMove).not.toHaveBeenCalled();
+    expect(props.onDropDone).not.toHaveBeenCalled();
+    expect(props.onDropPinned).not.toHaveBeenCalled();
+    expect(props.onDropUnread).not.toHaveBeenCalled();
+  });
+
+  it("the top third keeps the insertion-line reorder", () => {
+    // Three cards so the drag is non-adjacent: thr_x (the top card) dropped
+    // on thr_a's top half lands above thr_a — "before thr_a" is not its own
+    // slot (thr_x is two slots up).
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderBoard(threeCardFixture(), {
+      onReparent,
+      rawParentOf: new Map(),
+    });
+    const { dropAllowed } = dragOnto("thr_x", "thr_a", 10);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).not.toHaveBeenCalled();
+    expect(props.onRankMove).toHaveBeenCalled();
+  });
+
+  it("the bottom third keeps the insertion-line reorder", () => {
+    // Non-adjacent: thr_x (the top card) on thr_a's bottom half appends
+    // below the lane's last card — the slot below thr_a holds nothing.
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderBoard(threeCardFixture(), {
+      onReparent,
+      rawParentOf: new Map(),
+    });
+    dragOnto("thr_x", "thr_a", 290);
+    expect(onReparent).not.toHaveBeenCalled();
+    expect(props.onRankMove).toHaveBeenCalled();
+  });
+
+  it("a release whose insertion slot already holds the dragged card refuses loudly", () => {
+    // thr_a sits directly below thr_b; dropping it on thr_b's bottom half
+    // resolves to its own slot. The earlier conventions shipped both wrong
+    // behaviors here: the card jumped ABOVE the hover (the anchor at the
+    // hover's id), or — the shipped product — wrote a self-anchored
+    // rank_move that changed nothing, silently (reported 2026-10-15: a
+    // pinned family parent that could not be landed below its neighbour no
+    // matter how the release aimed).
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderBoard(twoCardFixture(), {
+      onReparent,
+      rawParentOf: new Map(),
+    });
+    const { dropAllowed } = dragOnto("thr_a", "thr_b", 290);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).not.toHaveBeenCalled();
+    expect(props.onRankMove).not.toHaveBeenCalled();
+    expect(document.body.textContent).toMatch(/resolved to no move/);
+  });
+
+  it("hovering the nest zone rings the card amber, not the lane color", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    renderBoard(twoCardFixture(), { onReparent, rawParentOf: new Map() });
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(cardAnchor("thr_a"), { dataTransfer: dt });
+    const slot = cardSlot("thr_b");
+    withRect(slot);
+    const over = createEvent.dragOver(slot, { dataTransfer: dt });
+    Object.defineProperty(over, "clientY", { value: 150 });
+    fireEvent(slot, over);
+    expect(slot.className).toMatch(/after:ring-2/);
+    // Amber marks the family write; the lane affordance keeps the theme's
+    // ring color, so the two reads are distinguishable at a glance.
+    expect(slot.className).toMatch(/after:ring-amber-500/);
+    expect(slot.className).toMatch(/after:bg-amber-500\/10/);
+    expect(slot.className).not.toMatch(/after:ring-ring/);
+    expect(slot.className).not.toMatch(/after:inset-x-0/);
+  });
+
+  it("dropping a card onto its own child falls back to a reorder", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderBoard(threeCardFixture(), {
+      onReparent,
+      rawParentOf: new Map([["thr_b", "thr_a"]]),
+    });
+    // thr_a dropped onto thr_b (its own child) would close a loop. The nest
+    // is never offered — the drop reads as the edge reorder the cursor's
+    // position implies, so indicator and action agree and nothing eats
+    // silently. thr_a is the bottom card and thr_b the middle one, so the
+    // top-half release ("before thr_b") is a real move, not its own slot.
+    const { dropAllowed } = dragOnto("thr_a", "thr_b", 10);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).not.toHaveBeenCalled();
+    expect(props.onRankMove).toHaveBeenCalled();
+  });
+
+  it("hovering a refused nest target falls back to the edge zones", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    renderBoard(threeCardFixture(), {
+      onReparent,
+      rawParentOf: new Map([["thr_b", "thr_a"]]),
+    });
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(cardAnchor("thr_a"), { dataTransfer: dt });
+    const slot = cardSlot("thr_b");
+    withRect(slot);
+    const over = createEvent.dragOver(slot, { dataTransfer: dt });
+    Object.defineProperty(over, "clientY", { value: 10 });
+    fireEvent(slot, over);
+    expect(slot.className).toMatch(/after:absolute|before:absolute/);
+    expect(slot.className).not.toMatch(/after:ring-2/);
+  });
+
+  it("a card dropped onto itself is never a nest", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    renderBoard(twoCardFixture(), {
+      onReparent,
+      rawParentOf: new Map(),
+    });
+    dragOnto("thr_a", "thr_a", 150);
+    expect(onReparent).not.toHaveBeenCalled();
+  });
+
+  it("a cross-lane drop onto the middle nests without a state change", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const threads = [
+      thread({ id: "thr_bug", isUnread: true, updatedAt: NOW - 1000 }),
+      thread({ id: "thr_pinned", isPinned: true, updatedAt: NOW - 500 }),
+    ];
+    const { props } = renderBoard(threads, {
+      onReparent,
+      rawParentOf: new Map(),
+    });
+    const { dropAllowed } = dragOnto("thr_bug", "thr_pinned", 150);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_bug", "thr_pinned");
+    expect(props.onDropPinned).not.toHaveBeenCalled();
+    expect(props.onRankMove).not.toHaveBeenCalled();
+  });
+
+  it("a pinned card's middle-third drop nests and posts its receipt: the render keeps the card alone", async () => {
+    // The reported gesture (2026-10-15): dropping a pinned card on another
+    // pinned card's face nests it — writes `thread_reparent` — but the
+    // placement rules keep a pinned child on its own card (a row never
+    // carries the pin, and a folded family must never hide one), so the
+    // board renders nothing. The nest itself is wanted (the operator nests
+    // pinned cards deliberately, 2026-10-16); the write's receipt says what
+    // landed and names the undo, so the gesture never reads as a silent
+    // no-op again.
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const threads = [
+      thread({ id: "thr_pin_a", isPinned: true, updatedAt: NOW - 5000 }),
+      thread({ id: "thr_pin_b", isPinned: true, updatedAt: NOW - 1000 }),
+    ];
+    renderBoard(threads, { onReparent, rawParentOf: new Map() });
+    const { dropAllowed } = dragOnto("thr_pin_a", "thr_pin_b", 150);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_pin_a", "thr_pin_b");
+    await vi.waitFor(() => {
+      const notice = document.querySelector('[data-testid="nest-notice"]');
+      expect(notice).not.toBeNull();
+      expect(notice!.textContent).toMatch(/pinned card/);
+      expect(notice!.textContent).toMatch(/Make Top-Level/);
+    });
+  });
+
+  it("an attention card's middle-third drop nests too, receipt naming why it surfaces alone", async () => {
+    // The same invisibility class: an attention child un-nests (childPlacement
+    // step 2 — it surfaces as its own actionable card), so the nest write
+    // changes no render. The drop still nests; the receipt explains.
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const threads = [
+      thread({ id: "thr_attn", hasPendingInteraction: true, updatedAt: NOW - 5000 }),
+      thread({ id: "thr_attn2", hasPendingInteraction: true, updatedAt: NOW - 1000 }),
+    ];
+    renderBoard(threads, { onReparent, rawParentOf: new Map() });
+    const { dropAllowed } = dragOnto("thr_attn", "thr_attn2", 150);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_attn", "thr_attn2");
+    await vi.waitFor(() => {
+      const notice = document.querySelector('[data-testid="nest-notice"]');
+      expect(notice).not.toBeNull();
+      expect(notice!.textContent).toMatch(/attention/);
+    });
+  });
+
+  it("a live card's middle-third drop onto a Done parent nests, receipt saying Done hosts no live rows", async () => {
+    // childPlacement step 3: a Done root shares its space with no live child,
+    // so nesting a live card under a done one writes nothing visible either.
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const threads = [
+      thread({ id: "thr_live", isUnread: true, updatedAt: NOW - 5000 }),
+      thread({ id: "thr_done", updatedAt: NOW - 1000 }),
+    ];
+    renderBoard(threads, {
+      onReparent,
+      rawParentOf: new Map(),
+      doneIds: new Set(["thr_done"]),
+    });
+    const { dropAllowed } = dragOnto("thr_live", "thr_done", 150);
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_live", "thr_done");
+    await vi.waitFor(() => {
+      const notice = document.querySelector('[data-testid="nest-notice"]');
+      expect(notice).not.toBeNull();
+      expect(notice!.textContent).toMatch(/Done card/);
+    });
+  });
+
+  it("a rejected re-parent write reports the error", async () => {
+    const onReparent = vi.fn().mockRejectedValue(new Error("the host refused"));
+    renderBoard(twoCardFixture(), {
+      onReparent,
+      rawParentOf: new Map(),
+    });
+    dragOnto("thr_a", "thr_b", 150);
+    await vi.waitFor(() => {
+      expect(document.body.textContent).toMatch(/the host refused/);
+    });
+  });
+
+  it("without onReparent the middle stays an edge (the board before nesting)", () => {
+    const { props } = renderBoard(threeCardFixture());
+    // thr_x (the top card) on thr_a's (the bottom card's) middle: the nest
+    // zone needs a re-parent write; with one unwired the pair stays an edge,
+    // and the after-edge ("below thr_a") appends — a real move, because the
+    // slot below thr_a holds nothing.
+    const { dropAllowed } = dragOnto("thr_x", "thr_a", 150);
+    expect(dropAllowed).toBe(true);
+    expect(props.onRankMove).toHaveBeenCalled();
+  });
+});
+function familyFixture(): PluginSidebarThread[] {
+  return [
+    thread({ id: "thr_a", isUnread: true, updatedAt: NOW - 5000 }),
+    thread({ id: "thr_b", isUnread: true, updatedAt: NOW - 1000 }),
+  ];
+}
+const [childThread, parentThread] = familyFixture();
+
+function nestedRowAnchor(childId: string): HTMLElement {
+  const anchor = document.querySelector(
+    `[data-nested-rows] a[data-thread-card="${childId}"]`,
+  );
+  if (!(anchor instanceof HTMLElement)) throw new Error(`missing nested row ${childId}`);
+  return anchor;
+}
+
+describe("drag a child off its family: the column floor detaches", () => {
+  // thr_b renders as the only top-level slot; thr_a lives as its nested row.
+
+  function renderFamily(onReparent: unknown = vi.fn().mockResolvedValue(undefined)) {
+    return renderBoard([parentThread], {
+      nestedChildrenByParent: new Map<string, readonly PluginSidebarThread[]>([
+        ["thr_b", [childThread]],
+      ]),
+      rawParentOf: new Map<string, string>([["thr_a", "thr_b"]]),
+      onReparent,
+    }) as { props: BoardProps };
+  }
+
+  /** dragstart on the child row, dragover and drop on the column section itself. */
+  function dragToFloor(fromId: string, columnId: string, viaAnchor?: HTMLElement) {
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(viaAnchor ?? nestedRowAnchor(fromId), { dataTransfer: dt });
+    const section = document.querySelector(`section[data-column-id="${columnId}"]`);
+    if (!(section instanceof HTMLElement)) throw new Error(`missing column ${columnId}`);
+    const over = createEvent.dragOver(section, { dataTransfer: dt });
+    fireEvent(section, over);
+    const drop = createEvent.drop(section, { dataTransfer: dt });
+    fireEvent(section, drop);
+    return { dropAllowed: over.defaultPrevented };
+  }
+
+  it("a nested child row is draggable and rides its lane's type", () => {
+    renderFamily();
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(nestedRowAnchor("thr_a"), { dataTransfer: dt });
+    expect(dt.types).toContain("text/focus-board-id");
+    expect(dt.types).toContain("application/x-focus-board-rank:status:unread");
+  });
+
+  it("releasing a child on its own lane's floor un-nests it and makes no rank move", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderFamily(onReparent);
+    const { dropAllowed } = dragToFloor("thr_a", "unread");
+    // The child was never a visible slot in this lane, so there is no rank
+    // to move: the detach IS the write.
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_a", null);
+    expect(props.onRankMove).not.toHaveBeenCalled();
+  });
+
+  it("a child dropped on the Done floor detaches and marks done in one gesture", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const doneFiller = thread({ id: "thr_old_done", updatedAt: NOW - 9000 });
+    const { props } = renderBoard([parentThread, doneFiller], {
+      doneIds: new Set<string>(["thr_old_done"]),
+      nestedChildrenByParent: new Map<string, readonly PluginSidebarThread[]>([
+        ["thr_b", [childThread]],
+      ]),
+      rawParentOf: new Map<string, string>([["thr_a", "thr_b"]]),
+      onReparent,
+    });
+    const section = document.querySelector('section[data-column-id="done"]');
+    if (!(section instanceof HTMLElement)) throw new Error("missing done column");
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(nestedRowAnchor("thr_a"), { dataTransfer: dt });
+    const over = createEvent.dragOver(section, { dataTransfer: dt });
+    fireEvent(section, over);
+    const drop = createEvent.drop(section, { dataTransfer: dt });
+    fireEvent(section, drop);
+    expect(over.defaultPrevented).toBe(true);
+    expect(props.onDropDone).toHaveBeenCalledWith("thr_a");
+    expect(onReparent).toHaveBeenCalledWith("thr_a", null);
+  });
+
+  it("a child dropped on a non-lane column's floor detaches with no lane write", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderBoard([parentThread], {
+      groupBy: "project" as const,
+      columns: buildColumns([parentThread], "project", context as never, new Map(), new Set<string>(), NOW, {}),
+      nestedChildrenByParent: new Map<string, readonly PluginSidebarThread[]>([
+        ["thr_b", [childThread]],
+      ]),
+      rawParentOf: new Map<string, string>([["thr_a", "thr_b"]]),
+      onReparent,
+    });
+    const { dropAllowed } = dragToFloor("thr_a", "proj_a");
+    expect(dropAllowed).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_a", null);
+    expect(props.onDropDone).not.toHaveBeenCalled();
+    expect(props.onDropUnread).not.toHaveBeenCalled();
+    expect(props.onDropPinned).not.toHaveBeenCalled();
+    expect(props.onRankMove).not.toHaveBeenCalled();
+  });
+
+  it("a top-level card's floor drop keeps the plain append, never a detach", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderBoard(twoCardFixture(), { onReparent, rawParentOf: new Map() });
+    const section = document.querySelector('section[data-column-id="unread"]');
+    if (!(section instanceof HTMLElement)) throw new Error("missing unread column");
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(cardAnchor("thr_a"), { dataTransfer: dt });
+    const over = createEvent.dragOver(section, { dataTransfer: dt });
+    fireEvent(section, over);
+    const drop = createEvent.drop(section, { dataTransfer: dt });
+    fireEvent(section, drop);
+    expect(over.defaultPrevented).toBe(true);
+    expect(props.onRankMove).toHaveBeenCalled();
+    expect(onReparent).not.toHaveBeenCalled();
+  });
+
+  it("the floor glows amber under a nested child, stays lane-colored otherwise", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    renderFamily(onReparent);
+    const section = document.querySelector('section[data-column-id="unread"]');
+    if (!(section instanceof HTMLElement)) throw new Error("missing unread column");
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(nestedRowAnchor("thr_a"), { dataTransfer: dt });
+    fireEvent(section, createEvent.dragOver(section, { dataTransfer: dt }));
+    expect(section.className).toMatch(/ring-amber-500/);
+    expect(section.className).not.toMatch(/ring-ring/);
+  });
+
+  it("the detach announcement names the way back", async () => {
+    renderFamily();
+    dragToFloor("thr_a", "unread");
+    // The write resolves on a microtask; the announcement follows it.
+    await vi.waitFor(() => {
+      const live = document.querySelector('[aria-live="polite"]');
+      expect(live?.textContent ?? "").toMatch(/Drag it onto a card to nest it back/);
+    });
+  });
+});
+
+describe("a deep member drags out of the family whole (issue #249, goal 2)", () => {
+  // The Make Top-Level write at ANY depth: a sub-row (a child row's own
+  // row) released on a column floor un-parents ENTIRELY — parentThreadId
+  // null — never re-hanging under its grandparent's family root, because
+  // the gesture is "out of the family" and a partial promotion would be a
+  // different gesture with no affordance naming it.
+  function deepFamily() {
+    const root = thread({ id: "thr_deep_root", isUnread: true, updatedAt: NOW - 1000 });
+    const mid = thread({
+      id: "thr_deep_mid",
+      isUnread: true,
+      parentThreadId: "thr_deep_root",
+      updatedAt: NOW - 5000,
+    });
+    const leaf = thread({
+      id: "thr_deep_leaf",
+      parentThreadId: "thr_deep_mid",
+      updatedAt: NOW - 9000,
+    });
+    return { leaf, root, mid };
+  }
+
+  function renderDeepFamily(onReparent: unknown = vi.fn().mockResolvedValue(undefined)) {
+    const { leaf, root, mid } = deepFamily();
+    const props = {
+      nestedChildrenByParent: new Map<string, readonly PluginSidebarThread[]>([
+        ["thr_deep_root", [mid]],
+        ["thr_deep_mid", [leaf]],
+      ]),
+      rawParentOf: new Map<string, string>([
+        ["thr_deep_mid", "thr_deep_root"],
+        ["thr_deep_leaf", "thr_deep_mid"],
+      ]),
+      onReparent,
+    };
+    return { props, ...renderBoard([root], props) };
+  }
+
+  function deepRowAnchor(leafId: string): HTMLElement {
+    const anchor = document.querySelector(
+      `[data-child-sub-rows] a[data-thread-card="${leafId}"]`,
+    );
+    if (!(anchor instanceof HTMLElement)) throw new Error(`missing deep row ${leafId}`);
+    return anchor;
+  }
+
+  function dragDeepRowToFloor(fromId: string, columnId: string) {
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(deepRowAnchor(fromId), { dataTransfer: dt });
+    const section = document.querySelector(`section[data-column-id="${columnId}"]`);
+    if (!(section instanceof HTMLElement)) throw new Error(`missing column ${columnId}`);
+    const over = createEvent.dragOver(section, { dataTransfer: dt });
+    fireEvent(section, over);
+    const drop = createEvent.drop(section, { dataTransfer: dt });
+    fireEvent(section, drop);
+    return { dropAllowed: over.defaultPrevented };
+  }
+
+  it("the deep row is draggable and carries its own tier's type, not the lane's", () => {
+    renderDeepFamily();
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(deepRowAnchor("thr_deep_leaf"), { dataTransfer: dt });
+    expect(dt.types).toContain("text/focus-board-id");
+    // child:<its own parent> — the dot cut's same key family rides here too.
+    expect(dt.types).toContain("application/x-focus-board-rank:child:thr_deep_mid");
+    expect(dt.types).not.toContain("application/x-focus-board-rank:status:unread");
+  });
+
+  it("releasing the deep row on its lane's floor un-parents it entirely, writing no rank move", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderDeepFamily(onReparent);
+    const { dropAllowed } = dragDeepRowToFloor("thr_deep_leaf", "unread");
+    expect(dropAllowed).toBe(true);
+    // The FULL detach: null parent, three tiers deep or not.
+    expect(onReparent).toHaveBeenCalledWith("thr_deep_leaf", null);
+    expect(onReparent).toHaveBeenCalledTimes(1);
+    expect(props.onRankMove).not.toHaveBeenCalled();
+  });
+
+  it("dropping the deep row on the column title detaches it the same way", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    renderDeepFamily(onReparent);
+    const section = document.querySelector('section[data-column-id="unread"] header');
+    if (!(section instanceof HTMLElement)) throw new Error("missing unread header");
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(deepRowAnchor("thr_deep_leaf"), { dataTransfer: dt });
+    const over = createEvent.dragOver(section, { dataTransfer: dt });
+    fireEvent(section, over);
+    const drop = createEvent.drop(section, { dataTransfer: dt });
+    fireEvent(section, drop);
+    expect(onReparent).toHaveBeenCalledWith("thr_deep_leaf", null);
+  });
+
+  it("the floor rings amber for the deep member's hover, the same family affordance", () => {
+    renderDeepFamily();
+    const section = document.querySelector('section[data-column-id="unread"]');
+    if (!(section instanceof HTMLElement)) throw new Error("missing unread column");
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(deepRowAnchor("thr_deep_leaf"), { dataTransfer: dt });
+    fireEvent(section, createEvent.dragOver(section, { dataTransfer: dt }));
+    expect(section.className).toMatch(/ring-amber-500/);
+  });
+
+  it("dropping the deep row on the Done floor detaches and marks done in one gesture", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const doneFiller = thread({ id: "thr_old_done2", updatedAt: NOW - 9000 });
+    const { leaf, root, mid } = deepFamily();
+    const { props } = renderBoard([root, doneFiller], {
+      doneIds: new Set<string>(["thr_old_done2"]),
+      nestedChildrenByParent: new Map<string, readonly PluginSidebarThread[]>([
+        ["thr_deep_root", [mid]],
+        ["thr_deep_mid", [leaf]],
+      ]),
+      rawParentOf: new Map<string, string>([
+        ["thr_deep_mid", "thr_deep_root"],
+        ["thr_deep_leaf", "thr_deep_mid"],
+      ]),
+      onReparent,
+    });
+    const section = document.querySelector('section[data-column-id="done"]');
+    if (!(section instanceof HTMLElement)) throw new Error("missing done column");
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(deepRowAnchor("thr_deep_leaf"), { dataTransfer: dt });
+    const over = createEvent.dragOver(section, { dataTransfer: dt });
+    fireEvent(section, over);
+    const drop = createEvent.drop(section, { dataTransfer: dt });
+    fireEvent(section, drop);
+    expect(over.defaultPrevented).toBe(true);
+    expect(onReparent).toHaveBeenCalledWith("thr_deep_leaf", null);
+    expect(props.onDropDone).toHaveBeenCalledWith("thr_deep_leaf");
+  });
+});
+
+describe("the column header is the closer detach target (family drag)", () => {
+  const [childThread, parentThread] = familyFixture();
+
+  function nestedRowAnchor(childId: string): HTMLElement {
+    const anchor = document.querySelector(
+      `[data-nested-rows] a[data-thread-card="${childId}"]`,
+    );
+    if (!(anchor instanceof HTMLElement)) throw new Error(`missing nested row ${childId}`);
+    return anchor;
+  }
+
+  function renderFamily(onReparent: unknown = vi.fn().mockResolvedValue(undefined)) {
+    return renderBoard([parentThread], {
+      nestedChildrenByParent: new Map<string, readonly PluginSidebarThread[]>([
+        ["thr_b", [childThread]],
+      ]),
+      rawParentOf: new Map<string, string>([["thr_a", "thr_b"]]),
+      onReparent,
+    }) as { props: BoardProps };
+  }
+
+  function unreadHeader(): HTMLElement {
+    const header = document.querySelector(
+      'section[data-column-id="unread"] header',
+    );
+    if (!(header instanceof HTMLElement)) throw new Error("missing unread column header");
+    return header;
+  }
+
+  it("grows a column header while a drag is in flight, and settles after", () => {
+    renderFamily();
+    const header = unreadHeader();
+    expect(header.className).not.toMatch(/pb-2\.5/);
+    fireEvent.dragStart(nestedRowAnchor("thr_a"), { dataTransfer: makeDataTransfer() });
+    expect(header.className).toMatch(/pb-2\.5/);
+    fireEvent.dragEnd(nestedRowAnchor("thr_a"));
+    expect(header.className).not.toMatch(/pb-2\.5/);
+  });
+
+  it("rings the hovered header amber, not the lane color", () => {
+    renderFamily();
+    const header = unreadHeader();
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(nestedRowAnchor("thr_a"), { dataTransfer: dt });
+    fireEvent(header, createEvent.dragOver(header, { dataTransfer: dt }));
+    expect(header.className).toMatch(/ring-amber-500/);
+    expect(header.className).not.toMatch(/ring-ring/);
+    fireEvent(header, createEvent.dragLeave(header, { dataTransfer: dt }));
+    expect(header.className).not.toMatch(/ring-amber-500/);
+  });
+
+  it("releasing a child on the header un-nests it with no rank move", () => {
+    const onReparent = vi.fn().mockResolvedValue(undefined);
+    const { props } = renderFamily(onReparent);
+    const header = unreadHeader();
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(nestedRowAnchor("thr_a"), { dataTransfer: dt });
+    fireEvent(header, createEvent.dragOver(header, { dataTransfer: dt }));
+    // The header sits inside the section, so the drop bubbles to the
+    // section's own handler — this pins that the header drop detaches the
+    // child and never issues a rank move.
+    expect(header.className).toMatch(/ring-amber-500/);
+    fireEvent(header, createEvent.drop(header, { dataTransfer: dt }));
+    expect(onReparent).toHaveBeenCalledWith("thr_a", null);
+    expect(props.onRankMove).not.toHaveBeenCalled();
+    // A successful drop clears the hover affordances.
+    expect(header.className).not.toMatch(/ring-amber-500/);
+  });
+
+  /** Full drag onto a column's TITLE strip: dragstart, dragover, drop on the <header>. */
+  function dragToHeader(fromId: string, columnId: string) {
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(cardAnchor(fromId), { dataTransfer: dt });
+    const section = document.querySelector(`section[data-column-id="${columnId}"]`);
+    if (!(section instanceof HTMLElement)) throw new Error(`missing column ${columnId}`);
+    const header = unreadHeader();
+    const over = createEvent.dragOver(header, { dataTransfer: dt });
+    fireEvent(header, over);
+    const drop = createEvent.drop(header, { dataTransfer: dt });
+    fireEvent(header, drop);
+    return { dropAllowed: over.defaultPrevented, dropPrevented: drop.defaultPrevented };
+  }
+
+  it("a top-level card dropped on its own column's title writes nothing", () => {
+    const { props } = renderBoard(twoCardFixture());
+    const { dropAllowed } = dragToHeader("thr_a", "unread");
+    // The section floor already authorizes the hover, so the browser accepts
+    // the drop — the point is that releasing on the TITLE does no write.
+    expect(dropAllowed).toBe(true);
+    expect(props.onRankMove).not.toHaveBeenCalled();
+    expect(props.onDropDone).not.toHaveBeenCalled();
+    expect(props.onDropUnread).not.toHaveBeenCalled();
+    expect(props.onDropPinned).not.toHaveBeenCalled();
+  });
+
+  it("a title drop is state-only cross-lane: done, but no rank order", () => {
+    const doneFiller = thread({ id: "thr_old_done", updatedAt: NOW - 9000 });
+    const { props } = renderBoard(
+      [...twoCardFixture(), doneFiller],
+      { doneIds: new Set<string>(["thr_old_done"]) },
+    );
+    const header = document.querySelector('section[data-column-id="done"] header');
+    if (!(header instanceof HTMLElement)) throw new Error("missing done column header");
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(cardAnchor("thr_a"), { dataTransfer: dt });
+    const over = createEvent.dragOver(header, { dataTransfer: dt });
+    fireEvent(header, over);
+    fireEvent(header, createEvent.drop(header, { dataTransfer: dt }));
+    expect(props.onDropDone).toHaveBeenCalledWith("thr_a");
+    expect(props.onRankMove).not.toHaveBeenCalled();
+  });
+});
+
+describe("the hover's promise dies when the pointer leaves the card", () => {
+  /** Set the insertion line on a slot's top edge with a live drag. */
+  function showLine(fromId: string, targetId: string) {
+    const dt = makeDataTransfer();
+    fireEvent.dragStart(cardAnchor(fromId), { dataTransfer: dt });
+    const slot = cardSlot(targetId);
+    withRect(slot);
+    const over = createEvent.dragOver(slot, { dataTransfer: dt });
+    Object.defineProperty(over, "clientY", { value: 60 });
+    fireEvent(slot, over);
+    return slot;
+  }
+
+  it("crossing out of the slot toward the title clears the line", () => {
+    renderBoard(twoCardFixture());
+    const slot = showLine("thr_a", "thr_b");
+    expect(slot.className).toMatch(/inset-x-0/);
+    // The header is NOT inside the slot — this is the leave the browser
+    // fires when the pointer crosses from the card up to the title strip.
+    const header = document.querySelector('section[data-column-id="unread"] header');
+    if (!(header instanceof HTMLElement)) throw new Error("missing unread header");
+    const leave = createEvent.dragLeave(slot, { dataTransfer: makeDataTransfer() });
+    // jsdom does not apply `relatedTarget` in the init dict (same as
+    // `clientY`); force it the way the spec event would arrive.
+    Object.defineProperty(leave, "relatedTarget", { value: header });
+    fireEvent(slot, leave);
+    expect(slot.className).not.toMatch(/inset-x-0/);
+  });
+
+  it("a leave that lands deeper inside the card keeps the line", () => {
+    renderBoard(twoCardFixture());
+    const slot = showLine("thr_a", "thr_b");
+    // Some browsers fire dragleave on the slot even when the pointer only
+    // sinks into a descendant (the card anchor itself): relatedTarget inside
+    // the slot means the hover never left — keep the promise.
+    const anchor = cardAnchor("thr_b");
+    const leave = createEvent.dragLeave(slot, { dataTransfer: makeDataTransfer() });
+    Object.defineProperty(leave, "relatedTarget", { value: anchor });
+    fireEvent(slot, leave);
+    expect(slot.className).toMatch(/inset-x-0/);
+  });
+});

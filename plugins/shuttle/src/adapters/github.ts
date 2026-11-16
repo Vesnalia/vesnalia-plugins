@@ -1,0 +1,1258 @@
+// The built-in GitHub adapter: gh's GraphQL API, mapped onto the same shapes command adapters print.
+import { z } from "zod";
+import { OPERATIONS, type ListOperation, type Operation, type ServerConfig } from "../config";
+import type { CheckCounts, CheckRun, CheckState, FileChange, MergeMethod, MergeOptions, MyReview, PrChange, PrDetails, PrState, Reviewer, ReviewerState, ReviewState, RunState, TimelineEvent, TimelineKind } from "../contract";
+import { failureKind } from "../failures";
+import { linkFor } from "../keys";
+import type { Activity, ActivityItem, ActivityState, EditOptions, PrSummary } from "../model";
+import { AdapterError, changeOperation, type ActivityOptions, type Adapter, type CheckInfo, type CommitInfo, type IssueInfo, type ListOptions, type ListResult, type MergeInput, type PrFile, type PrRead, type ReviewComment, type ReviewPost, type ReviewPosted } from "./adapter";
+import { fillCommand, outputTail, runProcess, shellQuote, tail, type RunResult, type Runner } from "./exec";
+
+const GH_TIMEOUT_MS = 45_000;
+// GitHub ends a GraphQL request after 10s; a page of 50 full PRs took 7 to 11s.
+export const PAGE_SIZE = 25;
+/** PRs per list; past this a list is incomplete and keeps the reasons it did not see. */
+export const SEARCH_LIMIT = 300;
+/** Tries after the first, each asking for half as many PRs. */
+const TIMEOUT_RETRIES = 2;
+// gh reports a 5xx with an empty JSON body as a parse error, hiding the status (cli/cli#10579).
+const GITHUB_TIMEOUT = /HTTP 50[234]|unexpected end of JSON input|couldn't respond to your request in time/u;
+
+/** `gh api graphql`: what ran, without its query or body. */
+const ghCommand = (args: readonly string[]) => ["gh", ...args.slice(0, 2)].join(" ");
+
+/** GitHub Enterprise servers before merge queues have no such field; the adapter leaves it out of every query once one says so. */
+const MERGE_QUEUE_FIELDS = "isInMergeQueue";
+const NO_MERGE_QUEUE = /Field '(?:isInMergeQueue|mergeQueueEntry)' doesn't exist/u;
+/** PRs per batched read: GitHub ends a request after 10s, and a search page of 25 full PRs took about 6s. */
+export const VIEW_MANY_SIZE = 10;
+/** PRs whose latest checks an adapter keeps, oldest read dropped first. */
+const LATEST_KEPT = 2000;
+// Counts by state rather than the contexts themselves, so a list of 300 PRs stays light.
+const SUMMARY_FIELDS = `number title url isDraft state reviewDecision headRefOid headRefName baseRefName createdAt updatedAt closedAt mergedAt additions deletions changedFiles
+  author { login __typename } repository { nameWithOwner } autoMergeRequest { enabledAt } ${MERGE_QUEUE_FIELDS}
+  commits(last: 1) { nodes { commit { statusCheckRollup { state contexts { totalCount checkRunCountsByState { state count } statusContextCountsByState { state count } } } } } }
+  labels(first: 30) { nodes { name color } }
+  latestReviews(first: 30) { nodes { state submittedAt viewerDidAuthor commit { oid } author { login __typename } } }
+  reviewRequests(first: 20) { nodes { requestedReviewer { __typename ... on Team { combinedSlug } ... on User { login } ... on Bot { login } } } }`;
+// A PR that asks many teams at once (CODEOWNERS) pushes the user's own request out of the last five.
+const REQUESTED_FIELDS = `viewerDidAuthor timelineItems(itemTypes: [REVIEW_REQUESTED_EVENT], last: 10) { nodes { ... on ReviewRequestedEvent { createdAt
+  requestedReviewer { __typename ... on Team { combinedSlug } ... on User { isViewer } } } } }`;
+const FIRST_REVIEW_FIELDS = "reviews(first: 20) { nodes { state submittedAt author { login __typename } } }";
+
+/**
+ * Only the lists that ask the user read when they were asked; only the author's read the first review. Every list
+ * reads the description, so the page's keyword filters find words in it.
+ */
+export function listFields(operation: ListOperation, options: ListOptions = {}): string {
+  const fields = `${SUMMARY_FIELDS} body`;
+  if (operation === "authored") return `${fields} ${FIRST_REVIEW_FIELDS}`;
+  // A merged or closed PR asks nobody any more.
+  if (operation === "mentioned" || (operation === "reviewed" && options.state === "closed")) return fields;
+  return `${fields} ${REQUESTED_FIELDS}`;
+}
+
+const WHO = "author { login __typename }";
+// The run and workflow say which check runs a newer run replaced.
+const SUITE = "checkSuite { workflowRun { databaseId event workflow { id name } } app { name } }";
+/** A failed run's first annotations, where GitHub says it refused to start the job over billing. */
+const ANNOTATIONS = "annotations(first: 3) { nodes { message } }";
+const REVIEWER = "requestedReviewer { __typename ... on User { login } ... on Bot { login } ... on Mannequin { login } ... on Team { combinedSlug } }";
+const TIMELINE_EVENTS = `REVIEW_REQUESTED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, LABELED_EVENT, UNLABELED_EVENT, READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT,
+  HEAD_REF_FORCE_PUSHED_EVENT, MERGED_EVENT, CLOSED_EVENT, REOPENED_EVENT, RENAMED_TITLE_EVENT, AUTO_MERGE_ENABLED_EVENT, AUTO_MERGE_DISABLED_EVENT,
+  REVIEW_DISMISSED_EVENT, HEAD_REF_DELETED_EVENT, BASE_REF_CHANGED_EVENT`;
+
+/**
+ * The review activity of one PR. Watching reads it on every sync, so it stays light; the PR view asks with
+ * detail for every check, the commits, the changed files (paths and counts, never contents), other timeline
+ * events, whether it can merge, and each thread's diff hunk.
+ */
+function activityQuery(detail: boolean): string {
+  const threadExtra = detail ? "first: comments(first: 1) { nodes { diffHunk } }" : "";
+  const commentExtra = detail ? "pullRequestReview { id }" : "";
+  const contexts = detail
+    ? `state contexts(first: 100) { totalCount nodes { __typename
+      ... on CheckRun { id databaseId name status conclusion detailsUrl startedAt completedAt isRequired(pullRequestNumber: $number) ${SUITE} ${ANNOTATIONS} }
+      ... on StatusContext { id context state targetUrl createdAt description isRequired(pullRequestNumber: $number) } } }`
+    : `contexts(first: 100) { nodes { __typename
+      ... on CheckRun { id databaseId name status conclusion detailsUrl completedAt ${SUITE} ${ANNOTATIONS} } ... on StatusContext { id context state targetUrl createdAt } } }`;
+  const extra = detail
+    ? `isDraft mergeable mergeStateStatus reviewDecision
+      commitList: commits(last: 100) { totalCount nodes { commit { oid messageHeadline committedDate author { name user { login } } } } }
+      files(first: 100) { totalCount nodes { path additions deletions changeType } }
+      timelineItems(last: 100, itemTypes: [${TIMELINE_EVENTS}]) { nodes { __typename
+        ... on ReviewRequestedEvent { createdAt actor { login } ${REVIEWER} }
+        ... on ReviewRequestRemovedEvent { createdAt actor { login } ${REVIEWER} }
+        ... on LabeledEvent { createdAt actor { login } label { name } }
+        ... on UnlabeledEvent { createdAt actor { login } label { name } }
+        ... on ReadyForReviewEvent { createdAt actor { login } }
+        ... on ConvertToDraftEvent { createdAt actor { login } }
+        ... on HeadRefForcePushedEvent { createdAt actor { login } beforeCommit { abbreviatedOid } afterCommit { abbreviatedOid } }
+        ... on MergedEvent { createdAt actor { login } commit { abbreviatedOid } mergeRefName }
+        ... on ClosedEvent { createdAt actor { login } }
+        ... on ReopenedEvent { createdAt actor { login } }
+        ... on RenamedTitleEvent { createdAt actor { login } previousTitle currentTitle }
+        ... on AutoMergeEnabledEvent { createdAt actor { login } }
+        ... on AutoMergeDisabledEvent { createdAt actor { login } }
+        ... on ReviewDismissedEvent { createdAt actor { login } review { author { login } } }
+        ... on HeadRefDeletedEvent { createdAt actor { login } headRefName }
+        ... on BaseRefChangedEvent { createdAt actor { login } previousRefName currentRefName } } }`
+    : "";
+  // Watching reads every watched PR on each sync, so its light read also says when one merged or closed.
+  const state = detail ? "" : "state isDraft mergedAt closedAt updatedAt";
+  return `query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) {
+    headRefOid ${state}
+    reviews(last: 50) { nodes { id state body url submittedAt ${WHO} } }
+    reviewThreads(last: 50) { nodes { id isResolved path line ${threadExtra} comments(last: 20) { nodes { id body url createdAt ${WHO} ${commentExtra} } } } }
+    comments(last: 50) { nodes { id body url createdAt ${WHO} } }
+    commits(last: 1) { nodes { commit { statusCheckRollup { ${contexts} } } } }
+    ${extra}
+  } } }`;
+}
+const ACTIVITY_QUERY = activityQuery(false);
+const DETAIL_QUERY = activityQuery(true);
+
+const actor = z.object({ login: z.string(), __typename: z.string().optional() }).nullable();
+const stateCounts = z.array(z.object({ state: z.string(), count: z.number() })).nullish();
+const summaryNode = z.object({
+  number: z.number(),
+  title: z.string(),
+  url: z.string(),
+  isDraft: z.boolean(),
+  state: z.enum(["OPEN", "CLOSED", "MERGED"]),
+  reviewDecision: z.string().nullable(),
+  headRefOid: z.string().nullable(),
+  headRefName: z.string().nullable(),
+  baseRefName: z.string().nullable(),
+  createdAt: z.string().nullish(),
+  updatedAt: z.string(),
+  closedAt: z.string().nullish(),
+  mergedAt: z.string().nullish(),
+  additions: z.number().nullable(),
+  deletions: z.number().nullable(),
+  changedFiles: z.number().nullable(),
+  body: z.string().optional(),
+  author: actor,
+  repository: z.object({ nameWithOwner: z.string() }),
+  autoMergeRequest: z.object({ enabledAt: z.string().nullable() }).nullish(),
+  isInMergeQueue: z.boolean().optional(),
+  commits: z.object({
+    nodes: z.array(
+      z.object({
+        commit: z.object({
+          statusCheckRollup: z
+            .object({
+              state: z.string(),
+              contexts: z.object({ totalCount: z.number(), checkRunCountsByState: stateCounts, statusContextCountsByState: stateCounts }).optional(),
+            })
+            .nullable(),
+        }),
+      }),
+    ),
+  }),
+  labels: z.object({ nodes: z.array(z.object({ name: z.string(), color: z.string().nullable() })) }).nullish(),
+  latestReviews: z
+    .object({
+      nodes: z.array(
+        z.object({
+          state: z.string(),
+          submittedAt: z.string().nullish(),
+          viewerDidAuthor: z.boolean().optional(),
+          commit: z.object({ oid: z.string() }).nullish(),
+          author: z.object({ login: z.string(), __typename: z.string().optional() }).nullable(),
+        }),
+      ),
+    })
+    .nullish(),
+  reviewRequests: z.object({ nodes: z.array(z.object({ requestedReviewer: z.object({ __typename: z.string(), combinedSlug: z.string().optional(), login: z.string().optional() }).nullable() })) }).nullable(),
+  viewerDidAuthor: z.boolean().optional(),
+  timelineItems: z
+    .object({
+      nodes: z.array(
+        z
+          .object({
+            createdAt: z.string().optional(),
+            requestedReviewer: z.object({ __typename: z.string(), combinedSlug: z.string().optional(), isViewer: z.boolean().optional() }).nullish(),
+          })
+          .nullable(),
+      ),
+    })
+    .optional(),
+  reviews: z.object({ nodes: z.array(z.object({ state: z.string(), submittedAt: z.string().nullish(), author: actor })) }).optional(),
+});
+type SummaryNode = z.infer<typeof summaryNode>;
+
+/** Search qualifiers per list. Team requests leave out the ones that also name the viewer. */
+export function searchQuery(operation: ListOperation, options: ListOptions): string {
+  const base = "is:pr archived:false sort:updated-desc";
+  switch (operation) {
+    case "authored":
+      return options.state === "closed" ? `${base} author:@me is:closed updated:>=${options.sinceAt ?? options.since}` : `${base} author:@me is:open`;
+    case "review_requested":
+      return `${base} is:open user-review-requested:@me`;
+    case "team_requested":
+      return `${base} is:open review-requested:@me -user-review-requested:@me`;
+    case "mentioned":
+      return `${base} is:open mentions:@me`;
+    case "reviewed":
+      return options.state === "closed" ? `${base} is:closed reviewed-by:@me -author:@me updated:>=${options.sinceAt ?? options.since}` : `${base} is:open reviewed-by:@me -author:@me`;
+  }
+}
+
+export function checksState(rollup: string | null | undefined): CheckState {
+  if (!rollup) return "none";
+  if (rollup === "SUCCESS") return "passed";
+  if (rollup === "FAILURE" || rollup === "ERROR") return "failed";
+  return "pending";
+}
+
+export function reviewState(decision: string | null): ReviewState {
+  if (decision === "APPROVED") return "approved";
+  if (decision === "CHANGES_REQUESTED") return "changes";
+  if (decision === "REVIEW_REQUIRED") return "required";
+  return "none";
+}
+
+const isBot = (a: z.infer<typeof actor>) => a?.__typename === "Bot" || Boolean(a?.login.endsWith("[bot]"));
+
+const ms = (value: string | null | undefined): number | null => {
+  const parsed = value ? Date.parse(value) : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const REVIEWER_STATE: Record<string, ReviewerState> = { APPROVED: "approved", CHANGES_REQUESTED: "changes", COMMENTED: "commented", DISMISSED: "dismissed" };
+const MY_VERDICT: Record<string, MyReview["verdict"]> = { APPROVED: "approve", CHANGES_REQUESTED: "changes", COMMENTED: "comment", DISMISSED: "dismissed" };
+
+/** Who is asked to review, then the latest review of everyone else; a re-request shows as requested. */
+export function reviewersOf(node: SummaryNode): Reviewer[] {
+  const author = node.author?.login;
+  const latest = new Map<string, { at: number | null; head: string | null }>();
+  for (const review of node.latestReviews?.nodes ?? []) if (review.author) latest.set(review.author.login, { at: ms(review.submittedAt), head: review.commit?.oid ?? null });
+  const out: Reviewer[] = [];
+  for (const { requestedReviewer: r } of node.reviewRequests?.nodes ?? []) {
+    if (r?.__typename === "Team" && r.combinedSlug) out.push({ login: r.combinedSlug, team: true, state: "requested", at: null, head: null });
+    else if (r?.login) out.push({ login: r.login, team: false, state: "requested", ...(latest.get(r.login) ?? { at: null, head: null }), ...(r.__typename === "Bot" ? { bot: true } : {}) });
+  }
+  for (const review of node.latestReviews?.nodes ?? []) {
+    const login = review.author?.login;
+    const state = REVIEWER_STATE[review.state];
+    if (!login || !state || login === author || out.some((r) => !r.team && r.login === login)) continue;
+    out.push({ login, team: false, state, at: ms(review.submittedAt), head: review.commit?.oid ?? null, ...(review.author?.__typename === "Bot" ? { bot: true } : {}) });
+  }
+  return out;
+}
+
+/** The viewer's own latest review, even when they have been asked again since. */
+export function myReviewOf(node: SummaryNode): MyReview | null {
+  const mine = node.latestReviews?.nodes.find((r) => r.viewerDidAuthor && MY_VERDICT[r.state]);
+  return mine ? { verdict: MY_VERDICT[mine.state]!, at: ms(mine.submittedAt), head: mine.commit?.oid ?? null } : null;
+}
+
+/** The newest request of the viewer, or of a team the PR still asks; never on the viewer's own PR. */
+export function requestedAtOf(node: SummaryNode): number | null {
+  if (!node.timelineItems || node.viewerDidAuthor) return null;
+  const teams = new Set((node.reviewRequests?.nodes ?? []).flatMap((n) => (n.requestedReviewer?.__typename === "Team" && n.requestedReviewer.combinedSlug ? [n.requestedReviewer.combinedSlug] : [])));
+  let newest: number | null = null;
+  for (const event of node.timelineItems.nodes) {
+    const r = event?.requestedReviewer;
+    const asksMe = r?.__typename === "User" ? r.isViewer === true : r?.__typename === "Team" && Boolean(r.combinedSlug && teams.has(r.combinedSlug));
+    const at = ms(event?.createdAt);
+    if (asksMe && at !== null && (newest === null || at > newest)) newest = at;
+  }
+  return newest;
+}
+
+/** The first submitted review by someone other than the author and bots. */
+export function firstReviewAtOf(node: SummaryNode): number | null {
+  if (!node.reviews) return null;
+  let first: number | null = null;
+  for (const review of node.reviews.nodes) {
+    if (review.state === "PENDING" || !review.author || review.author.login === node.author?.login || isBot(review.author)) continue;
+    const at = ms(review.submittedAt);
+    if (at !== null && (first === null || at < first)) first = at;
+  }
+  return first;
+}
+
+const PASSED_RUN = new Set(["SUCCESS", "NEUTRAL", "SKIPPED"]);
+const FAILED_RUN = new Set(["FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]);
+
+type Outcome = "passed" | "failed" | "pending";
+const runOutcome = (state: string): Outcome => (PASSED_RUN.has(state) ? "passed" : FAILED_RUN.has(state) ? "failed" : "pending");
+
+type StateCounts = z.infer<typeof stateCounts>;
+function countsOf(contexts: { totalCount: number; checkRunCountsByState?: StateCounts; statusContextCountsByState?: StateCounts }): CheckCounts {
+  const counts = { passed: 0, failed: 0, pending: 0, total: contexts.totalCount };
+  for (const { state, count } of contexts.checkRunCountsByState ?? []) counts[runOutcome(state)] += count;
+  for (const { state, count } of contexts.statusContextCountsByState ?? []) counts[state === "SUCCESS" ? "passed" : state === "FAILURE" || state === "ERROR" ? "failed" : "pending"] += count;
+  return counts;
+}
+
+/** Checks on the head by outcome; a head with no checks has all zeros. */
+export function checkCountsOf(node: SummaryNode): CheckCounts | null {
+  const rollup = node.commits.nodes[0]?.commit.statusCheckRollup;
+  if (!rollup) return { passed: 0, failed: 0, pending: 0, total: 0 };
+  if (!rollup.contexts) return null;
+  return countsOf(rollup.contexts);
+}
+
+export function toSummary(node: SummaryNode): PrSummary {
+  const state: PrState = node.state === "MERGED" ? "merged" : node.state === "CLOSED" ? "closed" : node.isDraft ? "draft" : "open";
+  const teams = (node.reviewRequests?.nodes ?? []).flatMap((n) => (n.requestedReviewer?.__typename === "Team" && n.requestedReviewer.combinedSlug ? [`@${n.requestedReviewer.combinedSlug}`] : []));
+  return {
+    repo: node.repository.nameWithOwner,
+    number: node.number,
+    title: node.title,
+    author: node.author?.login ?? "ghost",
+    state,
+    url: node.url,
+    head: node.headRefOid,
+    headRef: node.headRefName,
+    base: node.baseRefName,
+    checks: checksState(node.commits.nodes[0]?.commit.statusCheckRollup?.state),
+    review: reviewState(node.reviewDecision),
+    updatedAt: ms(node.updatedAt),
+    additions: node.additions,
+    deletions: node.deletions,
+    files: node.changedFiles,
+    teams,
+    body: node.body ?? null,
+    labels: node.labels ? node.labels.nodes.map((l) => ({ name: l.name, color: l.color ? l.color.toLowerCase() : null })) : null,
+    reviewers: node.reviewRequests && node.latestReviews ? reviewersOf(node) : null,
+    createdAt: ms(node.createdAt),
+    closedAt: state === "merged" ? ms(node.mergedAt ?? node.closedAt) : state === "closed" ? ms(node.closedAt) : null,
+    checkCounts: checkCountsOf(node),
+    myReview: myReviewOf(node),
+    autoMerge: Boolean(node.autoMergeRequest),
+    inMergeQueue: node.isInMergeQueue ?? null,
+    authorBot: isBot(node.author),
+    requestedAt: requestedAtOf(node),
+    firstReviewAt: firstReviewAtOf(node),
+  };
+}
+
+const contextNode = z.object({
+  __typename: z.string(),
+  id: z.string().optional(),
+  databaseId: z.number().nullish(),
+  name: z.string().optional(),
+  status: z.string().optional(),
+  conclusion: z.string().nullable().optional(),
+  detailsUrl: z.string().nullable().optional(),
+  startedAt: z.string().nullish(),
+  completedAt: z.string().nullish(),
+  isRequired: z.boolean().optional(),
+  checkSuite: z
+    .object({
+      workflowRun: z.object({ databaseId: z.number().nullish(), event: z.string().nullish(), workflow: z.object({ id: z.string().optional(), name: z.string() }) }).nullish(),
+      app: z.object({ name: z.string() }).nullish(),
+    })
+    .nullish(),
+  context: z.string().optional(),
+  state: z.string().optional(),
+  targetUrl: z.string().nullable().optional(),
+  createdAt: z.string().nullish(),
+  description: z.string().nullable().optional(),
+  annotations: z.object({ nodes: z.array(z.object({ message: z.string() })) }).nullish(),
+});
+type ContextNode = z.infer<typeof contextNode>;
+
+/**
+ * A check run GitHub never started because the account's payments failed or it reached its spending limit. It still
+ * fails, with this as its annotation, but no change to the code can fix it, so an agent is never sent it.
+ */
+const BILLING_REFUSED = /^The job was not started because (recent account payments have failed|your spending limit needs to be increased)/iu;
+const billingRefused = (context: ContextNode) => context.annotations?.nodes.some((note) => BILLING_REFUSED.test(note.message)) === true;
+
+/**
+ * The check runs on a head that a newer run replaced: every job of an older run of the same workflow for the same
+ * event, which concurrency usually cancels, and an older attempt of the same check. GitHub's rollup still lists and
+ * counts them, so a run cancelled when a newer one started kept the PR failing after the newer one passed or
+ * skipped that job. `gh pr checks` also keeps only the newest check per name, workflow and event.
+ */
+function supersededRuns(contexts: readonly ContextNode[]): Set<ContextNode> {
+  const runs = contexts.filter((context) => context.__typename === "CheckRun");
+  const workflowOf = (context: ContextNode) => {
+    const run = context.checkSuite?.workflowRun;
+    return run ? `${run.workflow.id ?? run.workflow.name}\u0000${run.event ?? ""}` : null;
+  };
+  const newestRun = new Map<string, number>();
+  for (const context of runs) {
+    const workflow = workflowOf(context);
+    const id = context.checkSuite?.workflowRun?.databaseId;
+    if (workflow !== null && typeof id === "number") newestRun.set(workflow, Math.max(newestRun.get(workflow) ?? id, id));
+  }
+  const out = new Set<ContextNode>();
+  const newestCheck = new Map<string, { context: ContextNode; id: number }>();
+  for (const context of runs) {
+    const workflow = workflowOf(context);
+    const runId = context.checkSuite?.workflowRun?.databaseId;
+    if (workflow !== null && typeof runId === "number" && runId < newestRun.get(workflow)!) {
+      out.add(context);
+      continue;
+    }
+    const id = context.databaseId;
+    if (typeof id !== "number") continue;
+    const key = `${workflow ?? `app:${context.checkSuite?.app?.name ?? ""}`}\u0000${context.name ?? ""}`;
+    const kept = newestCheck.get(key);
+    if (kept !== undefined && kept.id > id) {
+      out.add(context);
+      continue;
+    }
+    if (kept !== undefined) out.add(kept.context);
+    newestCheck.set(key, { context, id });
+  }
+  return out;
+}
+
+/** A PR's head with every check run on it, read again for a PR whose summary says its checks fail. */
+const LATEST_FIELDS = `headRefOid commits(last: 1) { nodes { commit { statusCheckRollup { state contexts(first: 100) { totalCount
+  checkRunCountsByState { state count } statusContextCountsByState { state count }
+  nodes { __typename ... on CheckRun { databaseId name status conclusion ${SUITE} } } } } } } }`;
+const latestNode = z.object({
+  headRefOid: z.string().nullable(),
+  commits: z.object({
+    nodes: z.array(
+      z.object({
+        commit: z.object({
+          statusCheckRollup: z
+            .object({
+              state: z.string(),
+              contexts: z.object({ totalCount: z.number(), checkRunCountsByState: stateCounts, statusContextCountsByState: stateCounts, nodes: z.array(contextNode) }),
+            })
+            .nullable(),
+        }),
+      }),
+    ),
+  }),
+});
+
+/**
+ * The head's checks without the runs newer ones replaced, from GitHub's state and counts, which include them. Only
+ * runs the read listed come out of the counts, so a superseded run past its first 100 checks still counts.
+ */
+type LatestChecks = { head: string | null; checks: CheckState; checkCounts: CheckCounts };
+function latestChecksOf(node: z.infer<typeof latestNode>): LatestChecks | null {
+  const rollup = node.commits.nodes[0]?.commit.statusCheckRollup ?? null;
+  if (rollup === null) return null;
+  const counts = countsOf(rollup.contexts);
+  const superseded = supersededRuns(rollup.contexts.nodes);
+  if (superseded.size === 0) return { head: node.headRefOid, checks: checksState(rollup.state), checkCounts: counts };
+  for (const run of superseded) {
+    const outcome = runOutcome(run.status === "COMPLETED" ? (run.conclusion ?? "") : (run.status ?? ""));
+    counts[outcome] = Math.max(0, counts[outcome] - 1);
+    counts.total = Math.max(0, counts.total - 1);
+  }
+  const checks: CheckState = counts.failed > 0 ? "failed" : counts.pending > 0 ? "pending" : counts.total > 0 ? "passed" : "none";
+  return { head: node.headRefOid, checks, checkCounts: counts };
+}
+
+const oid = z.object({ abbreviatedOid: z.string() }).nullish();
+const timelineNode = z
+  .object({
+    __typename: z.string(),
+    createdAt: z.string().optional(),
+    actor: z.object({ login: z.string() }).nullish(),
+    requestedReviewer: z.object({ __typename: z.string(), login: z.string().optional(), combinedSlug: z.string().optional() }).nullish(),
+    label: z.object({ name: z.string() }).nullish(),
+    beforeCommit: oid,
+    afterCommit: oid,
+    commit: oid,
+    mergeRefName: z.string().nullish(),
+    previousTitle: z.string().optional(),
+    currentTitle: z.string().optional(),
+    review: z.object({ author: z.object({ login: z.string() }).nullable() }).nullish(),
+    headRefName: z.string().optional(),
+    previousRefName: z.string().optional(),
+    currentRefName: z.string().optional(),
+  })
+  .nullable();
+type TimelineNode = NonNullable<z.infer<typeof timelineNode>>;
+
+const activityNode = z.object({
+  headRefOid: z.string().nullable(),
+  reviews: z.object({ nodes: z.array(z.object({ id: z.string(), state: z.string(), body: z.string(), url: z.string().nullable(), submittedAt: z.string().nullish(), author: actor })) }),
+  reviewThreads: z.object({
+    nodes: z.array(
+      z.object({
+        id: z.string(),
+        isResolved: z.boolean(),
+        path: z.string().nullable(),
+        line: z.number().nullable(),
+        first: z.object({ nodes: z.array(z.object({ diffHunk: z.string().nullable() })) }).optional(),
+        comments: z.object({
+          nodes: z.array(z.object({ id: z.string(), body: z.string(), url: z.string().nullable(), createdAt: z.string().nullish(), author: actor, pullRequestReview: z.object({ id: z.string() }).nullish() })),
+        }),
+      }),
+    ),
+  }),
+  comments: z.object({ nodes: z.array(z.object({ id: z.string(), body: z.string(), url: z.string().nullable(), createdAt: z.string().nullish(), author: actor })) }),
+  commits: z.object({
+    nodes: z.array(
+      z.object({
+        commit: z.object({
+          statusCheckRollup: z.object({ state: z.string().optional(), contexts: z.object({ totalCount: z.number().optional(), nodes: z.array(contextNode) }) }).nullable(),
+        }),
+      }),
+    ),
+  }),
+  // Only without detail: the PR's own state.
+  state: z.enum(["OPEN", "CLOSED", "MERGED"]).optional(),
+  mergedAt: z.string().nullish(),
+  closedAt: z.string().nullish(),
+  updatedAt: z.string().optional(),
+  // Only with detail: what the PR view shows besides the conversation.
+  isDraft: z.boolean().optional(),
+  mergeable: z.string().optional(),
+  mergeStateStatus: z.string().optional(),
+  reviewDecision: z.string().nullable().optional(),
+  commitList: z
+    .object({
+      totalCount: z.number(),
+      nodes: z.array(z.object({ commit: z.object({ oid: z.string(), messageHeadline: z.string(), committedDate: z.string().nullish(), author: z.object({ name: z.string().nullable(), user: z.object({ login: z.string() }).nullable() }).nullable() }) })),
+    })
+    .optional(),
+  files: z.object({ totalCount: z.number(), nodes: z.array(z.object({ path: z.string(), additions: z.number(), deletions: z.number(), changeType: z.string() })) }).nullish(),
+  timelineItems: z.object({ nodes: z.array(timelineNode) }).optional(),
+});
+
+const REVIEW_LABEL: Record<string, string> = { APPROVED: "approved", CHANGES_REQUESTED: "changes requested", COMMENTED: "commented", DISMISSED: "dismissed" };
+
+export function toActivity(node: z.infer<typeof activityNode>): Activity {
+  const head = node.headRefOid;
+  const items: ActivityItem[] = [];
+  for (const review of node.reviews.nodes) {
+    if (review.state === "PENDING") continue;
+    // A comment-only review with no body is just the container of its threads, which arrive on their own.
+    if (review.state === "COMMENTED" && !review.body.trim()) continue;
+    items.push({ id: `${review.id}:${review.state}`, kind: "review", author: review.author?.login ?? null, bot: isBot(review.author), state: REVIEW_LABEL[review.state] ?? review.state.toLowerCase(), body: review.body, url: review.url, path: null, line: null, at: ms(review.submittedAt), thread: null, resolved: null, review: review.id });
+  }
+  for (const thread of node.reviewThreads.nodes) {
+    const hunk = thread.first?.nodes[0]?.diffHunk ?? null;
+    thread.comments.nodes.forEach((comment, index) => {
+      items.push({
+        id: `${thread.id}:${comment.id}`, kind: "thread", author: comment.author?.login ?? null, bot: isBot(comment.author), state: null, body: comment.body, url: comment.url, path: thread.path, line: thread.line,
+        at: ms(comment.createdAt), thread: thread.id, resolved: thread.isResolved,
+        // The hunk is the thread's; it rides on the earliest comment read.
+        ...(index === 0 && hunk !== null ? { hunk } : {}),
+        ...(comment.pullRequestReview ? { review: comment.pullRequestReview.id } : {}),
+      });
+    });
+  }
+  for (const comment of node.comments.nodes) {
+    items.push({ id: comment.id, kind: "comment", author: comment.author?.login ?? null, bot: isBot(comment.author), state: null, body: comment.body, url: comment.url, path: null, line: null, at: ms(comment.createdAt), thread: null, resolved: null });
+  }
+  const rollup = node.commits.nodes[0]?.commit.statusCheckRollup ?? null;
+  const listed = rollup?.contexts.nodes ?? [];
+  const superseded = supersededRuns(listed);
+  const contexts = listed.filter((context) => !superseded.has(context));
+  for (const context of contexts) {
+    const failed = context.__typename === "CheckRun" ? FAILED_RUN.has(context.conclusion ?? "") : context.state === "FAILURE" || context.state === "ERROR";
+    if (!failed || !context.id || billingRefused(context)) continue;
+    const name = context.name ?? context.context ?? "check";
+    items.push({ id: checkItemId(context.id, head), kind: "check", author: null, bot: false, state: "failed", body: `${name} failed`, url: context.detailsUrl ?? context.targetUrl ?? null, path: null, line: null, at: ms(context.completedAt ?? context.createdAt), thread: null, resolved: null });
+  }
+  return { head, items, details: node.commitList === undefined ? null : detailsOf(node, contexts, superseded.size, head), pr: activityStateOf(node) };
+}
+
+function activityStateOf(node: z.infer<typeof activityNode>): ActivityState | null {
+  if (!node.state) return null;
+  const state: PrState = node.state === "MERGED" ? "merged" : node.state === "CLOSED" ? "closed" : node.isDraft ? "draft" : "open";
+  return { state, closedAt: state === "merged" ? ms(node.mergedAt ?? node.closedAt) : state === "closed" ? ms(node.closedAt) : null, updatedAt: ms(node.updatedAt) };
+}
+
+/** A failed check's id is the check and the head it ran on, so the same failure on a new head is new again. */
+const checkItemId = (contextId: string, head: string | null) => `${contextId}:${head ?? ""}`;
+const words = (value: string) => value.toLowerCase().replace(/_/gu, " ");
+
+export function checkRunOf(context: ContextNode, head: string | null): CheckRun {
+  if (context.__typename === "CheckRun") {
+    const conclusion = context.conclusion ?? null;
+    const state: RunState = context.status !== "COMPLETED" || conclusion === null ? "running"
+      : FAILED_RUN.has(conclusion) ? "failed"
+        : conclusion === "SKIPPED" || conclusion === "STALE" ? "skipped" : "passed";
+    const detail = state === "running" ? (context.status ? words(context.status) : null)
+      : state === "failed" && billingRefused(context) ? "GitHub refused to start it over the account's billing"
+        : conclusion !== null && !["SUCCESS", "FAILURE", "SKIPPED"].includes(conclusion) ? words(conclusion) : null;
+    return {
+      name: context.name ?? "check",
+      group: context.checkSuite?.workflowRun?.workflow.name ?? context.checkSuite?.app?.name ?? null,
+      state,
+      detail,
+      required: context.isRequired ?? null,
+      url: context.detailsUrl ?? null,
+      startedAt: ms(context.startedAt),
+      completedAt: state === "running" ? null : ms(context.completedAt),
+      itemId: state === "failed" && context.id ? checkItemId(context.id, head) : null,
+    };
+  }
+  const state: RunState = context.state === "SUCCESS" ? "passed" : context.state === "FAILURE" || context.state === "ERROR" ? "failed" : "running";
+  return {
+    name: context.context ?? "status",
+    group: null,
+    state,
+    detail: context.description ?? null,
+    required: context.isRequired ?? null,
+    url: context.targetUrl ?? null,
+    startedAt: ms(context.createdAt),
+    completedAt: null,
+    itemId: state === "failed" && context.id ? checkItemId(context.id, head) : null,
+  };
+}
+
+const FILE_CHANGE: Record<string, FileChange> = { ADDED: "added", DELETED: "removed", RENAMED: "renamed", COPIED: "copied", MODIFIED: "modified", CHANGED: "changed" };
+/** A merge is also a close at the same moment on GitHub's timeline; only the merge is news. */
+const SAME_MOMENT_MS = 5000;
+
+export function timelineOf(nodes: ReadonlyArray<TimelineNode | null>): TimelineEvent[] {
+  const merges = nodes.flatMap((n) => (n?.__typename === "MergedEvent" ? [ms(n.createdAt)] : [])).filter((at): at is number => at !== null);
+  const reviewer = (r: TimelineNode["requestedReviewer"]) => (!r ? null : r.__typename === "Team" ? (r.combinedSlug ? `@${r.combinedSlug}` : null) : r.login ?? null);
+  const out: TimelineEvent[] = [];
+  for (const n of nodes) {
+    const at = ms(n?.createdAt);
+    if (!n || at === null) continue;
+    const add = (kind: TimelineKind, subject: string | null = null, detail: string | null = null) => out.push({ kind, at, actor: n.actor?.login ?? null, subject, detail });
+    switch (n.__typename) {
+      case "ReviewRequestedEvent": add("review_requested", reviewer(n.requestedReviewer)); break;
+      case "ReviewRequestRemovedEvent": add("review_request_removed", reviewer(n.requestedReviewer)); break;
+      case "LabeledEvent": add("labeled", n.label?.name ?? null); break;
+      case "UnlabeledEvent": add("unlabeled", n.label?.name ?? null); break;
+      case "ReadyForReviewEvent": add("ready_for_review"); break;
+      case "ConvertToDraftEvent": add("converted_to_draft"); break;
+      case "HeadRefForcePushedEvent": add("force_pushed", n.afterCommit?.abbreviatedOid ?? null, n.beforeCommit?.abbreviatedOid ?? null); break;
+      case "MergedEvent": add("merged", n.commit?.abbreviatedOid ?? null, n.mergeRefName ?? null); break;
+      case "ClosedEvent": if (!merges.some((merged) => Math.abs(merged - at) < SAME_MOMENT_MS)) add("closed"); break;
+      case "ReopenedEvent": add("reopened"); break;
+      case "RenamedTitleEvent": add("renamed", n.currentTitle ?? null, n.previousTitle ?? null); break;
+      case "AutoMergeEnabledEvent": add("auto_merge_enabled"); break;
+      case "AutoMergeDisabledEvent": add("auto_merge_disabled"); break;
+      case "ReviewDismissedEvent": add("review_dismissed", n.review?.author?.login ?? null); break;
+      case "HeadRefDeletedEvent": add("branch_deleted", n.headRefName ?? null); break;
+      case "BaseRefChangedEvent": add("base_changed", n.currentRefName ?? null, n.previousRefName ?? null); break;
+    }
+  }
+  return out;
+}
+
+function detailsOf(node: z.infer<typeof activityNode>, contexts: readonly ContextNode[], superseded: number, head: string | null): PrDetails {
+  const rollup = node.commits.nodes[0]?.commit.statusCheckRollup ?? null;
+  const list = node.commitList!;
+  return {
+    checks: { total: Math.max((rollup?.contexts.totalCount ?? 0) - superseded, contexts.length), items: contexts.map((context) => checkRunOf(context, head)) },
+    commits: {
+      total: list.totalCount,
+      items: list.nodes.map(({ commit }) => ({ sha: commit.oid, message: commit.messageHeadline, author: commit.author?.user?.login ?? commit.author?.name ?? null, at: ms(commit.committedDate) })),
+    },
+    files: node.files ? { total: node.files.totalCount, items: node.files.nodes.map((file) => ({ path: file.path, additions: file.additions, deletions: file.deletions, change: FILE_CHANGE[file.changeType] ?? "changed" })) } : null,
+    timeline: timelineOf(node.timelineItems?.nodes ?? []),
+    merge: node.mergeStateStatus === undefined ? null : mergeState({
+      isDraft: node.isDraft ?? false,
+      mergeable: node.mergeable ?? "UNKNOWN",
+      mergeStateStatus: node.mergeStateStatus,
+      viewerCanEnableAutoMerge: false,
+      reviewDecision: node.reviewDecision ?? null,
+      commits: { nodes: [{ commit: { statusCheckRollup: rollup?.state ? { state: rollup.state } : null } }] },
+    }),
+  };
+}
+
+const commitNode = z.object({
+  __typename: z.string(),
+  oid: z.string().optional(),
+  messageHeadline: z.string().optional(),
+  committedDate: z.string().nullish(),
+  additions: z.number().nullish(),
+  deletions: z.number().nullish(),
+  author: z.object({ name: z.string().nullable(), user: z.object({ login: z.string() }).nullable() }).nullish(),
+  statusCheckRollup: z.object({ state: z.string() }).nullish(),
+  associatedPullRequests: z.object({ nodes: z.array(z.object({ number: z.number() })) }).nullish(),
+});
+const restPrs = z.array(z.object({ number: z.number() })).nullish();
+const issueNode = z.object({
+  __typename: z.string(),
+  number: z.number().optional(),
+  title: z.string().optional(),
+  state: z.string().optional(),
+  stateReason: z.string().nullish(),
+  url: z.string().optional(),
+  body: z.string().nullish(),
+  createdAt: z.string().nullish(),
+  closedAt: z.string().nullish(),
+  author: z.object({ login: z.string() }).nullish(),
+  labels: z.object({ nodes: z.array(z.object({ name: z.string(), color: z.string().nullish() })) }).nullish(),
+  assignees: z.object({ nodes: z.array(z.object({ login: z.string() })) }).nullish(),
+  comments: z.object({ totalCount: z.number() }).nullish(),
+  closedByPullRequestsReferences: z.object({ nodes: z.array(z.object({
+    number: z.number(), title: z.string(), state: z.string(), isDraft: z.boolean().nullish(), url: z.string(), repository: z.object({ nameWithOwner: z.string() }),
+  })) }).nullish(),
+});
+/** How far into an issue's description a card reads. */
+const ISSUE_BODY = 600;
+const restCheckRun = z.object({
+  node_id: z.string().nullish(), name: z.string(), status: z.string(), conclusion: z.string().nullish(), html_url: z.string().nullish(), details_url: z.string().nullish(),
+  started_at: z.string().nullish(), completed_at: z.string().nullish(), head_sha: z.string().nullish(), app: z.object({ name: z.string() }).nullish(), pull_requests: restPrs,
+});
+const restRun = z.object({
+  name: z.string(), display_title: z.string().nullish(), status: z.string(), conclusion: z.string().nullish(), html_url: z.string().nullish(), event: z.string().nullish(),
+  run_started_at: z.string().nullish(), updated_at: z.string().nullish(), head_sha: z.string().nullish(), pull_requests: restPrs,
+});
+
+const mergeNode = z.object({
+  squashMergeAllowed: z.boolean(),
+  mergeCommitAllowed: z.boolean(),
+  rebaseMergeAllowed: z.boolean(),
+  autoMergeAllowed: z.boolean(),
+  deleteBranchOnMerge: z.boolean(),
+  viewerDefaultMergeMethod: z.string().nullable(),
+  pullRequest: z
+    .object({
+      isDraft: z.boolean(),
+      mergeable: z.string(),
+      mergeStateStatus: z.string(),
+      viewerCanEnableAutoMerge: z.boolean(),
+      reviewDecision: z.string().nullable(),
+      commits: z.object({ nodes: z.array(z.object({ commit: z.object({ statusCheckRollup: z.object({ state: z.string() }).nullable() }) })) }),
+    })
+    .nullable(),
+});
+type MergeNode = z.infer<typeof mergeNode> & { pullRequest: NonNullable<z.infer<typeof mergeNode>["pullRequest"]> };
+
+const METHOD_OF: Record<string, MergeMethod> = { SQUASH: "squash", MERGE: "merge", REBASE: "rebase" };
+
+function mergeState(pr: MergeNode["pullRequest"]): Pick<MergeOptions, "state" | "detail"> {
+  const rollup = pr.commits.nodes[0]?.commit.statusCheckRollup?.state;
+  const checksPending = rollup === "PENDING" || rollup === "EXPECTED";
+  const status = pr.mergeStateStatus;
+  if (pr.isDraft || status === "DRAFT") return { state: "blocked", detail: "It is a draft." };
+  if (status === "DIRTY" || pr.mergeable === "CONFLICTING") return { state: "conflicts", detail: "It has conflicts with the base branch." };
+  if (status === "CLEAN" || status === "HAS_HOOKS") return { state: "clean", detail: null };
+  if (status === "BLOCKED") {
+    if (pr.reviewDecision === "CHANGES_REQUESTED") return { state: "blocked", detail: "A reviewer requested changes." };
+    if (pr.reviewDecision === "REVIEW_REQUIRED") return { state: "blocked", detail: "It needs an approving review." };
+    if (checksPending) return { state: "pending", detail: "Required checks are still running." };
+    return { state: "blocked", detail: "A required check or branch rule blocks it." };
+  }
+  if (status === "BEHIND") return { state: "behind", detail: "The base branch has moved on; update the branch first." };
+  if (status === "UNSTABLE" || checksPending) return { state: "pending", detail: checksPending ? "Checks are still running." : "Some checks have not passed." };
+  return { state: "unknown", detail: "GitHub has not worked out yet whether it can merge." };
+}
+
+export function toMergeOptions(repo: MergeNode): MergeOptions {
+  const allowed: MergeMethod[] = [];
+  if (repo.squashMergeAllowed) allowed.push("squash");
+  if (repo.mergeCommitAllowed) allowed.push("merge");
+  if (repo.rebaseMergeAllowed) allowed.push("rebase");
+  const preferred = METHOD_OF[repo.viewerDefaultMergeMethod ?? ""];
+  const first = preferred && allowed.includes(preferred) ? preferred : (allowed[0] ?? "merge");
+  return {
+    methods: [first, ...allowed.filter((m) => m !== first)],
+    default: first,
+    deleteBranch: repo.deleteBranchOnMerge,
+    canAuto: repo.autoMergeAllowed && repo.pullRequest.viewerCanEnableAutoMerge,
+    ...mergeState(repo.pullRequest),
+  };
+}
+
+const EVENT_OF = { comment: "COMMENT", approve: "APPROVE", changes: "REQUEST_CHANGES" } as const;
+
+/** Inline comments GitHub could not place, as a list under the review's body. */
+export function commentsInBody(body: string, comments: readonly ReviewComment[]): string {
+  const list = comments.map((c) => `- \`${c.line === null ? c.path : `${c.path}:${c.line}`}\` ${c.body.trim().replaceAll("\n", "\n  ")}`);
+  return [body.trim(), list.join("\n")].filter(Boolean).join("\n\n");
+}
+
+/**
+ * A refusal of a comment's place in the diff, such as "Line could not be resolved". Anything that names
+ * the commit is about the review itself (a head that moved on) and must fail rather than post again.
+ */
+export function isPlacementError(text: string): boolean {
+  return /\b(line|start_line|path|position|side|start_side|subject_type|diff|diff_hunk)\b|could not be resolved/iu.test(text) && !/\b(commit|commit_id|commit_oid|sha|head)\b/iu.test(text);
+}
+
+/** GitHub's own words from an API error body, such as "Line could not be resolved". */
+function apiDetail(stdout: string): string {
+  try {
+    const body = JSON.parse(stdout) as { message?: string; errors?: unknown[] };
+    const errors = (body.errors ?? []).map((e) => (typeof e === "string" ? e : ((e as { message?: string }).message ?? JSON.stringify(e))));
+    return [body.message, ...errors].filter(Boolean).join("; ");
+  } catch {
+    return "";
+  }
+}
+
+interface GraphqlError {
+  message?: string;
+  path?: Array<string | number>;
+}
+interface GraphqlAnswer {
+  data: unknown;
+  errors: GraphqlError[];
+}
+
+export class GithubAdapter implements Adapter {
+  constructor(
+    readonly server: ServerConfig,
+    private readonly run: Runner = runProcess,
+  ) {}
+
+  operations(): Operation[] {
+    return [...OPERATIONS];
+  }
+
+  private hostArgs(): string[] {
+    return this.server.hostname ? ["--hostname", this.server.hostname] : [];
+  }
+
+  /** gh pr takes the host in the repository. */
+  private target(repo: string): string[] {
+    return ["-R", this.server.hostname ? `${this.server.hostname}/${repo}` : repo];
+  }
+
+  private async call(operation: Operation, args: string[], signal?: AbortSignal, stdin?: string): Promise<RunResult> {
+    const command = ghCommand(args);
+    const result = await this.run("gh", args, { timeoutMs: GH_TIMEOUT_MS, signal, ...(stdin === undefined ? {} : { stdin }) }).catch((error: unknown) => {
+      const missing = (error as NodeJS.ErrnoException).code === "ENOENT";
+      throw new AdapterError(operation, missing ? "gh is not installed or not on PATH" : `gh could not start: ${(error as Error).message}`, { command });
+    });
+    if (result.timedOut) throw new AdapterError(operation, `gh took longer than ${GH_TIMEOUT_MS / 1000}s`, { command, output: outputTail(result.stderr) });
+    return result;
+  }
+
+  private failure(operation: Operation, result: RunResult, args: readonly string[]): AdapterError {
+    const detail = apiDetail(result.stdout);
+    return new AdapterError(operation, `gh exited ${result.code}: ${tail(result.stderr || result.stdout) || "no output"}${detail ? ` (${detail})` : ""}`, {
+      command: ghCommand(args),
+      exit: result.code,
+      output: outputTail(result.stderr || result.stdout),
+    });
+  }
+
+  private async gh(operation: Operation, args: string[], signal?: AbortSignal, stdin?: string): Promise<string> {
+    const result = await this.call(operation, args, signal, stdin);
+    if (result.code !== 0) throw this.failure(operation, result, args);
+    return result.stdout;
+  }
+
+  /** False once the server said it has no merge queue fields. */
+  private mergeQueue = true;
+
+  /**
+   * GitHub's answer. With `partial`, an answer with data and errors, which gh exits 1 on, is still an answer:
+   * a PR it could not read is a null with an error naming its alias.
+   */
+  private async graphqlAnswer(operation: Operation, query: string, vars: Record<string, string | number>, signal?: AbortSignal, partial = false): Promise<GraphqlAnswer> {
+    // What this request asked, not the flag now: a request sent at the same time may have changed it since.
+    const asked = this.mergeQueue;
+    try {
+      return await this.post(operation, asked ? query : query.replaceAll(MERGE_QUEUE_FIELDS, ""), vars, signal, partial);
+    } catch (error) {
+      if (!asked || !(error instanceof AdapterError) || !NO_MERGE_QUEUE.test(error.message)) throw error;
+      this.mergeQueue = false;
+      return this.post(operation, query.replaceAll(MERGE_QUEUE_FIELDS, ""), vars, signal, partial);
+    }
+  }
+
+  private async post(operation: Operation, query: string, vars: Record<string, string | number>, signal: AbortSignal | undefined, partial: boolean): Promise<GraphqlAnswer> {
+    const args = ["api", "graphql", ...this.hostArgs(), "-f", `query=${query}`];
+    for (const [name, value] of Object.entries(vars)) args.push(typeof value === "number" ? "-F" : "-f", `${name}=${value}`);
+    const result = await this.call(operation, args, signal);
+    let parsed: { data?: unknown; errors?: GraphqlError[] } | undefined;
+    try {
+      parsed = JSON.parse(result.stdout) as typeof parsed;
+    } catch {
+      parsed = undefined;
+    }
+    const data = parsed?.data;
+    if (result.code !== 0 && !(partial && typeof data === "object" && data !== null)) throw this.failure(operation, result, args);
+    if (parsed === undefined || typeof parsed !== "object" || parsed === null) throw new AdapterError(operation, "gh did not print JSON");
+    const errors = Array.isArray(parsed.errors) ? parsed.errors : [];
+    if (errors.some((e) => NO_MERGE_QUEUE.test(e.message ?? ""))) throw new AdapterError(operation, `GitHub: ${errors.map((e) => e.message).join("; ")}`);
+    return { data, errors };
+  }
+
+  private async graphql<S extends z.ZodType>(operation: Operation, query: string, vars: Record<string, string | number>, schema: S, signal?: AbortSignal): Promise<z.output<S>> {
+    const { data, errors } = await this.graphqlAnswer(operation, query, vars, signal);
+    const result = schema.safeParse(data);
+    if (!result.success) throw new AdapterError(operation, errors.length ? `GitHub: ${errors.map((e) => e.message).join("; ")}` : `unexpected answer from GitHub: ${result.error.issues[0]?.message ?? ""}`);
+    return result.data;
+  }
+
+  async whoami(signal?: AbortSignal): Promise<string> {
+    const out = await this.gh("whoami", ["api", "user", ...this.hostArgs(), "--jq", ".login"], signal);
+    const login = out.trim();
+    if (!login) throw new AdapterError("whoami", "gh printed no login");
+    return login;
+  }
+
+  async list(operation: ListOperation, options: ListOptions, signal?: AbortSignal): Promise<ListResult> {
+    const result = await this.search(operation, options, signal);
+    return { ...result, rows: await this.withLatestChecks(result.rows, signal) };
+  }
+
+  private async search(operation: ListOperation, options: ListOptions, signal?: AbortSignal): Promise<ListResult> {
+    const query = `query($q: String!, $first: Int!, $after: String) { search(query: $q, type: ISSUE, first: $first, after: $after) {
+      pageInfo { hasNextPage endCursor } nodes { ... on PullRequest { ${listFields(operation, options)} } } } }`;
+    const schema = z.object({
+      search: z.object({ pageInfo: z.object({ hasNextPage: z.boolean(), endCursor: z.string().nullable() }), nodes: z.array(z.union([summaryNode, z.object({}).strict()])) }),
+    });
+    const rows: PrSummary[] = [];
+    let after: string | null = null;
+    let size = PAGE_SIZE;
+    let fetched = 0;
+    while (fetched < SEARCH_LIMIT) {
+      let data: z.output<typeof schema> | undefined;
+      for (let retry = 0; !data; retry++) {
+        const vars = { q: searchQuery(operation, options), first: Math.min(size, SEARCH_LIMIT - fetched), ...(after ? { after } : {}) };
+        try {
+          data = await this.graphql(operation, query, vars, schema, signal);
+        } catch (error) {
+          if (!(error instanceof AdapterError) || !GITHUB_TIMEOUT.test(error.message) || signal?.aborted) throw error;
+          if (retry === TIMEOUT_RETRIES) throw new AdapterError(operation, error.message, { ...error.detail, retried: true });
+          // Search cursors are offsets, so the same cursor with a smaller page carries on where it stopped.
+          size = Math.max(1, Math.floor(size / 2));
+        }
+      }
+      fetched += data.search.nodes.length;
+      for (const node of data.search.nodes) if ("number" in node) rows.push(toSummary(node as SummaryNode));
+      if (!data.search.pageInfo.hasNextPage || !data.search.pageInfo.endCursor) return { rows, complete: true };
+      // An empty page that claims more would never reach the limit.
+      if (data.search.nodes.length === 0) return { rows, complete: false };
+      after = data.search.pageInfo.endCursor;
+    }
+    return { rows, complete: false };
+  }
+
+  private repoVars(repo: string, number: number, operation: Operation = "view") {
+    const [owner, name] = repo.split("/");
+    if (!owner || !name) throw new AdapterError(operation, `${repo} is not owner/name`);
+    return { owner, name, number };
+  }
+
+  async view(repo: string, number: number, signal?: AbortSignal): Promise<PrSummary> {
+    const query = `query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) {
+      ${SUMMARY_FIELDS} ${REQUESTED_FIELDS} ${FIRST_REVIEW_FIELDS} body } } }`;
+    const schema = z.object({ repository: z.object({ pullRequest: summaryNode.nullable() }).nullable() });
+    const data = await this.graphql("view", query, this.repoVars(repo, number), schema, signal);
+    const node = data.repository?.pullRequest;
+    if (!node) throw new AdapterError("view", `${repo}#${number} was not found`);
+    const [summary] = await this.withLatestChecks([toSummary(node)], signal);
+    return summary!;
+  }
+
+  /**
+   * Reads PRs in aliased batches; a PR GitHub could not read, or a batch that failed, comes back with its error and
+   * does not fail the rest. Once GitHub says it is limiting Shuttle, the PRs left get that answer without asking.
+   */
+  async viewMany(refs: ReadonlyArray<{ repo: string; number: number }>, signal?: AbortSignal): Promise<PrRead[]> {
+    const out: PrRead[] = [];
+    let limited: string | null = null;
+    for (let start = 0; start < refs.length; start += VIEW_MANY_SIZE) {
+      const batch = refs.slice(start, start + VIEW_MANY_SIZE);
+      if (limited !== null) {
+        out.push(...batch.map((ref) => ({ ...ref, summary: null, error: limited })));
+        continue;
+      }
+      const reads = await this.viewBatch(batch, signal).catch((error: unknown) => batch.map((ref) => ({ ...ref, summary: null, error: (error as Error).message })));
+      limited = reads.find((read) => read.error !== null && failureKind(read.error) === "rate_limit")?.error ?? null;
+      out.push(...reads);
+    }
+    if (limited !== null) return out;
+    const latest = await this.withLatestChecks(out.flatMap((read) => (read.summary ? [read.summary] : [])), signal);
+    let next = 0;
+    return out.map((read) => (read.summary ? { ...read, summary: latest[next++]! } : read));
+  }
+
+  /** One query that reads each PR under its own alias, p0, p1 and on, with the fields given. */
+  private aliased(refs: ReadonlyArray<{ repo: string; number: number }>, fields: string): { query: string; vars: Record<string, string | number> } {
+    const vars: Record<string, string | number> = {};
+    const params: string[] = [];
+    const selections: string[] = [];
+    refs.forEach((ref, i) => {
+      const { owner, name, number } = this.repoVars(ref.repo, ref.number);
+      Object.assign(vars, { [`p${i}o`]: owner, [`p${i}r`]: name, [`p${i}n`]: number });
+      params.push(`$p${i}o: String!, $p${i}r: String!, $p${i}n: Int!`);
+      selections.push(`p${i}: repository(owner: $p${i}o, name: $p${i}r) { pullRequest(number: $p${i}n) { ...pr } }`);
+    });
+    return { query: `query(${params.join(", ")}) { ${selections.join("\n")} } fragment pr on PullRequest { ${fields} }`, vars };
+  }
+
+  /** Each PR's checks without superseded runs, kept while its head and GitHub's state and counts stay the same. */
+  private readonly latest = new Map<string, { seen: string; checks: CheckState; checkCounts: CheckCounts }>();
+
+  /**
+   * GitHub's state and counts include check runs that a newer run replaced, so each open PR they call failing is
+   * read again with its check runs to leave those out, and again only once its head, state or counts change. A PR
+   * this read misses keeps GitHub's word, as before: a failed read never fails the list or view it corrects.
+   */
+  private async withLatestChecks(rows: readonly PrSummary[], signal?: AbortSignal): Promise<PrSummary[]> {
+    const keyOf = (row: PrSummary) => `${row.repo}#${row.number}`;
+    const seenOf = (row: PrSummary) => `${row.head}|${row.checks}|${JSON.stringify(row.checkCounts)}`;
+    const failing = new Set(rows.filter((row) => (row.state === "open" || row.state === "draft") && row.head !== null && (row.checkCounts?.failed ?? 0) > 0));
+    const unread = [...failing].filter((row) => this.latest.get(keyOf(row))?.seen !== seenOf(row));
+    for (let start = 0; start < unread.length && !signal?.aborted; start += VIEW_MANY_SIZE) {
+      const batch = unread.slice(start, start + VIEW_MANY_SIZE);
+      let reads: Array<LatestChecks | null>;
+      try {
+        reads = await this.latestBatch(batch, signal);
+      } catch (error) {
+        if (failureKind((error as Error).message) === "rate_limit") break;
+        continue;
+      }
+      batch.forEach((row, i) => {
+        const read = reads[i];
+        // A push between the two reads leaves the summary's head behind; the next sync reads both again.
+        if (!read || read.head !== row.head) return;
+        this.latest.delete(keyOf(row));
+        this.latest.set(keyOf(row), { seen: seenOf(row), checks: read.checks, checkCounts: read.checkCounts });
+        if (this.latest.size > LATEST_KEPT) this.latest.delete(this.latest.keys().next().value!);
+      });
+    }
+    return rows.map((row) => {
+      const latest = failing.has(row) ? this.latest.get(keyOf(row)) : undefined;
+      return latest !== undefined && latest.seen === seenOf(row) ? { ...row, checks: latest.checks, checkCounts: latest.checkCounts } : row;
+    });
+  }
+
+  /** The latest checks of each PR, in order; null for one GitHub could not read. */
+  private async latestBatch(refs: readonly PrSummary[], signal?: AbortSignal): Promise<Array<LatestChecks | null>> {
+    const { query, vars } = this.aliased(refs, LATEST_FIELDS);
+    const { data, errors } = await this.graphqlAnswer("view", query, vars, signal, true);
+    const answer = z.record(z.string(), z.object({ pullRequest: z.unknown() }).nullable()).safeParse(data);
+    if (!answer.success) throw new AdapterError("view", `unexpected answer from GitHub: ${answer.error.issues[0]?.message ?? ""}`);
+    return refs.map((_, i) => {
+      const alias = `p${i}`;
+      const node = latestNode.safeParse(answer.data[alias]?.pullRequest);
+      return node.success && !errors.some((e) => e.path?.[0] === alias) ? latestChecksOf(node.data) : null;
+    });
+  }
+
+  private async viewBatch(refs: ReadonlyArray<{ repo: string; number: number }>, signal?: AbortSignal): Promise<PrRead[]> {
+    const { query, vars } = this.aliased(refs, SUMMARY_FIELDS);
+    const { data, errors } = await this.graphqlAnswer("view", query, vars, signal, true);
+    const answer = z.record(z.string(), z.object({ pullRequest: z.unknown() }).nullable()).safeParse(data);
+    if (!answer.success) throw new AdapterError("view", `unexpected answer from GitHub: ${answer.error.issues[0]?.message ?? ""}`);
+    return refs.map((ref, i) => {
+      const alias = `p${i}`;
+      const own = errors.filter((e) => e.path?.[0] === alias);
+      const node = summaryNode.safeParse(answer.data[alias]?.pullRequest);
+      // A field that errored reads as null, which would pass for a real value such as auto-merge off.
+      if (node.success && own.length === 0) return { ...ref, summary: toSummary(node.data), error: null };
+      const said = own.map((e) => e.message).filter(Boolean).join("; ");
+      const why = node.success ? "GitHub could not read all of it" : answer.data[alias]?.pullRequest == null ? `${ref.repo}#${ref.number} was not found` : `unexpected answer from GitHub: ${node.error.issues[0]?.message ?? ""}`;
+      return { ...ref, summary: null, error: said || why };
+    });
+  }
+
+  async activity(repo: string, number: number, signal?: AbortSignal, options: ActivityOptions = {}): Promise<Activity> {
+    const query = options.detail ? DETAIL_QUERY : ACTIVITY_QUERY;
+    const schema = z.object({ repository: z.object({ pullRequest: activityNode.nullable() }).nullable() });
+    const data = await this.graphql("activity", query, this.repoVars(repo, number, "activity"), schema, signal);
+    const node = data.repository?.pullRequest;
+    if (!node) throw new AdapterError("activity", `${repo}#${number} was not found`);
+    return toActivity(node);
+  }
+
+  async change(repo: string, number: number, change: PrChange, signal?: AbortSignal): Promise<void> {
+    const op = changeOperation(change);
+    const target = this.target(repo);
+    const api = (method: string, path: string, fields: Array<[string, string]>) =>
+      this.gh(op, ["api", ...this.hostArgs(), "-X", method, path, ...fields.flatMap(([k, v]) => ["-f", `${k}=${v}`])], signal);
+    switch (change.kind) {
+      case "ready":
+      case "draft":
+        await this.gh(op, ["pr", "ready", String(number), ...target, ...(change.kind === "draft" ? ["--undo"] : [])], signal);
+        return;
+      case "close":
+      case "reopen":
+        await this.gh(op, ["pr", change.kind, String(number), ...target], signal);
+        return;
+      case "labels":
+        if (change.add.length) await api("POST", `repos/${repo}/issues/${number}/labels`, change.add.map((l) => ["labels[]", l]));
+        for (const label of change.remove) await api("DELETE", `repos/${repo}/issues/${number}/labels/${encodeURIComponent(label)}`, []);
+        return;
+      case "reviewers": {
+        // REST wants a team's slug without its org.
+        const fields = (refs: typeof change.add): Array<[string, string]> =>
+          refs.map((r) => (r.team ? ["team_reviewers[]", r.login.split("/").pop()!] : ["reviewers[]", r.login]));
+        if (change.add.length) await api("POST", `repos/${repo}/pulls/${number}/requested_reviewers`, fields(change.add));
+        if (change.remove.length) await api("DELETE", `repos/${repo}/pulls/${number}/requested_reviewers`, fields(change.remove));
+        return;
+      }
+    }
+  }
+
+  async editOptions(repo: string, number: number, signal?: AbortSignal): Promise<EditOptions> {
+    const query = `query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) {
+      labels(first: 100, orderBy: { field: NAME, direction: ASC }) { nodes { name color description } }
+      pullRequest(number: $number) { suggestedReviewers { reviewer { login } } } } }`;
+    const schema = z.object({
+      repository: z.object({
+        labels: z.object({ nodes: z.array(z.object({ name: z.string(), color: z.string().nullable(), description: z.string().nullable() })) }).nullable(),
+        pullRequest: z.object({ suggestedReviewers: z.array(z.object({ reviewer: z.object({ login: z.string() }).nullable() })) }).nullable(),
+      }).nullable(),
+    });
+    const data = await this.graphql("edit_options", query, this.repoVars(repo, number, "edit_options"), schema, signal);
+    return {
+      labels: (data.repository?.labels?.nodes ?? []).map((l) => ({ name: l.name, color: l.color ? l.color.toLowerCase() : null, description: l.description })),
+      people: (data.repository?.pullRequest?.suggestedReviewers ?? []).flatMap((s) => (s.reviewer ? [s.reviewer.login] : [])),
+    };
+  }
+
+  async mergeOptions(repo: string, number: number, signal?: AbortSignal): Promise<MergeOptions> {
+    const query = `query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) {
+      squashMergeAllowed mergeCommitAllowed rebaseMergeAllowed autoMergeAllowed deleteBranchOnMerge viewerDefaultMergeMethod
+      pullRequest(number: $number) { isDraft mergeable mergeStateStatus viewerCanEnableAutoMerge reviewDecision
+        commits(last: 1) { nodes { commit { statusCheckRollup { state } } } } } } }`;
+    const schema = z.object({ repository: mergeNode.nullable() });
+    const data = await this.graphql("merge_options", query, this.repoVars(repo, number, "merge_options"), schema, signal);
+    const repository = data.repository;
+    if (!repository?.pullRequest) throw new AdapterError("merge_options", `${repo}#${number} was not found`);
+    return toMergeOptions(repository as MergeNode);
+  }
+
+  async merge(repo: string, number: number, input: MergeInput, signal?: AbortSignal): Promise<{ merged: boolean }> {
+    const args = ["pr", "merge", String(number), ...this.target(repo), `--${input.method}`, "--match-head-commit", input.head];
+    if (input.auto) args.push("--auto");
+    if (input.deleteBranch) args.push("--delete-branch");
+    if (input.subject) args.push("--subject", input.subject);
+    await this.gh("merge", args, signal);
+    return { merged: !input.auto };
+  }
+
+  async files(repo: string, number: number, signal?: AbortSignal): Promise<PrFile[]> {
+    const out = await this.gh("files", ["api", ...this.hostArgs(), "--paginate", `repos/${repo}/pulls/${number}/files?per_page=100`, "--jq", ".[] | {path: .filename, patch: .patch}"], signal);
+    const row = z.object({ path: z.string(), patch: z.string().nullable().optional() });
+    return out.split("\n").filter((line) => line.trim()).map((line) => {
+      const parsed = row.safeParse(JSON.parse(line));
+      if (!parsed.success) throw new AdapterError("files", `gh printed a file in the wrong shape: ${tail(line, 1, 200)}`);
+      return { path: parsed.data.path, patch: parsed.data.patch ?? null };
+    });
+  }
+
+  async fileAt(repo: string, ref: string, path: string, signal?: AbortSignal): Promise<string | null> {
+    const encoded = path.split("/").map(encodeURIComponent).join("/");
+    const args = ["api", ...this.hostArgs(), "-H", "Accept: application/vnd.github.raw", `repos/${repo}/contents/${encoded}?ref=${encodeURIComponent(ref)}`];
+    const result = await this.call("file", args, signal);
+    if (result.code === 0) return result.stdout;
+    if (/\b404\b|Not Found/u.test(`${result.stderr}\n${result.stdout}`)) return null;
+    throw this.failure("file", result, args);
+  }
+
+  async commit(repo: string, sha: string, signal?: AbortSignal): Promise<CommitInfo> {
+    const query = `query($owner: String!, $name: String!, $sha: String!) { repository(owner: $owner, name: $name) { object(expression: $sha) { __typename
+      ... on Commit { oid messageHeadline committedDate additions deletions author { name user { login } } statusCheckRollup { state }
+        associatedPullRequests(first: 3, orderBy: { field: UPDATED_AT, direction: DESC }) { nodes { number } } } } } }`;
+    const schema = z.object({ repository: z.object({ object: commitNode.nullable() }).nullable() });
+    const [owner, name] = repo.split("/");
+    if (!owner || !name) throw new AdapterError("view", `${repo} is not owner/name`);
+    const data = await this.graphql("view", query, { owner, name, sha }, schema, signal);
+    const node = data.repository?.object;
+    if (!node || node.__typename !== "Commit" || !node.oid) throw new AdapterError("view", `${repo}@${sha.slice(0, 7)} was not found`);
+    return {
+      sha: node.oid,
+      message: node.messageHeadline ?? "",
+      author: node.author?.user?.login ?? node.author?.name ?? null,
+      at: ms(node.committedDate),
+      additions: node.additions ?? null,
+      deletions: node.deletions ?? null,
+      checks: node.statusCheckRollup ? checksState(node.statusCheckRollup.state) : null,
+      prs: (node.associatedPullRequests?.nodes ?? []).map((pr) => pr.number),
+    };
+  }
+
+  async issue(repo: string, number: number, signal?: AbortSignal): Promise<IssueInfo> {
+    const query = `query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { issueOrPullRequest(number: $number) { __typename
+      ... on Issue { number title state stateReason url body createdAt closedAt author { login } labels(first: 10) { nodes { name color } }
+        assignees(first: 5) { nodes { login } } comments { totalCount }
+        closedByPullRequestsReferences(first: 5, includeClosedPrs: true) { nodes { number title state isDraft url repository { nameWithOwner } } } }
+      ... on PullRequest { number title url } } } }`;
+    const schema = z.object({ repository: z.object({ issueOrPullRequest: issueNode.nullable() }).nullable() });
+    const [owner, name] = repo.split("/");
+    if (!owner || !name) throw new AdapterError("view", `${repo} is not owner/name`);
+    const data = await this.graphql("view", query, { owner, name, number }, schema, signal);
+    const node = data.repository?.issueOrPullRequest;
+    if (!node || (node.__typename !== "Issue" && node.__typename !== "PullRequest")) throw new AdapterError("view", `${repo}#${number} was not found`);
+    const closed = (node.state ?? "OPEN").toUpperCase() !== "OPEN";
+    const reason = (node.stateReason ?? "").toUpperCase();
+    return {
+      pr: node.__typename === "PullRequest",
+      number: node.number ?? number,
+      title: node.title ?? "",
+      state: !closed ? "open" : reason === "NOT_PLANNED" || reason === "DUPLICATE" ? "not_planned" : "completed",
+      author: node.author?.login ?? null,
+      createdAt: ms(node.createdAt),
+      closedAt: closed ? ms(node.closedAt) : null,
+      body: (node.body ?? "").slice(0, ISSUE_BODY),
+      labels: (node.labels?.nodes ?? []).map((label) => ({ name: label.name, color: label.color ?? null })),
+      assignees: (node.assignees?.nodes ?? []).map((person) => person.login),
+      comments: node.comments?.totalCount ?? 0,
+      closedBy: (node.closedByPullRequestsReferences?.nodes ?? []).map((pr) => ({
+        repo: pr.repository.nameWithOwner, number: pr.number, title: pr.title, url: pr.url,
+        state: pr.state === "MERGED" ? "merged" : pr.state === "CLOSED" ? "closed" : pr.isDraft ? "draft" : "open",
+      })),
+      url: node.url ?? "",
+    };
+  }
+
+  async checkRun(repo: string, ids: { checkRun: number | null; run: number | null }, signal?: AbortSignal): Promise<CheckInfo> {
+    if (ids.checkRun !== null) {
+      const raw = restCheckRun.parse(JSON.parse(await this.gh("view", ["api", ...this.hostArgs(), `repos/${repo}/check-runs/${ids.checkRun}`], signal)));
+      const run = checkRunOf({
+        __typename: "CheckRun", id: raw.node_id ?? undefined, name: raw.name, status: raw.status.toUpperCase(), conclusion: raw.conclusion ? raw.conclusion.toUpperCase() : null,
+        detailsUrl: raw.html_url ?? raw.details_url ?? null, startedAt: raw.started_at, completedAt: raw.completed_at, checkSuite: { app: raw.app ? { name: raw.app.name } : null },
+      }, raw.head_sha ?? null);
+      return { run: { ...run, itemId: null }, head: raw.head_sha ?? null, prs: (raw.pull_requests ?? []).map((pr) => pr.number) };
+    }
+    if (ids.run === null) throw new AdapterError("view", "a check link names no run");
+    const raw = restRun.parse(JSON.parse(await this.gh("view", ["api", ...this.hostArgs(), `repos/${repo}/actions/runs/${ids.run}`], signal)));
+    const run = checkRunOf({
+      __typename: "CheckRun", name: raw.display_title ? `${raw.name} · ${raw.display_title}` : raw.name, status: raw.status.toUpperCase(), conclusion: raw.conclusion ? raw.conclusion.toUpperCase() : null,
+      detailsUrl: raw.html_url ?? null, startedAt: raw.run_started_at, completedAt: raw.status === "completed" ? raw.updated_at : null, checkSuite: { workflowRun: { workflow: { name: raw.name } } },
+    }, raw.head_sha ?? null);
+    return { run: { ...run, group: raw.event ? `${raw.name} · on ${raw.event.replace(/_/gu, " ")}` : raw.name, itemId: null }, head: raw.head_sha ?? null, prs: (raw.pull_requests ?? []).map((pr) => pr.number) };
+  }
+
+  async cancelAutoMerge(repo: string, number: number, signal?: AbortSignal): Promise<void> {
+    await this.gh("merge", ["pr", "merge", String(number), ...this.target(repo), "--disable-auto"], signal);
+  }
+
+  async comment(repo: string, number: number, body: string, signal?: AbortSignal): Promise<void> {
+    await this.gh("comment", ["pr", "comment", String(number), ...this.target(repo), "--body-file", "-"], signal, body);
+  }
+
+  async review(repo: string, number: number, post: ReviewPost, signal?: AbortSignal): Promise<ReviewPosted> {
+    if (post.verdict === "comment" && !post.body.trim() && post.comments.length === 0) throw new AdapterError("review", "a comment review needs a body or at least one comment");
+    const args = ["api", ...this.hostArgs(), "-X", "POST", `repos/${repo}/pulls/${number}/reviews`, "--input", "-"];
+    const payload = (body: string, comments: unknown[]) =>
+      JSON.stringify({ ...(post.head ? { commit_id: post.head } : {}), body, event: EVENT_OF[post.verdict], ...(comments.length ? { comments } : {}) });
+    const inline = post.comments.map((c) => (c.line === null ? { path: c.path, body: c.body, subject_type: "file" } : { path: c.path, line: c.line, side: "RIGHT", body: c.body }));
+    const first = await this.call("review", args, signal, payload(post.body, inline));
+    if (first.code === 0) return { placed: post.comments.length, inBody: 0 };
+    // A line GitHub cannot find in the diff: the comments still reach the author in the body, on the same commit.
+    if (!post.comments.length || !/HTTP 422/u.test(first.stderr) || !isPlacementError(`${first.stderr} ${apiDetail(first.stdout)}`)) throw this.failure("review", first, args);
+    const second = await this.call("review", args, signal, payload(commentsInBody(post.body, post.comments), []));
+    if (second.code !== 0) throw this.failure("review", second, args);
+    return { placed: 0, inBody: post.comments.length };
+  }
+
+  async reply(_repo: string, _number: number, thread: string, body: string, signal?: AbortSignal): Promise<void> {
+    const mutation = `mutation($thread: ID!, $body: String!) { addPullRequestReviewThreadReply(input: { pullRequestReviewThreadId: $thread, body: $body }) { comment { id } } }`;
+    await this.graphql("reply", mutation, { thread, body }, z.object({ addPullRequestReviewThreadReply: z.object({ comment: z.object({ id: z.string() }) }) }), signal);
+  }
+
+  async resolve(_repo: string, _number: number, thread: string, resolved: boolean, signal?: AbortSignal): Promise<void> {
+    const field = resolved ? "resolveReviewThread" : "unresolveReviewThread";
+    const mutation = `mutation($thread: ID!) { ${field}(input: { threadId: $thread }) { thread { isResolved } } }`;
+    await this.graphql("resolve", mutation, { thread }, z.object({ [field]: z.object({ thread: z.object({ isResolved: z.boolean() }) }) }), signal);
+  }
+
+  readCommand(repo: string, number: number, url: string): string {
+    if (this.server.read) return fillCommand(this.server.read, repo, number, url);
+    const host = this.server.hostname ? `GH_HOST=${shellQuote(this.server.hostname)} ` : "";
+    return `${host}gh pr view ${number} -R ${shellQuote(repo)} --comments`;
+  }
+
+  linkFor(repo: string, number: number): string {
+    return linkFor(this.server, repo, number);
+  }
+}

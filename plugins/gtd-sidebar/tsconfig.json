@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "skipLibCheck": false
+  },
+  "include": ["server.ts", "host.ts", "app.tsx", "components", "hooks", "lib", "test"]
+}

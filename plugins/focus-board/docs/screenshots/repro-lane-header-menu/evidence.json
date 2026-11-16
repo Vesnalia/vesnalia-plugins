@@ -1,0 +1,34 @@
+{
+  "ruling": "dl-20261105T165850-324f",
+  "url": "http://localhost:5231/",
+  "header": {
+    "ordered": "true",
+    "triggerLabel": "Unread lane actions",
+    "triggerInName": true,
+    "triggerExpanded": "false",
+    "oldBadgeGone": true
+  },
+  "menu": {
+    "open": true,
+    "sortState": "yours",
+    "sortText": "Order: your order — arranged by hand, top of the lane first",
+    "directionChecked": "Newest first",
+    "removeEntry": true,
+    "sweepEntry": true
+  },
+  "hoverAndEscape": {
+    "hoverClass": true,
+    "chipTintGone": true,
+    "caretHoverTone": true,
+    "cursor": "pointer",
+    "escapeCloses": true
+  },
+  "pills": {
+    "unread": null,
+    "done": "2"
+  },
+  "consoleErrors": [
+    "[404] http://localhost:5231/favicon.ico",
+    "[console.error] Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

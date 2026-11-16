@@ -1,0 +1,38 @@
+[
+  {
+    "source": "Next",
+    "translation": "下一页",
+    "ancestorAriaLabel": "Results pagination",
+    "note": "automations 的分页 nav 原始 aria-label 为 Results pagination，Next 按钮位于其后代 div 中；使用最近的带该原始 aria-label 的祖先匹配，即使 aria-label 已翻译也应识别。仅此分页场景覆盖为“下一页”，问题表单等其他场景沿用原词典。"
+  },
+  {
+    "source": "Previous",
+    "translation": "上一页",
+    "ancestorAriaLabel": "Results pagination",
+    "note": "与 Next 相同的 automations 分页 nav，Previous 按钮位于后代 div 中；按原始祖先 aria-label 匹配。仅此分页场景覆盖为“上一页”，其余场景沿用原词典。"
+  },
+  {
+    "source": "Clean",
+    "translation": "无冲突",
+    "siblingText": "Mergeability",
+    "note": "plugin API 文档的 Release checklist 通过 [Mergeability, Clean] 生成同一 div 中的两个 span，源码证明二者为同父兄弟元素。此处表示可合并、无冲突；Git 与主题预览的其他 Clean 沿用词典“无改动”。"
+  },
+  {
+    "source": "Updated",
+    "translation": "已更新",
+    "siblingText": "Reference sheet",
+    "note": "theme-preview 的数据行 [Reference sheet, Updated, secondary] 经 e.map(([t,o,n])=>…) 渲染，行 div 的 children 为标签 span（t）与状态组件（o），Reference sheet 与 Updated 为同一行兄弟元素的原文。这里是完成状态；设置页和 GitHub 的时间字段继续沿用“更新时间”。"
+  },
+  {
+    "source": "Never",
+    "translation": "从未使用",
+    "precedingText": "Last used",
+    "note": "主任务按实际 account-pool 的 dl/dt/dd 结构补充：dd 只匹配紧邻前一个 dt 的原文，避免与同一 dl 的 Usage refreshed 混用。"
+  },
+  {
+    "source": "Never",
+    "translation": "从未刷新",
+    "precedingText": "Usage refreshed",
+    "note": "同一 account-pool 定义列表中的用量记录，匹配紧邻的 dt，不以整个列表中出现某标签判断。"
+  }
+]

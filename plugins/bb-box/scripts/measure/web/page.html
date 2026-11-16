@@ -1,0 +1,171 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#222;overflow:hidden}#screen{position:relative;width:100vw;height:100vh}.absolute{position:absolute}.inset-0{inset:0}</style></head><body><div id="screen"></div>
+<script type="module">
+// One viewer of a desktop showing scene.html (060), through BB's server:
+// video (the panel's SelkiesSession) or VNC (noVNC at the panel's quality
+// 2). The page's viewport is the desktop's size, so a pixel here is one of
+// the desktop's. Every frame drawn is logged: the red block's left edge as
+// the median of 40 rows down its height, how far the rows' edges spread,
+// which is a torn frame's mark, and the key square's colour. And where the
+// scrolled list's rows change colour down a blank column of it: its rows are
+// 20 pixels and alternate two colours, so in a whole frame every change is
+// at one place in 20; a frame with two scroll positions in it has two.
+import "./client.js";
+const q = new URLSearchParams(location.search);
+const kind = q.get("kind"), s = Number(q.get("scale") ?? 1);
+// Every 8 pixels down the block, whose left 16 pixels are red on every row.
+const rows = Array.from({ length: 40 }, (_, i) => Math.round((204 + i * 8) * s));
+const key = [Math.round(innerWidth - 50 * s), Math.round(innerHeight - 50 * s)];
+// The list's blank column, right of its rows' text and left of its scroll bar, above where a taskbar may be, and its
+// rows' height.
+const listColumn = { x: Math.round(1060 * s), y: Math.round(502 * s), h: Math.round(240 * s), row: 20 * s };
+window.log = []; window.moves = []; window.presses = []; window.bytes = []; window.rowsLog = [];
+const OW = WebSocket;
+// A real WebSocket, counted: noVNC checks its socket's own prototype, which a subclass's lacks.
+window.WebSocket = Object.assign(function (...a) { const socket = new OW(...a); socket.addEventListener("message", (e) => window.bytes.push([performance.now(), e.data.byteLength ?? e.data.size ?? e.data.length ?? 0])); return socket; }, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3, prototype: OW.prototype });
+Element.prototype.setPointerCapture = function () {};
+let canvas = null, ctx = null;
+const edge = (y) => {
+  const row = ctx.getImageData(0, y, Math.min(canvas.width, Math.round(1400 * s)), 1).data;
+  return redFrom(row, 0);
+};
+const redFrom = (data, start) => {
+  const width = Math.round(1400 * s);
+  for (let x = 0; x < width; x++) { const i = start + x * 4; if (data[i] > 150 && data[i + 1] < 90 && data[i + 2] < 90) return x; }
+  return -1;
+};
+// Each frame's rows and the key's pixel are copied into a small canvas, then read back at once: one readback a frame, as
+// one for each row of a 4K canvas stalls the page, and with it the drag it drives.
+let strip = null, stripCtx = null;
+const sample = () => {
+  if (!canvas) return;
+  ctx ??= canvas.getContext("2d", { willReadFrequently: true });
+  const width = Math.min(canvas.width, Math.round(1400 * s));
+  if (!strip) { strip = new OffscreenCanvas(Math.round(1400 * s), rows.length + 1); stripCtx = strip.getContext("2d", { willReadFrequently: true }); }
+  rows.forEach((y, i) => stripCtx.drawImage(canvas, 0, y, width, 1, 0, i, width, 1));
+  stripCtx.drawImage(canvas, key[0], key[1], 1, 1, 0, rows.length, 1, 1);
+  const data = stripCtx.getImageData(0, 0, strip.width, strip.height).data;
+  const edges = rows.map((_, i) => redFrom(data, i * strip.width * 4)).filter((x) => x >= 0).sort((a, b) => a - b);
+  const median = edges.length ? edges[edges.length >> 1] : -1;
+  window.log.push([performance.now(), median, edges.length ? edges.at(-1) - edges[0] : 0, data[rows.length * strip.width * 4]]);
+  sampleRows();
+};
+// The places, in 20, where the list's rows change colour down its column: one in a whole frame, two in a torn one.
+let column = null, columnCtx = null;
+const sampleRows = () => {
+  if (canvas.height < listColumn.y + listColumn.h) return;
+  if (!column) { column = new OffscreenCanvas(1, listColumn.h); columnCtx = column.getContext("2d", { willReadFrequently: true }); }
+  columnCtx.drawImage(canvas, listColumn.x, listColumn.y, 1, listColumn.h, 0, 0, 1, listColumn.h);
+  const data = columnCtx.getImageData(0, 0, 1, listColumn.h).data;
+  const light = (y) => 0.299 * data[y * 4] + 0.587 * data[y * 4 + 1] + 0.114 * data[y * 4 + 2] > 238;
+  const phases = [];
+  for (let y = 1; y < listColumn.h; y++) if (light(y) !== light(y - 1)) phases.push((y + listColumn.y) % listColumn.row);
+  // Places within 2 pixels of each other, round the 20, are one place.
+  const places = [];
+  for (const phase of phases.sort((a, b) => a - b)) {
+    const near = places.find((place) => Math.min(Math.abs(place - phase), listColumn.row - Math.abs(place - phase)) <= 2 * s);
+    if (near === undefined) places.push(phase);
+  }
+  window.rowsLog.push([performance.now(), places.length, phases.length]);
+};
+const screen = document.getElementById("screen");
+if (kind === "video") {
+  const draw = CanvasRenderingContext2D.prototype.drawImage;
+  CanvasRenderingContext2D.prototype.drawImage = function (image, ...rest) { const out = draw.call(this, image, ...rest); if (typeof VideoFrame !== "undefined" && image instanceof VideoFrame) { canvas = this.canvas; queueMicrotask(sample); } return out; };
+  // ws: a stream server reached directly, to test one without BB's server.
+  window.session = new SelkiesSession(q.get("ws") ?? `ws://${location.host}/bb?box=${q.get("box")}&viewer=${q.get("viewer")}&stream=selkies`);
+  screen.appendChild(window.session.element);
+  window.connected = () => window.session.connection.state === "connected";
+  window.control = () => window.session.setControl(true, false);
+  window.target = () => window.session.element.querySelector("canvas");
+} else {
+  const rfb = new RFB(screen, `ws://${location.host}/bb?box=${q.get("box")}&viewer=${q.get("viewer")}`, { shared: true });
+  rfb.qualityLevel = Number(q.get("quality") || 2); rfb.scaleViewport = true; rfb.viewOnly = true;
+  let ready = false;
+  // As the panel does for a box whose display says refresh "viewer" (wayvnc, QEMU): ask for a still area again losslessly.
+  if (q.get("refresh") === "viewer") refreshLosslessly(rfb);
+  rfb.addEventListener("connect", () => { ready = true; canvas = rfb._canvas; const d = rfb._display; const f = d.flip.bind(d); d.flip = (...a) => { const out = f(...a); sample(); return out; }; });
+  window.rfb = rfb;
+  // The RFB encodings the server used, by number, rectangles of each: 50 is Open H.264, which noVNC asks for first.
+  window.encodings = {};
+  const handleRect = rfb._handleRect.bind(rfb);
+  rfb._handleRect = () => { const done = handleRect(); if (done) window.encodings[rfb._FBU.encoding] = (window.encodings[rfb._FBU.encoding] ?? 0) + 1; return done; };
+  window.connected = () => ready;
+  window.control = () => { rfb.viewOnly = false; };
+  window.target = () => rfb._canvas;
+}
+const pointer = (type, x, y, buttons) => {
+  const init = { clientX: x, clientY: y, button: type.endsWith("move") ? -1 : 0, buttons, bubbles: true, cancelable: true, pointerId: 1, pointerType: "mouse", isPrimary: true };
+  if (kind === "video") window.target().dispatchEvent(new PointerEvent(type, init));
+  else window.target().dispatchEvent(new MouseEvent(type.replace("pointer", "mouse"), { ...init, button: 0 }));
+};
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const until = (at) => wait(Math.max(0, at - performance.now()));
+window.click = async (x, y) => { pointer("pointermove", x, y, 0); await wait(80); pointer("pointerdown", x, y, 1); await wait(80); pointer("pointerup", x, y, 0); };
+// Drags the block from its middle, `step` desktop pixels a move, 60 moves a second, 400 CSS pixels right and back.
+window.drag = async (seconds) => {
+  const x0 = Math.round(340 * s), y0 = Math.round(Number(q.get("dragY") || 360) * s), step = Math.round(8 * s), span = Math.round(400 * s);
+  pointer("pointermove", x0, y0, 0); await wait(150); pointer("pointerdown", x0, y0, 1); await wait(150);
+  const start = performance.now(); let n = 0, x = x0, dir = 1;
+  while (performance.now() - start < seconds * 1000) {
+    x += dir * step; if (x >= x0 + span || x <= x0) dir = -dir;
+    pointer("pointermove", x, y0, 1); window.moves.push([performance.now(), x - x0]); n++;
+    await until(start + (n * 1000) / 60);
+  }
+  pointer("pointerup", x, y0, 0);
+};
+window.press = () => {
+  window.presses.push(performance.now());
+  const t = window.target();
+  for (const type of ["keydown", "keyup"]) t.dispatchEvent(new KeyboardEvent(type, { key: "x", code: "KeyX", keyCode: 88, which: 88, bubbles: true, cancelable: true }));
+};
+// Wheel notches over the list, 20 a second, with a key every 400 ms.
+window.scroll = async (seconds) => {
+  const x = Math.round(920 * s), y = Math.round(650 * s);
+  pointer("pointermove", x, y, 0); await wait(100);
+  const start = performance.now(); let n = 0, next = start + 200;
+  while (performance.now() - start < seconds * 1000) {
+    window.target().dispatchEvent(new WheelEvent("wheel", { clientX: x, clientY: y, deltaY: 100, deltaMode: 0, bubbles: true, cancelable: true }));
+    n++; if (performance.now() >= next) { window.press(); next += 400; }
+    await until(start + (n * 1000) / 20);
+  }
+};
+// SSIM against ref.png, the box's own lossless screenshot, in 8x8 windows,
+// the mean of the red, green and blue channels' so that colour lost to
+// 4:2:0 counts: the fixed text, the coloured text, and the coloured text in
+// the block where the block is now, which is at its place in ref.png
+// moved by the block's edge.
+const REGIONS = { text: [640, 200, 560, 260], colour: [100, 560, 480, 220], moving: [116, 216, 448, 288] };
+let refImage = null;
+const channels = (g, src, sx, sy, w, h) => {
+  g.clearRect(0, 0, w, h); g.drawImage(src, sx, sy, w, h, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h).data;
+  return [0, 1, 2].map((c) => { const out = new Float64Array(w * h); for (let i = 0; i < w * h; i++) out[i] = d[i * 4 + c]; return out; });
+};
+const ssimOf = (a, b, w, h) => {
+  const C1 = (0.01 * 255) ** 2, C2 = (0.03 * 255) ** 2; let sum = 0, n = 0;
+  for (let by = 0; by + 8 <= h; by += 8) for (let bx = 0; bx + 8 <= w; bx += 8) {
+    let ma = 0, mb = 0; for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) { ma += a[(by + j) * w + bx + i]; mb += b[(by + j) * w + bx + i]; }
+    ma /= 64; mb /= 64; let va = 0, vb = 0, cov = 0;
+    for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) { const p = a[(by + j) * w + bx + i] - ma, r = b[(by + j) * w + bx + i] - mb; va += p * p; vb += r * r; cov += p * r; }
+    va /= 63; vb /= 63; cov /= 63;
+    sum += ((2 * ma * mb + C1) * (2 * cov + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2)); n++;
+  }
+  return sum / n;
+};
+window.ssim = async (name = "text") => {
+  if (!refImage) { refImage = new Image(); refImage.src = "ref.png"; await refImage.decode(); }
+  ctx ??= canvas.getContext("2d", { willReadFrequently: true });
+  const [x, y, full, h] = REGIONS[name].map((v) => Math.round(v * s));
+  // The moving region is read where the block's edge is now, in the same frame, and only left of the text panel, which covers the block.
+  const dx = name === "moving" ? Math.max(0, edge(rows[20]) - Math.round(100 * s)) : 0;
+  const w = name === "moving" ? Math.min(full, Math.round(640 * s) - x - dx) : full;
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  const a = channels(g, canvas, x + dx, y, w, h), b = channels(g, refImage, x, y, w, h);
+  const value = (ssimOf(a[0], b[0], w, h) + ssimOf(a[1], b[1], w, h) + ssimOf(a[2], b[2], w, h)) / 3;
+  // With the mean absolute difference in levels and the share of values more than 16 levels out, so that an SSIM near 1 can be checked.
+  let mad = 0, off = 0; for (let c = 0; c < 3; c++) for (let i = 0; i < w * h; i++) { const d = Math.abs(a[c][i] - b[c][i]); mad += d; if (d > 16) off++; }
+  return { ssim: Math.round(value * 10000) / 10000, mad: Math.round((mad / (3 * w * h)) * 100) / 100, off: Math.round((off / (3 * w * h)) * 10000) / 10000, dx, w };
+};
+window.ready = true;
+</script></body></html>

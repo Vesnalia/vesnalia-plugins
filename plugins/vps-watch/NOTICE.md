@@ -1,0 +1,17 @@
+# VPS Watch Lite
+
+Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+
+- Оригинальный автор: Artur Karapetyan (https://github.com/architawr)
+- Исходный репозиторий: https://github.com/architawr/bb-plugin-vps-watch
+- Каталог в репозитории: (корень)
+- Версия: v0.1.0, коммит 682a3c50833f565b904df1e1c2bf5e786a9547b5
+- Ссылка на исходник: https://github.com/architawr/bb-plugin-vps-watch/tree/682a3c50833f565b904df1e1c2bf5e786a9547b5
+- Лицензия: MIT (текст в файле LICENSE рядом)
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

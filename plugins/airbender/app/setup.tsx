@@ -1,0 +1,1617 @@
+// app/setup.tsx — getting a folder ready for Airbender.
+//
+// What: the setup steps worked out from the backend's status, the hook that
+// loads the status and remembers skipped steps, the card in the middle of the
+// tab, the "more" menu in the toolbar, and the confirmation dialog.
+//
+// Why: when something the tab needs is missing (the beads program, beads in
+// the folder, Airbender's instructions for agents) the tab offers to set it
+// up instead of leaving the user at a dead end (bead-bb-80e). Beads' own
+// setup for a coding agent is no longer among them: its instructions
+// contradict the workflow, and the instructions step takes them out
+// (bead-bb-c9l.8).
+//
+// Design notes:
+// - One list of steps (setupSteps) drives both the card and the menu, so they
+//   cannot disagree.
+// - The status is asked for on every refresh; that is cheap because the
+//   backend stops checking a condition once it is met.
+
+import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+import type {
+  IssuesResult,
+  SetupStatus,
+  rpcContract,
+} from "../server/contract.ts";
+import { CHANGED_CHANNEL } from "../shared/constants.ts";
+import type { SetupAction } from "../shared/constants.ts";
+import { MenuPanel, useMenu } from "./menus.tsx";
+import type { Scope } from "./use-issues.ts";
+import { WORKFLOW_CHOICES } from "../shared/workflows.ts";
+import type { WorkflowId } from "../shared/workflows.ts";
+
+/**
+ * One thing that can be set up for a folder (bead-bb-80e), worked out from
+ * the server's SetupStatus for both the setup card and the "more" menu.
+ */
+export interface SetupStep {
+  /** Unique per step; also what "Skip" remembers. E.g. "rules". */
+  key: string;
+  action: SetupAction;
+  /** Nothing today; kept for a step that carries a fixed choice. */
+  option: string | null;
+  /** The button and menu label. */
+  label: string;
+  /** One line on what it is for, shown on the card. */
+  why: string;
+  /** Not yet in place, and possible right now: offered on the card. */
+  needed: boolean;
+  /**
+   * The step updates something that was set up before, where nothing is
+   * missing: the card then says the folder is set up and has an update.
+   */
+  update?: boolean;
+  /**
+   * Why it cannot be started, in a word or two ("done", "install beads
+   * first"); null when it can. The menu greys the item and shows this.
+   */
+  blocked: string | null;
+  /**
+   * For a step whose words come from elsewhere (the issue sync's): what
+   * the confirmation says it does, an opening line and points. Text in
+   * backticks is a command or a file name.
+   */
+  explain?: { lead: string; points: string[] };
+  /**
+   * Would be offered, but this folder is not where Airbender is set up (a
+   * worktree, another branch; bead-bb-25p): the card says where to go.
+   */
+  heldBack?: boolean;
+}
+
+/**
+ * The steps that change the repository, so are only offered from its main
+ * folder on the main branch (bead-bb-25p). Installing beads or bend is for
+ * the whole computer; signing in to GitHub is the owner's.
+ */
+const CHANGES_REPOSITORY: readonly SetupAction[] = ["tracker", "init", "fetch", "rules", "facts", "commit", "sync"];
+
+/** A sentence with its `backticked` parts in the code font. */
+function Marked({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("`").map((part, index) =>
+        index % 2 === 1 ? (
+          <span key={index} className="font-mono">
+            {part}
+          </span>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
+/** Whether the instructions step has something of beads' to take out. */
+/**
+ * Whether the rules for agents in the folder were changed by hand and are
+ * from an earlier version than the current one: the owner then chooses
+ * between the current rules and their own (bead-bb-c9l.10).
+ */
+const rulesBehind = (status: SetupStatus | null): boolean =>
+  status?.instructions.rules === "behind" || status?.instructions.claudeRules === "behind";
+
+/**
+ * Whether the folder has a CLAUDE.md that is a file of its own with none of
+ * Airbender's rules in it: the owner then says what it is to be, a link to
+ * AGENTS.md or a file with the same rules (bead-bb-c9l.12).
+ */
+const claudeOpen = (status: SetupStatus | null): boolean =>
+  status?.instructions.claudeFile === "file" && status.instructions.claudeRules === "none";
+
+/**
+ * The mark of a tracker, for the line that says which one a project uses.
+ *
+ * Drawn here, like the tab's other small marks: BB's icon set draws a
+ * lightning bolt for a name it does not have. GitHub's is its own mark.
+ * Beads has none that people know, so it gets a plain one of ours: three
+ * beads on a thread. Any other tracker gets no mark, and takes no room.
+ *
+ * @param name The tracker's name, "github" or "beads".
+ */
+function TrackerIcon({ name, className }: { name: string; className?: string }) {
+  if (name === "github") {
+    return (
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" className={className}>
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+      </svg>
+    );
+  }
+  if (name === "beads") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M1 12h22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="5.5" cy="12" r="3" fill="currentColor" />
+        <circle cx="12" cy="12" r="3" fill="currentColor" />
+        <circle cx="18.5" cy="12" r="3" fill="currentColor" />
+      </svg>
+    );
+  }
+  return null;
+}
+
+/**
+ * Whether the folder has Airbender's rules already and they are only not
+ * the current ones: an earlier version of ours, or the owner's own from an
+ * earlier version. The step is then an update, and is said as one: the
+ * owner set the folder up before, and "get this folder ready" read as if
+ * that had been lost (bead-bb-c9l.10).
+ */
+const rulesUpdate = (status: SetupStatus | null) =>
+  status?.instructions.rules === "old" ||
+  status?.instructions.rules === "behind" ||
+  // The rules are in place and only something beside them is not: an
+  // earlier version in CLAUDE.md, or import lines to take out.
+  ((status?.instructions.rules === "current" || status?.instructions.rules === "edited") &&
+    (status.instructions.claudeRules === "old" ||
+      status.instructions.claudeRules === "behind" ||
+      status.instructions.imports));
+
+/**
+ * Whether what is left to settle for the instructions is only what the
+ * folder's CLAUDE.md is to be: the rules themselves are in place.
+ */
+const onlyClaudeOpen = (status: SetupStatus | null) =>
+  claudeOpen(status) &&
+  !rulesUpdate(status) &&
+  (status?.instructions.rules === "current" || status?.instructions.rules === "edited");
+
+const replacesBeads = (status: SetupStatus | null) =>
+  status !== null &&
+  (status.instructions.beadsBlocks.length > 0 ||
+    status.instructions.beadsHooks.length > 0 ||
+    status.instructions.beadsFiles.length > 0);
+
+/**
+ * All that is left of beads' agent setup is files that do nothing now
+ * (bead-bb-cnv): said as such, not as instructions that steer the agents.
+ */
+const onlyBeadsFiles = (status: SetupStatus | null) =>
+  status !== null &&
+  status.instructions.beadsBlocks.length === 0 &&
+  status.instructions.beadsHooks.length === 0 &&
+  status.instructions.beadsFiles.length > 0;
+
+/** The setup steps for a folder, in the order they make sense. */
+function setupSteps(status: SetupStatus): SetupStep[] {
+  const running = status.running === null ? null : "running…";
+  // Without bend the folder cannot be asked whether it has issues, so the
+  // steps that depend on that answer wait for it.
+  const bendReady = status.bend === "ready";
+  // With GitHub issues there is no database to make: the step is signing in.
+  const onGitHub = status.tracker === "github";
+  const steps: SetupStep[] = [
+    {
+      key: "tracker",
+      action: "tracker",
+      option: null,
+      label: "Choose where the issues are kept",
+      why:
+        status.foreign !== null
+          ? `${foreignWords(status.foreign)} This looks like someone else's project: Airbender is for repositories of your own.`
+          : "Nothing says yet where this repository's issues are kept: in beads, a database inside the repository, or in GitHub issues.",
+      needed: bendReady && !status.trackerChosen,
+      blocked: status.trackerChosen
+        ? (status.tracker ?? "chosen")
+        : !bendReady
+          ? "install bend first"
+          : running,
+    },
+    {
+      key: "install",
+      action: "install",
+      option: null,
+      label: "Install beads",
+      why: "The beads program is not on this computer. The tab needs it to read and change issues.",
+      // It is bend that installs it, so bend comes first.
+      needed: !status.bdInstalled && status.trackerChosen && bendReady,
+      blocked: status.bdInstalled
+        ? onGitHub
+          ? "not needed"
+          : "installed"
+        : bendReady && !status.trackerChosen
+          ? "choose the tracker first"
+          : status.installMethods.length === 0 && bendReady
+            ? "no installer found"
+            : !bendReady
+              ? "install bend first"
+              : running,
+    },
+    {
+      key: "bend",
+      action: "bend",
+      option: null,
+      label: status.bendBuild.method === "download"
+        ? status.bend === "old" ? "Update bend" : "Install bend"
+        : status.bend === "old" ? "Build bend again" : "Build bend",
+      // Where it cannot be built the reason is said here, in the step's
+      // own words: a step that cannot be started opens no confirmation.
+      why:
+        (status.bend === "old"
+          ? "The bend program on this computer is older than this version of Airbender needs. The tab reads and changes issues with it."
+          : "The bend program is not on this computer. The tab reads and changes issues with it.") +
+        (status.bend !== "ready" && status.bendBuild.command === null
+          ? ` ${status.bendBuild.unavailable ?? ""}`
+          : ""),
+      needed: status.bend !== "ready",
+      blocked:
+        status.bend === "ready"
+          ? "installed"
+          : status.bendBuild.command === null
+            ? "cannot be installed here"
+            : running,
+      explain: {
+        lead:
+          status.bendBuild.command === null
+            ? (status.bendBuild.unavailable ?? "bend cannot be installed here.")
+            : status.bendBuild.method === "download"
+              ? "Downloads bend from this Airbender version's GitHub release, verifies its SHA-256 checksum, and installs it in your own commands folder. Go is not required:"
+              : "Builds bend from the source that comes with Airbender, and puts it in your own commands folder:",
+        points:
+          status.bendBuild.command === null
+            ? []
+            : [
+                `\`${status.bendBuild.command}\``,
+                "Nothing in the repository changes.",
+                "bend is one program with nothing beside it; you can also run it yourself in a terminal: `bend --help`.",
+              ],
+      },
+    },
+    // A folder with no issues gets one of two steps: fetch them, where
+    // the folder's issue sync says its remote already holds them (a fresh
+    // clone, bead-bb-0bz), or start empty. What the fetch step is called
+    // and says is the sync source's, not written here: another tracker's
+    // differs (bead-bb-6a9).
+    status.syncSteps.fetch !== null && !status.folderReady
+      ? {
+          key: "fetch",
+          action: "fetch" as const,
+          option: null,
+          label: status.syncSteps.fetch.label,
+          why: status.syncSteps.fetch.why,
+          needed: status.bdInstalled && bendReady,
+          blocked: !status.bdInstalled
+            ? "install beads first"
+            : !bendReady
+              ? "install bend first"
+              : running,
+          explain: status.syncSteps.fetch.explain,
+        }
+      : {
+          key: "init",
+          action: "init" as const,
+          option: null,
+          label: onGitHub ? "Sign in to GitHub" : "Set up beads in this folder",
+          // Where it cannot be done, the reason is said here: a step that
+          // cannot be started opens no confirmation to say it in.
+          why:
+            status.issuesBlocked !== null && status.bdInstalled && status.trackerChosen
+              ? status.issuesBlocked
+              : onGitHub
+                ? "There is no GitHub login on this computer. Issues on GitHub are read and changed as you."
+                : "This folder has no issue database yet. Setting it up lets you track issues here.",
+          needed:
+            status.bdInstalled && bendReady && status.trackerChosen && !status.folderReady,
+          blocked: status.folderReady
+            ? "done"
+            : !bendReady
+              ? "install bend first"
+              : !status.trackerChosen
+                ? "choose the tracker first"
+                : !status.bdInstalled
+                  ? "install beads first"
+                  : status.issuesBlocked !== null
+                    ? "not possible yet"
+                    : running,
+          // Signing in has words of its own; setting beads up keeps the
+          // confirmation written for it.
+          ...(onGitHub
+            ? {
+                explain: {
+                  lead: "Runs `gh auth login` in a terminal.",
+                  points: [
+                    "GitHub's own program asks how you want to sign in and opens a browser.",
+                    "Instead you can set a token yourself in the environment, as `GH_TOKEN`.",
+                  ],
+                },
+              }
+            : {}),
+        },
+    {
+      key: "rules",
+      action: "rules",
+      option: null,
+      // Named for what it will do here: a repository set up the old way
+      // has beads' instructions to take out, a new one only gets ours.
+      label: onlyBeadsFiles(status)
+        ? "Remove what beads' agent setup left"
+        : replacesBeads(status)
+        ? "Replace beads' instructions with Airbender's"
+        : rulesUpdate(status)
+          ? "Update Airbender's instructions for agents"
+          : onlyClaudeOpen(status)
+            ? "Decide what CLAUDE.md is here"
+            : "Add Airbender's instructions for agents",
+      // An update, not a first setup: said differently on the card.
+      update: !replacesBeads(status) && (rulesUpdate(status) || onlyClaudeOpen(status)),
+      why: onlyBeadsFiles(status)
+        ? "Beads' setup for the coding agents left files here that do nothing now. Airbender's instructions replace that setup, so they go."
+        : replacesBeads(status)
+        ? "Beads wrote instructions of its own into this folder. They tell agents to close issues themselves, which is the opposite of how this tab works. This takes them out and leaves Airbender's."
+        : rulesBehind(status) && status.instructions.rules !== "behind"
+          ? "The rules for agents in CLAUDE.md were changed by hand here, and Airbender's own rules have changed since. Agents that read that file work by the earlier rules until you choose."
+        : rulesBehind(status)
+          ? `The rules for agents in AGENTS.md were changed by hand here, and Airbender's own rules have changed since (${status.instructions.rulesVersion > 0 ? `yours are from version ${status.instructions.rulesVersion}` : "yours name no version"}, the current ones are version ${status.instructions.currentVersion}). Agents here work by the earlier rules until you choose.`
+          : onlyClaudeOpen(status)
+            ? "This folder has a CLAUDE.md of its own beside AGENTS.md, where Airbender's rules are. Choose what it is to be: a link to AGENTS.md, so there is one file of rules for every agent, or a file that holds the same rules."
+          : status.instructions.rules !== "old" && rulesUpdate(status)
+            ? "Something an earlier setup wrote for agents here is no longer used, or is from an earlier version. Nothing is wrong; this brings it up to date."
+          : status.instructions.rules === "old"
+            ? `Airbender's rules for agents have changed since this folder was set up: it has ${status.instructions.rulesVersion > 0 ? `version ${status.instructions.rulesVersion}` : "an earlier version"}, the current ones are version ${status.instructions.currentVersion}. Nothing is wrong here; this brings them up to date.`
+            : "The rules this tab's buttons rely on: agents take an issue one step at a time, leave closing to you, and commit when you accept it.",
+      needed: status.folderReady && !status.rulesPresent,
+      blocked: status.rulesPresent
+        ? "done"
+        : !status.folderReady
+          ? "set up the folder first"
+          : running,
+    },
+    // Facts saved in beads, which agents no longer see at the start of a
+    // session: offered once, for the owner to choose which go to the facts
+    // file. Listed only while there are any to choose from.
+    ...(status.savedFacts.length === 0
+      ? []
+      : [
+          {
+            key: "facts",
+            action: "facts" as const,
+            option: null,
+            label: "Carry saved facts over",
+            why: `Beads holds ${status.savedFacts.length === 1 ? "a saved fact" : `${status.savedFacts.length} saved facts`} that agents used to be shown when a session started. Choose which go into FACTS.md, where agents read them now.`,
+            needed: status.folderReady && status.rulesPresent,
+            blocked: !status.rulesPresent ? "add the instructions first" : running,
+          },
+        ]),
+    // Switching the issue sync on, while the source offers it: listed
+    // only then, since what it is called is the source's to say. Once on,
+    // the "Sync log…" row above the steps says how it stands.
+    ...(status.syncSteps.on === null
+      ? []
+      : [
+          {
+            key: "sync",
+            action: "sync" as const,
+            option: null,
+            label: status.syncSteps.on.label,
+            why: status.syncSteps.on.why,
+            needed: status.folderReady,
+            blocked: !status.folderReady ? "set up the folder first" : running,
+            explain: status.syncSteps.on.explain,
+          },
+        ]),
+    // Committing the files setup wrote, while there are any (bead-bb-25p):
+    // said in bend's words, like the sync's steps.
+    ...(status.commitStep === null
+      ? []
+      : [
+          {
+            key: "commit",
+            action: "commit" as const,
+            option: null,
+            label: status.commitStep.label,
+            why: status.commitStep.why,
+            needed: true,
+            blocked: running,
+            explain: status.commitStep.explain,
+          },
+        ]),
+  ];
+  if (status.notHere === null) return steps;
+  // Not the place to set Airbender up: what would change the repository is
+  // held back, and the card says where to go instead.
+  return steps.map((step) =>
+    !CHANGES_REPOSITORY.includes(step.action) || !step.needed
+      ? step
+      : { ...step, needed: false, heldBack: true, blocked: "only from the main folder, on main" },
+  );
+}
+
+/**
+ * Loads what is and is not set up for the tab's folder, and remembers which
+ * steps the user skipped.
+ *
+ * Asked for again whenever the issue list is: when its state changes, on
+ * every change notice, and when the user presses Refresh or opens the
+ * "more" menu. That is cheap because the server stops checking a condition
+ * once it is met; only what is still missing is looked at again.
+ *
+ * Skips are kept per folder in this browser's local storage, like the
+ * filter: skipping is a view preference ("stop showing me this"), and a
+ * skipped step stays available in the "more" menu.
+ *
+ * @returns `status` (null until the first answer), `reload`, the skipped
+ *   step keys and `skip` to add one.
+ */
+export function useSetup(scope: Scope, state: IssuesResult["state"] | null) {
+  const rpc = useRpc<typeof rpcContract>();
+  const { threadId, projectId } = scope;
+  const [status, setStatus] = useState<SetupStatus | null>(null);
+  const reload = useCallback(
+    // The promise is given back so that a caller can wait for the fresh
+    // answer (the card, to stop saying "applying").
+    () =>
+      rpc.call("setup_status", { threadId, projectId }).then(setStatus, () => {
+        // Without an answer nothing is offered; the list's own message stands.
+      }),
+    [rpc, threadId, projectId],
+  );
+  useEffect(() => {
+    if (state !== null) void reload();
+  }, [reload, state]);
+  useRealtime(CHANGED_CHANNEL, reload);
+  useEffect(() => {
+    // Like the issue list: coming back to BB is when things have changed.
+    window.addEventListener("focus", reload);
+    return () => window.removeEventListener("focus", reload);
+  }, [reload]);
+  const storageKey =
+    status?.path == null ? null : `bb-plugin-airbender:setup-skipped:${status.path}`;
+  const [skipped, setSkipped] = useState<string[]>([]);
+  useEffect(() => {
+    if (storageKey === null) return;
+    try {
+      const stored: unknown = JSON.parse(
+        window.localStorage.getItem(storageKey) ?? "[]",
+      );
+      setSkipped(
+        Array.isArray(stored)
+          ? stored.filter((key): key is string => typeof key === "string")
+          : [],
+      );
+    } catch {
+      setSkipped([]);
+    }
+  }, [storageKey]);
+  const skip = (key: string) => {
+    const next = skipped.includes(key) ? skipped : [...skipped, key];
+    setSkipped(next);
+    if (storageKey === null) return;
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      // Storage full or disabled: the skip lasts until the tab is reopened.
+    }
+  };
+  return { status, reload, skipped, skip };
+}
+
+/**
+ * The setup card, in the middle of the tab: the steps that are missing and
+ * were not skipped, each with its button and a Skip.
+ *
+ * The user's rule: what is missing is offered here, in the centre, not
+ * tucked into a menu; pressing Skip takes a step off the card, and from
+ * then on it is only in the "more" menu. Also shown here: the terminal run
+ * in progress, and a run that failed, with the last lines it printed, so a
+ * failure can be read without finding the terminal.
+ *
+ * Draws nothing when there is nothing to say.
+ */
+export function SetupCard({
+  status,
+  skipped,
+  onSkip,
+  onStart,
+  applying = null,
+}: {
+  /**
+   * The key of the step that was confirmed and is being applied right now;
+   * null when none is. That step shows a spinner in place of its buttons,
+   * and the others cannot be started meanwhile: the owner had pressed, and
+   * the card went on looking as if nothing had happened (bead-bb-c9l.12).
+   */
+  applying?: string | null;
+  status: SetupStatus;
+  skipped: string[];
+  onSkip: (key: string) => void;
+  /** Opens the confirmation for a step. */
+  onStart: (step: SetupStep) => void;
+}) {
+  const all = setupSteps(status);
+  const offered = all.filter(
+    (step) => step.needed && !skipped.includes(step.key),
+  );
+  // Something to set up, held back here (bead-bb-25p): said instead.
+  const heldBack =
+    status.notHere !== null &&
+    all.some((step) => step.heldBack === true && !skipped.includes(step.key))
+      ? status.notHere
+      : null;
+  const failed =
+    status.lastRun !== null && status.lastRun.exitCode !== 0
+      ? status.lastRun
+      : null;
+  if (offered.length === 0 && status.running === null && failed === null && heldBack === null) {
+    return null;
+  }
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+      {heldBack === null ? null : (
+        <div className="space-y-1.5">
+          <div className="text-sm font-medium">Airbender's setup isn't done from here</div>
+          <p className="text-sm text-muted-foreground">{heldBack}</p>
+        </div>
+      )}
+      {offered.length === 0 ? null : (
+        <div className="text-sm font-medium">
+          {/* Nothing but updates to offer: the folder is ready, and is
+              said to be. */}
+          {offered.every((step) => step.update === true)
+            ? "This folder is set up. Airbender has an update for it"
+            : "Get this folder ready for Airbender"}
+        </div>
+      )}
+      {status.running === null ? null : (
+        <p role="status" className="flex items-center gap-2 text-sm">
+          <Icon name="Loading" className="size-4 animate-spin" />
+          <span>
+            Running in a terminal:{" "}
+            <span className="font-medium">{status.running.title}</span>. Open
+            BB's terminal to watch it or to answer its questions.
+          </span>
+        </p>
+      )}
+      {failed === null ? null : (
+        <div role="alert" className="space-y-1 text-sm">
+          <p className="text-destructive">
+            "{failed.title}" did not finish
+            {failed.exitCode === null ? "" : ` (exit code ${failed.exitCode})`}.
+            You can try again.
+          </p>
+          {failed.tail === "" ? null : (
+            <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded bg-muted p-2 font-mono text-xs">
+              {failed.tail}
+            </pre>
+          )}
+        </div>
+      )}
+      {offered.map((step) => (
+        <div key={step.key} className="space-y-1.5">
+          <p className="text-sm text-muted-foreground">{step.why}</p>
+          {applying === step.key ? (
+            // Being applied: said, in the place of the buttons, until the
+            // answer is back and the card is drawn anew from it.
+            <p role="status" className="flex h-8 items-center gap-2 text-sm">
+              <Icon name="Loading" className="size-4 animate-spin" />
+              <span>Applying: {step.label}…</span>
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                disabled={step.blocked !== null || applying !== null}
+                onClick={() => onStart(step)}
+              >
+                {step.label}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={applying !== null}
+                tip="Take this off the card. It stays in the menu at the top right."
+                onClick={() => onSkip(step.key)}
+              >
+                Skip
+              </Button>
+            </div>
+          )}
+          {step.blocked === null || step.blocked === "running…" ? null : (
+            <p className="text-xs text-muted-foreground">
+              Not possible here: {step.blocked}.
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The "more" menu at the right end of the toolbar: every setup step, so any
+ * of them can be started by hand, also after it was skipped on the card.
+ *
+ * A step that is already done, or cannot be done yet, is greyed out with
+ * the reason beside it (the user's rule), so the menu doubles as a view of
+ * what is in place.
+ *
+ * It also holds the choice of workflow for the repository (the user: "as a
+ * part of the menu ... because it's not gonna be often"), above the setup
+ * steps, with a tick on the one in use.
+ *
+ * @param workflow The workflow in use, or null when there is no folder with
+ *   beads to choose one for; the choice is then not shown.
+ * @param onChooseWorkflow Called with the choice the user picked.
+ */
+export function SetupMenu({
+  status,
+  onOpen,
+  onStart,
+  workflow,
+  onChooseWorkflow,
+  tracker,
+  onSwitchTracker,
+  onSyncGithub,
+  issueSync,
+}: {
+  status: SetupStatus | null;
+  /** Called when the menu opens, to fetch a fresh status. */
+  onOpen: () => void;
+  onStart: (step: SetupStep) => void;
+  workflow: WorkflowId | null;
+  onChooseWorkflow: (id: WorkflowId) => void;
+  /**
+   * The tracker the project's issues are kept in, for the line at the top
+   * of the menu: its name ("beads" or "github") and, for GitHub issues,
+   * the repository as "owner/name". Left out where none is chosen yet.
+   */
+  tracker?: { name: string; repository: string | null };
+  /**
+   * Opens the window that switches the tracker (bead-bb-c9l.18); left out
+   * where it cannot be switched now.
+   */
+  onSwitchTracker?: () => void;
+  /**
+   * Opens the "Import / export GitHub issues" window; left out where there are no
+   * issues to sync (no folder with beads).
+   */
+  onSyncGithub?: () => void;
+  /**
+   * How the issues' sync stands, for its row: the state in a word or two,
+   * a longer message when there is something to read, and the way to its
+   * log. Left out where there is no folder with issues.
+   */
+  issueSync?: { state: string; message: string | null; onLog: () => void };
+}) {
+  const { open, setOpen, root } = useMenu();
+  // The setup steps are folded away until asked for (bead-bb-c9l.21, the
+  // owner: "setup can be under chevron because we don't need it all the
+  // time ... it takes a lot of space"). Folded again each time the menu
+  // is opened anew. What is missing is still said on the folded row, and
+  // offered on the card in the middle of the tab.
+  const [showingSetup, setShowingSetup] = useState(false);
+  useEffect(() => {
+    if (!open) setShowingSetup(false);
+  }, [open]);
+  const steps = status === null || status.unavailable !== null ? [] : setupSteps(status);
+  const toDo = steps.filter((step) => step.needed).length;
+  return (
+    <div ref={root} className="relative shrink-0">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-8"
+        tip="Workflow and setup for this folder"
+        aria-label="Workflow and setup menu"
+        aria-expanded={open}
+        onClick={() => {
+          if (!open) onOpen();
+          setOpen((current) => !current);
+        }}
+      >
+        {/* Three dots, drawn here: BB's icon set has no "more" icon. */}
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+          className="size-4"
+        >
+          <circle cx="5" cy="12" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="19" cy="12" r="1.8" />
+        </svg>
+      </Button>
+      {open ? (
+        <MenuPanel className="w-80 max-w-[85vw]">
+          {/* Which tracker the project uses (bead-bb-c9l.21). First in the
+              menu, where the owner looks it up when they want to know; it
+              used to stand in the toolbar, in the path's own hand, and read
+              as part of the path. The switch to the other tracker is in
+              this same spot (bead-bb-c9l.18), as the owner placed it. */}
+          {tracker === undefined ? null : (
+            <>
+              <div className="flex items-start gap-2 px-2 py-1 text-sm">
+                <TrackerIcon
+                  name={tracker.name}
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                />
+                <span className="min-w-0 flex-1">
+                  This project uses{" "}
+                  {tracker.name === "github"
+                    ? "GitHub issues"
+                    : tracker.name === "beads"
+                      ? "beads issues"
+                      : `${tracker.name} issues`}
+                  {tracker.name !== "github" || tracker.repository === null ? null : (
+                    <a
+                      href={`https://github.com/${tracker.repository}/issues`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Open this repository's issues on github.com"
+                      className="block truncate font-mono text-xs text-muted-foreground underline-offset-2 hover:underline"
+                    >
+                      {tracker.repository}
+                    </a>
+                  )}
+                </span>
+                {/* The line height of the sentence beside it: smaller type
+                    alone would sit above or below its line. */}
+                {onSwitchTracker === undefined ? null : (
+                  <button
+                    type="button"
+                    className="shrink-0 rounded px-1.5 text-xs leading-5 text-muted-foreground underline-offset-2 hover:bg-state-hover hover:text-foreground hover:underline"
+                    title={`Keep this project's issues in ${tracker.name === "github" ? "beads" : "GitHub issues"} instead`}
+                    onClick={() => {
+                      setOpen(false);
+                      onSwitchTracker();
+                    }}
+                  >
+                    Switch…
+                  </button>
+                )}
+              </div>
+              {/* The sync's row follows at once, in the same group: it
+                  is about the tracker (the owner: "sync should be the
+                  second menu item -- close to the tracker selection"). */}
+              {issueSync === undefined ? (
+                <div className="my-1 border-t border-border" />
+              ) : null}
+            </>
+          )}
+          {/* The issues' own sync with the repository's remote
+              (bead-bb-0bz): when it last happened, or what went wrong. Only
+              said here: syncing runs by itself, and the refresh button
+              asks for one (the user: "the rest is in the menu"). */}
+          {issueSync === undefined ? null : (
+            <>
+              {/* One row: the way to the sync log, with how the sync
+                  stands at its right, like a setup step's "done" (the
+                  user: "issue sync, it was synced one minute ago"). They
+                  were two rows, "Issue sync" with the state and "Sync
+                  log…" under it; the owner had them made one
+                  (bead-bb-c9l.18). Syncing runs by itself, and refresh
+                  asks for one, so the row does not start a sync. */}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  issueSync.onLog();
+                }}
+                className="flex w-full cursor-pointer items-baseline justify-between gap-3 rounded px-2 py-1 text-left text-sm hover:bg-state-hover"
+              >
+                <span className="min-w-0">Sync log…</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {issueSync.state}
+                </span>
+              </button>
+              {issueSync.message === null ? null : (
+                <p className="whitespace-pre-wrap px-2 pb-1 text-xs text-muted-foreground">
+                  {issueSync.message}
+                </p>
+              )}
+              <div className="my-1 border-t border-border" />
+            </>
+          )}
+          {workflow === null ? null : (
+            <>
+              <div className="px-2 pb-1 text-xs font-medium text-muted-foreground">
+                Workflow
+              </div>
+              {WORKFLOW_CHOICES.map((choice) => (
+                <button
+                  key={choice.id}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={choice.id === workflow}
+                  onClick={() => {
+                    setOpen(false);
+                    if (choice.id !== workflow) onChooseWorkflow(choice.id);
+                  }}
+                  className="flex w-full cursor-pointer items-start gap-2 rounded px-2 py-1 text-left text-sm hover:bg-state-hover"
+                >
+                  {/* The tick's place is kept on the other entry, so the
+                      two labels line up. */}
+                  <Icon
+                    name="Check"
+                    className={cn(
+                      "mt-0.5 size-4 shrink-0",
+                      choice.id !== workflow && "invisible",
+                    )}
+                  />
+                  <span className="min-w-0">
+                    {choice.label}
+                    <span className="block text-xs text-muted-foreground">
+                      {choice.hint}
+                    </span>
+                  </span>
+                </button>
+              ))}
+              <div className="my-1 border-t border-border" />
+            </>
+          )}
+          <button
+            type="button"
+            aria-expanded={showingSetup}
+            onClick={() => setShowingSetup((shown) => !shown)}
+            className="flex w-full cursor-pointer items-center gap-1 rounded px-2 py-1 text-left text-sm hover:bg-state-hover"
+          >
+            <Icon
+              name={showingSetup ? "ChevronDown" : "ChevronRight"}
+              className="size-4 shrink-0 text-muted-foreground"
+            />
+            <span className="min-w-0 flex-1">Setup</span>
+            {/* In a word, so that the folded row still says whether there
+                is anything to do. */}
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {status === null
+                ? "checking…"
+                : status.unavailable !== null
+                  ? ""
+                  : toDo === 0
+                    ? "all set"
+                    : `${toDo} to do`}
+            </span>
+          </button>
+          {!showingSetup ? null : status === null ? (
+            <p className="px-2 py-1 text-sm text-muted-foreground">Checking…</p>
+          ) : status.unavailable !== null ? (
+            <p className="px-2 py-1 text-sm text-muted-foreground">
+              {status.unavailable}
+            </p>
+          ) : (
+            steps.map((step) => (
+              <button
+                key={step.key}
+                type="button"
+                role="menuitem"
+                disabled={step.blocked !== null}
+                onClick={() => {
+                  setOpen(false);
+                  onStart(step);
+                }}
+                className="flex w-full cursor-pointer items-center justify-between gap-3 rounded py-1 pl-7 pr-2 text-left text-sm hover:bg-state-hover disabled:cursor-default disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
+              >
+                <span className="min-w-0">{step.label}</span>
+                {step.blocked === null ? null : (
+                  <span className="shrink-0 text-xs">{step.blocked}</span>
+                )}
+              </button>
+            ))
+          )}
+          {/* Copying issues between beads and GitHub issues (bead-bb-rh3).
+              Under Setup, with the steps: it is done once or twice in a
+              project's life, not day to day (bead-bb-c9l.21). Called
+              "import and export", not "sync": it used to stand beside
+              "Issue sync" under the name "Sync with GitHub", and the two
+              are different things. */}
+          {!showingSetup || onSyncGithub === undefined ? null : (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onSyncGithub();
+              }}
+              className="flex w-full cursor-pointer items-start rounded py-1 pl-7 pr-2 text-left text-sm hover:bg-state-hover"
+            >
+              {/* No line under it: the name says what it is (the owner:
+                  "It's already self descriptive"). */}
+              Import / export GitHub issues…
+            </button>
+          )}
+          {/* Where the plugin's settings are. In words, because a tab has
+              no way to open that page (asked of BB in get-bb/bb#5014); the
+              user asked to be directed there from here. */}
+          <div className="my-1 border-t border-border" />
+          <p className="px-2 py-1 text-xs text-muted-foreground">
+            Settings (background sizing and its model, the bd command, the
+            GitHub token): in BB under Tools, then Airbender.
+          </p>
+        </MenuPanel>
+      ) : null}
+    </div>
+  );
+}
+
+/** One answer to a decision: its value, its words, and what follows from it. */
+type Answer<T extends string> = readonly [value: T, label: string, hint: string];
+
+/**
+ * One thing the owner has to decide in the instructions step: a heading
+ * that names what it is about, what was found, and the answers.
+ *
+ * @param number Its place among the decisions; left out when it is the
+ *   only one, which needs no counting.
+ */
+function Decision<T extends string>({
+  number,
+  heading,
+  finding,
+  name,
+  answers,
+  chosen,
+  onChoose,
+}: {
+  number?: number;
+  heading: React.ReactNode;
+  finding: React.ReactNode;
+  name: string;
+  answers: readonly Answer<T>[];
+  chosen: T | null;
+  onChoose: (value: T) => void;
+}) {
+  return (
+    <section className="space-y-2">
+      <div>
+        <h4 className="flex items-baseline gap-2 text-sm font-medium">
+          {number === undefined ? null : (
+            <span className="text-muted-foreground">{number}</span>
+          )}
+          <span>{heading}</span>
+        </h4>
+        <p className="text-muted-foreground">{finding}</p>
+      </div>
+      <div className="space-y-1.5">
+        {answers.map(([value, label, hint]) => (
+          <label key={value} className="flex cursor-pointer items-start gap-2">
+            <input
+              type="radio"
+              name={name}
+              className="mt-1"
+              checked={chosen === value}
+              onChange={() => onChoose(value)}
+            />
+            <span className="min-w-0">
+              {label}
+              <span className="block text-xs text-muted-foreground">{hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The body of the instructions step's window: the decisions, then what is
+ * done without asking, then what is left alone.
+ *
+ * Nothing is chosen for the owner: either answer of either decision changes
+ * or keeps text of their own.
+ */
+function InstructionsBody({
+  status,
+  rulesChoice,
+  onRulesChoice,
+  claudeChoice,
+  onClaudeChoice,
+}: {
+  status: SetupStatus | null;
+  rulesChoice: "replace" | "keep" | null;
+  onRulesChoice: (choice: "replace" | "keep") => void;
+  claudeChoice: "link" | "rules" | null;
+  onClaudeChoice: (choice: "link" | "rules") => void;
+}) {
+  const found = status?.instructions;
+  if (found === undefined) return null;
+  const mono = (text: string) => <span className="font-mono">{text}</span>;
+  const needsRules = rulesBehind(status);
+  const needsClaude = claudeOpen(status);
+  const both = needsRules && needsClaude;
+  // Which file's rules fell behind, for the heading and the finding.
+  const behindFile =
+    found.rules === "behind" && found.claudeRules === "behind"
+      ? "AGENTS.md and CLAUDE.md"
+      : found.rules === "behind"
+        ? "AGENTS.md"
+        : "CLAUDE.md";
+  const from =
+    found.rules === "behind" && found.rulesVersion > 0
+      ? `version ${found.rulesVersion}`
+      : "an earlier version";
+  // What the step does without asking, each as one short line.
+  const done: React.ReactNode[] = [];
+  if (found.rules === "none") {
+    done.push(<>Airbender's rules are added at the end of {mono("AGENTS.md")}</>);
+  }
+  if (found.rules === "old") {
+    done.push(
+      <>
+        the rules in {mono("AGENTS.md")} are brought
+        {found.rulesVersion > 0 ? ` from version ${found.rulesVersion}` : ""} to version{" "}
+        {found.currentVersion}
+      </>,
+    );
+  }
+  if (found.claudeRules === "old") {
+    done.push(<>the rules in {mono("CLAUDE.md")} are brought up to date</>);
+  }
+  if (found.imports) {
+    done.push(
+      <>
+        the lines {mono("@AGENTS.md")} and {mono("@FACTS.md")} are taken out
+      </>,
+    );
+  }
+  for (const file of found.beadsBlocks) {
+    done.push(<>the block beads generated is taken out of {mono(file)}</>);
+  }
+  for (const agent of found.beadsHooks) {
+    done.push(<>beads' own setup for {agent} is removed, with beads' command for that</>);
+  }
+  for (const file of found.beadsFiles) {
+    done.push(<>{mono(file)}, left by beads' setup and holding nothing of yours, is deleted</>);
+  }
+  done.push(<>{mono("FACTS.md")} is created if there is none</>);
+  // What is left as it is, said so that nobody wonders.
+  const left: React.ReactNode[] = [];
+  if (found.rules === "edited") {
+    left.push(<>your own version of the rules in {mono("AGENTS.md")}</>);
+  }
+  if (found.claudeFile === "linked") {
+    left.push(
+      <>
+        {mono("CLAUDE.md")}, which is one file with {mono("AGENTS.md")} here
+      </>,
+    );
+  }
+  if (found.claudeFile === "linked-elsewhere") {
+    left.push(<>{mono("CLAUDE.md")}, which is not a file of its own here</>);
+  }
+  for (const agent of found.machineWide) {
+    left.push(
+      <>
+        beads' setup for {agent} on this whole computer (remove it with{" "}
+        {mono("bd setup … --remove --global")})
+      </>,
+    );
+  }
+  for (const name of found.leftovers) {
+    left.push(
+      <>
+        beads' section "{name}" in {mono("AGENTS.md")}, which has no markers and
+        cannot be told safely from your own text
+      </>,
+    );
+  }
+  const rule = <div className="border-t border-border" />;
+  return (
+    <div className="space-y-3 text-sm">
+      {!needsRules ? null : (
+        <Decision
+          number={both ? 1 : undefined}
+          heading={<>The rules in {behindFile}</>}
+          finding={
+            <>
+              You changed them by hand, and they are from {from}. The current rules
+              are version {found.currentVersion}.
+            </>
+          }
+          name="rules-choice"
+          answers={[
+            ["replace", "Replace them with the current rules", "Your version is saved first."],
+            ["keep", "Keep mine", "Asked again only when the rules change once more."],
+          ]}
+          chosen={rulesChoice}
+          onChoose={onRulesChoice}
+        />
+      )}
+      {both ? rule : null}
+      {!needsClaude ? null : (
+        <Decision
+          number={both ? 2 : undefined}
+          heading="CLAUDE.md"
+          finding={
+            <>
+              This folder has a {mono("CLAUDE.md")} of its own, beside{" "}
+              {mono("AGENTS.md")}.
+            </>
+          }
+          name="claude-choice"
+          answers={[
+            [
+              "link",
+              "Make CLAUDE.md a link to AGENTS.md",
+              "One file of rules for every agent. Your own text in it moves to the end of AGENTS.md; the file is saved first.",
+            ],
+            [
+              "rules",
+              "Keep CLAUDE.md a file, with the same rules",
+              "The rules are written into it too, and updated with AGENTS.md from now on.",
+            ],
+          ]}
+          chosen={claudeChoice}
+          onChoose={onClaudeChoice}
+        />
+      )}
+      {needsRules || needsClaude ? rule : null}
+      <div className="space-y-1 text-muted-foreground">
+        <p>{needsRules || needsClaude ? "Also done, without asking:" : "What it does:"}</p>
+        <ul className="list-disc space-y-0.5 pl-5">
+          {done.map((line, index) => (
+            <li key={index}>{line}</li>
+          ))}
+        </ul>
+      </div>
+      {left.length === 0 ? null : (
+        <div className="space-y-1 text-muted-foreground">
+          <p>Left as it is:</p>
+          <ul className="list-disc space-y-0.5 pl-5">
+            {left.map((line, index) => (
+              <li key={index}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!needsRules && !needsClaude ? null : (
+        <p className="text-xs text-muted-foreground">
+          Saved copies go to {mono(".git/bend/instructions")} in this repository.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The confirmation before a setup step runs: what it will do, and the exact
+ * command where there is one, so nothing is done to the machine or the
+ * repository unseen. For installing, the user picks the method here (their
+ * choice: "let me choose each time").
+ *
+ * @param step The step to confirm; null keeps the dialog closed.
+ * @param onRun Called with the chosen option: the install method's id, the
+ *   keys of the facts to carry over (a JSON list), or null; and, for the
+ *   tracker in a folder that looks like someone else's project, `anyway`
+ *   true when the owner chose to set up there all the same (bead-bb-dof).
+ */
+export function SetupDialog({
+  step,
+  status,
+  onRun,
+  onClose,
+}: {
+  step: SetupStep | null;
+  status: SetupStatus | null;
+  onRun: (step: SetupStep, option: string | null, anyway?: boolean) => void;
+  onClose: () => void;
+}) {
+  // In a folder that looks like someone else's project (bead-bb-dof): keep
+  // the issues in GitHub issues in a repository of the owner's (the safe
+  // way, so the one chosen to begin with), or set up here anyway.
+  const foreign = step?.action === "tracker" ? (status?.foreign ?? null) : null;
+  const [foreignWay, setForeignWay] = useState<"elsewhere" | "anyway">("elsewhere");
+  const [ownRepository, setOwnRepository] = useState("");
+  const ownTrimmed = ownRepository.trim();
+  const ownProblem =
+    foreign === null || foreignWay !== "elsewhere"
+      ? null
+      : !/^[\w.-]+\/[\w.-]+$/.test(ownTrimmed)
+        ? "Name a repository of yours as owner/name."
+        : ownTrimmed.toLowerCase() === foreign.repository.toLowerCase()
+          ? `That is ${foreign.repository} itself; name one of yours.`
+          : null;
+  const methods = status?.installMethods ?? [];
+  const [methodId, setMethodId] = useState<string | null>(null);
+  // The tracker step: beads unless the other is picked.
+  const [trackerId, setTrackerId] = useState<"beads" | "github">("beads");
+  // The instructions step, where the rules were changed by hand and fell
+  // behind: nothing is chosen for the owner, since either answer changes
+  // or keeps their own text.
+  const [rulesChoice, setRulesChoice] = useState<"replace" | "keep" | null>(null);
+  // The same for a CLAUDE.md that is a file of its own: a link, or the
+  // same rules. Not chosen for the owner either.
+  const [claudeChoice, setClaudeChoice] = useState<"link" | "rules" | null>(null);
+  // Asked afresh every time the window opens: a choice from an earlier
+  // opening, cancelled, must not be standing there already picked.
+  useEffect(() => {
+    setRulesChoice(null);
+    setClaudeChoice(null);
+    setForeignWay("elsewhere");
+  }, [step]);
+  // What the instructions step needs decided, and how much of it is not
+  // answered yet.
+  const needsRules = step?.action === "rules" && rulesBehind(status);
+  const needsClaude = step?.action === "rules" && claudeOpen(status);
+  const decisions = (needsRules ? 1 : 0) + (needsClaude ? 1 : 0);
+  const unanswered =
+    (needsRules && rulesChoice === null ? 1 : 0) + (needsClaude && claudeChoice === null ? 1 : 0);
+  // For GitHub issues, the repository when the remote does not say it.
+  const [repository, setRepository] = useState("");
+  // The facts step: every saved fact is carried over unless unticked, so
+  // nothing is dropped by pressing the button without reading.
+  const facts = status?.savedFacts ?? [];
+  const [left, setLeft] = useState<string[]>([]);
+  const method =
+    methods.find((candidate) => candidate.id === methodId) ?? methods[0];
+  return (
+    <Dialog
+      open={step !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{step?.label}</DialogTitle>
+          <DialogDescription>
+            {step?.action === "tracker"
+              ? foreign !== null
+                ? "This looks like someone else's project."
+                : "Says which tracker this repository uses. It writes one small file; nothing is run in a terminal."
+              : step?.action === "rules"
+              ? decisions === 2
+                ? "Two things here need your decision."
+                : decisions === 1
+                  ? "One thing here needs your decision."
+                  : replacesBeads(status)
+                    ? "Makes Airbender's instructions the only ones about issues in this folder. It changes files in the repository; nothing is run in a terminal."
+                    : rulesUpdate(status)
+                      ? "Nothing to decide: this brings the instructions for agents here up to the current version."
+                      : "Adds the rules agents work by here. It changes files in the repository; nothing is run in a terminal."
+              : step?.action === "facts"
+                ? "Choose which saved facts agents should keep seeing."
+                : "Runs in a BB terminal, so you can watch it and answer anything it asks."}
+          </DialogDescription>
+        </DialogHeader>
+        {foreign !== null ? (
+          <div className="space-y-2 text-sm">
+            <p>
+              {foreignWords(foreign)} Airbender adds its files to the
+              repository (<span className="font-mono">.beads</span>,{" "}
+              <span className="font-mono">AGENTS.md</span>,{" "}
+              <span className="font-mono">.bend.json</span>) and they get
+              committed, so in a contribution they would end up in your pull
+              requests. Airbender is for repositories of your own.
+            </p>
+            {(
+              [
+                ["elsewhere", "Keep the issues in a repository of yours", "GitHub issues, in a repository you name. Airbender's settings file stays out of git here, and no instructions for agents are added to this project."],
+                ["anyway", "Set up here anyway", "As in a repository of your own: choose the tracker, and Airbender's files are added here."],
+              ] as const
+            ).map(([id, label, note]) => (
+              <label
+                key={id}
+                className="flex cursor-pointer items-start gap-2 rounded px-2 py-1 hover:bg-state-hover"
+              >
+                <input
+                  type="radio"
+                  name="foreign-way"
+                  className="mt-1"
+                  checked={foreignWay === id}
+                  onChange={() => setForeignWay(id)}
+                />
+                <span className="min-w-0">
+                  {label}
+                  <span className="block text-xs text-muted-foreground">{note}</span>
+                </span>
+              </label>
+            ))}
+            {foreignWay === "elsewhere" ? (
+              <label className="block px-2 text-xs text-muted-foreground">
+                Your repository for the issues:
+                <input
+                  type="text"
+                  className="mt-1 block w-full rounded border border-border bg-transparent px-2 py-1 font-mono text-sm text-foreground"
+                  placeholder="owner/name"
+                  value={ownRepository}
+                  onChange={(event) => setOwnRepository(event.target.value)}
+                />
+                {ownProblem !== null && ownTrimmed !== "" ? (
+                  <span className="mt-1 block text-destructive">{ownProblem}</span>
+                ) : null}
+              </label>
+            ) : (
+              <TrackerChoice
+                trackerId={trackerId}
+                onTrackerId={setTrackerId}
+                repository={repository}
+                onRepository={setRepository}
+              />
+            )}
+          </div>
+        ) : step?.action === "tracker" ? (
+          <div className="space-y-2 text-sm">
+            <TrackerChoice
+              trackerId={trackerId}
+              onTrackerId={setTrackerId}
+              repository={repository}
+              onRepository={setRepository}
+            />
+          </div>
+        ) : step?.action === "install" ? (
+          <div className="space-y-2 text-sm">
+            <p>Choose how to install it:</p>
+            {methods.map((candidate) => (
+              <label
+                key={candidate.id}
+                className="flex cursor-pointer items-start gap-2 rounded px-2 py-1 hover:bg-state-hover"
+              >
+                <input
+                  type="radio"
+                  name="install-method"
+                  className="mt-1"
+                  checked={candidate.id === method?.id}
+                  onChange={() => setMethodId(candidate.id)}
+                />
+                <span className="min-w-0">
+                  {candidate.label}
+                  <span className="block break-all font-mono text-xs text-muted-foreground">
+                    {candidate.command}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : step?.action === "init" && step.explain === undefined ? (
+          <div className="space-y-2 text-sm">
+            <p>
+              Runs{" "}
+              <span className="font-mono">
+                {status?.initRuns ?? "bd init --skip-agents --non-interactive --role maintainer"}
+              </span>{" "}
+              in <span className="break-all font-mono">{status?.path}</span>.
+              It changes the repository:
+            </p>
+            <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
+              <li>
+                adds a <span className="font-mono">.beads</span> folder with
+                the issue database;
+              </li>
+              <li>starts a git repository if the folder is not one yet.</li>
+              <li>
+                writes no instructions for agents: Airbender's are a step
+                of their own.
+              </li>
+            </ul>
+            <p>
+              It asks no questions: you are set up as the repository's
+              maintainer, with no export of the issues to a file.
+            </p>
+          </div>
+        ) : step?.explain !== undefined ? (
+          // A step of the issue sync: said in the sync source's words.
+          <div className="space-y-2 text-sm">
+            <p>
+              <Marked text={step.explain.lead} />{" "}
+              <span className="break-all font-mono text-muted-foreground">
+                {status?.path}
+              </span>
+            </p>
+            <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
+              {step.explain.points.map((point) => (
+                <li key={point}>
+                  <Marked text={point} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : step?.action === "facts" ? (
+          <div className="space-y-2 text-sm">
+            <p>
+              These were saved in beads and shown to agents when a session
+              started. That no longer happens. The ticked ones are written
+              to <span className="font-mono">FACTS.md</span>; the others stay
+              in beads, and this is not asked again.
+            </p>
+            <div className="max-h-72 space-y-1 overflow-auto">
+              {facts.map((fact) => (
+                <label
+                  key={fact.key}
+                  className="flex cursor-pointer items-start gap-2 rounded px-2 py-1 hover:bg-state-hover"
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={!left.includes(fact.key)}
+                    onChange={() =>
+                      setLeft((now) =>
+                        now.includes(fact.key)
+                          ? now.filter((key) => key !== fact.key)
+                          : [...now, fact.key],
+                      )
+                    }
+                  />
+                  <span className="min-w-0">
+                    <span className="block break-all font-mono text-xs text-muted-foreground">
+                      {fact.key}
+                    </span>
+                    {fact.text}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          // The instructions step (bead-bb-c9l.12): one block per thing the
+          // owner has to decide, each with what was found and its answers
+          // right under it, and apart from those a plain list of what is
+          // done without asking. The first version put every finding in one
+          // list of bullets and every answer in one run of radio buttons,
+          // and the owner could not tell which answer went with which
+          // question ("the most, utmost confusing shit I've seen").
+          <InstructionsBody
+            status={status}
+            rulesChoice={rulesChoice}
+            onRulesChoice={setRulesChoice}
+            claudeChoice={claudeChoice}
+            onClaudeChoice={setClaudeChoice}
+          />
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            disabled={
+              (step?.action === "install" && method === undefined) ||
+              (step?.action === "rules" && unanswered > 0) ||
+              ownProblem !== null
+            }
+            onClick={() => {
+              if (step === null) return;
+              if (foreign !== null && foreignWay === "elsewhere") {
+                onRun(step, `github:${ownTrimmed}`);
+                return;
+              }
+              onRun(
+                step,
+                step.action === "install"
+                  ? (method?.id ?? null)
+                  : step.action === "rules" && (rulesBehind(status) || claudeOpen(status))
+                    ? [
+                        ...(rulesBehind(status) && rulesChoice !== null
+                          ? [`rules:${rulesChoice}`]
+                          : []),
+                        ...(claudeOpen(status) && claudeChoice !== null
+                          ? [`claude:${claudeChoice}`]
+                          : []),
+                      ].join(",")
+                    : step.action === "tracker"
+                    ? trackerId === "github" && repository.trim() !== ""
+                      ? `github:${repository.trim()}`
+                      : trackerId
+                    : step.action === "facts"
+                    ? JSON.stringify(
+                        facts
+                          .map((fact) => fact.key)
+                          .filter((key) => !left.includes(key)),
+                      )
+                    : step.option,
+                foreign !== null,
+              );
+            }}
+          >
+            {step?.action === "rules"
+              ? // With something to decide the button is neutral: it stands
+                // for both answers, and says what is still missing.
+                decisions > 0
+                ? unanswered === 0
+                  ? "Apply"
+                  : decisions === 2
+                    ? "Choose both to continue"
+                    : "Choose to continue"
+                : replacesBeads(status)
+                  ? "Replace"
+                  : rulesUpdate(status)
+                    ? "Update"
+                    : "Add"
+              : step?.action === "facts"
+                ? "Carry over"
+                : step?.action === "tracker"
+                  ? "Choose"
+                  : "Run in a terminal"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Why a folder looks like someone else's project, in one sentence; the
+ * same words as bend's (bend/internal/setup/foreign.go). Pure.
+ */
+export function foreignWords(foreign: NonNullable<SetupStatus["foreign"]>): string {
+  return foreign.fork
+    ? `${foreign.repository} is a fork of another repository.`
+    : `Your GitHub account cannot push to ${foreign.repository}.`;
+}
+
+/**
+ * The choice of tracker in the setup window: beads or GitHub issues, and
+ * for GitHub issues the repository when the folder's remote does not say
+ * it. Shown alone, or under "Set up here anyway" in a folder that looks
+ * like someone else's project.
+ */
+function TrackerChoice({
+  trackerId,
+  onTrackerId,
+  repository,
+  onRepository,
+}: {
+  trackerId: "beads" | "github";
+  onTrackerId: (id: "beads" | "github") => void;
+  repository: string;
+  onRepository: (text: string) => void;
+}) {
+  const setTrackerId = onTrackerId;
+  const setRepository = onRepository;
+  return (
+    <>
+      <p>Where are this repository's issues kept?</p>
+      {(
+        [
+          ["beads", "beads", "A database inside the repository. This tab lists and changes the issues."],
+          ["github", "GitHub issues", "On the repository's page on github.com. This tab lists and changes them through a copy kept on this computer."],
+        ] as const
+      ).map(([id, label, note]) => (
+        <label
+          key={id}
+          className="flex cursor-pointer items-start gap-2 rounded px-2 py-1 hover:bg-state-hover"
+        >
+          <input
+            type="radio"
+            name="tracker"
+            className="mt-1"
+            checked={trackerId === id}
+            onChange={() => setTrackerId(id)}
+          />
+          <span className="min-w-0">
+            {label}
+            <span className="block text-xs text-muted-foreground">{note}</span>
+          </span>
+        </label>
+      ))}
+      {trackerId === "github" ? (
+        <label className="block px-2 text-xs text-muted-foreground">
+          Repository, only if this folder's remote is not on github.com:
+          <input
+            type="text"
+            className="mt-1 block w-full rounded border border-border bg-transparent px-2 py-1 font-mono text-sm text-foreground"
+            placeholder="owner/name"
+            value={repository}
+            onChange={(event) => setRepository(event.target.value)}
+          />
+        </label>
+      ) : null}
+      <p className="text-muted-foreground">
+        The choice is recorded in{" "}
+        <span className="font-mono">.bend.json</span> at the
+        repository's top folder, a small file to check in.
+      </p>
+    </>
+  );
+}

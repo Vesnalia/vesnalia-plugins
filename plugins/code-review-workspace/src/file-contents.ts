@@ -1,0 +1,203 @@
+// A changed file's whole old and new contents, so the diff can show the code around its hunks.
+import { readFile, stat } from "node:fs/promises";
+import { join } from "node:path";
+import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import type { FeatureReview, ReviewMeta } from "./store";
+import { ghErrorMessage, type runGh, type runGit } from "./gh";
+import { patchRows, type PatchFile } from "./patch";
+import { declaredGenerated } from "./classify";
+import { NO_DIFF } from "./pr-snapshot";
+import { callGit } from "./env-diff";
+
+export type FileContentsResult = { ok: true; old: string | null; new: string | null } | { ok: false; error: string };
+/** `missing`: GitHub, or the folder, has no such file at that commit. */
+export type Read = { text: string } | { error: string; missing?: boolean };
+
+/** Larger files stay as the diff: pierre would draw them as plain text, and they'd fill the panel's memory. */
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
+/** A commit's file never changes, so a PR's reads are kept, up to this many. */
+const CACHE_SIZE = 64;
+const cache = new Map<string, string>();
+
+function remember(key: string, text: string) {
+  cache.delete(key);
+  cache.set(key, text);
+  if (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value!);
+}
+
+/** Whether each side's contents hold every line the patch shows on that side, at its number. */
+function matchesPatch(text: string, old: string | null, next: string | null): boolean {
+  const oldLines = old?.split("\n");
+  const newLines = next?.split("\n");
+  return patchRows(text).every((row) => {
+    if (row.kind !== "+" && row.kind !== "-" && row.kind !== " ") return true;
+    const code = row.text.slice(1);
+    return (row.kind === "+" || oldLines?.[row.oldLine - 1] === code) && (row.kind === "-" || newLines?.[row.newLine - 1] === code);
+  });
+}
+
+const tooLarge = (path: string) => ({ error: `${path} is too large to show in full.` });
+
+async function githubFile(gh: typeof runGh, repo: string, sha: string, path: string): Promise<Read> {
+  const key = `${repo}\0${sha}\0${path}`;
+  const cached = cache.get(key);
+  if (cached !== undefined) return { text: cached };
+  const encoded = path.split("/").map(encodeURIComponent).join("/");
+  const out = await gh(["api", "-H", "Accept: application/vnd.github.raw", `repos/${repo}/contents/${encoded}?ref=${sha}`], { maxBuffer: MAX_FILE_BYTES });
+  if (out.code !== 0) return /too much to read/.test(out.stderr) ? tooLarge(path) : { error: `Couldn’t read ${path}: ${ghErrorMessage(out)}`, missing: /HTTP 404|Not Found/.test(out.stderr + out.stdout) };
+  remember(key, out.stdout);
+  return { text: out.stdout };
+}
+
+/** The commit a PR's diff starts from: where its head left the base branch. */
+async function mergeBase(gh: typeof runGh, review: ReviewMeta, head: string): Promise<Read> {
+  const key = `${review.repo}\0${review.base}...${head}`;
+  const cached = cache.get(key);
+  if (cached !== undefined) return { text: cached };
+  const out = await gh(["api", `repos/${review.repo}/compare/${encodeURIComponent(review.base!)}...${head}`, "--jq", ".merge_base_commit.sha"]);
+  const sha = out.stdout.trim();
+  if (out.code !== 0 || !sha) return { error: `Couldn’t find the PR’s base commit: ${ghErrorMessage(out)}` };
+  remember(key, sha);
+  return { text: sha };
+}
+
+export async function gitFile(git: typeof runGit, cwd: string, rev: string, path: string): Promise<Read> {
+  const out = await git(["show", "--no-textconv", `${rev}:${path}`], { cwd, maxBuffer: MAX_FILE_BYTES });
+  if (out.code !== 0) return /too much to read/.test(out.stderr) ? tooLarge(path) : { error: `Couldn’t read ${path} at ${rev}: ${out.stderr.trim() || "not found"}` };
+  return { text: out.stdout };
+}
+
+export async function workingTreeFile(cwd: string, path: string): Promise<Read> {
+  try {
+    if ((await stat(join(cwd, path))).size > MAX_FILE_BYTES) return tooLarge(path);
+    return { text: await readFile(join(cwd, path), "utf8") };
+  } catch {
+    return { error: `Couldn’t read ${path} in ${cwd}.` };
+  }
+}
+
+const fileSide = z.discriminatedUnion("outcome", [
+  z.object({ outcome: z.literal("available"), file: z.object({ content: z.string(), contentEncoding: z.enum(["base64", "utf8"]), sizeBytes: z.number() }) }),
+  z.object({ outcome: z.literal("unavailable"), code: z.string(), message: z.string() }),
+]);
+
+/**
+ * A file of a local review's folder, on whichever machine it's on (`bb git file`): the old side at the commit its diff
+ * starts from, the new side as the folder has it now.
+ */
+export async function readFeatureFile(bb: BbPluginApi | undefined, feature: Pick<FeatureReview, "environmentId" | "machine" | "mergeBaseRef">, side: "old" | "new", path: string): Promise<Read> {
+  if (!bb) return { error: `Couldn’t read ${path}: BB’s Git plugin isn’t reachable from here.` };
+  if (!feature.mergeBaseRef) return { error: "This review hasn’t read its folder’s changes yet." };
+  try {
+    const out = await callGit(bb, "fileSide", { environmentId: feature.environmentId, query: { target: "all", mergeBaseRef: feature.mergeBaseRef, path, side } }, fileSide);
+    if (out.outcome === "unavailable") {
+      if (out.code === "file_too_large") return tooLarge(path);
+      return out.code === "ENOENT" ? { error: `${path} isn’t in the folder${side === "old" ? " at the diff’s base" : ""}.`, missing: true } : { error: `Couldn’t read ${path}: ${out.message}` };
+    }
+    if (out.file.sizeBytes > MAX_FILE_BYTES) return tooLarge(path);
+    if (out.file.contentEncoding !== "utf8") return { error: `${path} isn’t text, so it shows as the diff only.` };
+    return { text: out.file.content };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    // bb fails a read at a commit that hasn't the file with git's own words, where the folder hasn't it says ENOENT.
+    if (/exists on disk, but not in '|does not exist in '/.test(message)) return { error: `${path} isn’t in the folder at the diff’s base.`, missing: true };
+    return { error: `Couldn’t read ${path} from ${feature.machine}: ${message}` };
+  }
+}
+
+/** Where a local review's diff starts and ends: `a...b` from their merge base, `a..b` from a, and a single ref against the working tree (null). */
+export async function localRevs(git: typeof runGit, review: ReviewMeta): Promise<{ from: string; to: string | null } | { error: string }> {
+  // Each side goes to git first among its arguments, so none may read as an option.
+  if (review.gitRef!.split(/\.\.\.?/).some((side) => side.startsWith("-"))) return { error: `${review.gitRef} isn’t a git ref or range.` };
+  const [, from, dots, to] = review.gitRef!.match(/^(.*?)(\.\.\.?)(.*)$/) ?? [];
+  if (!dots) return { from: review.gitRef!, to: null };
+  if (dots === "..") return { from: from || "HEAD", to: to || "HEAD" };
+  const base = await git(["merge-base", from || "HEAD", to || "HEAD"], { cwd: review.cwd });
+  if (base.code !== 0) return { error: `Couldn’t find where ${review.gitRef} starts: ${base.stderr.trim()}` };
+  return { from: base.stdout.trim(), to: to || "HEAD" };
+}
+
+/** A changed file's old and new contents (null for a side it doesn't exist on), when they agree with its diff. */
+export async function readFileContents(gh: { runGh: typeof runGh; runGit: typeof runGit; bb?: BbPluginApi }, review: ReviewMeta, file: PatchFile): Promise<FileContentsResult> {
+  const rows = patchRows(file.text);
+  if (rows.some((row) => row.kind === "header" && /^(Binary files |GIT binary patch)/.test(row.text))) return { ok: false, error: "A binary file shows as the diff only." };
+  // GitHub sent no diff for it, so it may be binary, and there's no diff to check its contents against.
+  if (file.text.split("\n").some((line) => line.startsWith(NO_DIFF))) return { ok: false, error: "GitHub sent no diff for this file, so it shows as the diff only." };
+  // A repo-relative path only: no "." or ".." segments that could reach another endpoint or directory.
+  const unsafe = (path: string) => path.startsWith("/") || path.split("/").some((segment) => !segment || segment === "." || segment === "..");
+  const oldPath = file.oldPath ?? file.path;
+  if (unsafe(file.path) || unsafe(oldPath)) return { ok: false, error: `${file.path} isn’t a repo-relative file path.` };
+  const added = rows.some((row) => row.kind === "header" && (row.text.startsWith("new file mode") || row.text === "--- /dev/null"));
+  const deleted = rows.some((row) => row.kind === "header" && (row.text.startsWith("deleted file mode") || row.text === "+++ /dev/null"));
+
+  let readOld: () => Promise<Read>;
+  let readNew: () => Promise<Read>;
+  if (review.kind === "pr") {
+    const { repo, base, headSha } = review;
+    if (!repo || !base || !headSha) return { ok: false, error: "This review has no commits to read the file at." };
+    readOld = async () => {
+      const sha = await mergeBase(gh.runGh, review, headSha);
+      return "error" in sha ? sha : githubFile(gh.runGh, repo, sha.text, oldPath);
+    };
+    readNew = () => githubFile(gh.runGh, repo, headSha, file.path);
+  } else if (review.feature) {
+    const { feature } = review;
+    readOld = () => readFeatureFile(gh.bb, feature, "old", oldPath);
+    readNew = () => readFeatureFile(gh.bb, feature, "new", file.path);
+  } else {
+    const { cwd } = review;
+    if (!cwd || !review.gitRef) return { ok: false, error: "This review has no checkout to read the file from." };
+    const revs = await localRevs(gh.runGit, review);
+    if ("error" in revs) return { ok: false, error: revs.error };
+    readOld = () => gitFile(gh.runGit, cwd, revs.from, oldPath);
+    readNew = () => revs.to === null ? workingTreeFile(cwd, file.path) : gitFile(gh.runGit, cwd, revs.to, file.path);
+  }
+  const none: Read = { text: "" };
+  const [old, next] = await Promise.all([added ? none : readOld(), deleted ? none : readNew()]);
+  if ("error" in old) return { ok: false, error: old.error };
+  if ("error" in next) return { ok: false, error: next.error };
+  const contents = { old: added ? null : old.text, new: deleted ? null : next.text };
+  if (!matchesPatch(file.text, contents.old, contents.new)) return { ok: false, error: "The file doesn’t match the diff, so only the diff shows." };
+  return { ok: true, ...contents };
+}
+
+/** Generated or not, by the repo's .gitattributes at a PR's merge base: kept per commit. */
+const generatedCache = new Map<string, string>();
+/** What each PR's diff at a head has generated: every path is tried on every rule of a file the PR controls, so once. */
+const declaredCache = new Map<string, string[]>();
+
+/**
+ * The changed files the repo's root .gitattributes marks generated or vendored, read at the diff's old side
+ * (a PR's merge base), so a change can't mark its own code generated.
+ */
+export async function readGeneratedFiles(gh: { runGh: typeof runGh; runGit: typeof runGit; bb?: BbPluginApi }, review: ReviewMeta, paths: string[]): Promise<string[]> {
+  let attributes: Read;
+  if (review.kind === "pr") {
+    if (!review.repo || !review.base || !review.headSha) return [];
+    const base = await mergeBase(gh.runGh, review, review.headSha);
+    if ("error" in base) return [];
+    const key = `${review.repo}\0${base.text}`;
+    if (!generatedCache.has(key)) {
+      // A repo without the file has nothing to declare; another failure is worth trying again.
+      const read = await githubFile(gh.runGh, review.repo, base.text, ".gitattributes");
+      if ("error" in read && !read.missing) return [];
+      generatedCache.set(key, "text" in read ? read.text : "");
+      if (generatedCache.size > CACHE_SIZE) generatedCache.delete(generatedCache.keys().next().value!);
+    }
+    const declared = `${review.targetKey}\0${base.text}\0${review.headSha}`;
+    if (!declaredCache.has(declared)) {
+      declaredCache.set(declared, declaredGenerated(generatedCache.get(key)!, paths));
+      if (declaredCache.size > CACHE_SIZE) declaredCache.delete(declaredCache.keys().next().value!);
+    }
+    return declaredCache.get(declared)!;
+  } else if (review.feature) {
+    attributes = await readFeatureFile(gh.bb, review.feature, "old", ".gitattributes");
+  } else {
+    if (!review.cwd || !review.gitRef) return [];
+    const revs = await localRevs(gh.runGit, review);
+    if ("error" in revs) return [];
+    attributes = await gitFile(gh.runGit, review.cwd, revs.from, ".gitattributes");
+  }
+  return "text" in attributes ? declaredGenerated(attributes.text, paths) : [];
+}

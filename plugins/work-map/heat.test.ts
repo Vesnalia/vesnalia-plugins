@@ -1,0 +1,1706 @@
+import { describe, expect, it } from "vitest";
+import { now, task, thread } from "./fixtures";
+import type { WorkItem } from "./model";
+import { buildMap } from "./model";
+import { areaState } from "./heat-view";
+import { heatTiming } from "./heat-timing";
+import { data } from "./fixtures";
+import {
+  type HeatArea,
+  type HeatTile,
+  SESSIONS_AREA,
+  buildHeat,
+  cardGrid,
+  cardLayout,
+  evenOut,
+  expandedWeights,
+  fitsWord,
+  foldSmall,
+  closedStatus,
+  heatWorking,
+  MIN_AREA,
+  openAreaShare,
+  heatOrder,
+  labelRow,
+  labelWidth,
+  heatPull,
+  heatStats,
+  heatSize,
+  SIZE_POWER,
+  TIER_GAIN,
+  TIER_SIZE,
+  NOW_CAP,
+  NEXT_CAP,
+  tierCaps,
+  assignTiers,
+  tileReason,
+  areaWeight,
+  type Tier,
+  type Prospect,
+  heatTone,
+  needsYou,
+  partition,
+  place,
+  staleDays,
+  tileText,
+  treemap,
+  waitDays,
+  waitingSince,
+  withFloor,
+  type HeatTone,
+  type Rect,
+  type Weighted,
+  openAreaWant,
+  OPEN_AREA_FLOOR,
+  MIN_TILE,
+  NOW_SHARE_CAP,
+  capNowShare,
+  nowScale,
+  nowShare,
+  priorityGroup,
+  priorityOrder,
+} from "./heat";
+
+const DAY = 86400000;
+const BOARD: Rect = { x: 0, y: 0, w: 1280, h: 720 };
+function item(overrides: Partial<WorkItem> = {}): WorkItem {
+  return {
+    id: "task:a",
+    title: "A task",
+    kind: "task",
+    summary: "",
+    nextAction: "",
+    focus: false,
+    signal: "inactive",
+    attention: null,
+    unreadResults: 0,
+    reason: "Inactive",
+    score: 0,
+    changed: false,
+    updatedAt: now,
+    activityAt: now,
+    recent: true,
+    threads: [],
+    children: [],
+    scope: "TEST",
+    issue: false,
+    bbProjectId: "proj_test",
+    ...overrides,
+  };
+}
+const project = (id: string, children: WorkItem[]): WorkItem =>
+  item({
+    id: `project:${id}`,
+    kind: "project",
+    title: id,
+    children,
+    scope: id,
+  });
+const running = () => [thread({ id: "thr_run", indicator: "runtime" })];
+const area = (rect: Rect) => rect.w * rect.h;
+function overlap(a: Rect, b: Rect) {
+  return (
+    Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) *
+    Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+  );
+}
+const weights = (count: number): Weighted[] =>
+  Array.from({ length: count }, (_, index) => ({
+    id: `i${index}`,
+    // Deterministic but uneven, including repeated weights and a tiny tail.
+    weight: Math.round((1 + ((index * 37) % 23) / 2.5) * 100) / 100,
+  }));
+
+describe("treemap geometry", () => {
+  it("fills the rectangle exactly and never overlaps, at every size", () => {
+    for (const count of [1, 2, 3, 5, 9, 17, 40]) {
+      const rects = [...treemap(weights(count), BOARD).values()];
+      expect(rects).toHaveLength(count);
+      const covered = rects.reduce((sum, rect) => sum + area(rect), 0);
+      expect(covered).toBeCloseTo(area(BOARD), 5);
+      for (const rect of rects) {
+        expect(rect.w).toBeGreaterThan(0);
+        expect(rect.h).toBeGreaterThan(0);
+        expect(rect.x).toBeGreaterThanOrEqual(-1e-9);
+        expect(rect.y).toBeGreaterThanOrEqual(-1e-9);
+        expect(rect.x + rect.w).toBeLessThanOrEqual(BOARD.w + 1e-9);
+        expect(rect.y + rect.h).toBeLessThanOrEqual(BOARD.h + 1e-9);
+      }
+      for (let a = 0; a < rects.length; a++)
+        for (let b = a + 1; b < rects.length; b++)
+          expect(overlap(rects[a], rects[b])).toBeLessThan(1e-9);
+    }
+  });
+  it("places the same work in the same place whatever order it arrives in", () => {
+    const base = weights(12);
+    const shuffled = [...base].reverse();
+    const first = treemap(base, BOARD);
+    const second = treemap(shuffled, BOARD);
+    expect([...second.keys()].sort()).toEqual([...first.keys()].sort());
+    for (const [id, rect] of first) expect(second.get(id)).toEqual(rect);
+  });
+  it("breaks equal weights by id, so a refresh cannot reshuffle the board", () => {
+    const tied = [
+      { id: "b", weight: 3 },
+      { id: "a", weight: 3 },
+      { id: "c", weight: 3 },
+    ];
+    expect(heatOrder(tied).map((entry) => entry.id)).toEqual(["a", "b", "c"]);
+    expect(treemap(tied, BOARD).get("a")).toEqual(
+      treemap([...tied].reverse(), BOARD).get("a"),
+    );
+  });
+  it("keeps every neighbour in its strip while one item expands", () => {
+    const items = heatOrder(weights(11));
+    const rows = partition(items, BOARD);
+    const before = place(
+      rows,
+      new Map(items.map((entry) => [entry.id, entry.weight])),
+      BOARD,
+    );
+    const grown = expandedWeights(items, "i4", 0.6);
+    const after = place(rows, grown, BOARD);
+    // Same strips, same order inside them: expansion resizes, it never moves work.
+    expect(partition(items, BOARD)).toEqual(rows);
+    for (const row of rows) {
+      const line = (rects: Map<string, Rect>) =>
+        row.ids.map((id) => rects.get(id)!);
+      const order = (rects: Rect[]) =>
+        rects.map((rect) => (row.alongHeight ? rect.y : rect.x));
+      const positions = order(line(after));
+      expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+      expect(line(after).map((rect) => rect.w > 0 && rect.h > 0)).toEqual(
+        line(before).map(() => true),
+      );
+    }
+    expect(area(after.get("i4")!) / area(BOARD)).toBeCloseTo(0.6, 2);
+    const covered = [...after.values()].reduce(
+      (sum, rect) => sum + area(rect),
+      0,
+    );
+    expect(covered).toBeCloseTo(area(BOARD), 5);
+  });
+  it("leaves a single item and an unknown target untouched", () => {
+    const one = [{ id: "only", weight: 2 }];
+    expect(expandedWeights(one, "only", 0.6).get("only")).toBe(2);
+    const pair = weights(2);
+    expect(expandedWeights(pair, "missing", 0.6)).toEqual(
+      new Map(pair.map((entry) => [entry.id, entry.weight])),
+    );
+    expect([...treemap(one, BOARD).values()][0]).toEqual(BOARD);
+  });
+});
+
+describe("readable minimums", () => {
+  it("lifts a sliver to a readable share without disturbing the order", () => {
+    const items = [
+      { id: "big", weight: 50 },
+      { id: "mid", weight: 8 },
+      { id: "sliver", weight: 0.8 },
+    ];
+    const floored = withFloor(items, 0.05);
+    expect(floored.map((entry) => entry.id)).toEqual(["big", "mid", "sliver"]);
+    const sum = floored.reduce((total, entry) => total + entry.weight, 0);
+    expect(floored[2].weight / sum).toBeGreaterThanOrEqual(0.049);
+    expect(floored[0].weight).toBe(50);
+    expect(floored[1].weight).toBe(8);
+  });
+  it("shrinks the floor rather than flattening a crowded map", () => {
+    const many = Array.from({ length: 30 }, (_, index) => ({
+      id: `i${index}`,
+      weight: index === 0 ? 40 : 0.8,
+    }));
+    const floored = withFloor(many, 0.05);
+    const sum = floored.reduce((total, entry) => total + entry.weight, 0);
+    // 30 areas cannot each hold 5%; the biggest must stay clearly the biggest.
+    expect(floored[0].weight / sum).toBeGreaterThan(0.3);
+    expect(withFloor([], 0.05)).toEqual([]);
+  });
+  it("lays an expanded area out as cards in rank order, with no hole", () => {
+    const ids = Array.from({ length: 17 }, (_, index) => `t${index}`);
+    const grid = cardGrid(ids, { w: 600, h: 460 });
+    expect(grid.size).toBe(17);
+    // Rank order reads row by row, left to right; rows never overlap.
+    const rects = ids.map((id) => grid.get(id)!);
+    for (let index = 1; index < rects.length; index++) {
+      const before = rects[index - 1];
+      const here = rects[index];
+      expect(
+        here.y > before.y || (here.y === before.y && here.x > before.x),
+      ).toBe(true);
+    }
+    // Every row spans the full width, the last one included.
+    const rows = new Map<number, Rect[]>();
+    for (const rect of rects)
+      rows.set(rect.y, [...(rows.get(rect.y) ?? []), rect]);
+    for (const row of rows.values()) {
+      const span = row.reduce((sum, rect) => sum + rect.w, 0);
+      expect(span).toBeCloseTo(100, 1);
+      const equal = row.every((rect) => Math.abs(rect.w - row[0].w) < 0.01);
+      expect(equal).toBe(true);
+    }
+    const height = [...rows.values()].reduce((sum, row) => sum + row[0].h, 0);
+    expect(height).toBeCloseTo(100, 1);
+    // A wide, short body takes more columns; a tall, narrow one fewer.
+    expect(cardGrid(ids, { w: 350, h: 1100 }).get("t1")!.x).toBe(50);
+    expect(cardGrid(ids, { w: 1400, h: 300 }).get("t1")!.x).toBeLessThan(20);
+    expect(cardGrid([], { w: 1, h: 1 }).size).toBe(0);
+  });
+  it("evens an expanded area so its lightest tile is still a card, in the same order", () => {
+    const items = [
+      { id: "loud", weight: 12 },
+      { id: "mid", weight: 4 },
+      { id: "quiet", weight: 0.8 },
+    ];
+    const even = evenOut(items, 0.6);
+    expect(even.map((entry) => entry.id)).toEqual(["loud", "mid", "quiet"]);
+    expect(even[0].weight).toBe(12);
+    expect(even[1].weight).toBeCloseTo(7.2, 3);
+    expect(even[2].weight).toBeCloseTo(7.2, 3);
+    // The input is left alone, and an empty or weightless list stays as it is.
+    expect(items[2].weight).toBe(0.8);
+    expect(evenOut([], 0.6)).toEqual([]);
+    expect(evenOut([{ id: "a", weight: 0 }], 0.6)).toEqual([
+      { id: "a", weight: 0 },
+    ]);
+  });
+});
+
+describe("attention to colour", () => {
+  it("reuses the map's own channels and adds no sixth kind of attention", () => {
+    expect(heatTone(item({ attention: "input" }))).toBe("input");
+    expect(heatTone(item({ attention: "error" }))).toBe("error");
+    expect(heatTone(item({ attention: "review" }))).toBe("review");
+    expect(heatTone(item({ attention: "followup" }))).toBe("followup");
+    expect(heatTone(item({ attention: "unread" }))).toBe("unread");
+    // A review task with no session, and an unread result with no attention.
+    expect(heatTone(item({ task: task({ status: "in_review" }) }))).toBe(
+      "review",
+    );
+    expect(heatTone(item({ unreadResults: 2 }))).toBe("unread");
+    expect(heatTone(item({ threads: running() }))).toBe("working");
+    expect(heatTone(item())).toBe("quiet");
+  });
+  it("counts only work that needs your hands as waiting on you", () => {
+    const tones: HeatTone[] = [
+      "input",
+      "error",
+      "review",
+      "followup",
+      "unread",
+      "working",
+      "quiet",
+    ];
+    expect(tones.filter(needsYou)).toEqual([
+      "input",
+      "error",
+      "review",
+      "followup",
+    ]);
+  });
+  it("sizes attention above activity, and keeps the quietest tile a size", () => {
+    const quiet = heatPull(item(), now);
+    const input = heatPull(item({ attention: "input" }), now);
+    const error = heatPull(item({ attention: "error" }), now);
+    const review = heatPull(item({ attention: "review" }), now);
+    const unread = heatPull(item({ attention: "unread" }), now);
+    const work = heatPull(item({ threads: running() }), now);
+    expect(quiet).toBeGreaterThan(0);
+    expect(input).toBeGreaterThan(error);
+    expect(error).toBeGreaterThan(review);
+    expect(review).toBeGreaterThan(unread);
+    expect(unread).toBeGreaterThan(work);
+    expect(work).toBeGreaterThan(quiet);
+    // An explicit request pulls three times a review, and is current
+    // whatever its date says, so a fresh one pulls four times an undated review.
+    expect(input / review).toBe(4);
+    expect(
+      heatPull(item({ attention: "input", focus: true }), now),
+    ).toBeGreaterThan(input);
+    expect(
+      heatPull(
+        item({
+          attention: "review",
+          task: task({ status: "in_review", priority: "urgent" }),
+        }),
+        now,
+      ),
+    ).toBeGreaterThan(
+      heatPull(item({ task: task({ status: "in_review" }) }), now),
+    );
+  });
+  it("marks work stale only after 30 days of actually waiting on you", () => {
+    const old = now - 45 * DAY;
+    const request = item({
+      attention: "input",
+      activityAt: old,
+      threads: [
+        thread({ indicator: "waiting-for-input", latestAttentionAt: old }),
+      ],
+    });
+    expect(staleDays(request, now)).toBe(45);
+    expect(staleDays(item({ attention: "input" }), now)).toBe(0);
+    // A quiet or already-read item is old, not waiting.
+    expect(staleDays(item({ activityAt: old }), now)).toBe(0);
+    expect(staleDays(item({ attention: "unread", activityAt: old }), now)).toBe(
+      0,
+    );
+    expect(heatPull(request, now)).toBeGreaterThan(
+      heatPull(item({ attention: "input" }), now),
+    );
+  });
+  it("measures the wait from when the task started needing you, not from agent activity", () => {
+    const iso = (days: number) => new Date(now - days * DAY).toISOString();
+    const day = (days: number) =>
+      new Date(now - days * DAY).toISOString().slice(0, 10);
+    const review = (overrides: Partial<ReturnType<typeof task>>) =>
+      item({
+        attention: "review",
+        activityAt: now,
+        updatedAt: now,
+        task: task({ status: "in_review", dateKind: "due", ...overrides }),
+      });
+    // An old recurring record entered review today: the old creation and due dates do not age this cycle.
+    expect(
+      waitDays(
+        review({ createdAt: iso(40), statusSince: iso(0), dueDate: day(7) }),
+        now,
+      ),
+    ).toBe(0);
+    // Ordinary agent edits cannot reset a proven current review period.
+    expect(
+      waitDays(
+        review({ createdAt: iso(40), statusSince: iso(20), dueDate: day(81) }),
+        now,
+      ),
+    ).toBe(20);
+    // A future or planning date does not change when an existing review began.
+    expect(
+      waitDays(review({ statusSince: iso(3), dueDate: day(-4) }), now),
+    ).toBe(3);
+    // A planning date is a plan, not a request.
+    expect(
+      waitDays(
+        review({ statusSince: iso(3), dueDate: day(50), dateKind: "plan" }),
+        now,
+      ),
+    ).toBe(3);
+    // Missing review history stays unknown, never guessed from creation or a maintenance edit.
+    expect(
+      waitDays(
+        item({
+          attention: "review",
+          updatedAt: now - 9 * DAY,
+          task: task({ createdAt: undefined, dueDate: null }),
+        }),
+        now,
+      ),
+    ).toBe(0);
+    // A session waits since it asked; quiet work waits for nothing.
+    expect(
+      waitingSince(
+        item({
+          attention: "input",
+          activityAt: now - 2 * DAY,
+          threads: [
+            thread({
+              indicator: "waiting-for-input",
+              latestAttentionAt: now - 2 * DAY,
+            }),
+          ],
+        }),
+        now,
+      ),
+    ).toBe(now - 2 * DAY);
+    expect(
+      waitingSince(item({ task: task({ createdAt: iso(40) }) }), now),
+    ).toBe(0);
+    expect(
+      staleDays(review({ statusSince: iso(31), dueDate: null }), now),
+    ).toBe(31);
+    expect(
+      staleDays(review({ statusSince: iso(30), dueDate: null }), now),
+    ).toBe(0);
+    expect(waitingSince(review({ statusSince: iso(-1) }), now)).toBe(0);
+    const [area] = buildHeat(
+      [project("unknown", [review({ createdAt: iso(40) })])],
+      now,
+    );
+    expect(area.tiles[0].waited).toBeNull();
+  });
+  it("keeps deferred follow-ups quiet and starts aging only on the current check date", () => {
+    const check = (days: number) =>
+      new Date(now - days * DAY).toISOString().slice(0, 10);
+    const followup = (days: number) =>
+      buildMap(
+        data([
+          task({
+            lifecycle: "waiting",
+            waitingOn: "A partner",
+            checkAfter: check(days),
+            createdAt: new Date(now - 40 * DAY).toISOString(),
+            dueDate: check(40),
+          }),
+        ]),
+        [],
+        {},
+        now,
+      )[0].children[0];
+    expect(heatTone(followup(-7))).toBe("quiet");
+    expect(waitDays(followup(-7), now)).toBe(0);
+    expect(heatTone(followup(1))).toBe("followup");
+    expect(waitDays(followup(1), now)).toBe(1);
+    expect(staleDays(followup(1), now)).toBe(0);
+  });
+  it("ages a task's input request from its requesting session, not the task or another session", () => {
+    const request = item({
+      attention: "input",
+      task: task({
+        status: "in_review",
+        statusSince: new Date(now - 40 * DAY).toISOString(),
+      }),
+      threads: [
+        thread({
+          indicator: "waiting-for-input",
+          latestAttentionAt: now - DAY,
+        }),
+        thread({ indicator: "unread-success", latestAttentionAt: now }),
+      ],
+    });
+    expect(waitDays(request, now)).toBe(1);
+    expect(waitDays({ ...request, threads: [] }, now)).toBe(0);
+  });
+  it("leaves impossible follow-up calendar dates unknown instead of normalizing them", () => {
+    const current = new Date("2026-03-02T12:00:00").getTime();
+    const invalid = buildMap(
+      data([
+        task({
+          lifecycle: "waiting",
+          waitingOn: "Partner",
+          checkAfter: "2026-02-30",
+        }),
+      ]),
+      [],
+      {},
+      current,
+    )[0].children[0];
+    expect(waitingSince(invalid, current)).toBe(0);
+    expect(
+      buildHeat([project("bad-date", [invalid])], current)[0].tiles[0].waited,
+    ).toBeNull();
+  });
+  it("does not mistake a standalone session's creation for a missing attention timestamp", () => {
+    for (const indicator of ["waiting-for-input", "unread-error"] as const) {
+      const session = thread({
+        createdAt: now - 40 * DAY,
+        latestAttentionAt: 0,
+        indicator,
+      });
+      const root = buildMap(data([]), [session], {}, now)[0];
+      expect(waitingSince(root, now)).toBe(0);
+      expect(staleDays(root, now)).toBe(0);
+      expect(buildHeat([root], now)[0].tiles[0].waited).toBeNull();
+    }
+  });
+  it("does not boost a task just because it has a distant future date", () => {
+    const dated = (days: number) =>
+      item({
+        task: task({
+          dateKind: "due",
+          dueDate: new Date(now + days * DAY).toISOString().slice(0, 10),
+        }),
+      });
+    expect(heatPull(dated(30), now)).toBe(
+      heatPull(item({ task: task() }), now),
+    );
+    expect(heatPull(dated(0), now)).toBeGreaterThan(heatPull(dated(30), now));
+  });
+  it("ranks pull by priority first-class, date nearness and focus, never by review age", () => {
+    const iso = (days: number) => new Date(now - days * DAY).toISOString();
+    const dueIn = (days: number) =>
+      new Date(now + days * DAY).toISOString().slice(0, 10);
+    const review = (
+      priority: string,
+      fields: Partial<ReturnType<typeof task>> = {},
+      focus = false,
+    ) =>
+      item({
+        attention: "review",
+        focus,
+        task: task({
+          status: "in_review",
+          priority,
+          statusSince: iso(0),
+          createdAt: iso(0),
+          dueDate: null,
+          ...fields,
+        }),
+      });
+    const pull = (entry: WorkItem) => heatPull(entry, now);
+    // Priority is a multiplier: urgent > high > medium > low = none.
+    expect(pull(review("urgent"))).toBeGreaterThan(pull(review("high")));
+    expect(pull(review("high"))).toBeGreaterThan(pull(review("medium")));
+    expect(pull(review("medium"))).toBeGreaterThan(pull(review("low")));
+    expect(pull(review("low"))).toBe(pull(review("none")));
+    expect(pull(review("urgent")) / pull(review("medium"))).toBeCloseTo(2.4);
+    // A low-priority draft two months past due sits clearly under a
+    // high-priority task due this week, and under a medium one due today.
+    const staleDraft = review("low", { dueDate: dueIn(-60) });
+    const highThisWeek = review("high", { dueDate: dueIn(5) });
+    const mediumToday = review("medium", { dueDate: dueIn(0) });
+    expect(pull(highThisWeek) / pull(staleDraft)).toBeGreaterThan(3);
+    expect(pull(mediumToday)).toBeGreaterThan(pull(staleDraft) * 3);
+    // An urgent task a month past due still outranks a medium one a month out.
+    expect(pull(review("urgent", { dueDate: dueIn(-30) }))).toBeGreaterThan(
+      pull(review("medium", { dueDate: dueIn(30) })),
+    );
+    // But a date today beats a stale urgent date: nearness is not optional.
+    expect(pull(mediumToday)).toBeGreaterThan(
+      pull(review("urgent", { dueDate: dueIn(-90) })),
+    );
+    // Undated age is a modest factor: 90 days old is under any date this week.
+    expect(pull(review("medium", { createdAt: iso(90) }))).toBeLessThan(
+      pull(review("medium", { dueDate: dueIn(7) })),
+    );
+    expect(pull(review("medium", { createdAt: iso(90) }))).toBeGreaterThan(
+      pull(review("medium", { createdAt: iso(1) })),
+    );
+    // Focus multiplies, and review age moves nothing.
+    expect(pull(review("medium", {}, true)) / pull(review("medium"))).toBeCloseTo(1.6);
+    expect(pull(review("medium", { statusSince: iso(45) }))).toBe(
+      pull(review("medium")),
+    );
+    // Input and a failed run stay strong: an undated medium request for your
+    // hands beats a high-priority review due this week.
+    expect(pull(item({ attention: "input", task: task({ priority: "medium" }) }))).toBeGreaterThan(
+      pull(highThisWeek),
+    );
+  });
+  const dueIn = (days: number) =>
+    new Date(now + days * DAY).toISOString().slice(0, 10);
+  const prospect = (
+    id: string,
+    pull: number,
+    overrides: Partial<Prospect> & { due?: number } = {},
+  ): Prospect => {
+    const { due, ...rest } = overrides;
+    const timing =
+      due === undefined
+        ? null
+        : heatTiming(
+            item({ task: task({ dueDate: dueIn(due), dateKind: "deadline" }) }),
+            now,
+          );
+    return {
+      id,
+      pull,
+      focus: false,
+      tone: "review",
+      timing,
+      priority: "medium",
+      resting: false,
+      task: true,
+      ...rest,
+    };
+  };
+  const tiersOf = (prospects: Prospect[]) =>
+    Object.fromEntries(
+      [...assignTiers(prospects)].map(([id, t]) => [id, t.rank ? `${t.tier}${t.rank}` : t.tier]),
+    );
+  it("caps Now at five and Next at eight on the whole map, a third each at most, and Now is never empty", () => {
+    expect(NOW_CAP).toBe(5);
+    expect(NEXT_CAP).toBe(8);
+    expect(tierCaps(37)).toEqual({ now: 5, next: 8 });
+    expect(tierCaps(15)).toEqual({ now: 5, next: 5 });
+    expect(tierCaps(6)).toEqual({ now: 2, next: 2 });
+    expect(tierCaps(3)).toEqual({ now: 1, next: 1 });
+    expect(tierCaps(2)).toEqual({ now: 1, next: 0 });
+    expect(tierCaps(1)).toEqual({ now: 1, next: 0 });
+    // Forty equal reviews, all due today: five red, eight amber, the rest grey.
+    const forty = Array.from({ length: 40 }, (_, i) => prospect(`t${String(i).padStart(2, "0")}`, 1, { due: 0 }));
+    const tiers = [...assignTiers(forty).values()];
+    expect(tiers.filter((t) => t.tier === "now").length).toBe(5);
+    expect(tiers.filter((t) => t.tier === "next").length).toBe(8);
+    expect(tiers.filter((t) => t.tier === "later").length).toBe(27);
+    expect(tiers.filter((t) => t.rank).map((t) => t.rank)).toEqual([1, 2, 3]);
+    // One tile alone is Now; two are Now and Later.
+    expect(tiersOf([prospect("a", 0.1)])).toEqual({ a: "now1" });
+    expect(tiersOf([prospect("a", 0.1), prospect("b", 0.2)])).toEqual({ a: "later", b: "now1" });
+  });
+  it("fills Now in order: focus, a request for your hands, current dates by priority, then pull; Next: due soon, high priority, then pull", () => {
+    const tiers = tiersOf([
+      prospect("pull", 9, { due: 30 }),
+      prospect("focus", 0.1, { focus: true, due: 40, priority: "low" }),
+      prospect("input", 0.25, { tone: "input" }),
+      prospect("failed", 0.2, { tone: "error" }),
+      prospect("today-none", 0.5, { due: 0, priority: "none" }),
+      prospect("tomorrow-high", 0.4, { due: 1, priority: "high" }),
+      prospect("late5-urgent", 0.3, { due: -5, priority: "urgent" }),
+      prospect("late8-medium", 0.9, { due: -8 }),
+      prospect("week", 0.6, { due: 6 }),
+      prospect("high-undated", 0.45, { priority: "high" }),
+      prospect("slipped-high", 0.48, { due: -30, priority: "high" }),
+      prospect("month", 0.2, { due: 25 }),
+      prospect("later1", 0.1, { due: 50 }),
+      prospect("later2", 0.1, { due: 60 }),
+      prospect("later3", 0.1, { due: 70 }),
+    ]);
+    // 15 tiles: five Now, five Next. Focus first, then the hands, then the
+    // current dates by priority (urgent, high, none), then pull takes over.
+    expect(tiers).toMatchObject({
+      focus: "now1",
+      input: "now2",
+      failed: "now3",
+      "late5-urgent": "now",
+      "tomorrow-high": "now",
+      // Next: the current dates left (today, late 8d, this week) by pull,
+      // then the high priorities by pull, nearer date first on a tie.
+      "today-none": "next",
+      "late8-medium": "next",
+      week: "next",
+      "slipped-high": "next",
+      "high-undated": "next",
+      pull: "later",
+      month: "later",
+      later1: "later",
+    });
+    // The highest pull is the last stage of Now: without the dated ones it gets in.
+    expect(tiersOf([prospect("pull", 9, { due: 30 }), prospect("a", 1, { due: 40 }), prospect("b", 1, { due: 41 })])).toMatchObject({ pull: "now1" });
+    // Closed and snoozed work never enters Now or Next whatever it pulls.
+    expect(tiersOf([prospect("closed", 9, { resting: true }), prospect("open", 0.1)])).toEqual({ closed: "later", open: "now1" });
+    // A standalone session is Later even pinned and running; it is Now only
+    // when it asks for your hands or failed.
+    expect(tiersOf([prospect("pinned", 9, { task: false, focus: true, tone: "working" }), prospect("open", 0.1)])).toEqual({ pinned: "later", open: "now1" });
+    expect(tiersOf([prospect("asks", 0.2, { task: false, tone: "input" }), prospect("open", 0.1)])).toEqual({ asks: "now1", open: "later" });
+    // Equal pulls break by the nearer date: 19 days past before 40 days past.
+    const [a, b] = [prospect("x-40", 0.48, { due: -40 }), prospect("y-19", 0.48, { due: -19 })];
+    expect(tiersOf([a, b])).toEqual({ "x-40": "later", "y-19": "now1" });
+  });
+  it("says why on every coloured tile: the drivers and the priority, low and none silent", () => {
+    const reason = (p: Prospect) => tileReason(p).reason;
+    expect(reason(prospect("a", 1, { due: 1, priority: "high" }))).toBe("due tomorrow · high");
+    expect(reason(prospect("a", 1, { due: -2 }))).toBe("2d late · medium");
+    expect(reason(prospect("a", 1, { due: 0, priority: "none" }))).toBe("due today");
+    expect(reason(prospect("a", 1, { due: 5, priority: "low" }))).toBe("due in 5d");
+    expect(reason(prospect("a", 1, { due: -21, priority: "high" }))).toBe("slipped 21d · high");
+    expect(reason(prospect("a", 1, { focus: true, priority: "low" }))).toBe("in focus");
+    expect(reason(prospect("a", 1, { tone: "input", priority: "urgent" }))).toBe("needs your input · urgent");
+    expect(reason(prospect("a", 1, { tone: "error", due: 0 }))).toBe("run failed · due today · medium");
+    expect(reason(prospect("a", 1, { focus: true, due: 1, priority: "high" }))).toBe("in focus · due tomorrow · high");
+    // An undated task names its age only once it is aged.
+    const aged = heatTiming(item({ task: task({ createdAt: new Date(now - 40 * DAY).toISOString() }) }), now);
+    const fresh = heatTiming(item({ task: task({ createdAt: new Date(now - 3 * DAY).toISOString() }) }), now);
+    expect(reason(prospect("a", 1, { timing: aged, priority: "high" }))).toBe("40d old · high");
+    expect(reason(prospect("a", 1, { timing: fresh, priority: "high" }))).toBe("high");
+    // The compact form says the same in fewer letters.
+    expect(tileReason(prospect("a", 1, { focus: true, tone: "input", due: 1, priority: "high" })).compact).toBe("focus · input · tmrw · high");
+    expect(tileReason(prospect("a", 1, { due: -21, priority: "high" })).compact).toBe("slip 21d · high");
+  });
+  it("treats a date more than two weeks past as slipped: flat pull by priority and need, and never a Now driver", () => {
+    const review = (priority: string, due: number) =>
+      item({ attention: "review", task: task({ status: "in_review", priority, dueDate: dueIn(due) }) });
+    // Flat: 15, 30 and 90 days past pull the same; 14 days past still pulls as a date.
+    expect(heatPull(review("high", -15), now)).toBe(heatPull(review("high", -90), now));
+    expect(heatPull(review("high", -14), now)).toBeGreaterThan(heatPull(review("high", -15), now) * 2);
+    // Priority and need alone decide between slipped dates.
+    expect(heatPull(review("high", -30), now)).toBeGreaterThan(heatPull(review("medium", -16), now));
+    expect(heatPull(item({ attention: "input", task: task({ priority: "medium", dueDate: dueIn(-30) }) }), now)).toBeGreaterThan(heatPull(review("high", -30), now));
+    // Under a date this week, over a date a month out.
+    expect(heatPull(review("medium", -30), now)).toBeLessThan(heatPull(review("medium", 5), now));
+    expect(heatPull(review("medium", -30), now)).toBeGreaterThan(heatPull(review("medium", 30), now));
+    // On the map: the slipped tile says so, is not Now beside current work, and a
+    // slipped quiet task folds into the quiet pile like any other quiet task.
+    const [area] = buildHeat(
+      [project("p", [
+        item({ id: "task:slipped", attention: "review", task: task({ status: "in_review", priority: "high", dueDate: dueIn(-21) }) }),
+        item({ id: "task:today", attention: "review", task: task({ status: "in_review", priority: "medium", dueDate: dueIn(0) }) }),
+        item({ id: "task:week", attention: "review", task: task({ status: "in_review", priority: "medium", dueDate: dueIn(4) }) }),
+        ...Array.from({ length: 7 }, (_, i) => item({ id: `task:quiet${i}`, task: task({ status: "backlog", priority: "none", dueDate: dueIn(-40 - i) }) })),
+      ])],
+      now,
+    );
+    const slipped = area.tiles.find((t) => t.id === "task:slipped")!;
+    expect(slipped.slipped).toBe(true);
+    expect(slipped.timing?.label).toBe("slipped 21d");
+    expect(slipped.tier).not.toBe("now");
+    // Seven drawn tiles: two Now, two Next. The current dates take Now; the
+    // slipped high-priority task is Next on its priority, not its date.
+    expect(area.tiles.find((t) => t.id === "task:today")!.tier).toBe("now");
+    expect(area.tiles.find((t) => t.id === "task:week")!.tier).toBe("now");
+    expect(slipped.tier).toBe("next");
+    expect(area.tiles.find((t) => t.id === "quiet:project:p")!.members.length).toBe(3);
+    expect(heatStats([area], now)).toMatchObject({ overdue: 0, slipped: 8 });
+  });
+  it("still has a meaningful Now when nothing is overdue: due-soon work fills it", () => {
+    const [area] = buildHeat(
+      [project("p", Array.from({ length: 12 }, (_, i) =>
+        item({ id: `task:${i}`, attention: "review", task: task({ status: "in_review", priority: i % 3 ? "medium" : "high", dueDate: dueIn(i + 1), dateKind: "deadline" }) }),
+      ))],
+      now,
+    );
+    const by = (tier: Tier) => area.tiles.filter((t) => t.tier === tier).map((t) => t.id).sort();
+    // Twelve tiles: four Now, four Next. Tomorrow's high task leads; then the
+    // highest pulls, all inside the week, with the high priorities ahead.
+    expect(by("now")).toEqual(["task:0", "task:1", "task:3", "task:6"]);
+    expect(area.tiles.find((t) => t.id === "task:0")!.rank).toBe(1);
+    expect(by("next").length).toBe(4);
+    expect(by("later").length).toBe(4);
+    for (const tile of area.tiles.filter((t) => t.tier !== "later"))
+      expect(tile.timing!.days).toBeLessThanOrEqual(10);
+    expect(area.tiles.find((t) => t.id === "task:0")!.reason).toBe("due tomorrow · high");
+    expect(area.tiles.find((t) => t.id === "task:1")!.reason).toBe("due in 2d · medium");
+    expect(heatStats([area], now)).toMatchObject({ overdue: 0, slipped: 0 });
+  });
+  it("weighs an area by what its tiles lend it through their tiers, sizes Now biggest, and wears its hottest tier", () => {
+    expect(TIER_GAIN.now).toBe(1);
+    expect(TIER_GAIN.next).toBeLessThan(TIER_GAIN.now);
+    expect(TIER_GAIN.later).toBeLessThan(TIER_GAIN.next);
+    expect(TIER_SIZE.now).toBeGreaterThan(TIER_SIZE.next);
+    expect(TIER_SIZE.later).toBeLessThan(TIER_SIZE.next);
+    const tileOf = (id: string, pull: number, tier: Tier): HeatTile => ({
+      id, weight: heatSize(pull), pull, tone: "review", item: item({ id, attention: "review" }),
+      members: [], stale: 0, waited: 0, tier, reason: "", compact: "", slipped: false, timing: null,
+    });
+    const hot = [tileOf("a", 1, "now"), tileOf("b", 1, "next")];
+    const cold = [tileOf("c", 1, "later"), tileOf("d", 1, "later")];
+    expect(areaWeight(hot)).toBeCloseTo(TIER_GAIN.now + TIER_GAIN.next, 4);
+    expect(areaWeight(cold)).toBeCloseTo(2 * TIER_GAIN.later, 4);
+    expect(areaWeight(hot) / areaWeight(cold)).toBeGreaterThan(2);
+    // Before the tiers are known every tile lends its whole size.
+    expect(areaWeight(cold, false)).toBeCloseTo(2, 4);
+    // On a built map each area's weight follows the tiers and the area wears
+    // the tier of its hottest tile.
+    const areas = buildHeat(
+      [
+        project("p1", [
+          item({ id: "task:u", attention: "review", task: task({ status: "in_review", priority: "urgent", dueDate: dueIn(0) }) }),
+          item({ id: "task:m", attention: "review", task: task({ status: "in_review", priority: "medium", dueDate: dueIn(0) }) }),
+          item({ id: "task:n", attention: "review", task: task({ status: "in_review", priority: "medium", dueDate: dueIn(5) }) }),
+        ]),
+        project("p2", [
+          item({ id: "task:l1", attention: "review", task: task({ status: "in_review", priority: "low", dueDate: dueIn(-40) }) }),
+          item({ id: "task:l2", attention: "review", task: task({ status: "in_review", priority: "low", dueDate: dueIn(-50) }) }),
+          item({ id: "task:l3", attention: "review", task: task({ status: "in_review", priority: "low", dueDate: dueIn(-60) }) }),
+        ]),
+      ],
+      now,
+    );
+    const hotArea = areas.find((area) => area.id === "project:p1")!;
+    const coldArea = areas.find((area) => area.id === "project:p2")!;
+    expect(hotArea.tier).toBe("now");
+    expect(hotArea.tiers.get("task:u")).toBe("now");
+    expect(coldArea.tier).not.toBe("now");
+    expect(hotArea.weight).toBeGreaterThan(coldArea.weight);
+  });
+  it("in tidy mode draws every slipped date on its own, grows it and shrinks the rest", () => {
+    const roots = [project("p", [
+      item({ id: "task:today", attention: "review", task: task({ status: "in_review", priority: "high", dueDate: dueIn(0) }) }),
+      ...Array.from({ length: 6 }, (_, i) => item({ id: `task:slip${i}`, task: task({ status: "backlog", priority: "none", dueDate: dueIn(-30 - i) }) })),
+    ])];
+    const [plain] = buildHeat(roots, now);
+    const [tidy] = buildHeat(roots, now, { tidy: true });
+    // Plainly the quiet slipped tasks beyond the first four pile up; in tidy mode each is a tile.
+    expect(plain.tiles.some((t) => t.id === "quiet:project:p")).toBe(true);
+    expect(tidy.tiles.some((t) => t.id === "quiet:project:p")).toBe(false);
+    expect(tidy.tiles.filter((t) => t.slipped).length).toBe(6);
+    const todayPlain = plain.tiles.find((t) => t.id === "task:today")!.weight;
+    const todayTidy = tidy.tiles.find((t) => t.id === "task:today")!.weight;
+    expect(todayTidy).toBeLessThan(todayPlain);
+    const slip = tidy.tiles.find((t) => t.id === "task:slip0")!;
+    expect(slip.weight).toBeGreaterThanOrEqual(todayTidy * 0.5 - 1e-6);
+    // The current date still leads in tidy mode; growing a slipped tile is
+    // room for its date-fix row, not heat.
+    expect(tidy.tiles.find((t) => t.id === "task:today")!.tier).toBe("now");
+    expect(tidy.tiles.find((t) => t.id === "task:today")!.rank).toBe(1);
+  });
+  it("curves size with pull so the hottest tile is several times the coldest", () => {
+    expect(SIZE_POWER).toBeGreaterThan(1);
+    expect(heatSize(1)).toBe(1);
+    expect(heatSize(2) / heatSize(1)).toBeCloseTo(2 ** SIZE_POWER);
+    // Order is kept, and nothing goes negative.
+    expect(heatSize(0.5)).toBeLessThan(heatSize(0.6));
+    expect(heatSize(-1)).toBe(0);
+    // On a map of one hot and several warm review tasks the hot tile is at
+    // least three times the coldest drawn tile, after the readable floor.
+    const dueIn = (days: number) =>
+      new Date(now + days * DAY).toISOString().slice(0, 10);
+    const [area] = buildHeat(
+      [
+        project("p", [
+          item({ id: "task:hot", attention: "review", task: task({ status: "in_review", priority: "high", dueDate: dueIn(0) }) }),
+          ...[40, 50, 60, 70, 80].map((days) =>
+            item({ id: `task:warm${days}`, attention: "review", task: task({ status: "in_review", priority: "none", dueDate: dueIn(-days) }) }),
+          ),
+        ]),
+      ],
+      now,
+    );
+    const weights = area.tiles.map((tile) => tile.weight);
+    expect(Math.max(...weights) / Math.min(...weights)).toBeGreaterThan(3);
+    expect(area.tiles[0].id).toBe("task:hot");
+    expect(area.tiles[0].rank).toBe(1);
+    expect(area.tiles[0].tier).toBe("now");
+    expect(area.tiles.at(-1)!.tier).toBe("later");
+    expect(area.tiers.get("task:hot")).toBe("now");
+  });
+  it("moves a known leading verb out of the title and leaves everything else alone", () => {
+    expect(tileText("Review draft: The Screen That Lies")).toEqual({
+      ask: "draft",
+      title: "The Screen That Lies",
+    });
+    expect(tileText("Decide: drop the VM image?")).toEqual({
+      ask: "decide",
+      title: "drop the VM image?",
+    });
+    expect(tileText("Review: Wiz architecture audit")).toEqual({
+      ask: "review",
+      title: "Wiz architecture audit",
+    });
+    // A project code or a plain title is not a verb.
+    expect(tileText("HN: your comments are being killed")).toEqual({
+      ask: "",
+      title: "HN: your comments are being killed",
+    });
+    expect(tileText("Approve the droplet (1 click)")).toEqual({
+      ask: "",
+      title: "Approve the droplet (1 click)",
+    });
+    expect(tileText("Review:")).toEqual({ ask: "", title: "Review:" });
+  });
+  it("keeps a pinned quiet session out of the quiet cap so the Sessions area stays readable", () => {
+    const pinned = Array.from({ length: 3 }, (_, index) =>
+      item({ id: `thread:pin${index}`, kind: "thread", focus: true }),
+    );
+    const plain = Array.from({ length: 3 }, (_, index) =>
+      item({ id: `thread:idle${index}`, kind: "thread" }),
+    );
+    const [withPins] = buildHeat(pinned, now);
+    const [withoutPins] = buildHeat(plain, now);
+    expect(withPins.id).toBe(SESSIONS_AREA);
+    // Each pinned session is its own tile; the idle ones pile into one group.
+    expect(withPins.tiles.map((tile) => tile.id).sort()).toEqual(["thread:pin0", "thread:pin1", "thread:pin2"]);
+    expect(withoutPins.tiles.map((tile) => tile.id)).toEqual([`quiet:${SESSIONS_AREA}`]);
+    expect(withPins.weight).toBeGreaterThan(withoutPins.weight);
+  });
+});
+
+describe("areas", () => {
+  it("groups standalone sessions, collapses the finished ones, and opens on request", () => {
+    const roots = [
+      project("p1", [item({ id: "task:1", attention: "input" })]),
+      ...Array.from({ length: 6 }, (_, index) =>
+        item({ id: `thread:${index}`, kind: "thread", scope: "Session" }),
+      ),
+      item({ id: "thread:live", kind: "thread", threads: running() }),
+    ];
+    const areas = buildHeat(roots, now);
+    expect(areas.map((entry) => entry.id)).toEqual([
+      "project:p1",
+      SESSIONS_AREA,
+    ]);
+    const collapsed = areas[1];
+    expect(collapsed.title).toBe("Sessions");
+    expect(collapsed.root).toBeNull();
+    expect(collapsed.items).toHaveLength(7);
+    expect(collapsed.tiles).toHaveLength(2);
+    const group = collapsed.tiles.find((tile) => !tile.item)!;
+    expect(group.members).toHaveLength(6);
+    expect(group.tone).toBe("quiet");
+    const opened = buildHeat(roots, now, { uncollapsed: [SESSIONS_AREA] }).find(
+      (entry) => entry.id === SESSIONS_AREA,
+    )!;
+    expect(opened.tiles).toHaveLength(7);
+    expect(opened.tiles.every((tile) => tile.item)).toBe(true);
+  });
+  it("ranks the area that needs you above a busier quiet one, and counts its header", () => {
+    const loud = project("loud", [
+      item({ id: "task:in", attention: "input" }),
+      item({ id: "task:run", threads: running() }),
+    ]);
+    const quiet = project(
+      "quiet",
+      Array.from({ length: 14 }, (_, index) => item({ id: `task:q${index}` })),
+    );
+    const areas = buildHeat([quiet, loud], now);
+    expect(areas.map((entry) => entry.title)).toEqual(["loud", "quiet"]);
+    expect(areas[0].waiting).toBe(1);
+    expect(areas[0].running).toBe(1);
+    // A pile of quiet tasks is capped, and collapses behind one tile.
+    expect(areas[1].weight).toBeLessThan(areas[0].weight);
+    expect(areas[1].tiles).toHaveLength(5);
+    expect(
+      buildHeat([quiet, loud], now, { uncollapsed: [quiet.id] })[1].tiles,
+    ).toHaveLength(14);
+  });
+  it("reports the header stats over every item, collapsed ones included", () => {
+    const roots = [
+      project("p1", [
+        item({
+          id: "task:1",
+          attention: "input",
+          activityAt: now - 40 * DAY,
+          threads: [
+            thread({
+              indicator: "waiting-for-input",
+              latestAttentionAt: now - 40 * DAY,
+            }),
+          ],
+        }),
+        item({ id: "task:2", attention: "unread", unreadResults: 1 }),
+      ]),
+      item({ id: "thread:a", kind: "thread", threads: running() }),
+      item({ id: "thread:b", kind: "thread" }),
+    ];
+    expect(heatStats(buildHeat(roots, now), now)).toEqual({
+      waiting: 1,
+      unread: 1,
+      running: 1,
+      stale: 1,
+      overdue: 0,
+      slipped: 0,
+      aged: 0,
+    });
+  });
+  it("lays every area inside the board without gaps", () => {
+    const roots = Array.from({ length: 7 }, (_, index) =>
+      project(
+        `p${index}`,
+        Array.from({ length: index + 1 }, (_, child) =>
+          item({
+            id: `task:${index}-${child}`,
+            attention: child === 0 ? "input" : null,
+          }),
+        ),
+      ),
+    );
+    const areas = buildHeat(roots, now);
+    const rects = treemap(areas, BOARD);
+    expect(rects.size).toBe(areas.length);
+    const covered = [...rects.values()].reduce(
+      (sum, rect) => sum + area(rect),
+      0,
+    );
+    expect(covered).toBeCloseTo(area(BOARD), 5);
+    for (const entry of areas) {
+      const inner = treemap(entry.tiles, rects.get(entry.id)!);
+      expect(inner.size).toBe(entry.tiles.length);
+      expect(
+        [...inner.values()].reduce((sum, rect) => sum + area(rect), 0),
+      ).toBeCloseTo(area(rects.get(entry.id)!), 5);
+    }
+  });
+});
+
+describe("what an area header says", () => {
+  const area = (overrides: Partial<HeatArea>): HeatArea => ({
+    id: "project:p1",
+    title: "Test project",
+    scope: "TEST",
+    root: null,
+    weight: 1,
+    tier: "later",
+    waiting: 0,
+    running: 0,
+    orchestrator: null,
+    items: [],
+    tiers: new Map(),
+    tiles: [],
+    ...overrides,
+  });
+  it("counts what needs you and what runs, and never says zero", () => {
+    expect(areaState(area({ waiting: 2, running: 1 }))).toBe(
+      "2 need you · 1 running",
+    );
+    expect(areaState(area({ items: [{} as WorkItem] }))).toBe("1 quiet");
+  });
+  it("names one orchestrator instead of counting its threads, until it breaks its cap", () => {
+    const orchestrator = {
+      threadId: "orch",
+      title: "Test project orchestrator",
+      limit: 3,
+    };
+    expect(
+      areaState(
+        area({ running: 3, orchestrator: { ...orchestrator, running: 2 } }),
+      ),
+    ).toBe("orchestrator · 2 of 3 running");
+    expect(
+      areaState(
+        area({
+          waiting: 1,
+          running: 5,
+          orchestrator: { ...orchestrator, running: 4 },
+        }),
+      ),
+    ).toBe("1 need you · orchestrator · 4 running, over the cap of 3");
+  });
+});
+
+describe("tile label row", () => {
+  it("never cuts the key: the timing label shows whole or not at all", () => {
+    expect(labelRow(160, "DT-11", "35d overdue", false)).toEqual({
+      lead: "DT-11",
+      label: "35d overdue",
+      ask: "",
+    });
+    // Too narrow for "47d overdue" beside the key: the key stays whole.
+    expect(labelRow(90, "DT-11", "47d overdue", false)).toEqual({
+      lead: "DT-11",
+      label: "",
+      ask: "",
+    });
+    expect(labelRow(40, "WIZ-110", "2d overdue", false).lead).toBe("WIZ-110");
+    const threshold = 22 + labelWidth("DT-11") + 5 + labelWidth("47d overdue");
+    expect(labelRow(threshold, "DT-11", "47d overdue", false).label).toBe(
+      "47d overdue",
+    );
+    expect(labelRow(threshold - 1, "DT-11", "47d overdue", false).label).toBe(
+      "",
+    );
+  });
+
+  it("budgets the ask tag and falls back to the compact label before dropping anything", () => {
+    // The round-two case: "38d overdue" beside "DT-19 · draft" in a 130px tile.
+    const row = (width: number) =>
+      labelRow(width, "DT-19", "38d overdue", false, {
+        compact: "38d",
+        ask: "draft",
+      });
+    const full = 22 + labelWidth("DT-19") + 5 + labelWidth("· draft") + 5 + labelWidth("38d overdue");
+    expect(row(full)).toEqual({ lead: "DT-19", label: "38d overdue", ask: "draft" });
+    // A pixel short: the compact label, the tag kept.
+    expect(row(full - 1)).toEqual({ lead: "DT-19", label: "38d", ask: "draft" });
+    expect(row(130)).toEqual({ lead: "DT-19", label: "38d", ask: "draft" });
+    // Narrower: the tag yields before the date does.
+    const bare = 22 + labelWidth("DT-19") + 5 + labelWidth("38d");
+    expect(row(bare)).toEqual({ lead: "DT-19", label: "38d", ask: "" });
+    expect(row(bare - 1).label).toBe("");
+    expect(row(bare - 1).lead).toBe("DT-19");
+    // Whatever it picks, key, tag and label fit the room together.
+    for (let width = 40; width <= 200; width++) {
+      const pick = row(width);
+      const used =
+        labelWidth(pick.lead) +
+        (pick.ask ? 5 + labelWidth(`· ${pick.ask}`) : 0) +
+        (pick.label ? 5 + labelWidth(pick.label) : 0);
+      if (pick.ask || pick.label) expect(used).toBeLessThanOrEqual(width - 22);
+    }
+  });
+
+  it("says running whole or leaves only the green dot, never a clipped word", () => {
+    expect(labelRow(120, "running", "", true).lead).toBe("running");
+    expect(labelRow(60, "running", "", true).lead).toBe("");
+    // The dot takes room too, so the label yields to a session's running word.
+    expect(labelRow(90, "running", "12d", true)).toEqual({
+      lead: "running",
+      label: "",
+      ask: "",
+    });
+    expect(fitsWord(120, "agent running")).toBe(true);
+    expect(fitsWord(80, "agent running")).toBe(false);
+  });
+});
+
+describe("a snoozed task in Heat", () => {
+  it("carries the quiet tone, folds with the quiet group and labels the snooze, not the date", () => {
+    const tasks = [
+      task({
+        id: "late",
+        key: "TEST-1",
+        status: "in_review",
+        dueDate: "2026-09-10",
+        dateKind: "deadline",
+      }),
+      ...[2, 3, 4].map((n) =>
+        task({
+          id: `q${n}`,
+          key: `TEST-${n}`,
+          createdAt: new Date(now).toISOString(),
+        }),
+      ),
+    ];
+    const snoozedUntil = now + 6 * DAY;
+    const [root] = buildMap(
+      data(tasks),
+      [],
+      { "task:late": { snoozedUntil } },
+      now,
+    );
+    const late = root.children.find((c) => c.id === "task:late")!;
+    expect(heatTone(late)).toBe("quiet");
+    const [area] = buildHeat([root], now, { keepQuiet: 1 });
+    const group = area.tiles.find((t) => t.id.startsWith("quiet:"));
+    expect(group?.members.map((m) => m.id)).toContain("task:late");
+    const [open] = buildHeat([root], now, { uncollapsed: [root.id] });
+    const tile = open.tiles.find((t) => t.id === "task:late")!;
+    expect(tile.timing).toMatchObject({
+      kind: "snooze",
+      near: 0.1,
+      label: "snoozed 6d",
+      overdue: false,
+      prominent: false,
+    });
+    expect(tile.timing!.description).toBe(
+      "Snoozed until 2026-09-23; due 2026-09-10",
+    );
+    // Unsnoozed, the same task is loud and overdue.
+    const [awake] = buildHeat(buildMap(data(tasks), [], {}, now), now, {
+      keepQuiet: 1,
+    });
+    expect(awake.tiles.find((t) => t.id === "task:late")).toMatchObject({
+      tone: "review",
+      timing: { kind: "due", overdue: true },
+    });
+  });
+});
+
+describe("folding tiles too small to read", () => {
+  const heatTile = (id: string, weight: number): HeatTile => ({
+    id,
+    weight,
+    tone: "review",
+    item: { id, title: id } as WorkItem,
+    members: [],
+    stale: 0,
+    waited: null,
+    pull: 0,
+    tier: "later",
+    reason: "",
+    compact: "",
+    slipped: false,
+    timing: null,
+  });
+  const size = { w: 300, h: 200 };
+  const min = { w: 64, h: 42 };
+  const geometry = (tiles: HeatTile[], keep?: string) =>
+    place(
+      partition(tiles, { x: 0, y: 0, ...size }),
+      expandedWeights(tiles, keep, 0.78),
+      { x: 0, y: 0, ...size },
+    );
+
+  it("folds the unreadable tiles into one +N more with their summed weight and leaves no hole", () => {
+    const tiles = [
+      heatTile("a", 10),
+      heatTile("b", 8),
+      heatTile("c", 6),
+      heatTile("d", 0.4),
+      heatTile("e", 0.3),
+      heatTile("f", 0.2),
+    ];
+    // Unfolded, the light tiles are slivers.
+    const before = geometry(tiles);
+    expect(
+      ["d", "e", "f"].every((id) => {
+        const cell = before.get(id)!;
+        return cell.w < min.w || cell.h < min.h;
+      }),
+    ).toBe(true);
+    const shown = foldSmall(tiles, size, { id: "p1", min });
+    const more = shown.find((tile) => tile.overflow)!;
+    expect(more.id).toBe("more:p1");
+    expect(more.members.map((member) => member.id).sort()).toEqual([
+      "d",
+      "e",
+      "f",
+    ]);
+    // Their summed weight, or more when that alone would draw it as a sliver.
+    expect(more.weight).toBeGreaterThanOrEqual(0.9);
+    expect(
+      shown.filter((tile) => !tile.overflow).map((tile) => tile.id),
+    ).toEqual(["a", "b", "c"]);
+    const after = geometry(shown);
+    for (const tile of shown.filter((entry) => !entry.overflow)) {
+      const cell = after.get(tile.id)!;
+      expect(cell.w).toBeGreaterThanOrEqual(min.w);
+      expect(cell.h).toBeGreaterThanOrEqual(min.h);
+    }
+    const covered = [...after.values()].reduce(
+      (sum, cell) => sum + cell.w * cell.h,
+      0,
+    );
+    expect(covered).toBeCloseTo(size.w * size.h, 4);
+  });
+
+  it("keeps readable areas untouched, and never folds the expanded tile", () => {
+    const roomy = [heatTile("a", 5), heatTile("b", 4)];
+    expect(foldSmall(roomy, size, { id: "p1", min })).toEqual(heatOrder(roomy));
+    const tiles = [heatTile("a", 10), heatTile("b", 9), heatTile("tiny", 0.2)];
+    const shown = foldSmall(tiles, size, { id: "p1", min, keep: "tiny" });
+    expect(shown.some((tile) => tile.id === "tiny")).toBe(true);
+    // An existing quiet group folds by its members, not as one item.
+    const group: HeatTile = {
+      ...heatTile("quiet:p1", 0.3),
+      tone: "quiet",
+      item: null,
+      members: [{ id: "q1" } as WorkItem, { id: "q2" } as WorkItem],
+    };
+    const folded = foldSmall([heatTile("a", 30), group], size, {
+      id: "p1",
+      min,
+    });
+    expect(
+      folded.find((tile) => tile.overflow)?.members.map((member) => member.id),
+    ).toEqual(["q1", "q2"]);
+  });
+
+  it("lays open-area cards out at a minimum size and grows taller instead of shrinking them", () => {
+    const ids = Array.from({ length: 12 }, (_, index) => `t${index}`);
+    const { rects, height } = cardLayout(
+      ids,
+      { w: 400, h: 300 },
+      {
+        w: 150,
+        h: 90,
+      },
+    );
+    const cols = Math.max(
+      ...ids.map((id) => Math.round(100 / rects.get(id)!.w)),
+    );
+    expect(cols).toBeLessThanOrEqual(2);
+    expect(height).toBeGreaterThan(300);
+    for (const id of ids) {
+      const cell = rects.get(id)!;
+      expect((cell.h / 100) * height).toBeGreaterThanOrEqual(90 - 0.01);
+      expect((cell.w / 100) * 400).toBeGreaterThanOrEqual(150);
+    }
+    // With room to spare it is the plain grid.
+    expect(cardLayout(ids, { w: 1400, h: 900 }, { w: 150, h: 90 }).height).toBe(
+      900,
+    );
+  });
+});
+
+describe("area shares", () => {
+  it("never lets one heavy single-task area take more than about a third of the map", () => {
+    const day = 86400000;
+    const projects = ["a", "b", "c", "d"].map((id) => ({
+      id,
+      prefix: id.toUpperCase(),
+      name: `Project ${id}`,
+    }));
+    const tasks = [
+      // One task, as heavy as a task gets: input, urgent, three days late.
+      task({
+        id: "heavy",
+        projectId: "a",
+        key: "A-1",
+        status: "in_review",
+        priority: "urgent",
+        dateKind: "deadline",
+        dueDate: new Date(now - 3 * day).toISOString().slice(0, 10),
+        threadIds: ["thr_ask"],
+      }),
+      ...["b", "c", "d"].flatMap((projectId) =>
+        [1, 2, 3].map((n) =>
+          task({
+            id: `${projectId}${n}`,
+            projectId,
+            key: `${projectId.toUpperCase()}-${n}`,
+            status: "in_review",
+          }),
+        ),
+      ),
+    ];
+    const roots = buildMap(
+      { ...data(tasks), projects },
+      [thread({ id: "thr_ask", hasPendingInteraction: true })],
+      {},
+      now,
+    );
+    const areas = buildHeat(roots, now);
+    const rects = treemap(areas, { x: 0, y: 0, w: 1200, h: 700 });
+    const heavy = areas.find((area) => area.tiles.length === 1)!;
+    const cell = rects.get(heavy.id)!;
+    expect((cell.w * cell.h) / (1200 * 700)).toBeLessThanOrEqual(0.35);
+    // Still the heaviest: the cap never reorders the map.
+    expect(areas[0].id).toBe(heavy.id);
+  });
+
+  it("stops an open area growing where a neighbour would lose its name", () => {
+    // Weights shaped like the real map: an open area among eight.
+    const areas = [
+      { id: "open", weight: 6 },
+      { id: "n1", weight: 14 },
+      { id: "n2", weight: 10 },
+      { id: "n3", weight: 9 },
+      { id: "n4", weight: 5 },
+      { id: "n5", weight: 3 },
+      { id: "n6", weight: 1.5 },
+      { id: "n7", weight: 1.2 },
+    ];
+    const neighbours = areas.slice(1).map((area) => area.id);
+    const size = { w: 1110, h: 620 };
+    const rows = partition(areas, { x: 0, y: 0, ...size });
+    const share = openAreaShare(areas, "open", rows, size, 0.66);
+    expect(share).toBeGreaterThan(0);
+    const rects = place(rows, expandedWeights(areas, "open", share), {
+      x: 0,
+      y: 0,
+      ...size,
+    });
+    // Every neighbour that could say its name before the area opened still can.
+    const base = place(rows, expandedWeights(areas, undefined, 0), {
+      x: 0,
+      y: 0,
+      ...size,
+    });
+    const named = neighbours.filter(
+      (id) => base.get(id)!.w >= MIN_AREA.w && base.get(id)!.h >= MIN_AREA.h,
+    );
+    expect(named.length).toBeGreaterThan(4);
+    for (const id of named) {
+      expect(rects.get(id)!.w).toBeGreaterThanOrEqual(MIN_AREA.w - 0.5);
+      expect(rects.get(id)!.h).toBeGreaterThanOrEqual(MIN_AREA.h - 0.5);
+    }
+    // Uncapped, 66% would have crushed one of them.
+    const greedy = place(rows, expandedWeights(areas, "open", 0.66), {
+      x: 0,
+      y: 0,
+      ...size,
+    });
+    expect(
+      named.some(
+        (id) =>
+          greedy.get(id)!.w < MIN_AREA.w || greedy.get(id)!.h < MIN_AREA.h,
+      ),
+    ).toBe(true);
+    expect(share).toBeLessThan(0.66);
+  });
+
+  it("balances card rows: 16 cards in equal rows, 13 with no card alone", () => {
+    const rowsOf = (n: number, size: { w: number; h: number }) => {
+      const ids = Array.from({ length: n }, (_, index) => `t${index}`);
+      const { rects } = cardLayout(ids, size, { w: 150, h: 90 });
+      const rows = new Map<number, number>();
+      for (const id of ids) {
+        const y = rects.get(id)!.y;
+        rows.set(y, (rows.get(y) ?? 0) + 1);
+      }
+      return [...rows.values()];
+    };
+    const sixteen = rowsOf(16, { w: 1160, h: 600 });
+    expect(new Set(sixteen).size).toBe(1);
+    expect(sixteen.length).toBeGreaterThan(1);
+    for (const size of [
+      { w: 1160, h: 600 },
+      { w: 900, h: 700 },
+      { w: 700, h: 500 },
+    ])
+      expect(rowsOf(13, size)).not.toContain(1);
+  });
+});
+
+describe("closed work with an agent still attached", () => {
+  it("reads as done: quiet, not working, not counted as running, no working pull", () => {
+    const orchestrator = thread({ id: "thr_orch", indicator: "runtime" });
+    const roots = buildMap(
+      data([
+        task({
+          id: "done",
+          key: "T-1",
+          status: "done",
+          threadIds: ["thr_orch"],
+        }),
+        task({
+          id: "gone",
+          key: "T-2",
+          status: "canceled",
+          threadIds: ["thr_orch"],
+        }),
+        task({ id: "open", key: "T-3", threadIds: ["thr_orch"] }),
+      ]),
+      [orchestrator],
+      {},
+      now,
+    );
+    const items = roots[0].children;
+    const byKey = (key: string) => items.find((i) => i.task?.key === key)!;
+    const done = byKey("T-1");
+    const gone = byKey("T-2");
+    const open = byKey("T-3");
+    expect(closedStatus(done)).toBe("done");
+    expect(closedStatus(gone)).toBe("canceled");
+    expect(closedStatus(open)).toBeNull();
+    for (const closed of [done, gone]) {
+      expect(heatTone(closed)).toBe("quiet");
+      expect(heatWorking(closed)).toBe(false);
+    }
+    expect(heatTone(open)).toBe("working");
+    // The same closed task without the agent pulls exactly as hard.
+    const detached = { ...done, threads: [] };
+    expect(heatPull(done, now)).toBe(heatPull(detached, now));
+    const [area] = buildHeat(roots, now, { uncollapsed: [roots[0].id] });
+    expect(area.running).toBe(1);
+    expect(heatStats([area], now).running).toBe(1);
+  });
+});
+
+describe("what an open area asks for", () => {
+  it("never asks for less than the floor that fits its act bar and one card", () => {
+    expect(openAreaWant(1, 0.66)).toBe(OPEN_AREA_FLOOR);
+    expect(openAreaWant(3, 0.66)).toBe(OPEN_AREA_FLOOR);
+    expect(openAreaWant(13, 0.66)).toBe(0.66);
+    expect(openAreaWant(13, 0.9)).toBeCloseTo(0.77);
+  });
+});
+
+describe("folding keeps the heaviest tiles on screen", () => {
+  const tile = (id: string, weight: number): HeatTile => ({
+    id,
+    weight,
+    tone: "working",
+    item: { id, title: id } as WorkItem,
+    members: [],
+    stale: 0,
+    waited: null,
+    pull: 0,
+    tier: "later",
+    reason: "",
+    compact: "",
+    slipped: false,
+    timing: null,
+  });
+  it("folds the lightest half at a time, so a crowded area still shows its heaviest work", () => {
+    // Fifteen sessions in a 290x300 area: all too small at once, but once the
+    // light half is folded the rest fit, and "+N more" is never the whole area.
+    const tiles = Array.from({ length: 15 }, (_, i) => tile(`s${i}`, 1 + i * 0.3));
+    const shown = foldSmall(tiles, { w: 290, h: 300 }, { id: "sessions" });
+    const more = shown.find((t) => t.overflow);
+    expect(more).toBeTruthy();
+    expect(shown.length).toBeGreaterThan(2);
+    expect(shown.map((t) => t.id)).toContain("s14");
+    expect(more!.members.map((m) => m.id)).toContain("s0");
+    expect(more!.members.map((m) => m.id)).not.toContain("s14");
+    // And nothing left on screen is below the readable minimum.
+    const rect = { x: 0, y: 0, w: 290, h: 300 };
+    const rects = place(partition(shown, rect), expandedWeights(shown, undefined, 0.78), rect);
+    for (const t of shown) {
+      const cell = rects.get(t.id)!;
+      if (!t.overflow) expect(cell.w >= MIN_TILE.w && cell.h >= MIN_TILE.h).toBe(true);
+    }
+  });
+});
+
+describe("the fold tile itself", () => {
+  const tile = (id: string, weight: number): HeatTile => ({
+    id, weight, tone: "review", item: { id, title: id } as WorkItem, members: [],
+    stale: 0, waited: null, pull: 0, tier: "later", reason: "", compact: "", slipped: false, timing: null,
+  });
+  it("is never a sliver: below the minimum it absorbs the next lightest tile", () => {
+    // One heavy tile and many light ones in a short, narrow area: the light
+    // ones fold, and the fold tile keeps growing until it can be read.
+    const tiles = [tile("big", 40), ...Array.from({ length: 6 }, (_, i) => tile(`s${i}`, 0.4 + i * 0.1))];
+    const shown = foldSmall(tiles, { w: 160, h: 90 }, { id: "a" });
+    const rect = { x: 0, y: 0, w: 160, h: 90 };
+    const rects = place(partition(shown, rect), expandedWeights(shown, undefined, 0.78), rect);
+    const more = shown.find((t) => t.overflow)!;
+    const cell = rects.get(more.id)!;
+    expect(cell.w >= MIN_TILE.w && cell.h >= MIN_TILE.h).toBe(true);
+  });
+});
+
+describe("a fold never hides running work behind quiet work", () => {
+  const tile = (
+    id: string,
+    weight: number,
+    tone: HeatTile["tone"],
+    running = 0,
+  ): HeatTile => ({
+    id,
+    weight,
+    tone,
+    item: { id, title: id } as WorkItem,
+    members: [],
+    stale: 0,
+    waited: null,
+    pull: 0,
+    tier: tone === "review" ? "next" : "later",
+    reason: "",
+    compact: "",
+    slipped: false,
+    timing: null,
+    running,
+  });
+  const loud = (t: HeatTile) =>
+    t.tone === "review" || t.tone === "input" || (t.running ?? 0) > 0;
+  it("folds quiet tiles first, then by weight, and keeps the running ones drawn", () => {
+    // Sessions at 1024: light running agents beside heavier finished ones.
+    const tiles = [
+      ...Array.from({ length: 10 }, (_, i) => tile(`q${i}`, 2 + i * 0.1, "quiet")),
+      tile("r1", 0.9, "working", 1),
+      tile("r2", 0.8, "working", 1),
+      tile("r3", 0.7, "working", 1),
+    ];
+    const size = { w: 280, h: 190 };
+    const shown = foldSmall(tiles, size, { id: "s" });
+    const drawn = shown.filter((t) => !t.overflow);
+    const more = shown.find((t) => t.overflow);
+    // Every running tile is drawn whole...
+    expect(drawn.map((t) => t.id)).toEqual(
+      expect.arrayContaining(["r1", "r2", "r3"]),
+    );
+    const rect = { x: 0, y: 0, ...size };
+    const rects = place(
+      partition(shown, rect),
+      expandedWeights(shown, undefined, 0.78),
+      rect,
+    );
+    for (const t of drawn) {
+      const cell = rects.get(t.id)!;
+      expect(cell.w >= MIN_TILE.w && cell.h >= MIN_TILE.h).toBe(true);
+    }
+    // ...and only quiet work went into the fold, which stays quiet.
+    expect(more).toBeTruthy();
+    expect(more!.members.every((m) => m.id.startsWith("q"))).toBe(true);
+    expect(more!.tone).toBe("quiet");
+    expect(more!.running).toBe(0);
+  });
+  it("folds a loud tile only once no quieter tile is drawn", () => {
+    const tiles = [
+      tile("q0", 3, "quiet"),
+      tile("q1", 2.5, "quiet"),
+      ...Array.from({ length: 12 }, (_, i) =>
+        tile(`r${i}`, 0.5 + i * 0.05, "working", 1),
+      ),
+      tile("n0", 0.6, "review"),
+    ];
+    const shown = foldSmall(tiles, { w: 150, h: 120 }, { id: "s" });
+    const more = shown.find((t) => t.overflow)!;
+    const drawn = shown.filter((t) => !t.overflow);
+    if (more.members.some((m) => loud(tiles.find((t) => t.id === m.id)!)))
+      expect(drawn.every(loud)).toBe(true);
+    // The fold wears its strongest member and counts what it hides.
+    const hidden = more.members.map((m) => tiles.find((t) => t.id === m.id)!);
+    expect(more.running).toBe(hidden.filter((t) => t.running).length);
+    expect(more.waiting).toBe(hidden.filter((t) => t.tone === "review").length);
+    expect(more.tone).toBe(
+      hidden.some((t) => t.tone === "review")
+        ? "review"
+        : hidden.some((t) => t.running)
+          ? "working"
+          : "quiet",
+    );
+  });
+});
+
+describe("the Now share of the map", () => {
+  const tileOf = (id: string, weight: number, tier: Tier): HeatTile => ({
+    id, weight, pull: 0, tone: "review", item: item({ id, attention: "review" }),
+    members: [], stale: 0, waited: null, tier, reason: "", compact: "", slipped: false, timing: null,
+  });
+  const areaOf = (id: string, tiles: HeatTile[]): HeatArea => ({
+    id, title: id, scope: id, root: null, weight: areaWeight(tiles), tier: "later",
+    waiting: 0, running: 0, orchestrator: null, items: [], tiles, tiers: new Map(),
+  });
+  const same = (areas: readonly HeatArea[]) => [...areas];
+  const nowOf = (area: HeatArea) => area.tiles.filter((t) => t.tier === "now");
+
+  it("reads the Now tiles' share of the map from each area's share and the tiles' share of it", () => {
+    const one = areaOf("p", [
+      tileOf("now", 3, "now"),
+      tileOf("l1", 1, "later"),
+      tileOf("l2", 1, "later"),
+      tileOf("l3", 1, "later"),
+    ]);
+    expect(nowShare([one])).toBeCloseTo(0.5, 6);
+    expect(nowShare([])).toBe(0);
+  });
+
+  it("shrinks the Now tiles to the cap and keeps them the heaviest of their area", () => {
+    const areas = [
+      areaOf("hot", [tileOf("now", 1.5, "now"), tileOf("a", 0.5, "later"), tileOf("b", 0.5, "later")]),
+      areaOf("cold", [tileOf("c", 1, "later"), tileOf("d", 1, "later"), tileOf("e", 1, "later")]),
+    ];
+    expect(nowShare(areas)).toBeGreaterThan(NOW_SHARE_CAP);
+    const capped = capNowShare(areas, same);
+    expect(nowShare(capped)).toBeLessThanOrEqual(NOW_SHARE_CAP + 1e-6);
+    const hot = capped.find((area) => area.id === "hot")!;
+    const [now] = nowOf(hot);
+    for (const tile of hot.tiles.filter((t) => t.tier !== "now"))
+      expect(now.weight).toBeGreaterThan(tile.weight);
+    // Only the Now tiles move; the room they give back goes to the rest.
+    expect(capped.find((area) => area.id === "cold")!.tiles).toEqual(areas[1].tiles);
+    expect(hot.weight).toBeLessThan(areas[0].weight);
+  });
+
+  it("never scales the Now tiles under the floor, even when the cap cannot be met", () => {
+    // One area, the Now tile three fifths of it: at 0.4 of its weight it is
+    // still more than the cap, so the scale stops at the floor.
+    const areas = [areaOf("p", [tileOf("now", 3, "now"), tileOf("a", 1, "later"), tileOf("b", 1, "later")])];
+    expect(nowShare(areas)).toBeCloseTo(0.6, 6);
+    const scale = nowScale(areas, same);
+    expect(scale).toBeGreaterThanOrEqual(0.4);
+    expect(scale * 0.94).toBeLessThan(0.4);
+    const capped = capNowShare(areas, same);
+    expect(nowShare(capped)).toBeGreaterThan(NOW_SHARE_CAP);
+    expect(nowOf(capped[0])[0].weight).toBeCloseTo(3 * scale, 3);
+    expect(nowOf(capped[0])[0].weight).toBeGreaterThan(1);
+  });
+});
+
+describe("the order of an open area's cards", () => {
+  const card = (id: string, weight: number, priority: string, status = "todo"): HeatTile => ({
+    id, weight, pull: 0, tone: "quiet", item: item({ id, task: task({ id, priority, status }) }),
+    members: [], stale: 0, waited: null, tier: "later", reason: "", compact: "", slipped: false, timing: null,
+  });
+
+  it("puts closed work last, then urgent, high, medium, low and none, heavier first, then by id", () => {
+    const tiles = [
+      card("done-urgent", 9, "urgent", "done"),
+      card("low", 5, "low"),
+      card("none", 6, "none"),
+      card("medium-b", 2, "medium"),
+      card("medium-light", 1, "medium"),
+      card("medium-a", 2, "medium"),
+      card("high", 1, "high"),
+      card("urgent", 0.5, "urgent"),
+      card("canceled", 3, "medium", "canceled"),
+    ];
+    expect(priorityOrder(tiles).map((t) => t.id)).toEqual([
+      "urgent",
+      "high",
+      "medium-a",
+      "medium-b",
+      "medium-light",
+      // Low and none are one group, so weight decides between them.
+      "none",
+      "low",
+      "done-urgent",
+      "canceled",
+    ]);
+  });
+
+  it("names each priority group in a word", () => {
+    expect(priorityGroup("urgent")).toBe("Urgent");
+    expect(priorityGroup("high")).toBe("High");
+    expect(priorityGroup("medium")).toBe("Medium");
+    expect(priorityGroup("low")).toBe("Low / none");
+    expect(priorityGroup("none")).toBe("Low / none");
+    expect(priorityGroup(undefined)).toBe("Low / none");
+  });
+});
+
+describe("folding Next after Later", () => {
+  it("folds a heavier Later tile before a lighter Next one", () => {
+    const tileOf = (id: string, weight: number, tier: Tier): HeatTile => ({
+      id, weight, pull: 0, tone: "quiet", item: item({ id }),
+      members: [], stale: 0, waited: null, tier, reason: "", compact: "", slipped: false, timing: null,
+    });
+    const tiles = [
+      tileOf("later-a", 6, "later"),
+      tileOf("later-b", 3, "later"),
+      tileOf("next", 1, "next"),
+    ];
+    const size = { w: 300, h: 120 };
+    const rect = { x: 0, y: 0, ...size };
+    // Unfolded, the Next tile is too small to read: something must fold.
+    const before = place(partition(tiles, rect), expandedWeights(tiles, undefined, 0.78), rect);
+    const cell = before.get("next")!;
+    expect(cell.w < MIN_TILE.w || cell.h < MIN_TILE.h).toBe(true);
+    const shown = foldSmall(tiles, size, { id: "p1" });
+    const more = shown.find((tile) => tile.overflow)!;
+    expect(more.members.map((member) => member.id)).toEqual(["later-b"]);
+    expect(shown.map((tile) => tile.id).sort()).toEqual(["later-a", "more:p1", "next"]);
+  });
+});

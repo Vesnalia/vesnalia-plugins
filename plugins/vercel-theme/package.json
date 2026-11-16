@@ -1,0 +1,70 @@
+{
+  "name": "bb-plugin-vercel-theme",
+  "version": "0.1.0",
+  "description": "A crisp Vercel-inspired light and dark theme for bb with Geist typography, true-black surfaces, and matching code colors.",
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "theme",
+    "vercel",
+    "geist",
+    "dark-mode"
+  ],
+  "license": "MIT",
+  "author": "Divyesh Puri",
+  "homepage": "https://github.com/divyesh-puri/bb-plugin-vercel-theme#readme",
+  "bugs": {
+    "url": "https://github.com/divyesh-puri/bb-plugin-vercel-theme/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/divyesh-puri/bb-plugin-vercel-theme.git"
+  },
+  "type": "module",
+  "engines": {
+    "bb": ">=0.40.0 <1.0.0",
+    "bbPluginSdk": ">=0.4.21"
+  },
+  "bb": {
+    "name": "Vercel Theme",
+    "description": "A crisp Vercel-inspired palette for bb with Geist typography, true-black dark surfaces, and matching code colors.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "themes": [
+      {
+        "id": "vercel",
+        "name": "Vercel",
+        "description": "Geist typography, monochrome surfaces, restrained blue accents, and matching light and dark code palettes.",
+        "css": "./themes/vercel.css",
+        "codeTheme": {
+          "dark": "./themes/vercel-dark-code.json",
+          "light": "./themes/vercel-light-code.json"
+        }
+      }
+    ],
+    "skills": []
+  },
+  "files": [
+    "dist/server.js",
+    "dist/server.meta.json",
+    "themes/",
+    "assets/",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "server.ts"
+  ],
+  "scripts": {
+    "build": "npm run check && bb plugin build .",
+    "check": "npm run typecheck && npm test",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.21",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

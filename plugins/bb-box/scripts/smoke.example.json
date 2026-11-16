@@ -1,0 +1,26 @@
+{
+  "backends": [
+    {
+      "id": "proxmox-lxc",
+      "type": "proxmox-lxc",
+      "enabled": true,
+      "fields": {
+        "url": { "file": "proxmox-token.env", "key": "PROXMOX_API_URL" },
+        "node": { "file": "proxmox-token.env", "key": "PROXMOX_NODE" },
+        "tls-fingerprint": { "file": "proxmox-token.env", "key": "PROXMOX_TLS_SHA256_FINGERPRINT" },
+        "token-id": { "file": "proxmox-token.env", "key": "PROXMOX_TOKEN_ID" },
+        "token-secret": { "file": "proxmox-token.env", "key": "PROXMOX_TOKEN_SECRET" },
+        "ssh-private-key": { "file": "ssh/id_ed25519" },
+        "pool": "bbbox",
+        "linux-templates": "9100",
+        "bridge": "vmbr200",
+        "subnet": "10.200.0.0/24",
+        "gateway": "10.200.0.1",
+        "addresses": "10.200.0.10-10.200.0.254",
+        "vmid-first": 9900,
+        "vmid-last": 9999,
+        "ssh-user": "box"
+      }
+    }
+  ]
+}

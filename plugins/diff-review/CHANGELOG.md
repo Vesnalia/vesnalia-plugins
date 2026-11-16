@@ -1,0 +1,218 @@
+# Changelog
+
+Notable changes to `diff-review`. The other plugins in this repository version separately.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version numbers
+follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## 0.5.1
+
+### Fixed
+
+- A line comment you submit to a pull request now shows as one comment thread, even when the review
+  re-read GitHub while Submit review was sending it (Sync, a reconnect, another window). It used to
+  show twice: your comment, and a second copy of it from GitHub. A copy left by an earlier version
+  goes the next time the review reads GitHub, and anything written on it (an agent's draft, a reply
+  you were typing) moves to the one that stays.
+- A reply you were typing on that second copy moves to the comment thread that stays, in every open
+  window, and stays there however long the window is open. When you had started a reply on both,
+  you get both texts, in full, in the one reply box, and nothing is posted until you press Reply; if
+  together they are longer than a comment can be, the box says by how much, so you can shorten them.
+- A reply you had already sent from either copy stays greyed out while it is being posted, even when
+  the two copies become one meanwhile, and once it is posted only that text leaves the reply box: a
+  reply you started on the other copy stays, unsent. The same holds for a reply or an edit still
+  being saved when you leave the Review tab and come back.
+- A Reply, Post, Resolve or Reopen you pressed on that second copy just as it went no longer says it
+  failed after GitHub took it, so you won't post the same reply twice.
+
+## 0.5.0
+
+### Added
+
+- **Viewed on pull requests.** A pull request's review now has the Viewed box on every file, as the
+  other views do. It is your own Viewed mark on GitHub, the one GitHub's *Files changed* page shows:
+  ticking it folds the file and marks it viewed on GitHub, clearing it does the opposite, and every
+  load (Sync with GitHub, new commits) reads the marks again. A file GitHub reset because it changed
+  after you viewed it shows "changed since viewed". When GitHub refuses a change, the box goes back
+  and says why; when the marks cannot be read, the pull request's bar says so and the diff shows
+  without the boxes. Nothing else is posted to GitHub. A tick stays put even when the review
+  reloads at that moment (a reconnect, a change in the workspace, Sync) or GitHub takes a few seconds
+  to report the change back, and quick ticks and unticks of a file reach GitHub one at a time, in the
+  order you made them.
+- **Agents' answers on GitHub threads are drafts you post.** When you send a pull request's GitHub
+  threads to an agent, its reply comes back on the thread as a draft marked as the agent's, with
+  **Post to GitHub** to post it as your account, and Edit and Discard. When the agent resolved or
+  dismissed the thread, the draft says so and **Post and resolve** also resolves the thread on GitHub.
+  **Submit review…** lists the drafts too, each left out until you tick it, and posts the ones you
+  tick as replies in your review. The agent itself still never posts to GitHub.
+
+### Changed
+
+- **Picking another view shows at once.** The picker shows the new choice right away, and the
+  previous diff is dimmed under a loading indicator until the new one arrives, instead of staying as
+  it was and then suddenly changing. If the new view cannot be loaded, the reason shows over it with
+  *Try again*, and you can still pick another view. A slow answer for a view you have already moved
+  on from never replaces the newer one.
+
+### Fixed
+
+- An agent's resolve of a GitHub thread no longer comes undone: the next read of GitHub's threads
+  used to reopen it in the tab, since GitHub still had it open. It is now kept as the agent's draft
+  until you post it.
+- An agent's draft is posted once, even when you press Post in one window while Submit review is
+  sending it from another, and shows once after posting even when the review re-read GitHub at that
+  moment.
+- When two quick changes of a file's Viewed box both fail, the box goes back to the mark GitHub has,
+  not to the first change; when only the second fails, the first stays, even if the review reloads
+  at that moment.
+
+## 0.4.1
+
+### Changed
+
+- **Diff Review stops waiting for reads nobody needs any more**: the changes of files loaded on
+  demand, those of commented files, and the check for the branch's pull request, when the plugin is
+  reloaded, turned off or removed, or when the window that asked closes before the answer arrives. It
+  then asks for no more of those changes. A read bb's own Git or GitHub PR Status plugin has already
+  started still runs to the end there, as bb 0.48.1 does not stop it. This needs bb 0.48.1 or newer;
+  on bb 0.48.0 Diff Review waits for every read as before.
+
+## 0.4.0
+
+### Added
+
+- **Review a GitHub pull request.** Pick *Pull request #N* in the view picker (offered when the
+  workspace's branch has one) or *A pull request…* to paste any pull request's address, or run
+  `bb diff-review open <address>`. Its changes are fetched into the workspace's repository without
+  switching your checkout, and its review threads from GitHub appear on their lines, marked GitHub.
+  The thread's tab comes back on it until the pull request is closed or merged.
+- **Answer GitHub's threads from the tab.** A reply, Resolve or Reopen on one of them goes to GitHub;
+  **Sync with GitHub** reads them again. A reply that asks @reviewer or @agent stays in the tab and
+  asks the view's AI reviewer instead of going to GitHub.
+- **Submit a review.** Your own comments in the view go to GitHub as one review, with the verdict you
+  pick (Comment, Approve or Request changes) and a summary: line comments as review threads, comments
+  on a file or the whole change in the summary. A comment that cannot be posted says why. It posts
+  exactly the text the dialog showed, refuses if the pull request got new commits meanwhile, and
+  keeps your replies and the agent's answers in the tab. It posts as the GitHub CLI's account on the
+  machine running bb, and only from that button.
+- GitHub comments on a whole file show on the file, and comments GitHub marks outdated keep the code
+  they were made on instead of moving to whatever is at their old line now.
+- **Fix a pull request in a new thread.** In a pull request's view, *A new thread…* in Send to agent
+  starts it in a new worktree that checks out the pull request.
+
+Needs the GitHub CLI (`gh`), signed in, on the machine running bb.
+
+## 0.3.0
+
+Needs bb 0.48 or newer.
+
+### Added
+
+- **More views.** Besides the uncommitted changes, the branch's commits and one commit, the view picker
+  now offers the **staged** and the **unstaged** changes, **a range** between two branches, tags or
+  commits (`main..feature`, or `main...feature`, which still shows a branch's changes after it was
+  merged), and **Any file**: search the workspace for any file, in the diff or not, and comment on its
+  lines. They work on a remote machine too. Each thread's Review tab comes back on the view you
+  picked in it, unless that view is gone (a range whose branch was deleted, say).
+- **Viewed.** Each file has a Viewed box, shared with bb's own diff panel: marking a file folds it, and
+  a file that changed since you marked it says so.
+- **Find in the diff**, across every file, folded ones included, with the match count, previous and
+  next, and match case.
+- **Go to** a file, an open comment or a view, by typing part of its name.
+- **Suggested changes.** A comment can hold a suggestion block (the **Suggest a change** button starts
+  one with the commented lines, blank ones included); **Apply suggestion** writes it into the file and
+  resolves the thread.
+- **Revert** a file's uncommitted change, or only some of its changes, after asking. It changes the
+  file only if it is still the version you were looking at, and leaves symlinks and submodules alone.
+- **Summarize** the change, from the AI review dialog, and **Explain** a file or the lines you
+  selected; each answer appears as a comment in the tab.
+- **Open** shows a file in bb's own viewer, at the version the view shows.
+- **Hide whitespace** in the toolbar.
+- **Colour-blind diff colours** (blue and orange instead of green and red), in the settings.
+- **A Reviews page** in the sidebar lists every review with comments, across projects, with a count
+  of the open ones on its entry, and shows the one you pick in full. The count covers the reviews the
+  page lists, so comments left in a workspace that has since been archived no longer add to it. The
+  page says how many such reviews there are and deletes them, with their comments, when you confirm.
+  A review with an AI thread still at work, in any workspace, is not one of them and is kept.
+- **The thread's Info tab** says how many review comments its workspace has open.
+- **Previous and next comment arrows** in the toolbar and on each comment thread, which move to the
+  open comment before or after (wrapping around at the ends), highlight it and put the cursor on it.
+  Comments on files far down a large diff show in their real place from the start, instead of moving
+  to "Not on the current diff" as you scroll, and the comment you moved to stays in view while the
+  files above it finish loading. A folded comment is a stop too, and a newer jump is never undone by
+  an older one whose comment showed up late.
+- **Palette commands** for every action of the tab: reload, send, AI review, find, go to, the next or
+  previous comment, the toolbar switches and more.
+- **`bb diff-review open`** opens a thread's review on a view and file from the command line.
+- A comment notes when its file changed since it was made.
+
+### Changed
+
+- A second click on the **Review** button in the thread's header closes the tab.
+- Diffs come from bb's Git plugin. If it is turned off, the tab says so instead of failing.
+- The tab hears about changes to the workspace made outside an agent's turn (your own edits, a `git`
+  command) and reloads by itself, and a tab you are not looking at waits to reload until you open it.
+
+## 0.2.1
+
+### Fixed
+
+- **Comments fit the pane.** A comment on a line of a wide file no longer stretches past the edge of
+  the Review tab: comments, replies and the new-comment box are as wide as the visible diff, their text
+  wraps, and a long word or code block in a comment no longer makes the code scroll sideways.
+- **"Only files with comments" starts off in every thread.** Turning it on in one thread no longer
+  turns it on in the next thread you open; each thread remembers its own choice.
+- **AI runs start with providers that lack the chosen permission mode.** An AI review, a question to
+  the reviewer or a fix in a new thread with opencode failed with "only supports accept-edits, full
+  permission mode". A provider that does not offer the mode set in the settings now runs in full
+  mode instead; the others keep the mode you set.
+
+## 0.2.0
+
+### Added
+
+- **AI review.** Ask an agent to review the diff, with an optional focus (security, performance,
+  correctness, naming, tests, types) and your own instructions. It runs in a thread of its own in the
+  same workspace, under the thread being reviewed, which you can watch and steer, and leaves its
+  comments in the Review tab as it goes, with a summary comment on the whole diff.
+- **Ask the reviewer in a comment.** Writing @reviewer (or @agent) in a comment or a reply asks the AI
+  reviewer of that view, which already knows the diff and its own comments, and its answer appears in
+  the same comment thread. When there is no reviewer yet, one starts and answers the next questions too.
+- **Fix in a new thread.** Send to agent can now start a new thread in the same workspace instead of
+  sending to the thread under review, with the provider and model you pick.
+- **The runs, listed in the tab**, with a link to each thread and Close, which archives it. An AI review
+  that ended while files in the workspace changed lists them, since bb cannot stop a review from
+  editing.
+- **Settings** for the provider and model AI runs start with (Claude Code and its default model unless
+  you change them; each run can pick another) and for how they run: *Approve for me* unless you choose
+  *Accept edits*.
+- **Runs appear under the thread they review**, and their reports to it say that nothing needs doing.
+- **Only files with comments.** A switch in the toolbar hides the files without comments, so you can go
+  through a review's findings file by file; the tab remembers it. With the switch off, each file's
+  header shows how many comment threads it has, open and closed.
+- **The tab remembers where you were.** Leaving it (another thread, a reload, a restart) no longer
+  loses unsent comments, replies or edits, which come back as typed with their box open, nor the files
+  and comment threads you folded or opened, nor the place you were scrolled to, kept separately for each thread and view.
+- **Clear review.** Deletes every comment thread in the view and closes its AI runs, archiving their
+  threads, so you can start over. It asks first, since it can't be undone.
+
+## 0.1.0
+
+### Added
+
+- **A Review tab beside each thread** with the diff of the thread's workspace: its uncommitted
+  changes, the changes committed since the base branch, all changes since the base branch, or one of
+  the branch's commits, split or unified, in bb's code theme. It opens on the uncommitted changes, or,
+  when there are none, on the changes committed since the base branch. Diffs load on their own as you
+  scroll; very large changes start folded.
+- **A Review button in the thread's title bar** that opens the tab.
+- **Comments on a line, a range of lines, a whole file or the whole diff**, with an optional severity
+  (must fix, suggestion, nit, question), in Markdown. Reply, edit, delete, resolve, reopen and
+  dismiss.
+- **Comments follow the code they are on** as it moves; a comment whose code changed or left the view
+  is listed apart, with the code as it read when you commented.
+- **Send to agent:** pick open comment threads, add a note, and send them to the thread under review,
+  queued behind its current turn. Its agent answers each thread, and the tab shows the answers as they
+  arrive, or *No reply* when its turn ended without one.
+- **Ignore patterns** for generated files, in the plugin's settings and in the workspace's own
+  `.diffityignore`.

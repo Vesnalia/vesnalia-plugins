@@ -1,0 +1,289 @@
+// AI review drafts: a review thread hands Shuttle its findings, and the user chooses what to post.
+import { AdapterError } from "./adapters/adapter";
+import { type Consensus, type HistoryFate, type HistoryFinding, type ReviewHistoryItem, type Evidence, type Finding, type PostFinding, type ReviewDraft, type Severity, type Verdict } from "./contract";
+import { errText, ShuttleError, type Ctx } from "./ctx";
+import type { DraftRow, PostRow, PrRow } from "./db/store";
+import { parseKey } from "./keys";
+import { autoPostRepo, gateDraft, normalizeAssessment, parseAssessment, parseGate, type AssessmentInput } from "./gate";
+import { fetchPr, lookup, requirePr, shortKey } from "./prs";
+import { authorizeAutoPost, planOf, postedByShuttle } from "./auto-post";
+
+export interface DraftInput {
+  summary: string;
+  verdict: Verdict;
+  findings: Array<{ severity: Severity; path: string; line?: number | null; body: string; evidence?: Evidence[]; consensus?: Consensus | null; category?: string }>;
+  notes?: string;
+  assessment?: AssessmentInput;
+}
+
+/** What the user did with one finding of a draft they posted; auto when Shuttle posted it, retracted when you marked that a mistake. */
+export interface FindingOutcome {
+  id: string;
+  outcome: "kept" | "edited" | "dropped" | "auto" | "retracted";
+}
+
+/**
+ * Kept when posted as drafted, edited when posted with other text, dropped when not posted. Null when no posted
+ * finding names its draft finding, as from an older client: then nothing is known per finding, and nothing is recorded.
+ */
+export function outcomesOf(drafted: readonly Finding[], posted: readonly PostFinding[]): FindingOutcome[] | null {
+  if (posted.length > 0 && posted.every((f) => f.id === undefined)) return null;
+  const byId = new Map(posted.filter((f) => f.id !== undefined).map((f) => [f.id!, f]));
+  return drafted.map((finding) => {
+    const post = byId.get(finding.id);
+    if (!post) return { id: finding.id, outcome: "dropped" };
+    return { id: finding.id, outcome: post.body.trim() === finding.body.trim() ? "kept" : "edited" };
+  });
+}
+
+export function draftView(ctx: Ctx, row: DraftRow): ReviewDraft {
+  const review = row.review_id !== null ? ctx.store.reviewsOf(row.pr_id).find((r) => r.id === row.review_id) ?? null : null;
+  return {
+    id: row.id,
+    threadId: row.thread_id,
+    threadTitle: ctx.store.threadTitle(row.thread_id) ?? "Review thread",
+    preset: review?.preset ?? null,
+    trigger: review?.trigger ?? null,
+    head: row.head,
+    at: row.created_at,
+    summary: row.summary,
+    verdict: row.verdict,
+    findings: JSON.parse(row.findings) as Finding[],
+    notes: row.notes,
+    assessment: parseAssessment(row.assessment),
+    // A gate stored by an older or newer Shuttle in another shape shows as not checked, never as a broken draft.
+    gate: parseGate(row.gate),
+    autoPost: autoPostOf(ctx, row),
+  };
+}
+
+/** What Shuttle posted itself from the draft, finding by finding, with your marks. */
+function autoPostedOf(row: DraftRow): ReviewHistoryItem["autoPosted"] {
+  if (row.auto_post_state !== "posted" || row.auto_post_verdict === null) return null;
+  const marks = new Map((row.outcome ? (JSON.parse(row.outcome) as FindingOutcome[]) : []).map((o) => [o.id, o.outcome]));
+  const findings = (JSON.parse(row.findings) as Finding[]).filter((f) => marks.get(f.id) === "auto" || marks.get(f.id) === "retracted");
+  return {
+    verdict: row.auto_post_verdict,
+    findings: findings.map((f) => ({ id: f.id, path: f.path, line: f.line, body: f.body, marked: marks.get(f.id) === "retracted" })),
+    mistake: row.approval_mistake_at,
+  };
+}
+
+/** Auto post's schedule of the draft, with the findings it posts or posted. */
+export function autoPostOf(ctx: Ctx, row: DraftRow): ReviewDraft["autoPost"] {
+  if (row.auto_post_state === null) return null;
+  const outcomes = row.auto_post_state === "posted" && row.outcome ? (JSON.parse(row.outcome) as FindingOutcome[]) : [];
+  const gate = parseGate(row.gate);
+  const pr = ctx.store.prById(row.pr_id);
+  const repo = pr ? autoPostRepo(ctx.config(), pr.repo) : null;
+  const findings = row.auto_post_state === "posted"
+    ? outcomes.filter((o) => o.outcome === "auto" || o.outcome === "retracted").map((o) => o.id)
+    : row.auto_post_findings ? (JSON.parse(row.auto_post_findings) as string[]) : (repo && gate ? planOf(ctx, repo, row, gate)?.findings : null) ?? [];
+  return { state: row.auto_post_state, at: row.auto_post_at, verdict: row.auto_post_verdict, reason: row.auto_post_reason, findings, mistake: row.approval_mistake_at };
+}
+
+const FATE: Record<FindingOutcome["outcome"], HistoryFate> = { kept: "posted", edited: "edited", dropped: "left_out", auto: "auto", retracted: "retracted" };
+
+/**
+ * Every finding of the draft, with the text it posted with and what became of it. A draft posted before Shuttle kept
+ * outcomes takes them from its post when the post names its findings. A finding Shuttle left out of its own post has no
+ * outcome, and was left out. When the post holds a comment that names no finding, a finding it did not name may be that
+ * comment, so what became of it is not known.
+ */
+function historyFindings(row: DraftRow, post: PostRow | null): HistoryFinding[] {
+  const drafted = JSON.parse(row.findings) as Finding[];
+  const sent = post === null ? [] : (JSON.parse(post.findings) as PostFinding[]);
+  const outcomes = row.state !== "posted" ? null : row.outcome ? (JSON.parse(row.outcome) as FindingOutcome[]) : post === null ? null : outcomesOf(drafted, sent);
+  const fates = outcomes === null ? null : new Map(outcomes.map((o) => [o.id, FATE[o.outcome]]));
+  const texts = new Map(sent.flatMap((f) => (f.id === undefined ? [] : [[f.id, f.body] as const])));
+  const unnamed = sent.some((f) => f.id === undefined);
+  const fateOf = (id: string): HistoryFate | null => {
+    if (fates === null || (unnamed && !texts.has(id))) return null;
+    return fates.get(id) ?? "left_out";
+  };
+  return drafted.map((f) => ({ id: f.id, severity: f.severity, path: f.path, line: f.line, body: texts.get(f.id) ?? f.body, fate: fateOf(f.id) }));
+}
+
+/** An earlier draft as the Your review tab lists it, with the post it went out in, if Shuttle posted it. */
+export function historyView(ctx: Ctx, row: DraftRow, post: PostRow | null = null): ReviewHistoryItem {
+  const review = row.review_id !== null ? ctx.store.reviewsOf(row.pr_id).find((r) => r.id === row.review_id) ?? null : null;
+  return {
+    id: row.id,
+    threadId: row.thread_id,
+    threadTitle: ctx.store.threadTitle(row.thread_id) ?? "Review thread",
+    preset: review?.preset ?? null,
+    trigger: review?.trigger ?? null,
+    head: row.head,
+    at: row.created_at,
+    state: row.state === "posted" ? "posted" : row.state === "discarded" ? "discarded" : "unposted",
+    discardReason: row.state === "discarded" ? row.discard_reason : null,
+    suggested: row.verdict,
+    posted: row.state === "posted" ? row.posted_verdict : null,
+    postedAt: row.posted_at,
+    summary: row.summary,
+    postedBody: row.state === "posted" && post !== null ? post.body : null,
+    notes: row.notes,
+    findings: historyFindings(row, post),
+    postedFindings: row.state === "posted" ? row.posted_findings : null,
+    autoPosted: autoPostedOf(row),
+  };
+}
+
+/** Called by the review thread's shuttle_review_draft tool. */
+export async function saveDraft(ctx: Ctx, threadId: string, query: string, input: DraftInput): Promise<{ pr: PrRow; draft: DraftRow }> {
+  const pr = await lookup(ctx, query);
+  if (pr.mine === 1) throw new ShuttleError(`${shortKey(ctx, pr)} is the user's own PR; drafts are for reviewing other people's`);
+  const review = [...ctx.store.reviewsOf(pr.id)].reverse().find((r) => r.thread_id === threadId) ?? null;
+  const latest = ctx.store.lastReview(pr.id);
+  // A slower, older review must not replace the draft of the one that came after it.
+  if (latest && latest.thread_id !== threadId) {
+    throw new ShuttleError(`a newer review of ${shortKey(ctx, pr)} runs in \u201c${ctx.store.threadTitle(latest.thread_id) ?? latest.thread_id}\u201d; this thread's draft is out of date`);
+  }
+  // The user stopped it: nothing it hands back may reach auto post. Starting a review again opens the way.
+  if (review?.ended_by === "stopped") throw new ShuttleError(`the user stopped this review of ${shortKey(ctx, pr)}; stop working on it and hand back nothing`);
+  const findings: Finding[] = input.findings.map((f, index) => ({
+    id: `f${index + 1}`, severity: f.severity, path: f.path, line: f.line ?? null, body: f.body,
+    ...(f.evidence?.length ? { evidence: f.evidence } : {}),
+    ...(f.consensus ? { consensus: f.consensus } : {}),
+    ...(f.category ? { category: f.category } : {}),
+  }));
+  // Shuttle's own schedule or queued post of an older draft goes with it; it says so below.
+  const withdrawn = ctx.store.pastDrafts(pr.id).filter((row) => row.state === "draft" && (row.auto_post_state === "scheduled" || row.auto_post_state === "queued"));
+  const draft = ctx.store.addDraft({
+    pr_id: pr.id,
+    thread_id: threadId,
+    review_id: review?.id ?? null,
+    head: review?.head ?? pr.head,
+    summary: input.summary,
+    verdict: input.verdict,
+    findings: JSON.stringify(findings),
+    notes: input.notes?.trim() || null,
+    assessment: input.assessment ? JSON.stringify(normalizeAssessment(input.assessment)) : null,
+  });
+  for (const old of withdrawn) {
+    if (ctx.store.draftById(old.id)?.auto_post_state !== "stopped") continue;
+    ctx.store.addEvent("auto_post", `Auto post withdrew its post of the earlier draft on ${shortKey(ctx, pr)}: a newer review replaced it.`, pr.id, old.thread_id);
+    void ctx.port.notify(`Shuttle will not post the earlier review of ${shortKey(ctx, pr)}`, "A newer review of the PR replaced it; Shuttle checks the new one.");
+  }
+  // The draft is what the review was for, whatever the thread does next.
+  if (review?.state === "running") ctx.store.finishReview(review.id, "done", "draft");
+  ctx.store.setSnooze(pr.id, null, null);
+  ctx.store.addEvent("draft", `\u201c${ctx.store.threadTitle(threadId) ?? threadId}\u201d drafted a review of ${shortKey(ctx, pr)}: ${findings.length} finding${findings.length === 1 ? "" : "s"}, nothing posted.`, pr.id, threadId);
+  ctx.port.publish();
+  // Auto post checks the draft in the background, so the review thread's call returns at once.
+  if (autoPostRepo(ctx.config(), pr.repo) !== null) void gateDraft(ctx, draft.id);
+  return { pr, draft };
+}
+
+function refused(ctx: Ctx, pr: PrRow, error: unknown): never {
+  if (error instanceof AdapterError) throw new ShuttleError(`${ctx.server(pr.server)?.name ?? pr.server} refused: ${error.message}`);
+  throw error;
+}
+
+export async function readBack(ctx: Ctx, pr: PrRow): Promise<void> {
+  const ref = parseKey(pr.key);
+  if (ref) await fetchPr(ctx, ref).catch((error: unknown) => ctx.port.log("warn", `read back ${pr.key}: ${errText(error)}`));
+}
+
+export interface SubmitInput {
+  verdict: Verdict;
+  body: string;
+  findings: PostFinding[];
+  draftId?: number;
+  staleOk?: boolean;
+  /** Auto post's own review: its findings are Shuttle's choice, not the user's, so none is recorded as kept. */
+  auto?: boolean;
+}
+
+const VERDICT_TEXT: Record<Verdict, string> = { comment: "commented on", approve: "approved", changes: "requested changes on" };
+
+/** The PR as its server has it now: a draft is compared with this head, not with the last sync's. */
+async function currentHead(ctx: Ctx, pr: PrRow): Promise<PrRow> {
+  const ref = parseKey(pr.key);
+  if (!ref) return pr;
+  try {
+    return await fetchPr(ctx, ref);
+  } catch (error) {
+    throw new ShuttleError(`Could not check ${shortKey(ctx, pr)}'s current head on ${ctx.server(pr.server)?.name ?? pr.server}, so the draft was not posted: ${errText(error)}`);
+  }
+}
+
+/** What is refused before anything is sent: a verdict on your own PR, nothing to post, and a draft that is not this PR's or not live. */
+export function checkReview(ctx: Ctx, pr: PrRow, input: SubmitInput): DraftRow | null {
+  if (pr.mine === 1 && input.verdict !== "comment") throw new ShuttleError("You can't approve or request changes on your own PR");
+  if (!input.body.trim() && !input.findings.length) throw new ShuttleError(input.verdict === "comment" ? "Write something, or pick findings to post" : "Nothing to post");
+  const draft = input.draftId !== undefined ? ctx.store.draftById(input.draftId) : null;
+  if (input.draftId !== undefined && (!draft || draft.pr_id !== pr.id)) throw new ShuttleError("That draft is not this PR's");
+  if (draft && draft.state !== "draft") throw new ShuttleError(`That draft was already ${draft.state}`);
+  return draft;
+}
+
+/** A draft read on another head than `pr`'s posts only its comments, and only once the user confirmed. */
+export function checkHead(ctx: Ctx, pr: PrRow, draft: DraftRow | null, input: SubmitInput): void {
+  // A draft that does not say which head it read counts as read on an older one.
+  const stale = draft !== null && (draft.head === null || pr.head === null || draft.head !== pr.head);
+  const read = draft?.head ? ` at ${draft.head.slice(0, 7)}` : "";
+  if (stale && input.verdict === "approve") throw new ShuttleError(`${shortKey(ctx, pr)} may have new commits since the review read it${read}; review it again before you approve`);
+  if (stale && !input.staleOk) throw new ShuttleError(`${shortKey(ctx, pr)} may have new commits since the review read it${read}; confirm to post its comments on the lines it read`);
+}
+
+export function reviewAdapter(ctx: Ctx, pr: PrRow) {
+  const adapter = ctx.adapter(pr.server);
+  if (!adapter.operations().includes("review")) throw new ShuttleError(`${ctx.server(pr.server)?.name ?? pr.server} has no review command, so Shuttle can't post reviews there`);
+  return adapter;
+}
+
+/** Posts the review now; the queue calls this for each review in turn. */
+export async function submitReview(ctx: Ctx, key: string, input: SubmitInput): Promise<{ pr: PrRow; placed: number; inBody: number }> {
+  let pr = requirePr(ctx, key);
+  const draft = checkReview(ctx, pr, input);
+  if (input.auto && !draft) throw new ShuttleError("Auto post posts only from a draft");
+  if (draft) pr = await currentHead(ctx, pr);
+  // Auto post's own review is checked once more here, after the last read and just before it is sent.
+  if (input.auto) await authorizeAutoPost(ctx, pr, draft!.id, input);
+  checkHead(ctx, pr, draft, input);
+  const adapter = reviewAdapter(ctx, pr);
+  let posted: { placed: number; inBody: number };
+  try {
+    posted = await adapter.review(pr.repo, pr.number, { verdict: input.verdict, body: input.body, head: draft ? draft.head : pr.head, comments: input.findings });
+  } catch (error) {
+    refused(ctx, pr, error);
+  }
+  if (draft) {
+    ctx.store.setDraftState(draft.id, "posted", input.findings.length);
+    // Findings Shuttle left out of its own review were never the user's to drop, so they get no outcome.
+    const outcomes = input.auto ? input.findings.map((f) => ({ id: f.id!, outcome: "auto" as const })) : outcomesOf(JSON.parse(draft.findings) as Finding[], input.findings);
+    ctx.store.setDraftOutcome(draft.id, outcomes === null ? null : JSON.stringify(outcomes), input.verdict);
+    if (input.auto) {
+      ctx.store.setAutoPost(draft.id, { state: "posted", reason: null });
+      postedByShuttle(ctx, pr, draft, input.findings.length);
+    } else if (draft.auto_post_state === "scheduled" || draft.auto_post_state === "queued") ctx.store.setAutoPost(draft.id, { state: "stopped", reason: "you posted it yourself" });
+  }
+  // What you reviewed is what the draft read, so new commits after it still bring the PR back.
+  ctx.store.addMyReview({ pr_id: pr.id, verdict: input.verdict, head: draft?.head ?? pr.head, findings: input.findings.length });
+  ctx.store.setSnooze(pr.id, null, null);
+  const comments = input.findings.length ? ` with ${input.findings.length} comment${input.findings.length === 1 ? "" : "s"}` : "";
+  ctx.store.addEvent("reviewed", `You ${VERDICT_TEXT[input.verdict]} ${shortKey(ctx, pr)}${comments}.`, pr.id);
+  await readBack(ctx, pr);
+  ctx.port.publish();
+  return { pr: ctx.store.prById(pr.id)!, ...posted };
+}
+
+/** The user's own discard or restore of a draft; a draft replaced by a newer one is marked superseded instead. */
+export function setDraftState(ctx: Ctx, key: string, draftId: number, state: "discarded" | "draft"): PrRow {
+  const pr = requirePr(ctx, key);
+  const draft = ctx.store.draftById(draftId);
+  if (!draft || draft.pr_id !== pr.id) throw new ShuttleError("That draft is not this PR's");
+  if (draft.state === "posted") throw new ShuttleError("That draft was already posted");
+  if (ctx.store.activePostOfDraft(draft.id)) throw new ShuttleError("That draft is queued to post; cancel the post first");
+  ctx.store.tx(() => {
+    if (state === "draft") {
+      const live = ctx.store.liveDraft(pr.id);
+      if (live && live.id !== draft.id) ctx.store.setDraftState(live.id, "discarded", null, "superseded");
+    }
+    ctx.store.setDraftState(draft.id, state, null, state === "discarded" ? "user" : null);
+    if (draft.auto_post_state === "scheduled") ctx.store.setAutoPost(draft.id, { state: "stopped", reason: state === "discarded" ? "you discarded it" : "you restored it, so it waits for you" });
+  });
+  ctx.port.publish();
+  return pr;
+}

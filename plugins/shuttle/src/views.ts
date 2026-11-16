@@ -1,0 +1,334 @@
+// PR rows as the UI, the tools and the CLI see them, and which area each one belongs in.
+import type { AgentView, Area, CheckCounts, PrView, Reason } from "./contract";
+import type { Ctx } from "./ctx";
+import type { InboxRuleRow, LinkRow, PrRow, ServerRow, Store } from "./db/store";
+import { actionsOf, parseLabels, parseReviewers } from "./edit";
+import { agentActive, feedbackSignature, INBOX_ORDER, nextStep, ruleMatches, stepOf, stillHandled, type NextFacts } from "./next";
+import { mergeView, SENT_MERGE_MS } from "./merges";
+import { postView } from "./posts";
+import { myReviewOf } from "./prs";
+import { globMatch, STEP_OF_REASON } from "./sync";
+import { waitingCount } from "./watch";
+
+const DAY = 86_400_000;
+const QUIET_MS = 30 * DAY;
+/** Reasons first seen this soon after the first sync were already waiting at install. */
+const BASELINE_SLACK_MS = 5 * 60_000;
+
+const isLive = (pr: PrRow) => pr.state === "open" || pr.state === "draft";
+
+/**
+ * Whether the server's last sync failed every list that brings this PR, and when one of them last
+ * passed. A PR read during that sync anyway, by its own refresh, is current. A PR no list brings is
+ * old only when Shuttle refreshes it and its read did not land.
+ */
+export function staleness(server: ServerRow | null, pr: { reasons: readonly Reason[]; fetchedAt: number; refreshed: boolean }): { stale: boolean; since: number | null } {
+  if (server === null || server.state === null || server.state === "ok") return { stale: false, since: null };
+  // A server that failed before Shuttle kept each step: all of its PRs may be old.
+  if (server.failed_steps === null) return { stale: server.state === "failed", since: server.last_ok_at };
+  const started = (server.last_sync_at ?? 0) - (server.duration_ms ?? 0);
+  if (pr.fetchedAt >= started) return { stale: false, since: null };
+  const failed = new Set<string>(JSON.parse(server.failed_steps) as string[]);
+  if (pr.reasons.length === 0) return pr.refreshed && failed.has("refresh") ? { stale: true, since: pr.fetchedAt } : { stale: false, since: null };
+  const { reasons } = pr;
+  // A PR of yours that the open list did not bring may have merged or closed, which only the closed list says.
+  const failedOf = (step: string) => (step === "authored" ? ["authored", "authored_closed"] : [step]).filter((s) => failed.has(s));
+  const down = [...new Set(reasons.map((reason) => STEP_OF_REASON[reason]))].map(failedOf);
+  if (down.some((steps) => steps.length === 0)) return { stale: false, since: null };
+  const okAt = server.steps_ok_at ? (JSON.parse(server.steps_ok_at) as Record<string, number>) : {};
+  const times = down.flat().map((step) => okAt[step]).filter((at): at is number => at !== undefined);
+  return { stale: true, since: times.length > 0 ? Math.max(...times) : server.last_ok_at };
+}
+
+/** A row that still says forward, from before a watch was only on or off, is the same watch as act. */
+export function agentMode(watch: "act" | "forward" | null): AgentView["mode"] {
+  return watch === null ? "off" : "fix";
+}
+
+/** A thread Shuttle has not read yet is unknown. */
+function threadStatus(thread: { archived: number | null; waiting: number | null; status: string | null } | null): AgentView["status"] {
+  if (thread === null) return "unknown";
+  return thread.archived === 1 ? "archived" : thread.waiting === 1 ? "waiting" : thread.status === null ? "unknown" : ["active", "starting", "pending"].includes(thread.status) ? "working" : "idle";
+}
+
+export function agentOf(ctx: Ctx, pr: PrRow, owner: LinkRow | null = ctx.store.ownerLink(pr.id)): AgentView | null {
+  if (!owner) return null;
+  const watch = ctx.store.watch(pr.id);
+  const status = threadStatus(owner);
+  const sent = ctx.store.events({ prId: pr.id, threadId: owner.thread_id, kinds: ["forwarded"], limit: 1 })[0];
+  return {
+    threadId: owner.thread_id,
+    title: owner.title ?? "Thread",
+    mode: agentMode(watch?.mode ?? null),
+    status,
+    auto: owner.auto === 1,
+    lastSent: sent ? { at: sent.at, text: sent.text } : null,
+  };
+}
+
+export function isBot(ctx: Ctx, pr: PrRow): boolean {
+  return pr.author_bot === 1 || ctx.settings().botAuthors.some((glob) => globMatch(glob, pr.author));
+}
+
+/** Team slugs without @ or org, so GitHub's @acme/platform and another server's @platform match. */
+export function normalizeTeam(team: string): string {
+  return team.replace(/^@/u, "").split("/").pop()!.toLowerCase();
+}
+
+function requestedAtOf(ctx: Ctx, pr: PrRow, reasons: Array<{ reason: string; since: number }>): number | null {
+  const asking = reasons.filter((r) => r.reason === "requested" || r.reason === "team" || r.reason === "mentioned");
+  if (!asking.length) return null;
+  if (pr.requested_at !== null) return pr.requested_at;
+  const baseline = ctx.store.server(pr.server)?.baseline_at ?? null;
+  const since = Math.min(...asking.map((r) => r.since));
+  // Shuttle saw it after its first sync, so when it saw it is when it was asked.
+  if (baseline !== null && since > baseline + BASELINE_SLACK_MS) return since;
+  return null;
+}
+
+export function toView(ctx: Ctx, pr: PrRow, rules: readonly InboxRuleRow[] = ctx.store.inboxRules()): PrView {
+  return viewOf(ctx, pr, rules).view;
+}
+
+/** The first rule by age, so adding a rule never changes which one a PR names. */
+function keptOutBy(rules: readonly InboxRuleRow[], pr: PrRow, reasons: readonly Reason[]): number | null {
+  const facts = { mine: pr.mine === 1, server: pr.server, author: pr.author, repo: pr.repo, reasons };
+  const ids = rules.filter((rule) => ruleMatches(rule, facts)).map((rule) => rule.id);
+  return ids.length ? Math.min(...ids) : null;
+}
+
+/** The view, and whether its step would put it in the Inbox if nothing held it out. */
+function viewOf(ctx: Ctx, pr: PrRow, rules: readonly InboxRuleRow[]): { view: PrView; wanted: boolean } {
+  const server = ctx.server(pr.server);
+  const serverRow = ctx.store.server(pr.server);
+  const watch = ctx.store.watch(pr.id);
+  const last = ctx.store.lastReview(pr.id);
+  const links = ctx.store.linksOf(pr.id);
+  const owner = links.find((l) => l.role === "owner") ?? null;
+  const agent = agentOf(ctx, pr, owner);
+  const reasonRows = ctx.store.reasons(pr.id);
+  const reasons = reasonRows.map((r) => ({ reason: r.reason, teams: JSON.parse(r.teams) as string[] }));
+  const freshness = staleness(serverRow, { reasons: reasons.map((r) => r.reason), fetchedAt: pr.fetched_at, refreshed: pr.tracked === 1 || watch !== null || links.length > 0 });
+  const teams = [...new Set(reasons.filter((r) => r.reason === "team").flatMap((r) => r.teams).map(normalizeTeam))];
+  const reviewers = parseReviewers(pr.reviewers);
+  const checkCounts = pr.check_counts ? (JSON.parse(pr.check_counts) as CheckCounts) : null;
+  const draft = pr.mine ? null : ctx.store.liveDraft(pr.id);
+  const postRow = ctx.store.currentPost(pr.id);
+  const post = postRow === null ? null : postView(ctx, postRow, pr);
+  // A failed merge of a PR that merged or closed since needs nothing more; one the server took stays while the PR waits at that head.
+  const open = pr.state === "open" || pr.state === "draft";
+  const mergeRow = pr.mine === 1 ? ctx.store.currentMerge(pr.id) ?? (open ? ctx.store.sentMerge(pr.id, ctx.now() - SENT_MERGE_MS) : null) : null;
+  // A server that says the PR is in its merge queue says more than Shuttle's guess that it may be.
+  const shown = mergeRow !== null && (mergeRow.state === "done" ? pr.head === mergeRow.head && pr.in_merge_queue !== 1 : mergeRow.state !== "failed" || open);
+  const merge = shown ? mergeView(ctx, mergeRow, pr) : null;
+  const draftFindings = draft ? (JSON.parse(draft.findings) as unknown[]).length : 0;
+  const myReview = pr.mine ? null : myReviewOf(ctx, pr);
+  const requestedAt = requestedAtOf(ctx, pr, reasonRows);
+  const actions = actionsOf(ctx, pr);
+  let ops = new Set<string>();
+  let cancelsAutoMerge = false;
+  try {
+    const adapter = ctx.adapter(pr.server);
+    ops = new Set(adapter.operations());
+    cancelsAutoMerge = typeof adapter.cancelAutoMerge === "function";
+  } catch {
+    // A server removed from the config: its PRs show, with nothing to do on them.
+  }
+  const lastReview = last
+    ? {
+      threadId: last.thread_id, title: ctx.store.threadTitle(last.thread_id) ?? "Review thread", state: last.state, preset: last.preset, trigger: last.trigger, head: last.head, at: last.created_at,
+      thread: threadStatus(ctx.store.thread(last.thread_id)), endedBy: last.ended_by, note: last.note, attempt: last.attempt,
+    }
+    : null;
+  const ownRun = pr.mine ? null : ctx.store.reviewThreadOf(pr.id);
+  const ownThread = ownRun && ctx.store.linkRole(pr.id, ownRun.thread_id) === "review" ? ctx.store.thread(ownRun.thread_id) : null;
+  const reviewThread = ownThread ? { threadId: ownThread.id, title: ownThread.title, archived: ownThread.archived === 1 } : null;
+  const live = isLive(pr);
+  const can = {
+    merge: pr.mine === 1 && pr.state === "open" && ops.has("merge"),
+    comment: live && ops.has("comment"),
+    review: pr.mine === 0 && live && ops.has("review"),
+    reply: live && ops.has("reply"),
+    resolve: live && ops.has("resolve"),
+  };
+  const now = ctx.now();
+  const snoozed = pr.snoozed_at !== null && (pr.updated_at ?? 0) <= pr.snoozed_at && (pr.snoozed_until === null || now < pr.snoozed_until);
+  const dismissedAt = pr.inbox_dismissed_at;
+  const ruleId = keptOutBy(rules, pr, reasons.map((r) => r.reason));
+  const handled = stillHandled(pr.handled_sig, feedbackSignature(reviewers, pr.checks, pr.head));
+  const bot = isBot(ctx, pr);
+  const suggested = pr.suggested_thread && !owner ? { threadId: pr.suggested_thread, title: ctx.store.threadTitle(pr.suggested_thread) ?? "Thread", why: pr.suggested_why ?? "" } : null;
+  const settings = ctx.settings();
+  const facts: NextFacts = {
+    now,
+    mine: pr.mine === 1,
+    state: pr.state,
+    checks: pr.checks,
+    checkCounts,
+    review: pr.review,
+    head: pr.head,
+    author: pr.author,
+    createdAt: pr.created_at,
+    updatedAt: pr.updated_at,
+    reviewers,
+    agent,
+    suggestedAgent: suggested,
+    handled,
+    autoMerge: pr.auto_merge === 1,
+    inMergeQueue: pr.in_merge_queue === 1,
+    snoozed,
+    keptOut: dismissedAt !== null || ruleId !== null,
+    can: {
+      merge: can.merge,
+      comment: can.comment,
+      ready: actions.includes("ready"),
+      reopen: actions.includes("reopen"),
+      cancelAutoMerge: cancelsAutoMerge,
+      approve: can.review,
+    },
+    reasons: reasons.map((r) => r.reason),
+    teams,
+    tracked: pr.tracked === 1,
+    bot,
+    requestedAt,
+    lastReview,
+    lastReviewFinishedAt: last?.finished_at ?? null,
+    lastReviewHandled: last ? ctx.store.hasDraftSince(pr.id, last.created_at) : false,
+    draft: draft ? {
+      findings: draftFindings, preset: last?.preset ?? null, auto: last?.trigger === "auto",
+      posts: draft.auto_post_state === "scheduled" && draft.auto_post_at !== null && draft.auto_post_verdict !== null ? { at: draft.auto_post_at, verdict: draft.auto_post_verdict } : null,
+    } : null,
+    post,
+    merge,
+    myReview,
+    additions: pr.additions,
+    deletions: pr.deletions,
+    files: pr.files,
+    inboxRequests: settings.inboxRequests,
+    inboxRequestDays: settings.inboxRequestDays,
+  };
+  const step = stepOf(facts);
+  const next = nextStep(facts, step);
+  const view: PrView = {
+    key: pr.key,
+    server: pr.server,
+    serverName: server?.name ?? pr.server,
+    repo: pr.repo,
+    number: pr.number,
+    sep: server?.sep ?? "#",
+    url: pr.url,
+    title: pr.title,
+    author: pr.author,
+    mine: pr.mine === 1,
+    state: pr.state,
+    checks: pr.checks,
+    checkCounts,
+    review: pr.review,
+    head: pr.head,
+    headRef: pr.head_ref,
+    base: pr.base,
+    additions: pr.additions,
+    deletions: pr.deletions,
+    files: pr.files,
+    updatedAt: pr.updated_at,
+    createdAt: pr.created_at,
+    closedAt: pr.closed_at,
+    reasons,
+    teams,
+    requestedAt,
+    bot,
+    quiet: (pr.updated_at ?? pr.fetched_at) < now - QUIET_MS,
+    tracked: pr.tracked === 1,
+    links: links.map((l) => ({ threadId: l.thread_id, title: l.title ?? "Thread", role: l.role, archived: l.archived === 1 })),
+    agent,
+    suggestedAgent: suggested,
+    watch: watch?.mode ?? null,
+    lastReview,
+    reviewThread,
+    myReview,
+    draft: draft ? { id: draft.id, findings: draftFindings, at: draft.created_at } : null,
+    post,
+    merge,
+    next,
+    snoozed,
+    snoozedUntil: snoozed ? (pr.snoozed_until ?? null) : null,
+    dismissed: dismissedAt === null ? null : { at: dismissedAt, activity: (pr.updated_at ?? 0) > dismissedAt },
+    keptOutBy: ruleId,
+    unseen: pr.seen_at === null || (pr.updated_at ?? 0) > pr.seen_at,
+    handled,
+    autoMerge: pr.auto_merge === 1,
+    inMergeQueue: pr.in_merge_queue === 1,
+    stale: freshness.stale,
+    staleSince: freshness.since,
+    pendingItems: watch ? waitingCount(ctx, pr) : 0,
+    labels: parseLabels(pr.labels),
+    reviewers,
+    actions,
+    can,
+  };
+  return { view, wanted: step.inbox };
+}
+
+export function inArea(view: PrView, area: Area, ctx: Ctx): boolean {
+  const live = view.state === "open" || view.state === "draft";
+  switch (area) {
+    case "mine":
+      return view.mine && live;
+    case "done":
+      return view.mine && !live && (view.closedAt ?? view.updatedAt ?? 0) >= ctx.now() - ctx.settings().doneDays * DAY;
+    case "reviews":
+      return !view.mine && live && (view.reasons.length > 0 || view.tracked || view.myReview !== null || view.draft !== null || view.lastReview !== null);
+    case "reviewed":
+      return !view.mine && view.myReview !== null;
+  }
+}
+
+export function enabledServerIds(ctx: Ctx): Set<string> {
+  return new Set(ctx.config().servers.filter((s) => s.enabled).map((s) => s.id));
+}
+
+/** Every PR of the enabled servers, newest first, as views. */
+export function allViews(ctx: Ctx): PrView[] {
+  return inboxCandidates(ctx).map((entry) => entry.view);
+}
+
+/**
+ * How long every PR's view is kept while nothing is written to the store and the settings stay the same. Only what
+ * depends on the clock alone, such as "asked 3d ago" or a snooze running out, can be this late.
+ */
+export const VIEW_INDEX_MS = 60_000;
+
+type Candidate = Readonly<{ view: PrView; wanted: boolean }>;
+interface ViewIndex {
+  version: number;
+  settings: string;
+  at: number;
+  entries: readonly Candidate[];
+}
+/** Every PR's view, built once for the Inbox, every list, the overview and Insights, which all read it. */
+const indexes = new WeakMap<Store, ViewIndex>();
+
+/** allViews, each with whether its step would put it in the Inbox if no snooze, dismissal or rule held it out. */
+export function inboxCandidates(ctx: Ctx): readonly Candidate[] {
+  const now = ctx.now();
+  const settings = JSON.stringify(ctx.settings());
+  const index = indexes.get(ctx.store);
+  if (index && index.version === ctx.store.version && index.settings === settings && now >= index.at && now - index.at < VIEW_INDEX_MS) return index.entries;
+  const enabled = enabledServerIds(ctx);
+  const rules = ctx.store.inboxRules();
+  // Shared by every reader, so nobody may change them.
+  const entries = Object.freeze(ctx.store.allPrs().filter((pr) => enabled.has(pr.server)).map((pr) => {
+    const entry = viewOf(ctx, pr, rules);
+    Object.freeze(entry.view);
+    return Object.freeze(entry);
+  }));
+  indexes.set(ctx.store, { version: ctx.store.version, settings, at: now, entries });
+  return entries;
+}
+
+export function inboxOf(views: PrView[]): PrView[] {
+  const rank = (view: PrView) => INBOX_ORDER.indexOf(view.next.kind);
+  return views.filter((view) => view.next.inbox).sort((a, b) => rank(a) - rank(b) || (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+}
+
+export { agentActive };

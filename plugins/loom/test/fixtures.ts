@@ -1,0 +1,356 @@
+import type { AgentRow, Attempt, BoardCard, ChangeRepo, HomeProject, HomeView, PlannerView, ProjectHealth, ProjectSummary, ProjectTimeline, ProjectView, RepoOverview, SpecVersionView, TicketDetail } from "../src/contract";
+import type { ProjectMetrics } from "../src/metrics";
+import { parseSpec } from "../src/spec";
+import { TICKET_STATES, type TicketState } from "../src/states";
+import { specToml, type Doc } from "./helpers";
+
+export const NOW = Date.UTC(2026, 0, 10, 12);
+export const HOUR = 3_600_000;
+
+export const overview = (over: Partial<ProjectSummary> = {}): ProjectSummary => ({
+  slug: "csv",
+  name: "CSV export",
+  key: "CSV",
+  state: "running",
+  goal: "Let people export their orders as a CSV file from the admin page.",
+  about: { summary: "Let people export their orders as a CSV file from the admin page.", lead: "Let people export their orders as a CSV file from the admin page.", doneWhen: [], links: [], nonGoals: 0 },
+  aboutPending: null,
+  base: "main",
+  strategy: "integration",
+  branch: "loom/csv",
+  approvedVersion: 1,
+  pendingVersion: null,
+  plannerThreadId: "thr_plan",
+  sectionId: "sec_1",
+  hostId: "host_1",
+  reason: null,
+  ticketCount: 4,
+  ticketCounts: { queued: 2, working: 1, done: 1 },
+  repos: [{ name: null, bbProjectId: "proj_1", bbProjectName: "shop", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true }],
+  createdAt: NOW - 3 * 24 * HOUR,
+  updatedAt: NOW - HOUR,
+  ...over,
+});
+
+/** One repo of a multi-repo project's overview: web by default, with merged work to land. */
+export const repoOverview = (over: Partial<RepoOverview> = {}): RepoOverview => ({ name: "web", bbProjectId: "proj_web", bbProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true, ...over });
+
+/** One repo of a multi-repo project's Changes view: web by default, read in its checkout. */
+export const changeRepo = (over: Partial<ChangeRepo> = {}): ChangeRepo => ({ name: "web", base: "main", remoteBase: "origin/main", branch: "loom/csv", unavailable: null, ...over });
+
+/** The helpers' base spec over two repos: web (its own checks, after-merge checks and a protected path) holds csv-model, and api (another base and remote, bb's name for it unknown) holds csv-export. */
+export function withRepos(doc: Doc): void {
+  doc.scope = { protected: ["db/**"] };
+  doc.repo = [
+    { name: "web", project: "proj_web", checks: ["npm run web-test"], after_merge: ["npm run web-e2e"], protected: ["web.lock"] },
+    { name: "api", project: "proj_api", base: "trunk", remote: "upstream" },
+  ];
+  doc.ticket[0].repo = "web";
+  doc.ticket[1].repo = "api";
+}
+
+export const homeProject = (over: Partial<HomeProject> = {}): HomeProject => ({
+  ...overview(),
+  progress: { done: 1, total: 4, inFlight: 1, blocked: 0 },
+  agents: 3,
+  throughput: [0, 0, 1, 2, 1, 0, 1, 2, 0, 1, 1, 0, 2, 1],
+  tokens: 12_000,
+  maxTokens: 50_000,
+  lastEventAt: NOW - 2 * 60_000,
+  ...over,
+});
+
+export const homeView = (over: Partial<HomeView> = {}): HomeView => ({
+  totals: { projects: 4, running: 2, paused: 1, workers: 3, reviewers: 2, planners: 1, slots: 8, doneLast7: 14, doneByDay: [0, 1, 2, 1, 3, 0, 2, 4, 1, 2, 3, 2, 4, 3], tokens: 3_100_000, perDoneTicket: 220_000 },
+  needsYou: [
+    { kind: "blocked", slug: "csv", project: "CSV export", key: "CSV-7", text: "needs the staging DB credentials", at: NOW - 5 * 60_000 },
+    { kind: "approve", slug: "audit", project: "Audit log", key: null, text: "has a draft spec v1 with 9 tickets", at: NOW - 12 * 60_000 },
+    { kind: "land", slug: "srch", project: "Search revamp", key: null, text: "finished all 12 tickets; land the integration branch", at: NOW - HOUR },
+    { kind: "paused", slug: "bill", project: "Billing API", key: null, text: "The token budget is used up: 900 of 900 tokens.", at: NOW - 3 * HOUR },
+  ],
+  projects: [homeProject()],
+  now: NOW,
+  ...over,
+});
+
+export const card = (over: Partial<BoardCard> = {}): BoardCard => ({
+  key: "CSV-1",
+  title: "Order rows",
+  state: "queued",
+  stateAt: NOW - 2 * HOUR,
+  repo: null,
+  priority: 2,
+  attempt: 0,
+  reviewRound: 0,
+  deps: [],
+  ready: true,
+  waitingOn: [],
+  threadId: null,
+  prUrl: null,
+  blockedReason: null,
+  hasChanges: false,
+  stackedOn: [],
+  holding: null,
+  startWait: null,
+  mergeWait: null,
+  waitsForSlot: false,
+  ci: null,
+  mergeConfirm: null,
+  ...over,
+});
+
+export const metrics = (over: Partial<ProjectMetrics> = {}): ProjectMetrics => ({
+  counts: { ...(Object.fromEntries(TICKET_STATES.map((state) => [state, 0])) as Record<TicketState, number>), queued: 2, working: 1, done: 1 },
+  wip: 1,
+  throughput: Array.from({ length: 14 }, (_, index) => ({ day: `2026-01-${String(index + 1).padStart(2, "0")}`, done: index === 12 ? 2 : index === 13 ? 1 : 0 })),
+  cycleTime: { p50: 3 * HOUR + 12 * 60_000, p85: 5 * HOUR, n: 1 },
+  leadTime: { p50: 26 * HOUR, p85: 26 * HOUR, n: 1 },
+  wipAge: [{ key: "CSV-2", state: "working", ageMs: 5 * HOUR }],
+  firstPassApproval: { rate: 0.5, n: 2 },
+  reviewRounds: { mean: 1.5, n: 2 },
+  checks: { total: 4, failed: 1 },
+  blocks: 1,
+  humanInterventions: 2,
+  tokens: { total: 12_000, perDoneTicket: 12_000, byRole: { planner: 2000, worker: 8000, reviewer: 2000 }, unreported: 0 },
+  cumulativeFlow: Array.from({ length: 14 }, (_, index) => ({
+    day: `2026-01-${String(index + 1).padStart(2, "0")}`,
+    ...(Object.fromEntries(TICKET_STATES.map((state) => [state, 0])) as Record<TicketState, number>),
+    queued: 4 - Math.min(3, Math.floor(index / 4)),
+    working: Math.min(1, Math.floor(index / 6)),
+    done: Math.floor(index / 10),
+  })),
+  activeMs: 7 * HOUR,
+  windowActiveMs: 7 * HOUR,
+  timeInState: { ms: { ...(Object.fromEntries(TICKET_STATES.map((state) => [state, 0])) as Record<TicketState, number>), queued: 2 * HOUR, working: 4 * HOUR, checking: HOUR, review: 3 * HOUR }, flowEfficiency: 0.4, n: 1 },
+  checksByCommand: [
+    { command: "npm test", runs: 3, failed: 1, p50Ms: 100_000 },
+    { command: "npm run lint", runs: 1, failed: 0, p50Ms: 12_000 },
+  ],
+  scopeFlags: { outside: 1, protectedHits: 0 },
+  findings: { total: 3, blocking: 1, shouldFix: 2, rounds: 3, changesRequested: 1 },
+  tokensByTicket: [
+    { key: "CSV-2", tokens: 6000 },
+    { key: "CSV-1", tokens: 2000 },
+  ],
+  reliability: { failedAttempts: 1, rateLimitRetries: 2, timeouts: 1, mergesSentBack: 1 },
+  finalReviews: { runs: 0, passed: 0, failed: 0, unfinished: 0, tokens: 0 },
+  ...over,
+});
+
+export const health = (over: Partial<ProjectHealth> = {}): ProjectHealth => ({
+  progress: { done: 8, total: 14, inFlight: 3, blocked: 1, queued: 2 },
+  pace: { perHour: 0.5 / 24, remaining: 6, etaMs: 12 * 24 * HOUR },
+  budget: { used: 12_000, max: 50_000 },
+  deadline: { date: "2026-01-15", daysLeft: 6 },
+  capacity: { workers: 1, maxWorkers: 2, reviewers: 1, maxReviewers: 2, readyWaiting: 1, handBacksWaiting: 0 },
+  ...over,
+});
+
+export const agent = (over: Partial<AgentRow> = {}): AgentRow => ({
+  threadId: "thr_w1",
+  role: "worker",
+  ticketKey: "CSV-2",
+  ticketTitle: "Export endpoint",
+  state: "active",
+  startedAt: NOW - 5 * HOUR,
+  endedAt: null,
+  endReason: null,
+  tokens: 6000,
+  rateLimitRetries: 1,
+  reviewRound: 0,
+  model: "claude / sonnet",
+  timeoutAt: NOW + HOUR,
+  ...over,
+});
+
+export const projectView = (over: Partial<ProjectView> = {}): ProjectView => ({
+  overview: overview(),
+  board: [card(), card({ key: "CSV-2", title: "Export endpoint", state: "working", stateAt: NOW - 5 * HOUR, attempt: 1, ready: false, threadId: "thr_w1" })],
+  metrics: metrics(),
+  spec: {
+    toml: '[project]\nslug = "csv"\n',
+    version: 1,
+    pendingVersion: null,
+    summary: {
+      tickets: [
+        { ref: "csv-model", title: "Order rows", dependsOn: [] },
+        { ref: "csv-export", title: "Export endpoint", dependsOn: ["csv-model"] },
+      ],
+      repos: [],
+      checks: ["npm test"],
+      reviewer: "codex / gpt-5",
+      warnings: ["ticket[0] and ticket[1] have overlapping scope and no dependency between them, so they will run one at a time."],
+    },
+  },
+  prUrl: null,
+  next: { stage: 4, tone: "normal", title: "Running.", text: "1 worker is on CSV-2.", action: null },
+  health: health(),
+  agents: [agent()],
+  now: NOW,
+  at: null,
+  specReview: null,
+  askSteps: [],
+  badgeAcks: { merge: [], rollout: [] },
+  mergeOrder: null,
+  rollout: null,
+  ...over,
+});
+
+export const attempt = (over: Partial<Attempt> = {}): Attempt => ({
+  n: 1,
+  claimPostId: 2,
+  threadId: "thr_w1",
+  startedAt: NOW - 5 * HOUR,
+  endedAt: null,
+  outcome: "in_progress",
+  line: null,
+  pipeline: { work: "running", checks: [], review: [], merge: [], pr: [] },
+  items: [],
+  ...over,
+});
+
+export const ticketDetail = (over: Partial<TicketDetail> = {}): TicketDetail => ({
+  slug: "csv",
+  projectState: "running",
+  key: "CSV-2",
+  title: "Export endpoint",
+  state: "working",
+  stateAt: NOW - 5 * HOUR,
+  repo: null,
+  priority: 2,
+  attempt: 1,
+  reviewRound: 0,
+  deps: ["CSV-1"],
+  blockedReason: null,
+  startWait: null,
+  mergeWait: null,
+  branch: "loom/csv-2",
+  prUrl: null,
+  pr: null,
+  body: "Serve the file.",
+  acceptance: ["WHEN the endpoint is called THE SYSTEM SHALL stream a CSV"],
+  verify: [],
+  scope: ["src/export/**"],
+  posts: [{ id: 1, parentId: null, depth: 0, authorKind: "planner", authorThreadId: "thr_plan", kind: "brief", body: "Serve the file.", at: NOW - 6 * HOUR }],
+  reviews: [],
+  threads: [{ threadId: "thr_w1", role: "worker", attempt: 1, reviewRound: 0, state: "active", startedAt: NOW - 5 * HOUR, endedAt: null, endReason: null }],
+  depsDone: [],
+  replyTo: "worker",
+  stoppedFrom: null,
+  reviewAgain: false,
+  mergeConfirm: null,
+  activity: { brief: { postId: 1, at: NOW - 6 * HOUR, edits: 0, fields: [] }, before: [], attempts: [attempt()] },
+  at: null,
+  now: NOW,
+  ...over,
+});
+
+/** v1 of specVersionView's draft: `edit`'s spec with another second criterion on csv-export and another check. */
+export const specV1 = (edit?: (doc: Doc) => void) =>
+  parseSpec(
+    specToml((doc) => {
+      edit?.(doc);
+      doc.checks.commands = ["npm test -- --ci"];
+      doc.ticket[1].acceptance[1] = "WHEN there are no orders THE SYSTEM SHALL return an empty file";
+    }),
+  ).spec!;
+
+/** v2, a draft, of the helpers' base spec, changed from v1 in one criterion and one check. */
+export const specVersionView = (over: Partial<SpecVersionView> = {}, edit?: (doc: Doc) => void): SpecVersionView => ({
+  slug: "csv",
+  version: 2,
+  status: "draft",
+  toml: specToml(edit),
+  spec: parseSpec(specToml(edit)).spec!,
+  overlaps: [],
+  warnings: [],
+  changes: { changed: ["ticket[csv-export].acceptance[1]", "checks.commands[0]"], removed: [] },
+  compared: { version: 1, status: "superseded", spec: specV1(edit) },
+  versions: [
+    { version: 1, status: "superseded" },
+    { version: 2, status: "draft" },
+  ],
+  notes: [],
+  reviews: [],
+  ...over,
+});
+
+
+const MINUTE = 60_000;
+
+/** Three moments five minutes apart (the tickets made, the human's start, two moves), two overlapping ticket bars (CSV-2 in trouble) and one worker session. */
+export const timeline = (over: Partial<ProjectTimeline> = {}): ProjectTimeline => ({
+  state: "running",
+  start: NOW - 20 * MINUTE,
+  end: NOW,
+  events: [
+    [11, NOW - 20 * MINUTE],
+    [12, NOW - 15 * MINUTE],
+    [13, NOW - 10 * MINUTE],
+  ],
+  project: [
+    { from: NOW - 20 * MINUTE, to: NOW - 15 * MINUTE, state: "ready" },
+    { from: NOW - 15 * MINUTE, to: NOW, state: "running" },
+  ],
+  moments: [
+    {
+      id: 11,
+      at: NOW - 20 * MINUTE,
+      kind: "move",
+      lines: [
+        { kind: "move", text: "CSV-1 was created.", key: "CSV-1" },
+        { kind: "move", text: "CSV-2 was created.", key: "CSV-2" },
+      ],
+    },
+    {
+      id: 12,
+      at: NOW - 15 * MINUTE,
+      kind: "you",
+      lines: [
+        { kind: "milestone", text: "The project moved from ready to running.", key: null },
+        { kind: "you", text: "You ran start.", key: null },
+        { kind: "move", text: "CSV-1 moved from queued to working: attempt 1.", key: "CSV-1" },
+      ],
+    },
+    {
+      id: 13,
+      at: NOW - 10 * MINUTE,
+      kind: "move",
+      lines: [
+        { kind: "move", text: "CSV-1 moved from working to review: the checks passed, round 1.", key: "CSV-1" },
+        { kind: "move", text: "CSV-2 moved from queued to working: attempt 1.", key: "CSV-2" },
+      ],
+    },
+  ],
+  ticketCount: 2,
+  tickets: [
+    { key: "CSV-1", title: "Order rows", from: NOW - 15 * MINUTE, to: NOW, parts: [{ from: NOW - 15 * MINUTE, to: NOW - 10 * MINUTE, state: "working" }, { from: NOW - 10 * MINUTE, to: NOW, state: "review" }], sentBack: [], final: null },
+    { key: "CSV-2", title: "Export endpoint", from: NOW - 10 * MINUTE, to: NOW, parts: [{ from: NOW - 10 * MINUTE, to: NOW, state: "working" }], sentBack: [], final: null },
+  ],
+  sessions: [{ key: "CSV-1", role: "worker", label: "attempt 1", from: NOW - 15 * MINUTE, to: NOW, endReason: null }],
+  trouble: ["CSV-2"],
+  ...over,
+});
+
+/** The planner view of csv's draft v1: started from the page, one turn that proposed v1, and a passed spec review. */
+export const plannerViewOf = (over: Partial<PlannerView> = {}): PlannerView => ({
+  threadId: "thr_plan",
+  title: "Export orders as CSV",
+  startedAt: NOW - 3 * HOUR,
+  slug: "csv",
+  projectState: "draft",
+  approvedVersion: null,
+  pendingVersion: null,
+  steps: [
+    { kind: "started", at: NOW - 3 * HOUR, text: "Export orders as CSV" },
+    { kind: "turn", at: NOW - 2 * HOUR, text: "I proposed v1 of csv. Loom's spec review is running.", actions: [{ kind: "proposed", version: 1, tickets: 2, change: null }] },
+    { kind: "review", at: NOW - HOUR, version: 1, round: 1, state: "approved", summary: "Both tickets serve the request.", findings: [], reason: null, startedAt: NOW - 2 * HOUR, endedAt: NOW - HOUR },
+  ],
+  ask: null,
+  versions: [{ version: 1, status: "draft", createdAt: NOW - 2 * HOUR, tickets: 2, change: null, summary: null, summaryChanged: false, review: { state: "approved", round: 1, findings: 0 } }],
+  review: { kind: "approved", version: 1, round: 1, summary: "Both tickets serve the request." },
+  triageRounds: 0,
+  mergeRequests: [],
+  now: NOW,
+  ...over,
+});

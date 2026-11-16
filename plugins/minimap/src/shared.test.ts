@@ -1,0 +1,84 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { BLOCKS, COLOR_KEYS, NUMBER_KEYS, NUMBER_RANGES, SETTINGS, SETTING_KEYS, SHARE_KEYS, hintOf, readNumber, shortOf, unitOf } from "./shared.ts";
+
+test("every setting is exactly one of on/off, number or colour", () => {
+  const all = [...SETTING_KEYS, ...NUMBER_KEYS, ...COLOR_KEYS].sort();
+  assert.deepEqual(all, Object.keys(SETTINGS).sort());
+});
+
+test("every number's default is inside its own range", () => {
+  for (const key of NUMBER_KEYS) {
+    const [min, max] = NUMBER_RANGES[key];
+    assert.ok(min < max && SETTINGS[key].default >= min && SETTINGS[key].default <= max, key);
+  }
+});
+
+test("every kind of rectangle has a show switch and a colour with the names the panel expects", () => {
+  for (const { kind } of BLOCKS) {
+    const word = kind[0]!.toUpperCase() + kind.slice(1);
+    assert.equal((SETTINGS as Record<string, { type: string }>)[`show${word}`]?.type, "boolean", kind);
+    assert.equal((SETTINGS as Record<string, { type: string }>)[`color${word}`]?.type, "string", kind);
+  }
+});
+
+test("a number read is rounded, held to its range, and falls back to its default", () => {
+  assert.equal(readNumber({ width: 40.6 }, "width"), 41);
+  assert.equal(readNumber({ width: 1 }, "width"), 6);
+  assert.equal(readNumber({ width: 9999 }, "width"), 120);
+  assert.equal(readNumber({ width: "wide" }, "width"), 26);
+  assert.equal(readNumber({ width: Number.NaN }, "width"), 26);
+  assert.equal(readNumber(undefined, "narrowWidth"), 12);
+});
+
+test("the defaults are the ones the owner settled on", () => {
+  assert.deepEqual(
+    { w: SETTINGS.width.default, o: SETTINGS.opacity.default, i: SETTINGS.idleOpacity.default, so: SETTINGS.sliderOpacity.default, st: SETTINGS.sliderThickness.default },
+    { w: 26, o: 66, i: 33, so: 26, st: 2 },
+  );
+  assert.equal(SETTINGS.hideScrollbar.default, true);
+  assert.equal(SETTINGS.fadeIdle.default, true);
+  assert.equal(SETTINGS.hoverPreview.default, true);
+  assert.deepEqual(
+    [SETTINGS.hoverContext.default, SETTINGS.hoverLines.default, SETTINGS.hoverAnimate.default, SETTINGS.hoverSlideMs.default, SETTINGS.hoverBlur.default, SETTINGS.hoverDelay.default],
+    [1, 2, true, 420, 6, 66],
+  );
+});
+
+test("the shade defaults: on, from the strip edge, 44% strong, half the strip wide", () => {
+  assert.equal(SETTINGS.edgeShadow.default, true);
+  assert.equal(SETTINGS.edgeOver.default, false);
+  assert.equal(SETTINGS.edgeStrength.default, 44);
+  assert.equal(SETTINGS.edgeReach.default, 50);
+});
+
+test("the scrolling defaults: smooth clicks, smooth wheel, three times the wheel's distance", () => {
+  assert.equal(SETTINGS.clickSmooth.default, true);
+  assert.equal(SETTINGS.wheelSmooth.default, true);
+  assert.equal(SETTINGS.wheelSpeed.default, 300);
+});
+
+test("the shade starts at the strip's edge and is black", () => {
+  assert.equal(SETTINGS.edgeRight.default, false);
+  assert.equal(SETTINGS.edgeTheme.default, false);
+});
+
+test("the shade is off on a light theme by default", () => {
+  assert.equal(SETTINGS.edgeDarkOnly.default, true);
+});
+
+test("the panel's labels, hints and units come from SETTINGS, and every setting has words for it", () => {
+  for (const key of Object.keys(SETTINGS) as (keyof typeof SETTINGS)[]) {
+    assert.ok(shortOf(key).length > 0, `${key} has no label`);
+    assert.ok(hintOf(key).length > 0, `${key} has no hint or description`);
+    // The panel shows a hint on one line beside its control.
+    assert.ok(hintOf(key).length <= 100, `${key}'s hint is ${hintOf(key).length} characters`);
+  }
+  assert.equal(shortOf("width"), "Width");
+  assert.equal(unitOf("width"), "px");
+  assert.equal(unitOf("hoverLines"), "");
+  assert.equal(unitOf("edgeStrength"), "%");
+  // A setting with no panel wording falls back to the API's.
+  assert.equal(shortOf("showUser"), SETTINGS.showUser.label);
+  for (const key of SHARE_KEYS) assert.equal(SETTINGS[key].max, 100, `${key} is a percentage`);
+});

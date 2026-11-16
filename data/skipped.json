@@ -1,0 +1,638 @@
+[
+  {
+    "id": "agent-checklists",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "agent-plugins",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "agentation",
+    "reason": "package.json license: MIT AND PolyForm-Shield-1.0.0"
+  },
+  {
+    "id": "agentation-mentions",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "ai-usage",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "aif-chat",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "ambient",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "antigravity",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "app-preview",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "arc-switcher",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "artifacts",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "asciimoji",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "at-plugin",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "attention",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "auto-archive",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "automation-palette",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "autorouter",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "ballast",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "bang-shell",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "battery",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "bb-ui-reference",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "beacon",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "bookmarks",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "bots-sidebar",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "browser-annotate",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "bureaucat",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "callstack",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "canvas",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "career-hub",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "chat-search",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "chatgpt-skin",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "claude-accounts",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "claude-auth",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "close-tab",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "cloud-sandbox",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "code-review",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "codex-migrate",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "color-swatches",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "command-center",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "compact-panes",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "compact-rail",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "context-katamari",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "context-meter",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "copy-session-id",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "ctrl-enter-send",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "dbf-viewer",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "decisions",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "devin",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "diagram-fences",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "diff-viewed",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "diffdad",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "discord",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "dispatch",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "emoji-picker",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "emoji-react",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "endless",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "factory-droid",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "feature-flags",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "file-explorer",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "file-pins",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "file-tree",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "finder",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "git-worktrees",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "github-folder",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "github-projects",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "glass",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "global-workflows",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "graphite-mono",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "hands-free",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "handsfree",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "hashstash",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "headroom",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "host-pulse",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "image-preview",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "impromptu-ui",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "inline-terminal",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "jsonl-viewer",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "lanes",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "lazygit",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "limits",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "machine-monitor",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "markdown-editor",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "markdown-reader",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "mattermost",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "maxwell",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "mcp-hub",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "mcp-manager",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "mdb-viewer",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "mesh-gradient",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "message-timestamps",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "muse",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "nested-sidebar",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "noema",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "noisegate",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "ntfy",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "oddship-gitea",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "oddship-gitlab",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "omp-agents",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "pane-workspaces",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "parquet-viewer",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "password-gate",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "peek",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "perspectives",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "plan-mode",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "plan-progress",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "plugin-vault",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "pool-usage",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "postgres-viewer",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "pr-manager",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "prism-frame",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "project-colors",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "prolepsia",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "prompt-log",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "prompt-shaper",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "provider-authentication",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "provider-pi-durable",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "pstack-for-bb",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "px0",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "px0-review",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "references",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "repo-watch",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "reveal-in-finder",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "rtk",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "screenshot",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "server-switcher",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "shipyard",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "sidebar-filter",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "skiff",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "skill-library",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "smart-queue",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "sqlite-viewer",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "stelow",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "sticky-notes",
+    "reason": "в каталоге bb только npm-источник"
+  },
+  {
+    "id": "subscriptions",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "super-diff",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "theme-glass",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "thread-glow",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "thread-hover-cards",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "thread-nicknames",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "thread-organizer",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "thread-reveal",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "thread-switcher",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "thread-tree",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "threadline",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "timer",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "tokenomics",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "traces",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "tracing",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "turn-tps",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "unified-inbox",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "unslop",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "vim",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "voice-input",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "web-push-notify",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "wiki",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "wizbar",
+    "reason": "лицензия NOASSERTION"
+  },
+  {
+    "id": "workspace-skills",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "worktree-setup",
+    "reason": "лицензия NONE"
+  },
+  {
+    "id": "xlsx-preview",
+    "reason": "лицензия NONE"
+  }
+]

@@ -1,0 +1,62 @@
+{
+  "name": "bb-plugin-haze",
+  "version": "0.2.1",
+  "description": "MonoCode-style conversation background: your image as a soft haze at the top of every thread that dissolves before the text.",
+  "author": "AdzeB (https://github.com/AdzeB)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdzeB/bb-plugin-haze.git"
+  },
+  "homepage": "https://github.com/AdzeB/bb-plugin-haze#readme",
+  "bugs": {
+    "url": "https://github.com/AdzeB/bb-plugin-haze/issues"
+  },
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "background",
+    "wallpaper",
+    "theme",
+    "glass",
+    "dither",
+    "halftone",
+    "ascii"
+  ],
+  "type": "module",
+  "engines": {
+    "bb": ">=0.48",
+    "bbPluginSdk": ">=0.6.104"
+  },
+  "bb": {
+    "name": "Haze",
+    "description": "Puts your own image behind every BB conversation as a soft haze, with optional window-wide glass, six effects and per-project backgrounds.",
+    "branding": {
+      "icon": "Image"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "scripts": {
+    "build": "bb plugin build .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.104",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "tailwind-merge": "^3.4.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,735 @@
+// @vitest-environment jsdom
+// The composer band: headline, window bars with the pace marker, context bar,
+// auto-compact switch with the threshold it acts at, compact button, expanded view, Russian.
+
+import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import type { CompactResult, Tokens } from "../src/shared/contract";
+import { HOUR_MS } from "../src/shared/windows";
+import { worstProvider } from "../src/app/model";
+import { clearHiddenOverrides } from "../src/app/hooks";
+import { backend, callsTo, entry, forecastOf, provider, render, snapshot, T, threadState, win } from "./app-fixtures";
+
+let Banner: React.ComponentType<object>;
+
+beforeAll(async () => {
+  const app = await loadPluginApp(() => import("../app"));
+  expect(app.composerCustomizations).toHaveLength(1);
+  expect(app.composerCustomizations[0]!.scopes).toEqual(["thread"]);
+  Banner = app.composerCustomizations[0]!.banners![0]!.component as React.ComponentType<object>;
+});
+
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  clearHiddenOverrides();
+});
+
+const twoProviders = () =>
+  snapshot([
+    provider("claude-code", [win("Current session", 40), win("Weekly limit", 92, { resetsAt: Date.now() + 3 * 24 * HOUR_MS + HOUR_MS / 2 })], {
+      planLabel: "Max",
+    }),
+    provider("codex", [
+      win("Current session", 10, { forecast: forecastOf(20, 130), cost: { usedUsdCents: 125, limitUsdCents: 2000 } }),
+    ]),
+  ]);
+
+/** The element of one window (or "context") inside `root`, once it is drawn. */
+async function findWindow(label: string, root: () => HTMLElement | null = () => screen.queryByTestId("collapsed-row")) {
+  let found: HTMLElement | null = null;
+  await waitFor(() => {
+    found = root()?.querySelector<HTMLElement>(`[data-window="${label}"]`) ?? null;
+    expect(found).not.toBeNull();
+  });
+  return found!;
+}
+
+const providerBlock = (id: string) => () => document.querySelector<HTMLElement>(`[data-provider="${id}"]`);
+
+describe("band, collapsed", () => {
+  it("renders nothing and asks for nothing when the showBand setting is off", async () => {
+    const b = backend({ snapshot: twoProviders() });
+    const { container } = render(Banner, {}, b, { settings: { showBand: false } });
+    await act(async () => {});
+    expect(container.querySelector('[data-testid="usage-banner"]')).toBeNull();
+    expect(b.calls).toHaveLength(0);
+  });
+
+  it("AE1: shows the thread's provider as 5H and W bars, the weekly one tight and amber at 92%", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }));
+    const weekly = await findWindow("Weekly limit");
+    expect(weekly.textContent).toBe("W3d92%");
+    expect(within(weekly).getByText("92%").getAttribute("data-tone")).toBe("amber");
+    expect(weekly.querySelector("[data-marker]")).toBeNull();
+    expect((await findWindow("Current session")).textContent).toBe("5H2h40%");
+    // AE8: the tight weekly window speaks over the calm session.
+    const head = await screen.findByTestId("headline");
+    expect(head.textContent).toMatch(/^Tight\. At this pace about 92% will be used by \w+'s reset\.$/);
+    expect(head.firstElementChild!.getAttribute("data-tone")).toBe("amber");
+  });
+
+  it("without a thread provider shows the worst one: 60% heading for 110% beats 70% heading for 75%", async () => {
+    const s = snapshot([
+      provider("claude-code", [win("Current session", 70, { forecast: forecastOf(75) })]),
+      provider("codex", [win("Weekly limit", 60, { forecast: forecastOf(110), resetsAt: Date.now() + 5 * HOUR_MS })]),
+    ]);
+    expect(worstProvider(s.hosts[0]!.providers, Date.now())?.providerId).toBe("codex");
+    render(Banner, {}, backend({ snapshot: s, thread: threadState({ providerId: null }) }));
+    const weekly = await findWindow("Weekly limit");
+    expect(weekly.querySelector("[data-marker]")!.getAttribute("data-marker")).toBe("100");
+    const head = await screen.findByTestId("headline");
+    expect(head.textContent).toMatch(/^At this pace you'll run out before the .+ reset\.$/);
+    expect(head.firstElementChild!.getAttribute("data-tone")).toBe("amber");
+  });
+
+  it("prefers the thread's provider over a worse one", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders(), thread: threadState({ providerId: "codex" }) }));
+    const session = await findWindow("Current session");
+    expect(session.textContent).toBe("5H2h10%");
+    expect(screen.queryByText("92%")).toBeNull();
+  });
+
+  it("breaks a tie by the later reset", () => {
+    const s = snapshot([
+      provider("claude-code", [win("Current session", 50, { resetsAt: Date.now() + HOUR_MS })]),
+      provider("codex", [win("Weekly limit", 50, { resetsAt: Date.now() + 5 * 24 * HOUR_MS })]),
+    ]);
+    expect(worstProvider(s.hosts[0]!.providers, Date.now())?.providerId).toBe("codex");
+  });
+
+  it("says the limit is reached, in red", async () => {
+    const hit = { status: "hit" as const, current: null, learned: null, main: null, early: false, warning: true };
+    render(Banner, {}, backend({ snapshot: snapshot([provider("claude-code", [win("Current session", 100, { forecast: hit })])]) }));
+    const head = await screen.findByTestId("headline");
+    expect(head.textContent).toMatch(/^Limit reached\. Usage resumes at .+\.$/);
+    expect(head.firstElementChild!.getAttribute("data-tone")).toBe("red");
+  });
+
+  it("names the provider and plan when no window has a forecast", async () => {
+    const s = snapshot([provider("claude-code", [win("Current session", 30, { forecast: null })], { planLabel: "Max" })]);
+    render(Banner, {}, backend({ snapshot: s }));
+    expect(await screen.findByText("Claude Code · Max")).toBeTruthy();
+    expect(screen.queryByTestId("headline")).toBeNull();
+  });
+
+  it("joins the plan multiplier to the plan name (UF-11 AE1)", async () => {
+    const s = snapshot([provider("claude-code", [win("Current session", 30, { forecast: null })], { planLabel: "Max", planMultiplier: 5 })]);
+    render(Banner, {}, backend({ snapshot: s }));
+    expect(await screen.findByText("Claude Code · Max 5×")).toBeTruthy();
+  });
+
+  it("says when no data has arrived yet", async () => {
+    render(Banner, {}, backend({ snapshot: snapshot([], { polledAt: null }) }));
+    expect(await screen.findByText("No limit data yet")).toBeTruthy();
+  });
+
+  it("AE3: gives one line of reasons when no provider has windows", async () => {
+    const s = snapshot([
+      provider("claude-code", [], { status: "unauthenticated" }),
+      provider("codex", [], { status: "error", message: "timeout" }),
+    ]);
+    render(Banner, {}, backend({ snapshot: s }));
+    expect(await screen.findByText("Claude Code: not signed in · Codex: error: timeout")).toBeTruthy();
+  });
+
+  it("draws the context bar and colours its fill: 85% red, 60% amber", async () => {
+    render(Banner, {}, backend({ thread: threadState({ context: { ...threadState().context!, percent: 85 } }) }));
+    const ctx = await findWindow("context");
+    expect(ctx.textContent).toBe("Ctx90k / 150k85%");
+    expect(within(ctx).getByText("85%").getAttribute("data-tone")).toBe("red");
+    expect(ctx.querySelector('[data-segment="messages"]')).toBeTruthy();
+    cleanup();
+    render(Banner, {}, backend());
+    expect(within(await findWindow("context")).getByText("60%").getAttribute("data-tone")).toBe("amber");
+  });
+});
+
+describe("band, auto compact", () => {
+  const toggle = () => screen.findByRole("switch", { name: "Auto compact" });
+  const actsAt = async () => (await screen.findByTestId("auto-compact-at")).textContent;
+
+  it("has no threshold field: the threshold lives in the settings and the context card", async () => {
+    render(Banner, {}, backend());
+    await toggle();
+    expect(screen.queryByRole("textbox", { name: "Auto compact threshold, %" })).toBeNull();
+    expect((await screen.findByTestId("auto-compact-at")).parentElement!.title).toContain("plugin settings");
+  });
+
+  it("follows the settings, turns the thread on at the current threshold and off again", async () => {
+    const b = backend();
+    render(Banner, {}, b);
+    const sw = await toggle();
+    expect(sw.getAttribute("aria-checked")).toBe("false");
+    // The fixture's 80 % lands at 76 % below the provider's own point; the band names where it acts.
+    expect(await actsAt()).toBe("Auto compact at 76%");
+    fireEvent.click(sw);
+    await waitFor(() => expect(b.overrides).toEqual([{ autoCompact: "on", thresholdPercent: 80 }]));
+    await waitFor(async () => expect((await toggle()).getAttribute("aria-checked")).toBe("true"));
+    expect(screen.queryByRole("alert")).toBeNull();
+    fireEvent.click(await toggle());
+    await waitFor(() => expect(b.overrides.at(-1)).toEqual({ autoCompact: "off" }));
+  });
+
+  it("turns on at the thread's own threshold when it has one", async () => {
+    const b = backend({ thread: threadState({ override: { autoCompact: "off", thresholdPercent: 65 } }) });
+    render(Banner, {}, b);
+    fireEvent.click(await toggle());
+    await waitFor(() => expect(b.overrides.at(-1)).toEqual({ autoCompact: "on", thresholdPercent: 65 }));
+  });
+
+  it("keeps the thread's limit when the switch changes the mode", async () => {
+    const b = backend({ thread: threadState({ override: { autoCompact: "on", thresholdPercent: 80, limitTokens: 100_000 } }) });
+    render(Banner, {}, b);
+    fireEvent.click(await toggle());
+    await waitFor(() => expect(b.overrides.at(-1)).toEqual({ autoCompact: "off", limitTokens: 100_000 }));
+  });
+
+  it("shows on when the settings turn it on for every thread", async () => {
+    const autoCompact = { enabled: true, thresholdPercent: 70, effectiveThresholdPercent: 70, effectiveThresholdTokens: 105_000, source: "settings" as const };
+    render(Banner, {}, backend({ thread: threadState({ autoCompact }) }));
+    expect((await toggle()).getAttribute("aria-checked")).toBe("true");
+    expect(await actsAt()).toBe("Auto compact at 70%");
+  });
+
+  it("asks before compacting when turned on past the threshold; Now compacts once", async () => {
+    const autoCompact = { enabled: false, thresholdPercent: 50, effectiveThresholdPercent: 50, effectiveThresholdTokens: 75_000, source: "settings" as const };
+    const b = backend({ thread: threadState({ autoCompact }) });
+    render(Banner, {}, b);
+    fireEvent.click(await toggle());
+    await waitFor(() => expect(b.overrides).toEqual([{ autoCompact: "on", thresholdPercent: 50 }]));
+    const ask = await screen.findByRole("alert");
+    expect(ask.textContent).toContain("Context is already at 60%, past 50%. Auto compact:");
+    fireEvent.click(within(ask).getByRole("button", { name: "Now" }));
+    await waitFor(() => expect(callsTo(b, "compact")).toEqual([{ method: "compact", input: { threadId: T } }]));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("After the next reply leaves the compact to the idle check", async () => {
+    const autoCompact = { enabled: false, thresholdPercent: 55, effectiveThresholdPercent: 55, effectiveThresholdTokens: 82_500, source: "settings" as const };
+    const b = backend({ thread: threadState({ autoCompact }) });
+    render(Banner, {}, b);
+    fireEvent.click(await toggle());
+    fireEvent.click(await screen.findByRole("button", { name: "After the next reply" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(callsTo(b, "compact")).toEqual([]);
+  });
+});
+
+describe("band, compact button", () => {
+  it("is disabled while the agent answers", async () => {
+    render(Banner, {}, backend({ thread: threadState({ active: true }) }));
+    expect(((await screen.findByRole("button", { name: "Compact" })) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("is hidden when the provider cannot compact", async () => {
+    render(Banner, {}, backend({ thread: threadState({ compactSupported: false }) }));
+    await screen.findByRole("switch", { name: "Auto compact" });
+    expect(screen.queryByRole("button", { name: "Compact" })).toBeNull();
+  });
+
+  it("is shown for summary and clear", async () => {
+    render(Banner, {}, backend({ thread: threadState({ compactSupported: false, summaryClear: true }) }));
+    const button = await screen.findByRole("button", { name: "Compact" });
+    expect(button.closest("[title]")?.getAttribute("title")).toBe("Ask the agent for a summary, clear the context and send the summary back");
+  });
+
+  it("AE4: one click calls compact once and stays disabled until the answer", async () => {
+    let resolve!: (r: CompactResult) => void;
+    const b = backend({ compact: () => new Promise<CompactResult>((r) => (resolve = r)) });
+    render(Banner, {}, b);
+    const button = (await screen.findByRole("button", { name: "Compact" })) as HTMLButtonElement;
+    fireEvent.click(button);
+    fireEvent.click(button);
+    const pending = (await screen.findByRole("button", { name: "Compacting…" })) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.click(pending);
+    expect(callsTo(b, "compact")).toEqual([{ method: "compact", input: { threadId: T } }]);
+    await act(async () => resolve({ ok: true, message: null, entry: entry(0) }));
+    expect(((await screen.findByRole("button", { name: "Compact" })) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("shows why a compact did not start and lets the user retry", async () => {
+    render(Banner, {}, backend({ compact: async () => ({ ok: false, message: "The agent is answering", entry: null }) }));
+    fireEvent.click(await screen.findByRole("button", { name: "Compact" }));
+    expect(await screen.findByText("The agent is answering")).toBeTruthy();
+    expect(((await screen.findByRole("button", { name: "Compact" })) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("falls back to a generic reason when the server gives none", async () => {
+    render(Banner, {}, backend({ compact: async () => ({ ok: false, message: null, entry: null }) }));
+    fireEvent.click(await screen.findByRole("button", { name: "Compact" }));
+    expect(await screen.findByText("Compact did not start")).toBeTruthy();
+  });
+});
+
+describe("band, expanded", () => {
+  const expand = async () => fireEvent.click(await screen.findByRole("button", { name: "Show details" }));
+
+  it("AE1: lists both providers with their pace notes, cost and the last 5 compacts", async () => {
+    const s = twoProviders();
+    s.recentCompactions = [0, 1, 2, 3, 4].map((i) => entry(i));
+    render(Banner, {}, backend({ snapshot: s }));
+    await expand();
+    const claude = providerBlock("claude-code");
+    expect(claude()!.textContent).toContain("Max");
+    expect((await findWindow("Current session", claude)).textContent).toContain("5 Hour40%");
+    expect((await findWindow("Weekly limit", claude)).textContent).toContain("Tight – at this pace about 92% used, resets in 3d");
+    const codex = providerBlock("codex");
+    fireEvent.click(within(codex()!).getByRole("button"));
+    const session = await findWindow("Current session", codex);
+    expect(session.textContent).toContain("At this pace lasts to reset – about 20% used, resets in 2h");
+    expect(session.textContent).toContain("$1.25 of $20.00");
+    expect(session.title).toBe("Current pace: 20% by reset (main forecast)\nUsual pace (3 past windows): 130%");
+    expect(screen.queryByTestId("window-budget")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Recent compacts (5)" }));
+    expect(within(screen.getByRole("list", { name: "Recent compacts" })).getAllByRole("listitem")).toHaveLength(5);
+    expect(screen.getAllByText(/\(Codex\), auto: 85% → 30%, compacted/)).toHaveLength(5);
+    expect(screen.queryByTestId("collapsed-row")).toBeNull();
+  });
+
+  it("shows the plan multiplier in the provider headers (UF-11 AE1, AE2)", async () => {
+    const s = snapshot([
+      provider("claude-code", [win("Current session", 40)], { planLabel: "Max", planMultiplier: 5 }),
+      provider("codex", [win("Current session", 10)], { planLabel: "Plus", planMultiplier: 1 }),
+    ]);
+    render(Banner, {}, backend({ snapshot: s }));
+    await expand();
+    await waitFor(() => expect(providerBlock("claude-code")()).not.toBeNull());
+    expect(within(providerBlock("claude-code")()!).getByText("Max 5×")).toBeTruthy();
+    expect(within(providerBlock("codex")()!).getByText("Plus")).toBeTruthy();
+    expect(providerBlock("codex")()!.textContent).not.toContain("×");
+  });
+
+  it("says when a window will run out before the reset, and the budget that lasts", async () => {
+    const forecast = { status: "running" as const, current: { projectedPercent: 160, runOutAt: Date.now() + HOUR_MS }, learned: null, main: "current" as const, early: false, warning: true };
+    render(Banner, {}, backend({ snapshot: snapshot([provider("claude-code", [win("Current session", 70, { forecast })])]) }));
+    await expand();
+    const session = await findWindow("Current session", providerBlock("claude-code"));
+    expect(session.textContent).toMatch(/At this pace runs out (at|\w{3}) .+ – 1h before reset/);
+    // Runs out in 1 h, more than a tenth of five hours: will not last, amber.
+    expect(within(session).getByText(/runs out/).getAttribute("data-tone")).toBe("amber");
+    // 30 % left over 2 h.
+    expect(within(session).getByTestId("window-budget").textContent).toBe("to last: up to 15% an hour");
+  });
+
+  it("reads a forecast from an older server without main as before", async () => {
+    const forecast = { status: "running" as const, current: { projectedPercent: 160, runOutAt: Date.now() + HOUR_MS }, learned: null, warning: true };
+    const w = win("Current session", 70, { forecast: forecast as never });
+    render(Banner, {}, backend({ snapshot: snapshot([provider("claude-code", [w])]) }));
+    expect((await screen.findByTestId("headline")).textContent).toMatch(/^At this pace you'll run out before/);
+    await expand();
+    expect((await findWindow("Current session", providerBlock("claude-code"))).textContent).toContain("1h before reset");
+  });
+
+  it("AE4: does not warn while early, whatever the usual pace says", async () => {
+    const forecast = {
+      status: "running" as const,
+      current: null,
+      learned: { projectedPercent: 110, runOutAt: Date.now() + HOUR_MS, basedOnWindows: 8 },
+      main: "learned" as const,
+      early: true,
+      warning: false,
+    };
+    const w = win("Current session", 3, { forecast, resetsAt: Date.now() + 5 * HOUR_MS - 6 * 60_000 });
+    render(Banner, {}, backend({ snapshot: snapshot([provider("claude-code", [w])]) }));
+    // No headline at all: the band names the provider, as with no forecast.
+    expect(await screen.findByText("Claude Code")).toBeTruthy();
+    expect(screen.queryByTestId("headline")).toBeNull();
+    await expand();
+    const session = await findWindow("Current session", providerBlock("claude-code"));
+    expect(session.textContent).toContain("Too early to judge – usually ends at about 100%, resets in 4h 54m");
+    expect(within(session).getByText("3%").getAttribute("data-tone")).toBe("normal");
+    expect(session.querySelector("[data-marker]")).toBeNull();
+    expect(screen.queryByTestId("window-budget")).toBeNull();
+  });
+
+  it("speaks Russian for a window that runs out", async () => {
+    const forecast = { status: "running" as const, current: { projectedPercent: 160, runOutAt: Date.now() + HOUR_MS }, learned: null, main: "current" as const, early: false, warning: true };
+    render(Banner, {}, backend({ snapshot: snapshot([provider("claude-code", [win("Current session", 70, { forecast })])]) }), {
+      settings: { language: "ru" },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Подробнее" }));
+    const session = await findWindow("Current session", providerBlock("claude-code"));
+    expect(session.textContent).toMatch(/При текущем темпе кончится в .+ – за 1ч до сброса/);
+    expect(within(session).getByTestId("window-budget").textContent).toBe("чтобы хватило – не больше 15% в час");
+  });
+
+  it("marks windows kept from an earlier answer", async () => {
+    const s = twoProviders();
+    s.hosts[0]!.providers[1] = { ...s.hosts[0]!.providers[1]!, status: "error", message: "timeout", measuredAt: Date.now() - 30 * 60_000 };
+    render(Banner, {}, backend({ snapshot: s }));
+    await expand();
+    await waitFor(() => expect(providerBlock("codex")()?.textContent).toMatch(/error: timeout.*data from .+/));
+  });
+
+  it("shows the context panel with free space and breakdown", async () => {
+    render(Banner, {}, backend());
+    await expand();
+    const details = await screen.findByTestId("context-details");
+    expect(details.textContent).toContain("Context 60% used");
+    expect(details.textContent).toContain("60k free of 150k");
+    expect(within(screen.getByRole("list", { name: "Context breakdown" })).getByRole("listitem").textContent).toBe("Messages90k");
+    expect(details.textContent).toContain("The provider compacts on its own at 117k (78% of the window)");
+  });
+
+  it("shows another provider on one line and its windows on tap", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }));
+    await expand();
+    const codex = providerBlock("codex");
+    await waitFor(() => expect(codex()).not.toBeNull());
+    const row = within(codex()!).getByRole("button");
+    expect(row.textContent).toBe("▸Codex5H 10%");
+    expect(row.getAttribute("aria-expanded")).toBe("false");
+    expect(codex()!.querySelector("[data-window]")).toBeNull();
+    fireEvent.click(row);
+    expect(row.getAttribute("aria-expanded")).toBe("true");
+    expect(codex()!.querySelector('[data-window="Current session"]')).not.toBeNull();
+  });
+
+  it("hides the recent compacts behind a row and has none when there are none", async () => {
+    const s = twoProviders();
+    s.recentCompactions = [entry(1)];
+    render(Banner, {}, backend({ snapshot: s }));
+    await expand();
+    const row = await screen.findByRole("button", { name: "Recent compacts (1)" });
+    expect(screen.queryByRole("list", { name: "Recent compacts" })).toBeNull();
+    fireEvent.click(row);
+    expect(within(screen.getByRole("list", { name: "Recent compacts" })).getAllByRole("listitem")).toHaveLength(1);
+    cleanup();
+    render(Banner, {}, backend({ snapshot: twoProviders() })); // still expanded: the state is kept per device
+    await screen.findByTestId("banner-details");
+    expect(screen.queryByRole("button", { name: /Recent compacts/ })).toBeNull();
+  });
+
+  it("scrolls the details inside a capped height and collapses from the bottom", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }));
+    await expand();
+    const details = await screen.findByTestId("banner-details");
+    expect(details.className).toContain("max-h-[45dvh]");
+    expect(details.className).toContain("overflow-y-auto");
+    fireEvent.click(within(details).getByRole("button", { name: "▲ Collapse" }));
+    expect(screen.queryByTestId("banner-details")).toBeNull();
+    expect(await screen.findByTestId("collapsed-row")).toBeTruthy();
+    expect(localStorage.getItem("usage-forecast:banner-expanded")).toBe("0");
+  });
+
+  it("keeps the collapsed band to two lines: one metrics row, the controls hidden on a phone", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }));
+    const row = await screen.findByTestId("collapsed-row");
+    expect(row.className).toContain("flex-nowrap");
+    const controls = (await screen.findByTestId("controls")).className.split(" ");
+    expect(controls).toEqual(expect.arrayContaining(["hidden", "@2xl:block"]));
+    await expand();
+    expect((await screen.findByTestId("controls")).className.split(" ")).not.toContain("hidden");
+  });
+
+  it("keeps the expanded state per device", async () => {
+    render(Banner, {}, backend());
+    await expand();
+    expect(localStorage.getItem("usage-forecast:banner-expanded")).toBe("1");
+    cleanup();
+    render(Banner, {}, backend());
+    expect((await screen.findByRole("button", { name: "Hide details" })).getAttribute("aria-expanded")).toBe("true");
+  });
+});
+
+describe("band, limits shown as left", () => {
+  const remaining = { settings: { limitsShow: "remaining" } };
+  const fillWidth = (el: HTMLElement) => el.querySelector<HTMLElement>("[aria-hidden] > span")!.style.width;
+
+  it("shows what is left of each window and keeps the risk colours and the used context", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }), remaining);
+    const weekly = await findWindow("Weekly limit");
+    expect(weekly.textContent).toBe("W3d8%");
+    expect(within(weekly).getByText("8%").getAttribute("data-tone")).toBe("amber");
+    expect(fillWidth(weekly)).toBe("8%");
+    expect(weekly.title).toBe("Weekly – 8% left");
+    expect((await findWindow("Current session")).textContent).toBe("5H2h60%");
+    expect((await findWindow("context")).textContent).toBe("Ctx90k / 150k60%");
+  });
+
+  it("mirrors the pace tick: 60% used heading for 110% leaves 40% now and nothing at reset", async () => {
+    const s = snapshot([provider("codex", [win("Weekly limit", 60, { forecast: forecastOf(110), resetsAt: Date.now() + 5 * HOUR_MS })])]);
+    render(Banner, {}, backend({ snapshot: s, thread: threadState({ providerId: "codex" }) }), remaining);
+    const weekly = await findWindow("Weekly limit");
+    expect(fillWidth(weekly)).toBe("40%");
+    expect(weekly.querySelector("[data-marker]")!.getAttribute("data-marker")).toBe("0");
+  });
+
+  it("says in the details how much will be left at reset", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }), remaining);
+    fireEvent.click(await screen.findByRole("button", { name: "Show details" }));
+    const claude = providerBlock("claude-code");
+    expect((await findWindow("Current session", claude)).textContent).toContain("5 Hour60%");
+    expect((await findWindow("Weekly limit", claude)).textContent).toContain("Tight – at this pace about 8% left, resets in 3d");
+    const codex = providerBlock("codex");
+    expect(within(codex()!).getByRole("button").textContent).toBe("▸Codex5H 90%");
+    fireEvent.click(within(codex()!).getByRole("button"));
+    expect((await findWindow("Current session", codex)).title).toBe(
+      "Current pace: 80% left by reset (main forecast)\nUsual pace (3 past windows): 0% left",
+    );
+  });
+
+  it("speaks Russian", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }), { settings: { limitsShow: "remaining", language: "ru" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Подробнее" }));
+    expect((await findWindow("Weekly limit", providerBlock("claude-code"))).textContent).toContain("Впритык – при текущем темпе останется примерно 8%");
+  });
+});
+
+describe("band, Russian", () => {
+  it("follows the language setting", async () => {
+    render(Banner, {}, backend({ snapshot: twoProviders() }), { settings: { language: "ru" } });
+    expect((await findWindow("Weekly limit")).textContent).toBe("Нед3д92%");
+    expect((await screen.findByTestId("headline")).textContent).toMatch(/^Впритык\. При таком темпе до сброса .+ уйдёт примерно 92% лимита\.$/);
+    expect(await screen.findByRole("button", { name: "Сжать" })).toBeTruthy();
+    expect(screen.getByRole("switch", { name: "Авто-компакт" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Подробнее" }));
+    expect((await screen.findByTestId("context-details")).textContent).toContain("Контекст занято 60%");
+  });
+});
+
+describe("band, pace state", () => {
+  const expand = async () => fireEvent.click(await screen.findByRole("button", { name: "Show details" }));
+  const fill = (el: HTMLElement) => el.querySelector<HTMLElement>("[aria-hidden] > span")!.className;
+  const one = (w: ReturnType<typeof win>) => snapshot([provider("claude-code", [w])]);
+  const runsOut = (projectedPercent: number, inMs: number) => ({
+    ...forecastOf(projectedPercent)!,
+    current: { projectedPercent, runOutAt: Date.now() + inMs },
+  });
+
+  it("AE1: a calm window at 80 % is normal on its bar, percent and note", async () => {
+    render(Banner, {}, backend({ snapshot: one(win("Current session", 80, { forecast: forecastOf(83), pace: "calm" })) }));
+    const session = await findWindow("Current session");
+    expect(within(session).getByText("80%").getAttribute("data-tone")).toBe("normal");
+    expect(fill(session)).toContain("bg-[#22b856]");
+    await expand();
+    const row = await findWindow("Current session", providerBlock("claude-code"));
+    const note = within(row).getByText(/At this pace lasts to reset – about 83% used/);
+    expect(note.getAttribute("data-tone")).toBeNull();
+    expect(note.className).toContain("text-muted-foreground");
+  });
+
+  it("AE3: a tight window at 92 % is amber, its note too", async () => {
+    render(Banner, {}, backend({ snapshot: one(win("Current session", 92, { forecast: forecastOf(94), pace: "tight" })) }));
+    const session = await findWindow("Current session");
+    expect(within(session).getByText("92%").getAttribute("data-tone")).toBe("amber");
+    expect(fill(session)).toContain("bg-[#ea8a0c]");
+    await expand();
+    const row = await findWindow("Current session", providerBlock("claude-code"));
+    expect(within(row).getByText(/^Tight – at this pace about 94% used/).getAttribute("data-tone")).toBe("amber");
+  });
+
+  it("a held will-not-last window stays amber while its note says it lasts", async () => {
+    render(Banner, {}, backend({ snapshot: one(win("Current session", 40, { forecast: forecastOf(80), pace: "short" })) }));
+    expect(within(await findWindow("Current session")).getByText("40%").getAttribute("data-tone")).toBe("amber");
+    expect((await screen.findByTestId("headline")).textContent).toMatch(/^On track/);
+    await expand();
+    const row = await findWindow("Current session", providerBlock("claude-code"));
+    expect(within(row).getByText(/At this pace lasts to reset – about 80% used/).getAttribute("data-tone")).toBe("amber");
+    expect(screen.queryByTestId("window-budget")).toBeNull();
+  });
+
+  it("a held will-not-last window whose run-out is now close is red with the critical headline", async () => {
+    const w = win("Current session", 50, { forecast: runsOut(200, 20 * 60_000), pace: "short" });
+    render(Banner, {}, backend({ snapshot: one(w) }));
+    expect(within(await findWindow("Current session")).getByText("50%").getAttribute("data-tone")).toBe("red");
+    const head = await screen.findByTestId("headline");
+    expect(head.textContent).toBe("At this pace you'll run out in 20m.");
+    expect(head.firstElementChild!.getAttribute("data-tone")).toBe("red");
+  });
+
+  it("a window from an older server without pace renders from its forecast", async () => {
+    const { pace: _pace, ...old } = win("Current session", 40, { forecast: runsOut(200, 90 * 60_000) });
+    render(Banner, {}, backend({ snapshot: one(old as ReturnType<typeof win>) }));
+    expect(within(await findWindow("Current session")).getByText("40%").getAttribute("data-tone")).toBe("amber");
+    expect((await screen.findByTestId("headline")).textContent).toMatch(/^At this pace you'll run out before/);
+  });
+
+  it("without a thread provider shows the one with the worst state, not the highest projection", () => {
+    const s = snapshot([
+      provider("claude-code", [win("Current session", 60, { forecast: forecastOf(95), pace: "tight" })]),
+      provider("codex", [win("Current session", 30, { forecast: forecastOf(60), pace: "short" })]),
+    ]);
+    expect(worstProvider(s.hosts[0]!.providers, Date.now())?.providerId).toBe("codex");
+  });
+});
+
+describe("hidden providers (UF-11)", () => {
+  const expand = async () => fireEvent.click(await screen.findByRole("button", { name: "Show details" }));
+  const settings = (hiddenProviders: string) => ({ autoCompactEnabled: false, autoCompactThresholdPercent: 80, pollIntervalMinutes: 2, hiddenProviders });
+  const three = () =>
+    snapshot([
+      provider("claude-code", [win("Current session", 40)]),
+      provider("codex", [win("Weekly limit", 97)]),
+      provider("acp-opencode", [], { status: "unauthenticated" }),
+    ]);
+
+  it("leaves a hidden provider out of the other providers (AE3)", async () => {
+    render(Banner, {}, backend({ snapshot: three() }), { settings: settings("acp-opencode") });
+    await expand();
+    await waitFor(() => expect(providerBlock("codex")()).not.toBeNull());
+    expect(providerBlock("claude-code")()).not.toBeNull();
+    expect(providerBlock("acp-opencode")()).toBeNull();
+  });
+
+  it("keeps the thread's own provider when it is hidden (AE4)", async () => {
+    const b = backend({ snapshot: three(), thread: threadState({ providerId: "codex" }) });
+    render(Banner, {}, b, { settings: settings("codex") });
+    // The collapsed row draws the Codex window: Codex is the band's provider.
+    expect((await findWindow("Weekly limit")).textContent).toContain("97%");
+    expect(screen.getByTestId("collapsed-row").querySelector('[data-window="Current session"]')).toBeNull();
+    await expand();
+    await waitFor(() => expect(providerBlock("codex")()).not.toBeNull());
+    expect(providerBlock("claude-code")()).not.toBeNull();
+  });
+
+  it("with every provider hidden shows only the thread's own one; case and spaces do not matter (AE7)", async () => {
+    render(Banner, {}, backend({ snapshot: three() }), { settings: settings(" Claude-Code ,, CODEX acp-opencode nope") });
+    await expand();
+    await waitFor(() => expect(providerBlock("claude-code")()).not.toBeNull());
+    expect(providerBlock("codex")()).toBeNull();
+    expect(providerBlock("acp-opencode")()).toBeNull();
+  });
+});
+
+describe("Hide button (UF-11 U4)", () => {
+  const expand = async () => fireEvent.click(await screen.findByRole("button", { name: "Show details" }));
+  const three = () =>
+    snapshot([
+      provider("claude-code", [win("Current session", 40)]),
+      provider("codex", [win("Weekly limit", 30)]),
+      provider("acp-opencode", [], { status: "unauthenticated" }),
+    ]);
+
+  it("hides another provider at once and saves it (AE6)", async () => {
+    const b = backend({ snapshot: three() });
+    render(Banner, {}, b);
+    await expand();
+    const hide = await screen.findByRole("button", { name: "Hide acp-opencode here and in notifications" });
+    expect(hide.textContent).toBe("Hide");
+    expect(hide.parentElement!.closest("button")).toBeNull();
+    fireEvent.click(hide);
+    await waitFor(() => expect(providerBlock("acp-opencode")()).toBeNull());
+    expect(providerBlock("codex")()).not.toBeNull();
+    await waitFor(() => expect(callsTo(b, "hideProvider").map((c) => c.input)).toEqual([{ providerId: "acp-opencode" }]));
+  });
+
+  it("puts the button in the opened content of a provider with windows, never in its summary", async () => {
+    render(Banner, {}, backend({ snapshot: three() }));
+    await expand();
+    await waitFor(() => expect(providerBlock("codex")()).not.toBeNull());
+    const codex = providerBlock("codex")!;
+    const summary = within(codex()!).getByRole("button", { expanded: false });
+    expect(within(codex()!).queryByTestId("hide-provider")).toBeNull();
+    fireEvent.click(summary);
+    const hide = await within(codex()!).findByRole("button", { name: "Hide Codex here and in notifications" });
+    expect(summary.contains(hide)).toBe(false);
+    expect(hide.parentElement!.closest("button")).toBeNull();
+  });
+
+  it("gives the thread's own provider no button", async () => {
+    render(Banner, {}, backend({ snapshot: three() }));
+    await expand();
+    await waitFor(() => expect(providerBlock("claude-code")()).not.toBeNull());
+    expect(within(providerBlock("claude-code")()!).queryByTestId("hide-provider")).toBeNull();
+  });
+
+  it("gives the thread's own provider no button when it has no windows and sits among the others", async () => {
+    render(Banner, {}, backend({ snapshot: three(), thread: threadState({ providerId: "acp-opencode" }) }));
+    await expand();
+    await waitFor(() => expect(providerBlock("acp-opencode")()).not.toBeNull());
+    expect(within(providerBlock("acp-opencode")()!).queryByTestId("hide-provider")).toBeNull();
+  });
+
+  it("brings the block back when the save fails", async () => {
+    const b = backend({ snapshot: three(), hideProvider: async () => Promise.reject(new Error("settings write failed")) });
+    render(Banner, {}, b);
+    await expand();
+    fireEvent.click(await screen.findByRole("button", { name: "Hide acp-opencode here and in notifications" }));
+    await waitFor(() => expect(callsTo(b, "hideProvider")).toHaveLength(1));
+    await waitFor(() => expect(providerBlock("acp-opencode")()).not.toBeNull());
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("speaks Russian", async () => {
+    render(Banner, {}, backend({ snapshot: three() }), { settings: { language: "ru" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Подробнее" }));
+    const hide = await screen.findByRole("button", { name: "Скрыть acp-opencode здесь и в уведомлениях" });
+    expect(hide.textContent).toBe("Скрыть");
+  });
+});
+
+describe("band, token line (UF-12)", () => {
+  const expand = async (name = "Show details") => fireEvent.click(await screen.findByRole("button", { name }));
+  const pair = (work: number, all: number) => ({ work, all });
+  const claude = { providerId: "claude-code", today: pair(310_000, 2_500_000), month: pair(4_200_000, 31_000_000) };
+  const counted = async (): Promise<Tokens> => ({
+    thread: pair(86_000, 1_234_567),
+    providers: [claude, { providerId: "codex", today: pair(5_000, 9_000), month: pair(7_000, 12_000) }],
+    backfillDone: true,
+  });
+
+  it("shows the thread, today and month of the thread's provider, below the limit windows", async () => {
+    const b = backend({ tokens: counted });
+    render(Banner, {}, b);
+    expect(screen.queryByTestId("tokens-line")).toBeNull();
+    await expand();
+    const line = await screen.findByTestId("tokens-line");
+    expect(line.textContent).toBe("Tokens: thread 86k · today 310k · month 4.2M");
+    const details = screen.getByTestId("banner-details");
+    expect(details.contains(line)).toBe(true);
+    const input = callsTo(b, "tokens")[0]!.input as { threadId: string; dayStart: number; monthStart: number };
+    expect(input.threadId).toBe(T);
+    expect(input.monthStart).toBeLessThanOrEqual(input.dayStart);
+  });
+
+  it("puts the full sums with cache reads and the BB-only note in the tooltip", async () => {
+    render(Banner, {}, backend({ tokens: counted }));
+    await expand();
+    const title = (await screen.findByTestId("tokens-line")).getAttribute("title");
+    expect(title).toBe(
+      [
+        "Tokens without cache reads (with them in brackets).",
+        "This thread: 86 000 (1 234 567).",
+        "The provider today: 310 000 (2 500 000).",
+        "The provider this month: 4 200 000 (31 000 000).",
+        "Counts BB threads only; use of the same account outside BB is not included.",
+      ].join("\n"),
+    );
+  });
+
+  it("speaks Russian", async () => {
+    render(Banner, {}, backend({ tokens: counted }), { settings: { language: "ru" } });
+    await expand("Подробнее");
+    expect((await screen.findByTestId("tokens-line")).textContent).toBe("Токены: тред 86 тыс. · сегодня 310 тыс. · месяц 4,2 млн");
+  });
+
+  it("without the thread's own total shows today and month only", async () => {
+    render(Banner, {}, backend({ tokens: async () => ({ thread: null, providers: [claude], backfillDone: false }) }));
+    await expand();
+    expect((await screen.findByTestId("tokens-line")).textContent).toBe("Tokens: today 310k · month 4.2M");
+  });
+
+  it("AE7: a Hermes thread with no events and no provider sums has no line", async () => {
+    const b = backend({ thread: threadState({ providerId: "acp-hera" }), tokens: async () => ({ thread: null, providers: [claude], backfillDone: true }) });
+    render(Banner, {}, b);
+    await expand();
+    await waitFor(() => expect(callsTo(b, "tokens")).toHaveLength(1));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+    expect(screen.queryByTestId("tokens-line")).toBeNull();
+  });
+
+  it("a failed query shows no line and no error", async () => {
+    const b = backend({ tokens: async () => Promise.reject(new Error("tokens failed")) });
+    render(Banner, {}, b);
+    await expand();
+    await waitFor(() => expect(callsTo(b, "tokens").length).toBeGreaterThan(0));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+    expect(screen.queryByTestId("tokens-line")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(/tokens failed/)).toBeNull();
+  });
+});

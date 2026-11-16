@@ -1,0 +1,1017 @@
+import { PRODUCT } from "../brand.ts";
+import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
+import { readFile, rename, stat, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { turnedFrom } from "../core/device-settings.ts";
+import {
+  DEVICE_HUB_PROCESS,
+  clockwiseTurns,
+  isSideways,
+  deviceModel,
+  screensOf,
+  type DeviceControl,
+  type DeviceElement,
+  type DeviceState,
+  type LaunchedApp,
+  type OfferedDevice,
+  type OfferedDeviceOf,
+  type Orientation,
+  type Power,
+  type TableModel,
+  type TouchContact,
+  type VideoSize,
+} from "../core/device.ts";
+import { parseDeviceState } from "../core/device-parse.ts";
+import { clockwiseTurnedPixels, pngPixels, rgbaPng } from "../core/png.ts";
+import { DriverError, type ControlContext, type DeviceDriver, type PinchGesture, type VideoSource } from "./driver.ts";
+import { Companion, accessibilityTree, orientation, screenshot, setOrientation, videoStream } from "./idb.ts";
+import { accessibilityUnanswered, iosElementAt, readIosTree } from "./ios-tree.ts";
+import { IosSettingsKeeper } from "./ios-controls.ts";
+import { IosInput, PasteboardAccess, typesWithOption } from "./ios-input.ts";
+import { PASTE_LOG_PREDICATE, PASTE_WATCH_MS, PasteWatch, type PasteWatchTimings } from "./ios-paste-watch.ts";
+import { pasteboardInOwnSession } from "./user-session.ts";
+import { IosVideo, scaledBack } from "./ios-video.ts";
+import { EncodeMeter, SOFTWARE_ENCODER, hardwareFailed, simulatorStream, softwareEncoderAt, type IosEncoderMode, type IosEncoderWay } from "./simulator-video.ts";
+import type { StreamOutput } from "./idb.ts";
+import { inBox, type DevicePaths } from "./paths.ts";
+import { Simctl, appOfProgram, runProgram, type SimDevice } from "./simctl.ts";
+
+export const SLIM_LISTS = "/usr/local/share/bb-box/ios";
+export const WATCH_MS = 5_000;
+export const CLOCK_TICK_MS = 1_000;
+export const RESUME_GAP_MS = 5_000;
+export const ORIENTATION_EVERY_MS = 250;
+export const ORIENTATION_STILL_EVERY_MS = 2_000;
+export const ORIENTATION_READ_MS = 2_000;
+export const DEVICE_EXITS_WINDOW_MS = 5 * 60_000;
+const SHUTTING_DOWN_WAIT_MS = 30_000;
+export const BUTTON_SETTLE_MS = 400;
+export const ROTATE_SETTLE_MS = 2_000;
+export const ROTATE_PICTURE_MS = 1_000;
+export const LOCK_SETTLE_MS = 3_000;
+export const REBOOT_PICTURE_MS = 10_000;
+export const HID_DAEMON = "com.apple.coredevice.dtuhidd";
+export const FULL_SIZE_SLACK = 0.02;
+export const SPRINGBOARD = "com.apple.SpringBoard";
+export const HID_DAEMON_ACTIVE = "dtuhidd state changed to active";
+export const HID_DAEMON_ACTIVE_WAIT_MS = 15_000;
+export const IOS_PASTE_LANDS_MS = 250;
+export const PASTE_UNWATCHED_LANDS_MS = 1_500;
+export const CLIPBOARD_HOLDS_WAIT = { mostMs: 5_000, everyMs: 50 } as const;
+export const SERVICES_ANSWER_WAIT = { mostMs: 45_000, everyMs: 1_000, readMs: 15_000, worthSayingMs: 1_000 } as const;
+const LOCK_STATE = "com.apple.springboard.lockstate";
+const APP_NAMES_MOST = 64;
+export const IOS_MOBILE_UID = 501;
+const SHOWN_AT_START: ReadonlySet<DeviceControl["action"]> = new Set(["appearance", "text_size"]);
+
+export function changesShowAtStart(uid: number): boolean {
+  return uid !== IOS_MOBILE_UID;
+}
+const PLUTIL = "/usr/bin/plutil";
+const SLIM_PASSES = 2;
+
+export interface IosDriverClock {
+  now(): number;
+  monotonic(): number;
+}
+
+export function stoppedTwiceWords(model: string, hostManaged: boolean): string {
+  const again = hostManaged ? "Reboot it with box_device reboot to start it again, or release the box for a new one: a shared box cannot be restarted." : "Restart the box to start it again.";
+  return `The ${model} stopped twice within ${DEVICE_EXITS_WINDOW_MS / 60_000} minutes, so ${PRODUCT} leaves it stopped. ${again}`;
+}
+
+export interface IosDriverOptions {
+  readonly paths: DevicePaths;
+  readonly slim: boolean;
+  readonly log: (line: string) => void;
+  readonly simctl?: Simctl;
+  readonly companionProgram?: string;
+  readonly slimLists?: string;
+  readonly watchMs?: number;
+  readonly clockTickMs?: number;
+  readonly orientationEveryMs?: number;
+  readonly clock?: IosDriverClock;
+  readonly processes?: (name: string) => Promise<number[]>;
+  readonly access?: PasteboardAccess;
+  readonly appInfo?: (app: string) => Promise<AppInfo | null>;
+  readonly buttonSettleMs?: number;
+  readonly processStart?: (pid: number) => Promise<ProcessStart | null>;
+  readonly hidDaemonActiveWaitMs?: number;
+  readonly uid?: number;
+  readonly encoder?: IosEncoderMode;
+  readonly softwareEncoder?: string;
+  readonly developer?: string;
+  readonly clipboardHoldsWait?: { readonly mostMs: number; readonly everyMs: number };
+  readonly pasteWatchMs?: Partial<PasteWatchTimings>;
+  readonly servicesAnswerWait?: { readonly [Key in keyof typeof SERVICES_ANSWER_WAIT]: number };
+}
+
+export interface ProcessStart {
+  readonly startedAt: number;
+  readonly parentPid: number;
+}
+
+export function parseProcessStart(printed: string): ProcessStart | null {
+  const match = /^\s*(\d+)\s+(\w{3} \w{3}\s+\d+ \d\d:\d\d:\d\d \d{4})\s*$/.exec(printed.trim());
+  const startedAt = match ? Date.parse(match[2]!) : Number.NaN;
+  return match && Number.isFinite(startedAt) ? { parentPid: Number(match[1]), startedAt } : null;
+}
+
+function ownProcessStart(pid: number): Promise<ProcessStart | null> {
+  return new Promise((resolve) =>
+    execFile("ps", ["-o", "ppid=,lstart=", "-p", String(pid)], { env: { ...process.env, LC_ALL: "C" } }, (error, stdout) => resolve(error ? null : parseProcessStart(String(stdout)))),
+  );
+}
+
+export interface DeviceHubKills {
+  readonly killed: number;
+  readonly last: number | null;
+}
+
+export function iosPaths(paths: DevicePaths) {
+  return {
+    companion: { socket: join(paths.dir, "idb.sock"), record: join(paths.dir, "companion.json"), log: join(paths.dir, "companion.log") },
+    deviceHub: join(paths.dir, "device-hub.json"),
+    settings: join(paths.dir, "ios-settings.json"),
+    session: join(paths.dir, "session"),
+  };
+}
+
+function processName(pid: number): Promise<string | null> {
+  return new Promise((resolve) => execFile("ps", ["-p", String(pid), "-o", "comm="], (error, stdout) => resolve(error ? null : String(stdout).trim() || null)));
+}
+
+function ownProcesses(name: string): Promise<number[]> {
+  return new Promise((resolve) =>
+    execFile("pgrep", ["-x", "-U", String(process.getuid?.() ?? 0), name], (error, stdout) =>
+      resolve(error ? [] : stdout.split("\n").map(Number).filter((pid) => Number.isInteger(pid) && pid > 0)),
+    ),
+  );
+}
+
+export function contentOrientation(physical: Orientation, video: VideoSize, model: TableModel, lastSideways: Orientation = "turned-left"): Orientation {
+  const screen = model.form === "foldable" ? model.outer : model.screen;
+  const turned = video.width > video.height !== screen.pixels.width > screen.pixels.height;
+  if (turned) return isSideways(physical) ? physical : isSideways(lastSideways) ? lastSideways : "turned-left";
+  if (physical === "upside-down") return model.form === "phone" ? "upright" : "upside-down";
+  return "upright";
+}
+
+export interface AppInfo {
+  readonly bundleId: string;
+  readonly platforms: readonly string[];
+}
+
+function readAppInfo(app: string): Promise<AppInfo | null> {
+  return new Promise((resolve) =>
+    execFile(PLUTIL, ["-convert", "json", "-o", "-", join(app, "Info.plist")], { timeout: 10_000 }, (error, stdout) => {
+      if (error) return resolve(null);
+      try {
+        const info = JSON.parse(String(stdout)) as { CFBundleIdentifier?: unknown; CFBundleSupportedPlatforms?: unknown };
+        resolve(typeof info.CFBundleIdentifier === "string" ? { bundleId: info.CFBundleIdentifier, platforms: Array.isArray(info.CFBundleSupportedPlatforms) ? info.CFBundleSupportedPlatforms.map(String) : [] } : null);
+      } catch {
+        resolve(null);
+      }
+    }),
+  );
+}
+
+function words(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export class IosDriver implements DeviceDriver {
+  readonly pasteLandsMs = IOS_PASTE_LANDS_MS;
+  readonly #options: IosDriverOptions;
+  readonly #simctl: Simctl;
+  readonly #clock: IosDriverClock;
+  readonly #companion: Companion;
+  readonly #video: IosVideo;
+  readonly #input: IosInput;
+  readonly #listeners = new Set<() => void>();
+  readonly #processes: (name: string) => Promise<number[]>;
+  readonly #processStart: (pid: number) => Promise<ProcessStart | null>;
+  readonly #deviceHubFile: string;
+  #target: OfferedDeviceOf<"ios"> | null = null;
+  #udid: string | null = null;
+  readonly #appNames = new Map<string, string | null>();
+  readonly #changesShowAtStart: boolean;
+  #power: Power<"ios"> = { is: "stopped" };
+  #generation = 0;
+  #physical: Orientation = "upright";
+  #lastSideways: Orientation = "turned-left";
+  #orientationTimer: ReturnType<typeof setInterval> | null = null;
+  #readingOrientation = false;
+  #orientationRead = { at: 0, frames: -1 };
+  #busy = false;
+  #lastExit: number | null = null;
+  #watchTimer: ReturnType<typeof setInterval> | null = null;
+  #clockTimer: ReturnType<typeof setInterval> | null = null;
+  #watching = false;
+  #lastTick: { readonly wall: number; readonly mono: number } | null = null;
+  #closed = new AbortController();
+  #awake = true;
+  #leftoversChecked = false;
+  readonly #settings: IosSettingsKeeper;
+  readonly #encodeMeter = new EncodeMeter();
+  #fellBack = false;
+  #softwareName: string | null = null;
+
+  constructor(options: IosDriverOptions) {
+    this.#options = options;
+    const own = iosPaths(options.paths);
+    this.#simctl = options.simctl ?? new Simctl({ pasteboard: pasteboardInOwnSession({ run: runProgram, dir: own.session, log: options.log }) });
+    this.#clock = options.clock ?? { now: () => Date.now(), monotonic: () => performance.now() };
+    this.#processes = options.processes ?? ownProcesses;
+    this.#processStart = options.processStart ?? ownProcessStart;
+    this.#deviceHubFile = own.deviceHub;
+    this.#changesShowAtStart = changesShowAtStart(options.uid ?? process.getuid?.() ?? IOS_MOBILE_UID);
+    this.#settings = new IosSettingsKeeper({ simctl: this.#simctl, file: own.settings, log: options.log, now: () => this.#clock.now(), changesShowAtStart: this.#changesShowAtStart });
+    this.#companion = new Companion({ program: options.companionProgram, paths: own.companion, log: options.log });
+    this.#video = new IosVideo({
+      open: (stopped, signal, scale) => this.#openVideo(stopped, signal, scale),
+      encoding: () => this.#encoding(),
+      recover: (error) => this.#recover(error),
+      sized: (size) => this.#sized(size),
+      fullSize: (frame, scale) => this.#fullSize(frame, scale),
+      log: options.log,
+      monotonic: () => this.#clock.monotonic(),
+    });
+    this.#input = new IosInput({
+      client: () => this.#companion.client,
+      scale: () => screensOf(this.#model())[0].scale,
+      access: options.access ?? new PasteboardAccess({ udid: () => this.#udid, log: options.log }),
+      log: options.log,
+    });
+  }
+
+  get udid(): string | null {
+    return this.#udid;
+  }
+
+  #encoderWay(): IosEncoderWay {
+    return this.#options.encoder === "software" || this.#fellBack ? "software" : "hardware";
+  }
+
+  #encoding(): { readonly way: IosEncoderWay; readonly encoder: string | null; readonly cores: number | null } {
+    const way = this.#encoderWay();
+    return way === "software" ? { way, encoder: this.#softwareName, cores: this.#encodeMeter.cores() } : { way, encoder: null, cores: null };
+  }
+
+  async *#openVideo(stopped: Promise<void>, signal: AbortSignal, scale: number): AsyncIterable<StreamOutput> {
+    const helper = this.#options.softwareEncoder ?? SOFTWARE_ENCODER;
+    if (this.#encoderWay() === "software") {
+      if (!this.#udid) throw new DriverError("not-booted", "There is no device to stream.");
+      yield* simulatorStream({ helper, udid: this.#udid, developer: this.#options.developer, encoded: (unit) => this.#encodeMeter.add(unit.encodeMicros), described: (words) => (this.#softwareName = words) }, stopped, signal, scale);
+      return;
+    }
+    for await (const output of videoStream(this.#companion.client, stopped, signal, scale)) {
+      if (output.log && this.#options.encoder !== "hardware" && hardwareFailed(output.log) && (await softwareEncoderAt(helper))) {
+        this.#fellBack = true;
+        this.#log(`video: the Mac's hardware H.264 encoder failed (${output.log}); streaming in software with ${helper} from now`);
+        throw new Error(`the hardware H.264 encoder failed: ${output.log}`);
+      }
+      yield output;
+    }
+  }
+
+  onChange(listener: () => void): void {
+    this.#listeners.add(listener);
+  }
+
+  #changed(): void {
+    for (const listener of this.#listeners) listener();
+  }
+
+  #log(line: string): void {
+    this.#options.log(line);
+  }
+
+  #model(): TableModel {
+    if (!this.#target) throw new DriverError("not-booted", "No iOS device has started in this box yet.");
+    return deviceModel(this.#target.model);
+  }
+
+  async #find(target: OfferedDeviceOf<"ios">, signal: AbortSignal): Promise<SimDevice> {
+    const devices = await this.#simctl.devices(signal);
+    const matching = devices.filter((device) => device.name === target.model && device.type === target.native && device.available);
+    if (!matching.length) {
+      const seen = devices.filter((device) => device.available).map((device) => device.name);
+      throw new DriverError("failed", `This box has no simulator device named ${target.model} of type ${target.native}. Its image should have made it. It has: ${seen.join(", ") || "none"}.`);
+    }
+    return matching.find((device) => device.state === "Booted") ?? matching[0]!;
+  }
+
+  async attach(target: OfferedDevice, signal: AbortSignal): Promise<"reattached" | "booted"> {
+    if (target.runtime.platform !== "ios") throw new DriverError("failed", `The ${target.model} is not an iOS device.`);
+    const ios = target as OfferedDeviceOf<"ios">;
+    this.#target = ios;
+    this.#busy = true;
+    this.#power = { is: "booting", since: this.#clock.now() };
+    this.#changed();
+    try {
+      const how = await this.#start(ios, signal);
+      this.#power = { is: "booted", awake: true };
+      this.#watch();
+      this.#changed();
+      return how;
+    } catch (error) {
+      this.#power = { is: "failed", error: { code: error instanceof DriverError && /idb_companion/.test(error.message) ? "companion-failed" : "boot-failed", words: words(error) }, since: this.#clock.now() };
+      this.#changed();
+      throw error;
+    } finally {
+      this.#busy = false;
+    }
+  }
+
+  async #start(target: OfferedDeviceOf<"ios">, signal: AbortSignal): Promise<"reattached" | "booted"> {
+    let device = await this.#find(target, signal);
+    this.#udid = device.udid;
+    const began = this.#clock.monotonic();
+    if (device.state === "Shutting Down") {
+      const until = this.#clock.monotonic() + SHUTTING_DOWN_WAIT_MS;
+      while (device.state === "Shutting Down" && this.#clock.monotonic() < until) {
+        await wait(250);
+        device = (await this.#simctl.device(device.udid, signal)) ?? device;
+      }
+    }
+    const running = device.state === "Booted";
+    await this.#simctl.boot(device.udid, signal);
+    if (!running) this.#log(`device: the ${target.model} (${device.udid}) booted in ${((this.#clock.monotonic() - began) / 1000).toFixed(1)} s`);
+    const rebooted = await this.#slimming(target, device.udid, signal);
+    await this.#rememberContent(target);
+    const reattached = running && !rebooted;
+    const keepCompanion = reattached && !(await this.#companionPredatesBoot(target, device.udid));
+    let companion = keepCompanion ? await this.#companion.ensure(device.udid, signal) : await this.#companion.restart(device.udid, signal);
+    if (companion === "reused" && !this.#leftoversChecked) {
+      this.#leftoversChecked = true;
+      const leftover = await this.#companion.streamsEncoding(this.#clock.now());
+      if (leftover) {
+        this.#log(`companion: idb_companion still encodes ${leftover} video stream${leftover === 1 ? "" : "s"} of an earlier device server, which it never ends; starting it again`);
+        companion = await this.#companion.restart(device.udid, signal);
+      }
+    }
+    if (companion === "started") this.#input.close();
+    this.#physical = (await orientation(this.#companion.client, AbortSignal.any([signal, AbortSignal.timeout(ORIENTATION_READ_MS)])).catch(() => null)) ?? this.#physical;
+    if (this.#video.enabled) this.#video.restart(`idb_companion was ${companion}`);
+    else this.#video.start();
+    await this.#settings.use(target.model, device.udid, signal).catch((error) => this.#log(`settings: ${words(error)}`));
+    await this.#readSettings(signal).catch((error) => this.#log(`settings: not read: ${words(error)}`));
+    await this.#pasteboardReady();
+    await this.#hidDaemonActive(target, device.udid, signal);
+    await this.#servicesAnswer(target, device.udid, signal);
+    return reattached ? "reattached" : "booted";
+  }
+
+  async #servicesAnswer(target: OfferedDeviceOf<"ios">, udid: string, signal: AbortSignal): Promise<void> {
+    const timing = this.#options.servicesAnswerWait ?? SERVICES_ANSWER_WAIT;
+    const began = this.#clock.monotonic();
+    const answersBy = async (answers: () => Promise<boolean>): Promise<boolean> => {
+      for (;;) {
+        if (await answers()) return true;
+        signal.throwIfAborted();
+        if (this.#clock.monotonic() - began + timing.everyMs > timing.mostMs) return false;
+        await wait(timing.everyMs);
+      }
+    };
+    const [accessibility, pasteboard] = await Promise.all([
+      answersBy(() => accessibilityTree(this.#companion.client, AbortSignal.any([signal, AbortSignal.timeout(timing.readMs)])).then(() => true, (error) => !accessibilityUnanswered(error))),
+      answersBy(() => this.#simctl.pasteboardAnswers(udid).catch(() => true)),
+    ]);
+    const seconds = ((this.#clock.monotonic() - began) / 1000).toFixed(1);
+    const silent = [accessibility ? null : "accessibility", pasteboard ? null : "pasteboard"].filter((each): each is string => each !== null);
+    if (silent.length) this.#log(`device: the ${target.model}'s ${silent.join(" and ")} did not answer in ${seconds} s more after it booted, so reads of its screen or its clipboard may fail until it does`);
+    else if (this.#clock.monotonic() - began >= timing.worthSayingMs) this.#log(`device: the ${target.model}'s accessibility and pasteboard took ${seconds} s more to answer after it booted`);
+  }
+
+  async #companionPredatesBoot(target: OfferedDeviceOf<"ios">, udid: string): Promise<boolean> {
+    const pid = await this.#companion.recordedPid();
+    if (pid === null) return false;
+    const companionStart = (await this.#processStart(pid))?.startedAt;
+    const booted = await this.#bootedAt(udid).catch(() => null);
+    if (companionStart === undefined || booted === null || companionStart >= booted) return false;
+    this.#log(`companion: idb_companion ${pid} started before the ${target.model} last booted, so its HID connection is gone; starting a new one`);
+    return true;
+  }
+
+  async #bootedAt(udid: string): Promise<number | null> {
+    const springBoard = await this.#simctl.servicePid(udid, SPRINGBOARD);
+    const parent = springBoard === null ? null : (await this.#processStart(springBoard))?.parentPid;
+    return parent ? ((await this.#processStart(parent))?.startedAt ?? null) : null;
+  }
+
+  async #hidDaemonActive(target: OfferedDeviceOf<"ios">, udid: string, signal: AbortSignal): Promise<void> {
+    if ((await this.#simctl.servicePid(udid, HID_DAEMON, signal).catch(() => 0)) !== null) return;
+    const began = this.#clock.monotonic();
+    const waitMs = this.#options.hidDaemonActiveWaitMs ?? HID_DAEMON_ACTIVE_WAIT_MS;
+    const active = await this.#simctl.logged(udid, HID_DAEMON_ACTIVE, () => this.#input.releaseInertKey(), AbortSignal.any([signal, AbortSignal.timeout(waitMs)]));
+    signal.throwIfAborted();
+    const seconds = ((this.#clock.monotonic() - began) / 1000).toFixed(1);
+    if (active) this.#log(`input: the ${target.model}'s HID daemon, which starts at its first input, took it in ${seconds} s`);
+    else this.#log(`input: the ${target.model}'s HID daemon did not say it took input within ${waitMs / 1000} s, so the first input may wait`);
+  }
+
+  async #rememberContent(target: OfferedDeviceOf<"ios">): Promise<void> {
+    const text = await readFile(this.#options.paths.state, "utf8").catch(() => null);
+    if (text === null) return;
+    let value: unknown;
+    try {
+      value = JSON.parse(text);
+    } catch {
+      return;
+    }
+    const parsed = parseDeviceState(value);
+    const geometry = parsed.ok && parsed.value.model === target.model ? parsed.value.geometry : null;
+    if (geometry && isSideways(geometry.content)) this.#lastSideways = geometry.content;
+  }
+
+  async #slimList(name: string): Promise<readonly string[] | null> {
+    const text = await readFile(join(this.#options.slimLists ?? SLIM_LISTS, `${name}.txt`), "utf8").catch(() => null);
+    return text === null ? null : text.split("\n").map((line) => line.trim()).filter(Boolean);
+  }
+
+  async #slimming(target: OfferedDeviceOf<"ios">, udid: string, signal: AbortSignal): Promise<boolean> {
+    const slim = target.slim;
+    if (!slim) return false;
+    const labels = await this.#slimList(slim.list);
+    if (!labels) {
+      this.#log(`slim: this box has no list ${slim.list}, so the ${target.model}'s services are left as they are`);
+      return false;
+    }
+    const began = this.#clock.monotonic();
+    const off = async () => {
+      const disabled = await this.#simctl.disabled(udid, signal);
+      return labels.filter((label) => disabled.has(label));
+    };
+    let disabled = await off();
+    if (this.#options.slim) {
+      if (disabled.length === labels.length) {
+        this.#log(`slim: the ${target.model} has all ${labels.length} services of ${slim.list} off`);
+        return false;
+      }
+      this.#log(`slim: the ${target.model} has ${disabled.length} of the ${labels.length} services of ${slim.list} off; turning the rest off, then rebooting it`);
+      for (let pass = 1; pass <= SLIM_PASSES && disabled.length < labels.length; pass++) {
+        for (const label of labels) if (!disabled.includes(label)) await this.#simctl.setService(udid, label, false, signal);
+        await this.#simctl.reboot(udid, signal);
+        disabled = await off();
+      }
+      const seconds = ((this.#clock.monotonic() - began) / 1000).toFixed(1);
+      if (disabled.length < labels.length) this.#log(`slim: the ${target.model} still has ${labels.length - disabled.length} of its ${labels.length} services on after ${SLIM_PASSES} passes, ${seconds} s`);
+      else this.#log(`slim: the ${target.model} has all ${labels.length} services of ${slim.list} off again, in ${seconds} s with its reboots`);
+      return true;
+    }
+    if (!disabled.length) {
+      this.#log(`slim: off for this box, and the ${target.model} has every service on`);
+      return false;
+    }
+    this.#log(`slim: off for this box, and the ${target.model} has ${disabled.length} of the ${labels.length} services of ${slim.list} off; turning them on, then rebooting it`);
+    for (const label of disabled) await this.#simctl.setService(udid, label, true, signal);
+    await this.#simctl.reboot(udid, signal);
+    disabled = await off();
+    this.#log(`slim: the ${target.model} has ${disabled.length} of those services off now, in ${((this.#clock.monotonic() - began) / 1000).toFixed(1)} s with its reboot`);
+    return true;
+  }
+
+  #fullSize(frame: VideoSize, scale: number): VideoSize {
+    const back = scaledBack(frame, scale);
+    if (scale === 1 || !this.#target) return back;
+    const screen = screensOf(this.#model())[0].pixels;
+    const own = back.width > back.height === screen.width > screen.height ? screen : { width: screen.height, height: screen.width };
+    const near = (a: number, b: number) => Math.abs(a - b) <= Math.max(4, b * FULL_SIZE_SLACK);
+    return near(back.width, own.width) && near(back.height, own.height) ? own : back;
+  }
+
+  #sized(size: VideoSize): number {
+    this.#generation++;
+    this.#input.close();
+    this.#log(`video: the ${this.#target?.model ?? "device"} is ${size.width}x${size.height} in its own pixels, generation ${this.#generation}`);
+    void this.#readOrientation();
+    this.#changed();
+    return this.#generation;
+  }
+
+  #watchOrientation(): void {
+    const frames = this.#video.framesSent;
+    const still = frames === this.#orientationRead.frames;
+    if (still && this.#clock.monotonic() - this.#orientationRead.at < ORIENTATION_STILL_EVERY_MS) return;
+    void this.#readOrientation();
+  }
+
+  async #orientationNow(): Promise<Orientation | null> {
+    try {
+      return await orientation(this.#companion.client, AbortSignal.timeout(ORIENTATION_READ_MS));
+    } catch {
+      return null;
+    }
+  }
+
+  async #readOrientation(): Promise<void> {
+    if (this.#readingOrientation || this.#busy || this.#power.is !== "booted") return;
+    this.#readingOrientation = true;
+    this.#orientationRead = { at: this.#clock.monotonic(), frames: this.#video.framesSent };
+    try {
+      const read = await this.#orientationNow();
+      if (!read || this.#busy || this.#power.is !== "booted") return;
+      this.#turned(read);
+    } finally {
+      this.#readingOrientation = false;
+    }
+  }
+
+  #turned(to: Orientation): number {
+    if (to === this.#physical) return this.#generation;
+    const from = this.#physical;
+    this.#physical = to;
+    this.#generation++;
+    this.#input.close();
+    this.#log(`orientation: the ${this.#target?.model ?? "device"} turned from ${from} to ${to}, generation ${this.#generation}`);
+    this.#video.regenerate(this.#generation);
+    this.#changed();
+    return this.#generation;
+  }
+
+  #contentOf(size: VideoSize, model: TableModel): Orientation {
+    const content = contentOrientation(this.#physical, size, model, this.#lastSideways);
+    if (isSideways(content)) this.#lastSideways = content;
+    return content;
+  }
+
+  async #recover(error: unknown): Promise<void> {
+    if (this.#busy || !this.#udid || this.#closed.signal.aborted) return;
+    if (!(await this.#companion.alive())) this.#log(`companion: idb_companion is gone (${words(error)}); starting it again`);
+    if ((await this.#companion.ensure(this.#udid, this.#closed.signal)) === "started") this.#input.close();
+  }
+
+  #watch(): void {
+    if (this.#watchTimer) return;
+    this.#watchTimer = setInterval(() => void this.#look(), this.#options.watchMs ?? WATCH_MS);
+    this.#watchTimer.unref?.();
+    this.#clockTimer = setInterval(() => this.#tick(), this.#options.clockTickMs ?? CLOCK_TICK_MS);
+    this.#clockTimer.unref?.();
+    this.#orientationTimer = setInterval(() => this.#watchOrientation(), this.#options.orientationEveryMs ?? ORIENTATION_EVERY_MS);
+    this.#orientationTimer.unref?.();
+    void this.#look();
+  }
+
+  async #look(): Promise<void> {
+    if (this.#watching) return;
+    this.#watching = true;
+    try {
+      await this.#deviceHub();
+      if (this.#busy || !this.#udid || this.#power.is !== "booted") return;
+      const device = await this.#simctl.device(this.#udid).catch(() => undefined);
+      if (device === undefined || this.#busy) return;
+      if (device?.state !== "Booted") await this.#exited(device?.state ?? "gone");
+    } finally {
+      this.#watching = false;
+    }
+  }
+
+  async #deviceHub(): Promise<void> {
+    const pids = await this.#processes(DEVICE_HUB_PROCESS).catch(() => []);
+    if (!pids.length) return;
+    for (const pid of pids) {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {}
+    }
+    const known = await this.deviceHubKills();
+    const kills: DeviceHubKills = { killed: known.killed + pids.length, last: this.#clock.now() };
+    const fresh = `${this.#deviceHubFile}.new`;
+    await writeFile(fresh, `${JSON.stringify(kills)}\n`, { mode: 0o600 }).then(() => rename(fresh, this.#deviceHubFile)).catch(() => undefined);
+    this.#log(`device hub: Device Hub started (process ${pids.join(", ")}), and was killed, as it takes the device's pasteboard; quitting it would shut the device down`);
+  }
+
+  async deviceHubKills(): Promise<DeviceHubKills> {
+    try {
+      const parsed = JSON.parse(await readFile(this.#deviceHubFile, "utf8")) as Partial<DeviceHubKills>;
+      return { killed: typeof parsed.killed === "number" ? parsed.killed : 0, last: typeof parsed.last === "number" ? parsed.last : null };
+    } catch {
+      return { killed: 0, last: null };
+    }
+  }
+
+  async #exited(state: string): Promise<void> {
+    const target = this.#target!;
+    const now = this.#clock.now();
+    const again = this.#lastExit !== null && now - this.#lastExit < DEVICE_EXITS_WINDOW_MS;
+    this.#lastExit = now;
+    this.#busy = true;
+    try {
+      await this.#video.stop();
+      if (again) {
+        const words = stoppedTwiceWords(target.model, existsSync(this.#options.paths.hostManaged));
+        this.#log(`device: ${words}`);
+        this.#power = { is: "failed", error: { code: "device-exited", words }, since: now };
+        this.#changed();
+        return;
+      }
+      this.#log(`device: the ${target.model} stopped (${state}) without being asked; booting it again`);
+      this.#power = { is: "booting", since: now };
+      this.#changed();
+      await this.#start(target, this.#closed.signal);
+      this.#power = { is: "booted", awake: true };
+      this.#log(`device: the ${target.model} is back`);
+    } catch (error) {
+      this.#power = { is: "failed", error: { code: "boot-failed", words: words(error) }, since: this.#clock.now() };
+      this.#log(`device: the ${target.model} did not boot again: ${words(error)}`);
+    } finally {
+      this.#busy = false;
+      this.#changed();
+    }
+  }
+
+  #tick(): void {
+    const wall = this.#clock.now();
+    const mono = this.#clock.monotonic();
+    const last = this.#lastTick;
+    this.#lastTick = { wall, mono };
+    if (!last) return;
+    const tick = this.#options.clockTickMs ?? CLOCK_TICK_MS;
+    const gone = Math.max(wall - last.wall, mono - last.mono) - tick;
+    const parted = Math.abs(wall - last.wall - (mono - last.mono));
+    if (gone > RESUME_GAP_MS || parted > RESUME_GAP_MS) void this.#resumed(Math.round(Math.max(gone, parted) / 1000));
+  }
+
+  async #resumed(seconds: number): Promise<void> {
+    if (this.#busy || !this.#udid || this.#power.is !== "booted") return;
+    this.#log(`resume: the clock moved ${seconds} s past this server's own, as after a stop of the box; starting idb_companion again, as one from before the stop grows without bound, and checking the ${this.#target?.model}`);
+    this.#busy = true;
+    try {
+      await this.#video.stop();
+      this.#input.close();
+      await this.#companion.restart(this.#udid, this.#closed.signal);
+    } catch (error) {
+      this.#log(`resume: idb_companion did not start again: ${words(error)}`);
+    } finally {
+      this.#busy = false;
+      this.#video.start();
+    }
+    await this.#look();
+  }
+
+  async shutdown(signal: AbortSignal): Promise<void> {
+    this.#busy = true;
+    try {
+      await this.#video.stop();
+      this.#input.close();
+      await this.#companion.stop();
+      if (this.#udid) await this.#simctl.shutdown(this.#udid, signal);
+      this.#power = { is: "stopped" };
+      this.#changed();
+    } finally {
+      this.#busy = false;
+    }
+  }
+
+  close(): void {
+    this.#closed.abort();
+    if (this.#watchTimer) clearInterval(this.#watchTimer);
+    if (this.#clockTimer) clearInterval(this.#clockTimer);
+    if (this.#orientationTimer) clearInterval(this.#orientationTimer);
+    this.#watchTimer = this.#clockTimer = this.#orientationTimer = null;
+    this.#input.close();
+    void this.#video.stop();
+    this.#companion.close();
+  }
+
+  video(): VideoSource {
+    return this.#video;
+  }
+
+  async touch(contacts: readonly TouchContact[]): Promise<void> {
+    if (!contacts.length && this.#power.is !== "booted") return;
+    this.#booted();
+    this.#input.touch(contacts);
+  }
+
+  async pinch(gesture: PinchGesture, signal: AbortSignal): Promise<void> {
+    this.#booted();
+    await this.#input.pinch(gesture, signal);
+  }
+
+  async key(key: string, down: boolean): Promise<void> {
+    if (!down && this.#power.is !== "booted") return;
+    this.#booted();
+    await this.#input.key(key, down);
+  }
+
+  typesAsKeys(character: string): boolean {
+    return typesWithOption(character);
+  }
+
+  async paste(): Promise<void> {
+    const udid = this.#booted();
+    const watch = new PasteWatch((signal) => this.#simctl.pasteLog(udid, PASTE_LOG_PREDICATE, signal), { ms: this.#options.pasteWatchMs });
+    try {
+      await Promise.all([watch.listening(), this.#input.readyToPaste()]);
+      watch.pressed();
+      await this.#input.pressPaste();
+      const read = await watch.read();
+      if (!read.watched) {
+        watch.close();
+        this.#log(`paste: the device's log could not be watched for the app's read of the clipboard, so it is put back after ${PASTE_UNWATCHED_LANDS_MS / 1000} s`);
+        await wait(PASTE_UNWATCHED_LANDS_MS);
+        return;
+      }
+      if (!read.reader) this.#log(`paste: no app read the clipboard within ${(this.#options.pasteWatchMs?.read ?? PASTE_WATCH_MS.read) / 1000} s of the paste key, so it is put back now`);
+      this.#input.holdKeysUntilTheNoticeGoes(
+        watch
+          .noticeGone()
+          .then((outcome) => {
+            if (outcome === "still shown") this.#log("paste: iOS's paste notice still showed when the wait for it ended, so the next keys may be lost");
+            return outcome === "gone";
+          })
+          .finally(() => watch.close()),
+      );
+    } catch (error) {
+      watch.close();
+      throw error;
+    }
+  }
+
+  async prepareInput(): Promise<void> {
+    if (this.#power.is === "booted") this.#input.prepare();
+  }
+
+  #booted(): string {
+    if (this.#power.is !== "booted" || !this.#udid) throw new DriverError("not-booted", `The ${this.#target?.model ?? "device"} is not booted.`);
+    return this.#udid;
+  }
+
+  async #pasteboardReady(): Promise<void> {
+    const problem = await this.#simctl.pasteboardReady().catch((error) => words(error));
+    if (problem) this.#log(`pasteboard: ${problem}`);
+  }
+
+  async setClipboard(text: string): Promise<void> {
+    const udid = this.#booted();
+    await this.#simctl.setClipboard(udid, text);
+    await this.#untilTheDeviceHolds(udid, text);
+  }
+
+  async #untilTheDeviceHolds(udid: string, text: string): Promise<void> {
+    const holds = this.#options.clipboardHoldsWait ?? CLIPBOARD_HOLDS_WAIT;
+    const began = this.#clock.monotonic();
+    for (let reads = 1; ; reads++) {
+      if ((await this.#simctl.clipboard(udid)) === text) return;
+      const waited = this.#clock.monotonic() - began;
+      if (waited + holds.everyMs > holds.mostMs) throw new DriverError("failed", `The ${this.#target?.model ?? "device"}'s clipboard still held other text ${(waited / 1000).toFixed(1)} s and ${reads} reads after simctl set it.`);
+      await wait(holds.everyMs);
+    }
+  }
+
+  async clipboard(): Promise<string> {
+    return this.#simctl.clipboard(this.#booted());
+  }
+
+  async #readSettings(signal: AbortSignal): Promise<void> {
+    if (!this.#udid) return;
+    const [, locked] = await Promise.all([this.#settings.read(signal), this.#simctl.notifyState(this.#udid, LOCK_STATE, signal).catch(() => null)]);
+    if (locked !== null) this.#awake = locked === 0;
+  }
+
+  async readSettings(signal: AbortSignal): Promise<void> {
+    if (this.#busy || this.#power.is !== "booted") return;
+    const before = JSON.stringify([this.#settings.settings(), this.#awake]);
+    await this.#readSettings(signal);
+    if (JSON.stringify([this.#settings.settings(), this.#awake]) !== before) this.#changed();
+  }
+
+  async #press(button: "home" | "lock", signal: AbortSignal): Promise<void> {
+    this.#input.button(button);
+    await new Promise((resolve) => setTimeout(resolve, this.#options.buttonSettleMs ?? BUTTON_SETTLE_MS));
+    signal.throwIfAborted();
+  }
+
+  async #locked(udid: string, signal: AbortSignal): Promise<boolean> {
+    return (await this.#simctl.notifyState(udid, LOCK_STATE, signal)) === 1;
+  }
+
+  async #lockedBecomes(udid: string, locked: boolean, signal: AbortSignal): Promise<void> {
+    const until = this.#clock.monotonic() + LOCK_SETTLE_MS;
+    while ((await this.#locked(udid, signal)) !== locked) {
+      if (this.#clock.monotonic() > until) throw new DriverError("failed", `The device was ${locked ? "locked" : "woken"}, but it still reads ${locked ? "unlocked" : "locked"} after ${LOCK_SETTLE_MS / 1000} s.`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    this.#awake = !locked;
+  }
+
+  async control(control: DeviceControl, signal: AbortSignal, context: ControlContext): Promise<void> {
+    if (control.action === "reboot") await this.#reboot(signal);
+    else await this.#act(this.#booted(), control, signal, context);
+    await this.#readSettings(signal).catch((error) => this.#log(`settings: not read after ${control.action}: ${words(error)}`));
+    this.#changed();
+  }
+
+  async #act(udid: string, control: DeviceControl, signal: AbortSignal, context: ControlContext): Promise<void> {
+    switch (control.action) {
+      case "home":
+        await this.#press("home", signal);
+        break;
+      case "lock":
+        await this.#press("lock", signal);
+        await this.#lockedBecomes(udid, true, signal);
+        break;
+      case "wake":
+        await this.#press("home", signal);
+        if (await this.#locked(udid, signal)) await this.#press("home", signal);
+        await this.#lockedBecomes(udid, false, signal);
+        break;
+      case "rotate": {
+        const to = control.turn ? turnedFrom(this.#physical, control.turn) : control.to;
+        await setOrientation(this.#companion.client, to, signal);
+        const until = this.#clock.monotonic() + ROTATE_SETTLE_MS;
+        let read = await orientation(this.#companion.client, signal).catch(() => null);
+        while (read !== to && this.#clock.monotonic() < until) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          read = await orientation(this.#companion.client, signal).catch(() => null);
+        }
+        if (read !== to) throw new DriverError("failed", `idb_companion was asked to turn the device ${to.replace("-", " ")}, but it reads ${read?.replace("-", " ") ?? "nothing"}.`);
+        await this.#newPicture(this.#turned(to), signal);
+        break;
+      }
+      case "appearance":
+        await this.#settings.setAppearance(control.to, signal);
+        await this.#rebootToShow(control, signal);
+        break;
+      case "text_size":
+        if (typeof control.to === "number") throw new DriverError("bad-value", "iOS takes a content size, not a font scale.");
+        await this.#settings.setTextSize(control.to, signal);
+        await this.#rebootToShow(control, signal);
+        break;
+      case "location":
+        await this.#settings.setLocation(control.to, signal);
+        break;
+      case "status_bar":
+        await this.#settings.setStatusBar(control.to, signal);
+        break;
+      case "battery":
+        await this.#settings.setBattery(control.to, signal);
+        break;
+      case "install":
+        await this.#install(udid, control.paths, signal, context);
+        break;
+      default:
+        throw new DriverError("unsupported", `iOS has no ${control.action.replace("_", " ")} control.`);
+    }
+  }
+
+  rebootsFor(control: DeviceControl): boolean {
+    return this.#changesShowAtStart && SHOWN_AT_START.has(control.action);
+  }
+
+  async #rebootToShow(control: DeviceControl, signal: AbortSignal): Promise<void> {
+    if (!this.rebootsFor(control)) return;
+    this.#log(`settings: this device shows a change to ${control.action.replace("_", " ")} only at its start, as its user's uid is not ${IOS_MOBILE_UID}, so bb-box reboots it`);
+    await this.#reboot(signal);
+  }
+
+  async openUrl(url: string, signal: AbortSignal): Promise<void> {
+    const udid = this.#booted();
+    const began = this.#clock.monotonic();
+    await this.#simctl.openUrl(udid, url, signal);
+    this.#log(`open: ${url} in ${Math.round(this.#clock.monotonic() - began)} ms`);
+  }
+
+  async #newPicture(since: number, signal: AbortSignal, waitMs = ROTATE_PICTURE_MS): Promise<void> {
+    const until = this.#clock.monotonic() + waitMs;
+    while (this.#generation === since && this.#clock.monotonic() < until && !signal.aborted) await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+
+  async #install(udid: string, paths: readonly string[], signal: AbortSignal, context: ControlContext): Promise<void> {
+    const app = inBox(paths[0]!);
+    const found = await stat(app).catch(() => null);
+    if (!found?.isDirectory()) throw new DriverError("bad-value", `There is no .app folder at ${app} in the box. Copy it there with box_copy, as a tar, and unpack it, or build it in the box.`);
+    const info = await (this.#options.appInfo ?? readAppInfo)(app);
+    if (!info) throw new DriverError("bad-value", `${app} has no Info.plist with a CFBundleIdentifier, so it is not an app.`);
+    if (!info.platforms.includes("iPhoneSimulator"))
+      throw new DriverError("bad-value", `${app} is a build for a physical device${info.platforms.length ? ` (${info.platforms.join(", ")})` : ""}. Build for the simulator, for example xcodebuild -sdk iphonesimulator, and install the .app.`);
+    if (context.personHasControl && (await this.#simctl.installed(udid, info.bundleId, signal)))
+      throw new DriverError("person-has-control", `A person has control of this box's device, and ${info.bundleId} is installed on it already: installing it again would stop it if it is open. Wait for them to hand control back, or take it back with computer_take_control when they ask.`);
+    const began = this.#clock.monotonic();
+    await this.#simctl.install(udid, app, signal);
+    this.#log(`install: ${info.bundleId} from ${app} in ${((this.#clock.monotonic() - began) / 1000).toFixed(1)} s`);
+  }
+
+  async #reboot(signal: AbortSignal): Promise<void> {
+    const target = this.#target;
+    if (!target) throw new DriverError("not-booted", "No iOS device has started in this box yet.");
+    if (this.#busy) throw new DriverError("not-booted", `The ${target.model} is booting. Try again when it has booted.`);
+    this.#busy = true;
+    const began = this.#clock.monotonic();
+    this.#power = { is: "booting", since: this.#clock.now() };
+    this.#changed();
+    try {
+      await this.#video.stop();
+      this.#input.close();
+      const generation = this.#generation;
+      if (this.#udid) await this.#simctl.shutdown(this.#udid, signal);
+      await this.#startUnlessSlowToSay(target, signal);
+      await this.#newPicture(generation, signal, REBOOT_PICTURE_MS);
+      this.#power = { is: "booted", awake: true };
+      this.#awake = true;
+      this.#watch();
+      this.#log(`device: the ${target.model} rebooted in ${((this.#clock.monotonic() - began) / 1000).toFixed(1)} s`);
+    } catch (error) {
+      this.#power = { is: "failed", error: { code: "boot-failed", words: words(error) }, since: this.#clock.now() };
+      throw error;
+    } finally {
+      this.#busy = false;
+      this.#changed();
+    }
+  }
+
+  async #startUnlessSlowToSay(target: OfferedDeviceOf<"ios">, signal: AbortSignal): Promise<"reattached" | "booted"> {
+    try {
+      return await this.#start(target, signal);
+    } catch (error) {
+      if (signal.aborted || !this.#udid) throw error;
+      const device = await this.#simctl.device(this.#udid, signal).catch(() => null);
+      if (device?.state !== "Booted") throw error;
+      this.#log(`device: the ${target.model} reads Booted, though its start said: ${words(error)}; attaching to it again`);
+      return await this.#start(target, signal);
+    }
+  }
+
+  async screenshot(): Promise<Uint8Array> {
+    this.#booted();
+    const png = await screenshot(this.#companion.client);
+    const size = this.#video.size;
+    const turns = size ? clockwiseTurns(this.#contentOf(size, this.#model())) : 0;
+    if (!turns) return png;
+    const turned = clockwiseTurnedPixels(pngPixels(png), turns);
+    return rgbaPng(turned.width, turned.height, turned.rgba);
+  }
+
+  async tree(): Promise<readonly DeviceElement[]> {
+    this.#booted();
+    const scale = screensOf(this.#model())[0].scale;
+    const client = this.#companion.client;
+    const size = this.#video.size ?? screensOf(this.#model())[0].pixels;
+    const began = this.#clock.monotonic();
+    const read = await readIosTree(
+      { tree: () => accessibilityTree(client), at: (point) => accessibilityTree(client, undefined, point), processName, appName: (pid) => this.#appNamed(pid) },
+      { width: size.width / scale, height: size.height / scale },
+      scale,
+    );
+    if (read.byPoints) this.#log(`tree: iOS named no app in front, so the screen was read point by point in ${Math.round(this.#clock.monotonic() - began)} ms: ${read.elements[0]?.children.length ?? 0} elements`);
+    if (read.pageByPoints) this.#log(`tree: ${read.elements[0]?.label || "the app in front"} shows a page of another process, read point by point; the read took ${Math.round(this.#clock.monotonic() - began)} ms`);
+    return read.elements;
+  }
+
+  async #appNamed(pid: number): Promise<string | null> {
+    const udid = this.#booted();
+    const key = `${udid}:${pid}`;
+    if (this.#appNames.has(key)) return this.#appNames.get(key)!;
+    const program = await processName(pid);
+    const found = program ? appOfProgram(program, await this.#simctl.apps(udid)) : null;
+    const app = found && found.id.toLowerCase() !== SPRINGBOARD.toLowerCase() ? found : null;
+    if (this.#appNames.size >= APP_NAMES_MOST) this.#appNames.clear();
+    this.#appNames.set(key, app?.name ?? null);
+    return app?.name ?? null;
+  }
+
+  async elementAt(point: { readonly x: number; readonly y: number }): Promise<DeviceElement | null> {
+    this.#booted();
+    const scale = screensOf(this.#model())[0].scale;
+    return iosElementAt(await accessibilityTree(this.#companion.client, undefined, { x: point.x / scale, y: point.y / scale }), scale);
+  }
+
+  async launchApp(app: string, signal: AbortSignal): Promise<LaunchedApp> {
+    const udid = this.#booted();
+    const began = this.#clock.monotonic();
+    const looksLikeId = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(app);
+    if (looksLikeId) {
+      const ran = await this.#simctl.launch(udid, app, signal);
+      if (ran.code === 0) {
+        this.#log(`launch: ${app} in ${Math.round(this.#clock.monotonic() - began)} ms`);
+        return { id: app, name: (await this.#simctl.apps(udid, signal).catch(() => [])).find((each) => each.id === app)?.name ?? app };
+      }
+    }
+    const apps = await this.#simctl.apps(udid, signal);
+    const wanted = app.trim().toLowerCase();
+    const found = apps.find((each) => each.id.toLowerCase() === wanted) ?? apps.find((each) => each.name.toLowerCase() === wanted);
+    if (!found) {
+      const named = [...apps].sort((a, b) => Number(a.system) - Number(b.system) || a.name.localeCompare(b.name)).map((each) => `${each.name} (${each.id})`);
+      throw new DriverError("bad-value", `The ${this.#model().name} has no app ${JSON.stringify(app)}. Its apps are: ${named.join(", ")}.`);
+    }
+    const ran = await this.#simctl.launch(udid, found.id, signal);
+    if (ran.code !== 0) throw new DriverError("failed", `simctl could not launch ${found.name} (${found.id}): ${(ran.stderr || ran.stdout).trim().split("\n").slice(-2).join(" ") || `exit code ${ran.code}`}`);
+    this.#log(`launch: ${found.id} in ${Math.round(this.#clock.monotonic() - began)} ms`);
+    return { id: found.id, name: found.name };
+  }
+
+  async readBack(): Promise<DeviceState> {
+    const model = this.#model();
+    if (model.platform !== "ios") throw new DriverError("failed", `The ${model.name} is not an iOS device.`);
+    const size = this.#video.size;
+    const geometry =
+      this.#power.is === "booted" && size ? { generation: this.#generation, physical: this.#physical, content: this.#contentOf(size, model), video: size } : null;
+    const power: Power<"ios"> = this.#power.is === "booted" ? { is: "booted", awake: this.#awake } : this.#power;
+    return { platform: "ios", model: model.name, power, geometry, settings: this.#settings.settings(), at: this.#clock.now() };
+  }
+}

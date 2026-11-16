@@ -1,0 +1,201 @@
+# Aura Motion
+
+Video, animated GIF and photo backgrounds for BB, with Capy's dithering effect, seven
+texture patterns, five photo motions, four dither styles, six saved slots, and an
+optional GitHub activity overview. Open **Settings → Aura Motion Motion**, or
+**+ → Actions → Aura Motion** in a thread panel.
+
+Aura Motion is a fork of [Aura](https://github.com/MateoCerquetella/bb-plugins/tree/main/plugins/aura)
+by Mateo Cerquetella, released under the MIT license. It adds animated GIF
+backgrounds and the texture choices; the GIF and texture work is also
+[proposed upstream](https://github.com/MateoCerquetella/bb-plugins/pull/99).
+Install Aura Motion **instead of** Aura, not beside it — both draw a background
+on the same panels.
+
+## Activity overview
+
+Turn on **Activity overview** in **Settings → Aura Motion Motion** to show a compact overview
+below the native New thread composer. It is off by default and saves immediately,
+without applying or discarding your background draft. This preference stays
+global when switching slots or resetting a background. Composer centering stays
+active with the overview or wallpaper disabled; short windows and long drafts
+remain scrollable. The overview is part of Aura Motion, with no extra plugin required.
+
+The BB server needs an authenticated [GitHub CLI](https://cli.github.com/): run
+`gh auth login` directly on that server if necessary. Aura Motion invokes `gh api` against
+GitHub; credentials stay in the CLI and are never sent to the browser. The
+overview makes no activity requests while disabled. Results are cached for five
+minutes, with an update time displayed in the UI.
+
+- **Contributions:** actual dated GitHub contribution-calendar counts. The
+  selected period covers 30, 90 or 365 inclusive UTC dates ending today. Dates
+  retain GitHub's contribution-day attribution; today's counts are still changing.
+- **PRs opened / merged:** authored PR counts by creation or merge date. These
+  use different events and can differ from contribution totals.
+- **Review contributions:** GitHub's counted pull-request review contributions,
+  rather than every individual review comment.
+- **Patterns:** longest consecutive active streak within the selected period;
+  current streak ends today or, if today has zero contributions, yesterday.
+  Busiest date/month come from dated counts; earliest dates win ties. Streaks
+  are bounded by the selected interval.
+- **Repositories:** actual contribution repositories returned by GitHub, up to
+  100 per contribution category. Scoped PR counts and available review counts
+  requery that repository. GitHub's global contribution calendar has no repository
+  filter, so repository contributions, calendar and patterns display **Unavailable**.
+  Aura Motion never reuses global counts under a repository label.
+- **Links:** open your real authored PRs and review-request search on GitHub.
+  No invented attention items or example activity ship in the overview.
+
+Visibility follows the authenticated account's GitHub permissions and private
+contribution settings. Loading, incomplete, missing-authentication and API-error
+states omit unconfirmed metrics and offer retry where appropriate. A complete
+empty response shows zero activity explicitly. Source failures never become zero.
+The heatmap scrolls inside its own keyboard-accessible region on narrow screens.
+
+## Use Aura Motion
+
+In **Settings → Aura Motion Motion**, use **Half wallpaper on New thread**:
+
+- **On:** the wallpaper appears in the upper half and fades out at the midpoint.
+- **Off:** New thread shows the full wallpaper.
+- Chats always show the full wallpaper. **Behind your messages** picks how much
+  shows through the message column: **Solid** (margins only), **Glass** (a
+  floating frosted sheet) or **Sheer** (a light veil). Glass follows Apple's
+  materials and turns solid when Reduce Transparency is on. The live preview's
+  **Chat** tab shows the chosen surface. There is no dimmer button in the composer.
+
+Select **Apply background** to save the setting.
+
+- Choose or drop a PNG/JPG (up to 32 MB). Large images are resized automatically
+  to fit the 2 MB stored-image limit. The preview shows the result before saving.
+- Or choose an MP4 (H.264) or WebM video, up to 24 MB and 4,096 px per side —
+  a 4K loop fits easily. Videos play muted and looped, and pause while hidden,
+  off-screen or under reduced motion. Choose **No texture** to show the video
+  exactly as encoded; with Capy dithering it becomes the shader's texture.
+- Or choose an animated GIF (up to 8 MB and 4,096 px per side). GIFs are stored as uploaded — resizing
+  would drop their animation — and play frame by frame through Capy dithering.
+  With **No texture**, the browser plays the GIF directly.
+- Adjust image visibility (0–100%), half-wallpaper mode, fit, and Capy dithering.
+  The half-wallpaper setting affects New thread only. Photo dithering now animates with a gentle threshold wave.
+- Without an image, choose a **Pattern**: Drifting noise (the default), Warp,
+  Falling dots, Sine wave, Ripple, Swirl or Lit sphere. With an image, choose its
+  **Texture motion**: Wave (the default), Ripple, Diagonal drift, Shimmer or Still.
+- Choose a **Dither**: Grain, or a 2×2, 4×4 or 8×8 (the default) ordered grid.
+- Choose **Animation speed** (15/30/60 FPS) and **Render quality**
+  (Performance/Balanced/Sharp). Higher settings use more GPU; saved slots retain them.
+- Select **Apply background** to apply the current draft.
+- Choose a slot, enter a name, and select **Save slot** to save and apply the draft.
+  Occupied slots have an explicit **Replace slot** button. Each slot keeps its
+  image and appearance independently; click its card to switch immediately.
+- **New thread screen only** hides Aura Motion inside existing conversations. Apply it
+  to save. This scope and the Enabled preference remain global when switching slots.
+- **Clear** removes a saved slot without removing the currently displayed image.
+  **Reset to default** restores the noise effect while keeping your saved slots
+  and global scope/enabled preferences.
+
+Settings and slots are shared across this BB server and its remote clients.
+The current window updates immediately; other windows refresh on focus or within
+15 seconds. Images stay in plugin-owned SQLite and are served through a
+BB-authenticated image route. Images are not sent to Capy or included in prompts.
+
+## Install
+
+Requires BB 0.40+ and SDK 0.4.21+. Uninstall Aura first if you use it
+(`bb plugin remove aura`; this deletes Aura's saved slots).
+
+```sh
+bb plugin install git:https://github.com/NickolasBenakis/bb-plugin-aura-motion.git@^0.3.0
+```
+
+From a checkout:
+
+```sh
+npm install
+npm run check
+bb plugin install . --yes
+bb plugin reload aura-motion
+```
+
+## Releasing
+
+Pull requests and pushes to `main` run typecheck and tests in GitHub Actions.
+To release, bump `version` in `package.json` and add a matching `## X.Y.Z`
+section to `CHANGELOG.md` in your pull request. When it merges, the Release
+workflow runs the checks, tags `vX.Y.Z` and publishes a GitHub release with
+those notes. A merge without a version bump releases nothing.
+
+The BB marketplace entry tracks a semver range of these tags. While the plugin
+is 0.x, `^0.3.0` covers 0.3.x patches only; a new minor such as 0.4.0 needs a
+marketplace pull request that raises the range.
+
+## CLI
+
+```sh
+bb aura-motion status --json
+bb aura-motion slots
+bb aura-motion use 1
+bb aura-motion new-thread-only on
+bb aura-motion new-thread-only off
+bb aura-motion overview on
+bb aura-motion overview off
+bb aura-motion chat glass
+bb aura-motion enable
+bb aura-motion disable
+bb aura-motion reset
+```
+
+Use the settings UI to upload and save slots. CLI output contains metadata,
+never image bytes.
+
+## Reading and composing
+
+Existing conversations have an opaque, theme-colored reading column. Background
+images remain undimmed in the side margins all the way to the bottom, including
+beside the composer, never directly behind message text.
+Wide Markdown tables get an opaque backing across their entire width, including
+where they extend beyond the normal reading column.
+Half-wallpaper mode applies only to the New thread screen.
+The New thread composer stays centered, with the optional overview below it.
+Short windows and long drafts remain scrollable. Background styling follows
+Aura Motion's enable/scope settings; composer centering stays independent of them.
+
+On phones (the bb mobile app or a phone browser), the New thread Recent list and
+project row sit on a frosted card, and Sheer chats use Glass's fill, so text
+stays readable when the wallpaper fills the screen. These rules use BB's own
+touch test (`max-width: 767px` with a coarse pointer); desktop is unchanged.
+
+## Effect and verification
+
+The shader and fade masks come from [Capy](https://capy.ai/new). Source URLs and
+the Paper Shaders Apache-2.0 license are recorded in
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Wallpaper requests stay local;
+the optional overview requests GitHub activity from the BB server.
+
+Aura Motion decorates BB's `root-compose-main-panel` and `thread-detail-timeline-panel`
+DOM containers. Recheck these host names when upgrading BB. Canvas/GL resources,
+observers and listeners are disposed when disabling or reloading. Noise and photo animation
+run at the chosen FPS and pause off-screen, when hidden, and for reduced motion.
+GIF frames keep their own timing and are decoded with WebCodecs' `ImageDecoder`;
+without it, the shader shows the first frame. The image/gradient remains if WebGL is unavailable.
+
+```sh
+npm run check
+```
+
+To check the chat glass across eight device sizes in light and dark (read-only;
+set Behind your messages to Glass or Sheer first):
+
+```sh
+BB_THREAD_ID=thr_… BB_SCREENSHOT_DIR=/tmp/aura-shots npm run test:responsive
+```
+
+Unit tests cover atomic apply/rejection, six-slot persistence and replacement,
+global scope/overview preferences across switches, deletion/reset, legacy settings, and DOM cleanup
+when switching to New thread only. The opt-in live browser test additionally
+checks real uploads, slot switching, and the scope toggle while preserving the
+user's active image and saved slots.
+Activity tests cover UTC date ranges, gaps/ties/streaks, actual response parsing,
+auth/source failures, scoped queries, discovery bounds, cache expiry/coalescing,
+late responses, retry and disabled/empty/unavailable states. The component tests
+use the SDK's isolated slot harness; installed-host screenshots require a
+signed-in BB browser session.

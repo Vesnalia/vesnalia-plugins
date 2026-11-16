@@ -1,0 +1,295 @@
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import http from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { VERSION, buildDeclaration } from "../../src/declaration.js";
+import { PAGEHOST } from "../../src/pagehost.js";
+import { METHODS } from "../../src/methods/index.js";
+import { controlOver, serve, type Served } from "../../hosts/claude/process.js";
+import { fakeBb } from "../fake-bb.js";
+import { rec } from "../fake-runner.js";
+
+const SESSION = "aaaaaaaa-1111-2222-3333-444444444444";
+const REPO = { owner: "acme", name: "crm", commitSha: "7ca9bc78ba047d9e7798b8d2733c254e24cfc837", status: "draft", visibility: "private", fileCount: 3, role: "owner" };
+
+/** A Unife Pages daemon's control socket, as much of it as the process uses. */
+function fakeDaemon(socketPath: string) {
+  const seen = { registrations: [] as Record<string, unknown>[], deletes: [] as string[] };
+  let pid = 4242;
+  const server = http.createServer((req, res) => {
+    let body = "";
+    req.setEncoding("utf8");
+    req.on("data", (d: string) => (body += d));
+    req.on("end", () => {
+      const json = (status: number, value: unknown) => res.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(value));
+      if (req.method === "GET" && req.url === "/v1/daemon") return json(200, { version: "test", pid, port: 0, origin: "", sessions: 1, protocol: 1 });
+      if (req.method === "POST" && req.url === "/v1/contributors") return (seen.registrations.push(JSON.parse(body)), json(201, { ok: true }));
+      if (req.method === "DELETE" && req.url?.startsWith("/v1/contributors/")) return (seen.deletes.push(req.url), json(200, { ok: true }));
+      json(404, { error: "not_found" });
+    });
+  });
+  return {
+    seen,
+    restart: () => void (pid += 1),
+    listen: () => new Promise<void>((resolve) => server.listen(socketPath, () => resolve())),
+    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
+}
+
+/** What the daemon does with a call: POST { namespace, ...call } to the registered endpoint (claude-pages provider.ts). */
+function post(endpoint: string, call: Record<string, unknown>): Promise<{ status: number; body: unknown }> {
+  const [, socketPath, path] = /^unix:(.+?):(\/.*)$/.exec(endpoint)!;
+  return new Promise((resolve, reject) => {
+    const text = JSON.stringify({ namespace: "syns", ...call });
+    const req = http.request({ socketPath, path, method: "POST", headers: { "content-type": "application/json", "content-length": Buffer.byteLength(text) } }, (res) => {
+      let out = "";
+      res.setEncoding("utf8");
+      res.on("data", (d: string) => (out += d));
+      res.on("end", () => resolve({ status: res.statusCode ?? 0, body: out ? JSON.parse(out) : null }));
+    });
+    req.on("error", reject);
+    req.end(text);
+  });
+}
+
+describe("Claude Code: the declaration is bb's, byte for byte (07 R-X1)", () => {
+  for (const agentInstructions of [true, false]) {
+    it(`with agentInstructions ${agentInstructions}: what the process registers equals what threadPagesContributions answers`, async () => {
+      const dir = mkdtempSync(join(tmpdir(), "syns-rx1-"));
+      const daemon = fakeDaemon(join(dir, "control.sock"));
+      await daemon.listen();
+      const served = await serve({ socket: join(dir, "control.sock"), agentInstructions, log: { info: () => undefined, warn: () => undefined }, everyMs: 50 });
+      try {
+        await vi.waitFor(() => expect(daemon.seen.registrations).toHaveLength(1));
+        const bb = await fakeBb({ agentInstructions }, async () => rec("repo.ok")).handlers.threadPagesContributions!(undefined);
+        expect(JSON.stringify(daemon.seen.registrations[0]!.declaration)).toBe(JSON.stringify(bb));
+        expect(JSON.stringify(bb)).toBe(JSON.stringify(buildDeclaration(METHODS, { agentInstructions })));
+      } finally {
+        await served.stop();
+        await daemon.close();
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+  }
+});
+
+describe("Claude Code: a request on the control socket, whatever its size", () => {
+  // Node 26.7 on macOS: a POST sent with Connection: close failed with EPIPE, with no answer, at about one body size in
+  // four (15,000, 16,000, 23,000… bytes), against a Node server that read it whole. The 0.8.4 declaration was one.
+  it("every body from 1,000 to 120,000 bytes gets the daemon's answer", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "syns-ctl-"));
+    const daemon = fakeDaemon(join(dir, "control.sock"));
+    await daemon.listen();
+    try {
+      const control = controlOver(join(dir, "control.sock"));
+      const failed: string[] = [];
+      for (let size = 1000; size <= 120_000; size += 1000) {
+        const answer = await control("POST", "/v1/contributors", { pad: "x".repeat(size - 10) }).catch((error: Error) => ({ status: 0, text: error.message }));
+        if (answer.status !== 201) failed.push(`${size}: ${answer.status} ${answer.text}`);
+      }
+      expect(failed).toEqual([]);
+    } finally {
+      await daemon.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 30_000);
+});
+
+describe("Claude Code: the process against a daemon's control socket (R-X5)", () => {
+  let dir = "";
+  let served: Served | null = null;
+  let daemon: ReturnType<typeof fakeDaemon> | null = null;
+  afterEach(async () => {
+    await served?.stop();
+    await daemon?.close();
+    served = null;
+    daemon = null;
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  /** A checkout with one placed folder, a plain folder, and a stand-in `syns` that logs where it ran. */
+  function machine() {
+    dir = mkdtempSync(join(tmpdir(), "syns-claude-"));
+    const checkout = join(dir, "checkout");
+    mkdirSync(join(checkout, "clients", "vela", "crm"), { recursive: true });
+    mkdirSync(join(checkout, "notes"), { recursive: true });
+    writeFileSync(join(checkout, ".syns.yaml"), "repo: acme/crm\n");
+    writeFileSync(join(checkout, "clients", "vela", "crm", ".syns.yaml"), "holder: acme/crm\npath: clients/vela/crm\n");
+    const log = join(dir, "runs.log");
+    const synsPath = join(dir, "syns");
+    writeFileSync(join(dir, "repo.json"), JSON.stringify(REPO));
+    // repo --within: the CLI answers within from disk (roadmap 277); a plain folder never reaches it (the host half refuses it).
+    writeFileSync(synsPath, `#!/bin/sh\necho "$(pwd -P) $*" >> "${log}"\ncase "$1" in\n  repo) if [ "$2" = "--within=${checkout}" ]; then sed 's/}$/,"within":true}/' "${join(dir, "repo.json")}"; else cat "${join(dir, "repo.json")}"; fi ;;\n  *) echo '{"error":"unexpected"}' >&2; exit 2 ;;\nesac\n`);
+    chmodSync(synsPath, 0o755);
+    const runs = (): string[] => readFileSync(log, "utf8").trim().split("\n");
+    return { checkout, synsPath, runs };
+  }
+
+  it("registers with a Unix-socket endpoint, answers the daemon's POST in the session's folder, re-registers after a restart, unregisters on stop", async () => {
+    const { checkout, synsPath, runs } = machine();
+    daemon = fakeDaemon(join(dir, "control.sock"));
+    await daemon.listen();
+    const lines: string[] = [];
+    served = await serve({ socket: join(dir, "control.sock"), synsPath, agentInstructions: true, log: { info: (l) => lines.push(l), warn: (l) => lines.push(l) }, everyMs: 50 });
+    await vi.waitFor(() => expect(daemon!.seen.registrations).toHaveLength(1));
+    const reg = daemon.seen.registrations[0]!;
+    expect(reg).toMatchObject({ kind: "process", namespace: "syns", endpoint: served.endpoint });
+    expect(served.endpoint).toMatch(/^unix:\/.+\/invoke\.sock:\/invoke$/);
+    expect(lines[0]).toMatch(/^registered syns \S+ with the Unife Pages daemon 4242$/);
+
+    const answer = await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: null, workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r1" });
+    expect(answer).toMatchObject({ status: 200, body: { ok: true, result: { owner: "acme", name: "crm", version: REPO.commitSha } } });
+    expect(runs()).toEqual([`${realpathSync(checkout)} repo --json`]);
+
+    daemon.restart();
+    await vi.waitFor(() => expect(daemon!.seen.registrations).toHaveLength(2));
+    await served.stop();
+    served = null;
+    expect(daemon.seen.deletes).toEqual(["/v1/contributors/syns"]);
+  });
+
+  it("a scope runs the CLI in the placed folder, checked on this machine; a plain folder is bad_scope; a session with no folder is no_repo", async () => {
+    const { checkout, synsPath, runs } = machine();
+    daemon = fakeDaemon(join(dir, "control.sock"));
+    await daemon.listen();
+    served = await serve({ socket: join(dir, "control.sock"), synsPath, agentInstructions: true, log: { info: () => undefined, warn: () => undefined }, everyMs: 50 });
+    await vi.waitFor(() => expect(daemon!.seen.registrations).toHaveLength(1));
+
+    const scoped = await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: "clients/vela/crm", workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r2" });
+    expect(scoped).toMatchObject({ status: 200, body: { ok: true } });
+    // one check at the scope (D46 as amended, D83), whose run is the scoped syns.repo's answer
+    expect(runs()).toEqual([`${realpathSync(join(checkout, "clients/vela/crm"))} repo --within=${checkout} --json`]);
+
+    expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: "notes", workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r3" })).toMatchObject({ body: { ok: false, error: { reason: "bad_scope" } } });
+    expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: "../elsewhere", workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r4" })).toMatchObject({ body: { ok: false, error: { reason: "bad_scope" } } });
+    expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: "bbbbbbbb-0000-0000-0000-000000000000", scope: null, workspace: null }, requestId: "r5" })).toMatchObject({ body: { ok: false, error: { reason: "no_repo" } } });
+    expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: null, scope: null, workspace: null }, requestId: "r6" })).toMatchObject({ body: { ok: false, error: { reason: "no_repo" } } });
+  });
+
+  it("a call from an app's frame runs at the session's folder with its folder as scope, checked on this machine: a link out of the folder is bad_scope, one not on disk yet is judged by its parent (B-0103, review F6)", async () => {
+    const { checkout, synsPath, runs } = machine();
+    const outside = mkdtempSync(join(tmpdir(), "syns-outside-"));
+    symlinkSync(outside, join(checkout, "escape"));
+    daemon = fakeDaemon(join(dir, "control.sock"));
+    await daemon.listen();
+    served = await serve({ socket: join(dir, "control.sock"), synsPath, agentInstructions: true, log: { info: () => undefined, warn: () => undefined }, everyMs: 50 });
+    await vi.waitFor(() => expect(daemon!.seen.registrations).toHaveLength(1));
+    const fromFrame = (scope: string, requestId: string) => post(served!.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope, frame: { scope, title: "app" }, workspace: { id: "ws", path: checkout, machine: null } }, requestId });
+
+    expect(await fromFrame("notes", "f1")).toMatchObject({ status: 200, body: { ok: true } });
+    expect(runs()).toEqual([`${realpathSync(checkout)} repo --json`]);
+    expect(await fromFrame("notes/not-yet", "f2")).toMatchObject({ status: 200, body: { ok: true } });
+    expect(await fromFrame("escape", "f3")).toMatchObject({ body: { ok: false, error: { reason: "bad_scope" } } });
+    expect(await fromFrame("escape/deeper", "f4")).toMatchObject({ body: { ok: false, error: { reason: "bad_scope" } } });
+    expect(runs()).toHaveLength(2);
+    rmSync(outside, { recursive: true, force: true });
+  });
+
+  it("answers a page-script ask on the same endpoint: the script for a session whose folder is a Syns repository, none without a folder (S2.27)", async () => {
+    const { checkout, synsPath, runs } = machine();
+    daemon = fakeDaemon(join(dir, "control.sock"));
+    await daemon.listen();
+    served = await serve({ socket: join(dir, "control.sock"), synsPath, agentInstructions: true, log: { info: () => undefined, warn: () => undefined }, everyMs: 50 });
+    await vi.waitFor(() => expect(daemon!.seen.registrations).toHaveLength(1));
+    expect(daemon.seen.registrations[0]).toMatchObject({ declaration: { pageScript: true } });
+
+    const caller = { sessionId: SESSION, workspace: { id: "ws", path: checkout, machine: null } };
+    expect(await post(served.endpoint, { kind: "pageScript", caller, documentPath: "index.html", have: null })).toEqual({ status: 200, body: { version: VERSION, script: PAGEHOST } });
+    expect(await post(served.endpoint, { kind: "pageScript", caller, documentPath: "index.html", have: VERSION })).toEqual({ status: 200, body: { version: VERSION } });
+    expect(runs()).toEqual([`${realpathSync(checkout)} repo --json`, `${realpathSync(checkout)} repo --json`]);
+    expect(await post(served.endpoint, { kind: "pageScript", caller: { sessionId: null, workspace: null }, documentPath: "index.html", have: null })).toEqual({ status: 200, body: null });
+  });
+
+  it("a new-session page (no session, a workspace) is answered in the workspace's folder: its call, its page-script ask, an app's frame with a link out of the folder bad_scope (S2.33, A97, A99, A102)", async () => {
+    const { checkout, synsPath, runs } = machine();
+    const outside = mkdtempSync(join(tmpdir(), "syns-outside-"));
+    symlinkSync(outside, join(checkout, "escape"));
+    daemon = fakeDaemon(join(dir, "control.sock"));
+    await daemon.listen();
+    const lines: string[] = [];
+    served = await serve({ socket: join(dir, "control.sock"), synsPath, agentInstructions: true, log: { info: (l) => lines.push(l), warn: (l) => lines.push(l) }, everyMs: 50 });
+    await vi.waitFor(() => expect(daemon!.seen.registrations).toHaveLength(1));
+    const workspace = { id: "ws_9f2c4e", path: checkout, machine: null };
+
+    const answer = await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: null, scope: null, workspace }, requestId: "n1" });
+    expect(answer).toMatchObject({ status: 200, body: { ok: true, result: { owner: "acme", name: "crm", version: REPO.commitSha } } });
+    expect(runs()).toEqual([`${realpathSync(checkout)} repo --json`]);
+
+    expect(await post(served.endpoint, { kind: "pageScript", caller: { sessionId: null, workspace }, documentPath: "index.html", have: null })).toEqual({ status: 200, body: { version: VERSION, script: PAGEHOST } });
+    expect(await post(served.endpoint, { kind: "pageScript", caller: { sessionId: null, workspace }, documentPath: "index.html", have: VERSION })).toEqual({ status: 200, body: { version: VERSION } });
+    expect(runs()).toHaveLength(3);
+
+    const fromFrame = await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: null, scope: "escape", frame: { scope: "escape", title: "app" }, workspace }, requestId: "n2" });
+    expect(fromFrame).toMatchObject({ body: { ok: false, error: { reason: "bad_scope" } } });
+    expect(runs()).toHaveLength(3);
+
+    // A CLI failure the plugin does not know is handler_error; its line names the caller by the workspace's id (S2.34).
+    expect(await post(served.endpoint, { method: "syns.ls", params: {}, caller: { sessionId: null, scope: null, workspace }, requestId: "n3" })).toMatchObject({ body: { ok: false, error: { code: "handler_error" } } });
+    expect(lines.filter((line) => line.includes(" handler_error "))).toEqual([expect.stringMatching(/^syns\.ls session=none workspace=ws_9f2c4e handler_error /)]);
+    expect(lines.join("\n")).not.toContain(checkout);
+    rmSync(outside, { recursive: true, force: true });
+  });
+
+  it("no syns executable is cli_missing; anything but POST /invoke is 404", async () => {
+    const { checkout } = machine();
+    daemon = fakeDaemon(join(dir, "control.sock"));
+    await daemon.listen();
+    served = await serve({ socket: join(dir, "control.sock"), synsPath: join(dir, "missing"), agentInstructions: true, log: { info: () => undefined, warn: () => undefined }, everyMs: 50 });
+    expect(await post(served.endpoint, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: null, workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r1" })).toMatchObject({ body: { ok: false, error: { reason: "cli_missing" } } });
+    const [, socketPath] = /^unix:(.+?):/.exec(served.endpoint)!;
+    const status = await new Promise<number>((resolve) => http.get({ socketPath, path: "/invoke" }, (res) => (res.resume(), resolve(res.statusCode ?? 0))));
+    expect(status).toBe(404);
+  });
+});
+
+describe("Claude Code: the plugin folder the daemon starts (U45)", () => {
+  const folder = new URL("../../hosts/claude/", import.meta.url);
+
+  it("declares syns and a process that exists, and the committed bundle is what the sources build", () => {
+    expect(JSON.parse(readFileSync(new URL("unife-pages.json", folder), "utf8"))).toEqual({ contributor: { namespace: "syns", process: "bin/syns-pages.mjs" } });
+    const scratch = mkdtempSync(join(tmpdir(), "syns-bundle-"));
+    const out = join(scratch, "fresh.mjs");
+    execFileSync(new URL("../../node_modules/.bin/rolldown", import.meta.url).pathname, ["hosts/claude/main.ts", "--platform", "node", "--format", "esm", "--file", out], { cwd: new URL("../..", import.meta.url).pathname, stdio: "ignore" });
+    const fresh = readFileSync(out, "utf8");
+    rmSync(scratch, { recursive: true, force: true });
+    expect(fresh, "run npm run build:claude").toBe(readFileSync(new URL("bin/syns-pages.mjs", folder), "utf8"));
+    // The plugin's version is the package's.
+    expect(JSON.parse(readFileSync(new URL(".claude-plugin/plugin.json", folder), "utf8")).version).toBe(JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version);
+  });
+
+  it("the bundle, started as the daemon starts it, registers with its token, answers a call, and leaves when that daemon is gone", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "syns-started-"));
+    const sock = join(dir, "given.sock");
+    const tokens: (string | undefined)[] = [];
+    const registrations: Record<string, unknown>[] = [];
+    let pid = 7;
+    const server = http.createServer((req, res) => {
+      let body = "";
+      req.setEncoding("utf8");
+      req.on("data", (d: string) => (body += d));
+      req.on("end", () => {
+        const json = (status: number, v: unknown) => res.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(v));
+        if (req.url === "/v1/daemon") return json(200, { pid });
+        if (req.method === "POST" && req.url === "/v1/contributors") { registrations.push(JSON.parse(body)); tokens.push(req.headers["x-unife-contributor-token"] as string | undefined); return json(201, { ok: true }); }
+        json(404, {});
+      });
+    });
+    await new Promise<void>((r) => server.listen(sock, () => r()));
+    const child = spawn(process.execPath, [new URL("bin/syns-pages.mjs", folder).pathname], { cwd: new URL(".", folder).pathname, env: { ...process.env, UNIFE_PAGES_CONTROL_SOCKET: sock, UNIFE_PAGES_CONTRIBUTOR_TOKEN: "tok_9", SYNS_PATH: join(dir, "missing") }, stdio: ["ignore", "ignore", "ignore"] });
+    try {
+      await vi.waitFor(() => expect(registrations).toHaveLength(1), { timeout: 10_000 });
+      expect(tokens).toEqual(["tok_9"]);
+      expect(JSON.stringify(registrations[0]!.declaration)).toBe(JSON.stringify(buildDeclaration(METHODS, { agentInstructions: true })));
+      const answer = await post(registrations[0]!.endpoint as string, { method: "syns.repo", params: {}, caller: { sessionId: SESSION, scope: null, workspace: { id: "w", path: dir, machine: null } }, requestId: "r1" });
+      expect(answer).toMatchObject({ status: 200, body: { ok: false, error: { reason: "cli_missing" } } });
+      pid = 8;
+      await vi.waitFor(() => expect(child.exitCode).toBe(0), { timeout: 10_000 });
+    } finally {
+      child.kill("SIGKILL");
+      await new Promise<void>((r) => server.close(() => r()));
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 20_000);
+});

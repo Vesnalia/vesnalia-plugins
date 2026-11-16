@@ -1,0 +1,558 @@
+// SQLite schema (append-only migrations; never edit a shipped statement).
+// Tables follow docs/design.md "Data model"; extra columns are the
+// implementation state the design leaves implicit.
+
+export const STUDY_STATES = ["draft", "calibrating", "running", "paused", "harvesting", "archived"] as const;
+export type StudyState = (typeof STUDY_STATES)[number];
+
+export const IDEA_STATUSES = ["queued", "running", "won", "lost", "abandoned", "retired"] as const;
+export type IdeaStatus = (typeof IDEA_STATUSES)[number];
+
+export const THREAD_ROLES = ["worker", "strategist"] as const;
+export type ThreadRole = (typeof THREAD_ROLES)[number];
+
+export const THREAD_STATES = ["spawning", "active", "finishing", "finished", "abandoned", "failed"] as const;
+export type ThreadState = (typeof THREAD_STATES)[number];
+
+/** Pipeline stages a candidate moves through. */
+export const CANDIDATE_STAGES = ["submitted", "gating", "queued", "measuring", "confirming", "promoting", "decided"] as const;
+export type CandidateStage = (typeof CANDIDATE_STAGES)[number];
+
+export const MIGRATIONS: string[] = [
+  `CREATE TABLE studies (
+    id TEXT PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    project_id TEXT NOT NULL,
+    state TEXT NOT NULL,
+    spec_version INTEGER NOT NULL,
+    best_sha TEXT,
+    budget TEXT NOT NULL DEFAULT '{}',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    host_id TEXT,
+    repo_path TEXT,
+    study_thread_id TEXT,
+    section_id TEXT,
+    segment INTEGER NOT NULL DEFAULT 0,
+    base_sha TEXT,
+    pause_reason TEXT,
+    calibration_status TEXT,
+    calibration_json TEXT,
+    calibration_approved_at INTEGER,
+    round_in_flight INTEGER NOT NULL DEFAULT 0,
+    rounds INTEGER NOT NULL DEFAULT 0,
+    verdicts_since_round INTEGER NOT NULL DEFAULT 0,
+    last_round_at INTEGER,
+    last_round_event_id INTEGER NOT NULL DEFAULT 0,
+    stall_signaled_at_verdict INTEGER NOT NULL DEFAULT 0,
+    best_run_json TEXT,
+    best_run_sha TEXT
+  )`,
+  `CREATE TABLE spec_versions (
+    study_id TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    spec_toml TEXT NOT NULL,
+    spec_json TEXT NOT NULL,
+    oracle_hash TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    approved_at INTEGER,
+    PRIMARY KEY (study_id, version)
+  )`,
+  `CREATE TABLE segments (
+    study_id TEXT NOT NULL,
+    k INTEGER NOT NULL,
+    baseline_sha TEXT NOT NULL,
+    oracle_hash TEXT NOT NULL,
+    noise_floor REAL,
+    mde REAL,
+    eval_seconds REAL,
+    gate_seconds REAL,
+    report TEXT,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (study_id, k)
+  )`,
+  `CREATE TABLE ideas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    rationale TEXT NOT NULL DEFAULT '',
+    theme TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL,
+    priority REAL NOT NULL DEFAULT 0,
+    pinned INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL,
+    start_ref TEXT,
+    status_reason TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX ideas_study_status ON ideas (study_id, status)`,
+  `CREATE TABLE threads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id TEXT UNIQUE,
+    spawn_token TEXT UNIQUE,
+    study_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    idea_id INTEGER,
+    state TEXT NOT NULL,
+    submissions INTEGER NOT NULL DEFAULT 0,
+    spawned_at INTEGER NOT NULL,
+    fork_sha TEXT,
+    environment_id TEXT,
+    worktree_path TEXT,
+    last_idle_at INTEGER,
+    last_active_at INTEGER,
+    nudged_at INTEGER,
+    ended_at INTEGER,
+    end_reason TEXT
+  )`,
+  `CREATE INDEX threads_study ON threads (study_id, role, state)`,
+  `CREATE TABLE candidates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    n INTEGER NOT NULL,
+    idea_id INTEGER,
+    thread_id TEXT,
+    sha TEXT NOT NULL,
+    parent_sha TEXT NOT NULL,
+    against_sha TEXT,
+    prepared_sha TEXT,
+    promoted_sha TEXT,
+    summary TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    verdict TEXT,
+    effect REAL,
+    ci_lo REAL,
+    ci_hi REAL,
+    metrics_json TEXT,
+    reasons_json TEXT,
+    changed_paths_json TEXT,
+    diag_json TEXT,
+    gate_output TEXT,
+    bench_seconds REAL NOT NULL DEFAULT 0,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    submitted_at INTEGER NOT NULL,
+    decided_at INTEGER,
+    reported_at INTEGER,
+    UNIQUE (study_id, n)
+  )`,
+  `CREATE INDEX candidates_stage ON candidates (study_id, stage)`,
+  `CREATE TABLE samples (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    candidate_id INTEGER,
+    run TEXT NOT NULL,
+    pair INTEGER NOT NULL,
+    side TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    value REAL NOT NULL,
+    host_id TEXT,
+    at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX samples_candidate ON samples (candidate_id, run)`,
+  `CREATE TABLE findings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    idea_id INTEGER,
+    candidate_id INTEGER,
+    thread_id TEXT,
+    outcome TEXT NOT NULL,
+    learned TEXT NOT NULL,
+    revisit_if TEXT NOT NULL DEFAULT '',
+    evidence TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT,
+    at INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    data_json TEXT NOT NULL DEFAULT '{}'
+  )`,
+  `CREATE INDEX events_study ON events (study_id, id)`,
+  `CREATE TRIGGER events_append_only_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT, 'events is append-only'); END`,
+  `CREATE TRIGGER events_append_only_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT, 'events is append-only'); END`,
+  `CREATE TABLE dossiers (
+    study_id TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    author_thread_id TEXT,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (study_id, version)
+  )`,
+  `CREATE TABLE harvest_proposals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    proposal_json TEXT NOT NULL,
+    author_thread_id TEXT,
+    created_at INTEGER NOT NULL
+  )`,
+  // ---- M1 ----
+  `ALTER TABLE candidates ADD COLUMN queued_at INTEGER`,
+  `ALTER TABLE candidates ADD COLUMN lines_added INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE candidates ADD COLUMN lines_deleted INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE candidates ADD COLUMN rebases INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE threads ADD COLUMN conflict_refunds INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE threads ADD COLUMN pending_notice TEXT`,
+  `ALTER TABLE threads ADD COLUMN finishing_at INTEGER`,
+  `ALTER TABLE ideas ADD COLUMN variation_of INTEGER`,
+  `ALTER TABLE ideas ADD COLUMN lineage INTEGER`,
+  `ALTER TABLE studies ADD COLUMN max_workers_override INTEGER`,
+  `ALTER TABLE studies ADD COLUMN target_workers INTEGER`,
+  `ALTER TABLE studies ADD COLUMN running_since INTEGER`,
+  `ALTER TABLE studies ADD COLUMN running_seconds REAL NOT NULL DEFAULT 0`,
+  /** Every span the bench lock was held: measurement, profile, calibration. */
+  `CREATE TABLE bench_intervals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    host_id TEXT NOT NULL,
+    lock_key TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    candidate_id INTEGER,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER
+  )`,
+  `CREATE INDEX bench_intervals_study ON bench_intervals (study_id, started_at)`,
+  /** Human-facing milestones, batched into the next strategist round instead of starting a turn. */
+  `CREATE TABLE notices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    at INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    text TEXT NOT NULL,
+    delivered_round INTEGER
+  )`,
+  `CREATE INDEX notices_study ON notices (study_id, id)`,
+  // ---- M2 ----
+  /** A spec proposed while Running/Paused waits here until the human approves it. */
+  `ALTER TABLE studies ADD COLUMN pending_spec_version INTEGER`,
+  /** The active spec before a mid-run recalibration; restored if the new oracle fails calibration. */
+  `ALTER TABLE studies ADD COLUMN prev_spec_version INTEGER`,
+  `ALTER TABLE spec_versions ADD COLUMN bench_json TEXT`,
+  `ALTER TABLE segments ADD COLUMN spec_version INTEGER`,
+  `ALTER TABLE segments ADD COLUMN details_json TEXT`,
+  `ALTER TABLE candidates ADD COLUMN bench_host_id TEXT`,
+  /** 'pass' | 'fail' | null. The numbers stay in holdout_results and never reach agents. */
+  `ALTER TABLE candidates ADD COLUMN holdout TEXT`,
+  `ALTER TABLE candidates ADD COLUMN measure_restarts INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE threads ADD COLUMN profiles INTEGER NOT NULL DEFAULT 0`,
+  /** Bench hosts of a study (from the active spec), with health, cache, drift, and calibration per host. */
+  `CREATE TABLE bench_hosts (
+    study_id TEXT NOT NULL,
+    host_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    entry TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    repo_path TEXT,
+    status TEXT NOT NULL DEFAULT 'unknown',
+    status_at INTEGER,
+    offline_since INTEGER,
+    offline_notified_at INTEGER,
+    best_build_sha TEXT,
+    health_ok INTEGER,
+    health_at INTEGER,
+    health_json TEXT,
+    unhealthy_since INTEGER,
+    unhealthy_notified_at INTEGER,
+    deferred_until INTEGER,
+    evals_since_drift INTEGER NOT NULL DEFAULT 0,
+    drift_status TEXT,
+    drift_at INTEGER,
+    noise_floor REAL,
+    mde REAL,
+    eval_seconds REAL,
+    baseline_json TEXT,
+    PRIMARY KEY (study_id, host_id)
+  )`,
+  `CREATE TABLE health_checks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    host_id TEXT NOT NULL,
+    at INTEGER NOT NULL,
+    context TEXT NOT NULL,
+    ok INTEGER NOT NULL,
+    problems_json TEXT NOT NULL,
+    report_json TEXT NOT NULL
+  )`,
+  `CREATE INDEX health_checks_study ON health_checks (study_id, host_id, id)`,
+  `CREATE TABLE drift_checks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    host_id TEXT NOT NULL,
+    segment INTEGER NOT NULL,
+    best_sha TEXT NOT NULL,
+    started_at INTEGER NOT NULL,
+    finished_at INTEGER,
+    status TEXT NOT NULL,
+    pairs INTEGER,
+    noise REAL,
+    calibrated REAL,
+    ratio REAL,
+    median REAL
+  )`,
+  `CREATE TABLE transfers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    host_id TEXT NOT NULL,
+    sha TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    bytes INTEGER NOT NULL,
+    chunks INTEGER NOT NULL,
+    ms REAL NOT NULL,
+    ok INTEGER NOT NULL,
+    error TEXT,
+    at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX transfers_study ON transfers (study_id, id)`,
+  /** Private: holdout numbers. Never read by any view, prompt, tool, or event. */
+  `CREATE TABLE holdout_results (
+    candidate_id INTEGER PRIMARY KEY,
+    study_id TEXT NOT NULL,
+    at INTEGER NOT NULL,
+    pass INTEGER NOT NULL,
+    runs INTEGER NOT NULL,
+    effect REAL,
+    details_json TEXT NOT NULL
+  )`,
+  // ---- M3 ----
+  /** Harvest runs: base→best turned into changesets, ablations, standalone checks, PR drafts. */
+  `CREATE TABLE harvests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    state TEXT NOT NULL,
+    phase_detail TEXT,
+    from_state TEXT NOT NULL,
+    base_sha TEXT,
+    best_sha TEXT,
+    segment INTEGER,
+    host_id TEXT,
+    proposal_id INTEGER,
+    promotions_json TEXT,
+    grouping_source TEXT,
+    grouping_notes TEXT,
+    round_sent_at INTEGER,
+    measure_standalone INTEGER NOT NULL DEFAULT 1,
+    total_effect REAL,
+    total_ci_lo REAL,
+    total_ci_hi REAL,
+    total_n INTEGER,
+    total_vs_base REAL,
+    stacks_json TEXT,
+    publisher TEXT NOT NULL DEFAULT 'dry-run',
+    publish_state TEXT,
+    publish_json TEXT,
+    export_dir TEXT,
+    bench_seconds REAL NOT NULL DEFAULT 0,
+    error TEXT,
+    started_at INTEGER NOT NULL,
+    finished_at INTEGER
+  )`,
+  `CREATE INDEX harvests_study ON harvests (study_id, id)`,
+  `CREATE TABLE changesets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    harvest_id INTEGER NOT NULL,
+    study_id TEXT NOT NULL,
+    k INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    rationale TEXT NOT NULL DEFAULT '',
+    candidates_json TEXT NOT NULL,
+    commits_json TEXT NOT NULL,
+    paths_json TEXT NOT NULL DEFAULT '[]',
+    ablation_status TEXT NOT NULL DEFAULT 'pending',
+    ablation_detail TEXT,
+    ablation_sha TEXT,
+    contribution REAL,
+    ci_lo REAL,
+    ci_hi REAL,
+    n INTEGER,
+    droppable INTEGER NOT NULL DEFAULT 0,
+    depends_on_json TEXT NOT NULL DEFAULT '[]',
+    dependency_reason TEXT,
+    stack INTEGER,
+    pr_base TEXT,
+    standalone_status TEXT NOT NULL DEFAULT 'pending',
+    standalone_detail TEXT,
+    standalone_sha TEXT,
+    standalone_effect REAL,
+    standalone_ci_lo REAL,
+    standalone_ci_hi REAL,
+    branch TEXT,
+    pr_title TEXT,
+    pr_body TEXT,
+    pr_url TEXT,
+    pr_status TEXT,
+    UNIQUE (harvest_id, k)
+  )`,
+  `ALTER TABLE harvest_proposals ADD COLUMN harvest_id INTEGER`,
+  /** Provider usage: total tokens a thread reported (thread/tokenUsage/updated), and the reading at its start. */
+  `ALTER TABLE threads ADD COLUMN tokens INTEGER`,
+  `ALTER TABLE threads ADD COLUMN tokens_base INTEGER`,
+  `ALTER TABLE threads ADD COLUMN tokens_at INTEGER`,
+  `ALTER TABLE threads ADD COLUMN provider_id TEXT`,
+  `ALTER TABLE threads ADD COLUMN rate_limit_retries INTEGER NOT NULL DEFAULT 0`,
+  /** Rate limits and usage windows: until when spawns hold, and the last usage reading. */
+  `ALTER TABLE studies ADD COLUMN rate_limited_until INTEGER`,
+  `ALTER TABLE studies ADD COLUMN usage_json TEXT`,
+  `ALTER TABLE studies ADD COLUMN usage_at INTEGER`,
+  /** Budget thresholds already announced, e.g. ["candidates:50","bench:80"]. */
+  `ALTER TABLE studies ADD COLUMN budget_notices_json TEXT NOT NULL DEFAULT '[]'`,
+  /** Human interface: the human's keep/drop choice on a changeset, and when the human last looked at the notices. */
+  `ALTER TABLE changesets ADD COLUMN human_choice TEXT`,
+  `ALTER TABLE studies ADD COLUMN notices_seen_at INTEGER`,
+  /** Guardrails at harvest: per guardrail, the cost of the whole study (base vs best) and of each changeset (ablation), relative to best. */
+  `ALTER TABLE harvests ADD COLUMN total_guardrails_json TEXT`,
+  `ALTER TABLE changesets ADD COLUMN guardrails_json TEXT`,
+  // ---- Live view ----
+  /** The worker's recorded phase (live view): every change is also a worker.phase event, so replay can rebuild it. */
+  `ALTER TABLE threads ADD COLUMN phase TEXT`,
+  `ALTER TABLE threads ADD COLUMN phase_at INTEGER`,
+  /** What the worker's agent is doing, from its thread's tool items (reading, editing, testing), and the last thread event sequence read. */
+  `ALTER TABLE threads ADD COLUMN activity TEXT`,
+  `ALTER TABLE threads ADD COLUMN activity_at INTEGER`,
+  `ALTER TABLE threads ADD COLUMN activity_seq INTEGER NOT NULL DEFAULT 0`,
+  // ---- Live view, part 2 ----
+  /** The worker's last action, as a short sanitized label ("editing src/toy.py"), from its latest tool item, and the item's time. */
+  `ALTER TABLE threads ADD COLUMN last_action TEXT`,
+  `ALTER TABLE threads ADD COLUMN last_action_at INTEGER`,
+  /** The label last recorded as a worker.action event, and when (the event is rate-limited; replay reads the events). */
+  `ALTER TABLE threads ADD COLUMN action_recorded TEXT`,
+  `ALTER TABLE threads ADD COLUMN action_recorded_at INTEGER`,
+  /** The measurement's CI band (band.ts), stored when the measurement ends so views and replay don't recompute it. */
+  `ALTER TABLE candidates ADD COLUMN band_json TEXT`,
+  // ---- v0.2.1 ----
+  /**
+   * The worker row (threads.id) that submitted the candidate: the live view and
+   * replay link lanes to candidates through it (a worker row may have no BB
+   * thread id). Backfilled from the BB thread id, then from the worker.phase
+   * events, which record each worker's latest candidate.
+   */
+  `ALTER TABLE candidates ADD COLUMN worker_id INTEGER`,
+  `UPDATE candidates SET worker_id = (SELECT t.id FROM threads t WHERE t.study_id = candidates.study_id AND t.role = 'worker' AND t.thread_id = candidates.thread_id ORDER BY t.id LIMIT 1) WHERE worker_id IS NULL AND thread_id IS NOT NULL`,
+  `UPDATE candidates SET worker_id = (SELECT json_extract(e.data_json, '$.worker') FROM events e WHERE e.study_id = candidates.study_id AND e.kind = 'worker.phase' AND json_extract(e.data_json, '$.candidate') = candidates.n AND json_type(e.data_json, '$.worker') = 'integer' ORDER BY e.id LIMIT 1) WHERE worker_id IS NULL`,
+  // ---- Single-machine mode ----
+  /** Seconds the candidate's gates ran (with single-machine mode they held the bench lock). */
+  `ALTER TABLE candidates ADD COLUMN gate_seconds REAL NOT NULL DEFAULT 0`,
+  `CREATE INDEX bench_intervals_open ON bench_intervals (host_id, ended_at)`,
+  // ---- v0.2.4 ----
+  /** Runs of the measure command per side of a pair on this host (side_runs, chosen at calibration when "auto"). */
+  `ALTER TABLE bench_hosts ADD COLUMN side_runs INTEGER`,
+  /** Median seconds of one run of the measure command at calibration (the auto-recalibration trigger compares best's runs with it). */
+  `ALTER TABLE bench_hosts ADD COLUMN run_seconds REAL`,
+  /** An automatic recalibration is due at the next free bench slot (JSON: why, when). */
+  `ALTER TABLE studies ADD COLUMN recalibrate_due TEXT`,
+  // ---- v0.2.4: harvest ----
+  /** The harvest's number within its study (h1, h2, …), shown everywhere instead of the global id; backfilled in id order per study. */
+  `ALTER TABLE harvests ADD COLUMN seq INTEGER`,
+  `UPDATE harvests SET seq = (SELECT r.n FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY study_id ORDER BY id) AS n FROM harvests) r WHERE r.id = harvests.id) WHERE seq IS NULL`,
+  /** Stacks that apply: the changeset whose PR ships this one (null when it has its own), why, and its position in its stack's PR order. */
+  `ALTER TABLE changesets ADD COLUMN folded_into INTEGER`,
+  `ALTER TABLE changesets ADD COLUMN fold_reason TEXT`,
+  `ALTER TABLE changesets ADD COLUMN layer INTEGER`,
+  // ---- v0.3.0: remote bench hosts ----
+  /**
+   * Machines lent by bench provider plugins, one row per machine (a slot's
+   * replacement is a new row). The machine's bench host row (bench_hosts,
+   * mode 'remote', host_id = bench_host_id) holds its calibration; this row
+   * holds its lifecycle: created → joining → calibrating → ready →
+   * retiring → gone. Kept after it leaves (history, orphan cleanup).
+   */
+  `CREATE TABLE remote_hosts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    entry INTEGER NOT NULL,
+    slot TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    create_key TEXT NOT NULL,
+    remote_id TEXT,
+    bench_host_id TEXT NOT NULL,
+    state TEXT NOT NULL,
+    phase TEXT,
+    replaces INTEGER,
+    cores INTEGER NOT NULL,
+    memory_gb REAL,
+    lifetime_seconds INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    ready_at INTEGER,
+    expires_at INTEGER,
+    retiring_at INTEGER,
+    left_at INTEGER,
+    left_reason TEXT,
+    home TEXT,
+    info_json TEXT,
+    seed_sha TEXT,
+    base_sha TEXT,
+    join_seconds REAL,
+    calibration_json TEXT,
+    error TEXT,
+    status_at INTEGER,
+    measured INTEGER NOT NULL DEFAULT 0
+  )`,
+  `CREATE INDEX remote_hosts_study ON remote_hosts (study_id, state)`,
+  /**
+   * What the edit host builds once and ships to every machine: the shallow
+   * repo bundle of the study base, and each entry's seed per segment
+   * baseline. Cached by content hash (the files live in the host data dir).
+   */
+  `CREATE TABLE remote_artifacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    entry INTEGER NOT NULL DEFAULT -1,
+    key TEXT NOT NULL,
+    state TEXT NOT NULL,
+    path TEXT,
+    sha256 TEXT,
+    bytes INTEGER,
+    files INTEGER,
+    detail_json TEXT,
+    created_at INTEGER NOT NULL,
+    UNIQUE (study_id, kind, entry, key)
+  )`,
+  // ---- v1: measurement quality ----
+  /**
+   * A bench host taken out of the dispatch set because its calibrated noise
+   * floor was much above its peers' (JSON: reason, noise, peers, segment,
+   * at). Cleared by the next calibration, which measures it again.
+   */
+  `ALTER TABLE bench_hosts ADD COLUMN excluded_json TEXT`,
+  // ---- v1: agents own commits, harvest and publishing ----
+  /** The worker's commit message: a title (at most 72 characters) and an optional body, used verbatim for the candidate and promotion commits. */
+  `ALTER TABLE candidates ADD COLUMN commit_title TEXT`,
+  `ALTER TABLE candidates ADD COLUMN commit_body TEXT`,
+  /**
+   * Measurements and gates an agent or the human asked for (`bb study
+   * measure`, `bb study gate`): the trust boundary's primitives for agent-run
+   * harvests. Same bench hosts, lock and budget as candidates.
+   */
+  `CREATE TABLE adhoc_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    study_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    ref_a TEXT,
+    ref_b TEXT NOT NULL,
+    sha_a TEXT,
+    sha_b TEXT NOT NULL,
+    host_id TEXT,
+    pairs INTEGER,
+    state TEXT NOT NULL,
+    progress TEXT,
+    result_json TEXT,
+    error TEXT,
+    actor TEXT NOT NULL,
+    bench_seconds REAL NOT NULL DEFAULT 0,
+    requested_at INTEGER NOT NULL,
+    started_at INTEGER,
+    finished_at INTEGER,
+    UNIQUE (study_id, seq)
+  )`,
+  `CREATE INDEX adhoc_runs_study ON adhoc_runs (study_id, id)`,
+  // ---- 1.0 integration ----
+  /** Consecutive noisy replacements per remote entry (RemoteFleet.noisyOnArrival), kept across a plugin reload. */
+  `ALTER TABLE studies ADD COLUMN remote_noisy_json TEXT`,
+  /** The machine options a remote machine was created with (`[[oracle.remote_bench]] machine`, JSON), next to info_json (what it reported). */
+  `ALTER TABLE remote_hosts ADD COLUMN machine_json TEXT`,
+];

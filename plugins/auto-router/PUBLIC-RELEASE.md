@@ -1,0 +1,132 @@
+# Model Pilot 0.4.5 release notes and requirements
+
+Model Pilot is an experimental BB plugin for AI model routing, coding agents, and usage reporting.
+The public source is [MahmoudElsayad/bb-model-pilot](https://github.com/MahmoudElsayad/bb-model-pilot).
+Original plugin code uses the MIT license with copyright 2026 Mahmoud Elsayad.
+Copied T3 Code portions retain the MIT notice in `notices/T3-CODE-LICENSE.txt`.
+
+## Changes in 0.4.5
+
+Every change in this release was measured before it shipped, and the harness is in `scripts/measure/` with its write-ups.
+The classifier now picks the reasoning effort for every message, not only for the first prompt of a thread.
+The thread keeps its model, and an effort change keeps the Claude Code prompt cache.
+On the multi-turn tasks in the measurement set, later messages cost 37% less with no answer lost.
+A plan or a helper now needs the same 65% vote as a model pick before Model Pilot spawns it.
+Below that, the main agent does the work itself.
+Haiku 4.5 is no longer offered as a helper in Claude Code auto mode, because auto mode does not cover Haiku and 18 of 21 Haiku helpers hung on an approval prompt that nobody could see.
+The delegate tool now stops a helper as soon as it asks for an approval and tells the main agent why.
+A design question that needs a few sentences now goes to Opus instead of Fable.
+Fable keeps long autonomous work, correctness-critical changes, and subtle concurrency, security, or data-loss problems.
+On a replay of 199 first prompts, Fable routes fell from 11 to 7 and the repriced cost fell by 2.5%.
+In a four-way comparison on 13 frozen tasks, Model Pilot cost between 17% and 39% less than Opus at medium effort for one fewer good answer out of 13.
+The spread comes from the classifier choosing Opus or Sonnet differently for the same prompt between runs, which this release does not change.
+Compacting idle threads before the cache expires and a verifier before escalating from Sonnet to Opus were measured and rejected.
+
+## Changes in 0.4.4
+
+Subscription usage is now an input to routing.
+Model Pilot reads Codex limits from the Codex app server and Claude Code limits from the usage reports that BB sends during each turn.
+If an account is blocked, the classifier is not offered its models, and the route row shows a "Usage limit" badge.
+The model pick now considers only the models that the classifier was offered.
+Before, a GPT model could win a helper pick as the cheapest model in its tier, even when the Codex account was blocked.
+`bb auto status` and the dashboard's thread view now include the usage of the helpers that a thread started.
+Before, a thread that used helpers reported only its own usage.
+
+## Changes in 0.4.3
+
+Model Pilot picks the cheapest model, effort, and context window that the classifier's vote makes at least 65% likely to be enough.
+Before, it picked the option where the vote reached half, which sent close calls to the cheapest model.
+Codex, Claude Code, OpenAI, and Anthropic classifiers now return percent votes like Jev, so the same rule applies to them.
+Native Claude Code classification now finds the Claude login on macOS.
+Before, it reported "Not logged in" and every classification used the fallback route.
+`bb auto route` now prints the classifier's vote for every question.
+
+## Changes in 0.4.2
+
+Jev is the default classifier again.
+The Connection page offers Jev first, with an API key field, and Model in BB as the alternative.
+Model Pilot tests the Jev key before it saves the key as a secret plugin setting.
+Existing saved classifier choices stay unchanged.
+
+## Changes in 0.4.1
+
+Routing decisions now appear as their own timeline rows instead of assistant text.
+Each routed message shows one route row with the model, effort, context window, and any helper or plan.
+Plan rows show the step count and helper models.
+Helper rows show each helper's model, effort, and plan step.
+Routing rows use the orange theme accent on their icons.
+
+## Installation and marketplace status
+
+The Git release source is `git:https://github.com/MahmoudElsayad/bb-model-pilot.git@^0.4.0`.
+The plugin identifier remains `auto-router`, and the provider identifier remains `auto`.
+Commands remain under `bb auto`.
+The display name is Model Pilot.
+
+The BB Community marketplace submission is pending.
+A submission does not make the plugin discoverable in the marketplace until its maintainers merge it.
+Direct Git installation uses the public tagged release independently of that review.
+The primary category is `agents-and-providers`.
+The secondary category is `token-usage-and-limits`.
+
+## Compatibility limits
+
+Version 0.4.5 targets BB 0.46 on macOS, bridge protocol 2, and grammar version 3.
+The adapter uses internal BB bridge files rather than a public reusable provider factory.
+A BB update can require an adapter update.
+Other platforms and BB versions do not have verified support.
+Model availability depends on each user's provider accounts.
+Test each supported BB release before expanding the compatibility range.
+
+## Accounts and payment
+
+Jev is the default classifier.
+It uses a separate TypeSafe API key and API billing, entered on the Connection page.
+Users can choose a model from BB's available Codex and Claude Code models instead.
+Native classification uses the existing provider sign-in without a separate API key.
+Provider subscription limits and model access still apply.
+The model picker reads BB's provider catalog, not an account entitlement guarantee.
+
+Legacy direct OpenAI and Anthropic API modes also require separate keys and billing.
+The plugin includes no extra credits, shared account, payment collection, or hosted inference service.
+Users pay their providers directly.
+The open-source license permits commercial use under its terms.
+BB marketplace checkout is not part of this release.
+
+## Classifier and usage limits
+
+Jev retains the original TypeSafe classification questions.
+Each classifier returns a percent vote over the choices for every routing question.
+Model Pilot picks the cheapest model, effort, and context window that the vote makes at least 65% likely to be enough.
+This avoids a model too weak for the task and a stronger model than the task needs.
+Jev's votes are calibrated probabilities.
+Other classifiers estimate their own percents, so the same rule can give different routes.
+Adapter compatibility does not establish equivalent decision quality.
+A failed classification can trigger the policy's Opus medium fallback.
+That fallback requires provider access and can cost more than the expected route.
+
+Usage reports recorded tokens and estimated prices.
+The baseline comparison applies another model's price to the same recorded agent tokens.
+It does not measure token savings, task quality, or actual provider charges.
+Unknown model prices or classifier usage suppress the savings estimate.
+Native classifier cost remains unknown in this release.
+Bundled rates are dated snapshots, not live pricing.
+Read the README for the price sources and report retention limits.
+Read [PRIVACY.md](PRIVACY.md) for records, credentials, retention, and removal limits.
+
+## Release requirements
+
+1. Make sure that the release contains no keys, private recordings, personal vault references, or runtime records.
+2. Preserve the MIT license and all upstream notices.
+3. Keep the seven-day package cooldown and use the committed dependency lockfile.
+4. Run automated tests, type analysis, and the plugin build.
+5. Test a clean installation from the exact tagged Git artifact.
+6. Make sure that the package builds with the dependencies that Git installation supplies.
+7. Test the real connection page, scrolling, navigation, and usage charts.
+8. Record which classifiers completed live requests and which only passed adapter tests.
+9. Make sure that marketplace metadata preserves the compatibility, account, and estimate limits.
+10. Run the marketplace source and schema tests before submission.
+
+A passing unit suite does not establish live access to every advertised model.
+A local path installation does not establish that the public Git artifact installs successfully.
+The release record must distinguish completed tests from untested account or platform combinations.

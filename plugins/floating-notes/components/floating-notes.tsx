@@ -1,0 +1,121 @@
+// The content-script root: the main window, every visible sticky, the quick
+// capture bar, and the composer's note picker. Also owns the global
+// shortcuts and the refreshes on load, focus, and open. Live changes arrive
+// through the app overlay's realtime relay (app.tsx), not a timer.
+import { useEffect, useMemo } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
+import { NotesWindow } from "@/components/notes-window";
+import { StickyNote } from "@/components/sticky-note";
+import { CaptureBar } from "@/components/capture-bar";
+import { NotePicker } from "@/components/note-picker";
+import { SurfaceBoundary } from "@/components/error-boundary";
+import { controller } from "@/lib/controller";
+import { useControllerState, useNotesState } from "@/lib/hooks";
+import { notesStore, openStickies } from "@/lib/store";
+
+export function FloatingNotes() {
+  const { notes, config } = useNotesState();
+  const { windowOpen, notePickerTarget, visibleThreads } = useControllerState();
+  const sheet = useIsCompactViewport();
+
+  // ------------------------------------------------------------- data flow
+
+  useEffect(() => {
+    void notesStore.refresh();
+  }, []);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void notesStore.refresh();
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  // Editor font size for every surface, from settings.
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--bbnotes-editor-font-size",
+      `${config.fontSize}px`,
+    );
+    return () => {
+      document.documentElement.style.removeProperty("--bbnotes-editor-font-size");
+    };
+  }, [config.fontSize]);
+
+  // ------------------------------------------------------------- shortcuts
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.altKey || !event.ctrlKey) return;
+      // event.code, not event.key: Ctrl+Shift+' is `"` on a US layout.
+      if (event.code !== "Quote") return;
+      if (event.shiftKey) {
+        if (!config.captureShortcutEnabled) return;
+        event.preventDefault();
+        event.stopPropagation();
+        controller.openCapture();
+        return;
+      }
+      if (!config.shortcutEnabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+      controller.toggleWindow();
+    };
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
+  }, [config.shortcutEnabled, config.captureShortcutEnabled]);
+
+  // The window (or a reveal request) also wants fresh data on open.
+  useEffect(() => {
+    if (windowOpen) void notesStore.refresh();
+  }, [windowOpen]);
+
+  // -------------------------------------------------------------- stickies
+
+  const stickies = useMemo(() => {
+    const open = openStickies(notes);
+    return open.filter((note) => {
+      // Unpinned stickies float everywhere; pinned ones only where bound.
+      if (note.pinnedThreadId === null && note.pinnedProjectId === null) {
+        return true;
+      }
+      return visibleThreads.some(
+        (thread) =>
+          thread.threadId === note.pinnedThreadId ||
+          (note.pinnedProjectId !== null &&
+            thread.projectId === note.pinnedProjectId),
+      );
+    });
+  }, [notes, visibleThreads]);
+
+  return (
+    <TooltipProvider delayDuration={400}>
+      <SurfaceBoundary name="window">
+        <NotesWindow />
+      </SurfaceBoundary>
+      {/* A 300px card floating over a 390px screen is clutter; on the sheet
+          every note is one tap away inside the window instead. */}
+      {sheet
+        ? null
+        : stickies.map((note, index) => (
+            <SurfaceBoundary key={note.id} name={`sticky ${note.id}`}>
+              <StickyNote note={note} index={index} />
+            </SurfaceBoundary>
+          ))}
+      <SurfaceBoundary name="capture bar">
+        <CaptureBar />
+      </SurfaceBoundary>
+      {notePickerTarget !== null ? (
+        <SurfaceBoundary name="note picker">
+          <NotePicker target={notePickerTarget} />
+        </SurfaceBoundary>
+      ) : null}
+    </TooltipProvider>
+  );
+}

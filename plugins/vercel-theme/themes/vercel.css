@@ -1,0 +1,308 @@
+/*
+ * Vercel-inspired palette for bb.
+ * Light and dark modes use Vercel's characteristic neutral ramp, Geist type,
+ * restrained blue interaction color, and high-clarity one-pixel boundaries.
+ */
+
+:root,
+.light {
+  color-scheme: light;
+
+  /* Typography */
+  --font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --diffs-font-family: "Geist Mono", "SFMono-Regular", Consolas, monospace;
+
+  /* Core Vercel light ramp */
+  --canvas: #ffffff;
+  --ink: #171717;
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --secondary: #f2f2f2;
+  --accent: #ebebeb;
+  --muted: #f2f2f2;
+  --input: #a1a1a1;
+
+  --surface-recessed: #17171708;
+  --surface-recessed-solid: #fafafa;
+  --surface-recessed-soft-solid: #f7f7f7;
+  --surface-raised: #1717170a;
+  --surface-raised-solid: #ffffff;
+  --surface-scrim: #ffffffeb;
+  --agent-surface-background: #fafafa;
+  --agent-surface-border: #17171712;
+
+  --state-hover: #1717170a;
+  --state-active: #17171712;
+  --surface-selected: #1717170d;
+  --surface-selected-border: #17171724;
+
+  --border-seam: #eaeaea;
+  --border-seam-vertical: #eaeaea;
+  --border: #e5e5e5;
+  --border-hairline: #ebebeb;
+
+  /* Geist's deliberately compact neutral text ladder */
+  --muted-foreground: #666666;
+  --readback-foreground: #737373;
+  --subtle-foreground: #8f8f8f;
+  --accent-foreground: #171717;
+  --secondary-foreground: #171717;
+
+  /* Blue is reserved for links, focus, and explicit primary actions */
+  --primary: #006fee;
+  --primary-foreground: #ffffff;
+  --timeline-accent: #006fee;
+  --file-accent: #006fee;
+  --ring: #006fee;
+  --sidebar-ring: #006fee;
+  --sidebar-search-match: #006fee24;
+  --sidebar-search-match-border: #006fee66;
+
+  /* Semantic colors */
+  --destructive: #ee0000;
+  --destructive-foreground: #ffffff;
+  --destructive-text: #cc0000;
+  --warning: #f5a623;
+  --warning-text: #996800;
+  --attention: #f5a623;
+  --success: #1a7f37;
+  --success-foreground: #1a7f37;
+  --diff-added: #1a7f37;
+  --diff-removed: #cc0000;
+  --pr-merged: #8e4ec6;
+  --surface-destructive: #ee00000d;
+  --surface-destructive-border: #ee000033;
+  --surface-attention: #f5a6231a;
+
+  /* Quiet off-white navigation chrome */
+  --sidebar: #fafafa;
+  --sidebar-foreground: #666666;
+  --sidebar-accent: #ebebeb;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #eaeaea;
+
+  /* Prompt mentions */
+  --pill-surface: linear-gradient(to bottom, #f7f7f7, #f7f7f7);
+  --pill-surface-border: #e5e5e5;
+  --pill-foreground: #171717;
+  --pill-icon: #666666;
+  --pill-surface-selected: linear-gradient(to bottom, #ebebeb, #ebebeb);
+  --pill-surface-selected-border: #a1a1a1;
+
+  --radius: 0.5rem;
+
+  /* Vercel-like terminal palette */
+  --ansi-0: #000000;
+  --ansi-1: #e5484d;
+  --ansi-2: #30a46c;
+  --ansi-3: #f5a623;
+  --ansi-4: #006fee;
+  --ansi-5: #8e4ec6;
+  --ansi-6: #12a594;
+  --ansi-7: #ededed;
+  --ansi-8: #666666;
+  --ansi-9: #ff6166;
+  --ansi-10: #46a758;
+  --ansi-11: #f2c94c;
+  --ansi-12: #52a8ff;
+  --ansi-13: #be93e4;
+  --ansi-14: #0ac5b3;
+  --ansi-15: #ffffff;
+
+  --ansi-bg-fg-0: #ffffff;
+  --ansi-bg-fg-1: #ffffff;
+  --ansi-bg-fg-2: #000000;
+  --ansi-bg-fg-3: #000000;
+  --ansi-bg-fg-4: #ffffff;
+  --ansi-bg-fg-5: #ffffff;
+  --ansi-bg-fg-6: #000000;
+  --ansi-bg-fg-7: #000000;
+  --ansi-bg-fg-8: #ffffff;
+  --ansi-bg-fg-9: #000000;
+  --ansi-bg-fg-10: #000000;
+  --ansi-bg-fg-11: #000000;
+  --ansi-bg-fg-12: #000000;
+  --ansi-bg-fg-13: #000000;
+  --ansi-bg-fg-14: #000000;
+  --ansi-bg-fg-15: #000000;
+
+  /* Pierre diff and file-tree bridges */
+  --diffs-addition-color-override: #1a7f37;
+  --diffs-deletion-color-override: #cc0000;
+  --diffs-modified-color-override: #996800;
+  --diffs-bg-context-override: #ffffff;
+  --diffs-bg-context-gutter-override: #fafafa;
+  --diffs-bg-buffer-override: #fafafa;
+  --diffs-bg-separator-override: #fafafa;
+  --diffs-bg-addition-override: #1a7f3714;
+  --diffs-bg-addition-emphasis-override: #1a7f3729;
+  --diffs-bg-deletion-override: #cc000014;
+  --diffs-bg-deletion-emphasis-override: #cc000029;
+  --diffs-bg-hover-override: #1717170a;
+  --diffs-bg-selection-override: #006fee24;
+  --trees-status-added-override: #1a7f37;
+  --trees-status-untracked-override: #1a7f37;
+  --trees-status-renamed-override: #006fee;
+  --trees-status-modified-override: #996800;
+  --trees-status-deleted-override: #cc0000;
+  --trees-status-ignored-override: #8f8f8f;
+  --trees-accent-override: #006fee;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* True black content with #0a0a0a chrome is the signature dark treatment */
+  --canvas: #000000;
+  --ink: #ededed;
+  --background: #000000;
+  --foreground: #ededed;
+  --card: #0a0a0a;
+  --popover: #0a0a0a;
+  --secondary: #1a1a1a;
+  --accent: #1f1f1f;
+  --muted: #1f1f1f;
+  --input: #3d3d3d;
+
+  --surface-recessed: #ffffff0a;
+  --surface-recessed-solid: #0a0a0a;
+  --surface-recessed-soft-solid: #0f0f0f;
+  --surface-raised: #ffffff0f;
+  --surface-raised-solid: #111111;
+  --surface-scrim: #000000eb;
+  --agent-surface-background: #0a0a0a;
+  --agent-surface-border: #ffffff12;
+
+  --state-hover: #ffffff0d;
+  --state-active: #ffffff17;
+  --surface-selected: #ffffff12;
+  --surface-selected-border: #ffffff24;
+
+  --border-seam: #1f1f1f;
+  --border-seam-vertical: #1f1f1f;
+  --border: #262626;
+  --border-hairline: #1f1f1f;
+
+  --muted-foreground: #a1a1a1;
+  --readback-foreground: #888888;
+  --subtle-foreground: #666666;
+  --accent-foreground: #ededed;
+  --secondary-foreground: #ededed;
+
+  --primary: #006fee;
+  --primary-foreground: #ffffff;
+  --timeline-accent: #52a8ff;
+  --file-accent: #52a8ff;
+  --ring: #006fee;
+  --sidebar-ring: #006fee;
+  --sidebar-search-match: #006fee33;
+  --sidebar-search-match-border: #006feea3;
+
+  --destructive: #e5484d;
+  --destructive-foreground: #ffffff;
+  --destructive-text: #ff6166;
+  --warning: #f5a623;
+  --warning-text: #f2c94c;
+  --attention: #f5a623;
+  --success: #46a758;
+  --success-foreground: #46a758;
+  --diff-added: #46a758;
+  --diff-removed: #ff6166;
+  --pr-merged: #be93e4;
+  --surface-destructive: #e5484d17;
+  --surface-destructive-border: #e5484d4d;
+  --surface-attention: #f5a6231f;
+
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #a1a1a1;
+  --sidebar-accent: #1f1f1f;
+  --sidebar-accent-foreground: #ededed;
+  --sidebar-border: #1f1f1f;
+
+  --pill-surface: linear-gradient(to bottom, #111111, #111111);
+  --pill-surface-border: #262626;
+  --pill-foreground: #ededed;
+  --pill-icon: #a1a1a1;
+  --pill-surface-selected: linear-gradient(to bottom, #1f1f1f, #1f1f1f);
+  --pill-surface-selected-border: #3d3d3d;
+
+  --diffs-addition-color-override: #46a758;
+  --diffs-deletion-color-override: #ff6166;
+  --diffs-modified-color-override: #f2c94c;
+  --diffs-bg-context-override: #000000;
+  --diffs-bg-context-gutter-override: #0a0a0a;
+  --diffs-bg-buffer-override: #0a0a0a;
+  --diffs-bg-separator-override: #0a0a0a;
+  --diffs-bg-addition-override: #46a7581f;
+  --diffs-bg-addition-emphasis-override: #46a7583d;
+  --diffs-bg-deletion-override: #ff61661f;
+  --diffs-bg-deletion-emphasis-override: #ff61663d;
+  --diffs-bg-hover-override: #ffffff0d;
+  --diffs-bg-selection-override: #006fee4d;
+  --diffs-bg-addition-number-override: #0a0a0a;
+  --diffs-bg-deletion-number-override: #0a0a0a;
+  --diffs-bg-selection-number-override: #1a1a1a;
+  --diffs-fg-number-override: #666666;
+  --diffs-fg-number-addition-override: #46a758;
+  --diffs-fg-number-deletion-override: #ff6166;
+  --diffs-fg-conflict-marker-override: #f2c94c;
+
+  --trees-status-added-override: #46a758;
+  --trees-status-untracked-override: #46a758;
+  --trees-status-renamed-override: #52a8ff;
+  --trees-status-modified-override: #f2c94c;
+  --trees-status-deleted-override: #ff6166;
+  --trees-status-ignored-override: #666666;
+  --trees-input-bg-override: #0a0a0a;
+  --trees-accent-override: #006fee;
+  --trees-indent-guide-bg-override: #262626;
+  --trees-fg-muted-override: #888888;
+  --trees-focus-ring-color-override: #006fee;
+  --trees-file-icon-color: #888888;
+}
+
+/* Composer and chat requests use the same recessed Vercel surface. */
+.dark [data-promptbox],
+.dark .rounded-xl.border.border-border-seam.bg-surface-recessed {
+  background-color: #0a0a0a;
+}
+
+/* The thread-side panel belongs to the content plane, not navigation chrome. */
+.dark #thread-detail-secondary-panel {
+  --sidebar: #000000;
+}
+
+/* sugar-high powers lightweight chat code outside the Shiki diff viewer. */
+.dark .bb-code-highlight.bb-code-highlight {
+  --sh-identifier: #ededed;
+  --sh-sign: #a1a1a1;
+  --sh-property: #52a8ff;
+  --sh-comment: #888888;
+  --sh-keyword: #ff6166;
+  --sh-string: #f2c94c;
+  --sh-class: #0ac5b3;
+  --sh-entity: #be93e4;
+  --sh-jsxliterals: #52a8ff;
+}
+
+.light .bb-code-highlight.bb-code-highlight {
+  --sh-identifier: #171717;
+  --sh-sign: #666666;
+  --sh-property: #006fee;
+  --sh-comment: #666666;
+  --sh-keyword: #cc0000;
+  --sh-string: #996800;
+  --sh-class: #067a6f;
+  --sh-entity: #6f2cac;
+  --sh-jsxliterals: #006fee;
+}
+
+diffs-container {
+  --diffs-dark-bg: #000000;
+  --diffs-dark: #ededed;
+  --diffs-light-bg: #ffffff;
+  --diffs-light: #171717;
+}

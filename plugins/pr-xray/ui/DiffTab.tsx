@@ -1,0 +1,1174 @@
+// The grouped diff: a reading-path sidebar and hunk diffs with GitHub-style
+// inline comments.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FileDiff } from "@pierre/diffs/react";
+import type { DiffLineAnnotation, FileDiffMetadata, SelectedLineRange } from "@pierre/diffs";
+import {
+  experimental_SourceCode as SourceCode,
+  experimental_useCodeTheme as useCodeTheme,
+  experimental_VoiceInputTextarea as VoiceInputTextarea,
+  useBbNavigate,
+} from "@get-bb/plugin-sdk/app";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Icon } from "@/components/ui/icon";
+import { CONTROL_HOVER_TRANSITION } from "@/components/ui/motion";
+import { TEXTAREA_CLASS } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { threadsToFix } from "../shared/fix-scope";
+import { SafeMarkdown } from "./SafeMarkdown";
+import type { DraftComment, FixScope, Hunk, PendingComment, PrFile, ReviewGroup, ReviewThread, StoredComment } from "../shared/schema";
+import { useAgentConfirmContext } from "./agent-confirm";
+import { Composer, PendingView, ThreadView } from "./comments";
+import { FixCommentsButton } from "./FixCommentsButton";
+import { FileTree } from "./FileTree";
+import { buildGroupsOfPath, topmostPath, viewedPaths } from "./file-tree";
+import { prRefKey } from "../shared/pr-ref";
+import { canKeepDraft, draftInDiff, filesNotShown, firstChangedLine, hunkFileDiff, hunkRange, sideLines, threadVisibleIn } from "./diff-utils";
+import { errorMessage, type ReviewGet, type Rpc } from "./useReview";
+
+export type ViewMode = "unified" | "split";
+/** What the sidebar lists: the reading path or the File tree. */
+type SidebarView = "path" | "files";
+
+interface DraftTarget {
+  /** The commit on screen when the line was picked: the line number only holds there. */
+  headSha: string;
+  hunkId: string;
+  path: string;
+  range: SelectedLineRange;
+}
+
+type AnnotationItem =
+  | { kind: "thread"; thread: ReviewThread }
+  | { kind: "pending"; comment: PendingComment }
+  | { kind: "draft"; draft: DraftTarget };
+
+const KIND_LABEL: Record<ReviewGroup["kind"], string> = {
+  core: "Core",
+  supporting: "Supporting",
+  tests: "Tests",
+  noise: "Noise",
+};
+
+/** Key of one file within one group, for viewed/open state and element ids. */
+const fileKey = (groupId: string, path: string) => `file:${groupId}:${path}`;
+
+const toSide = (side: SelectedLineRange["side"]): "LEFT" | "RIGHT" => (side === "deletions" ? "LEFT" : "RIGHT");
+const toAnnotationSide = (side: "LEFT" | "RIGHT") => (side === "LEFT" ? "deletions" : "additions");
+
+export function DiffTab({
+  data,
+  rpc,
+  view,
+  groups,
+  viewedHunks,
+  onSetViewed,
+  onAskChat,
+  activeGroupId,
+  onActiveGroupChange,
+  scrollRequest,
+  fileRequest,
+  onFileRequestHandled,
+}: {
+  data: ReviewGet;
+  rpc: Rpc;
+  view: ViewMode;
+  groups: ReviewGroup[];
+  /** Fingerprints of viewed hunks. */
+  viewedHunks: Set<string>;
+  onSetViewed: (fingerprints: string[], viewed: boolean) => void;
+  onAskChat: (question: string) => Promise<void>;
+  activeGroupId: string | null;
+  onActiveGroupChange: (groupId: string) => void;
+  scrollRequest: { groupId: string; nonce: number } | null;
+  /** A file to open, from a diagram's node panel. */
+  fileRequest: string | null;
+  /** Called once the request is handled, so returning to this tab doesn't repeat it. */
+  onFileRequestHandled: () => void;
+}) {
+  const { pr } = data;
+  const navigate = useBbNavigate();
+  const hunks = useMemo(() => new Map(pr.hunks.map((hunk) => [hunk.id, hunk])), [pr.hunks]);
+  const files = useMemo(() => new Map(pr.files.map((file) => [file.index, file])), [pr.files]);
+  const storedByGithubId = useMemo(() => {
+    const map = new Map<number, StoredComment>();
+    for (const comment of data.comments) if (comment.githubCommentId !== null) map.set(comment.githubCommentId, comment);
+    return map;
+  }, [data.comments]);
+  const [draft, setDraft] = useState<DraftTarget | null>(null);
+  const [submitOpen, setSubmitOpen] = useState(false);
+  const { confirmAgent, confirmOthersComments } = useAgentConfirmContext();
+  const [fullFile, setFullFile] = useState<{ file: PrFile; content: string | null; loading: boolean } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeHunk, setActiveHunk] = useState<string | null>(null);
+  // Manual expand/collapse; without an entry, viewed means collapsed.
+  const [openOverride, setOpenOverride] = useState<Map<string, boolean>>(new Map());
+
+  /** File paths of each group, in diff order. */
+  const groupPaths = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const group of groups) {
+      const indexes = [...new Set(group.hunkIds.map((id) => hunks.get(id)?.fileIndex).filter((index) => index !== undefined))];
+      map.set(group.id, indexes.sort((a, b) => a - b).map((index) => files.get(index)!.path));
+    }
+    return map;
+  }, [files, groups, hunks]);
+
+  const groupsOfPath = useMemo(() => buildGroupsOfPath(groups.map((group) => groupPaths.get(group.id) ?? [])), [groupPaths, groups]);
+
+  /** Group ids and fileKeys whose hunks are all viewed. */
+  const viewed = useMemo(() => {
+    const set = new Set<string>();
+    for (const group of groups) {
+      const byPath = new Map<string, boolean>();
+      for (const id of group.hunkIds) {
+        const hunk = hunks.get(id);
+        const path = hunk ? files.get(hunk.fileIndex)?.path : undefined;
+        if (hunk && path !== undefined) byPath.set(path, (byPath.get(path) ?? true) && viewedHunks.has(hunk.fingerprint));
+      }
+      for (const [path, value] of byPath) if (value) set.add(fileKey(group.id, path));
+      if (byPath.size > 0 && [...byPath.values()].every(Boolean)) set.add(group.id);
+    }
+    return set;
+  }, [files, groups, hunks, viewedHunks]);
+
+  const fingerprintsOf = (group: ReviewGroup, path?: string) =>
+    group.hunkIds.flatMap((id) => {
+      const hunk = hunks.get(id);
+      return hunk && (path === undefined || files.get(hunk.fileIndex)?.path === path) ? [hunk.fingerprint] : [];
+    });
+
+  // Files you viewed before and that changed since (new commits).
+  const changedSinceViewed = useMemo(() => new Set(data.changedSinceViewed), [data.changedSinceViewed]);
+  const updatedPaths = (group: ReviewGroup) =>
+    (groupPaths.get(group.id) ?? []).filter((path) => changedSinceViewed.has(path) && !viewed.has(fileKey(group.id, path)));
+
+  const isFileViewed = useCallback(
+    (groupId: string, path: string) => viewed.has(groupId) || viewed.has(fileKey(groupId, path)),
+    [viewed],
+  );
+  const isOpen = useCallback(
+    (key: string, isViewed: boolean) => openOverride.get(key) ?? !isViewed,
+    [openOverride],
+  );
+  const setOpen = useCallback((key: string, open: boolean) => setOpenOverride((current) => new Map(current).set(key, open)), []);
+  const clearOpen = useCallback(
+    (keys: string[]) =>
+      setOpenOverride((current) => {
+        const next = new Map(current);
+        for (const key of keys) next.delete(key);
+        return next;
+      }),
+    [],
+  );
+
+  /** After a collapse, brings the element's header back if it is now above the viewport. */
+  const keepHeaderInView = useCallback((id: string) => {
+    requestAnimationFrame(() => {
+      const element = document.getElementById(id);
+      const root = scrollRef.current;
+      if (element && root && element.getBoundingClientRect().top < root.getBoundingClientRect().top) {
+        element.scrollIntoView({ block: "start" });
+      }
+    });
+  }, []);
+
+  const setGroupViewed = (group: ReviewGroup, value: boolean) => {
+    const paths = groupPaths.get(group.id) ?? [];
+    onSetViewed(fingerprintsOf(group), value);
+    clearOpen([group.id, ...paths.map((path) => fileKey(group.id, path))]);
+    if (value) keepHeaderInView(`group-${group.id}`);
+  };
+
+  const setFileViewed = (group: ReviewGroup, path: string, value: boolean) => {
+    const paths = groupPaths.get(group.id) ?? [];
+    const key = fileKey(group.id, path);
+    onSetViewed(fingerprintsOf(group, path), value);
+    const allViewed = paths.every((other) => (other === path ? value : isFileViewed(group.id, other)));
+    clearOpen([key, group.id]);
+    // Like GitHub: once a file collapses, keep its header in view so the next file follows it.
+    // Viewing the last file collapses the whole group, so return to the group's header instead.
+    if (value) keepHeaderInView(allViewed ? `group-${group.id}` : `file-${key}`);
+  };
+
+  // Hunks you can see: j/k skip collapsed groups and files.
+  const hunkOrder = useMemo(
+    () =>
+      groups.flatMap((group) => {
+        if (!isOpen(group.id, viewed.has(group.id))) return [];
+        return group.hunkIds.filter((id) => {
+          const path = files.get(hunks.get(id)?.fileIndex ?? -1)?.path;
+          return path !== undefined && isOpen(fileKey(group.id, path), isFileViewed(group.id, path));
+        });
+      }),
+    [files, groups, hunks, isFileViewed, isOpen, viewed],
+  );
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const [sidebar, setSidebar] = useState<SidebarView>(() => (localStorage.getItem("pr-xray:sidebar") === "files" ? "files" : "path"));
+  useEffect(() => localStorage.setItem("pr-xray:sidebar", sidebar), [sidebar]);
+  const toggleSidebar = useCallback(() => setSidebar((current) => (current === "path" ? "files" : "path")), []);
+
+  /** Expands `path` in `group` even if viewed, then scrolls to `targetId` and flashes it. */
+  const reveal = (group: ReviewGroup, path: string, targetId: string) => {
+    setOpen(group.id, true);
+    setOpen(fileKey(group.id, path), true);
+    // Wait a frame so a just-expanded group has laid out before scrolling.
+    requestAnimationFrame(() => {
+      scrollTo(targetId);
+      flash(targetId);
+    });
+  };
+
+  /** Jumps to the file in reading-path group `groupNumber` (default: its first appearance), opening it if viewed. */
+  const openFile = (path: string, groupNumber?: number) => {
+    const group = groupNumber ? groups[groupNumber - 1] : groups.find((candidate) => groupPaths.get(candidate.id)?.includes(path));
+    if (!group) return false;
+    reveal(group, path, `file-${fileKey(group.id, path)}`);
+    return true;
+  };
+
+  useEffect(() => {
+    if (!scrollRequest) return;
+    const group = groups.find((candidate) => candidate.id === scrollRequest.groupId);
+    const hunk = hunks.get(group?.hunkIds[0] ?? "");
+    const path = hunk ? files.get(hunk.fileIndex)?.path : undefined;
+    if (!group) return;
+    if (hunk && path !== undefined) reveal(group, path, `hunk-${hunk.id}`);
+    else scrollTo(`group-${group.id}`);
+    // Only a new request reveals a group; reveal changes on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollRequest]);
+
+  useEffect(() => {
+    if (!fileRequest) {
+      return;
+    }
+
+    if (!openFile(fileRequest)) {
+      toast.info(`${fileRequest} is not changed in this PR.`);
+    }
+
+    onFileRequestHandled();
+    // Only a new request opens a file; openFile changes on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileRequest]);
+
+  // Track which group is on screen for the sidebar highlight.
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        const id = visible?.target.getAttribute("data-group-id");
+        if (id) onActiveGroupChange(id);
+      },
+      { root, rootMargin: "0px 0px -70% 0px" },
+    );
+    root.querySelectorAll("[data-group-id]").forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [groups, onActiveGroupChange]);
+
+  // Track which file is on screen for the File tree. Follows file sections, not groups, so it
+  // works with or without an analysis and keeps its path when analysis groups replace the fallback.
+  const [activePath, setActivePath] = useState<string | null>(null);
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    // Each callback only reports sections that changed, so remember every one still on screen.
+    const onScreen = new Set<Element>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) onScreen.add(entry.target);
+          else onScreen.delete(entry.target);
+        }
+        // Measure now: tops recorded in earlier callbacks are stale after scrolling.
+        const path = topmostPath([...onScreen].map((element) => ({ path: element.getAttribute("data-file-path") ?? "", top: element.getBoundingClientRect().top })));
+        if (path) setActivePath(path);
+      },
+      { root, rootMargin: "0px 0px -70% 0px" },
+    );
+    root.querySelectorAll("[data-file-path]").forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+    // Re-observe when file sections mount or unmount (groups change, expand or collapse).
+  }, [groups, openOverride, viewed]);
+  const treeViewed = useMemo(() => viewedPaths(pr.files, hunks, viewedHunks), [hunks, pr.files, viewedHunks]);
+
+  // Keyboard: j/k hunks, n/p groups, c comment on the current hunk, v toggles it viewed.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.closest("input, textarea, [contenteditable=true]") || event.metaKey || event.ctrlKey || event.altKey)) return;
+      if (event.key === "j" || event.key === "k") {
+        const index = activeHunk ? hunkOrder.indexOf(activeHunk) : -1;
+        const next = hunkOrder[Math.max(0, Math.min(hunkOrder.length - 1, index + (event.key === "j" ? 1 : -1)))];
+        if (next) {
+          setActiveHunk(next);
+          scrollTo(`hunk-${next}`);
+          event.preventDefault();
+        }
+      } else if (event.key === "n" || event.key === "p") {
+        const index = groups.findIndex((group) => group.id === activeGroupId);
+        const next = groups[Math.max(0, Math.min(groups.length - 1, index + (event.key === "n" ? 1 : -1)))];
+        if (next) {
+          scrollTo(`group-${next.id}`);
+          setActiveHunk(next.hunkIds[0] ?? null);
+          event.preventDefault();
+        }
+      } else if (event.key === "v") {
+        const hunk = hunks.get(activeHunk ?? "");
+        if (hunk) {
+          onSetViewed([hunk.fingerprint], !viewedHunks.has(hunk.fingerprint));
+          event.preventDefault();
+        }
+      } else if (event.key === "t") {
+        toggleSidebar();
+        event.preventDefault();
+      } else if (event.key === "c") {
+        const hunk = hunks.get(activeHunk ?? groups.find((group) => group.id === activeGroupId)?.hunkIds[0] ?? "");
+        const file = hunk ? files.get(hunk.fileIndex) : undefined;
+        if (hunk && file) {
+          const at = firstChangedLine(hunk);
+          setDraft({ headSha: pr.headSha, hunkId: hunk.id, path: file.path, range: { start: at.line, end: at.line, side: toAnnotationSide(at.side) } });
+          event.preventDefault();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeHunk, activeGroupId, files, groups, hunkOrder, hunks, onSetViewed, scrollTo, toggleSidebar, viewedHunks]);
+
+  const anchoredThreadIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const thread of pr.threads) {
+      const file = pr.files.find((candidate) => candidate.path === thread.path);
+      if (!file) continue;
+      const fileHunks = file.hunkIds.map((id) => hunks.get(id)!).filter(Boolean);
+      if (threadVisibleIn(thread, file.path, fileHunks)) ids.add(thread.id);
+    }
+    return ids;
+  }, [hunks, pr.files, pr.threads]);
+  const otherThreads = pr.threads.filter((thread) => !anchoredThreadIds.has(thread.id));
+  const hunksOfPath = (path: string) => pr.files.find((file) => file.path === path)?.hunkIds.flatMap((id) => hunks.get(id) ?? []) ?? [];
+  const looseDrafts = data.pending.filter((comment) => !draftInDiff(comment, pr.headSha, hunksOfPath(comment.path)));
+
+  const draftToComment = (target: DraftTarget, body: string): DraftComment => {
+    const side = toSide(target.range.endSide ?? target.range.side);
+    const start = Math.min(target.range.start, target.range.end);
+    const end = Math.max(target.range.start, target.range.end);
+    return {
+      headSha: target.headSha,
+      path: target.path,
+      line: end,
+      side,
+      startLine: start === end ? null : start,
+      startSide: start === end ? null : toSide(target.range.side),
+      body,
+    };
+  };
+
+  const openFullFile = async (file: PrFile) => {
+    setFullFile({ file, content: null, loading: true });
+    try {
+      const contents = await rpc.call("file.contents", { ref: pr.ref, headSha: pr.headSha, path: file.path, previousPath: file.previousPath });
+      setFullFile({ file, content: contents.new ?? contents.old, loading: false });
+    } catch (error) {
+      toast.error(errorMessage(error));
+      setFullFile(null);
+    }
+  };
+
+  const fixComments = async (scope: FixScope) => {
+    if (!(await (scope === "mine" ? confirmAgent("fix") : confirmOthersComments()))) return;
+    try {
+      const { threadId } = await rpc.call("fix.allDiff", { ref: pr.ref, scope });
+      // Stay on the review; the fix runs in the background.
+      toast.success(scope === "mine" ? "Started a thread to fix your open comments" : "Started a thread to fix all open comments", {
+        action: { label: "Open", onClick: () => navigate.toThread(threadId) },
+      });
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  };
+
+  const viewedCount = groups.filter((group) => viewed.has(group.id)).length;
+  const firstUpdated = groups.find((group) => updatedPaths(group).length > 0);
+  const updatedCount = new Set(groups.flatMap(updatedPaths)).size;
+  const myOpenThreads = threadsToFix(pr.threads, pr.viewer, "mine").length;
+  const allOpenThreads = threadsToFix(pr.threads, pr.viewer, "all").length;
+
+  return (
+    <div className="flex h-full min-h-0">
+      <aside className="flex w-72 shrink-0 flex-col border-r border-border">
+        <div className="space-y-2 border-b border-border p-3">
+          <div role="group" aria-label="Sidebar" className="flex gap-1 rounded-md border border-border p-0.5 text-xs">
+            {(["path", "files"] satisfies SidebarView[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={sidebar === value}
+                className={cn(
+                  "flex-1 rounded px-2 py-0.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                  CONTROL_HOVER_TRANSITION,
+                  sidebar === value ? "bg-state-active" : "text-muted-foreground hover:bg-state-hover",
+                )}
+                onClick={() => setSidebar(value)}
+              >
+                {value === "path" ? "Reading path" : "Files"}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Progress</span>
+            <span>
+              {viewedCount}/{groups.length} viewed
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-foreground/70 transition-all" style={{ width: `${groups.length ? (viewedCount / groups.length) * 100 : 0}%` }} />
+          </div>
+          {firstUpdated ? (
+            <button
+              type="button"
+              className="flex w-full items-center gap-1.5 rounded-md border border-warning/60 bg-warning/10 px-2 py-1 text-left text-xs text-warning-text hover:bg-warning/20"
+              onClick={() => scrollTo(`group-${firstUpdated.id}`)}
+            >
+              <Icon name="Commit" className="size-3.5 shrink-0" />
+              {updatedCount} file{updatedCount === 1 ? "" : "s"} changed since you viewed {updatedCount === 1 ? "it" : "them"}
+            </button>
+          ) : null}
+        </div>
+        <nav className="min-h-0 flex-1 overflow-y-auto p-2">
+          {sidebar === "files" ? (
+            <FileTree
+              files={pr.files}
+              groupsOfPath={groupsOfPath}
+              onOpen={openFile}
+              prUrl={pr.url}
+              unlisted={filesNotShown(pr).unlisted}
+              viewed={treeViewed}
+              activePath={activePath}
+            />
+          ) : null}
+          {sidebar === "path" && groups.map((group, index) => (
+            <div
+              key={group.id}
+              className={cn(
+                "group flex items-start gap-2 rounded-md px-2 py-1.5 text-sm",
+                activeGroupId === group.id ? "bg-state-active" : "hover:bg-state-hover",
+              )}
+            >
+              <Checkbox
+                className="mt-0.5"
+                checked={viewed.has(group.id)}
+                onCheckedChange={(checked) => setGroupViewed(group, checked === true)}
+                aria-label={`Mark "${group.title}" viewed`}
+              />
+              <button type="button" className="min-w-0 flex-1 text-left" onClick={() => scrollTo(`group-${group.id}`)}>
+                <div className={cn("truncate", viewed.has(group.id) && "text-muted-foreground")}>
+                  <span className="mr-1 text-muted-foreground">{index + 1}.</span>
+                  {group.title}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {KIND_LABEL[group.kind]} · {group.hunkIds.length} hunk{group.hunkIds.length === 1 ? "" : "s"}
+                  {updatedPaths(group).length > 0 ? <span className="text-warning-text"> · updated</span> : null}
+                </div>
+              </button>
+            </div>
+          ))}
+          {looseDrafts.length > 0 ? (
+            <button
+              type="button"
+              className="mt-2 w-full rounded-md px-2 py-1.5 text-left text-xs text-warning-text hover:bg-state-hover"
+              onClick={() => scrollTo("pending-to-check")}
+            >
+              {looseDrafts.length} pending comment{looseDrafts.length === 1 ? "" : "s"} to check
+            </button>
+          ) : null}
+          {otherThreads.length > 0 ? (
+            <button
+              type="button"
+              className="mt-2 w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-state-hover"
+              onClick={() => scrollTo("other-threads")}
+            >
+              {otherThreads.length} conversation{otherThreads.length === 1 ? "" : "s"} outside the diff
+            </button>
+          ) : null}
+        </nav>
+        <div className="space-y-2 border-t border-border p-3">
+          <Button className="w-full" size="sm" onClick={() => setSubmitOpen(true)}>
+            <Icon name="Sent" />
+            {data.pending.length > 0 ? `Submit review (${data.pending.length})` : "Submit review"}
+          </Button>
+          <FixCommentsButton counts={{ mine: myOpenThreads, all: allOpenThreads }} onFix={(scope) => void fixComments(scope)} />
+          <p className="text-[11px] text-muted-foreground">j/k hunks · n/p groups · c comment · v viewed · t files · f focus · 1/2 tabs</p>
+        </div>
+      </aside>
+
+      <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-[1400px] space-y-8 p-4 md:p-6">
+          <FilesNotShown pr={pr} />
+          {groups.map((group, index) => {
+            const groupOpen = isOpen(group.id, viewed.has(group.id));
+            return (
+            <section key={group.id} id={`group-${group.id}`} data-group-id={group.id} className="scroll-mt-4 space-y-3">
+              <header className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-6"
+                    onClick={() => setOpen(group.id, !groupOpen)}
+                    aria-expanded={groupOpen}
+                    aria-label={groupOpen ? `Collapse "${group.title}"` : `Expand "${group.title}"`}
+                  >
+                    <Icon name={groupOpen ? "ChevronDown" : "ChevronRight"} className="size-4" />
+                  </Button>
+                  <span className="text-xs text-muted-foreground">{index + 1}</span>
+                  <button type="button" className="text-left text-base font-semibold" onClick={() => setOpen(group.id, !groupOpen)}>
+                    {group.title}
+                  </button>
+                  <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">{KIND_LABEL[group.kind]}</span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Checkbox checked={viewed.has(group.id)} onCheckedChange={(checked) => setGroupViewed(group, checked === true)} />
+                      Viewed
+                    </label>
+                  </div>
+                </div>
+                <SafeMarkdown content={group.why} className="text-sm text-muted-foreground" />
+              </header>
+              {groupOpen ? (
+                <GroupHunks
+                  group={group}
+                  isFileViewed={(path) => isFileViewed(group.id, path)}
+                  isFileUpdated={(path) => changedSinceViewed.has(path) && !isFileViewed(group.id, path)}
+                  onAskChat={onAskChat}
+                  onFileViewed={(path, value) => setFileViewed(group, path, value)}
+                  isFileOpen={(path) => isOpen(fileKey(group.id, path), isFileViewed(group.id, path))}
+                  onFileOpen={(path, open) => setOpen(fileKey(group.id, path), open)}
+                  hunks={hunks}
+                  files={files}
+                  data={data}
+                  rpc={rpc}
+                  view={view}
+                  draft={draft}
+                  setDraft={setDraft}
+                  activeHunk={activeHunk}
+                  setActiveHunk={setActiveHunk}
+                  storedByGithubId={storedByGithubId}
+                  draftToComment={draftToComment}
+                  openFullFile={(file) => void openFullFile(file)}
+                />
+              ) : null}
+            </section>
+            );
+          })}
+          {looseDrafts.length > 0 ? (
+            <section id="pending-to-check" className="space-y-2">
+              <h2 className="text-base font-semibold">Pending comments to check</h2>
+              <p className="text-sm text-muted-foreground">These can't be posted as they are, because they were written on an older commit or their line left the diff.</p>
+              {looseDrafts.map((comment) => {
+                const canKeep = canKeepDraft(comment, pr.headSha, hunksOfPath(comment.path));
+                return (
+                  <div key={comment.id}>
+                    <div className="font-mono text-xs text-muted-foreground">
+                      {comment.path}:{comment.line}
+                    </div>
+                    <PendingView
+                      rpc={rpc}
+                      prRef={pr.ref}
+                      comment={comment}
+                      keepOnSha={canKeep ? pr.headSha : null}
+                      note={canKeep ? "Check that this line is still right, then keep it." : "This line left the diff. Copy the text if you need it, then delete it."}
+                    />
+                  </div>
+                );
+              })}
+            </section>
+          ) : null}
+          {otherThreads.length > 0 ? (
+            <section id="other-threads" className="space-y-2">
+              <h2 className="text-base font-semibold">Conversations outside the diff</h2>
+              <p className="text-sm text-muted-foreground">Outdated threads or comments on lines the diff no longer shows.</p>
+              {otherThreads.map((thread) => (
+                <div key={thread.id}>
+                  <div className="font-mono text-xs text-muted-foreground">
+                    {thread.path}:{thread.line ?? "?"}
+                  </div>
+                  <ThreadView rpc={rpc} prRef={pr.ref} thread={thread} viewer={pr.viewer} storedByGithubId={storedByGithubId} />
+                </div>
+              ))}
+            </section>
+          ) : null}
+        </div>
+      </div>
+
+      <SubmitReviewDialog open={submitOpen} onOpenChange={setSubmitOpen} data={data} rpc={rpc} blockedDrafts={looseDrafts.length} />
+      <Dialog open={fullFile !== null} onOpenChange={(open) => !open && setFullFile(null)}>
+        <DialogContent className="max-h-[85vh] max-w-5xl overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-sm">{fullFile?.file.path}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-auto">
+            {fullFile?.loading ? (
+              <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+            ) : fullFile?.content != null ? (
+              <SourceCode content={fullFile.content} path={fullFile.file.path} />
+            ) : (
+              <p className="p-4 text-sm text-muted-foreground">No text content for this file.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/** Tints a (positioned) element for 1s, then fades the tint out. An overlay, so the diff's own background can't hide it. */
+function flash(id: string) {
+  const element = document.getElementById(id);
+  if (!element) return;
+  const overlay = document.createElement("div");
+  overlay.className = "pointer-events-none absolute inset-0 z-10 bg-warning/10 ring-1 ring-inset ring-warning/60";
+  element.append(overlay);
+  const animation = overlay.animate([{ opacity: 1 }, { opacity: 1, offset: 0.4 }, { opacity: 0 }], { duration: 2500, easing: "ease-out" });
+  animation.onfinish = () => overlay.remove();
+}
+
+function GroupHunks({
+  group,
+  hunks,
+  files,
+  data,
+  rpc,
+  view,
+  draft,
+  setDraft,
+  activeHunk,
+  setActiveHunk,
+  storedByGithubId,
+  draftToComment,
+  openFullFile,
+  isFileViewed,
+  isFileUpdated,
+  onAskChat,
+  onFileViewed,
+  isFileOpen,
+  onFileOpen,
+}: {
+  group: ReviewGroup;
+  isFileViewed: (path: string) => boolean;
+  isFileUpdated: (path: string) => boolean;
+  onAskChat: (question: string) => Promise<void>;
+  onFileViewed: (path: string, viewed: boolean) => void;
+  isFileOpen: (path: string) => boolean;
+  onFileOpen: (path: string, open: boolean) => void;
+  hunks: Map<string, Hunk>;
+  files: Map<number, PrFile>;
+  data: ReviewGet;
+  rpc: Rpc;
+  view: ViewMode;
+  draft: DraftTarget | null;
+  setDraft: (draft: DraftTarget | null) => void;
+  activeHunk: string | null;
+  setActiveHunk: (id: string) => void;
+  storedByGithubId: Map<number, StoredComment>;
+  draftToComment: (target: DraftTarget, body: string) => DraftComment;
+  openFullFile: (file: PrFile) => void;
+}) {
+  // Hunks of this group, kept together per file in diff order.
+  const byFile = new Map<number, Hunk[]>();
+  for (const id of group.hunkIds) {
+    const hunk = hunks.get(id);
+    if (!hunk) continue;
+    byFile.set(hunk.fileIndex, [...(byFile.get(hunk.fileIndex) ?? []), hunk]);
+  }
+  return (
+    <div className="space-y-4">
+      {[...byFile.entries()].map(([fileIndex, fileHunks]) => {
+        const file = files.get(fileIndex)!;
+        const fileViewed = isFileViewed(file.path);
+        const open = isFileOpen(file.path);
+        const comments =
+          data.pr.threads.filter((thread) => !thread.isResolved && threadVisibleIn(thread, file.path, fileHunks)).length +
+          data.pending.filter((comment) => comment.path === file.path && draftInDiff(comment, data.pr.headSha, fileHunks)).length;
+        return (
+          <div key={fileIndex} id={`file-${fileKey(group.id, file.path)}`} data-file-path={file.path} className="relative scroll-mt-0 rounded-lg border border-border">
+            {/* Sticky so Viewed stays reachable while scrolling a long file. */}
+            <div className={cn("sticky top-0 z-10 rounded-t-lg bg-background", !open && "rounded-b-lg")}>
+              <div
+                className={cn(
+                  "flex items-center gap-2 rounded-t-lg bg-muted/40 px-2 py-1.5 text-xs",
+                  open ? "border-b border-border" : "rounded-b-lg",
+                )}
+              >
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-6"
+                  onClick={() => onFileOpen(file.path, !open)}
+                  aria-expanded={open}
+                  aria-label={open ? `Collapse ${file.path}` : `Expand ${file.path}`}
+                >
+                  <Icon name={open ? "ChevronDown" : "ChevronRight"} className="size-3.5" />
+                </Button>
+                <button
+                  type="button"
+                  className={cn("min-w-0 truncate text-left font-mono", fileViewed && "text-muted-foreground")}
+                  onClick={() => onFileOpen(file.path, !open)}
+                >
+                  {file.previousPath ? `${file.previousPath} → ` : ""}
+                  {file.path}
+                </button>
+                <span className="shrink-0 text-muted-foreground">
+                  <span className="text-success">+{file.additions}</span> <span className="text-destructive">-{file.deletions}</span>
+                </span>
+                {isFileUpdated(file.path) ? (
+                  <span className="shrink-0 rounded-full border border-warning/60 bg-warning/10 px-1.5 text-warning-text" title="Changed since you marked it viewed">
+                    updated
+                  </span>
+                ) : null}
+                {comments > 0 ? (
+                  <span
+                    className="flex shrink-0 items-center gap-1 rounded-full border border-border px-1.5 text-muted-foreground"
+                    title={`${comments} open comment${comments === 1 ? "" : "s"}`}
+                  >
+                    <Icon name="MessageSquare" className="size-3" />
+                    {comments}
+                  </span>
+                ) : null}
+                <div className="ml-auto flex shrink-0 items-center gap-1">
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => openFullFile(file)}>
+                    Full file
+                  </Button>
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-0.5",
+                      fileViewed ? "border-border bg-state-active text-foreground" : "border-border text-muted-foreground hover:bg-state-hover",
+                    )}
+                  >
+                    <Checkbox checked={fileViewed} onCheckedChange={(checked) => onFileViewed(file.path, checked === true)} />
+                    Viewed
+                  </label>
+                </div>
+              </div>
+            </div>
+            {open ? (
+            <div className="overflow-hidden rounded-b-lg">
+            {fileHunks
+              .sort((a, b) => file.hunkIds.indexOf(a.id) - file.hunkIds.indexOf(b.id))
+              .map((hunk) => (
+                <HunkDiff
+                  key={hunk.id}
+                  hunk={hunk}
+                  file={file}
+                  data={data}
+                  rpc={rpc}
+                  view={view}
+                  draft={draft?.hunkId === hunk.id ? draft : null}
+                  setDraft={setDraft}
+                  active={activeHunk === hunk.id}
+                  onActivate={() => setActiveHunk(hunk.id)}
+                  storedByGithubId={storedByGithubId}
+                  draftToComment={draftToComment}
+                  onAskChat={onAskChat}
+                />
+              ))}
+            </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Unchanged-line gaps between hunks: transparent and muted with a leading "⋯",
+ * so they read as skipped context, not as the end of the file.
+ */
+const SEPARATOR_CSS = `
+[data-separator=line-info], [data-separator=line-info-basic] {
+  background-color: transparent;
+  border-block: 1px dashed color-mix(in srgb, var(--diffs-fg-number) 30%, transparent);
+}
+[data-separator] [data-separator-wrapper],
+[data-separator] [data-separator-content],
+[data-separator] [data-expand-button] {
+  background-color: transparent !important;
+}
+[data-separator] [data-separator-content] {
+  color: var(--diffs-fg-number);
+  font-style: italic;
+  opacity: 0.75;
+}
+[data-unmodified-lines]::before {
+  content: "⋯  ";
+  font-style: normal;
+}
+[data-separator] [data-expand-button] {
+  display: none;
+}
+`;
+
+/**
+ * Softer added/removed backgrounds than the @pierre/diffs defaults, which
+ * stack line + word tints so dim tokens (comments) become unreadable.
+ */
+const SOFT_CHANGE_BG = Object.fromEntries(
+  (["addition", "deletion"] as const).flatMap((kind) => [
+    [`--diffs-bg-${kind}-override`, `light-dark(color-mix(in lab, var(--diffs-bg) 93%, var(--diffs-${kind}-base)), color-mix(in lab, var(--diffs-bg) 90%, var(--diffs-${kind}-base)))`],
+    [`--diffs-bg-${kind}-emphasis-override`, `light-dark(rgb(from var(--diffs-${kind}-base) r g b / .12), rgb(from var(--diffs-${kind}-base) r g b / .12))`],
+  ]),
+);
+
+/** File text by commit, shared by a file's hunks. Commits don't change, so entries stay valid. */
+const fileTextCache = new Map<string, Promise<string | null>>();
+
+function fetchFileText(rpc: Rpc, ref: ReviewGet["pr"]["ref"], path: string, sha: string): Promise<string | null> {
+  const key = `${prRefKey(ref)}:${sha}:${path}`;
+  const cached = fileTextCache.get(key);
+  if (cached) return cached;
+  const request = rpc.call("file.contentAt", { ref, path, sha }).then(({ content }) => content);
+  // A failed fetch only costs highlighting accuracy, so let the next mount retry.
+  request.catch(() => fileTextCache.delete(key));
+  fileTextCache.set(key, request);
+  return request;
+}
+
+/**
+ * The hunk's parsed diff, carrying the code above it once that has loaded.
+ * Until then, or if it can't load, the hunk is highlighted on its own.
+ */
+function useHunkFileDiff(rpc: Rpc, pr: ReviewGet["pr"], file: PrFile, hunk: Hunk): FileDiffMetadata {
+  const range = hunkRange(hunk);
+  // Added and removed files are one hunk from line 1, as is any hunk at the top of a file.
+  const needsContext = file.status !== "added" && file.status !== "removed" && range.newStart > 1;
+  const contextKey = needsContext ? `${pr.headSha}:${file.path}` : null;
+  const [loaded, setLoaded] = useState<{ key: string; text: string | null } | null>(null);
+
+  useEffect(() => {
+    if (contextKey === null) return;
+    let cancelled = false;
+    fetchFileText(rpc, pr.ref, file.path, pr.headSha)
+      .then((text) => {
+        if (!cancelled) setLoaded({ key: contextKey, text });
+      })
+      .catch(() => {
+        // Keep the hunk-only highlighting.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contextKey, file.path, pr.headSha, pr.ref, rpc]);
+
+  const text = loaded !== null && loaded.key === contextKey ? loaded.text : null;
+  return useMemo(() => {
+    const fileHunks = pr.hunks.filter((candidate) => candidate.fileIndex === file.index);
+    return hunkFileDiff(file, fileHunks, hunk, text);
+  }, [file, hunk, pr.hunks, text]);
+}
+
+function HunkDiff({
+  hunk,
+  file,
+  data,
+  rpc,
+  view,
+  draft,
+  setDraft,
+  active,
+  onActivate,
+  storedByGithubId,
+  draftToComment,
+  onAskChat,
+}: {
+  onAskChat: (question: string) => Promise<void>;
+  hunk: Hunk;
+  file: PrFile;
+  data: ReviewGet;
+  rpc: Rpc;
+  view: ViewMode;
+  draft: DraftTarget | null;
+  setDraft: (draft: DraftTarget | null) => void;
+  active: boolean;
+  onActivate: () => void;
+  storedByGithubId: Map<number, StoredComment>;
+  draftToComment: (target: DraftTarget, body: string) => DraftComment;
+}) {
+  const { pr } = data;
+  const codeTheme = useCodeTheme();
+  const [selection, setSelection] = useState<SelectedLineRange | null>(null);
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const fileDiff = useHunkFileDiff(rpc, pr, file, hunk);
+
+  const annotations = useMemo(() => {
+    const byLine = new Map<string, { side: "LEFT" | "RIGHT"; line: number; items: AnnotationItem[] }>();
+    const add = (side: "LEFT" | "RIGHT", line: number, item: AnnotationItem) => {
+      const key = `${side}:${line}`;
+      const entry = byLine.get(key) ?? { side, line, items: [] };
+      entry.items.push(item);
+      byLine.set(key, entry);
+    };
+    for (const thread of pr.threads) {
+      if (threadVisibleIn(thread, file.path, [hunk])) add(thread.side, thread.line!, { kind: "thread", thread });
+    }
+    for (const comment of data.pending) {
+      if (comment.path === file.path && draftInDiff(comment, pr.headSha, [hunk])) add(comment.side, comment.line, { kind: "pending", comment });
+    }
+    if (draft) {
+      const side = toSide(draft.range.endSide ?? draft.range.side);
+      add(side, Math.max(draft.range.start, draft.range.end), { kind: "draft", draft });
+    }
+    return [...byLine.values()].map(
+      (entry): DiffLineAnnotation<AnnotationItem[]> => ({
+        side: toAnnotationSide(entry.side),
+        lineNumber: entry.line,
+        metadata: entry.items,
+      }),
+    );
+  }, [data.pending, draft, file.path, hunk, pr.threads]);
+
+  const options = useMemo(
+    () => ({
+      diffStyle: view,
+      overflow: "wrap" as const,
+      disableFileHeader: true,
+      themeType: codeTheme.mode,
+      theme: codeTheme.name as never,
+      enableGutterUtility: true,
+      enableLineSelection: true,
+      // Only show lines from the hunk: GitHub rejects comments on the ones around it.
+      collapsedContextThreshold: 0,
+      lineHoverHighlight: "number" as const,
+      unsafeCSS: SEPARATOR_CSS,
+      onLineSelected: (range: SelectedLineRange | null) => setSelection(range),
+      onGutterUtilityClick: (range: SelectedLineRange) => {
+        const current = selectionRef.current;
+        const useSelection =
+          current !== null && range.start >= Math.min(current.start, current.end) && range.start <= Math.max(current.start, current.end);
+        setDraft({ headSha: pr.headSha, hunkId: hunk.id, path: file.path, range: useSelection ? current : range });
+      },
+    }),
+    [codeTheme.mode, codeTheme.name, file.path, hunk.id, pr.headSha, setDraft, view],
+  );
+
+  const renderAnnotation = useCallback(
+    (annotation: DiffLineAnnotation<AnnotationItem[]>) => (
+      <div className="px-3 py-1">
+        {annotation.metadata.map((item) => {
+          if (item.kind === "thread") {
+            return (
+              <ThreadView key={item.thread.id} rpc={rpc} prRef={pr.ref} thread={item.thread} viewer={pr.viewer} storedByGithubId={storedByGithubId} />
+            );
+          }
+          if (item.kind === "pending") return <PendingView key={item.comment.id} rpc={rpc} prRef={pr.ref} comment={item.comment} />;
+          const start = Math.min(item.draft.range.start, item.draft.range.end);
+          const end = Math.max(item.draft.range.start, item.draft.range.end);
+          const side = toSide(item.draft.range.endSide ?? item.draft.range.side);
+          const isNewSide = side === "RIGHT";
+          return (
+            <div key="draft" className="my-2 max-w-3xl font-sans">
+              <div className="mb-1 text-xs text-muted-foreground">
+                Comment on {start === end ? `line ${end}` : `lines ${start}–${end}`}
+              </div>
+              <Composer
+                placeholder="Leave a comment (⌘/Ctrl+Enter to add to your review)"
+                suggestion={isNewSide ? sideLines([hunk], "RIGHT", start, end) : null}
+                onCancel={() => setDraft(null)}
+                actions={[
+                  {
+                    label: "Ask in chat",
+                    run: async (body) => {
+                      const code = sideLines([hunk], side, start, end);
+                      const where = `\`${item.draft.path}\` ${start === end ? `line ${end}` : `lines ${start}-${end}`} (${isNewSide ? "new" : "old"} side)`;
+                      await onAskChat(
+                        [`About ${where}:`, ...(code ? ["```", ...code, "```"] : []), "", body].join("\n"),
+                      );
+                      setDraft(null);
+                    },
+                  },
+                  {
+                    label: "Add single comment",
+                    run: async (body) => {
+                      await rpc.call("comment.single", { ref: pr.ref, draft: draftToComment(item.draft, body) });
+                      setDraft(null);
+                      toast.success("Comment posted to GitHub");
+                    },
+                  },
+                  {
+                    label: data.pending.length > 0 ? "Add to review" : "Start a review",
+                    primary: true,
+                    run: async (body) => {
+                      await rpc.call("comment.pendingAdd", { ref: pr.ref, draft: draftToComment(item.draft, body) });
+                      setDraft(null);
+                    },
+                  },
+                ]}
+              />
+            </div>
+          );
+        })}
+      </div>
+    ),
+    [data.pending.length, draftToComment, hunk, onAskChat, pr.ref, pr.viewer, rpc, setDraft, storedByGithubId],
+  );
+
+  return (
+    <div
+      id={`hunk-${hunk.id}`}
+      onPointerDown={onActivate}
+      className={cn("relative scroll-mt-12 border-b border-dashed border-border last:border-b-0", active && "ring-1 ring-inset ring-ring")}
+      style={{ "--diffs-font-size": "12px", "--diffs-line-height": "18px", ...SOFT_CHANGE_BG } as React.CSSProperties}
+    >
+      <FileDiff<AnnotationItem[]>
+        fileDiff={fileDiff}
+        options={options}
+        lineAnnotations={annotations}
+        selectedLines={selection}
+        renderAnnotation={renderAnnotation}
+      />
+    </div>
+  );
+}
+
+function SubmitReviewDialog({
+  open,
+  onOpenChange,
+  data,
+  rpc,
+  blockedDrafts,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  data: ReviewGet;
+  rpc: Rpc;
+  blockedDrafts: number;
+}) {
+  const [body, setBody] = useState("");
+  const [event, setEvent] = useState<"COMMENT" | "APPROVE" | "REQUEST_CHANGES">("COMMENT");
+  const [busy, setBusy] = useState(false);
+  const [dictating, setDictating] = useState(false);
+  const own = data.pr.isOwnPr;
+  const submittedEvent = own ? "COMMENT" : event;
+  const { files: patchless, unlisted } = filesNotShown(data.pr);
+  const notShown = patchless.length + unlisted;
+  // GitHub only accepts an empty review when it is an approval.
+  const canSubmit = blockedDrafts === 0 && (submittedEvent === "APPROVE" || data.pending.length > 0 || body.trim() !== "");
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const { posted } = await rpc.call("review.submit", { ref: data.pr.ref, headSha: data.pr.headSha, event: submittedEvent, body });
+      toast.success(posted === 0 && submittedEvent === "APPROVE" ? "Pull request approved" : `Review submitted with ${posted} comment${posted === 1 ? "" : "s"}`);
+      setBody("");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const options = [
+    { value: "COMMENT" as const, label: "Comment", hint: "General feedback without explicit approval." },
+    { value: "APPROVE" as const, label: "Approve", hint: "Approve merging these changes." },
+    { value: "REQUEST_CHANGES" as const, label: "Request changes", hint: "Feedback that must be addressed before merging." },
+  ];
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Submit review</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          {blockedDrafts > 0
+            ? `${blockedDrafts} pending comment${blockedDrafts === 1 ? " needs" : "s need"} checking first. Keep or delete ${blockedDrafts === 1 ? "it" : "them"} under "Pending comments to check" before you submit.`
+            : `${data.pending.length} pending comment${data.pending.length === 1 ? "" : "s"} will be posted to GitHub.`}
+        </p>
+        <VoiceInputTextarea
+          value={body}
+          onValueChange={setBody}
+          onVoiceInputActiveChange={setDictating}
+          placeholder="Leave a summary (optional)"
+          className={cn(TEXTAREA_CLASS, "min-h-24")}
+        />
+        {submittedEvent === "APPROVE" && notShown > 0 ? (
+          <p className="flex items-start gap-2 text-sm text-warning-text">
+            <Icon name="AlertTriangle" className="mt-0.5 size-4 shrink-0" />
+            {notShown === 1 ? "1 changed file isn't" : `${notShown} changed files aren't`} shown in this diff. Check {notShown === 1 ? "it" : "them"} on GitHub before you approve.
+          </p>
+        ) : null}
+        <div className="space-y-1.5">
+          {options.map((option) => {
+            const disabled = own && option.value !== "COMMENT";
+            return (
+              <label key={option.value} className={cn("flex items-start gap-2 text-sm", disabled && "opacity-50")}>
+                <input
+                  type="radio"
+                  name="review-event"
+                  className="mt-1"
+                  disabled={disabled}
+                  checked={submittedEvent === option.value}
+                  onChange={() => setEvent(option.value)}
+                />
+                <span>
+                  <span className="font-medium">{option.label}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {disabled ? "GitHub doesn't allow this on your own pull request." : option.hint}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => void submit()} disabled={busy || dictating || !canSubmit}>
+            Submit review
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Without this, a change GitHub gives no patch for would have no sign anywhere in the review. */
+function FilesNotShown({ pr }: { pr: ReviewGet["pr"] }) {
+  const { files, unlisted } = filesNotShown(pr);
+  if (files.length === 0 && unlisted === 0) return null;
+  return (
+    <section className="space-y-2 rounded-lg border border-warning/50 bg-warning/5 p-3 text-sm">
+      <h2 className="flex items-center gap-2 font-medium">
+        <Icon name="AlertTriangle" className="size-4 shrink-0" />
+        Not shown in this diff
+      </h2>
+      <p className="text-xs text-muted-foreground">
+        GitHub gives no patch for binary, very large, or rename-only changes.{" "}
+        <a href={`${pr.url}/files`} target="_blank" rel="noreferrer" className="underline">
+          Check them on GitHub
+        </a>
+        .
+      </p>
+      <ul className="space-y-0.5 font-mono text-xs">
+        {files.map((file) => (
+          <li key={file.index}>
+            {file.previousPath ? `${file.previousPath} → ` : ""}
+            {file.path} <span className="text-muted-foreground">({file.status})</span>
+          </li>
+        ))}
+        {unlisted > 0 ? <li className="font-sans text-muted-foreground">and {unlisted} more that GitHub's listing left out</li> : null}
+      </ul>
+    </section>
+  );
+}

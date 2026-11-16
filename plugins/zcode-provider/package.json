@@ -1,0 +1,69 @@
+{
+  "name": "bb-plugin-zcode-provider",
+  "version": "0.2.3",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Run your installed ZCode agent with a Z.ai Coding Plan inside bb on macOS.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emlevsky777/bb-plugin-zcode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/emlevsky777/bb-plugin-zcode/issues"
+  },
+  "engines": {
+    "node": "^24.22.0 || ^26.0.0",
+    "bb": ">=0.47.1",
+    "bbPluginSdk": ">=0.6.79"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "import": "./dist/plugin.js"
+    },
+    "./host": {
+      "types": "./dist/host.d.ts",
+      "import": "./dist/host.js"
+    }
+  },
+  "bb": {
+    "name": "ZCode Provider",
+    "description": "Use your Z.ai GLM Coding Plan in bb through your installed ZCode agent. macOS only.",
+    "branding": {
+      "icon": "./assets/zcode.svg"
+    },
+    "server": "./src/plugin.ts",
+    "host": "./src/host.ts"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "skills",
+    "LICENSE",
+    "NOTICE",
+    "LICENSES"
+  ],
+  "scripts": {
+    "build": "node scripts/provider/build.mjs",
+    "typecheck": "node scripts/provider/build.mjs --noEmit",
+    "test": "node scripts/provider/test.mjs",
+    "test:artifact": "ZCODE_TEST_ARTIFACT=1 node scripts/provider/test.mjs"
+  },
+  "dependencies": {
+    "@get-bb/plugin-sdk": "0.6.79"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "7.6.13",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.17",
+    "better-sqlite3": "^12.10.0",
+    "cron-parser": "^5.5.0",
+    "hono": "4.13.12",
+    "typescript": "5.9.3"
+  }
+}

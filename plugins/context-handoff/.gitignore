@@ -1,0 +1,6 @@
+dist/
+node_modules/
+.handoff/
+.remember/
+.worktrees/
+CURRENT_STATE.md

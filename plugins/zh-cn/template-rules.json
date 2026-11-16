@@ -1,0 +1,219 @@
+{
+  "Showing the first {0} changed file{1}; shown slice: {2} insertion{3}, {4} deletion{5}": {
+    "englishPluralSuffixes": [
+      "{1}",
+      "{3}",
+      "{5}"
+    ]
+  },
+  "{0} repo{1} · synced {2}": {
+    "englishPluralSuffixes": [
+      "{1}"
+    ]
+  },
+  "{0} in ~/.bb-dev whose source checkout no longer exists. Servers still running from them are stopped before removal.": {
+    "placeholderUnits": {
+      "{0}": {
+        "development instance": "个开发实例",
+        "development instances": "个开发实例"
+      }
+    }
+  },
+  "{0} of {1} or more across {2}. Smaller files and conversation history are kept.": {
+    "placeholderUnits": {
+      "{0}": {
+        "file": "个文件",
+        "files": "个文件"
+      },
+      "{2}": {
+        "archived thread": "个已归档 thread",
+        "archived threads": "个已归档 thread"
+      }
+    }
+  },
+  "{0} of {1} or more sit in the thread storage of {2}. Deleting them keeps smaller files like reports, and conversation history isn’t affected.": {
+    "placeholderUnits": {
+      "{0}": {
+        "file": "个文件",
+        "files": "个文件"
+      },
+      "{2}": {
+        "archived thread": "个已归档 thread",
+        "archived threads": "个已归档 thread"
+      }
+    }
+  },
+  "{0} removed · {1} freed": {
+    "placeholderUnits": {
+      "{0}": {
+        "instance": "个实例",
+        "instances": "个实例"
+      }
+    }
+  },
+  "{0} running at the last scan {1} stopped first.": {
+    "placeholderUnits": {
+      "{0}": {
+        "dev server": "个开发服务器",
+        "dev servers": "个开发服务器"
+      }
+    },
+    "placeholderChoices": {
+      "{1}": {
+        "is": "会",
+        "are": "会"
+      }
+    }
+  },
+  "Clear stored files of any size from {0}. Pinned and running threads are skipped. Conversations and uploaded attachments are kept.": {
+    "placeholderUnits": {
+      "{0}": {
+        "archived thread": "个已归档 thread",
+        "archived threads": "个已归档 thread"
+      }
+    }
+  },
+  "Delete {0} of stored files from {1} on this machine. Conversations and uploaded attachments are kept. Pinned and running threads are skipped. This can’t be undone.": {
+    "placeholderUnits": {
+      "{1}": {
+        "archived thread": "个已归档 thread",
+        "archived threads": "个已归档 thread"
+      }
+    }
+  },
+  "Delete {0} of stored files from {1} on this machine. This includes small files. Conversations and uploaded attachments will be kept. Pinned and running threads are skipped. This can’t be undone.": {
+    "placeholderUnits": {
+      "{1}": {
+        "archived thread": "个已归档 thread",
+        "archived threads": "个已归档 thread"
+      }
+    }
+  },
+  "Delete files of {0} or more from {1}. Smaller files and conversation history will be kept. Pinned threads are skipped. This can’t be undone.": {
+    "placeholderUnits": {
+      "{1}": {
+        "archived thread": "个已归档 thread",
+        "archived threads": "个已归档 thread"
+      }
+    }
+  },
+  "Remove {0} ({1})?": {
+    "placeholderUnits": {
+      "{0}": {
+        "development instance": "个开发实例",
+        "development instances": "个开发实例"
+      }
+    }
+  },
+  "Remove {0} created outside BB ({1})?": {
+    "placeholderUnits": {
+      "{0}": {
+        "worktree": "个 worktree",
+        "worktrees": "个 worktree"
+      }
+    }
+  },
+  "Used by {0} task{1} — removing it detaches them.": {
+    "englishPluralSuffixes": [
+      "{1}"
+    ]
+  },
+  "{0} for {1}": {
+    "placeholderChoices": {
+      "{0}": {
+        "Default shortcut": "默认快捷键",
+        "Default shortcuts": "默认快捷键"
+      }
+    }
+  },
+  "{0} {1} failed": {
+    "placeholderChoices": {
+      "{0}": {
+        "Enabling": "启用",
+        "Disabling": "停用"
+      }
+    }
+  },
+  "{0} environment {1}: {2}": {
+    "placeholderChoices": {
+      "{1}": {
+        "variable": "变量",
+        "variables": "变量"
+      }
+    }
+  },
+  "{0} {1} diff": {
+    "placeholderChoices": {
+      "{0}": {
+        "Collapse": "折叠",
+        "Expand": "展开"
+      }
+    }
+  },
+  "No {0} in the tracked repos.": {
+    "placeholderChoices": {
+      "{0}": {
+        "issues": "议题",
+        "pull requests": "PR"
+      }
+    }
+  },
+  "No {0} match this filter.": {
+    "placeholderChoices": {
+      "{0}": {
+        "issues": "议题",
+        "pull requests": "PR"
+      }
+    }
+  },
+  "{0} surface": {
+    "placeholderChoices": {
+      "{0}": {
+        "Previous": "上一个",
+        "Next": "下一个"
+      }
+    }
+  },
+  "Delete {0} large {1} ({2})?": {
+    "placeholderChoices": {
+      "{1}": {
+        "file": "文件",
+        "files": "文件"
+      }
+    }
+  },
+  "{0} swatch{1}": {
+    "placeholderChoices": {
+      "{1}": {
+        ", has a sidebar override": "，已设置侧边栏覆盖值"
+      }
+    }
+  },
+  "Automation \"{0}\" requires a prompt before {1}. Edit it and add a prompt first.": {
+    "placeholderChoices": {
+      "{1}": {
+        "it can run": "运行",
+        "it can be paused": "暂停",
+        "it can be resumed": "恢复",
+        "other fields can be updated": "更新其他字段"
+      }
+    }
+  },
+  "Automation \"{0}\" has invalid stored data and cannot be {1}. Delete it and recreate it.": {
+    "placeholderChoices": {
+      "{1}": {
+        "run": "运行",
+        "paused": "暂停",
+        "resumed": "恢复",
+        "updated": "更新"
+      }
+    }
+  },
+  "bb cloud can't transcribe {0} audio; use WebM, Ogg, MP4, MP3, WAV, FLAC, or AAC": {
+    "placeholderChoices": {
+      "{0}": {
+        "this": "未知类型"
+      }
+    }
+  }
+}

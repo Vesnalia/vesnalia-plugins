@@ -1,0 +1,709 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  accountSummary,
+  askForProject,
+  newestFirst,
+  projectRead,
+  composerProject,
+  picksOnSelect,
+  headerStatus,
+  listText,
+  noLoginFound,
+  projectsByAccount,
+  outText,
+  projectName,
+  retryDelayMs,
+  sharedWith,
+  signalsBack,
+  windowForecast,
+} from "./ui.js";
+import { tenAccounts } from "./list-fixture.js";
+
+const ok = { problem: null };
+const unauth = { problem: { kind: "unauthenticated" as const } };
+const failed = { problem: { kind: "error" as const, message: "boom" } };
+
+describe("noLoginFound", () => {
+  it("is true only when every listed account lacks a login", () => {
+    expect(noLoginFound([unauth])).toBe(true);
+    expect(noLoginFound([unauth, unauth])).toBe(true);
+    expect(noLoginFound([unauth, ok])).toBe(false);
+    expect(noLoginFound([ok])).toBe(false);
+    // A query that failed is still a login.
+    expect(noLoginFound([unauth, failed])).toBe(false);
+    // The default account is always listed, so this never happens; if it
+    // did, there is nothing to log in to either.
+    expect(noLoginFound([])).toBe(true);
+  });
+});
+
+describe("sharedWith", () => {
+  const main = { name: "main", accountUuid: "u-1" };
+  const team = { name: "team", accountUuid: "u-1" };
+  const work = { name: "work", accountUuid: "u-2" };
+  const bare = { name: "bare", accountUuid: null };
+  const other = { name: "other", accountUuid: null };
+  it("names another account with the same Claude account", () => {
+    expect(sharedWith(team, [main, team, work])).toBe("main");
+    expect(sharedWith(main, [main, team, work])).toBe("team");
+    expect(sharedWith(work, [main, team, work])).toBeNull();
+  });
+  it("takes accounts without a known Claude account as different ones", () => {
+    expect(sharedWith(bare, [bare, other, main])).toBeNull();
+  });
+});
+
+describe("projectName", () => {
+  const projects = [{ id: "proj-1", name: "Website" }];
+  it("names the project of a move, or says it is gone", () => {
+    expect(projectName(projects, "proj-1")).toBe("Website");
+    expect(projectName(projects, "proj-9")).toBe("a project that is gone");
+  });
+});
+
+describe("headerStatus", () => {
+  const NOW = 1_000_000;
+  const win = (usedPercent: number, resetsAt: number | null = null) => ({
+    usedPercent,
+    resetsAt,
+  });
+  const usage = (
+    session: number,
+    weekly: number,
+    fable: number,
+    blocked = false,
+  ) => ({
+    blocked,
+    session: win(session),
+    weekly: win(weekly),
+    models: { Fable: win(fable) },
+  });
+  type Usage = Omit<ReturnType<typeof usage>, "models"> & {
+    models: Record<string, ReturnType<typeof win>>;
+    unknown?: boolean;
+  };
+  const account = (name: string, u: Usage | null) => ({ name, usage: u });
+  const base = {
+    defaultAccountName: "main",
+    preferredModel: "Fable",
+    bestAccount: "work" as string | null,
+    accounts: [
+      account("main", usage(10, 40, 100)),
+      account("work", usage(5, 20, 30)),
+      account("busy", usage(85, 20, 30)),
+      account("fresh", null),
+    ],
+    projects: [
+      { id: "p-default", account: null, owned: false, external: false },
+      { id: "p-work", account: "work", owned: true, external: false },
+      { id: "p-busy", account: "busy", owned: true, external: false },
+      { id: "p-fresh", account: "fresh", owned: true, external: false },
+      { id: "p-ext", account: null, owned: false, external: true },
+      { id: "p-gone", account: null, owned: true, external: false },
+    ],
+  };
+
+  it("names the project's account and how it stands for the preferred model", () => {
+    expect(headerStatus(base, "p-default", NOW)).toEqual({
+      account: "main",
+      tone: "out",
+      best: "work",
+      canSwitch: true,
+      external: false,
+    });
+    expect(headerStatus(base, "p-work", NOW)).toEqual({
+      account: "work",
+      tone: "ok",
+      best: "work",
+      canSwitch: false,
+      external: false,
+    });
+    expect(headerStatus(base, "p-busy", NOW)).toMatchObject({
+      account: "busy",
+      tone: "tight",
+    });
+    expect(headerStatus(base, "p-fresh", NOW)).toMatchObject({
+      account: "fresh",
+      tone: "unknown",
+    });
+  });
+
+  const only = (u: Usage, preferredModel = "Fable") => ({
+    ...base,
+    preferredModel,
+    accounts: [account("main", u)],
+  });
+  const tone = (u: Usage, preferredModel?: string) =>
+    headerStatus(only(u, preferredModel), "p-default", NOW)?.tone;
+
+  it("turns amber at exactly 80 % and red at exactly 100 %", () => {
+    expect(tone(usage(79, 0, 0))).toBe("ok");
+    expect(tone(usage(80, 0, 0))).toBe("tight");
+    expect(tone(usage(0, 99.9, 0))).toBe("tight");
+    expect(tone(usage(0, 0, 100))).toBe("out");
+  });
+
+  it("reads the preferred model's window whatever its case", () => {
+    expect(tone(usage(0, 0, 100), "fable")).toBe("out");
+    expect(tone(usage(0, 0, 100), "Opus")).toBe("ok");
+  });
+
+  it("shows a lock as out, and a measurement with a missing window as not measured", () => {
+    expect(tone(usage(0, 0, 0, true))).toBe("out");
+    expect(tone({ ...usage(0, 100, 0, true), unknown: true })).toBe("unknown");
+  });
+
+  it("says so when the project's account has no login", () => {
+    const loggedOut = {
+      ...base,
+      accounts: [
+        { name: "main", usage: null, problem: { kind: "unauthenticated" } },
+      ],
+    };
+    expect(headerStatus(loggedOut, "p-default", NOW)?.tone).toBe("nologin");
+  });
+
+  it("keeps showing the numbers the plugin acts on when the last query failed", () => {
+    const failed = (u: Usage) => ({
+      ...base,
+      accounts: [{ name: "main", usage: u, problem: { kind: "error" } }],
+    });
+    expect(
+      headerStatus(failed(usage(100, 10, 10)), "p-default", NOW)?.tone,
+    ).toBe("out");
+    expect(
+      headerStatus(failed(usage(10, 10, 10)), "p-default", NOW)?.tone,
+    ).toBe("ok");
+  });
+
+  it("offers no switch when an older server sends no best account", () => {
+    const { bestAccount: _, ...older } = base;
+    expect(headerStatus(older as typeof base, "p-default", NOW)).toMatchObject({
+      best: null,
+      canSwitch: false,
+    });
+  });
+
+  it("ignores a model window with no name when no model is preferred, like the plugin", () => {
+    const blank = { ...usage(10, 10, 0), models: { "": win(100) } };
+    expect(tone(blank, "")).toBe("ok");
+  });
+
+  it("counts a window whose reset has passed as free, like the switch does", () => {
+    const reset = {
+      ...usage(0, 0, 0),
+      session: win(100, NOW - 60_000),
+      models: { Fable: win(100, NOW) },
+    };
+    expect(tone(reset)).toBe("ok");
+    expect(tone({ ...reset, session: win(100, NOW + 60_000) })).toBe("out");
+  });
+
+  it("offers no switch where the plugin may not act, and says when there is nothing better", () => {
+    expect(headerStatus(base, "p-ext", NOW)).toEqual({
+      account: null,
+      tone: "unknown",
+      best: "work",
+      canSwitch: false,
+      external: true,
+    });
+    expect(headerStatus(base, "p-gone", NOW)).toMatchObject({
+      account: null,
+      canSwitch: true,
+      external: false,
+    });
+    // Nothing measured yet: a project on a vanished account is still the plugin's to change.
+    expect(
+      headerStatus({ ...base, bestAccount: null }, "p-gone", NOW),
+    ).toMatchObject({
+      account: null,
+      canSwitch: false,
+      external: false,
+    });
+    expect(
+      headerStatus({ ...base, bestAccount: null }, "p-default", NOW),
+    ).toMatchObject({
+      canSwitch: false,
+    });
+    expect(headerStatus(base, "p-missing", NOW)).toBeNull();
+  });
+});
+
+describe("windowForecast", () => {
+  const runsOut = { kind: "runs-out" as const, at: 1, percentPerDay: 1 };
+  const lasts = { kind: "lasts" as const, until: 1, percentPerDay: 1 };
+  const forecasts = { main: { weekly: lasts, Fable: runsOut } };
+
+  it("takes the preferred model's window when the account has one, else the weekly one", () => {
+    expect(windowForecast(forecasts, "main", "Fable")).toEqual([
+      "Fable",
+      runsOut,
+    ]);
+    expect(windowForecast(forecasts, "main", "fable")).toEqual([
+      "Fable",
+      runsOut,
+    ]);
+    expect(windowForecast(forecasts, "main", "Opus")).toEqual([
+      "weekly",
+      lasts,
+    ]);
+    expect(windowForecast(forecasts, "main", "")).toEqual(["weekly", lasts]);
+    expect(windowForecast(forecasts, "gone", "Fable")).toBeNull();
+    expect(windowForecast(undefined, "main", "Fable")).toBeNull();
+  });
+});
+
+describe("retryDelayMs", () => {
+  it("retries a read the screen needs soon, then backs off to once a minute", () => {
+    expect([0, 1, 2, 3, 4, 5, 50].map(retryDelayMs)).toEqual([
+      2_000, 5_000, 15_000, 30_000, 60_000, 60_000, 60_000,
+    ]);
+  });
+});
+
+describe("composerProject", () => {
+  const newThread = (projectId: string | null) =>
+    ({ kind: "new-thread", projectId }) as const;
+
+  it("is the project picked in the new-thread composer", () => {
+    expect(composerProject(newThread("proj_a"), undefined)).toBe("proj_a");
+  });
+
+  it("is null until the composer has resolved its project", () => {
+    expect(composerProject(newThread(null), undefined)).toBeNull();
+  });
+
+  it("is null in any composer that is not the new-thread one", () => {
+    expect(composerProject({ kind: "thread", threadId: "thr_a" }, undefined)).toBeNull();
+    expect(
+      composerProject(
+        { kind: "queued-message", threadId: "thr_a", queuedMessageId: "qm_a" },
+        undefined,
+      ),
+    ).toBeNull();
+    // A composer kind a later bb adds, even one naming a project.
+    expect(
+      composerProject({ kind: "side-chat", projectId: "proj_a" } as never, undefined),
+    ).toBeNull();
+  });
+
+  it("is null when the composer says the new thread is not a Claude Code one", () => {
+    expect(
+      composerProject(newThread("proj_a"), { providerId: "codex" }),
+    ).toBeNull();
+  });
+
+  it("stays when the composer has picked Claude Code, has no provider yet, or no pickers", () => {
+    expect(
+      composerProject(newThread("proj_a"), { providerId: "claude-code" }),
+    ).toBe("proj_a");
+    expect(composerProject(newThread("proj_a"), {})).toBe("proj_a");
+    expect(composerProject(newThread("proj_a"), null)).toBe("proj_a");
+  });
+});
+
+describe("picksOnSelect", () => {
+  it("in a thread's header, a click on the project's own account does nothing", () => {
+    expect(picksOnSelect("main", "main", false)).toBe(false);
+    expect(picksOnSelect("work", "main", false)).toBe(true);
+  });
+
+  // A new project left unpicked moves to the best account after its first
+  // turn; picking the shown account in the composer keeps it there.
+  it("in the new-thread composer, a click on the shown account picks it too", () => {
+    expect(picksOnSelect("main", "main", true)).toBe(true);
+    expect(picksOnSelect("work", "main", true)).toBe(true);
+  });
+});
+
+describe("askForProject", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("asks once, and nothing more when the read worked", async () => {
+    vi.useFakeTimers();
+    const read = vi.fn(async () => true);
+    const failed = vi.fn();
+    askForProject(read, 0, failed);
+    await vi.runAllTimersAsync();
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(failed).not.toHaveBeenCalled();
+  });
+
+  it("after a failed read, calls for another once the back-off for that many failures has passed", async () => {
+    vi.useFakeTimers();
+    const failed = vi.fn();
+    askForProject(async () => false, 1, failed);
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(failed).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(failed).toHaveBeenCalledTimes(1);
+  });
+
+  it("takes a read that throws for a failed one", async () => {
+    vi.useFakeTimers();
+    const failed = vi.fn();
+    askForProject(() => Promise.reject(new Error("HTTP 503")), 0, failed);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(failed).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls for nothing once its view is gone, before or after the read fails", async () => {
+    vi.useFakeTimers();
+    let fail: (worked: boolean) => void = () => {};
+    const failed = vi.fn();
+    const stop = askForProject(
+      () => new Promise<boolean>((resolve) => (fail = resolve)),
+      0,
+      failed,
+    );
+    stop();
+    fail(false);
+    await vi.runAllTimersAsync();
+    const later = askForProject(async () => false, 0, failed);
+    await vi.advanceTimersByTimeAsync(1_000);
+    later();
+    await vi.runAllTimersAsync();
+    expect(failed).not.toHaveBeenCalled();
+  });
+});
+
+describe("newestFirst", () => {
+  it("shows the answer to the newest request, whatever order the answers come in", () => {
+    const answers = newestFirst<string>();
+    const older = answers.start();
+    const newer = answers.start();
+    expect(answers.accept(newer, "B")).toBe("B");
+    // The older request answers last, with what was there when it started.
+    expect(answers.accept(older, "A")).toBe("B");
+    const latest = answers.start();
+    expect(answers.accept(latest, "C")).toBe("C");
+  });
+
+  it("takes an answer when nothing newer has answered yet", () => {
+    const answers = newestFirst<string>();
+    const first = answers.start();
+    const second = answers.start();
+    expect(answers.accept(first, "A")).toBe("A");
+    expect(answers.accept(second, "B")).toBe("B");
+  });
+});
+
+describe("projectRead", () => {
+  const list = (...ids: string[]) => ({ projects: ids.map((id) => ({ id })) });
+
+  it("asks again when a newer list without the project hid the answer that had it", () => {
+    // The composer asks for a new project; another view's plain list starts
+    // after it but answers first, from a read made before the project.
+    const answers = newestFirst<ReturnType<typeof list>>();
+    const asked = answers.start();
+    const plain = answers.start();
+    answers.accept(plain, list("old"));
+    const sent = list("old", "new");
+    const shown = answers.accept(asked, sent);
+    expect(projectRead(sent, shown, "new")).toBe(false);
+  });
+
+  it("is done when its answer is shown, even without the project (bb does not list it)", () => {
+    const sent = list("old");
+    expect(projectRead(sent, sent, "ghost")).toBe(true);
+  });
+
+  it("is done when the newer list shown has the project", () => {
+    expect(projectRead(list("old"), list("old", "new"), "new")).toBe(true);
+  });
+});
+
+// bb's realtime signals are ephemeral: one sent while the connection was
+// down is lost, so a view that reads on them reads again when it is back
+// (Sol B2-R2-004).
+describe("signalsBack", () => {
+  it("is true when the connection is back after a drop: a signal to add or to take away the advice may have been lost", () => {
+    expect(signalsBack("reconnecting", "connected")).toBe(true);
+    expect(signalsBack("connecting", "connected")).toBe(true);
+  });
+
+  it("is false while it stays connected, and while it is down: nothing to read then", () => {
+    expect(signalsBack("connected", "connected")).toBe(false);
+    expect(signalsBack("connected", "reconnecting")).toBe(false);
+    expect(signalsBack("reconnecting", "connecting")).toBe(false);
+  });
+
+  it("is false on the view's first look, connected or not: it reads as it mounts", () => {
+    expect(signalsBack(undefined, "connected")).toBe(false);
+    expect(signalsBack(undefined, "connecting")).toBe(false);
+  });
+});
+
+describe("outText on a machine in another zone (Codex ULTRA-R2-005)", () => {
+  it("writes when an account is back in Madrid's time, with no zone given", () => {
+    const zone = process.env.TZ;
+    process.env.TZ = "America/New_York";
+    try {
+      const now = Date.parse("2026-10-29T10:00:00Z");
+      // 13:00 in Madrid (CET), 08:00 in New York.
+      expect(outText(Date.parse("2026-10-29T12:00:00Z"), now)).toBe("agotada hasta 13:00");
+      // 00:30 on 31 Oct in Madrid is still the 30th in New York.
+      expect(outText(Date.parse("2026-10-30T23:30:00Z"), now)).toBe("agotada hasta 31/10");
+    } finally {
+      if (zone === undefined) delete process.env.TZ;
+      else process.env.TZ = zone;
+    }
+  });
+});
+
+describe("listText (bb claude-switcher list)", () => {
+  const NOW = Date.parse("2026-10-29T10:00:00.000Z");
+
+  it("gives each account one aligned line, without a weekly on a Team seat, and the projects by account", () => {
+    expect(listText(tenAccounts(NOW), NOW, "UTC")).toBe(
+      [
+        "viaulab     ses  10% sem  40% Fable  20%",
+        "max2        ses  55% sem  71% Fable  64%",
+        "max3        ses   3% sem  12%",
+        "max4        ses  20% sem 100% Fable  88% agotada hasta 01/11",
+        "maxprivada  ses   0% sem   5% Fable   1%",
+        "team1       ses  30%          Fable  50%",
+        "team2       ses   5%          Fable   9%",
+        "team3       ses 100%          Fable  70% agotada hasta 12:00",
+        "team4       not logged in",
+        "team5       ses  45%          Fable  99%",
+        "",
+        "projects:",
+        "viaulab: Website",
+        "max2: Agenda",
+        "team3: Ads · Bots · Infra",
+        "(external CLAUDE_CONFIG_DIR): Legacy",
+        "(account no longer exists): Ghost",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("keeps every account line within 60 characters, and says no weekly for a Team seat", () => {
+    const state = tenAccounts(NOW);
+    // The longest a line gets: a ten-character name, every window full.
+    state.accounts.push({
+      ...state.accounts[3]!,
+      name: "a-very-long-account-name",
+      usage: {
+        blocked: false,
+        session: { usedPercent: 100, resetsAt: NOW + 60_000 },
+        weekly: { usedPercent: 100, resetsAt: NOW + 5 * 24 * 3_600_000 },
+        models: { Fable: { usedPercent: 100, resetsAt: NOW + 3_600_000 } },
+      },
+    });
+    state.accounts.push({
+      ...state.accounts[0]!,
+      name: "failing",
+      usage: null,
+      problem: { kind: "error", message: "HTTP 429: rate limited ".repeat(5) },
+    });
+    const lines = listText(state, NOW, "UTC").split("\n");
+    const accountLines = lines.slice(0, lines.indexOf(""));
+    expect(accountLines).toHaveLength(12);
+    for (const line of accountLines) expect(line.length).toBeLessThanOrEqual(60);
+    expect(accountLines).toContain(
+      "a-very-lon  ses 100% sem 100% Fable 100% agotada hasta 03/11",
+    );
+    expect(accountLines.at(-1)).toMatch(/^failing {5}query failed: HTTP 429/);
+    for (const line of accountLines.filter((l) => l.startsWith("team")))
+      expect(line).not.toMatch(/sem|weekly/);
+    // The pace of a window stays in --json: not a line of the text.
+    expect(lines.join("\n")).not.toMatch(/runs out|lasts until/);
+  });
+
+  it("says both when a locked account also has full windows: the latest reset and LOCKED, within 60 characters", () => {
+    const state = tenAccounts(NOW);
+    state.accounts = [
+      {
+        ...state.accounts[3]!,
+        name: "maxprivada",
+        usage: {
+          blocked: true,
+          session: { usedPercent: 100, resetsAt: NOW + 3_600_000 },
+          weekly: { usedPercent: 100, resetsAt: NOW + 4 * 24 * 3_600_000 },
+          models: { Fable: { usedPercent: 100, resetsAt: NOW + 2 * 3_600_000 } },
+        },
+      },
+    ];
+    state.projects = [];
+    const [locked] = listText(state, NOW, "UTC").split("\n");
+    // Too long with every column: the weekly goes first.
+    expect(locked).toBe(
+      "maxprivada  ses 100% Fable 100% agotada hasta 02/11 LOCKED",
+    );
+    expect(locked!.length).toBeLessThanOrEqual(60);
+    const base = tenAccounts(NOW).accounts[1]!;
+    state.accounts = [
+      {
+        ...base,
+        name: "m2",
+        usage: {
+          ...base.usage!,
+          blocked: true,
+          session: { usedPercent: 100, resetsAt: NOW + 3_600_000 },
+        },
+      },
+    ];
+    const [short] = listText(state, NOW, "UTC").split("\n");
+    // When it fits, every column stays.
+    expect(short).toBe(
+      "m2  ses 100% sem  71% Fable  64% agotada hasta 11:00 LOCKED",
+    );
+  });
+
+  it("says LOCKED for an account the provider locked, and counts a window whose reset passed as empty", () => {
+    const state = tenAccounts(NOW);
+    state.accounts = [
+      {
+        ...state.accounts[1]!,
+        usage: { ...state.accounts[1]!.usage!, blocked: true },
+      },
+      {
+        ...state.accounts[2]!,
+        usage: {
+          ...state.accounts[2]!.usage!,
+          session: { usedPercent: 100, resetsAt: NOW - 1 },
+        },
+      },
+    ];
+    state.projects = [];
+    expect(listText(state, NOW, "UTC")).toBe(
+      [
+        "max2  ses  55% sem  71% Fable  64% LOCKED",
+        "max3  ses   0% sem  12%",
+        "",
+        "projects:",
+        "",
+      ].join("\n"),
+    );
+  });
+});
+
+describe("outText", () => {
+  const NOW = Date.parse("2026-10-29T10:00:00.000Z");
+  it("gives the hour within a day of the reset and the date from a day on", () => {
+    expect(outText(NOW + 24 * 3_600_000 - 60_000, NOW, "UTC")).toBe(
+      "agotada hasta 09:59",
+    );
+    expect(outText(NOW + 24 * 3_600_000, NOW, "UTC")).toBe(
+      "agotada hasta 30/10",
+    );
+    expect(outText(NOW + 2 * 3_600_000, NOW, "Europe/Madrid")).toBe(
+      "agotada hasta 13:00",
+    );
+    expect(outText(null, NOW, "UTC")).toBe("agotada");
+  });
+});
+
+describe("projectsByAccount (the panel's project list)", () => {
+  it("groups the projects under their account, in the accounts' order, external and vanished ones last", () => {
+    const groups = projectsByAccount(
+      tenAccounts(Date.parse("2026-10-29T10:00:00.000Z")),
+    );
+    expect(
+      groups.map((g) => [g.heading, g.account, g.projects.map((p) => p.id)]),
+    ).toEqual([
+      ["viaulab", "viaulab", ["p2"]],
+      ["max2", "max2", ["p4"]],
+      ["team3", "team3", ["p7", "p3", "p1"]],
+      ["(external CLAUDE_CONFIG_DIR)", null, ["p5"]],
+      ["(account no longer exists)", null, ["p6"]],
+    ]);
+  });
+});
+
+describe("listText with seats", () => {
+  const NOW = Date.parse("2026-10-29T10:00:00.000Z");
+
+  it("puts each limited account's seats under its line and a final section with who waits", () => {
+    const state = {
+      ...tenAccounts(NOW),
+      seats: {
+        viaulab: { capacity: 4, running: 2, reserved: 1, queued: [] },
+        team1: {
+          capacity: 2,
+          running: 2,
+          reserved: 0,
+          queued: [
+            { threadId: "thr-a", title: "Fix the form" },
+            { threadId: "thr-b", title: null },
+          ],
+        },
+        max3: { capacity: 0, running: 5, reserved: 0, queued: [] },
+      },
+    };
+    const lines = listText(state, NOW, "UTC").split("\n");
+    const at = lines.indexOf("viaulab     ses  10% sem  40% Fable  20%");
+    expect(lines[at + 1]).toBe("            seats 3/4");
+    expect(lines).toContain("            seats 2/2 · 2 waiting");
+    // No limit: no seats line.
+    expect(lines[lines.indexOf("max3        ses   3% sem  12%") + 1]).not.toMatch(/seats/);
+    expect(lines.slice(lines.indexOf("Waiting for a seat:"))).toEqual([
+      "Waiting for a seat:",
+      "team1  #1  thr-a  Fix the form",
+      "team1  #2  thr-b",
+      "",
+    ]);
+  });
+
+  it("says nothing of seats when none are known or nobody waits", () => {
+    const text = listText(tenAccounts(NOW), NOW, "UTC");
+    expect(text).not.toMatch(/seat/i);
+  });
+});
+
+describe("an Ultra account without the 5-hour window (2026-10-30)", () => {
+  const NOW = Date.parse("2026-10-30T20:55:00.000Z");
+  type W = { usedPercent: number; resetsAt: number | null; absent?: true };
+  const usage: { blocked: boolean; session: W; weekly: W; models: Record<string, W> } = {
+    blocked: false,
+    session: { usedPercent: 0, resetsAt: null, absent: true as const },
+    weekly: { usedPercent: 98, resetsAt: Date.parse("2026-11-01T17:00:00Z") },
+    models: { Fable: { usedPercent: 100, resetsAt: Date.parse("2026-11-01T17:00:00Z") } },
+  };
+
+  it("lists its plan instead of a session, never «ses 100%» nor LOCKED", () => {
+    const text = listText(
+      {
+        defaultAccountName: "main",
+        preferredModel: "Fable",
+        accounts: [
+          { name: "main", problem: null, usage, planShort: "Ultra · sin tope de 5 h" },
+          {
+            name: "team1",
+            problem: null,
+            planShort: "Team",
+            usage: {
+              blocked: false,
+              session: { usedPercent: 30, resetsAt: NOW + 3_600_000 },
+              weekly: { usedPercent: 0, resetsAt: null, absent: true as const },
+              models: {},
+            },
+          },
+        ],
+        projects: [],
+        seats: { main: { capacity: 4, running: 1, reserved: 0, queued: [] } },
+      },
+      NOW,
+      "UTC",
+    );
+    expect(text.split("\n").slice(0, 4)).toEqual([
+      "main            sem  98% Fable 100% agotada hasta 01/11",
+      "       Ultra · sin tope de 5 h · seats 1/4",
+      "team1  ses  30%",
+      "       Team",
+    ]);
+  });
+
+  it("sums up no session", () => {
+    expect(accountSummary(usage, "Fable", NOW)).toEqual({
+      session: null,
+      weekly: 98,
+      model: { name: "Fable", percent: 100 },
+      outUntil: Date.parse("2026-11-01T17:00:00Z"),
+    });
+  });
+});

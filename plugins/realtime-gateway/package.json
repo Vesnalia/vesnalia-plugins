@@ -1,0 +1,43 @@
+{
+  "name": "bb-plugin-realtime-gateway",
+  "version": "0.1.1",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/steveafrost/bb-plugin-realtime-gateway.git"
+  },
+  "type": "module",
+  "engines": {
+    "bb": ">=0.46",
+    "bbPluginSdk": ">=0.6.49"
+  },
+  "bb": {
+    "name": "Realtime Gateway",
+    "description": "Voice Mode realtime sessions routed through the Vercel AI Gateway.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "bb plugin build"
+  },
+  "dependencies": {
+    "undici": "^7.30.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.49",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "hono": "^4.13.17",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "bb-plugin"
+  ],
+  "description": "Voice Mode realtime sessions through the Vercel AI Gateway"
+}

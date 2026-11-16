@@ -1,0 +1,197 @@
+/**
+ * The settings bb renders as a form (`bb.settings.define(SETTINGS)`), and how
+ * each half reads them: the server for what to announce, the app — through
+ * `useSettings()` — for how and where to speak. Settings changes do not reload
+ * the plugin; both halves read the current values when they act.
+ *
+ * Only a type is imported from the SDK, so the app may import this module.
+ */
+import type { PluginSettingDescriptor, PluginSettingsValues } from "@get-bb/plugin-sdk";
+
+import { DEFAULT_SENTENCE_PROMPT, RATE_OPTIONS, SPEECH_ENGINES, TOOL_COMMANDS, type SpeechEngine, type StoredConfig } from "./herald";
+
+/** What the form shows for each voice source, instead of its stored value. */
+export const ENGINE_LABELS: Record<SpeechEngine, string> = {
+  say: "Voices of the Mac running bb",
+  web: "This device's browser voice",
+};
+
+/** What the form shows for each speech rate. */
+export const RATE_LABELS: Record<(typeof RATE_OPTIONS)[number], string> = {
+  "0.8": "0.8×",
+  "1": "Normal",
+  "1.2": "1.2×",
+  "1.5": "1.5×",
+};
+
+export const SETTINGS = {
+  speak: {
+    type: "boolean",
+    label: "Speak announcements",
+    description: "The master switch. Off, nothing is spoken on any device; the Herald panel still lists what is waiting.",
+    default: true,
+  },
+  speakOnDesktop: {
+    type: "boolean",
+    label: "Speak in the desktop app",
+    description: "The bb desktop app speaks as soon as an agent needs you.",
+    default: true,
+  },
+  speakInBrowser: {
+    type: "boolean",
+    label: "Speak in a browser tab",
+    description: "A browser tab speaks only after you have pressed Test voice in the Herald panel once, since browsers block sound until a page is tapped.",
+    default: true,
+  },
+  speakOnMobile: {
+    type: "boolean",
+    label: "Speak in the mobile app",
+    description:
+      "The bb mobile app speaks while it is open on screen, after one tap of Test voice. A locked or backgrounded phone hears nothing; bb's push notifications reach it instead.",
+    default: false,
+  },
+  engine: {
+    type: "select",
+    label: "Voice source",
+    description:
+      "The voices of the Mac running bb are rendered there and played on this device; they fall back to this device's browser voice when bb does not run on a Mac.",
+    options: [...SPEECH_ENGINES],
+    experimental_optionLabels: ENGINE_LABELS,
+    default: "say",
+  },
+  rate: {
+    type: "select",
+    label: "Speech rate",
+    description: "A multiplier on the voice's own pace.",
+    options: [...RATE_OPTIONS],
+    experimental_optionLabels: RATE_LABELS,
+    default: "1",
+  },
+  announceQuestions: {
+    type: "boolean",
+    label: "Announce questions",
+    description: "An agent asks you something. Switched off, the thread is still listed in the panel, without being spoken.",
+    default: true,
+  },
+  announcePlans: {
+    type: "boolean",
+    label: "Announce plans",
+    description: "An agent waits for you to approve its plan.",
+    default: true,
+  },
+  announcePermissions: {
+    type: "boolean",
+    label: "Announce permissions",
+    description: "An agent waits for your approval to run a command, change files or use a tool.",
+    default: true,
+  },
+  announceFinished: {
+    type: "boolean",
+    label: "Announce finished turns",
+    description: "An agent finished its turn and is waiting for you.",
+    default: true,
+  },
+  announceErrors: {
+    type: "boolean",
+    label: "Announce errors",
+    description: "An agent's turn failed.",
+    default: true,
+  },
+  announceSubagents: {
+    type: "boolean",
+    label: "Announce threads started by another thread",
+    description:
+      "Off: a child thread reports to the thread that started it, and you hear the parent's announcement instead of two. It is still listed in the panel. On: both are announced. Herald in a thread's menu overrides this for that thread.",
+    default: false,
+  },
+  writeWithModel: {
+    type: "boolean",
+    label: "Write each sentence with a model",
+    description:
+      "Off: the plain sentence built from the event. On: a command-line tool runs once per announcement on the Mac running bb and writes the sentence from a prompt that includes the agent's own output — which can carry instructions, so the tool runs with no tools or read-only. Which tool, and the prompt, are under Model-written sentences further down this page. The plain sentence is used whenever the tool fails or takes longer than 45 seconds.",
+    default: false,
+  },
+} satisfies Record<string, PluginSettingDescriptor>;
+
+export type HeraldSettings = PluginSettingsValues<typeof SETTINGS>;
+
+/** How a sentence is written, as the server needs it, or null for the plain sentence. */
+export interface SentenceSettings {
+  /** The command line, to be split into words; never blank. */
+  command: string;
+  prompt: string;
+}
+
+/**
+ * Null unless the switch (from the host form) is on and the stored
+ * configuration names a command to run: a preset tool always has one, custom
+ * only once something is written.
+ */
+export function sentenceSettingsOf(writeWithModel: unknown, stored: StoredConfig): SentenceSettings | null {
+  if (writeWithModel !== true) return null;
+  const command = (stored.sentenceTool === "custom" ? stored.sentenceCommand : TOOL_COMMANDS[stored.sentenceTool]).trim();
+  if (command === "") return null;
+  return { command, prompt: stored.sentencePrompt.trim() === "" ? DEFAULT_SENTENCE_PROMPT : stored.sentencePrompt };
+}
+
+/**
+ * What to write into the custom command when the tool *becomes* custom while
+ * that command is blank: the command of the tool selected before, so the user
+ * edits a working line rather than an empty one. Null when there is nothing
+ * to seed — including a command the user cleared while already on custom,
+ * which is theirs to leave blank.
+ */
+export function customCommandSeed(prev: StoredConfig, next: StoredConfig): string | null {
+  if (prev.sentenceTool === "custom" || next.sentenceTool !== "custom" || next.sentenceCommand.trim() !== "") return null;
+  return TOOL_COMMANDS[prev.sentenceTool];
+}
+
+/** Where this copy of the app runs, which decides the switch that applies to it. */
+export type SpeechPlatform = "desktop" | "browser" | "mobile";
+
+/** How to speak, as the app needs it: the host form's values with their defaults filled in. */
+export interface SpeechSettings {
+  speak: boolean;
+  speakOnDesktop: boolean;
+  speakInBrowser: boolean;
+  speakOnMobile: boolean;
+  engine: SpeechEngine;
+  rate: number;
+}
+
+function flag(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+/** `useSettings().values` is undefined while loading and loosely typed; this reads it safely. */
+export function speechSettingsOf(values: Record<string, string | number | boolean> | undefined): SpeechSettings {
+  const engine = values?.engine;
+  const rate = Number(values?.rate ?? SETTINGS.rate.default);
+  return {
+    speak: flag(values?.speak, SETTINGS.speak.default),
+    speakOnDesktop: flag(values?.speakOnDesktop, SETTINGS.speakOnDesktop.default),
+    speakInBrowser: flag(values?.speakInBrowser, SETTINGS.speakInBrowser.default),
+    speakOnMobile: flag(values?.speakOnMobile, SETTINGS.speakOnMobile.default),
+    engine: engine === "web" ? "web" : "say",
+    rate: Number.isFinite(rate) && rate >= 0.5 && rate <= 2 ? rate : 1,
+  };
+}
+
+/**
+ * Why this device stays quiet, or null when it may speak. One function for
+ * every caller: an announcement that is blocked is dropped silently, a pressed
+ * control shows the reason — a switch the user set has to mean what it says,
+ * and a control that simply did nothing could not explain itself.
+ */
+export function blockedMessage(settings: SpeechSettings, platform: SpeechPlatform, mutedHere: boolean): string | null {
+  if (mutedHere) return "Herald is muted on this device. Unmute it from the Herald panel.";
+  if (!settings.speak) return "Announcements are off in Herald's settings.";
+  switch (platform) {
+    case "desktop":
+      return settings.speakOnDesktop ? null : "Speaking in the desktop app is off in Herald's settings.";
+    case "browser":
+      return settings.speakInBrowser ? null : "Speaking in a browser tab is off in Herald's settings.";
+    case "mobile":
+      return settings.speakOnMobile ? null : "Speaking in the mobile app is off in Herald's settings.";
+  }
+}

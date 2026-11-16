@@ -1,0 +1,817 @@
+// bb-github-pr-dashboard — backend entry.
+//
+// `prs_list` runs one GitHub GraphQL query for one tab's PRs (open, review
+// requested, assigned, merged or closed) and every tab's count; `pr_detail` fetches one PR's threads, conversation and
+// checks. A background service polls open PRs and stores an alert when CI
+// starts failing or someone comments; the page shows them as toasts and a badge,
+// and each check's alerts go out as one system notification through bb's
+// push-notifications plugin. Auth comes from the optional `token` setting, else
+// from the GitHub CLI already logged in on the machine (`gh auth token`), so
+// every user of a published copy sees their own PRs.
+import { execFile } from "node:child_process";
+import {
+  defineRpcContract,
+  experimental_PluginRpcRefusal,
+  type BbPluginApi,
+} from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import {
+  agentTarget,
+  linkCandidates,
+  canSubmitReview,
+  ALERTS_NEW,
+  ALERTS_SEEN,
+  diffWatch,
+  pushText,
+  toDetail,
+  toFiles,
+  toList,
+  toWatched,
+  type Alert,
+  type RawDetail,
+  type RawSearch,
+  type RestFile,
+  type RawWatchPr,
+  type WatchState,
+} from "./prs";
+import {
+  CLOSE_PR_MUTATION,
+  COMMENT_MUTATION,
+  DRAFT_PR_MUTATION,
+  DELETE_ISSUE_COMMENT_MUTATION,
+  DELETE_REVIEW_COMMENT_MUTATION,
+  READY_PR_MUTATION,
+  REOPEN_PR_MUTATION,
+  updatePrMutation,
+  REVIEW_DISCARD_MUTATION,
+  reviewAddThreadMutation,
+  reviewStartMutation,
+  REVIEW_SUBMIT_NEW_MUTATION,
+  REVIEW_SUBMIT_PENDING_MUTATION,
+  HISTORY_QUERY,
+  LIST_TABS,
+  listQuery,
+  historyQuery,
+  PR_DETAIL_QUERY,
+  REPLY_MUTATION,
+  resolveThreadMutation,
+  WATCH_QUERY,
+} from "./queries";
+
+const stackSchema = z.object({ number: z.number(), title: z.string(), url: z.string() }).nullable();
+const prSchema = z.object({
+  id: z.string(),
+  number: z.number(),
+  title: z.string(),
+  url: z.string(),
+  repo: z.string(),
+  author: z.string(),
+  baseRefName: z.string(),
+  onDefaultBranch: z.boolean(),
+  stackedOn: stackSchema,
+  isDraft: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  mergedAt: z.string().nullable(),
+  closedAt: z.string().nullable(),
+  ci: z.enum(["passing", "failing", "pending", "none"]),
+  failingChecks: z.array(
+    z.object({ name: z.string(), workflow: z.string().nullable(), url: z.string().nullable() }),
+  ),
+  unresolvedThreads: z.number(),
+  reviewDecision: z.string().nullable(),
+  conflicts: z.boolean(),
+  blockers: z.array(z.string()),
+  myReview: z.object({ state: z.string(), stale: z.boolean() }).nullable(),
+  additions: z.number(),
+  deletions: z.number(),
+});
+const listSchema = z.object({ total: z.number(), items: z.array(prSchema) });
+
+const commentSchema = z.object({
+  id: z.string(),
+  canDelete: z.boolean(),
+  author: z.string(),
+  avatarUrl: z.string().nullable(),
+  body: z.string(),
+  createdAt: z.string(),
+  url: z.string(),
+});
+const detailSchema = z.object({
+  id: z.string(),
+  viewer: z.string(),
+  number: z.number(),
+  title: z.string(),
+  url: z.string(),
+  repo: z.string(),
+  author: z.string(),
+  authorAvatarUrl: z.string().nullable(),
+  state: z.string(),
+  isDraft: z.boolean(),
+  headRefName: z.string(),
+  baseRefName: z.string(),
+  onDefaultBranch: z.boolean(),
+  stackedOn: stackSchema,
+  changedFiles: z.number(),
+  additions: z.number(),
+  deletions: z.number(),
+  pendingReviewId: z.string().nullable(),
+  reviewDecision: z.string().nullable(),
+  conflicts: z.boolean(),
+  timeline: z.array(commentSchema.extend({ reviewState: z.string().nullable() })),
+  commits: z.array(
+    z.object({
+      oid: z.string(),
+      shortOid: z.string(),
+      headline: z.string(),
+      author: z.string(),
+      avatarUrl: z.string().nullable(),
+      committedDate: z.string(),
+      ci: z.enum(["failing", "pending", "passing", "skipped"]).nullable(),
+    }),
+  ),
+  commitCount: z.number(),
+  reviewers: z.array(z.object({ name: z.string(), avatarUrl: z.string().nullable(), team: z.boolean(), state: z.string() })),
+  labels: z.array(z.object({ name: z.string(), color: z.string().nullable() })),
+  body: z.string(),
+  canEdit: z.boolean(),
+  myReviewOid: z.string().nullable(),
+  threads: z.array(
+    z.object({
+      id: z.string(),
+      path: z.string(),
+      side: z.enum(["LEFT", "RIGHT"]),
+      startLine: z.number().nullable(),
+      isPending: z.boolean(),
+      line: z.number().nullable(),
+      isResolved: z.boolean(),
+      isOutdated: z.boolean(),
+      resolvedBy: z.string().nullable(),
+      canToggleResolved: z.boolean(),
+      diffHunk: z.string().nullable(),
+      comments: z.array(commentSchema),
+      awaitingReply: z.boolean(),
+    }),
+  ),
+  checks: z.array(
+    z.object({
+      name: z.string(),
+      workflow: z.string().nullable(),
+      status: z.enum(["failing", "pending", "passing", "skipped"]),
+      conclusion: z.string().nullable(),
+      url: z.string().nullable(),
+      title: z.string().nullable(),
+      summary: z.string().nullable(),
+      annotations: z.array(
+        z.object({
+          path: z.string(),
+          line: z.number().nullable(),
+          level: z.string().nullable(),
+          message: z.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+const alertSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["ci", "comment", "test"]),
+  repo: z.string(),
+  number: z.number(),
+  url: z.string(),
+  headline: z.string(),
+  detail: z.string(),
+  at: z.string(),
+  seen: z.boolean(),
+});
+const alertsSchema = z.object({ alerts: z.array(alertSchema), unread: z.number() });
+
+const prRef = z
+  .object({
+    repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/, "Expected owner/name"),
+    number: z.number().int().positive(),
+  })
+  .strict();
+// GitHub GraphQL node ids are short base64-ish strings.
+const loginSchema = z.string().regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/, "Expected a GitHub login");
+const nodeId = z.string().regex(/^[A-Za-z0-9_=-]{1,100}$/, "Expected a GitHub node id");
+const commentBody = z.string().trim().min(1, "Write something first").max(65_000, "GitHub comments are limited to about 65,000 characters");
+
+export const rpcContract = defineRpcContract({
+  /** Read-only: whether bb's My Jira plugin runs here (Jira keys then open in it), and its Jira site. */
+  jira_link: {
+    input: z.object({}).strict(),
+    output: z.object({ plugin: z.boolean(), siteUrl: z.string().nullable() }),
+  },
+  /** Read-only, local: the gh accounts this plugin can use, and the one it uses. No GitHub request beyond gh's own check. */
+  accounts: {
+    input: z.object({}).strict(),
+    output: z.object({
+      accounts: z.array(z.object({ login: z.string(), ghActive: z.boolean() })),
+      selected: z.string().nullable(),
+      usingToken: z.boolean(),
+    }),
+  },
+  /** Which gh account this plugin reads and writes as; gh's own active account is left alone. */
+  account_select: {
+    input: z.object({ login: loginSchema }).strict(),
+    output: z.object({ selected: z.string() }),
+  },
+  prs_list: {
+    input: z.object({ tab: z.enum(["open", "review", "reviewed", "assigned", "merged", "closed"]) }).strict(),
+    output: z.object({
+      list: listSchema,
+      counts: z.object({
+        open: z.number(),
+        review: z.number(),
+        reviewed: z.number(),
+        assigned: z.number(),
+        merged: z.number(),
+        closed: z.number(),
+      }),
+      fetchedAt: z.string(),
+    }),
+  },
+  prs_history: {
+    input: z.object({ state: z.enum(["merged", "closed"]) }).strict(),
+    output: listSchema,
+  },
+  pr_detail: { input: prRef, output: detailSchema },
+  pr_files: {
+    input: prRef,
+    output: z.object({
+      files: z.array(
+        z.object({
+          path: z.string(),
+          previousPath: z.string().nullable(),
+          status: z.string(),
+          additions: z.number(),
+          deletions: z.number(),
+          patch: z.string().nullable(),
+        }),
+      ),
+    }),
+  },
+  pr_reply: {
+    input: z.object({ threadId: nodeId, body: commentBody }).strict(),
+    output: z.object({ url: z.string(), pending: z.boolean() }),
+  },
+  pr_resolve_thread: {
+    input: z.object({ threadId: nodeId, resolved: z.boolean() }).strict(),
+    output: z.object({ resolved: z.boolean() }),
+  },
+  pr_delete_comment: {
+    input: z.object({ id: nodeId, kind: z.enum(["issue", "review"]) }).strict(),
+    output: z.object({ ok: z.literal(true) }),
+  },
+  pr_comment: {
+    input: z.object({ subjectId: nodeId, body: commentBody }).strict(),
+    output: z.object({ url: z.string() }),
+  },
+  pr_line_comment: {
+    input: z
+      .object({
+        prId: nodeId,
+        reviewId: nodeId.nullable(),
+        path: z.string().min(1).max(1000).regex(/^[^\u0000-\u001f\u007f]+$/, "Invalid file path"),
+        line: z.number().int().positive(),
+        side: z.enum(["LEFT", "RIGHT"]),
+        // A multi-line comment: both ends together, the start above the end.
+        startLine: z.number().int().positive().optional(),
+        startSide: z.enum(["LEFT", "RIGHT"]).optional(),
+        body: commentBody,
+        mode: z.enum(["review", "single"]),
+      })
+      .strict()
+      .refine((v) => (v.startLine === undefined) === (v.startSide === undefined), "Send both startLine and startSide, or neither")
+      .refine((v) => v.startLine === undefined || v.startSide !== v.side || v.startLine < v.line, "A range must start above where it ends"),
+    output: z.object({ pending: z.boolean() }),
+  },
+  pr_discard_review: {
+    input: z.object({ reviewId: nodeId }).strict(),
+    output: z.object({ discarded: z.boolean() }),
+  },
+  pr_submit_review: {
+    input: z
+      .object({
+        prId: nodeId,
+        reviewId: nodeId.nullable(),
+        event: z.enum(["COMMENT", "APPROVE", "REQUEST_CHANGES"]),
+        body: z.string().trim().max(65_000),
+      })
+      .strict(),
+    output: z.object({ url: z.string(), state: z.string() }),
+  },
+  pr_edit: {
+    input: z
+      .object({
+        prId: nodeId,
+        title: z.string().trim().min(1, "A title is required").max(256, "GitHub titles are limited to 256 characters").optional(),
+        body: z.string().max(65_000, "GitHub descriptions are limited to about 65,000 characters").optional(),
+      })
+      .strict()
+      .refine((v) => (v.title === undefined) !== (v.body === undefined), "Edit either the title or the description"),
+    output: z.object({ title: z.string() }),
+  },
+  pr_set_state: {
+    input: z.object({ prId: nodeId, action: z.enum(["close", "reopen", "ready", "draft"]) }).strict(),
+    output: z.object({ state: z.string() }),
+  },
+  /** Read-only: which bb thread works on this PR's branch, else which project a new thread should start in. */
+  pr_agent_target: {
+    input: z
+      .object({
+        repo: prRef.shape.repo,
+        number: prRef.shape.number,
+        headRefName: z.string().min(1).max(255),
+      })
+      .strict(),
+    output: z.object({
+      thread: z.object({ id: z.string(), title: z.string() }).nullable(),
+      projectId: z.string().nullable(),
+      threads: z.array(z.object({ id: z.string(), title: z.string(), project: z.string(), updatedAt: z.number() })),
+    }),
+  },
+  alerts_list: { input: z.null(), output: alertsSchema },
+  alerts_mark_seen: { input: z.null(), output: alertsSchema },
+  alerts_test: {
+    input: z.null(),
+    output: alertsSchema.extend({ push: z.object({ sent: z.boolean(), message: z.string() }) }),
+  },
+});
+
+// The published output of push-notifications' `notifications.send`.
+const pushSent = z.object({ ok: z.literal(true), channels: z.array(z.enum(["web", "desktop", "mobile"])) });
+
+const MAX_ALERTS = 50;
+
+/** The part of bb's GitHub PR Status `pullRequests` answer read here: each environment's PR, when it has one. */
+const prStatusSchema = z.record(
+  z.string(),
+  z.object({ outcome: z.string(), pullRequest: z.object({ url: z.string() }).optional() }),
+);
+
+/** Resolves after `ms`, or at once when the service is told to stop. */
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => { clearTimeout(timer); resolve(); }, { once: true });
+  });
+}
+
+const GH_MISSING =
+  "GitHub CLI (gh) was not found. Install it from https://cli.github.com and run `gh auth login`, or set a GitHub token in this plugin's settings.";
+const GH_LOGGED_OUT =
+  "GitHub CLI is not logged in. Run `gh auth login` (or `gh auth refresh -h github.com`), or set a GitHub token in this plugin's settings.";
+
+function gh(args: string[]): Promise<{ stdout: string; error: NodeJS.ErrnoException | null }> {
+  return new Promise((resolve) => {
+    execFile(
+      "gh",
+      args,
+      {
+        timeout: 15_000,
+        // bb.app launched from the Dock may not have Homebrew on PATH.
+        env: { ...process.env, PATH: `${process.env.PATH ?? ""}:/opt/homebrew/bin:/usr/local/bin` },
+      },
+      (error, stdout) => resolve({ stdout: String(stdout), error: error as NodeJS.ErrnoException | null }),
+    );
+  });
+}
+
+/** The token of one gh account, or of gh's active account when `user` is empty. gh's active account is never changed. */
+async function ghToken(user: string): Promise<string> {
+  const { stdout, error } = await gh(["auth", "token", "--hostname", "github.com", ...(user ? ["--user", user] : [])]);
+  const token = stdout.trim();
+  if (error === null && token !== "") return token;
+  throw new experimental_PluginRpcRefusal({
+    code: "forbidden",
+    message:
+      error?.code === "ENOENT"
+        ? GH_MISSING
+        : user
+          ? `GitHub CLI has no login for ${user} any more. Pick another account on My PRs, or run \`gh auth login\`.`
+          : GH_LOGGED_OUT,
+  });
+}
+
+/** github.com accounts logged in to gh, and which one gh itself uses. */
+async function ghAccounts(): Promise<{ login: string; active: boolean }[]> {
+  // gh exits non-zero when any account's token is invalid, but still prints the JSON.
+  const { stdout } = await gh(["auth", "status", "--hostname", "github.com", "--json", "hosts"]);
+  try {
+    const hosts = JSON.parse(stdout) as { hosts?: Record<string, { login?: string; active?: boolean }[]> };
+    return (hosts.hosts?.["github.com"] ?? [])
+      .filter((a): a is { login: string; active?: boolean } => typeof a.login === "string")
+      .map((a) => ({ login: a.login, active: a.active === true }));
+  } catch {
+    return [];
+  }
+}
+
+interface GraphqlResponse<T> {
+  data?: T | null;
+  errors?: { message: string }[];
+}
+
+export default async function plugin(bb: BbPluginApi) {
+  const settings = bb.settings.define({
+    token: {
+      type: "string",
+      label: "GitHub token (optional)",
+      description:
+        "Leave empty to use the GitHub CLI login on this machine. Otherwise a token with `repo` scope (classic), or Pull requests read and write plus Checks read (fine-grained); authorize it for SSO orgs. Write access is only used when you comment, reply, review, close or reopen.",
+      secret: true,
+    },
+    notifyCi: {
+      type: "boolean",
+      label: "Notify when CI starts failing",
+      description: "Once per job that turns red on one of your open PRs.",
+      default: true,
+    },
+    notifyComments: {
+      type: "boolean",
+      label: "Notify on new comments and reviews",
+      description: "From anyone but you; GitHub bot accounts are skipped.",
+      default: true,
+    },
+    showToasts: {
+      type: "boolean",
+      label: "Show alerts as bb toasts",
+      default: true,
+    },
+    showDesktop: {
+      type: "boolean",
+      label: "Send desktop notifications",
+      description: "One system notification per check, sent through bb's Push notifications plugin to the channels on there (desktop, web, mobile).",
+      default: true,
+    },
+    showBadge: {
+      type: "boolean",
+      label: "Show the unread count on My PRs",
+      default: true,
+    },
+    ignoreAuthors: {
+      type: "string",
+      label: "Never notify for comments from",
+      description: "Comma-separated GitHub logins, for review bots that use normal accounts.",
+      default: "",
+    },
+    checkEveryMinutes: {
+      type: "number",
+      label: "Check every (minutes)",
+      experimental_schema: z.number().int().min(1).max(60),
+      default: 5,
+    },
+  });
+
+  async function auth(): Promise<{ token: string; fromSetting: boolean }> {
+    const configured = (await settings.get()).token;
+    const fromSetting = typeof configured === "string" && configured.trim() !== "";
+    return { token: fromSetting ? configured.trim() : await ghToken((await bb.storage.kv.get<string>("account")) ?? ""), fromSetting };
+  }
+
+  /** Every GitHub call, REST or GraphQL, goes through here so auth and errors stay in one place. */
+  async function github(path: string, init: { method?: string; body?: string } = {}): Promise<Response> {
+    const { token, fromSetting } = await auth();
+    const res = await fetch(`https://api.github.com${path}`, {
+      ...init,
+      headers: {
+        authorization: `bearer ${token}`,
+        accept: "application/vnd.github+json",
+        "content-type": "application/json",
+        "user-agent": "bb-github-pr-dashboard",
+      },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (res.status === 401) {
+      throw new experimental_PluginRpcRefusal({
+        code: "forbidden",
+        message: fromSetting
+          ? "GitHub rejected the token in this plugin's settings. Update or clear it."
+          : GH_LOGGED_OUT,
+      });
+    }
+    if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+    return res;
+  }
+
+  async function graphql<T>(
+    query: string,
+    variables?: Record<string, unknown>,
+    { mutation = false }: { mutation?: boolean } = {},
+  ): Promise<T> {
+    const res = await github("/graphql", { method: "POST", body: JSON.stringify({ query, variables }) });
+    const body = (await res.json()) as GraphqlResponse<T>;
+    // A failed write often still returns data ({ addComment: null }), so any error fails a mutation.
+    const message = body.errors?.[0]?.message ?? "GitHub returned no data";
+    // An expected refusal (locked thread, no permission) is not a plugin failure.
+    if (mutation && body.errors?.length) throw new experimental_PluginRpcRefusal({ code: "invalid", message });
+    if (body.data == null) throw new Error(message);
+    // Partial errors on reads (e.g. an SSO org the token cannot see) still return data.
+    if (body.errors?.length) bb.log.warn(`GitHub partial result: ${body.errors[0]!.message}`);
+    return body.data;
+  }
+
+  async function readAlerts(): Promise<Alert[]> {
+    return (await bb.storage.kv.get<Alert[]>("alerts")) ?? [];
+  }
+  const summary = (alerts: Alert[]) => ({ alerts, unread: alerts.filter((a) => !a.seen).length });
+
+  // kv is the source of truth: a closed window catches up from it on next open.
+  async function addAlerts(alerts: Alert[]): Promise<Alert[]> {
+    const stored = await readAlerts();
+    const known = new Set(stored.map((a) => a.id));
+    const fresh = alerts.filter((a) => !known.has(a.id));
+    if (fresh.length === 0) return [];
+    await bb.storage.kv.set("alerts", [...fresh, ...stored].slice(0, MAX_ALERTS));
+    bb.realtime.publish(ALERTS_NEW, { alerts: fresh });
+    return fresh;
+  }
+
+  /** One system notification for a batch. Never throws: the watcher must outlive a missing or disabled push-notifications. */
+  async function pushAlerts(alerts: Alert[]): Promise<{ sent: boolean; message: string }> {
+    if (alerts.length === 0) return { sent: false, message: "Nothing new to send." };
+    if (!(await settings.get()).showDesktop) {
+      return { sent: false, message: "Desktop notifications are off in this plugin's settings." };
+    }
+    let message: string;
+    try {
+      const { channels } = await bb.sdk.plugins.callRpc({
+        pluginId: "push-notifications",
+        method: "notifications.send",
+        input: pushText(alerts),
+        outputSchema: pushSent,
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (channels.length > 0) return { sent: true, message: `Sent to ${channels.join(", ")}.` };
+      message = "Push notifications reached no channel. Turn on desktop, web or mobile in its settings.";
+    } catch (cause) {
+      message = `Push notifications did not send it (${cause instanceof Error ? cause.message : String(cause)}). Check that the Push notifications plugin is enabled.`;
+    }
+    bb.log.warn(`Desktop notification not sent: ${message}`);
+    return { sent: false, message };
+  }
+
+  async function pollOnce() {
+    const s = await settings.get();
+    if (!s.notifyCi && !s.notifyComments) {
+      await bb.storage.kv.delete("watch"); // turning back on starts from a fresh baseline
+      return;
+    }
+    const ignore = new Set(s.ignoreAuthors.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean));
+    const data = await graphql<{ viewer: { login: string }; open: { nodes: (RawWatchPr | Record<string, never>)[] } }>(WATCH_QUERY);
+    const prs = data.open.nodes.filter((n): n is RawWatchPr => "url" in n).map((n) => toWatched(n, ignore));
+    // Keyed by account: switching gh accounts must not look like new failures.
+    const saved = await bb.storage.kv.get<{ login: string; state: Record<string, WatchState> }>("watch");
+    const prev = saved?.login === data.viewer.login ? saved.state : null;
+    const { alerts, next } = diffWatch(prev, prs, new Date().toISOString(), { ci: s.notifyCi, comments: s.notifyComments });
+    await bb.storage.kv.set("watch", { login: data.viewer.login, state: next });
+    if (prev === null) bb.log.info(`Watching ${prs.length} open PRs for ${data.viewer.login} (new baseline)`);
+    if (alerts.length > 0) bb.log.info(`${alerts.length} new PR alert(s)`);
+    await pushAlerts(await addAlerts(alerts));
+  }
+
+  bb.background.service("watch", {
+    async start(signal) {
+      while (!signal.aborted) {
+        try {
+          await pollOnce();
+        } catch (cause) {
+          // Logged, not thrown: a logged-out gh must not disable the plugin.
+          bb.log.warn(`PR watch skipped: ${cause instanceof Error ? cause.message : String(cause)}`);
+        }
+        await sleep((await settings.get()).checkEveryMinutes * 60_000, signal);
+      }
+    },
+  });
+
+  bb.rpc.register(rpcContract, {
+    prs_list: async ({ tab }) => {
+      const data = await graphql<Record<(typeof LIST_TABS)[number], RawSearch>>(listQuery(tab));
+      const count = (t: (typeof LIST_TABS)[number]) => data[t].issueCount;
+      return {
+        list: toList(data[tab]),
+        counts: {
+          open: count("open"),
+          review: count("review"),
+          reviewed: count("reviewed"),
+          assigned: count("assigned"),
+          merged: count("merged"),
+          closed: count("closed"),
+        },
+        fetchedAt: new Date().toISOString(),
+      };
+    },
+    prs_history: async ({ state }) => {
+      const items: ReturnType<typeof toList>["items"] = [];
+      let total = 0;
+      let after: string | null = null;
+      // GitHub search stops at 1,000 results (10 pages of 100); older history is left out.
+      for (let page = 0; page < 10; page++) {
+        const data: { search: RawSearch } = await graphql<{ search: RawSearch }>(HISTORY_QUERY, { q: historyQuery(state), after });
+        const list = toList(data.search);
+        total = list.total;
+        items.push(...list.items);
+        after = data.search.pageInfo?.hasNextPage ? data.search.pageInfo.endCursor : null;
+        if (!after) break;
+      }
+      return { total, items };
+    },
+    pr_detail: async ({ repo, number }) => {
+      const [owner, name] = repo.split("/");
+      const data = await graphql<{ viewer: { login: string }; repository: { pullRequest: RawDetail | null } | null }>(
+        PR_DETAIL_QUERY,
+        { owner, name, number },
+      );
+      const pr = data.repository?.pullRequest;
+      if (!pr) {
+        throw new experimental_PluginRpcRefusal({ code: "not_found", message: `${repo}#${number} not found` });
+      }
+      return toDetail(pr, data.viewer.login);
+    },
+    pr_files: async ({ repo, number }) => {
+      // shortcut: first 100 files (one REST page); paginate if PRs this large need it.
+      const res = await github(`/repos/${repo}/pulls/${number}/files?per_page=100`);
+      return { files: toFiles((await res.json()) as RestFile[]) };
+    },
+    pr_reply: async ({ threadId, body }) => {
+      const data = await graphql<{ addPullRequestReviewThreadReply: { comment: { url: string; state: string } | null } | null }>(
+        REPLY_MUTATION,
+        { threadId, body },
+        { mutation: true },
+      );
+      const comment = data.addPullRequestReviewThreadReply?.comment;
+      if (!comment) throw new Error("GitHub did not post the reply");
+      // With an unsubmitted review open, the reply joins it and stays hidden until submitted.
+      return { url: comment.url, pending: comment.state === "PENDING" };
+    },
+    jira_link: async () => {
+      try {
+        const status = await bb.sdk.plugins.callRpc({
+          pluginId: "my-jira",
+          method: "auth_status",
+          input: null,
+          outputSchema: z.object({ site: z.object({ url: z.string() }).nullable() }).passthrough(),
+        });
+        return { plugin: true, siteUrl: status.site?.url ?? null };
+      } catch {
+        return { plugin: false, siteUrl: null }; // not installed or not running: links go to the Jira site
+      }
+    },
+    accounts: async () => {
+      const [accounts, chosen, { token }] = await Promise.all([
+        ghAccounts(),
+        bb.storage.kv.get<string>("account"),
+        settings.get(),
+      ]);
+      const usingToken = typeof token === "string" && token.trim() !== "";
+      const selected = accounts.find((a) => a.login === chosen)?.login ?? accounts.find((a) => a.active)?.login ?? null;
+      return { accounts: accounts.map((a) => ({ login: a.login, ghActive: a.active })), selected, usingToken };
+    },
+    account_select: async ({ login }) => {
+      const accounts = await ghAccounts();
+      if (!accounts.some((a) => a.login === login)) {
+        throw new experimental_PluginRpcRefusal({ code: "invalid", message: `GitHub CLI is not logged in as ${login}.` });
+      }
+      // gh's active account is the default: remembering it would stop following later gh switches.
+      if (accounts.find((a) => a.active)?.login === login) await bb.storage.kv.delete("account");
+      else await bb.storage.kv.set("account", login);
+      return { selected: login };
+    },
+    pr_resolve_thread: async ({ threadId, resolved }) => {
+      type Result = { thread: { isResolved: boolean } | null } | null;
+      const data = await graphql<Record<string, Result>>(resolveThreadMutation(resolved), { threadId }, { mutation: true });
+      const thread = Object.values(data)[0]?.thread;
+      if (!thread) throw new Error("GitHub did not update the thread");
+      return { resolved: thread.isResolved };
+    },
+    pr_delete_comment: async ({ id, kind }) => {
+      await graphql(kind === "issue" ? DELETE_ISSUE_COMMENT_MUTATION : DELETE_REVIEW_COMMENT_MUTATION, { id }, { mutation: true });
+      return { ok: true as const };
+    },
+    pr_comment: async ({ subjectId, body }) => {
+      const data = await graphql<{ addComment: { commentEdge: { node: { url: string } } | null } | null }>(
+        COMMENT_MUTATION,
+        { subjectId, body },
+        { mutation: true },
+      );
+      const url = data.addComment?.commentEdge?.node.url;
+      if (!url) throw new Error("GitHub did not post the comment");
+      return { url };
+    },
+    pr_line_comment: async ({ prId, reviewId, path, line, side, startLine, startSide, body, mode }) => {
+      const range = startLine !== undefined && startSide !== undefined;
+      const thread = { path, line, side, body, ...(range ? { startLine, startSide } : {}) };
+      if (mode === "single" && reviewId) {
+        // GitHub allows one pending review per PR; a single comment would need a second.
+        throw new experimental_PluginRpcRefusal({ code: "conflict", message: "Finish your pending review first, or add this as a review comment." });
+      }
+      if (reviewId) {
+        await graphql(reviewAddThreadMutation(range), { reviewId, ...thread }, { mutation: true });
+        return { pending: true };
+      }
+      const data = await graphql<{ addPullRequestReview: { pullRequestReview: { state: string } | null } | null }>(
+        reviewStartMutation(range),
+        { prId, ...thread, event: mode === "single" ? "COMMENT" : null },
+        { mutation: true },
+      );
+      const review = data.addPullRequestReview?.pullRequestReview;
+      if (!review) throw new Error("GitHub did not save the comment");
+      return { pending: review.state === "PENDING" };
+    },
+    pr_submit_review: async ({ prId, reviewId, event, body }) => {
+      if (!canSubmitReview(event, body, reviewId ? 1 : 0)) {
+        throw new experimental_PluginRpcRefusal({
+          code: "invalid",
+          message: event === "REQUEST_CHANGES" ? "Say what needs to change." : "Write a comment or add line comments first.",
+        });
+      }
+      const data = await graphql<Record<string, { pullRequestReview: { url: string; state: string } | null } | null>>(
+        reviewId ? REVIEW_SUBMIT_PENDING_MUTATION : REVIEW_SUBMIT_NEW_MUTATION,
+        reviewId ? { reviewId, event, body: body || null } : { prId, event, body: body || null },
+        { mutation: true },
+      );
+      const review = Object.values(data)[0]?.pullRequestReview;
+      if (!review) throw new Error("GitHub did not submit the review");
+      return { url: review.url, state: review.state };
+    },
+    pr_discard_review: async ({ reviewId }) => {
+      const data = await graphql<{ deletePullRequestReview: { pullRequestReview: { id: string } | null } | null }>(
+        REVIEW_DISCARD_MUTATION,
+        { reviewId },
+        { mutation: true },
+      );
+      if (!data.deletePullRequestReview?.pullRequestReview) throw new Error("GitHub did not discard the review");
+      return { discarded: true };
+    },
+    pr_edit: async ({ prId, title, body }) => {
+      const data = await graphql<{ updatePullRequest: { pullRequest: { title: string } | null } | null }>(
+        updatePrMutation(title !== undefined ? "title" : "body"),
+        title !== undefined ? { prId, title } : { prId, body },
+        { mutation: true },
+      );
+      const pr = data.updatePullRequest?.pullRequest;
+      if (!pr) throw new Error("GitHub did not update the pull request");
+      return { title: pr.title };
+    },
+    pr_set_state: async ({ prId, action }) => {
+      const data = await graphql<Record<string, { pullRequest: { state: string } | null } | null>>(
+        { close: CLOSE_PR_MUTATION, reopen: REOPEN_PR_MUTATION, ready: READY_PR_MUTATION, draft: DRAFT_PR_MUTATION }[action],
+        { prId },
+        { mutation: true },
+      );
+      const pr = Object.values(data)[0]?.pullRequest;
+      if (!pr) throw new Error(`GitHub did not change the pull request (${action})`);
+      return { state: pr.state };
+    },
+    pr_agent_target: async ({ repo, number, headRefName }) => {
+      const projects = await bb.sdk.projects.list();
+      const threads: Awaited<ReturnType<typeof bb.sdk.threads.list>> = [];
+      // shortcut: the first 1,000 open threads; page further if someone keeps more.
+      const PAGE = 100;
+      for (let offset = 0; offset < 1000; offset += PAGE) {
+        const page = await bb.sdk.threads.list({ limit: PAGE, offset });
+        threads.push(...page);
+        if (page.length < PAGE) break;
+      }
+      const onBranch = threads.filter((t) => t.environmentId !== null && t.environmentBranchName === headRefName);
+      const prUrlByEnvironment: Record<string, string> = {};
+      if (onBranch.length > 0) {
+        try {
+          const rows = await bb.sdk.plugins.callRpc({
+            pluginId: "bb--github-pr-status",
+            method: "pullRequests",
+            input: { keys: [...new Set(onBranch.map((t) => t.environmentId!))] },
+            outputSchema: prStatusSchema,
+          });
+          for (const [environmentId, row] of Object.entries(rows)) {
+            if (row.pullRequest) prUrlByEnvironment[environmentId] = row.pullRequest.url;
+          }
+        } catch (cause) {
+          // Disabled or failing: the project's git remote decides instead.
+          bb.log.warn(`GitHub PR Status lookup skipped: ${cause instanceof Error ? cause.message : String(cause)}`);
+        }
+      }
+      const target = agentTarget({ url: `https://github.com/${repo}/pull/${number}`, repo, headRefName }, onBranch, projects, prUrlByEnvironment);
+      return { ...target, threads: linkCandidates(threads, projects, target) };
+    },
+    alerts_list: async () => summary(await readAlerts()),
+    alerts_mark_seen: async () => {
+      const alerts = (await readAlerts()).map((a) => ({ ...a, seen: true }));
+      await bb.storage.kv.set("alerts", alerts);
+      bb.realtime.publish(ALERTS_SEEN, {});
+      return summary(alerts);
+    },
+    alerts_test: async () => {
+      const at = new Date().toISOString();
+      const push = await pushAlerts(await addAlerts([{
+        id: `test:${at}`, kind: "test", repo: "", number: 0, url: "", seen: false, at,
+        headline: "Test alert from GitHub PR Dashboard",
+        detail: "This is how CI failures and new comments on your PRs will reach you.",
+      }]));
+      return { ...summary(await readAlerts()), push };
+    },
+  });
+}

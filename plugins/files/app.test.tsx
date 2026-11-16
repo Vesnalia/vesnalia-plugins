@@ -1,0 +1,680 @@
+// @vitest-environment jsdom
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { useEffect } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FilesPanel, FILE_OPENER_EXTENSIONS } from "./app";
+
+vi.mock("@excalidraw/excalidraw", () => ({
+  Excalidraw: (props: {
+    onChange?: (elements: never[], appState: object, files: object) => void;
+  }) => {
+    useEffect(() => {
+      props.onChange?.([], {}, {});
+    }, [props.onChange]);
+    return <div data-testid="mock-files-excalidraw">Drawing</div>;
+  },
+  loadFromBlob: async () => ({ elements: [], appState: {}, files: {} }),
+  serializeAsJSON: () =>
+    JSON.stringify({ type: "excalidraw", elements: [], appState: {}, files: {} }),
+}));
+import {
+  getCapturedPluginApp,
+  setBbContext,
+  setRpcHandlers,
+} from "./test/plugin-sdk-app-runtime";
+
+class TestResizeObserver {
+  constructor(private readonly callback: ResizeObserverCallback) {}
+  observe() {
+    this.callback(
+      [{ contentRect: { width: 900 } } as ResizeObserverEntry],
+      this,
+    );
+  }
+  disconnect() {}
+  unobserve() {}
+}
+
+beforeEach(() => {
+  setBbContext({ projectId: null, threadId: "thread-1" });
+  Object.defineProperty(Range.prototype, "getClientRects", {
+    configurable: true,
+    value: () => [],
+  });
+  vi.stubGlobal("ResizeObserver", TestResizeObserver);
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(() => false),
+    })),
+  );
+  vi.stubGlobal("navigator", {
+    ...navigator,
+    platform: navigator.platform,
+    userAgent: navigator.userAgent,
+    clipboard: { writeText: vi.fn(async () => undefined) },
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  window.localStorage.clear();
+  Reflect.deleteProperty(Range.prototype, "getClientRects");
+  vi.unstubAllGlobals();
+});
+
+describe("Files plugin app", () => {
+  it("registers one default flush thread action", () => {
+    expect(getCapturedPluginApp().threadPanelActions).toEqual([
+      expect.objectContaining({
+        id: "files",
+        title: "Files",
+        icon: "FolderOpen",
+        layout: "flush",
+      }),
+    ]);
+    expect(getCapturedPluginApp().threadPanelActions[0]).not.toHaveProperty("run");
+  });
+
+  it("registers itself as BB's file opener for the editable extensions", () => {
+    const openers = getCapturedPluginApp().fileOpeners;
+    expect(openers).toHaveLength(1);
+    expect(openers[0]).toEqual(
+      expect.objectContaining({ id: "files", title: "Files" }),
+    );
+    expect(openers[0].extensions).toEqual(FILE_OPENER_EXTENSIONS);
+    expect(FILE_OPENER_EXTENSIONS.length).toBeGreaterThan(0);
+    for (const extension of FILE_OPENER_EXTENSIONS) {
+      expect(extension).toBe(extension.toLowerCase());
+      expect(extension).not.toContain(".");
+    }
+    expect(FILE_OPENER_EXTENSIONS).toContain("md");
+  });
+
+  it("uploads files selected from the local file picker", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
+      const url = String(input);
+      return url.endsWith("/token") // ubs:ignore — test route suffix and fixture value are not credentials
+        ? new Response(JSON.stringify({ token: "plugin-token" }), { // ubs:ignore — inert test fixture
+            status: 200,
+            headers: { "content-type": "application/json" },
+          })
+        : new Response(
+            JSON.stringify({ path: "photo.png", sha256: "sha", sizeBytes: 3 }),
+            { status: 201, headers: { "content-type": "application/json" } },
+          );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    setRpcHandlers({
+      listDirectory: () => ({
+        path: "",
+        rootName: "repo",
+        entries: [],
+        annotateAvailable: false,
+        sqlAvailable: false,
+      }),
+    });
+    const view = render(<FilesPanel threadId="thread-1" params={null} />);
+    await view.findByText("This workspace is empty.");
+
+    fireEvent.click(view.getByRole("button", { name: "Upload files" }));
+    const file = new File(["png"], "photo.png", { type: "image/png" });
+    fireEvent.change(view.getByLabelText("Choose files to upload"), {
+      target: { files: [file] },
+    });
+
+    expect(await view.findByText("Uploaded 1 file to workspace root.")).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
+      "/api/v1/plugins/files/http/upload?threadId=thread-1&directory=&fileName=photo.png",
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      method: "POST",
+      body: file,
+    });
+  });
+
+  it("uploads dropped files into the target folder", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
+      const url = String(input);
+      return url.endsWith("/token") // ubs:ignore — test route suffix and fixture value are not credentials
+        ? new Response(JSON.stringify({ token: "plugin-token" }), { // ubs:ignore — inert test fixture
+            status: 200,
+            headers: { "content-type": "application/json" },
+          })
+        : new Response(
+            JSON.stringify({ path: "assets/notes.md", sha256: "sha", sizeBytes: 5 }),
+            { status: 201, headers: { "content-type": "application/json" } },
+          );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    setRpcHandlers({
+      listDirectory: (input) => {
+        const path = (input as { path: string }).path;
+        return {
+          path,
+          rootName: "repo",
+          entries: path.length === 0
+            ? [
+                {
+                  kind: "directory" as const,
+                  path: "assets",
+                  name: "assets",
+                  score: 0,
+                  positions: [],
+                },
+              ]
+            : [],
+          annotateAvailable: false,
+          sqlAvailable: false,
+        };
+      },
+    });
+    const view = render(<FilesPanel threadId="thread-1" params={null} />);
+    const folder = await view.findByRole("treeitem", { name: /assets/ });
+    const file = new File(["hello"], "notes.md", { type: "text/markdown" });
+    const dataTransfer = { files: [file], types: ["Files"], dropEffect: "none" };
+
+    fireEvent.dragOver(folder, { dataTransfer });
+    fireEvent.drop(folder, { dataTransfer });
+
+    expect(await view.findByText("Uploaded 1 file to assets.")).toBeTruthy();
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
+      "directory=assets&fileName=notes.md",
+    );
+  });
+
+  it("opens Markdown in an editable Preview and exposes Raw", async () => {
+    const content = "# Project\n\nOriginal body.";
+    const saveFile = vi.fn((_input: unknown) => ({
+      outcome: "written" as const,
+      sha256: "sha-2",
+      sizeBytes: content.length,
+    }));
+    setRpcHandlers({
+      saveFile,
+      listDirectory: () => ({
+        path: "",
+        rootName: "repo",
+        entries: [
+          {
+            kind: "file",
+            path: "README.md",
+            name: "README.md",
+            score: 0,
+            positions: [],
+          },
+        ],
+        annotateAvailable: false,
+        sqlAvailable: false,
+      }),
+      readFile: () => ({
+        state: "text",
+        path: "README.md",
+        sha256: "sha-1",
+        sizeBytes: content.length,
+        mimeType: "text/markdown",
+        modifiedAtMs: 1,
+        content,
+      }),
+    });
+    const view = render(<FilesPanel threadId="thread-1" params={null} />);
+
+    const row = await view.findByRole("treeitem", { name: /README\.md/ });
+    fireEvent.click(row);
+    const raw = await view.findByRole("button", { name: "Raw" });
+    const preview = await view.findByRole("textbox", {
+      name: "Editing preview of README.md",
+    });
+    expect(preview.textContent).toContain("Project");
+    const body = await view.findByText("Original body.");
+    body.textContent = "Updated body.";
+    fireEvent.input(body);
+    expect(await view.findByText("Unsaved")).toBeTruthy();
+    fireEvent.keyDown(preview, { key: "s", metaKey: true });
+    await waitFor(() => expect(saveFile).toHaveBeenCalled());
+    expect(saveFile.mock.calls.at(-1)?.[0]).toMatchObject({
+      content: "# Project\n\nUpdated body.",
+    });
+    fireEvent.click(raw);
+    expect(await view.findByLabelText("Editing README.md")).toBeTruthy();
+    expect(view.queryByRole("button", { name: "Open in Annotate" })).toBeNull();
+  });
+
+  it("reopens markdown with the preferred BB file viewer", async () => {
+    const openFile = vi.fn(() => ({ delivered: 1 }));
+    setRpcHandlers({
+      openFile,
+      listDirectory: () => ({
+        path: "",
+        rootName: "repo",
+        entries: [
+          {
+            kind: "file",
+            path: "README.md",
+            name: "README.md",
+            score: 0,
+            positions: [],
+          },
+        ],
+        annotateAvailable: true, sqlAvailable: false,
+      }),
+      readFile: () => ({
+        state: "text",
+        path: "README.md",
+        sha256: "sha-1",
+        sizeBytes: 9,
+        mimeType: "text/markdown",
+        modifiedAtMs: 1,
+        content: "# Project",
+      }),
+    });
+    const view = render(<FilesPanel threadId="thread-1" params={null} />);
+
+    fireEvent.click(
+      await view.findByRole("treeitem", { name: /README\.md/ }),
+    );
+    fireEvent.click(
+      await view.findByRole("button", { name: "Open in Annotate" }),
+    );
+
+    expect(openFile).toHaveBeenCalledWith({
+      threadId: "thread-1",
+      path: "README.md",
+    });
+  });
+
+  it("opens .excalidraw files as a drawing instead of source JSON", async () => {
+    const content = JSON.stringify({
+      type: "excalidraw",
+      version: 2,
+      elements: [],
+      appState: {},
+      files: {},
+    });
+    const saveFile = vi.fn(() => ({
+      outcome: "written" as const,
+      sha256: "saved-scene-sha",
+      sizeBytes: content.length,
+    }));
+    setRpcHandlers({
+      listDirectory: () => ({
+        path: "",
+        rootName: "repo",
+        entries: [
+          {
+            kind: "file",
+            path: "AI+MAN.excalidraw",
+            name: "AI+MAN.excalidraw",
+            score: 0,
+            positions: [],
+          },
+        ],
+        annotateAvailable: false,
+        sqlAvailable: false,
+      }),
+      readFile: () => ({
+        state: "text",
+        path: "AI+MAN.excalidraw",
+        sha256: "scene-sha",
+        sizeBytes: content.length,
+        mimeType: "application/json",
+        modifiedAtMs: 1,
+        content,
+      }),
+      saveFile,
+    });
+    const view = render(<FilesPanel threadId="thread-1" params={null} />);
+
+    fireEvent.click(
+      await view.findByRole("treeitem", { name: /AI\+MAN\.excalidraw/ }),
+    );
+    expect(await view.findByTestId("mock-files-excalidraw")).toBeTruthy();
+    expect(view.queryByLabelText("Editing AI+MAN.excalidraw")).toBeNull();
+    await new Promise((resolve) => window.setTimeout(resolve, 800));
+    expect(saveFile).not.toHaveBeenCalled();
+  });
+
+  it("restores open tabs after the Files panel remounts", async () => {
+    const { useFilesWorkspace } = await import(
+      "./src/hooks/useFilesWorkspace"
+    );
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: (input: unknown) => {
+        const path =
+          typeof input === "object" &&
+          input !== null &&
+          "path" in input &&
+          typeof input.path === "string"
+            ? input.path
+            : "";
+        return {
+          state: "text",
+          path,
+          sha256: `sha-${path}`,
+          sizeBytes: path.length,
+          mimeType: "text/plain",
+          modifiedAtMs: 1,
+          content: `content:${path}`,
+        };
+      },
+    });
+
+    setBbContext({ projectId: null, threadId: "thread-restore" });
+    const first = renderHook(() => useFilesWorkspace());
+    await act(async () => {
+      await first.result.current.openPath("README.md");
+      await first.result.current.openPath("src/app.tsx");
+    });
+    act(() => first.result.current.setActivePath("README.md"));
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem('bb-plugin-files:workspace:["thread-restore",null,null]')).toContain("src/app.tsx");
+    });
+    first.unmount();
+
+    const second = renderHook(() => useFilesWorkspace());
+    expect(second.result.current.tabs.map((tab) => tab.path)).toEqual([
+      "README.md",
+      "src/app.tsx",
+    ]);
+    expect(second.result.current.activePath).toBe("README.md");
+    await waitFor(() => {
+      expect(second.result.current.tabs.every((tab) => tab.file !== null)).toBe(true);
+    });
+  });
+
+  it("keeps identical paths separate across trusted host source identities", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: (input: unknown) => ({ state: "text", path: (input as { path: string }).path, sha256: "sha", sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: "x" }),
+    });
+    setBbContext({ projectId: "project-a", threadId: "thread-1" });
+    const first = renderHook(() => useFilesWorkspace());
+    setBbContext({ projectId: "project-b", threadId: "thread-1" });
+    const second = renderHook(() => useFilesWorkspace());
+    await act(async () => { await first.result.current.openPath("README.md"); await second.result.current.openPath("README.md"); });
+    expect(first.result.current.tabs[0].id).not.toBe(second.result.current.tabs[0].id);
+    expect(first.result.current.tabs).toHaveLength(1);
+    expect(second.result.current.tabs).toHaveLength(1);
+  });
+
+  it.each([
+    { kind: "host" as const, threadId: "thread-1", environmentId: null, projectId: null },
+    { kind: "workspace" as const, threadId: "thread-1", environmentId: "foreign-environment", projectId: null },
+    { kind: "workspace" as const, threadId: "thread-1", environmentId: null, projectId: "foreign-project" },
+  ])("does not authorize file-opener sources without a host context", async (source) => {
+    const listDirectory = vi.fn();
+    const readFile = vi.fn();
+    setBbContext({ projectId: null, threadId: null });
+    setRpcHandlers({ listDirectory, readFile });
+    render(
+      <FilesPanel path="README.md" source={source} Original={() => null} />,
+    );
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+    expect(listDirectory).not.toHaveBeenCalled();
+    expect(readFile).not.toHaveBeenCalled();
+  });
+
+  it("fails closed for unauthorized callback invocations", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    const handlers = { openFile: vi.fn(), saveFile: vi.fn(), createFile: vi.fn(), createDirectory: vi.fn(), movePath: vi.fn(), removePath: vi.fn(), readFile: vi.fn(), listDirectory: vi.fn() };
+    setRpcHandlers(handlers);
+    setBbContext({ projectId: null, threadId: null });
+    const hook = renderHook(() => useFilesWorkspace());
+    await act(async () => {
+      await hook.result.current.openInPreferredViewer("README.md");
+      await hook.result.current.save("README.md");
+      await hook.result.current.createFile("README.md");
+      await hook.result.current.createDirectory("src");
+      await hook.result.current.movePath("README.md", "src/README.md");
+      await hook.result.current.removePath("README.md", false);
+    });
+    expect(Object.values(handlers).every((handler) => handler.mock.calls.length === 0)).toBe(true);
+  });
+
+  it("does not import legacy thread-only state", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    window.localStorage.setItem("bb-plugin-files:workspace:thread-1", JSON.stringify({ version: 1, openPaths: ["README.md", "src/../bad", "x".repeat(4097)], activePath: "README.md" }));
+    setBbContext({ projectId: "project-a", threadId: "thread-1" });
+    const first = renderHook(() => useFilesWorkspace());
+    expect(first.result.current.tabs).toEqual([]);
+    expect(window.localStorage.getItem("bb-plugin-files:workspace:thread-1")).not.toBeNull();
+    first.unmount();
+    setBbContext({ projectId: "project-b", threadId: "thread-1" });
+    const second = renderHook(() => useFilesWorkspace());
+    expect(second.result.current.tabs).toEqual([]);
+  });
+
+  it("focuses an existing tab for the same source and path", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({ listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }), readFile: () => ({ state: "text", path: "README.md", sha256: "sha", sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: "x" }) });
+    const hook = renderHook(() => useFilesWorkspace());
+    await act(async () => { await hook.result.current.openPath("README.md"); await hook.result.current.openPath("README.md"); });
+    expect(hook.result.current.tabs).toHaveLength(1);
+  });
+
+  it("drops forged source records from v2 persistence", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    window.localStorage.setItem('bb-plugin-files:workspace:["thread-1","environment-a","project-a"]', JSON.stringify({ version: 2, openFiles: [{ version: 1, source: { kind: "workspace", threadId: "thread-1", environmentId: "forged", projectId: "project-a" }, path: "README.md" }], activeFileId: "forged" }));
+    setBbContext({ projectId: "project-a", threadId: "thread-1" });
+    const hook = renderHook(() => useFilesWorkspace());
+    expect(hook.result.current.tabs).toEqual([]);
+  });
+
+  it("resets panel state when the trusted host source changes", async () => {
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [{ kind: "file", path: "README.md", name: "README.md", score: 0, positions: [] }], annotateAvailable: false, sqlAvailable: false }),
+      readFile: () => ({ state: "text", path: "README.md", sha256: "sha", sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: "x" }),
+    });
+    const view = render(<FilesPanel threadId="thread-1" params={null} />);
+    fireEvent.click(await view.findByRole("treeitem", { name: /README\.md/ }));
+    expect(await view.findByRole("button", { name: "Raw" })).toBeTruthy();
+    setBbContext({ projectId: "project-2", threadId: "thread-2" });
+    view.rerender(<FilesPanel threadId="thread-1" params={null} />);
+    await waitFor(() => expect(view.queryByRole("button", { name: "Raw" })).toBeNull());
+  });
+
+  it("evicts the oldest clean tab while retaining the requested open file", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: (input: unknown) => {
+        const path = (input as { path: string }).path;
+        return { state: "text", path, sha256: path, sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: path };
+      },
+    });
+    const hook = renderHook(() => useFilesWorkspace());
+    await act(async () => {
+      for (let index = 0; index < 20; index += 1) await hook.result.current.openPath(`src/${index}.ts`);
+    });
+    await waitFor(() => expect(hook.result.current.tabs.every((tab) => !tab.loading)).toBe(true));
+    await act(async () => expect(await hook.result.current.openPath("src/20.ts")).toBe(true));
+    expect(hook.result.current.tabs).toHaveLength(20);
+    expect(hook.result.current.tabs.map((tab) => tab.path)).not.toContain("src/0.ts");
+    expect(hook.result.current.tabs.map((tab) => tab.path)).toContain("src/20.ts");
+    expect(hook.result.current.activePath).toBe("src/20.ts");
+  });
+
+  it("does not evict the oldest dirty tab", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: (input: unknown) => ({ state: "text", path: (input as { path: string }).path, sha256: "sha", sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: "saved" }),
+    });
+    const hook = renderHook(() => useFilesWorkspace());
+    await act(async () => {
+      for (let index = 0; index < 20; index += 1) await hook.result.current.openPath(`src/${index}.ts`);
+    });
+    await waitFor(() => expect(hook.result.current.tabs.every((tab) => !tab.loading)).toBe(true));
+    act(() => hook.result.current.setDraftText("src/0.ts", "dirty"));
+    await act(async () => expect(await hook.result.current.openPath("src/requested.ts")).toBe(true));
+    expect(hook.result.current.tabs.map((tab) => tab.path)).toContain("src/0.ts");
+    expect(hook.result.current.tabs.map((tab) => tab.path)).not.toContain("src/1.ts");
+    expect(hook.result.current.tabs.map((tab) => tab.path)).toContain("src/requested.ts");
+  });
+
+  it("does not evict the oldest CAS-conflicted tab", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: (input: unknown) => ({ state: "text", path: (input as { path: string }).path, sha256: "sha", sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: "saved" }),
+      saveFile: () => ({ outcome: "conflict", currentSha256: "new-sha" }),
+    });
+    const hook = renderHook(() => useFilesWorkspace());
+    await act(async () => {
+      for (let index = 0; index < 20; index += 1) await hook.result.current.openPath(`src/${index}.ts`);
+    });
+    await waitFor(() => expect(hook.result.current.tabs.every((tab) => !tab.loading)).toBe(true));
+    act(() => hook.result.current.setDraftText("src/0.ts", "dirty"));
+    await act(async () => expect(await hook.result.current.save("src/0.ts")).toBe(false));
+    await act(async () => expect(await hook.result.current.openPath("src/requested.ts")).toBe(true));
+    expect(hook.result.current.tabs.find((tab) => tab.path === "src/0.ts")?.saveState.kind).toBe("conflict");
+    expect(hook.result.current.tabs.map((tab) => tab.path)).not.toContain("src/1.ts");
+  });
+
+  it("rejects an open without evicting when all tabs have unsaved changes", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: (input: unknown) => ({ state: "text", path: (input as { path: string }).path, sha256: "sha", sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: "saved" }),
+    });
+    const hook = renderHook(() => useFilesWorkspace());
+    await act(async () => {
+      for (let index = 0; index < 20; index += 1) await hook.result.current.openPath(`src/${index}.ts`);
+    });
+    await waitFor(() => expect(hook.result.current.tabs.every((tab) => !tab.loading)).toBe(true));
+    act(() => {
+      for (let index = 0; index < 20; index += 1) hook.result.current.setDraftText(`src/${index}.ts`, "dirty");
+    });
+    await act(async () => expect(await hook.result.current.openPath("src/requested.ts")).toBe(false));
+    expect(hook.result.current.tabs).toHaveLength(20);
+    expect(hook.result.current.tabs.map((tab) => tab.path)).not.toContain("src/requested.ts");
+    expect(hook.result.current.treeError).toMatch(/Cannot open src\/requested\.ts/);
+  });
+
+  it("migrates descendant tabs and the active path after a directory rename", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: (input: unknown) => {
+        const path = (input as { path: string }).path;
+        return { state: "text", path, sha256: path, sizeBytes: 1, mimeType: null, modifiedAtMs: null, content: path };
+      },
+      movePath: () => undefined,
+    });
+    const hook = renderHook(() => useFilesWorkspace());
+    await act(async () => {
+      await hook.result.current.openPath("src/a.ts");
+      await hook.result.current.openPath("src/nested/b.ts");
+      await hook.result.current.movePath("src", "lib");
+    });
+    expect(hook.result.current.tabs.map((tab) => tab.path)).toEqual(["lib/a.ts", "lib/nested/b.ts"]);
+    expect(hook.result.current.activePath).toBe("lib/nested/b.ts");
+  });
+
+  it("preserves a dirty draft and reports a CAS conflict", async () => {
+    const { useFilesWorkspace } = await import(
+      "./src/hooks/useFilesWorkspace"
+    );
+    setRpcHandlers({
+      listDirectory: () => ({ path: "", rootName: "repo", entries: [], annotateAvailable: false, sqlAvailable: false }),
+      readFile: () => ({
+        state: "text",
+        path: "README.md",
+        sha256: "sha-old",
+        sizeBytes: 3,
+        mimeType: "text/markdown",
+        modifiedAtMs: 1,
+        content: "old",
+      }),
+      saveFile: () => ({ outcome: "conflict", currentSha256: "sha-new" }),
+    });
+    const { renderHook } = await import("@testing-library/react");
+    const hook = renderHook(() => useFilesWorkspace());
+
+    await act(async () => {
+      await hook.result.current.openPath("README.md");
+    });
+    act(() => hook.result.current.setDraftText("README.md", "my draft"));
+    await act(async () => {
+      expect(await hook.result.current.save("README.md")).toBe(false);
+    });
+
+    await waitFor(() => {
+      expect(hook.result.current.tabs.find(t => t.path === "README.md")?.saveState).toEqual({
+        kind: "conflict",
+        currentSha256: "sha-new",
+      });
+    });
+    expect(hook.result.current.tabs.find(t => t.path === "README.md")?.draftText).toBe("my draft");
+    expect(hook.result.current.activePath).toBe("README.md");
+  });
+
+  it("lazily loads a directory's children on expand and drops them on collapse", async () => {
+    const { useFilesWorkspace } = await import("./src/hooks/useFilesWorkspace");
+    const { renderHook } = await import("@testing-library/react");
+    const listDirectory = vi.fn((input: unknown) => {
+      const path = (input as { path: string }).path;
+      if (path === "") {
+        return {
+          path: "",
+          rootName: "repo",
+          annotateAvailable: false, sqlAvailable: false,
+          entries: [{ kind: "directory", path: "src", name: "src", score: 0, positions: [] }],
+        };
+      }
+      if (path === "src") {
+        return {
+          path: "src",
+          entries: [{ kind: "file", path: "src/a.ts", name: "a.ts", score: 0, positions: [] }],
+        };
+      }
+      throw new Error(`unexpected listDirectory path: ${path}`);
+    });
+    setRpcHandlers({ listDirectory });
+    const hook = renderHook(() => useFilesWorkspace());
+
+    await waitFor(() => {
+      expect(hook.result.current.entries.map((entry) => entry.path)).toEqual(["src"]);
+    });
+    expect(hook.result.current.expandedDirs.has("src")).toBe(false);
+
+    await act(async () => {
+      hook.result.current.toggleDirectory("src");
+    });
+    await waitFor(() => {
+      expect(hook.result.current.entries.map((entry) => entry.path)).toEqual(
+        expect.arrayContaining(["src", "src/a.ts"]),
+      );
+    });
+    expect(hook.result.current.expandedDirs.has("src")).toBe(true);
+    expect(listDirectory).toHaveBeenCalledWith(expect.objectContaining({ path: "src" }));
+
+    // Collapsing drops the fetched children from state instead of merely
+    // hiding them, so re-expanding fetches fresh data.
+    act(() => hook.result.current.toggleDirectory("src"));
+    expect(hook.result.current.expandedDirs.has("src")).toBe(false);
+    expect(hook.result.current.entries.map((entry) => entry.path)).toEqual(["src"]);
+  });
+});

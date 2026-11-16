@@ -1,0 +1,10 @@
+import { resolve, join } from 'node:path';
+import { writeFileSync, renameSync } from 'node:fs';
+const artifact = process.env.ZCODE_TEST_ARTIFACT === '1';
+const { NativeProcess } = await (artifact ? import('../../dist/process.js') : import('../../src/process.ts'));
+const root = process.argv[2];
+const launch = { executable: process.execPath, args: [resolve('tests/provider/catalogue-orphan-child.mjs'), root] };
+const child = new NativeProcess({ ...launch, cwd: root, env: process.env }, 1, null, () => {}, () => {});
+writeFileSync(join(root, 'group.json.tmp'), JSON.stringify({ pid: child.child.pid }), 'utf8');
+renameSync(join(root, 'group.json.tmp'), join(root, 'group.json'));
+setInterval(() => {}, 1000);

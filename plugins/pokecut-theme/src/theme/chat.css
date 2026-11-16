@@ -1,0 +1,1261 @@
+/* Chat layer — BB's native chat (composer, messages, work rows, loaders,
+   approval cards, banners, tooltips) restyled for the Pokecut theme.
+   Ported from Beautiful Chat (https://github.com/diip3sh/bb-plugin-beautiful-chat,
+   MIT, © 2026 Diip3sh), itself after BeautifulUI (MIT). Geometry and motion follow
+   BeautifulUI; colors, radii and elevation are Pokecut's (base.css tokens).
+
+   Each feature is switchable in the plugin settings. app.tsx mirrors them onto <html>:
+     data-pk-off     space-separated features turned off
+                     (prompt bubbles code actions rows shimmer caret approval selection
+                      unread banners minimize tree)
+     data-pk-loader  drive | dots | orbit | coins | bb
+     data-pk-chips   surface | outline | plain
+   With no attributes (settings still loading) everything uses its default. */
+
+:root {
+  --pk-surface: var(--pk-card);
+  --pk-field: color-mix(in oklab, var(--ink) 6%, var(--canvas));
+  --pk-inset: var(--pk-well);
+  --pk-hover: color-mix(in oklab, var(--ink) 6%, transparent);
+  --pk-line: var(--pk-hairline);
+  --pk-line-strong: var(--pk-outline);
+  --pk-ink: var(--foreground);
+  --pk-ink-2: var(--muted-foreground);
+  --pk-ink-3: var(--subtle-foreground);
+  --pk-radius-chip: 6px;
+  --pk-radius-control: 8px;
+  --pk-radius-card: 12px;
+  --pk-radius-window: 16px;
+  --pk-shadow-soft: var(--pk-drop);
+  --pk-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes pk-fade-in { from { opacity: 0; } }
+@keyframes pk-fade-up { from { opacity: 0; transform: translateY(8px); } }
+
+/* ── Prompt bar (promptBar): raised field, 28px controls, filled send ─────────── */
+:root:not([data-pk-off~="prompt"]) [data-app-composer] form[data-promptbox] {
+  border-radius: var(--pk-radius-window);
+  border-color: var(--pk-line-strong);
+  background-color: var(--pk-surface);
+  box-shadow: var(--pk-shadow-soft);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+:root:not([data-pk-off~="prompt"]) [data-app-composer] form[data-promptbox]:focus-within {
+  border-color: color-mix(in oklab, var(--primary) 45%, var(--pk-outline));
+}
+:root:not([data-pk-off~="prompt"]) [data-promptbox] [data-promptbox-submit-action] {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--pk-radius-control);
+  background-color: var(--pk-ink);
+  color: var(--background);
+  transition:
+    background-color 200ms var(--pk-ease-out),
+    color 200ms var(--pk-ease-out),
+    transform 160ms var(--pk-ease-out);
+}
+:root:not([data-pk-off~="prompt"]) [data-promptbox] [data-promptbox-submit-action]:disabled {
+  background-color: var(--pk-line-strong);
+  color: var(--pk-ink-2);
+}
+:root:not([data-pk-off~="prompt"]) [data-promptbox] [data-promptbox-submit-action]:not(:disabled):active {
+  transform: scale(0.96);
+}
+:root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] button:not([data-promptbox-submit-action]) {
+  height: 28px;
+  border-radius: var(--pk-radius-control);
+  color: var(--pk-ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms var(--pk-ease-out);
+}
+:root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] button:not([data-promptbox-submit-action]):not(:has(> span)) {
+  width: 28px;
+}
+:root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] button:not([data-promptbox-submit-action]):active {
+  transform: scale(0.94);
+}
+@media (hover: hover) and (pointer: fine) {
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] button:not([data-promptbox-submit-action]):hover {
+    background-color: var(--pk-hover);
+    color: var(--pk-ink);
+  }
+}
+:root:not([data-pk-off~="prompt"]) section[aria-label="Background commands"] {
+  border-color: transparent;
+  border-radius: var(--pk-radius-card);
+  background-color: var(--pk-surface);
+  box-shadow: 0 0 0 1px var(--pk-line);
+}
+:root:not([data-pk-off~="prompt"]) section[aria-label="Background commands"] [aria-label^="Background command"] {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* ── User messages (userBubbles): soft filled bubbles, no border ─────────────── */
+:root:not([data-pk-off~="bubbles"]) [data-timeline-row-id*=":user-seed:"] .group\/message > div > .rounded-xl,
+:root:not([data-pk-off~="bubbles"]) [data-timeline-row-id*=":user:"] .group\/message > div > .rounded-xl {
+  border-color: transparent;
+  border-radius: 12px;
+  background-color: var(--pk-field);
+  padding: 6px 12px;
+}
+
+/* ── Code (codeChips): inline code as hairline chips, blocks as hairline cards ── */
+:root:not([data-pk-off~="code"]) [data-timeline-row-list] [data-markdown-preview] :not(pre) > code {
+  border-radius: 5px;
+  background-color: var(--pk-inset);
+  box-shadow: 0 0 0 1px var(--pk-line);
+  color: var(--pk-ink-2);
+  font-size: 11.5px;
+  padding: 1px 5px;
+}
+:root:not([data-pk-off~="code"]) [data-timeline-row-list] [data-markdown-preview] pre {
+  border-radius: var(--pk-radius-card);
+  box-shadow: 0 0 0 1px var(--pk-line);
+}
+
+/* ── Message actions (messageActions): hover chips; spatial tooltips live in JS ─ */
+:root:not([data-pk-off~="actions"]) [data-message-column] button.size-5[aria-label] {
+  border-radius: var(--pk-radius-chip);
+}
+@media (hover: hover) and (pointer: fine) {
+  :root:not([data-pk-off~="actions"]) [data-message-column] button.size-5[aria-label]:hover {
+    background-color: var(--pk-hover);
+  }
+}
+
+/* ── Work rows (workRows): pill headers, guide line, smoother expand ─────────── */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] .group\/timeline-row > button {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: var(--pk-radius-control);
+  padding-block: 2px;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] .group\/timeline-row > button .text-sm,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] [data-timeline-row-id] > .rounded-md > .text-sm,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] [data-timeline-row-id] > .rounded-md > .text-sm .text-sm {
+  font-size: 12.5px;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root:not([data-pk-off~="rows"]) [data-timeline-row-list] .group\/timeline-row > button:hover {
+    background-color: var(--pk-hover);
+    transition-duration: 0ms;
+  }
+}
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] .group\/timeline-row > .grid > .overflow-hidden > div {
+  margin-left: 14px;
+  padding-left: 12px;
+  border-left: 1px solid var(--pk-line);
+}
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] .group\/timeline-row > .grid,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] .group\/timeline-row > .grid > .overflow-hidden > div {
+  transition-duration: 300ms;
+  transition-timing-function: var(--pk-ease-out);
+}
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] .group\/timeline-row > button .tabular-nums {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 11.5px;
+  color: var(--pk-ink-3);
+}
+
+/* ── Tool call rows (toolChips): surface = fill + hairline, outline = hairline,
+      plain = BB's own row with no background or border ───────────────────────── */
+:root:not([data-pk-chips="plain"]) [data-timeline-row-id]:not([data-timeline-row-id*=":turn:"]):not([data-timeline-row-id*=":assistant:"]):not([data-timeline-row-id*=":user"]):not([data-timeline-row-id*="reasoning"]):not([data-timeline-row-id*=":error:"])
+  > .rounded-md > .group\/timeline-row > button {
+  margin-block: 2px;
+  padding-inline: 8px;
+  box-shadow: 0 0 0 1px var(--pk-line);
+}
+:root:not([data-pk-chips="plain"]):not([data-pk-chips="outline"]) [data-timeline-row-id]:not([data-timeline-row-id*=":turn:"]):not([data-timeline-row-id*=":assistant:"]):not([data-timeline-row-id*=":user"]):not([data-timeline-row-id*="reasoning"]):not([data-timeline-row-id*=":error:"])
+  > .rounded-md > .group\/timeline-row > button {
+  background-color: var(--pk-surface);
+}
+
+/* ── Loading (loader): BeautifulUI's pixel loaders replace the pending row icon ── */
+@property --pk-px-a { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-px-b { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-px-c { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-px-d { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-0 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-1 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-2 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-3 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-4 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-5 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-6 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@property --pk-orb-7 { syntax: "<number>"; inherits: false; initial-value: 0.15; }
+@keyframes pk-px-a { 0%, 62%, 100% { --pk-px-a: 0.15; } 18%, 42% { --pk-px-a: 1; } }
+@keyframes pk-px-b { 0%, 62%, 100% { --pk-px-b: 0.15; } 18%, 42% { --pk-px-b: 1; } }
+@keyframes pk-px-c { 0%, 62%, 100% { --pk-px-c: 0.15; } 18%, 42% { --pk-px-c: 1; } }
+@keyframes pk-px-d { 0%, 62%, 100% { --pk-px-d: 0.15; } 18%, 42% { --pk-px-d: 1; } }
+@keyframes pk-orb-0 { 0%, 62%, 100% { --pk-orb-0: 0.15; } 18%, 42% { --pk-orb-0: 1; } }
+@keyframes pk-orb-1 { 0%, 62%, 100% { --pk-orb-1: 0.15; } 18%, 42% { --pk-orb-1: 1; } }
+@keyframes pk-orb-2 { 0%, 62%, 100% { --pk-orb-2: 0.15; } 18%, 42% { --pk-orb-2: 1; } }
+@keyframes pk-orb-3 { 0%, 62%, 100% { --pk-orb-3: 0.15; } 18%, 42% { --pk-orb-3: 1; } }
+@keyframes pk-orb-4 { 0%, 62%, 100% { --pk-orb-4: 0.15; } 18%, 42% { --pk-orb-4: 1; } }
+@keyframes pk-orb-5 { 0%, 62%, 100% { --pk-orb-5: 0.15; } 18%, 42% { --pk-orb-5: 1; } }
+@keyframes pk-orb-6 { 0%, 62%, 100% { --pk-orb-6: 0.15; } 18%, 42% { --pk-orb-6: 1; } }
+@keyframes pk-orb-7 { 0%, 62%, 100% { --pk-orb-7: 0.15; } 18%, 42% { --pk-orb-7: 1; } }
+
+:root:not([data-pk-loader="bb"]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child) > svg {
+  display: none;
+}
+:root:not([data-pk-loader="bb"]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+  --pk-px-on: var(--pk-ink);
+  content: "";
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+/* Drive: square pixels sweep diagonally. */
+:root[data-pk-loader="drive"] [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before,
+:root[data-pk-loader="coins"]:not([data-pk-coins-ready]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+  background:
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-b) * 100%), transparent) 0 0) 0px 0px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-c) * 100%), transparent) 0 0) 5px 0px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-d) * 100%), transparent) 0 0) 10px 0px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-a) * 100%), transparent) 0 0) 0px 5px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-b) * 100%), transparent) 0 0) 5px 5px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-c) * 100%), transparent) 0 0) 10px 5px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-b) * 100%), transparent) 0 0) 0px 10px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-c) * 100%), transparent) 0 0) 5px 10px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-d) * 100%), transparent) 0 0) 10px 10px / 4px 4px no-repeat;
+  animation:
+    pk-px-a 650ms ease-in-out 0ms infinite,
+    pk-px-b 650ms ease-in-out 90ms infinite,
+    pk-px-c 650ms ease-in-out 180ms infinite,
+    pk-px-d 650ms ease-in-out 270ms infinite;
+}
+/* Pokecut ring (default): the accent gradient turning in a thin ring. */
+@keyframes pk-spin { to { transform: rotate(1turn); } }
+:root:not([data-pk-loader]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before,
+:root[data-pk-loader="pokecut"] [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 18%, #d96d98 40%, #aa79bf 72%, #8c69c3);
+  -webkit-mask: radial-gradient(circle, transparent 4.2px, #000 4.7px);
+  mask: radial-gradient(circle, transparent 4.2px, #000 4.7px);
+  animation: pk-spin 900ms linear infinite;
+  will-change: transform;
+}
+/* Dots: the same sweep with round pixels. */
+:root[data-pk-loader="dots"] [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+  background:
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-b) * 100%), transparent) 90%, transparent) 0px 0px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-c) * 100%), transparent) 90%, transparent) 5px 0px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-d) * 100%), transparent) 90%, transparent) 10px 0px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-a) * 100%), transparent) 90%, transparent) 0px 5px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-b) * 100%), transparent) 90%, transparent) 5px 5px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-c) * 100%), transparent) 90%, transparent) 10px 5px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-b) * 100%), transparent) 90%, transparent) 0px 10px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-c) * 100%), transparent) 90%, transparent) 5px 10px / 4px 4px no-repeat,
+    radial-gradient(closest-side, color-mix(in oklab, var(--pk-px-on) calc(var(--pk-px-d) * 100%), transparent) 90%, transparent) 10px 10px / 4px 4px no-repeat;
+  animation:
+    pk-px-a 650ms ease-in-out 0ms infinite,
+    pk-px-b 650ms ease-in-out 90ms infinite,
+    pk-px-c 650ms ease-in-out 180ms infinite,
+    pk-px-d 650ms ease-in-out 270ms infinite;
+}
+/* Orbit: one lit pixel walks the edge; the centre stays dim. */
+:root[data-pk-loader="orbit"] [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+  background:
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-0) * 100%), transparent) 0 0) 0px 0px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-1) * 100%), transparent) 0 0) 5px 0px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-2) * 100%), transparent) 0 0) 10px 0px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-7) * 100%), transparent) 0 0) 0px 5px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) 7%, transparent) 0 0) 5px 5px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-3) * 100%), transparent) 0 0) 10px 5px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-6) * 100%), transparent) 0 0) 0px 10px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-5) * 100%), transparent) 0 0) 5px 10px / 4px 4px no-repeat,
+    linear-gradient(color-mix(in oklab, var(--pk-px-on) calc(var(--pk-orb-4) * 100%), transparent) 0 0) 10px 10px / 4px 4px no-repeat;
+  animation:
+    pk-orb-0 950ms ease-in-out 0ms infinite,
+    pk-orb-1 950ms ease-in-out 110ms infinite,
+    pk-orb-2 950ms ease-in-out 220ms infinite,
+    pk-orb-3 950ms ease-in-out 330ms infinite,
+    pk-orb-4 950ms ease-in-out 440ms infinite,
+    pk-orb-5 950ms ease-in-out 550ms infinite,
+    pk-orb-6 950ms ease-in-out 660ms infinite,
+    pk-orb-7 950ms ease-in-out 770ms infinite;
+}
+
+/* Coins: Originkit's ring of tumbling coins, painted by coins-worklet.ts. One loop
+   (10.472s) turns the ring once and tumbles each coin twice. */
+@property --pk-coin-t { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --pk-coin-color { syntax: "<color>"; inherits: false; initial-value: #fff; }
+@keyframes pk-coin-t { to { --pk-coin-t: 1; } }
+:root[data-pk-loader="coins"][data-pk-coins-ready] [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+  --pk-coin-color: var(--pk-ink);
+  background: paint(pk-coins);
+  animation: pk-coin-t 10.472s linear infinite;
+}
+
+/* ── Shimmer (shimmer): pending labels breathe ──────────────────────────────── */
+/* A band sliding through clipped text (background-position) only runs on the
+   main thread: with a run live it restyled and repainted every frame (~120
+   style recalcs a second), and on slower machines typing and scrolling lagged.
+   Opacity runs on the compositor, so the label pulses at no main-thread cost. */
+@keyframes pk-shimmer-pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-pk-off~="shimmer"]) #thread-detail-timeline-panel .animate-shine {
+    background-image: none;
+    color: var(--pk-ink);
+    -webkit-text-fill-color: currentColor;
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: pk-shimmer-pulse 1.4s ease-in-out infinite;
+    will-change: opacity;
+  }
+}
+
+/* ── Streaming caret (streamingCaret): trails the reply while the run is live ── */
+:root:not([data-pk-off~="caret"]) #thread-detail-timeline-panel:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action][aria-label^="Steer current run"], [data-promptbox-submit-action] svg[data-icon="Square"])
+  [data-timeline-row-list="top-level"] > [data-timeline-row-id*=":assistant:"]:last-child [data-markdown-preview]
+  > :is(p, h1, h2, h3, h4, h5, h6):last-child::after,
+:root:not([data-pk-off~="caret"]) #thread-detail-timeline-panel:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action][aria-label^="Steer current run"], [data-promptbox-submit-action] svg[data-icon="Square"])
+  [data-timeline-row-list="top-level"] > [data-timeline-row-id*=":assistant:"]:last-child [data-markdown-preview]
+  > :is(ul, ol):last-child > li:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  margin-left: 3px;
+  border-radius: 1px;
+  background-color: var(--pk-ink);
+  transform: translateY(1px);
+  animation: pk-fade-in 150ms ease-out both;
+}
+
+/* ── Approval cards (approvalCard): permission requests and agent questions ──── */
+:root:not([data-pk-off~="approval"]) section[data-testid="approval-banner"],
+:root:not([data-pk-off~="approval"]) section[data-testid="user-question-banner"] {
+  border-color: transparent;
+  border-radius: var(--pk-radius-card);
+  background-color: var(--pk-surface);
+  box-shadow: 0 0 0 1px var(--pk-line), var(--pk-shadow-soft);
+  animation: pk-fade-up 380ms var(--pk-ease-out) both;
+}
+:root:not([data-pk-off~="approval"]) section[data-testid$="-banner"] > div:first-child {
+  border-color: var(--pk-line);
+}
+:root:not([data-pk-off~="approval"]) section[data-testid$="-banner"] h3 {
+  font-size: 14px;
+  color: var(--pk-ink);
+}
+:root:not([data-pk-off~="approval"]) section[data-testid$="-banner"] button.inline-flex.whitespace-nowrap {
+  height: 27px;
+  padding-inline: 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  transition:
+    background-color 150ms ease,
+    opacity 150ms ease,
+    transform 150ms var(--pk-ease-out);
+}
+:root:not([data-pk-off~="approval"]) section[data-testid$="-banner"] button.inline-flex.whitespace-nowrap:not(:disabled):active {
+  transform: scale(0.96);
+}
+:root:not([data-pk-off~="approval"]) section[data-testid="user-question-banner"] fieldset button.w-full.items-start {
+  border-radius: var(--pk-radius-control);
+  padding-block: 5px;
+  color: var(--pk-ink-2);
+  transition: background-color 100ms ease, color 200ms ease;
+}
+:root:not([data-pk-off~="approval"]) section[data-testid="user-question-banner"] fieldset button.w-full.items-start.bg-surface-selected {
+  background-color: var(--pk-hover);
+  color: var(--pk-ink);
+}
+:root:not([data-pk-off~="approval"]) section[data-testid="user-question-banner"] fieldset button.w-full.items-start > span.size-4 {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--pk-line-strong);
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+:root:not([data-pk-off~="approval"]) section[data-testid="user-question-banner"] fieldset button.w-full.items-start > span.size-4.bg-primary {
+  box-shadow: none;
+}
+:root:not([data-pk-off~="approval"]) section[data-testid="user-question-banner"] fieldset textarea {
+  border-color: transparent;
+  border-radius: var(--pk-radius-control);
+  background-color: var(--pk-field);
+}
+
+/* ── Selection pill (selectionPill): Add to chat / Reply in side chat ───────── */
+:root:not([data-pk-off~="selection"]) [data-radix-popper-content-wrapper] > [role="dialog"]:has(> div > button > svg[data-icon="MessageSquarePlus"]) {
+  --tw-enter-scale: 0.96;
+  gap: 2px;
+  padding: 4px;
+  border-color: transparent;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px var(--pk-line),
+    0 8px 24px -6px color-mix(in oklab, black 35%, transparent),
+    0 2px 6px color-mix(in oklab, black 12%, transparent);
+  transform-origin: var(--radix-popover-content-transform-origin);
+  animation-duration: 180ms;
+  animation-timing-function: var(--pk-ease-out);
+}
+:root:not([data-pk-off~="selection"]) [data-radix-popper-content-wrapper] > [role="dialog"]:has(> div > button > svg[data-icon="MessageSquarePlus"]) button {
+  height: 28px;
+  gap: 4px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  transition:
+    background-color 150ms ease,
+    transform 150ms var(--pk-ease-out);
+}
+:root:not([data-pk-off~="selection"]) [data-radix-popper-content-wrapper] > [role="dialog"]:has(> div > button > svg[data-icon="MessageSquarePlus"]) button:hover {
+  background-color: var(--pk-hover);
+}
+:root:not([data-pk-off~="selection"]) [data-radix-popper-content-wrapper] > [role="dialog"]:has(> div > button > svg[data-icon="MessageSquarePlus"]) button:active {
+  transform: scale(0.96);
+}
+:root:not([data-pk-off~="selection"]) [data-radix-popper-content-wrapper] > [role="dialog"]:has(> div > button > svg[data-icon="MessageSquarePlus"]) span[aria-hidden="true"] {
+  background-color: var(--pk-line-strong);
+}
+
+/* ── Composer banners (mergedBanners): one card instead of a stack ──────────── */
+/* BB gives each banner above the composer (background commands, git, parent and
+   child threads) its own bordered card, 8px apart. The banners keep their own
+   boxes here and join into one card: gaps close, shared edges collapse onto each
+   other, and only the outer corners round. The chrome stays on the banners rather
+   than the stack, so anything else in there (a plugin strip) keeps its own space
+   instead of becoming an empty row, and nothing is clipped. */
+:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid:has(> section[aria-label]) {
+  gap: 0;
+}
+:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid > section[aria-label] {
+  border: 1px solid var(--pk-line);
+  border-radius: 0;
+  background-color: var(--pk-surface);
+  box-shadow: none;
+}
+:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid > section[aria-label]:not(:first-of-type) {
+  margin-top: -1px;
+}
+:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid > section[aria-label]:first-of-type {
+  border-top-left-radius: var(--pk-radius-card);
+  border-top-right-radius: var(--pk-radius-card);
+}
+:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid > section[aria-label]:last-of-type {
+  border-bottom-left-radius: var(--pk-radius-card);
+  border-bottom-right-radius: var(--pk-radius-card);
+}
+/* Anything that is not a banner keeps the stack's original spacing. */
+:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid:has(> section[aria-label]) > :not(section[aria-label]):not([data-bb-plugin-root]) {
+  margin-block: 8px;
+}
+
+/* ── Minimize while running (minimizeWhileRunning) ───────────────────────────── */
+/* While a response is generating, the prompt box drops to BB's own one-line compact
+   layout, freeing room for the reply. These are BB's compact-composer rules with
+   the trigger swapped for the send button: "Stop run" means a run is live and the
+   box is empty. Typing a follow-up flips it to "Steer current run", so the box
+   grows back as soon as you type, focused or not; voice input keeps the full box.
+   It never minimizes a box in use: focused, under the pointer, opened on the
+   phone, with a menu, the model picker or a $/@ list open (a click on the model
+   picker blurred the box first, and it shrank before the picker could open). Otherwise the plus vanished under the finger, and a
+   tap on a skill fell through the shrinking box onto the mic. */
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) {
+  overflow: hidden;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-action-row] {
+  inset-block: 0;
+  gap: 0;
+  padding: 0;
+  position: absolute;
+  right: .5rem;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-main] {
+  height: 3rem;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-expanded-only] {
+  display: none!important;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-scroll] {
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-right: 3.5rem;
+  overflow: hidden;
+  height: 3rem!important;
+  min-height: 3rem!important;
+  max-height: 3rem!important;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] {
+  align-items: center;
+  height: 100%;
+  display: flex;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable] {
+  text-overflow: ellipsis;
+  width: 100%;
+  max-height: 1.7em;
+  overflow: hidden;
+  white-space: nowrap!important;
+  min-height: 0!important;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable]>*,
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable] :where(blockquote,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+ol,
+p,
+ul) {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  white-space: inherit;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: inline;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable]>*+:before,
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable] :where(blockquote,
+li)>*+:before,
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable] :where(ol,
+ul)>li+li:before {
+  content: " ";
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable] br {
+  content: " ";
+  display: inline;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror[contenteditable] br:after {
+  content: " ";
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .prompt-mention-pill>span:last-child {
+  min-width: 0;
+}
+:root:not([data-pk-off~="minimize"]) [data-follow-up-composer]:has([data-promptbox-submit-action][aria-label="Stop run"], [data-promptbox-submit-action] svg[data-icon="Square"]):not(:focus-within, :hover, [data-follow-up-composer-footer-visible], :has([aria-expanded="true"], [data-promptbox-typeahead-menu])) [data-promptbox]:not([data-promptbox-voice-active]) [data-promptbox-editor-content] .ProseMirror p.is-editor-empty:first-child:before {
+  content: var(--promptbox-container-compact-placeholder);
+}
+
+/* ── Tree lines (treeLines): an expanded work group reads as a tree ────────────── */
+/* An expanded group ("Explored 10 files, 1 list") lists its tool calls in
+   [data-timeline-row-list="bundle"]. The list is indented under the header's icon. A 1px trunk runs
+   the full height of every row but the last; each row adds only the rounded curve
+   into its icon (centred 12px down), so strokes never stack. Colours are opaque
+   (ink mixed into the background) for the same reason: where lines meet, nothing
+   darkens. The running row is the current node: its curve and the trunk leading
+   down to it from the header are lit. */
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] {
+  --pk-tree-dim: color-mix(in oklab, var(--ink) 22%, var(--background));
+  --pk-tree-lit: color-mix(in oklab, var(--ink) 72%, var(--background));
+  position: relative;
+  margin-left: 7px;
+  padding-left: 16px;
+}
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] {
+  position: relative;
+}
+/* Trunk. */
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -16px;
+  width: 1px;
+  background: var(--pk-tree-dim);
+  pointer-events: none;
+}
+/* The first row's trunk reaches up to meet the header. */
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]:first-child:not(:last-child)::after {
+  top: -4px;
+}
+/* Elbow: just the curve; the trunk supplies the straight part. */
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: -16px;
+  width: 10px;
+  height: 6px;
+  border-bottom: 1px solid var(--pk-tree-dim);
+  border-left: 1px solid var(--pk-tree-dim);
+  border-bottom-left-radius: 6px;
+  pointer-events: none;
+}
+/* The last row has no trunk, so its elbow carries the straight part itself. */
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]:last-child::before {
+  top: 0;
+  height: 12px;
+}
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]:first-child:last-child::before {
+  top: -4px;
+  height: 16px;
+}
+/* Current node: the running row's curve, and the path above it, light up. */
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]:has(.animate-shine)::before {
+  border-color: var(--pk-tree-lit);
+}
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]:has(~ [data-timeline-row-id] .animate-shine)::after {
+  background: var(--pk-tree-lit);
+}
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]:has(.animate-shine):not(:last-child)::after {
+  background: linear-gradient(var(--pk-tree-lit) 0 12px, var(--pk-tree-dim) 12px);
+}
+/* Compact work rows' straight guide line would double up with the tree. */
+:root:not([data-pk-off~="tree"]) [data-timeline-row-list] .group\/timeline-row > .grid > .overflow-hidden > div:has(> [data-timeline-row-list="bundle"]) {
+  margin-left: 0;
+  padding-left: 8px;
+  border-left: 0;
+}
+
+/* ── Unread marker (unreadMarker): NEW trails the first unread row's label ───── */
+/* BB stacks a separator above the row: a 10px wide-tracked accent label and a rule
+   across the width. Where the row below has a label of its own, the separator is
+   clipped away (it stays in the a11y tree as role="separator") and the row prints
+   NEW after its label, at the label's own size. Message rows keep BB's separator.
+   NEW sits outside the row's button so a long, truncating label can't clip it; the
+   button's own trailing chevron supplies the gap. */
+:root:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) {
+  height: 0;
+  margin-bottom: -8px;
+  overflow: hidden;
+}
+:root:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) + [data-timeline-row-id] > .rounded-md > .group\/timeline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+:root:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) + [data-timeline-row-id] > .rounded-md > .group\/timeline-row > button {
+  order: 0;
+}
+:root:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) + [data-timeline-row-id] > .rounded-md > .group\/timeline-row::after {
+  order: 1;
+  content: "NEW";
+  color: var(--success);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 20px;
+}
+/* Compact work rows off: BB's own 14px label size. */
+:root[data-pk-off~="rows"]:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) + [data-timeline-row-id] > .rounded-md > .group\/timeline-row::after {
+  font-size: 14px;
+}
+/* Expanded details keep their own line under the label. */
+:root:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) + [data-timeline-row-id] > .rounded-md > .group\/timeline-row > .grid {
+  order: 2;
+  flex-basis: 100%;
+}
+
+/* Spatial tooltips (spatial-tooltip.ts, mounted only while messageActions is on):
+   in rows of 3+ tooltip buttons the native bubble is hidden visually (its sr-only
+   text stays) and one shared bubble glides between siblings. */
+[data-pk-spatial-native] {
+  opacity: 0 !important;
+}
+.pk-spatial-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  box-sizing: border-box;
+  width: var(--w, auto);
+  max-width: 320px;
+  overflow: hidden;
+  border-radius: var(--pk-radius-control);
+  background-color: var(--ink);
+  color: var(--canvas);
+  box-shadow: var(--pk-drop);
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(var(--x, 0), var(--y, 0), 0) scale(0.96);
+  transition:
+    opacity 120ms ease,
+    transform 180ms var(--pk-ease-out),
+    width 180ms var(--pk-ease-out);
+}
+.pk-spatial-tip[data-open] {
+  opacity: 1;
+  transform: translate3d(var(--x, 0), var(--y, 0), 0);
+}
+.pk-spatial-tip[data-snap] {
+  transition: none;
+}
+.pk-spatial-tip-measure {
+  width: max-content;
+  visibility: hidden;
+  transition: none;
+}
+
+/* Git chip is `flex-1` in BB, so it eats the row and the new-thread plus
+   sits in the hole before permission. Keep plus next to the chips. */
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] [data-promptbox-hide-branch-compact] {
+  flex-grow: 0 !important;
+}
+
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] button[aria-label="New thread in this environment"],
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] button:has(> svg[data-icon="MessageSquarePlus"]) {
+  margin-left: 8px !important;
+}
+
+/* Folders chip already names the section; hide the native path select
+   and its BB slot (that slot is flex-1 and opens a hole between folder
+   and the machine chip). The Environment button stays. */
+:root:not([data-pk-off~="prompt"]) [data-app-composer] :has(> .pf-env-inputs),
+:root:not([data-pk-off~="prompt"]) [data-app-composer] .pf-env-inputs,
+:root:not([data-pk-off~="prompt"]) [data-app-composer] .pf-env-inputs-note {
+  display: none !important;
+}
+
+/* Pack folder + machine + git on the left; permission stays on the right.
+   After git lost flex-1, leftover width sat between the folder chip and
+   the machine chip. */
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer],
+:root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+}
+
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] > div:first-child,
+:root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) > div:first-child {
+  flex: 0 1 auto !important;
+}
+
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] > div:last-child,
+:root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) > div:last-child {
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+}
+
+/* ── Mobile responsiveness: compact action row; same footer as desktop ───── */
+@media (max-width: 640px) {
+  /* Limit prompt box height on mobile so large text never pushes the action bar/mic below keyboard */
+  [data-app-composer] [data-promptbox-editor-scroll] {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-height: min(160px, 28dvh) !important;
+    overflow-y: auto !important;
+  }
+
+  [data-app-composer] [data-promptbox-editor-content] .ProseMirror[contenteditable] {
+    touch-action: pan-y !important;
+  }
+
+  /* Action row: tight gaps, proper padding, keep natural order */
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] {
+    gap: 4px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Left action group: Model/reasoning container truncates properly */
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] [data-promptbox-expanded-only] {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+    gap: 4px !important;
+  }
+
+  /* Hide long reasoning label (e.g. "Высокое" / "Среднее") on mobile to give space for model & agent */
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] [data-promptbox-hide-compact] {
+    display: none !important;
+  }
+
+  /* Right action slot (Agent, MoA, Mic, etc.): tight flex spacing */
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] > div:last-child {
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Action buttons: compact sizing with text truncation */
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] button:not([data-promptbox-submit-action]) {
+    height: 28px !important;
+    padding-inline: 6px !important;
+    font-size: 11.5px !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-action-row] button:not([data-promptbox-submit-action]) span {
+    max-width: 112px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /*
+   * Same two columns as desktop (chips | permission). Unpacking them with
+   * display:contents + justify-between parked the plus in the middle and
+   * turned EnvironmentPicker into a second folder dropdown.
+   * Never `[data-promptbox-shell] > div:has([data-promptbox-project-control])`.
+   */
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer-anchor],
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer] {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer] [data-promptbox-layout] {
+    height: auto !important;
+    flex: 0 1 auto !important;
+  }
+
+  /* Only when the context row is actually docked below: a minimized composer has
+     no footer and must keep its own bottom edge. */
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer]:has([data-follow-up-composer-footer]) form[data-promptbox],
+  :root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) form[data-promptbox] {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-bottom-width: 0 !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer][data-follow-up-composer-expanded] [data-follow-up-composer-footer],
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer]:focus-within [data-follow-up-composer-footer],
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer],
+  :root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 0 0 auto !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 24px !important;
+    max-height: none !important;
+    margin-top: 0 !important;
+    padding: 6px 8px 8px !important;
+    overflow: hidden !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    z-index: 2 !important;
+    background-color: var(--pk-well) !important;
+    border-color: var(--pk-line-strong) !important;
+    border-style: solid !important;
+    border-width: 0 1px 1px !important;
+    border-radius: 0 0 var(--pk-radius-window) var(--pk-radius-window) !important;
+    box-shadow: var(--pk-shadow-soft) !important;
+    transition: none !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] > div,
+  :root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) > div {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    max-height: none !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] > div:first-child,
+  :root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) > div:first-child {
+    flex: 0 1 auto !important;
+    overflow: hidden !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] > div:last-child,
+  :root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) > div:last-child {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-app-composer] .pf-native-project-slot {
+    min-width: 0 !important;
+    max-width: 55% !important;
+    overflow: hidden !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-shell] [data-follow-up-composer-footer] [data-promptbox-full-label],
+  :root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) [data-promptbox-full-label] {
+    display: none !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-promptbox-shell] [data-follow-up-composer-footer] [data-promptbox-compact-label],
+  :root:not([data-pk-off~="prompt"]) [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control]) [data-promptbox-compact-label],
+  :root:not([data-pk-off~="prompt"]) [data-app-composer] .pf-native-project-slot > button > span.min-w-0 {
+    display: inline-block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* ── Phone context row: wrap instead of squeezing ───────────────────────────
+   With a project, a machine, a branch and access mode there is no room for one
+   line at 390px. The chips flow onto a second line; access stays right-aligned
+   on the last line; long project and branch names truncate only past 60%. */
+@media (max-width: 640px) {
+  :root:not([data-pk-off~="prompt"]) :is(
+    [data-follow-up-composer-footer],
+    [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control])
+  ) {
+    flex-wrap: wrap !important;
+    row-gap: 6px !important;
+    column-gap: 6px !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) :is(
+    [data-follow-up-composer-footer],
+    [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control])
+  ) > div:first-child {
+    display: contents !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) :is(
+    [data-follow-up-composer-footer],
+    [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control])
+  ) > div:first-child > div {
+    display: contents !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) :is(
+    [data-follow-up-composer-footer],
+    [data-app-composer]:not(:has([data-follow-up-composer])) > div:has(> div [data-promptbox-project-control])
+  ) > div:last-child {
+    margin-left: auto !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-app-composer] :is(.pf-native-project-slot, [data-option-display]) {
+    flex: 0 1 auto !important;
+    max-width: 60% !important;
+    min-width: 0 !important;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-app-composer] [data-bb-plugin="environment-project-checkout"] button[role="combobox"] {
+    max-width: 60%;
+    min-width: 0;
+  }
+
+  :root:not([data-pk-off~="prompt"]) [data-app-composer] :is(button[data-promptbox-shrinkable-control], [data-follow-up-composer-footer] span.inline-flex.h-6) {
+    flex: 0 0 auto !important;
+  }
+}
+
+/* ── Context meter (context-meter.ts): a fill line instead of the ring ──────
+   The line sits on the context row's top edge, i.e. the composer's bottom
+   edge. The ring button stays as an invisible strip over the line so BB's
+   detail popover still opens from it; hovering shows the percentage. */
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer][data-pk-ctx] {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer][data-pk-ctx]::before {
+  content: "";
+  position: absolute;
+  top: var(--pk-meter-top, -1px);
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  z-index: 2;
+  border-radius: 2px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--pk-ctx-color), var(--pk-ctx-color)) 0 0 / var(--pk-ctx) 100% no-repeat,
+    var(--pk-hairline);
+  transition: background-size 400ms var(--pk-ease-out);
+}
+
+[data-follow-up-composer-footer][data-pk-ctx-level="low"] { --pk-ctx-color: color-mix(in oklab, var(--ink) 35%, transparent); }
+[data-follow-up-composer-footer][data-pk-ctx-level="mid"] { --pk-ctx-color: var(--warning); }
+[data-follow-up-composer-footer][data-pk-ctx-level="high"] { --pk-ctx-color: var(--destructive); }
+
+:root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer][data-pk-ctx] [data-pk-ctx-ring] {
+  position: absolute !important;
+  top: calc(var(--pk-meter-top, -1px) - 6px);
+  left: 14px;
+  right: 14px;
+  width: auto !important;
+  height: 12px !important;
+  margin: 0 !important;
+  border-radius: 6px !important;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ── Expanded work group as one card (workRows) ────────────────────────────
+   Rows of an expanded group (inside BB's [data-timeline-items] wrapper) sit in
+   one card with hairline dividers instead of each row being an outlined chip.
+   The repeated verb ("Ran") moves to the row's tooltip; a dot shows status; the
+   command reads as code; durations align right; errors are red
+   (timeline-marks.ts marks them). */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-right: 6px;
+  border: 1px solid var(--pk-hairline);
+  border-radius: 12px;
+  background-color: var(--pk-card);
+  box-shadow: var(--pk-card-drop);
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] + [data-timeline-row-id] {
+  border-top: 1px solid var(--pk-hairline);
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md {
+  border-radius: 0;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md > .group\/timeline-row > button {
+  width: 100%;
+  margin-block: 0;
+  padding-inline: 4px;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button > span,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button > span > span,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button span[title] {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+/* The verb lives in the row's title (hover); only on rows that carry a command. */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button span[title]:has(> span.font-medium) > span:first-child:not(.font-medium):not(.tabular-nums) {
+  display: none;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button span[title] > span.font-medium {
+  font-family: var(--font-mono, ui-monospace, "SF Mono", monospace);
+  font-size: 11.5px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button span[title] > span.tabular-nums {
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+/* Status dot instead of the tool glyph on finished command rows. */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button > span > span:not(:has(.animate-shine)):has(span.font-medium) > svg[data-icon] {
+  display: none;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .group\/timeline-row > button > span > span:not(:has(.animate-shine)):has(span.font-medium)::before {
+  content: "";
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border-radius: 0;
+  background: radial-gradient(circle, var(--pk-dot, color-mix(in oklab, var(--ink) 32%, transparent)) 0 3px, transparent 3.5px);
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id][data-pk-err-row] .group\/timeline-row > button > span > span::before {
+  --pk-dot: var(--destructive);
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id][data-pk-err-row] > .rounded-md {
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--destructive) 70%, transparent);
+}
+
+/* Error counts as red chips, in group headers and rows alike. */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] [data-pk-err] {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in oklab, var(--destructive) 35%, transparent);
+  border-radius: 999px;
+  background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+  color: var(--destructive-text);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Inside the group card the card itself is the grouping: no tree lines, an
+   even left edge, and reasoning rows ("Thought") one step quieter. */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] {
+  margin-left: 4px !important;
+  padding-left: 6px !important;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]::before,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id]::after {
+  content: none !important;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id][data-timeline-row-id*="reasoning"] .group\/timeline-row > button {
+  opacity: 0.6;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id][data-timeline-row-id*="reasoning"] .group\/timeline-row > button:hover {
+  opacity: 1;
+}
+
+/* One grid for every row in a group card, whatever its markup (button rows,
+   static rows such as "Read file"): 8px inset, a 14px icon cell, 8px to the
+   text, durations and error marks in a right-hand column. */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md > .group\/timeline-row > button,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md > div.items-center {
+  width: 100%;
+  padding-inline: 8px !important;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .inline-flex.items-center:has(> span[title]) {
+  gap: 8px !important;
+  width: 100%;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] .inline-flex.items-center:has(> span[title]) > svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] span.min-w-0.max-w-full:has(> .inline-flex),
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] span[title] {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] span[title] > span.font-medium + span,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] span[title] > span.tabular-nums:first-child {
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] span[title] > span.font-medium + span + span {
+  margin-left: 6px;
+}
+
+/* ── Message times (message-times.ts) ───────────────────────────────────────
+   A quiet relative time leading a message's action strip, faded in on hover or
+   focus; tabular digits so the strip does not jitter as minutes tick. */
+:root:not([data-pk-off~="times"]) [data-pk-time]::before {
+  content: attr(data-pk-time);
+  flex: 0 0 auto;
+  align-self: center;
+  margin-right: 4px;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: var(--subtle-foreground);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+:root:not([data-pk-off~="times"]) :is(.group\/message, .group\/timeline-row):is(:hover, :focus-within) [data-pk-time]::before,
+:root:not([data-pk-off~="times"]) .group\/message[data-pk-time]:is(:hover, :focus-within)::before {
+  opacity: 1;
+}
+
+:root:not([data-pk-off~="times"]) .group\/message[data-pk-time]::before {
+  display: block;
+  margin-top: 2px;
+}
+
+:root:not([data-pk-off~="times"]) .group\/message.ml-auto[data-pk-time]::before {
+  text-align: right;
+}
+
+:root[data-pk-off~="times"] [data-pk-time]::before {
+  content: none;
+}
+
+/* Timeline rows (cross-thread deliveries, agent events) keep the time only in
+   their tooltip: an inline label there would push the row's title aside. */
+.group\/timeline-row > [data-pk-time]::before {
+  content: none !important;
+}
+
+/* ── Expanded row output (command output, tool details) ──────────────────────
+   The detail under an expanded row is a recessed well, not another raised card:
+   hairline, 10px radius, wrapped monospace text. Inside a group card it starts
+   under the row's text (8px inset + 14px icon + 8px gap). */
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] [data-timeline-row-id] > .rounded-md .grid .overflow-hidden.rounded-lg.border.bg-card {
+  border-color: var(--pk-hairline);
+  border-radius: 10px;
+  background-color: var(--pk-well);
+  box-shadow: none;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] [data-timeline-row-id] > .rounded-md .grid .overflow-hidden.rounded-lg.border.bg-card > .font-mono {
+  padding: 8px 12px;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list] [data-timeline-row-id] > .rounded-md .grid .overflow-hidden.rounded-lg.border.bg-card .whitespace-pre-wrap {
+  overflow-wrap: anywhere;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md > .grid > .overflow-hidden > div,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md > .group\/timeline-row > .grid > .overflow-hidden > div {
+  margin-left: 30px !important;
+  padding-left: 0 !important;
+  padding-right: 8px;
+  border-left: 0 !important;
+}
+
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md > .grid > .overflow-hidden > div .space-y-1,
+:root:not([data-pk-off~="rows"]) [data-timeline-row-list="bundle"] > [data-timeline-items] > [data-timeline-row-id] > .rounded-md > .group\/timeline-row > .grid > .overflow-hidden > div .space-y-1 {
+  padding-bottom: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-promptbox] [data-promptbox-submit-action]:not(:disabled):active,
+  [data-promptbox-action-row] button:not([data-promptbox-submit-action]):active,
+  [data-radix-popper-content-wrapper] > [role="dialog"]:has(> div > button > svg[data-icon="MessageSquarePlus"]) button:active,
+  section[data-testid$="-banner"] button.inline-flex.whitespace-nowrap:not(:disabled):active {
+    transform: none;
+  }
+  [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+    animation: none !important;
+  }
+  section[data-testid="approval-banner"],
+  section[data-testid="user-question-banner"] {
+    animation-name: pk-fade-in;
+  }
+  .pk-spatial-tip,
+  .pk-spatial-tip[data-open] {
+    transform: translate3d(var(--x, 0), var(--y, 0), 0);
+    transition: opacity 120ms ease;
+  }
+}
+
+@media (min-width: 641px) {
+  [data-follow-up-composer-footer] {
+    --pk-meter-top: 17px;
+  }
+}

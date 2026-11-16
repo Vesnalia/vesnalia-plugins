@@ -1,0 +1,140 @@
+// bb-plugin-prompts — frontend entry.
+//
+// Surfaces:
+// - Composer actions: a queue pill (badge = pending count) and a snippets
+//   pill, each opening a focused popover.
+// - Composer plus-menu: "Queue current draft" and "Save draft as snippet".
+// - Composer banner: armed/paused state while relevant.
+// - Quick replies: one-tap prompts above a thread's composer, fit to the
+//   thread's state (Continue after a stop, common follow-ups after a finish).
+// - Thread tab (an action in the side panel): the same view.
+// - Nav panel: the manager, with every queue and the snippet library.
+//
+// Queue prompts consume on inject (undo restores); snippets never consume.
+import { definePluginApp, useBbContext } from "@get-bb/plugin-sdk/app";
+import { toast } from "sonner";
+import { ArmedBanner, QueueButton, SnippetsButton } from "./app/composer";
+import { QuickReplies } from "./app/quick-replies";
+import { ManagerPanel } from "./app/manager";
+import { QueueView } from "./app/queue-view";
+import {
+  callRpcDirect,
+  composerProjectIdFromScope,
+  composerThreadIdFromScope,
+  previewText,
+} from "./app/shared";
+
+/** The side-panel tab: the same view, minus the composer it would insert into. */
+function QueuePanel({ threadId }: { threadId: string }) {
+  const { projectId } = useBbContext();
+  return (
+    <QueueView
+      threadId={threadId}
+      projectId={projectId}
+      onInsertText={null}
+      listClassName="max-h-none"
+    />
+  );
+}
+
+export default definePluginApp((app) => {
+  app.composer.customize({
+    id: "prompts",
+    actions: [
+      { id: "queue", component: QueueButton },
+      { id: "snippets", component: SnippetsButton },
+    ],
+    banners: [{ id: "armed", component: ArmedBanner }],
+    plusMenu: [
+      {
+        id: "queue-draft",
+        label: "Queue current draft",
+        description: "Save the draft for later and clear the composer",
+        icon: "Layers",
+        run: ({ composer }) => {
+          const text = composer.text.trim();
+          if (!text) {
+            toast("Nothing to queue — the draft is empty");
+            return;
+          }
+          const threadId = composerThreadIdFromScope(composer.scope);
+          const projectId = composerProjectIdFromScope(composer.scope);
+          const scope =
+            threadId !== null ? "thread" : projectId !== null ? "project" : "global";
+          void callRpcDirect("addPrompt", {
+            text,
+            scope,
+            threadId,
+            projectId,
+            autoSend: false,
+          })
+            .then(() => {
+              composer.replace({ text: "", mentions: [] });
+              toast.success(
+                scope === "thread"
+                  ? "Draft queued for this thread"
+                  : scope === "project"
+                    ? "Draft queued for this project"
+                    : "Draft queued globally",
+              );
+            })
+            .catch((error: unknown) => {
+              toast.error(
+                error instanceof Error ? error.message : "Failed to queue the draft",
+              );
+            });
+        },
+      },
+      {
+        id: "save-snippet",
+        label: "Save draft as snippet",
+        description: "Keep the draft as a reusable prompt (does not clear it)",
+        icon: "Explore",
+        run: ({ composer }) => {
+          const text = composer.text.trim();
+          if (!text) {
+            toast("Nothing to save — the draft is empty");
+            return;
+          }
+          const title = previewText(text).slice(0, 60);
+          void callRpcDirect("addSnippet", { title, body: text })
+            .then(() => {
+              toast.success(
+                `Snippet saved: “${title}” — edit it in the Prompts popover`,
+              );
+            })
+            .catch((error: unknown) => {
+              toast.error(
+                error instanceof Error ? error.message : "Failed to save the snippet",
+              );
+            });
+        },
+      },
+    ],
+  });
+
+  // Thread composers only: a new thread has no turn to follow up on, and a
+  // queued-message editor is editing one message, not sending the next.
+  app.composer.customize({
+    id: "quick-replies",
+    scopes: ["thread"],
+    banners: [{ id: "quick-replies", chrome: "bare", component: QuickReplies }],
+  });
+
+  app.slots.experimental_tab({
+    context: { kind: "thread" },
+    availability: "action",
+    id: "queue",
+    title: "Prompts",
+    icon: "Layers",
+    component: QueuePanel,
+  });
+
+  app.slots.navPanel({
+    id: "manager",
+    title: "Prompts",
+    icon: "Layers",
+    path: "manager",
+    component: ManagerPanel,
+  });
+});

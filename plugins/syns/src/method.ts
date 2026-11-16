@@ -1,0 +1,279 @@
+import type { Limits } from "./cli.js";
+import type { Held } from "./held.js";
+import type { Reason } from "./errors.js";
+
+/**
+ * The type of one entry of the method table (D17, S2.21), the schema pieces
+ * entries share, and the check of a value against a schema.
+ *
+ * Schemas are written in the JSON Schema subset Thread Pages accepts from a
+ * contributor, because they are sent to it as they stand: type, properties,
+ * required, additionalProperties, enum, minimum, maximum, minLength, maxLength,
+ * pattern, items, minItems, maxItems, description. There is no anyOf.
+ */
+export type Schema = Record<string, unknown>;
+
+export const K64 = 64 * 1024;
+export const M1 = 1024 * 1024;
+
+/** Left for the host's envelope around a result: `{ v, id, ok, result }`, its id at most 96 characters. */
+export const ENVELOPE = 1024;
+
+/** How many bytes a value takes on the wire: its JSON, where a quote or a newline in a text is two characters. */
+export const bytes = (value: unknown): number => Buffer.byteLength(JSON.stringify(value), "utf8");
+
+/** What a method's own procedure is given. */
+export interface Context {
+  /**
+   * The provenance `run` of a write, and the key of what is held for the caller: the session the host says is calling,
+   * or on a new-session page, before its session starts, the workspace's id (S1.5, S2.33).
+   */
+  readonly sessionId: string;
+  readonly limits: Limits;
+  /** Runs the CLI in the session's folder and returns its parsed output, or throws a SynsError. Bytes on standard input travel as bytes. */
+  syns(args: string[], stdin?: string | Buffer, options?: RunOptions): Promise<unknown>;
+  /** What the plugin holds between calls (D27). */
+  readonly held: Held;
+  /** The CLI's words with the machine's paths taken out, as a refusal reaches a page (D60, D61). */
+  redact(text: string): string;
+  /** The most bytes a repository path may grow by in the answer: a reaching call's `../` segments (S1.25, D92), else 0. */
+  readonly pathGrowth?: number;
+}
+
+export interface RunOptions {
+  /** Set the page's provenance in the environment, for a command with no provenance flags (D44). */
+  provenanceEnv?: true;
+}
+
+export interface Command {
+  args: string[];
+  stdin?: string;
+  /** Set the page's provenance in the environment, for a command with no provenance flags (D44). */
+  provenanceEnv?: true;
+}
+
+interface Common {
+  /** `syns.<name>` */
+  name: string;
+  /** At most 240 characters (the host's bound). */
+  description: string;
+  effect: "read" | "contributed-write";
+  /** Closed, every string bounded. S1.1 */
+  params: Schema;
+  result: Schema;
+  maxRequestBytes: number;
+  maxResponseBytes: number;
+  /** Reasons beyond the ones every method, and every write, declares. */
+  reasons?: readonly Reason[];
+  /** What a schema cannot say. Throws a SynsError; runs before any process. */
+  check?(params: any): void;
+  /** A write that takes no base: stale_head and checkout_dirty are declared only where it lists them itself (D29). */
+  unguarded?: true;
+  /** Runs at the session's folder even when the calling document set a scope (D43): it acts on the repository as a whole. */
+  atRoot?: true;
+  /** A write that changes who can reach a repository or folder, not its files (D41): no base, no message, no file-write reasons. */
+  sharing?: true;
+  /** The sentence a not_found answer carries, where the plugin's default (a path or version) would mislead. */
+  notFound?: string;
+  /** An absent `path` is the root: under a call's scope, the scope (S1.25). */
+  rootPath?: true;
+  /** Acts on the repository, its people or Syns as a whole, never on paths: a call with a scope is `bad_scope` and runs nothing (S1.25). */
+  unscoped?: true;
+  /** Under a call's scope, what the result becomes before its paths are cut back to the folder (S1.26); `scope` is the folder, for a text naming paths. */
+  scoped?(result: any, inside: (path: unknown) => boolean, scope: string): unknown;
+  /** How many paths a write names, for the plugin's log. Defaults to one when there is a `path`. S2.19 */
+  pathCount?(params: any): number;
+}
+
+/** One CLI process: parameters become arguments and standard input, the parsed output becomes the result. */
+export interface SimpleMethod extends Common {
+  /** `run`: as Context.sessionId. */
+  command(params: any, run: string): Command;
+  /** Absent: the CLI's JSON is passed on as `result` names it, with pick() (D59), and what it drops is logged. */
+  shape?(output: Record<string, unknown>, params: any): unknown;
+}
+
+/** More than one CLI process: the method supplies its own small procedure. S2.22 */
+export interface ProcedureMethod extends Common {
+  procedure(params: any, context: Context): Promise<unknown>;
+}
+
+export type Method = SimpleMethod | ProcedureMethod;
+
+export const EVERY_METHOD: readonly Reason[] = ["no_repo", "no_access", "not_logged_in", "cli_missing", "timeout", "folder_out_of_place", "bad_scope"];
+/** Every write: a placed folder's write against a server without folder writes (D38). */
+export const EVERY_CHANGE: readonly Reason[] = ["folder_write_unsupported"];
+export const EVERY_WRITE: readonly Reason[] = ["stale_head", "checkout_dirty"];
+
+/** Every reason a method can answer with: the common ones, a write's, and its own. S3.2 */
+export const reasonsOf = (method: Method): Reason[] => [...EVERY_METHOD, ...(fileWrite(method) ? EVERY_CHANGE : []), ...(fileWrite(method) && !method.unguarded ? EVERY_WRITE : []), ...(method.reasons ?? [])];
+
+/** A write of a repository's files, as opposed to a sharing change (D41). */
+export const fileWrite = (method: Method): boolean => method.effect === "contributed-write" && !method.sharing;
+
+// --- shared schema pieces ---------------------------------------------------
+
+/** A closed object. */
+export const object = (properties: Record<string, Schema>, required: string[] = []): Schema => ({ type: "object", additionalProperties: false, properties, required });
+
+/**
+ * S2.9: not empty, at most 1,024 characters, not beginning with `/` or `-`, no
+ * `\`, no control character, no segment equal to `.` or `..`.
+ */
+export const path: Schema = {
+  type: "string",
+  minLength: 1,
+  maxLength: 1024,
+  pattern: "^(?![/-])(?!(?:.*/)?\\.{1,2}(?:/|$))[^\\\\\\u0000-\\u001f\\u007f-\\u009f]+$",
+};
+
+/** A glob pattern over whole paths (`syns.glob`, `syns.grep`): under a call's scope, counted from it like a path (S1.25). */
+export const pathGlob: Schema = { type: "string", minLength: 1, maxLength: 512 };
+
+/** A repository path in a result, or a string beginning with one: under a call's scope, counted from it, and dropped when outside (S1.25). */
+export const repoPath: Schema = { type: "string" };
+
+/** A call's scope (S1.25, D85), declared on every method beside its own params; the dispatch takes it out before they are checked. */
+export const scope: Schema = { type: "string", maxLength: 1024 };
+/**
+ * A read's path as declared to the host, which checks a call against it before the plugin sees it: a path, or one
+ * beginning with `../` segments (S1.25, B-0083). The dispatch resolves those against the call's scope and checks the
+ * result as a path (S2.9); without a scope it is checked as given.
+ */
+export const readPath: Schema = { ...path, pattern: "^(?:\\.\\.(?:/\\.\\.)*$|(?:\\.\\./)*" + (path.pattern as string).slice(1) + ")" };
+const reaching = (schema: Schema): Schema => schema === path ? readPath : schema.items === path ? { ...schema, items: readPath } : schema;
+/** A method's params as declared to the host: its own, a read's paths as `readPath`, and `scope`. */
+export const declaredParams = (method: Method): Schema => {
+  const own = method.params.properties as Record<string, Schema>;
+  const properties = method.effect === "read" ? Object.fromEntries(Object.entries(own).map(([name, schema]) => [name, reaching(schema)])) : own;
+  return { ...method.params, properties: { ...properties, scope } };
+};
+
+/** A commit SHA, opaque to the page (D12). */
+export const version: Schema = { type: "string", pattern: "^[0-9a-f]{40}$", maxLength: 40 };
+
+/** The `version` the page last read; every write against a parent requires it. S1.4 */
+export const base: Schema = version;
+
+/** S1.6 */
+export const message: Schema = { type: "string", maxLength: 500 };
+
+export const nullable = (type: "string" | "integer" | "boolean"): Schema => ({ type: [type, "null"] });
+
+/** The provenance of a page's commit (D6, S1.5). A page can set none of the three. */
+export const provenance = (run: string): Record<string, string> => ({ integration: "syns-pages", trigger: "page", run });
+
+// --- checking a value -------------------------------------------------------
+
+const typeMatches = (type: string, value: unknown): boolean => {
+  switch (type) {
+    case "object":
+      return typeof value === "object" && value !== null && !Array.isArray(value);
+    case "array":
+      return Array.isArray(value);
+    case "integer":
+      return typeof value === "number" && Number.isSafeInteger(value);
+    case "null":
+      return value === null;
+    default:
+      return typeof value === type;
+  }
+};
+
+/**
+ * The first way `value` fails `schema`, or null. The same subset, read the same
+ * way, as the host's own check; here it refuses bad parameters before any
+ * process runs, and refuses a CLI output with a hole in it (S3.7).
+ */
+export function validate(schema: Schema, value: unknown, at = "$"): string | null {
+  const types = schema.type === undefined ? [] : Array.isArray(schema.type) ? (schema.type as string[]) : [schema.type as string];
+  if (value === undefined) return `${at}: missing`;
+  if (types.length > 0 && !types.some((type) => typeMatches(type, value))) return `${at}: expected ${types.join(" or ")}`;
+  if (Array.isArray(schema.enum) && !schema.enum.includes(value)) return `${at}: not one of the allowed values`;
+
+  if (typeof value === "string") {
+    if (typeof schema.minLength === "number" && value.length < schema.minLength) return `${at}: too short`;
+    if (typeof schema.maxLength === "number" && value.length > schema.maxLength) return `${at}: too long`;
+    if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) return `${at}: not an accepted form`;
+  } else if (typeof value === "number") {
+    if (typeof schema.minimum === "number" && value < schema.minimum) return `${at}: below ${schema.minimum}`;
+    if (typeof schema.maximum === "number" && value > schema.maximum) return `${at}: above ${schema.maximum}`;
+  } else if (Array.isArray(value)) {
+    if (typeof schema.minItems === "number" && value.length < schema.minItems) return `${at}: too few items`;
+    if (typeof schema.maxItems === "number" && value.length > schema.maxItems) return `${at}: too many items`;
+    for (let index = 0; index < value.length; index += 1) {
+      const problem = validate(schema.items as Schema, value[index], `${at}[${index}]`);
+      if (problem) return problem;
+    }
+  } else if (typeof value === "object" && value !== null) {
+    const properties = (schema.properties ?? {}) as Record<string, Schema>;
+    const record = value as Record<string, unknown>;
+    if (schema.additionalProperties === false) {
+      const unknown = Object.keys(record).find((key) => !Object.hasOwn(properties, key));
+      if (unknown !== undefined) return `${at}.${unknown}: unknown key`;
+    }
+    for (const key of (schema.required ?? []) as string[]) {
+      if (!Object.hasOwn(record, key) || record[key] === undefined) return `${at}.${key}: missing`;
+    }
+    for (const [key, child] of Object.entries(properties)) {
+      if (!Object.hasOwn(record, key) || record[key] === undefined) continue;
+      const problem = validate(child, record[key], `${at}.${key}`);
+      if (problem) return problem;
+    }
+  }
+  return null;
+}
+
+// --- passing the CLI's JSON on (D59) ----------------------------------------
+
+/**
+ * Named groups of result keys several methods share, so the guide prints each
+ * once (D56): a result holding all of a group's keys, as the same schema
+ * objects, is written `…name` there.
+ */
+/** The not_found sentence of the methods that name no path or version (fix round 1, finding 3). */
+export const NOT_FOUND = "Syns answered that what this asked for is not there.";
+
+export const GROUPS = new Map<string, Record<string, Schema>>();
+/** A group's keys every result holding it requires, where it names them: the guide then prints them without `?`. */
+export const GROUP_REQUIRED = new Map<string, readonly string[]>();
+export const group = (name: string, properties: Record<string, Schema>, required?: readonly string[]): Record<string, Schema> => {
+  GROUPS.set(name, properties);
+  if (required) GROUP_REQUIRED.set(name, required);
+  return properties;
+};
+
+/** The provenance a version carries, as `syns.history` and `syns.changes` answer it (`by`). */
+export const BY = group("by", { integration: nullable("string"), run: nullable("string"), trigger: nullable("string") }, ["integration", "run", "trigger"]);
+
+/**
+ * The CLI's own JSON, kept to what `schema` names (S1.7): each named key whose
+ * value has a type the schema allows, objects and lists kept the same way.
+ * Nothing is renamed or made up; a key the CLI did not report stays absent,
+ * and the result's check (S3.7) refuses a required one that is missing.
+ */
+export function pick(schema: Schema, value: unknown, at = "$", dropped?: string[]): unknown {
+  const kept = keep(schema, value, at, dropped);
+  if (kept === undefined && value !== undefined) dropped?.push(at);
+  return kept;
+}
+
+function keep(schema: Schema, value: unknown, at: string, dropped?: string[]): unknown {
+  const types = schema.type === undefined ? [] : Array.isArray(schema.type) ? (schema.type as string[]) : [schema.type as string];
+  if (value === null) return types.includes("null") ? null : undefined;
+  if (Array.isArray(value)) return types.includes("array") ? value.map((item, index) => pick(schema.items as Schema, item, `${at}[${index}]`, dropped)).filter((item) => item !== undefined) : undefined;
+  if (typeof value === "object") {
+    if (!types.includes("object")) return undefined;
+    const properties = (schema.properties ?? {}) as Record<string, Schema>;
+    const record = value as Record<string, unknown>;
+    const kept: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(properties)) {
+      if (!Object.hasOwn(record, key)) continue;
+      const one = pick(child, record[key], `${at}.${key}`, dropped);
+      if (one !== undefined) kept[key] = one;
+    }
+    return kept;
+  }
+  const type = typeof value === "number" && Number.isSafeInteger(value) && types.includes("integer") ? "integer" : typeof value;
+  return types.includes(type) ? value : undefined;
+}

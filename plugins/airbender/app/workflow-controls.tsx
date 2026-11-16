@@ -1,0 +1,693 @@
+// app/workflow-controls.tsx — an issue's workflow, as the tab shows it.
+//
+// What: the tag that says which step an issue is at, and the buttons for
+// what can be done about it there: get the agent going on its step, or make
+// one of the user's moves (approve, send back, skip, accept).
+//
+// Why: every issue goes through a workflow to be closed (bead-bb-e2b).
+// Before this, "Define" was a special button, play always started from the
+// beginning, and finishing was a third, separate button. Now there is one
+// place that asks the workflow what the issue's step offers and draws it.
+//
+// Design notes:
+// - Nothing here names a step. Labels, hints and which moves exist all come
+//   from the workflow (shared/workflow.ts); a different workflow would draw
+//   different buttons with no change to this file.
+// - The buttons are offered on the thread's current issue, or on any open
+//   issue while the thread has none. With an issue already chosen, a stray
+//   click elsewhere would redirect an agent mid-task; that rule was the play
+//   button's and is kept.
+// - Which workflow is in force comes from the repository's choice, handed
+//   down by WorkflowProvider. On the simple workflow there is none, and
+//   everything in this file draws nothing (bead-bb-8j6).
+// - An issue's size (S, M, L: how many of the steps it takes) is shown
+//   here too, once it has one: a small dropdown beside the step, where the
+//   user corrects the agent's choice (bead-bb-4mb). An issue nobody has
+//   sized shows nothing (the user: "If it's not there, I'm not showing");
+//   it can be given one from the row's menu or inside the opened issue.
+// - A move that needs a reason (send back, skip) is not made on the click:
+//   the opened issue shows a small field for the reason first (NoteForm).
+
+import { createContext, useContext, useState } from "react";
+import type { FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
+import { Tip } from "@/components/ui/tip";
+import { cn } from "@/lib/utils";
+import type { Issue } from "../server/contract.ts";
+import { CLOSED_STATUS } from "../shared/constants.ts";
+import {
+  asOffered,
+  menuMoves,
+  nextWorkOf,
+  offeredMoves,
+  stateOf,
+} from "../shared/workflow.ts";
+import type {
+  Workflow,
+  WorkflowMove,
+  WorkflowState,
+} from "../shared/workflow.ts";
+import { useActions, useOptionalActions } from "./actions.ts";
+import type { IssueActions } from "./actions.ts";
+import { PersonIcon, RobotIcon, TAG_SELECT_CLASS, Tag } from "./bits.tsx";
+
+/** The workflow of the repository being shown; null when it has none. */
+const WorkflowContext = createContext<Workflow | null>(null);
+
+/**
+ * Hands the repository's workflow to everything drawn inside it: the tab's
+ * rows and the message box's status line each wrap their content in one.
+ * A context of its own, apart from the row actions, because the status
+ * line's card draws an issue's facts where there are no row actions.
+ */
+export const WorkflowProvider = WorkflowContext.Provider;
+
+/**
+ * The workflow in force where this component is drawn.
+ *
+ * @returns Null on the simple workflow, which has no steps, and outside any
+ *   WorkflowProvider.
+ */
+export function useWorkflow(): Workflow | null {
+  return useContext(WorkflowContext);
+}
+
+/**
+ * Whether the workflow buttons are offered on an issue: it is open, and it
+ * is the thread's current issue or the thread has none.
+ */
+function canAct(actions: IssueActions, issue: Issue): boolean {
+  return (
+    issue.status !== CLOSED_STATUS &&
+    (actions.currentBeadId === null || actions.currentBeadId === issue.id) &&
+    // An issue of an epic that has a branch is worked only in a folder on
+    // that branch (bead-bb-ty5.2); see Elsewhere for what is shown instead.
+    actions.placeOf(issue).elsewhere === null
+  );
+}
+
+/**
+ * In place of an issue's workflow buttons, where the issue belongs to an
+ * epic whose issues are worked on that epic's branch and this folder is
+ * not on it: a line saying so. On a row it is kept short, with the whole
+ * sentence as its tooltip.
+ */
+function Elsewhere({ why, short }: { why: string; short: boolean }) {
+  return short ? (
+    <Tip label={why}>
+      <span className="mx-1 mt-1.5 shrink-0 text-xs text-muted-foreground">
+        On the epic's branch
+      </span>
+    </Tip>
+  ) : (
+    <span className="self-center text-xs text-muted-foreground">{why}</span>
+  );
+}
+
+/**
+ * The step an open issue is at, as a tag. Nothing for a closed issue, whose
+ * step no longer matters.
+ *
+ * A little more prominent than the facts beside it, and no more. What was
+ * tried on the way here: a filled, inverted pill on the title line (far too
+ * loud), an outlined tag (looked like a button), plain text (too weak, and
+ * it ran into the id). The user settled on a light blue fill, in this spot.
+ *
+ * The icon says whose move it is, which is what the user wants to see at a
+ * glance: a person where the step waits for them, a robot where the next
+ * step is the agent's. A new issue counts as the agent's: it waits for the
+ * user only to say "go", and what follows is the agent's work.
+ */
+export function StateTag({ issue }: { issue: Issue }) {
+  const workflow = useWorkflow();
+  if (workflow === null || issue.status === CLOSED_STATUS) return null;
+  const state = stateOf(workflow, issue.step);
+  const human = nextWorkOf(state) === "user";
+  return (
+    <Tip
+      label={`${human ? "Needs you" : "The agent's work"}: ${state.hint}`}
+    >
+      {/* A plain inline span for the tooltip to attach to: the chip takes
+          no ref, and anything but plain inline text would upset the line
+          (see StateChip). */}
+      <span className="shrink-0 cursor-default">
+        <StateChip state={state} />
+      </span>
+    </Tip>
+  );
+}
+
+/**
+ * On an epic that Airbender opened a conversation and a work tree for:
+ * the word "worktree" with the small fir, beside its step, as the way to
+ * that conversation. Nothing for any other issue.
+ *
+ * The user asked for it (bead-bb-ty5.2): "Can we show that the epic is
+ * opened on a different work tree in a parallel conversation? Has a tag
+ * somewhere in epic?" It began as a boxed tag, with a second one, "branch",
+ * for an epic that holds a branch in a folder. The user found the boxes
+ * "too similar to a button" (bead-bb-ty5.3): the branch now stands on the
+ * tab's top line, beside the folder, and this one is plain underlined
+ * text, which reads as the link it is. In the epic's own conversation, and
+ * where it is drawn outside the tab (an issue's card above the message
+ * box), there is nowhere to go and it is plain text.
+ *
+ * Inline text for the same reason as the step's chip: the facts are lined
+ * up on their baseline.
+ */
+export function EpicPlaceTag({ issue }: { issue: Issue }) {
+  const workflow = useWorkflow();
+  const actions = useOptionalActions();
+  if (
+    workflow === null ||
+    issue.status === CLOSED_STATUS ||
+    issue.conversationId === null
+  ) {
+    return null;
+  }
+  const there =
+    actions !== null && actions.threadId !== issue.conversationId
+      ? issue.conversationId
+      : null;
+  const on = issue.branch === null ? "" : `, on the branch ${issue.branch}`;
+  const className = "shrink-0 whitespace-nowrap text-xs text-muted-foreground";
+  const content = (
+    <>
+      <MoveIcon
+        name="epic-tree"
+        className="mr-1 inline-block size-3 align-[-1.5px]"
+      />
+      <span className={there === null ? undefined : "underline underline-offset-2"}>
+        worktree
+      </span>
+    </>
+  );
+  return (
+    <Tip
+      label={
+        there !== null
+          ? `This epic's issues are worked in a conversation and work tree of its own${on}. Click to go there.`
+          : `This epic's issues are worked in this conversation's work tree${on}.`
+      }
+    >
+      {there !== null && actions !== null ? (
+        <button
+          type="button"
+          className={cn(className, "cursor-pointer hover:text-foreground")}
+          aria-label={`Go to the conversation of ${issue.id}`}
+          onClick={(event) => {
+            // The row under it opens the issue on a click.
+            event.stopPropagation();
+            actions.goToThread(there);
+          }}
+        >
+          {content}
+        </button>
+      ) : (
+        <span className={className}>{content}</span>
+      )}
+    </Tip>
+  );
+}
+
+/**
+ * The chip itself: the step's name on a light blue fill, with the icon for
+ * whose work is next. Shared by the tag on an issue (StateTag) and the
+ * status line above the message box, so a step looks the same in both.
+ *
+ * A light blue fill and no outline (the user's choice): the fill sets it
+ * apart from the id beside it, and without an outline it is not taken for
+ * one of the dropdowns. The blue is a tint over whatever is behind it, so
+ * it works in light and dark themes. Same box as the tags beside it (an
+ * invisible border makes up the height), and plain inline text, not a flex
+ * box: an issue's facts are lined up on their text's baseline, and a flex
+ * box would offer the icon's bottom edge as its baseline.
+ */
+export function StateChip({ state }: { state: WorkflowState }) {
+  const human = nextWorkOf(state) === "user";
+  return (
+    <span className="shrink-0 whitespace-nowrap rounded border border-transparent bg-blue-500/15 px-1.5 py-px text-[11px] font-medium leading-4 text-foreground">
+      {human ? (
+        <PersonIcon className="mr-1 inline-block size-3 align-[-1.5px]" />
+      ) : (
+        <RobotIcon className="mr-1 inline-block size-3 align-[-1.5px]" />
+      )}
+      {state.label}
+    </span>
+  );
+}
+
+/** The offered moves, plus any the workflow wants reachable regardless. */
+function withMenuMoves(
+  offered: WorkflowMove[],
+  always: WorkflowMove[],
+): WorkflowMove[] {
+  return [
+    ...offered,
+    ...always.filter((move) => !offered.some((other) => other.id === move.id)),
+  ];
+}
+
+/**
+ * The moves an issue's menu lists: the ones its workflow marks for the
+ * menu, at the step it is at. None on a closed issue or without a
+ * workflow. Where the step's buttons are not offered on this issue (see
+ * canAct), only the moves that run in a conversation of their own.
+ */
+export function useMenuMoves(issue: Issue): WorkflowMove[] {
+  const actions = useActions();
+  const workflow = useWorkflow();
+  if (workflow === null || issue.status === CLOSED_STATUS) return [];
+  const place = actions.placeOf(issue);
+  const listed = menuMoves(
+    workflow,
+    stateOf(workflow, issue.step).id,
+    "user",
+    place.context,
+  ).map((move) => asOffered(move, place.hasSubIssues));
+  // A move made in a conversation of its own does not touch this one, so
+  // it is offered whatever this conversation's current issue is: starting
+  // another issue alongside is what it is for.
+  return canAct(actions, issue)
+    ? listed
+    : listed.filter((move) => move.ownConversation === true);
+}
+
+/**
+ * The icon a move is drawn with on a row, by the name the workflow gives.
+ *
+ * Both are drawn here, from one triangle, so that the pair matches: "play"
+ * is Tabler Icons' "player-play" outline (MIT, (c) Pawel Kuna), and
+ * "play-branch" is that same triangle at three quarters of its size with,
+ * beside it, two dots joined by a line and a small arrow going off. The
+ * second is the drawing the user chose (of three) for "start in a new
+ * branch": "both icons should have a play button, but the one with branch
+ * will have also two dots and small arrow". No icon set has it.
+ *
+ * The first version took "play" from BB's own icons and drew only the
+ * second; the user saw at once that the two triangles were in different
+ * hands. A name this does not know gets the plain triangle.
+ *
+ * "define" is the icon of the Define step's button (bead-bb-0xy): a page
+ * with two written lines, Tabler Icons' "file-description" outline. The
+ * user asked only that it differ from the play triangle and left the
+ * choice open. Drawn here, not taken from BB's icons by name: a name BB
+ * does not have draws its fallback, a lightning bolt, without any error.
+ */
+export function MoveIcon({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      {name === "epic-branch" ? (
+        <>
+          {/* Starting an epic in a branch of its own (bead-bb-ty5.2): a
+              branch alone, with no play triangle, so that it does not read
+              as "start this issue". Tabler Icons' "git-branch" outline.
+              The user's choice ("just a branch icon"), after first taking
+              the epic mode arrow with a small branch in its corner, which
+              was built and then replaced by this. */}
+          <circle cx="7" cy="18" r="2" />
+          <circle cx="7" cy="6" r="2" />
+          <circle cx="17" cy="6" r="2" />
+          <path d="M7 8v8" />
+          <path d="M9 18h6a2 2 0 0 0 2 -2v-5" />
+          <path d="M14 14l3 -3l3 3" />
+        </>
+      ) : name === "epic-tree" ? (
+        <>
+          {/* Starting an epic in a work tree: the fir alone, two
+              triangles and a trunk (the user: "just a fir tree with two
+              triangles"). The fir of "play-tree" below, at full size. */}
+          <path d="M12 3l-4.5 7h9z" />
+          <path d="M12 10l-6 8h12z" />
+          <path d="M12 18v3" />
+        </>
+      ) : name === "play-tree" ? (
+        <>
+          {/* The same triangle, a little smaller still, and a small fir:
+              two tiers and a trunk. The user's choice for "start in a
+              work tree" ("triangle with a little tree on the side instead
+              of a branch"; of three trees, the fir). */}
+          <path d="M2 6v12l9 -6l-9 -6" />
+          <path d="M18 3l-3.2 5h6.4z" />
+          <path d="M18 8l-4.4 7.5h8.8z" />
+          <path d="M18 15.5v5" />
+        </>
+      ) : name === "play-branch" ? (
+        <>
+          {/* The triangle below, scaled by 0.75 and moved to the left. */}
+          <path d="M2.5 6v12l9.75 -6l-9.75 -6" />
+          <circle cx="16" cy="19" r="1.7" />
+          <circle cx="16" cy="5" r="1.7" />
+          <path d="M16 6.7v10.6" />
+          <path d="M17.7 19h1.3a2 2 0 0 0 2 -2v-5" />
+          <path d="M18.8 13.6l2.2 -2.2l2.2 2.2" />
+        </>
+      ) : name === "define" ? (
+        <>
+          <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+          <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+          <path d="M9 17h6" />
+          <path d="M9 13h6" />
+        </>
+      ) : (
+        <path d="M7 4v16l13 -8l-13 -8" />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * Whether the user may set or change an issue's size now: the repository's
+ * workflow has sizes, the issue is open, and the workflow still allows it
+ * at the issue's step (until the work reaches the user for review).
+ */
+export function useCanResize(issue: Issue): boolean {
+  const workflow = useWorkflow();
+  return (
+    workflow !== null &&
+    workflow.sizes !== undefined &&
+    issue.status !== CLOSED_STATUS &&
+    workflow.canResize?.(stateOf(workflow, issue.step).id) === true
+  );
+}
+
+/**
+ * An issue's size, beside its step. Nothing for an issue without a size,
+ * for a closed one, and where the workflow has no sizes.
+ *
+ * A dropdown while the size may still be changed and `onChange` is given;
+ * a plain tag otherwise. Changing it tells the agent to take the new
+ * size's path (the backend does that).
+ *
+ * @param onChange Called with the new size id.
+ */
+export function SizeTag({
+  issue,
+  onChange,
+}: {
+  issue: Issue;
+  onChange?: (size: string) => void;
+}) {
+  const workflow = useWorkflow();
+  const canResize = useCanResize(issue);
+  const sizes = workflow?.sizes;
+  if (sizes === undefined || issue.status === CLOSED_STATUS) return null;
+  const current = sizes.find((size) => size.id === issue.size);
+  // No size, or one this workflow does not know (written by hand).
+  if (current === undefined) return null;
+  if (onChange === undefined || !canResize) {
+    return (
+      <Tip label={`Size ${current.label}. ${current.hint}`}>
+        <span className="shrink-0 cursor-default">
+          <Tag>{current.label}</Tag>
+        </span>
+      </Tip>
+    );
+  }
+  return (
+    <select
+      aria-label={`Size of ${issue.id}`}
+      // A plain title, not the app's tooltip: a tooltip over a dropdown
+      // covers its own list.
+      title={`Size: how much of the workflow this issue takes. ${sizes
+        .map((size) => `${size.label}: ${size.hint}`)
+        .join(" ")}`}
+      value={current.id}
+      onChange={(event) => onChange(event.target.value)}
+      className={`${TAG_SELECT_CLASS} font-medium text-muted-foreground`}
+    >
+      {sizes.map((size) => (
+        <option key={size.id} value={size.id}>
+          {size.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/**
+ * The main button for an issue's step: at one of the agent's steps it gets
+ * the agent going ("Define", "Plan", "Implement"…); at one of the user's it
+ * is the user's main move ("Approve plan", "Accept").
+ *
+ * Draws nothing when the buttons are not offered on this issue (see
+ * canAct), when the step is the agent's and there is no thread to run it
+ * in or the agent is already at work on this issue, or when the user's
+ * step has no main move.
+ *
+ * Where the step's moves have icons and `icons` is set, they are drawn as
+ * a group of icon buttons instead: at a step that has not started, the two
+ * ways to start (bead-bb-jqn.1).
+ *
+ * @param className Extra classes, for the row's spacing.
+ */
+export function WorkflowButton({
+  issue,
+  className,
+  icons = false,
+  groupClassName,
+}: {
+  issue: Issue;
+  className?: string;
+  /**
+   * Draw moves that have an icon as icon buttons, without words. For a
+   * row; the opened issue keeps words on its buttons.
+   */
+  icons?: boolean;
+  /** Extra classes for that group of icon buttons: its place on the row. */
+  groupClassName?: string;
+}) {
+  const actions = useActions();
+  const workflow = useWorkflow();
+  if (workflow === null) return null;
+  if (!canAct(actions, issue)) {
+    // Worked on its epic's branch, and this folder is not on it: say so
+    // where the buttons would be. Not while the conversation is on another
+    // issue, when no row but the current one has buttons anyway.
+    const { elsewhere } = actions.placeOf(issue);
+    return elsewhere !== null &&
+      issue.status !== CLOSED_STATUS &&
+      (actions.currentBeadId === null || actions.currentBeadId === issue.id) ? (
+      <Elsewhere why={elsewhere} short={icons} />
+    ) : null;
+  }
+  const state = stateOf(workflow, issue.step);
+  if (state.actor === "agent") {
+    const { run } = actions;
+    if (run === null) return null;
+    // Not on the thread's current issue while its agent is at work
+    // (bead-bb-dtf): the agent is then doing this very step, and "Implement"
+    // beside it asked for what was already happening. Once the agent is
+    // idle the button is back, so a step that stalled can be started again.
+    if (actions.agentBusy && actions.currentBeadId === issue.id) return null;
+    const { runLabel, runIcon } = state;
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        className={className}
+        tip={`${state.hint} Starts the agent on this step and makes this the current issue.`}
+        aria-label={`${runLabel}: ${issue.id} ${issue.title}`}
+        onClick={() => run(issue.id)}
+      >
+        {/* The step's own icon where it has one (Define); otherwise the
+            play triangle of a button that sets the agent going. */}
+        {runIcon === undefined ? (
+          <Icon name="Play" className="size-4" />
+        ) : (
+          <MoveIcon name={runIcon} className="size-4" />
+        )}
+        {runLabel}
+      </Button>
+    );
+  }
+  const place = actions.placeOf(issue);
+  const offered = offeredMoves(workflow, state.id, "user", place.context).map(
+    (move) => asOffered(move, place.hasSubIssues),
+  );
+  // Moves the workflow wants drawn without words (the two ways to start an
+  // issue): on a row they are a small group of icon buttons, set apart by a
+  // soft fill from the row's other icons, each with its hint as a tooltip.
+  const drawn = icons ? offered.filter((move) => move.icon !== undefined) : [];
+  if (drawn.length > 0) {
+    return (
+      <span
+        className={cn(
+          "inline-flex shrink-0 overflow-hidden rounded-md bg-foreground/[0.06]",
+          groupClassName,
+        )}
+      >
+        {drawn.map((move, index) => (
+          <Button
+            key={move.id}
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-6 w-7 rounded-none text-muted-foreground hover:bg-foreground/[0.12] hover:text-foreground",
+              index > 0 && "border-l border-border/60",
+            )}
+            tip={`${move.label}. ${move.hint}`}
+            aria-label={`${move.label}: ${issue.id} ${issue.title}`}
+            onClick={() => actions.move(issue.id, move.id, "")}
+          >
+            <MoveIcon name={move.icon!} className="size-4" />
+          </Button>
+        ))}
+      </span>
+    );
+  }
+  const main = offered.find((move) => move.primary === true);
+  if (main === undefined) return null;
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className={className}
+      tip={main.hint}
+      aria-label={`${main.label}: ${issue.id} ${issue.title}`}
+      onClick={() => actions.move(issue.id, main.id, "")}
+    >
+      {/* A tick for an approval; play where the move only sets the agent
+          going (a new issue's "Define"). */}
+      <Icon
+        name={nextWorkOf(state) === "agent" ? "Play" : "CircleCheck"}
+        className="size-4"
+      />
+      {main.label}
+    </Button>
+  );
+}
+
+/**
+ * The user's other moves at an issue's step, for the opened issue's row of
+ * buttons: "Send back", "Skip", "Mark as done".
+ *
+ * A move that needs a reason calls `onNeedNote`, so the opened issue can
+ * show the field for it; the others are made on the click.
+ *
+ * Returns the buttons with no wrapper, because the opened issue styles its
+ * buttons as direct children of its row.
+ */
+export function WorkflowMoves({
+  issue,
+  onNeedNote,
+}: {
+  issue: Issue;
+  onNeedNote: (move: WorkflowMove) => void;
+}) {
+  const actions = useActions();
+  const workflow = useWorkflow();
+  const always = useMenuMoves(issue);
+  if (workflow === null || issue.status === CLOSED_STATUS) return null;
+  const state = stateOf(workflow, issue.step);
+  return (
+    <>
+      {withMenuMoves(
+        canAct(actions, issue)
+          ? offeredMoves(
+              workflow,
+              state.id,
+              "user",
+              actions.placeOf(issue).context,
+            ).map((move) => asOffered(move, actions.placeOf(issue).hasSubIssues))
+          : [],
+        always,
+      )
+        .filter((move) => move.primary !== true)
+        .map((move) => (
+          <Button
+            key={move.id}
+            variant="outline"
+            size="sm"
+            tip={move.hint}
+            onClick={() =>
+              move.needsNote === true
+                ? onNeedNote(move)
+                : actions.move(issue.id, move.id, "")
+            }
+          >
+            {/* A move that has an icon shows it here too, before its
+                words, like the buttons beside it (the user's request,
+                bead-bb-o3d). A little smaller than on a row, to match the
+                size this row of buttons gives BB's own icons. */}
+            {move.icon === undefined ? null : (
+              <MoveIcon name={move.icon} className="size-3.5" />
+            )}
+            {move.label}
+          </Button>
+        ))}
+    </>
+  );
+}
+
+/**
+ * The field for the reason a move needs ("Send back": what is wrong;
+ * "Skip": why it is not needed). Enter or the button makes the move; Escape
+ * or Cancel drops it. The reason is recorded on the issue and, when the
+ * issue goes back to the agent, passed on to it.
+ */
+export function NoteForm({
+  issue,
+  move,
+  onDone,
+}: {
+  issue: Issue;
+  move: WorkflowMove;
+  /** Called after the move was asked for, or cancelled. */
+  onDone: () => void;
+}) {
+  const actions = useActions();
+  const [note, setNote] = useState("");
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (note.trim() === "") return;
+    actions.move(issue.id, move.id, note.trim());
+    onDone();
+  };
+  return (
+    <form
+      onSubmit={submit}
+      className="space-y-1 rounded-lg border border-border p-2"
+    >
+      <div className="px-1 text-xs text-muted-foreground">{move.hint}</div>
+      <div className="flex items-center gap-2">
+        <Input
+          autoFocus
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              onDone();
+            }
+          }}
+          placeholder="Why?"
+          aria-label={`Reason for "${move.label}" on ${issue.id}`}
+        />
+        <Button type="submit" size="sm" disabled={note.trim() === ""}>
+          {move.label}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}

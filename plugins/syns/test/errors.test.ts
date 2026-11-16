@@ -1,0 +1,204 @@
+import { describe, expect, it } from "vitest";
+import { CLI_NOT_FOUND } from "../src/cli.js";
+import { REASONS, SynsError, interpret, redact, toAnswer } from "../src/errors.js";
+import { rec, spawnFailed, timedOut } from "./fake-runner.js";
+
+const never = async () => {
+  throw new Error("repo must not be run");
+};
+
+async function failure(run: Parameters<typeof interpret>[0], declared: string[] = [], runRepo: Parameters<typeof interpret>[2] = never, runWhoami: Parameters<typeof interpret>[4] = never): Promise<SynsError> {
+  try {
+    await interpret(run, declared, runRepo, {}, runWhoami);
+  } catch (error) {
+    if (error instanceof SynsError) return error;
+    throw error;
+  }
+  throw new Error("expected a failure");
+}
+
+describe("the recognition table (S3.4, A36)", () => {
+  it("row 1: exit 7 with currentSha is stale_head, with the current version as detail", async () => {
+    const error = await failure(rec("stale-parent"));
+    expect(toAnswer(error).error).toMatchObject({ code: "conflict", reason: "stale_head", detail: { current: "7ca9bc78ba047d9e7798b8d2733c254e24cfc837" } });
+  });
+  it("row 2: exit 2 with 'cannot determine repo identity' is no_repo", async () => {
+    expect(toAnswer(await failure(rec("no-identity"))).error).toMatchObject({ code: "unavailable", reason: "no_repo" });
+  });
+  it("row 2a: exit 2 with 'folder out of place' is folder_out_of_place (D38)", async () => {
+    expect(toAnswer(await failure(rec("folder-out-of-place"))).error).toMatchObject({ code: "unavailable", reason: "folder_out_of_place" });
+  });
+  it("row 2b: exit 1 with 'folder_write_unsupported' is folder_write_unsupported (D38)", async () => {
+    expect(toAnswer(await failure(rec("folder-write-unsupported"))).error).toMatchObject({ code: "unavailable", reason: "folder_write_unsupported" });
+  });
+  it("row 3: 'holds unpublished local changes' is checkout_dirty", async () => {
+    expect(toAnswer(await failure(rec("checkout-dirty"))).error).toMatchObject({ code: "conflict", reason: "checkout_dirty" });
+  });
+  it("row 4: 'authentication required' is not_logged_in, for every method (B-0011)", async () => {
+    expect(toAnswer(await failure(rec("auth-required"))).error).toMatchObject({ code: "unavailable", reason: "not_logged_in" });
+  });
+  it("row 5: '--old matched no content' is no_match", async () => {
+    expect(toAnswer(await failure(rec("edit-no-match"))).error).toMatchObject({ code: "invalid_params", reason: "no_match" });
+  });
+  it("row 6: '--old matched N times' is many_matches with the count", async () => {
+    expect(toAnswer(await failure(rec("edit-many-matches"))).error).toMatchObject({ code: "invalid_params", reason: "many_matches", detail: { count: 33 } });
+  });
+  it("row 8: 'invalid pattern' is bad_pattern, from grep and from glob", async () => {
+    for (const recording of ["bad-pattern.grep", "bad-pattern.glob"]) expect(toAnswer(await failure(rec(recording))).error, recording).toMatchObject({ code: "invalid_params", reason: "bad_pattern" });
+  });
+  it("row 9: anything else is handler_error, and keeps the exit code and output for the log", async () => {
+    const error = await failure(rec("malformed-changeset"));
+    expect(toAnswer(error).error).toEqual({ code: "handler_error", message: expect.any(String) });
+    expect(error.log).toContain("exit=1");
+    expect(error.log).toContain("the changeset document does not parse");
+  });
+  it("row 9 carries the CLI's own words as the message, at most 300 characters (D59)", async () => {
+    const error = await failure(rec("malformed-changeset"));
+    expect(error.message).toContain("the changeset document does not parse");
+    expect(error.message.length).toBeLessThanOrEqual(300);
+  });
+  it("row 9 without words of the CLI's keeps the plugin's sentence: no JSON error, no stderr line starting error: (row 9a)", async () => {
+    for (const stderr of ["", "thread 'main' panicked\n", "  error: indented is not a line starting error:\n"]) {
+      expect((await failure({ exitCode: 101, stdout: "", stderr, timedOut: false, spawnError: null, overflowed: false })).message, stderr).toBe("Syns could not complete this. The plugin's log has the cause.");
+    }
+  });
+  it("row 9a: with no JSON error on stdout, the message is stderr's first line starting error:, trimmed, redacted, at most 300 (0.9)", async () => {
+    expect((await failure(rec("arg-error"))).message).toBe("error: unexpected argument '--nope' found");
+    expect((await failure(rec("cat.paths-from.0322"))).message).toBe("error: unexpected argument '--paths-from' found");
+    expect((await failure(rec("repo.within.0322"))).message).toBe("error: unexpected argument '--within' found");
+    const stderr = `warning: x\nerror: could not read /Users/reader/secret/a.md ${"z".repeat(400)}  \nerror: second\n`;
+    const message = (await failure({ exitCode: 1, stdout: "", stderr, timedOut: false, spawnError: null, overflowed: false })).message;
+    expect(message.startsWith("error: could not read <path> zzz")).toBe(true);
+    expect(message).toHaveLength(300);
+  });
+  it("row 9a: stdout's JSON error wins over stderr, and the log keeps both as before", async () => {
+    const error = await failure({ exitCode: 1, stdout: JSON.stringify({ error: "the CLI's own words" }), stderr: "error: other words\n", timedOut: false, spawnError: null, overflowed: false });
+    expect(error.message).toBe("the CLI's own words");
+    expect(error.log).toContain("other words");
+  });
+  it("the CLI's refusals that a command does not act in this scope are bad_scope (D59, HOST_FACTS §17)", async () => {
+    for (const recording of ["share.root-dot.0313", "enable-checks.root.0313", "repo.visibility.holder-root.0313", "collaborators.holder-root.0313"]) expect(toAnswer(await failure(rec(recording))).error, recording).toMatchObject({ code: "invalid_params", reason: "bad_scope" });
+  });
+  it("row 9: the CLI's own argument error (plain text on stderr, exit 2) is handler_error", async () => {
+    const error = await failure(rec("arg-error"));
+    expect(error.code).toBe("handler_error");
+    expect(error.log).toContain("exit=2");
+    expect(error.log).toContain("unexpected argument");
+  });
+  it("row 8a: 'version not found' is not_found, about the version", async () => {
+    const error = await failure(rec("version-not-found"));
+    expect(toAnswer(error).error).toEqual({ code: "not_found", message: expect.any(String) });
+    expect(error.subject).toBe("version");
+  });
+
+  it("row 8a: 'path not found at version' is not_found, about the path", async () => {
+    const error = await failure(rec("path-not-found-at-version"));
+    expect(toAnswer(error).error).toEqual({ code: "not_found", message: expect.any(String) });
+    expect(error.subject).toBeUndefined();
+  });
+});
+
+describe("the 404 (S3.5, A37)", () => {
+  it("is not_found when repo then succeeds", async () => {
+    let asked = 0;
+    const error = await failure(rec("not-found-404"), [], async () => {
+      asked += 1;
+      return rec("repo.ok");
+    });
+    expect(toAnswer(error).error).toEqual({ code: "not_found", message: expect.any(String) });
+    expect(asked).toBe(1);
+  });
+  it("is no_access when repo fails too and the machine has a login", async () => {
+    let asked = 0;
+    const error = await failure(rec("not-found-404"), [], async () => rec("not-found-404"), async () => {
+      asked += 1;
+      return rec("whoami.ok");
+    });
+    expect(toAnswer(error).error).toMatchObject({ code: "unavailable", reason: "no_access" });
+    expect(asked).toBe(1);
+  });
+  it("is not_logged_in when repo fails too and whoami says nobody is logged in (B-0011)", async () => {
+    const error = await failure(rec("signed-out.repo"), [], async () => rec("signed-out.repo"), async () => rec("auth-required"));
+    expect(toAnswer(error).error).toMatchObject({ code: "unavailable", reason: "not_logged_in" });
+  });
+  it("is no_access when whoami cannot answer either (B-0011)", async () => {
+    expect(toAnswer(await failure(rec("signed-out.repo"), [], async () => rec("signed-out.repo"), async () => timedOut())).error).toMatchObject({ reason: "no_access" });
+  });
+  it("asks whoami only when repo fails (B-0011)", async () => {
+    const error = await failure(rec("not-found-404"), [], async () => rec("repo.ok"), never);
+    expect(error.code).toBe("not_found");
+  });
+});
+
+describe("processes that did not run to an answer", () => {
+  it("no executable is cli_missing (S3.6, A39)", async () => {
+    expect(toAnswer(await failure(spawnFailed(CLI_NOT_FOUND))).error).toMatchObject({ code: "unavailable", reason: "cli_missing" });
+  });
+  it("any other start failure is handler_error (S3.6)", async () => {
+    const error = await failure(spawnFailed("Error: spawn EACCES"));
+    expect(error.code).toBe("handler_error");
+    expect(error.log).toContain("EACCES");
+  });
+  it("a stopped process is timeout (S2.14)", async () => {
+    expect(toAnswer(await failure(timedOut())).error).toMatchObject({ code: "unavailable", reason: "timeout" });
+  });
+  it("output that is not JSON is handler_error, and the log holds none of it on exit 0 (S2.13, S2.20, A40)", async () => {
+    const error = await failure(rec("not-json"));
+    expect(error.code).toBe("handler_error");
+    expect(error.log).toContain("exit=0");
+    expect(error.log).not.toContain("secret file text");
+  });
+  it("output beyond the host half's bound is response_too_large (S2.16)", async () => {
+    const error = await failure({ ...rec("cat.ok"), exitCode: null, overflowed: true });
+    expect(error.code).toBe("response_too_large");
+  });
+});
+
+describe("success", () => {
+  it("returns the parsed document", async () => {
+    expect(await interpret(rec("repo.ok"), [], never)).toMatchObject({ owner: "acme", fileCount: 32 });
+  });
+});
+
+describe("page-facing messages (S3.1)", () => {
+  it("every reason has the plugin's own sentence of at most 300 characters, and a code from the host's set", () => {
+    for (const [reason, entry] of Object.entries(REASONS)) {
+      expect(entry.message.length, reason).toBeGreaterThan(0);
+      expect(entry.message.length, reason).toBeLessThanOrEqual(300);
+      expect(["unavailable", "conflict", "invalid_params", "not_found"]).toContain(entry.code);
+    }
+  });
+  it("never carries the CLI's text: no folder path, no CLI hint", async () => {
+    const dirty = toAnswer(await failure(rec("checkout-dirty"))).error.message;
+    expect(dirty).not.toContain("the checkout at");
+    const login = toAnswer(await failure(rec("auth-required"))).error.message;
+    expect(login).not.toContain("syns login' first");
+  });
+});
+
+describe("redact: the CLI's words without local paths (fix rounds 1 and 2, D60, D61)", () => {
+  const mac = { folder: "/Users/alice/work" };
+  const win = { folder: "C:\\Users\\alice\\work" };
+  it("writes the session's folder as ., whole paths only, and every other absolute path as <path>: no ~, so nothing under home shows", () => {
+    expect(redact("could not write /Users/alice/work/q3-plan/.syns.yaml; pull at /Users/alice/work", mac)).toBe("could not write ./q3-plan/.syns.yaml; pull at .");
+    expect(redact("see /Users/alice/work2/x, /Users/alice/work.bak and /etc/hosts", mac)).toBe("see <path>, <path> and <path>");
+    expect(redact("/Users/alice/other/client-acme-merger/x", mac)).toBe("<path>");
+    expect(redact("cannot determine repo identity for /tmp/x", {})).toBe("cannot determine repo identity for <path>");
+  });
+  it("redacts file:// URLs whole", () => {
+    expect(redact("open file:///Users/alice/other/x now", mac)).toBe("open <path> now");
+  });
+  it("replaces a quoted absolute path whole, spaces and all", () => {
+    expect(redact("see '/Users/alice/Library/Application Support/x' now", mac)).toBe("see '<path>' now");
+    expect(redact('"/Volumes/Client Data/acme/x" is gone', {})).toBe('"<path>" is gone');
+    expect(redact("`C:\\Program Files\\x` failed", win)).toBe("`<path>` failed");
+  });
+  it("on Windows: the session's folder with \\ after it, drive letters either way, \\\\?\\ and UNC paths", () => {
+    expect(redact("could not write C:\\Users\\alice\\work\\q3\\.syns.yaml", win)).toBe("could not write .\\q3\\.syns.yaml");
+    expect(redact("C:/Users/alice/other/x and D:\\data\\y", win)).toBe("<path> and <path>");
+    expect(redact("\\\\?\\C:\\very\\long and \\\\fileserver\\share\\acme\\x", win)).toBe("<path> and <path>");
+  });
+  it("leaves URLs, relative paths and status codes alone", () => {
+    expect(redact("server error (404): see https://syns.dev/a/b for notes/a.md", { folder: "/home/bo/w" })).toBe("server error (404): see https://syns.dev/a/b for notes/a.md");
+  });
+});

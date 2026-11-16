@@ -1,0 +1,16 @@
+{
+  "name": "vesnalia-plugins",
+  "private": true,
+  "type": "module",
+  "description": "Плагины для VesnALIA, адаптированные из открытого каталога bb",
+  "scripts": {
+    "import": "node scripts/import.mjs",
+    "adapt": "node scripts/adapt.mjs",
+    "verify": "node scripts/verify.mjs",
+    "catalog": "node scripts/catalog.mjs"
+  },
+  "devDependencies": {
+    "semver": "^7.7.2",
+    "typescript": "^5.9.3"
+  }
+}

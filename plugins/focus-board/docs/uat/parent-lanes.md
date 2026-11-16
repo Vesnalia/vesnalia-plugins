@@ -1,0 +1,37 @@
+# UAT report
+
+_Generated 2026-11-08T05:06:53.831Z by `npm run uat`._
+
+## parent-lanes
+
+Source: `tests/manual/uat-parent-lanes.yaml` · theme dark
+
+| Step | Result | Detail |
+| --- | --- | --- |
+| Parent-thread grouping shows family lanes and excludes loose threads | pass | ✓ text visible: "Parent thread lane fixture"; ✓ text visible: "Child thread lane fixture"; ✓ text hidden: "Standalone" |
+| The board opens with a family locked as the ruler lane and band tracks aligned | pass | ✓ locked lane: true; ✓ bands aligned across lanes; ✓ nest toggle: aria-checked=true aria-disabled=true; ✓ text hidden: "Standalone" |
+| A short pan that mostly brings the next lane in locks that lane | pass | ✓ locked lane: "thr_sweep_parent"; ✓ bands aligned across lanes |
+| Hovering a swimlane shades that row across every lane | pass | ✓ swimlane hover shades one row across lanes |
+| Clicking a lane header opens the parent thread's pane | pass | ✓ pane open; ✓ text visible: "Parent thread lane fixture"; ✓ url ends with /board/t/thr_parent_lane |
+| Clicking a child card opens its thread pane | pass | ✓ pane shows thr_child_lane; ✓ active card is thr_child_lane; ✓ url ends with /board/t/thr_child_lane |
+| A deep-linked child in the rightmost lane is scrolled into view | pass | ✓ pane shows thr_child_lane; ✓ active card is thr_child_lane; ✓ active card visible |
+| Clicking a card in a context lane keeps it fully visible after the relock and recut | pass | ✓ locked lane: "thr_sweep_parent"; ✓ card visible: thr_sweep_child |
+| A horizontal pan releases the ruler lock and re-locks the nearest family at rest | pass | ✓ locked lane: true; ✓ bands aligned across lanes |
+| After a pan the board settles quiet, bounded glide events then stillness | pass | ✓ board quiet after pan: ≤60 events, still ≥500ms; ✓ locked lane: true |
+| A real wheel-event pan re-locks the nearest lane and settles quiet | pass | ✓ board quiet after pan: ≤80 events, still ≥500ms; ✓ locked lane: true; ✓ bands aligned across lanes |
+| Clicking a family header while a pan glide is in flight locks THAT lane, not the pan's target | pass | ✓ locked lane: "thr_parent_lane"; ✓ bands aligned across lanes |
+| A small wheel overshoot inside the locked lane's grab window snaps back flush and keeps the lock | pass | ✓ locked lane: "thr_parent_lane"; ✓ locked lane pinned flush against the rail; ✓ bands aligned across lanes |
+| Resizing the viewport wider while a lane is locked keeps the ruler locked and bands aligned | pass | ✓ locked lane: "thr_parent_lane"; ✓ bands aligned across lanes |
+| Resizing the viewport narrower while a lane is locked keeps the ruler locked and bands aligned | pass | ✓ locked lane: "thr_parent_lane"; ✓ bands aligned across lanes |
+| A search that matches only loose threads drops every family and shows the empty state | pass | ✓ text hidden: "Standalone"; ✓ text hidden: "Queue the UAT pass for the rank lane"; ✓ text visible: "No thread families to show yet" |
+| The lane-order toggle defaults to Recency in parent-thread mode | pass | ✓ text visible: "Recency"; ✓ text visible: "Parent thread lane fixture"; ✓ text hidden: "Standalone" |
+| Switching lane order to By project groups family lanes under their project | pass | ✓ text visible: "By project"; ✓ text visible: "Parent thread lane fixture" |
+| Toggling lane order to By project then back to Recency keeps the board usable | pass | ✓ text visible: "By project"; ✓ text visible: "Parent thread lane fixture" |
+| Returning to Recency order removes project sections | pass | ✓ text visible: "Parent thread lane fixture"; ✓ text hidden: "Standalone" |
+| Switching back to Focus grouping renders normal columns | pass | ✓ unread order |
+| Each sweepable row's rail cell carries the sweep pill, and the non-sweepable rows carry none | pass | ✓ row idle-awhile sweep pill present; ✓ row idle-awhile pill matches ^\d+$; ✓ row done sweep pill present; ✓ row done pill matches ^\d+$; ✓ row attention sweep pill absent; ✓ row working sweep pill absent |
+| Clicking the idle row's broom arms the row and highlights its aged-out cards across every family lane | pass | ✓ row idle-awhile pill matches ^\d+ → Done$; ✓ row idle-awhile offers the sweep exit; ✓ row idle-awhile armed; ✓ row sweep reaches thr_sweep_parent:1, thr_proj_family:1; ✓ row idle-awhile excludes thr_sweep_w0,thr_sweep_w3 |
+| Confirming the armed idle row writes the same done_set the Focus view's idle column writes | pass | ✓ called done_set; ✓ done_set {"done":true}; ✓ row idle-awhile not armed; ✓ row idle-awhile excludes thr_sweep_child; ✓ row working sweep pill absent |
+| Arming the Done row's sweep names the Archive destination and offers the exit | pass | ✓ row done pill matches 1 → Archive; ✓ row done offers the sweep exit; ✓ row done armed |
+| Confirming the Done row's sweep archives its aged-out done child, the Focus view's Done-column destination | pass | ✓ archived set is ["thr_proj_done"]; ✓ row done pill matches ^$; ✓ row done not armed |
+| Clicking a card inside the armed row curates the sweep instead of disarming it | pass | ✓ row idle-awhile excludes thr_sweep_child; ✓ row idle-awhile armed; ✓ pane closed |

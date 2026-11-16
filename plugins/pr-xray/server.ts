@@ -1,0 +1,453 @@
+// PR X-ray backend: GitHub access, hidden analysis workers, comment storage,
+// fix threads, the `bb pr-xray` CLI and the agent tools.
+import { type BbPluginApi, PluginCliError, cliCommand, defineCli } from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import { rpcContract } from "./shared/contract";
+import { parsePrRef, prRefKey, prRefToSubPath, REVIEW_PANEL_PATH } from "./shared/pr-ref";
+import { threadsToFix } from "./shared/fix-scope";
+import { diagramTab } from "./shared/diagram-tabs";
+import type { FixScope, PrDetails, PrRef, ReviewThread } from "./shared/schema";
+import { agentTools, REVIEW_TOOL } from "./server/agent-tools";
+import { createAnalysis, findTicketUrl } from "./server/analysis";
+import { chatInstructions, createChat } from "./server/chat";
+import { createComments } from "./server/comments";
+import { fixDiagramComments, fixDiffComments } from "./server/fix";
+import { removeFilesWhenArchived } from "./server/worker-files";
+import { createGithub, GithubError } from "./server/github";
+import { createModels } from "./server/models";
+import { createStore } from "./server/store";
+
+export type { rpcContract };
+
+const PR_CACHE_MS = 20_000;
+const SKIP_TRUST_PROMPTS_KEY = "skipTrustPrompts";
+
+export default async function plugin(bb: BbPluginApi) {
+  const settings = bb.settings.define({
+    githubToken: {
+      type: "string",
+      label: "GitHub token",
+      description:
+        "Fine-grained token with Pull requests: read & write and Contents: read. Leave empty to use your gh login.",
+      secret: true,
+    },
+    notionProjectProperty: {
+      type: "string",
+      label: "Notion parent project property",
+      description: "Relation property on the ticket page that links to its parent project.",
+      default: "Project",
+    },
+    ticketUrlPattern: {
+      type: "string",
+      label: "Ticket URL pattern",
+      description: "Regular expression that finds the ticket link in the PR description.",
+      default: "https://(?:www\\.|app\\.)?notion\\.(?:so|com)/[^\\s)\\]>]+",
+    },
+  });
+
+  const store = createStore(bb);
+  const github = createGithub(async () => (await settings.get()).githubToken as string | undefined);
+  const models = createModels(bb);
+  const skipTrustPrompts = async () => {
+    const stored = await bb.storage.kv.get(SKIP_TRUST_PROMPTS_KEY);
+    return stored === true;
+  };
+  const comments = createComments({ bb, store, github, models, loadPr });
+  const analysis = createAnalysis({
+    bb,
+    store,
+    github,
+    models,
+    settings: async () => {
+      const values = await settings.get();
+      return { ticketUrlPattern: values.ticketUrlPattern, notionProjectProperty: values.notionProjectProperty };
+    },
+    onDiagramNodesChanged: (analysisId) => comments.reconcileDiagramPins(analysisId),
+  });
+
+  // Short-lived PR cache so realtime refetches don't hammer GitHub.
+  const prCache = new Map<string, { at: number; pr: Promise<PrDetails> }>();
+  function loadPr(ref: PrRef, fresh = false): Promise<PrDetails> {
+    const key = prRefKey(ref);
+    const hit = prCache.get(key);
+    if (!fresh && hit && Date.now() - hit.at < PR_CACHE_MS) return hit.pr;
+    const pr = github.loadPr(ref);
+    prCache.set(key, { at: Date.now(), pr });
+    pr.catch(() => prCache.delete(key));
+    return pr;
+  }
+  const invalidate = (ref: PrRef) => prCache.delete(prRefKey(ref));
+
+  const chat = createChat({ bb, models, loadPr, analysisFor: (ref) => store.latestCompletedAnalysis(ref) });
+  bb.onDispose(() => chat.dispose());
+  removeFilesWhenArchived(bb);
+
+  function reviewLink(ref: PrRef): string {
+    const path = `/plugins/${bb.pluginId}/${REVIEW_PANEL_PATH}/${prRefToSubPath(ref)}`;
+    const base = bb.server.experimental_appUrl;
+    return base ? `${base.replace(/\/$/u, "")}${path}` : path;
+  }
+
+  async function openReview(ref: PrRef) {
+    const pr = await loadPr(ref);
+    store.touchReview(ref, pr.title, pr.url);
+    // The user starts the analysis from the review page; opening only reports an existing one.
+    const latest = store.latestAnalysis(ref, pr.headSha);
+    return { pr, analysis: latest?.headSha === pr.headSha ? latest : null };
+  }
+
+  /** These can fail because the page shows an old commit, so a failure also refreshes the page. */
+  async function showingNewCommits<T>(ref: PrRef, task: () => Promise<T>): Promise<T> {
+    try {
+      return await task();
+    } catch (error) {
+      invalidate(ref);
+      comments.publish(ref);
+      throw error;
+    }
+  }
+
+  async function startFix(pr: PrDetails, threads: ReviewThread[], scope: FixScope) {
+    const tags = new Map<number, string>();
+    for (const thread of threads) {
+      for (const comment of thread.comments) {
+        const tag = store.commentByGithubId(comment.databaseId)?.tag;
+        if (tag) tags.set(comment.databaseId, tag);
+      }
+    }
+    const fix = await fixDiffComments(bb, pr, threads, tags, scope);
+    // The agent is already running, so a failed resolve (e.g. a token without write access) only leaves the thread open.
+    await Promise.allSettled(
+      threads.map((thread) =>
+        comments.setThreadResolved(pr.ref, thread.id, true, thread.comments.map((comment) => comment.databaseId)),
+      ),
+    );
+    invalidate(pr.ref);
+    comments.publish(pr.ref);
+    return fix;
+  }
+
+  bb.rpc.register(rpcContract, {
+    async "review.get"({ ref, fresh }) {
+      const pr = await loadPr(ref, fresh === true);
+      store.touchReview(ref, pr.title, pr.url);
+      if (store.latestAnalysis(ref, pr.headSha)?.status === "running") await analysis.reconcile();
+      const latest = store.latestAnalysis(ref, pr.headSha);
+      const current = latest?.headSha === pr.headSha ? latest : null;
+      const completed = current?.status === "done" ? current : store.latestCompletedAnalysis(ref);
+      const override = store.ticketOverride(ref);
+      const values = await settings.get();
+      const fingerprints = new Set(pr.hunks.map((hunk) => hunk.fingerprint));
+      const viewedRows = store.viewedHunks(ref);
+      return {
+        pr,
+        current,
+        completed,
+        // All of them: the page may be holding an older commit than this one.
+        viewedHunks: viewedRows.map((row) => row.fingerprint),
+        changedSinceViewed: [...new Set(viewedRows.filter((row) => !fingerprints.has(row.fingerprint)).map((row) => row.path))],
+        pending: store.pendingComments(ref),
+        comments: store.commentsForPr(ref),
+        ticketUrl: override ?? findTicketUrl(pr.body, values.ticketUrlPattern),
+        ticketOverridden: override !== null,
+      };
+    },
+    async "review.head"({ ref }) {
+      return { headSha: await github.headSha(ref) };
+    },
+    "review.recent": () => ({ reviews: store.recentReviews() }),
+    "review.setTicket"({ ref, url }) {
+      store.setTicketOverride(ref, url);
+      comments.publish(ref);
+      return { ok: true };
+    },
+    async "analysis.start"({ ref }) {
+      const pr = await loadPr(ref, true);
+      store.touchReview(ref, pr.title, pr.url);
+      return { analysis: await analysis.start(ref, { pr }) };
+    },
+    "hunks.setViewed"({ ref, hunks, current, viewed }) {
+      store.setHunksViewed(ref, hunks, viewed, new Set(current));
+      comments.publish(ref);
+      return { ok: true };
+    },
+    async "file.contents"({ ref, headSha, path, previousPath }) {
+      const baseSha = await github.baseSha(ref);
+      const [oldText, newText] = await Promise.all([
+        github.fileContent(ref, previousPath ?? path, baseSha),
+        github.fileContent(ref, path, headSha),
+      ]);
+      return { old: oldText, new: newText };
+    },
+    async "file.contentAt"({ ref, path, sha }) {
+      return { content: await github.fileContent(ref, path, sha) };
+    },
+    async "comment.single"({ ref, draft }) {
+      await comments.postSingle(ref, draft);
+      invalidate(ref);
+      return { ok: true };
+    },
+    "comment.pendingAdd"({ ref, draft }) {
+      const pending = store.addPendingComment(ref, draft);
+      comments.publish(ref);
+      return pending;
+    },
+    "comment.pendingUpdate"({ ref, id, body }) {
+      store.updatePendingComment(id, { body });
+      comments.publish(ref);
+      return { ok: true };
+    },
+    async "comment.pendingKeep"({ ref, id, headSha }) {
+      await showingNewCommits(ref, () => comments.keepPending(ref, id, headSha));
+      return { ok: true };
+    },
+    "comment.pendingRemove"({ ref, id }) {
+      store.removePendingComment(id);
+      comments.publish(ref);
+      return { ok: true };
+    },
+    async "review.submit"({ ref, headSha, event, body }) {
+      const result = await showingNewCommits(ref, () => comments.submitReview(ref, headSha, event, body));
+      invalidate(ref);
+      return result;
+    },
+    async "thread.reply"({ ref, commentDatabaseId, body }) {
+      await comments.reply(ref, commentDatabaseId, body);
+      invalidate(ref);
+      return { ok: true };
+    },
+    async "comment.edit"({ ref, commentDatabaseId, body }) {
+      await comments.editBody(ref, commentDatabaseId, body);
+      invalidate(ref);
+      return { ok: true };
+    },
+    async "thread.resolve"({ ref, threadId, resolved, commentDatabaseIds }) {
+      await comments.setThreadResolved(ref, threadId, resolved, commentDatabaseIds);
+      invalidate(ref);
+      return { ok: true };
+    },
+    async "comment.setTag"({ commentId, tag }) {
+      await comments.requireOwnDesignComment(commentId);
+      comments.setTag(commentId, tag);
+      return { ok: true };
+    },
+    async "comment.autoTag"({ commentId }) {
+      await comments.requireOwnDesignComment(commentId);
+      await comments.autoTag(commentId);
+      return { ok: true };
+    },
+    async "diagram.addComment"({ ref, analysisId, diagramId, nodeId, body }) {
+      await comments.requireOwnPr(ref);
+      return comments.addDiagramComment({ ref, analysisId, diagramId, nodeId, body });
+    },
+    async "diagram.updateComment"({ id, body, status }) {
+      await comments.requireOwnDesignComment(id);
+      const updated = store.updateComment(id, { ...(body ? { body } : {}), ...(status ? { status } : {}) });
+      if (updated) comments.publish(updated.ref);
+      return { ok: true };
+    },
+    async "diagram.deleteComment"({ id }) {
+      await comments.requireOwnDesignComment(id);
+      const existing = store.comment(id);
+      store.deleteComment(id);
+      if (existing) comments.publish(existing.ref);
+      return { ok: true };
+    },
+    async "fix.thread"({ ref, threadId, scope }) {
+      const pr = await loadPr(ref, true);
+      const thread = pr.threads.find((candidate) => candidate.id === threadId);
+      if (!thread) throw new Error("That review thread no longer exists.");
+      const scoped = threadsToFix([thread], pr.viewer, scope);
+      if (scoped.length === 0) throw new Error(scope === "mine" ? "You have no unresolved comments on that thread." : "That thread is resolved.");
+      return startFix(pr, scoped, scope);
+    },
+    async "fix.allDiff"({ ref, scope }) {
+      const pr = await loadPr(ref, true);
+      const threads = threadsToFix(pr.threads, pr.viewer, scope);
+      if (threads.length === 0) {
+        throw new Error(scope === "mine" ? "There are no unresolved review threads with your comments." : "There are no unresolved review threads.");
+      }
+      return startFix(pr, threads, scope);
+    },
+    async "fix.allDiagram"({ ref }) {
+      const pr = await loadPr(ref, true);
+      await comments.requireOwnPr(ref);
+      const open = store.commentsForPr(ref, "diagram").filter((comment) => comment.status === "open");
+      if (open.length === 0) throw new Error("There are no open design comments.");
+      const titles = new Map<string, string>();
+      for (const comment of open) {
+        const graph = store.analysis(comment.analysisId ?? "")?.result?.graph;
+        const tab = graph && diagramTab(graph, comment.diagramId);
+        if (tab) titles.set(tab.id, tab.title);
+      }
+      return fixDiagramComments(bb, pr, open, titles);
+    },
+    async "chat.get"({ ref }) {
+      return { threadId: await chat.get(ref) };
+    },
+    async "chat.start"({ ref, question }) {
+      return { threadId: await chat.start(ref, question) };
+    },
+    async "chat.reset"({ ref }) {
+      await chat.reset(ref);
+      return { ok: true };
+    },
+    async "settings.get"() {
+      let identity: { login: string; source: "token" | "gh" } | null = null;
+      let identityError: string | null = null;
+      try {
+        identity = await github.identity();
+      } catch (error) {
+        identityError = error instanceof Error ? error.message : String(error);
+      }
+      const [analysisModel, taggingModel, pickerSeed, skipTrust] = await Promise.all([
+        models.selected("analysis"),
+        models.selected("tagging"),
+        models.pickerSeed().catch(() => null),
+        skipTrustPrompts(),
+      ]);
+      return { identity, identityError, models: { analysis: analysisModel, tagging: taggingModel }, pickerSeed, skipTrustPrompts: skipTrust };
+    },
+    async "settings.getSkipTrustPrompts"() {
+      const skip = await skipTrustPrompts();
+      return { skipTrustPrompts: skip };
+    },
+    async "settings.setSkipTrustPrompts"({ skip }) {
+      if (skip) await bb.storage.kv.set(SKIP_TRUST_PROMPTS_KEY, true);
+      else await bb.storage.kv.delete(SKIP_TRUST_PROMPTS_KEY);
+      return { ok: true };
+    },
+    async "settings.setModel"({ purpose, selection }) {
+      await models.select(purpose, selection);
+      return { ok: true };
+    },
+  });
+
+  // ---- agent tools -------------------------------------------------------------
+
+  bb.agents.registerTool({
+    name: REVIEW_TOOL,
+    description:
+      "Open a GitHub pull request in PR X-ray and return a link to the review page, where the user can start the grouped-diff and visual analysis. Use when the user asks to review or x-ray a PR.",
+    instructions: `When the user asks to review or "x-ray" a GitHub PR, call ${REVIEW_TOOL} with its URL and share the returned link.`,
+    presentation: { label: { pending: "Opening PR in PR X-ray", completed: "Opened PR in PR X-ray" } },
+    parameters: z.object({ url: z.string().describe("GitHub PR URL or owner/repo#123") }),
+    async execute({ url }) {
+      const ref = parsePrRef(url);
+      if (ref === null) {
+        return { content: [{ type: "text", text: `Not a GitHub pull request URL: ${url}` }], isError: true };
+      }
+      try {
+        const { pr, analysis: record } = await openReview(ref);
+        const state =
+          record?.status === "done"
+            ? "The analysis is ready."
+            : record?.status === "running"
+              ? "The analysis is running (usually 1-3 minutes); the page updates live."
+              : "Not analysed yet; the user can start the analysis from the review page.";
+        return `Opened "${pr.title}" in PR X-ray. ${state}\nReview page: [${ref.owner}/${ref.repo}#${ref.number}](${reviewLink(ref)})`;
+      } catch (error) {
+        const message = error instanceof GithubError ? error.message : String(error);
+        return { content: [{ type: "text", text: message }], isError: true };
+      }
+    },
+  });
+
+  // Worker tools are offered only to the workers that need them.
+  bb.agents.configure((context) => {
+    const instructions = chatInstructions(context.pluginMetadata);
+    return { tools: agentTools(context.pluginMetadata.role), skills: [], ...(instructions ? { instructions } : {}) };
+  });
+
+  // ---- CLI -----------------------------------------------------------------------
+
+  bb.cli.register(
+    defineCli({
+      name: "pr-xray",
+      summary: "PR X-ray: grouped, visual PR self-review and the comments it records",
+      commands: {
+        review: cliCommand({
+          summary: "Open a PR in PR X-ray",
+          positionals: [{ name: "url", description: "GitHub PR URL or owner/repo#123", required: true }],
+          options: { json: { type: "boolean", description: "Emit JSON" } },
+          async run(input) {
+            const ref = parsePrRef(input.positionals.url);
+            if (ref === null) {
+              throw new PluginCliError(`not a GitHub PR: ${input.positionals.url}`, {
+                code: "invalid_pr",
+                hint: "Pass https://github.com/<owner>/<repo>/pull/<n> or owner/repo#n.",
+              });
+            }
+            const { pr, analysis: record } = await openReview(ref);
+            const value = { title: pr.title, analysis: record?.status ?? "none", link: reviewLink(ref) };
+            return {
+              exitCode: 0,
+              stdout: input.options.json ? JSON.stringify(value) : `${pr.title}\nanalysis: ${value.analysis}\n${value.link}`,
+            };
+          },
+        }),
+        comments: cliCommand({
+          summary: "List recorded review comments (diff and diagram) with tags, for retros",
+          options: {
+            since: { type: "string", description: "ISO date or duration like 30d / 12w (default 90d)" },
+            repo: { type: "string", description: "Only this repository, owner/name" },
+            source: { type: "enum", values: ["diff", "diagram"], description: "Only diff or diagram comments" },
+            tag: { type: "string", description: "Only this tag" },
+            limit: { type: "string", description: "Maximum comments, 1-2000 (default 500)" },
+            json: { type: "boolean", description: "Emit JSON" },
+          },
+          async run(input) {
+            const since = parseSince(input.options.since ?? "90d");
+            if (since === null) {
+              throw new PluginCliError(`invalid --since: ${input.options.since}`, {
+                code: "invalid_since",
+                hint: "Use an ISO date (2026-01-31) or a duration such as 30d or 12w.",
+              });
+            }
+            const limit = Math.min(2000, Math.max(1, Number(input.options.limit ?? 500) || 500));
+            const rows = store.queryComments({
+              since,
+              ...(input.options.repo ? { repo: input.options.repo } : {}),
+              ...(input.options.source ? { source: input.options.source } : {}),
+              ...(input.options.tag ? { tag: input.options.tag } : {}),
+              limit,
+            });
+            const items = rows.map((comment) => ({
+              id: comment.id,
+              source: comment.source,
+              repo: `${comment.ref.owner}/${comment.ref.repo}`,
+              pr: comment.ref.number,
+              tag: comment.tag,
+              status: comment.status,
+              body: comment.body.slice(0, 4000),
+              path: comment.path,
+              line: comment.line,
+              diagramNode: comment.nodeLabel,
+              githubUrl: comment.githubUrl,
+              createdAt: comment.createdAt,
+            }));
+            if (input.options.json) return { exitCode: 0, stdout: JSON.stringify({ since, count: items.length, comments: items }) };
+            if (items.length === 0) return { exitCode: 0, stdout: `No comments since ${since}.` };
+            const lines = items.map(
+              (item) =>
+                `${item.createdAt.slice(0, 10)} ${item.repo}#${item.pr} [${item.tag ?? "untagged"}] ${item.source === "diff" ? `${item.path}:${item.line}` : `diagram: ${item.diagramNode}`} — ${item.body.split("\n")[0]!.slice(0, 120)}`,
+            );
+            return { exitCode: 0, stdout: lines.join("\n") };
+          },
+        }),
+      },
+    }),
+  );
+
+  bb.log.info("loaded");
+}
+
+function parseSince(value: string): string | null {
+  const duration = /^(\d+)([dw])$/u.exec(value.trim());
+  if (duration) {
+    const days = Number(duration[1]) * (duration[2] === "w" ? 7 : 1);
+    return new Date(Date.now() - days * 86_400_000).toISOString();
+  }
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? null : new Date(date).toISOString();
+}

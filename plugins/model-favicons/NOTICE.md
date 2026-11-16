@@ -1,0 +1,17 @@
+# Model Favicons
+
+Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+
+- Оригинальный автор: Sancho (https://github.com/linncolnx)
+- Исходный репозиторий: https://github.com/linncolnx/bb-plugin-model-favicons
+- Каталог в репозитории: (корень)
+- Версия: v0.1.0, коммит f3fb3b4583a43f30470a2899b1fd9fc8aea22c5c
+- Ссылка на исходник: https://github.com/linncolnx/bb-plugin-model-favicons/tree/f3fb3b4583a43f30470a2899b1fd9fc8aea22c5c
+- Лицензия: MIT (текст в файле LICENSE рядом)
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

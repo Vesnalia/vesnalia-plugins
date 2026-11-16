@@ -1,0 +1,1364 @@
+// The scenes the preview renders: fixtures for each slot and state.
+
+export const THREAD = "thr_preview";
+const DESKTOP_PATH = "/api/v1/plugins/bb-box/http/desktop";
+const TERMINAL_PATH = "/api/v1/plugins/bb-box/http/terminal";
+const now = Date.now();
+
+function box(overrides = {}) {
+  return {
+    id: "box_1",
+    name: "calm-otter",
+    kind: "linux",
+    kindLabel: "Linux",
+    backendLabel: "Proxmox LXC on pve",
+    nature: "virtual",
+    form: "LXC",
+    role: "box",
+    state: "ready",
+    error: null,
+    createdAt: now - 12 * 60_000,
+    readyAt: now - 12 * 60_000 + 2200,
+    os: "linux",
+    arch: "x86_64",
+    gpu: false,
+    requires: [],
+    extras: ["docker"],
+    docker: true,
+    desktop: false,
+    display: null,
+    control: null,
+    computerUse: false,
+    terminal: true,
+    address: "10.200.0.12",
+    facts: [{ label: "Template", value: "9100" }],
+    timings: { clone: 750, start: 1000, ssh: 450, total: 2200, enrol: 5300 },
+    enrol: { state: "enrolled", hostId: "host_1", error: null },
+    enrols: true,
+    canStopStart: true,
+    size: "2 cores, 4 GiB memory",
+    ...overrides,
+  };
+}
+
+const desktop = box({
+  id: "box_2",
+  name: "bold-heron",
+  kind: "linux-desktop",
+  kindLabel: "Linux desktop",
+  desktop: true,
+  gpu: true,
+  display: { protocol: "rfb", resizable: true },
+  control: { owner: "agent", holder: null },
+  computerUse: true,
+  address: "10.200.0.14",
+  size: "4 cores, 8 GiB memory, 32 GiB disk",
+  facts: [
+    { label: "GPU", value: "GPU-0a1b2c3d" },
+    { label: "Display mode", value: "gpu" },
+    { label: "Template", value: "9101" },
+  ],
+});
+const starting = box({ id: "box_3", name: "quiet-fern", state: "acquiring", createdAt: now - 1400, address: null, facts: [], timings: {}, enrol: { state: "off", hostId: null, error: null } });
+const stopped = box({ id: "box_4", name: "wild-cove", kind: "linux", kindLabel: "Linux", backendLabel: "SSH host pool", nature: "real", form: "Physical", extras: [], docker: false, state: "stopped", size: "8 cores, 16 GiB memory, 64 GiB disk" });
+const failed = box({
+  id: "box_5",
+  name: "brisk-elm",
+  kind: "linux-desktop",
+  kindLabel: "Linux desktop",
+  desktop: true,
+  gpu: true,
+  state: "failed",
+  error: "No GPU is left: GPU-0a1b has 3 desktops and GPU-7c2d fell back to the CPU. Try a linux-desktop-cpu box.",
+  address: null,
+  facts: [],
+  timings: {},
+  enrol: { state: "off", hostId: null, error: null },
+});
+const gone = box({ id: "box_6", name: "soft-reed", state: "gone", enrol: { state: "off", hostId: null, error: null } });
+const refused = box({ id: "box_7", name: "quiet-fern", error: "Stopping the box failed: the host did not answer.", enrol: { state: "failed", hostId: null, error: "BB did not answer within 10 s." } });
+
+function size(cores, memoryGiB, diskGiB = null) {
+  return { cores, memoryGiB, diskGiB, words: `${cores} cores, ${memoryGiB} GiB memory${diskGiB === null ? "" : `, ${diskGiB} GiB disk`}` };
+}
+
+function kind(id, label, description, cores, desktop, gpu, spares = { target: 0, ready: 0, making: 0 }) {
+  return {
+    id,
+    label,
+    description,
+    size: size(cores, cores * 2).words,
+    presets: [
+      { name: "small", ...size(cores, cores * 2) },
+      { name: "medium", ...size(cores * 2, cores * 4) },
+      { name: "large", ...size(cores * 4, cores * 8) },
+    ],
+    defaultPreset: "small",
+    largest: size(cores * 8, cores * 16, 256),
+    gpu,
+    desktop,
+    os: id.startsWith("macos") ? "macos" : "linux",
+    arch: id.startsWith("macos") || id.includes("arm64") ? "arm64" : "x86_64",
+    windowing: id.includes("wayland") ? "wayland" : "x11",
+    features: [],
+    docker: !id.startsWith("macos"),
+    enrol: true,
+    spares,
+    backends: ["Proxmox LXC on pve"],
+    forms: ["LXC"],
+    offers: [offer("proxmox-lxc", "Proxmox LXC", ["pve"], "LXC", { ready: spares.ready, typicalReadyMs: desktop ? 3100 : 2200, resizable: desktop ? true : null, docker: !id.startsWith("macos") })],
+    computerUse: desktop,
+  };
+}
+
+/** One backend's offer of a kind, for the picker's pane. */
+function offer(type, label, hosts, form, extra = {}) {
+  const name = hosts.length === 1 ? `${label} on ${hosts[0]}` : hosts.length > 1 ? `${label} on ${hosts.length} ${type === "tart" ? "Macs" : "hosts"}` : label;
+  return { backend: type, name, type, label, hosts, form, ready: 0, free: null, admin: true, resizable: null, typicalReadyMs: null, docker: true, hostOs: type === "tart" ? "macos" : "linux", ...extra };
+}
+
+export const KINDS = [
+  // Linux keeps a spare, ready, so the chooser's Proxmox LXC row says "ready now"; three backends offer it, one without Docker (041).
+  {
+    ...kind("linux", "Linux", "A Linux box for builds, servers, Docker and the agent's own work.", 2, false, false, { target: 1, ready: 1, making: 0 }),
+    forms: ["LXC", "Physical", "Docker"],
+    admin: null,
+    docker: null,
+    offers: [
+      offer("proxmox-lxc", "Proxmox LXC", ["pve"], "LXC", { ready: 1, typicalReadyMs: 2200 }),
+      offer("ssh-pool", "SSH host pool", [], "Physical", { free: 1, admin: false, docker: false }),
+      offer("docker", "Docker", ["docker-host"], "Docker", { typicalReadyMs: 1800 }),
+    ],
+  },
+  kind("linux-desktop", "Linux desktop", "A Linux desktop on the host's GPU, for computer use, browsers and app development.", 4, true, true),
+  {
+    ...kind("linux-desktop-cpu", "Linux desktop", "A Linux desktop drawn by the CPU. Graphics are slower; nothing else changes.", 4, true, false),
+    forms: ["LXC", "Docker"],
+    offers: [offer("proxmox-lxc", "Proxmox LXC", ["pve"], "LXC", { typicalReadyMs: 3100, resizable: true }), offer("docker", "Docker", ["docker-host"], "Docker", { resizable: true })],
+  },
+  {
+    ...kind("macos-desktop", "macOS desktop", "A macOS desktop on a Mac.", 4, true, false),
+    forms: ["VM"],
+    offers: [offer("tart", "Tart", ["mac-mini", "studio"], "VM", { typicalReadyMs: 26000, resizable: false, docker: false })],
+  },
+  {
+    ...kind("windows-desktop", "Windows desktop", "A Windows desktop in a VM.", 4, true, false),
+    os: "windows",
+    arch: "x86_64",
+    enrol: false,
+    docker: false,
+    forms: ["VM"],
+    offers: [offer("proxmox-qemu", "Proxmox QEMU", ["pve"], "VM", { typicalReadyMs: 29000, resizable: true, docker: false })],
+  },
+];
+
+// A backend offering both an X11 CPU desktop and a Wayland one, so the New box form shows the Display choice (048).
+const WAYLAND_KINDS = [
+  ...KINDS,
+  {
+    ...kind("linux-desktop-wayland-cpu", "Linux desktop on Wayland", "A Linux desktop on Wayland (Sway), drawn by the CPU, for computer use, browsers and apps built for Wayland. X11-only apps do not run there.", 4, true, false),
+    forms: ["LXC"],
+    offers: [offer("proxmox-lxc", "Proxmox LXC", ["pve"], "LXC", { typicalReadyMs: 3200, resizable: true })],
+  },
+];
+
+const BACKENDS = [
+  { type: "proxmox-lxc", label: "Proxmox LXC", nature: "virtual", state: "active", problems: [], setup: { guide: "setup/proxmox-lxc/README.md", scripts: ["setup/proxmox-lxc/host/setup-host.sh", "setup/proxmox-lxc/host/setup-network.sh", "setup/proxmox-lxc/host/setup-token.sh", "setup/proxmox-lxc/template/build.sh"] } },
+  { type: "docker", label: "Docker", nature: "virtual", state: "misconfigured", problems: ["Set the Docker host.", "Set the image for Linux boxes."], setup: { guide: "setup/docker/README.md", scripts: ["setup/docker/build.sh"] } },
+  { type: "ssh-pool", label: "SSH host pool", nature: "real", state: "off", problems: [], setup: { guide: "setup/ssh-pool/README.md", scripts: [] } },
+];
+
+const DOCTOR = {
+  ok: false,
+  sections: [
+    {
+      title: "Proxmox LXC",
+      report: {
+        ok: false,
+        summary: "Proxmox VE 9.2 on pve",
+        checks: [
+          { id: "proxmox.api", name: "Proxmox API", status: "ok", detail: "Proxmox VE 9.2 on pve.", fix: null },
+          { id: "proxmox.token", name: "Token rights", status: "ok", detail: "VM.Allocate, VM.Clone, VM.Config.*, VM.PowerMgmt on /pool/bbbox.", fix: null },
+          { id: "template.9101", name: "Template 9101", status: "fail", detail: "has no build tag, so warm boxes cannot be checked against it.", fix: "Run build.sh desktop again; it tags the template." },
+          { id: "memory", name: "Memory", status: "warn", detail: "pve has 6 GiB free; 4 GiB is kept back, so one Linux box fits.", fix: "Release a box, or lower the memory kept free." },
+          { id: "ssh", name: "SSH into a box", status: "skipped", detail: "skipped, since a template check failed.", fix: null },
+        ],
+        notes: ["Install this public key in the templates:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB0Zk3Y7XkG0rvmP2tq1u8jq2QwKxH1tO6V6bFm5wQ4a bb-box"],
+      },
+    },
+    { title: "Docker", report: { ok: false, summary: "Its settings need fixing.", checks: [{ id: "settings.0", name: "Settings", status: "fail", detail: "Set the Docker host.", fix: "Fix it in bb-box's settings." }], notes: [] } },
+  ],
+};
+
+const sizeOf = (cores, memoryGiB, diskGiB = null) => ({ cores, memoryMiB: memoryGiB * 1024, diskGiB });
+const DOCTOR_PROXMOX = {
+  ok: false,
+  summary: "Proxmox VE 9.2 on pve",
+  checks: [
+    { id: "proxmox.api", name: "Proxmox API", status: "ok", detail: "Proxmox VE 9.2 on pve.", fix: null },
+    { id: "proxmox.token", name: "Token rights", status: "ok", detail: "VM.Allocate, VM.Clone, VM.Config.*, VM.PowerMgmt on /pool/bbbox.", fix: null },
+    { id: "template.9101", name: "Template 9101", status: "fail", detail: "has no build tag, so warm boxes cannot be checked against it.", fix: "Run build.sh desktop again; it tags the template." },
+    { id: "memory", name: "Memory", status: "warn", detail: "pve has 6 GiB free; 4 GiB is kept back, so one Linux box fits.", fix: "Release a box, or lower the memory kept free." },
+    { id: "ssh", name: "SSH into a box", status: "skipped", detail: "skipped, since a template check failed.", fix: null },
+  ],
+  notes: ["Install this public key in the templates:\nssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB0Zk3Y7XkG0rvmP2tq1u8jq2QwKxH1tO6V6bFm5wQ4a bb-box"],
+};
+const field = (key, label, group, extra = {}) => ({ key, type: "string", label, group, default: "", ...extra });
+const DRIVERS = [
+  {
+    type: "proxmox-lxc",
+    label: "Proxmox LXC",
+    description: "Linux containers on a Proxmox VE host, with or without a desktop on its GPU.",
+    nature: "virtual",
+    kinds: ["linux", "linux-desktop", "linux-desktop-cpu"],
+    fields: [
+      field("url", "API URL", "connection", { description: "For example https://192.0.2.10:8006, as the setup guide's token file gives it." }),
+      field("node", "Node", "connection", { description: "The node boxes run on. Leave empty on a single-node host." }),
+      field("tls-fingerprint", "TLS fingerprint", "connection", { description: "The SHA-256 fingerprint of the API's certificate, from the token file." }),
+      field("ca-certificate", "CA certificate", "connection", { experimental_multiline: true, description: "PEM certificate of the CA that signed the API's certificate, when there is no fingerprint." }),
+      field("token-id", "API token ID", "credentials", { description: "For example bbbox@pve!plugin." }),
+      field("token-secret", "API token secret", "credentials", { secret: true }),
+      field("ssh-private-key", "SSH private key", "credentials", { secret: true, description: "Leave empty and bb-box makes one and shows its public key, which the templates must then accept." }),
+      field("pool", "Resource pool", "boxes", { default: "bbbox", description: "Boxes are made in this pool." }),
+      field("linux-templates", "Linux templates", "boxes", { default: "9100", description: "VMIDs of the CT templates Linux boxes are linked clones of, separated by spaces." }),
+      field("desktop-templates", "GPU desktop templates", "boxes", { experimental_multiline: true, description: "One line per template: its VMID, a space and the ID of the GPU it carries." }),
+      field("desktop-cpu-templates", "CPU desktop templates", "boxes", { description: "VMIDs of the CPU-only desktop templates. Empty turns them off." }),
+      { key: "desktops-per-gpu", type: "number", label: "Desktops per GPU", group: "advanced", default: 0, description: "0 means no limit." },
+      field("bridge", "Network bridge", "advanced", { default: "vmbr200" }),
+      field("subnet", "Subnet", "advanced", { default: "10.200.0.0/24" }),
+      field("gateway", "Gateway", "advanced", { default: "10.200.0.1" }),
+      field("addresses", "Box addresses", "advanced", { default: "10.200.0.10-10.200.0.254" }),
+      { key: "vmid-first", type: "number", label: "First box VMID", group: "advanced", default: 9900 },
+      { key: "vmid-last", type: "number", label: "Last box VMID", group: "advanced", default: 9999 },
+      field("ssh-user", "SSH user", "advanced", { default: "box" }),
+      { key: "reserve-memory-mib", type: "number", label: "Memory kept free (MiB)", group: "advanced", default: 4096 },
+      { key: "reserve-disk-gib", type: "number", label: "Disk kept free (GiB)", group: "advanced", default: 50 },
+    ],
+    hostFields: [],
+    setup: { guide: "setup/proxmox-lxc/README.md", scripts: ["setup/proxmox-lxc/host/setup-host.sh", "setup/proxmox-lxc/host/setup-network.sh", "setup/proxmox-lxc/host/setup-token.sh", "setup/proxmox-lxc/template/build.sh"] },
+  },
+  {
+    type: "ssh-pool",
+    label: "SSH host pool",
+    description: "Your own machines, reached over SSH and reset between boxes.",
+    nature: "real",
+    kinds: ["linux"],
+    fields: [field("machines", "Machines", "boxes", { experimental_multiline: true, description: "One per line: a name, its address and the kinds it serves." }), field("host-keys", "Host keys", "boxes", { experimental_multiline: true }), field("ssh-private-key", "SSH private key", "credentials", { secret: true })],
+    hostFields: [],
+    setup: { guide: "setup/ssh-pool/README.md", scripts: ["setup/ssh-pool/setup.sh"] },
+  },
+  {
+    type: "tart",
+    label: "Tart",
+    description: "macOS VMs on your Macs, through Tart.",
+    nature: "virtual",
+    kinds: ["macos", "macos-desktop"],
+    fields: [field("ssh-private-key", "SSH private key", "credentials", { secret: true }), field("vm-user", "VM user", "advanced", { default: "admin" }), field("macos-image", "macOS image", "boxes", { default: "ghcr.io/cirruslabs/macos-sequoia-base:latest" })],
+    hostFields: [field("address", "Address", "connection", { description: "The Mac's address, with :port when SSH is not on 22." }), field("user", "User", "connection", { description: "The user bb-box logs in to the Mac as." }), field("host-keys", "Host keys", "connection", { experimental_multiline: true })],
+    setup: { guide: "setup/tart/README.md", scripts: ["setup/tart/setup-mac.sh"] },
+  },
+  {
+    type: "docker",
+    label: "Docker",
+    description: "Linux boxes, with or without a desktop, as containers on a Docker host. It needs only Docker.",
+    nature: "virtual",
+    kinds: ["linux", "linux-desktop-cpu", "linux-desktop"],
+    fields: [
+      field("host", "Host", "connection", { description: "unix:///path/to/docker.sock or ssh://user@host. Empty uses the docker CLI's own default." }),
+      field("linux-image", "Linux image", "boxes", { default: "bbbox/linux:1" }),
+      field("desktop-image", "Desktop image", "boxes", { default: "bbbox/linux-desktop:1" }),
+      { key: "privileged", type: "boolean", label: "Docker in boxes", group: "boxes", default: true },
+      { key: "gpu-desktops", type: "boolean", label: "GPU desktops", group: "boxes", default: false },
+      { key: "boxes", type: "number", label: "Most boxes", group: "advanced", default: 10 },
+    ],
+    hostFields: [],
+    setup: { guide: "setup/docker/README.md", scripts: ["setup/docker/build.sh"] },
+  },
+];
+/** Proxmox QEMU's driver, as the server describes it: Windows desktops, and the switch for their trial as BB machines (#539). */
+const PROXMOX_QEMU_DRIVER = {"type": "proxmox-qemu", "label": "Proxmox QEMU", "description": "Windows desktops as VMs on a Proxmox VE host.", "nature": "virtual", "kinds": ["windows-desktop"], "fields": [{"key": "url", "type": "string", "label": "API URL", "description": "For example https://192.0.2.10:8006/api2/json, as the Proxmox LXC setup guide's token file gives it. Leave it, the token, the fingerprint and the CA certificate empty to use Proxmox LXC's.", "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "node", "type": "string", "label": "Node", "description": "The node boxes run on. Leave empty on a single-node host.", "group": "connection", "default": ""}, {"key": "tls-fingerprint", "type": "string", "label": "TLS fingerprint", "description": "The SHA-256 fingerprint of the Proxmox API's certificate, from the setup guide's token file. bb-box then trusts that certificate alone. Leave empty to check the certificate against its CA.", "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "ca-certificate", "type": "string", "label": "CA certificate", "description": "PEM certificate of the CA that signed the Proxmox API's certificate, when there is no TLS fingerprint. Leave empty for a publicly trusted one.", "experimental_multiline": true, "group": "connection", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "token-id", "type": "string", "label": "API token ID", "description": "For example bbbox@pve!plugin. The setup guide lists the privileges it needs.", "group": "credentials", "default": "", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "token-secret", "type": "string", "label": "API token secret", "description": "The secret of the API token, from the setup guide's token file.", "secret": true, "group": "credentials", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["url", "token-id", "token-secret", "tls-fingerprint", "ca-certificate"]}}, {"key": "ssh-private-key", "type": "string", "label": "SSH private key", "description": "Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, bb-box makes a key, which the template does not accept until you add its public key.", "secret": true, "group": "credentials", "inherits": {"from": "proxmox-lxc", "label": "Proxmox LXC", "set": ["ssh-private-key"]}}, {"key": "pool", "type": "string", "label": "Resource pool", "description": "Boxes are made in this pool. The token needs rights on it.", "group": "boxes", "default": "bbbox"}, {"key": "windows-templates", "type": "string", "label": "Windows templates", "description": "VMIDs of the Windows templates windows-desktop boxes are linked clones of, separated by spaces or commas. setup/proxmox-qemu/build.sh builds one. A new box is cloned from the least used.", "group": "boxes", "default": "9104"}, {"key": "windows-enrol", "type": "boolean", "label": "Windows boxes as BB machines (trial)", "description": "A trial of Windows boxes that join BB, so threads and terminals can use them. Off unless you are trying it.", "group": "boxes", "default": false}, {"key": "bridge", "type": "string", "label": "Network bridge", "description": "The bridge boxes attach to.", "group": "advanced", "default": "vmbr200"}, {"key": "subnet", "type": "string", "label": "Subnet", "description": "The bridge's subnet in CIDR form. Boxes get static addresses; there is no DHCP.", "group": "advanced", "default": "10.200.0.0/24"}, {"key": "gateway", "type": "string", "label": "Gateway", "description": "The host's address on the bridge.", "group": "advanced", "default": "10.200.0.1"}, {"key": "addresses", "type": "string", "label": "Box addresses", "description": "The range bb-box hands out. The n-th VMID gets the n-th address. Keep it apart from the Proxmox LXC backend's. Leave empty to use the whole subnet except the gateway.", "group": "advanced", "default": "10.200.0.150-10.200.0.254"}, {"key": "vmid-first", "type": "number", "label": "First box VMID", "description": "Boxes take VMIDs from this range. Keep other guests out of it, the Proxmox LXC backend's too.", "group": "advanced", "default": 9700}, {"key": "vmid-last", "type": "number", "label": "Last box VMID", "description": "The end of the range boxes take VMIDs from.", "group": "advanced", "default": 9799}, {"key": "ssh-user", "type": "string", "label": "SSH user", "description": "The user in the template that bb-box and BB work as.", "group": "advanced", "default": "box"}, {"key": "reserve-memory-mib", "type": "number", "label": "Memory kept free (MiB)", "description": "A new box is refused if the node would have less memory than this left.", "group": "advanced", "default": 4096}, {"key": "reserve-disk-gib", "type": "number", "label": "Disk kept free (GiB)", "description": "A new box is refused if the template's storage has less free space than this.", "group": "advanced", "default": 50}], "hostFields": [], "setup": {"guide": "setup/proxmox-qemu/README.md", "scripts": ["setup/proxmox-qemu/build.sh"]}};
+/** microsandbox's driver, as the server describes it (053): the fields and help the settings page shows. */
+const MICROSANDBOX_DRIVER = {"type": "microsandbox", "label": "microsandbox", "description": "Linux boxes, with or without a desktop, as microVMs that start in under a second, on a Linux host with KVM or a Mac. bb-box installs its own msb there.", "nature": "virtual", "kinds": ["linux", "linux-desktop-cpu", "linux-arm64", "linux-arm64-desktop-cpu"], "fields": [{"key": "host", "type": "string", "label": "Host", "description": "The host that runs the boxes, a Linux host with KVM or a Mac: ssh://user@host, or bb:<machine ID> for a BB machine, which bb-box reaches through BB. Empty uses BB's server. bb-box installs its own msb there, in a folder of its own.", "group": "connection", "default": ""}, {"key": "linux-image", "type": "string", "label": "Linux image", "description": "The image linux boxes run. bb-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.", "group": "boxes", "default": "bbbox/linux:1"}, {"key": "desktop-image", "type": "string", "label": "Desktop image", "description": "The image linux-desktop-cpu boxes run. bb-box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off.", "group": "boxes", "default": "bbbox/linux-desktop:1"}, {"key": "linux-arm64-image", "type": "string", "label": "Linux image (arm64)", "description": "The image linux-arm64 boxes run, on an arm64 host such as a Mac. bb-box imports it from Docker on the host, or builds it there with setup/docker/build.sh --arch arm64 in a microVM of its own. Empty turns them off.", "group": "boxes", "default": "bbbox/linux:1-arm64"}, {"key": "desktop-arm64-image", "type": "string", "label": "Desktop image (arm64)", "description": "The image linux-arm64-desktop-cpu boxes run, on an arm64 host such as a Mac. bb-box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off.", "group": "boxes", "default": "bbbox/linux-desktop:1-arm64"}, {"key": "docker", "type": "boolean", "label": "Docker in boxes", "description": "Give each box its own Docker daemon, started by its first docker command, with its data on a disk of the box's own. Each box has its own kernel, so this needs no privilege on the host.", "group": "boxes", "default": true}, {"key": "docker-disk-gib", "type": "number", "label": "Docker disk (GiB)", "description": "The most each box's Docker disk may grow to. It takes only what Docker writes, and goes with the box.", "group": "advanced", "default": 64}, {"key": "disk-gib", "type": "number", "label": "Root disk (GiB)", "description": "The most a box's root disk may grow to when no disk size is asked for. It takes only what the box writes.", "group": "advanced", "default": 32}, {"key": "network", "type": "string", "label": "Network profiles", "description": "msb's network profiles for each box, comma-separated: public reaches the internet, private the host's local networks and tailnet, where BB's server often is.", "group": "advanced", "default": "public,private"}, {"key": "boxes", "type": "number", "label": "Most boxes", "description": "The most bb-box microVMs on the host at once, running or stopped, counting those of every bb-box install that uses it.", "group": "advanced", "default": 20}, {"key": "reserve-memory-mib", "type": "number", "label": "Memory kept free (MiB)", "description": "A new box is refused if the host would have less memory than this left, after the memory of the running boxes.", "group": "advanced", "default": 4096}, {"key": "memory-overcommit", "type": "number", "label": "Memory overcommit", "description": "How many times the host's memory the boxes may take in all, after the memory kept free: 1 to 4. At 1, each box counts at its full memory. Above 1, a new box also needs memory free on the host now. Raise it for mostly idle boxes.", "group": "advanced", "default": 1}], "hostFields": [], "setup": {"guide": "setup/microsandbox/README.md", "scripts": []}};
+const KIND_INFO = [
+  { id: "linux", label: "Linux", description: "A Linux box for builds, backend services and the agent's own work.", gpu: false, desktop: false, os: "linux", arch: "x86_64", features: [], docker: null, spares: { ready: 0, making: 0 }, drivers: ["proxmox-lxc", "ssh-pool", "docker"] },
+  { id: "linux-desktop", label: "Linux desktop", description: "A Linux desktop on a GPU.", gpu: true, desktop: true, os: "linux", arch: "x86_64", features: [], docker: true, spares: { ready: 0, making: 0 }, drivers: ["proxmox-lxc", "docker"] },
+  { id: "linux-desktop-cpu", label: "Linux desktop", description: "A Linux desktop drawn by the CPU.", gpu: false, desktop: true, os: "linux", arch: "x86_64", features: [], docker: true, spares: { ready: 0, making: 0 }, drivers: ["proxmox-lxc", "docker"] },
+  { id: "macos", label: "macOS", description: "A Mac for builds and Apple's tools.", gpu: false, desktop: false, os: "macos", arch: "arm64", features: [], docker: false, spares: { ready: 0, making: 0 }, drivers: ["tart"] },
+  { id: "macos-desktop", label: "macOS desktop", description: "A macOS desktop for computer use and app development.", gpu: false, desktop: true, os: "macos", arch: "arm64", features: [], docker: false, spares: { ready: 0, making: 0 }, drivers: ["tart"] },
+];
+const LINUX_SIZES = { enabled: true, presets: { small: sizeOf(2, 4), medium: sizeOf(4, 8), large: sizeOf(8, 16) }, default: "small", largest: sizeOf(16, 32, 256) };
+const DESKTOP_SIZES = { enabled: true, presets: { small: sizeOf(4, 8), medium: sizeOf(8, 16), large: sizeOf(16, 32) }, default: "small", largest: sizeOf(32, 64, 256) };
+function configState(options = {}) {
+  const document = options.document ?? {
+    schema: 1,
+    revision: 4,
+    backends: [
+      { id: "proxmox-lxc", type: "proxmox-lxc", enabled: true, fields: { url: "https://192.0.2.10:8006", node: "pve", "tls-fingerprint": "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89", "token-id": "bbbox@pve!plugin", "token-secret": { set: options.tokenSet ?? true }, "ssh-private-key": { set: true }, "linux-templates": "9800", "desktop-templates": "9801 GPU-0a1b2c3d" }, warm: { linux: 1, "linux-desktop": 1 } },
+      { id: "tart", type: "tart", enabled: false, fields: { "ssh-private-key": { set: false } }, hosts: [{ name: "studio", enabled: true, fields: { address: "192.0.2.20", user: "admin" } }] },
+    ],
+    kinds: { "linux-desktop-cpu": { enabled: false }, linux: { default: "medium" } },
+    general: {},
+  };
+  const tokenSet = options.tokenSet ?? true;
+  return {
+    document,
+    revision: document.revision,
+    defaults: { general: { boxesPerThread: 0, enrol: true, defaultKind: "linux", video: true, nightlyImages: false, testDevice: false, encoderLedger: true }, kinds: { linux: LINUX_SIZES, "linux-desktop": DESKTOP_SIZES, "linux-desktop-cpu": DESKTOP_SIZES, macos: LINUX_SIZES, "macos-desktop": DESKTOP_SIZES } },
+    kinds: KIND_INFO,
+    drivers: [...DRIVERS, ...(options.drivers ?? [])],
+    backends: options.backends ?? [
+      tokenSet
+        ? { id: "proxmox-lxc", type: "proxmox-lxc", label: "Proxmox LXC on pve", form: "LXC", state: "active", problems: [], boxes: 2, kinds: ["linux", "linux-desktop"], doctor: { report: DOCTOR_PROXMOX, at: now - 2 * 60_000 }, warmShort: options.warmShort ?? [] }
+        : { id: "proxmox-lxc", type: "proxmox-lxc", label: "Proxmox LXC", form: "LXC", state: "misconfigured", problems: [{ path: "backends.proxmox-lxc.token-secret", message: "Set the Proxmox API token secret." }], boxes: 0, kinds: [], doctor: null, warmShort: [] },
+      { id: "tart", type: "tart", label: "Tart", form: "VM", state: "off", problems: [], boxes: 0, kinds: [], doctor: null, warmShort: [] },
+    ],
+    problems: tokenSet ? [] : [{ path: "backends.proxmox-lxc.token-secret", message: "Set the Proxmox API token secret." }],
+    migrated: { at: now - 3 * 3600_000, version: "0.2.0" },
+  };
+}
+
+/** Your machines (036) for the settings scene: a desktop a thread works on, and a stopped Linux box. */
+const MACHINES = [
+  { box: { ...desktop, id: "box_m1", name: "build-1", address: "10.200.0.21", enrol: { state: "enrolled", hostId: "host_m1", error: null } }, threads: [{ id: "thr_a", title: "Fix the login form", running: true }, { id: "thr_b", title: "Docs pass", running: false }] },
+  { box: { ...stopped, id: "box_m2", name: "scratch", form: "LXC", backendLabel: "Proxmox LXC on pve", nature: "virtual" }, threads: [] },
+];
+
+/** A BB machine's first-run setup (the setup job): the one that runs BB, with Docker ready. */
+function setupOf(overrides = {}) {
+  return { hostId: "host_bb", name: "bb", here: true, state: "ready", docker: "29.8.1", problem: null, fix: null, restart: null, kvm: "ok", freeGb: 120, build: null, took: {}, ...overrides };
+}
+
+function rpc(boxes, options = {}) {
+  const find = (ref) => boxes.find((candidate) => candidate.id === ref) ?? null;
+  return {
+    "machines.list": () => ({ machines: options.machines ?? [], kinds: (options.kinds ?? KINDS).filter((kind) => kind.enrol) }),
+    provider: ({ backend }) => ({
+      backend,
+      name: "Proxmox LXC on pve",
+      technology: "Linux containers on a Proxmox VE host, with or without a desktop on its GPU.",
+      nature: "virtual",
+      hosts: ["pve"],
+      hostOs: "linux",
+      makes: [
+        { id: "linux", label: "Linux", form: "LXC", typicalReadyMs: 2200, ready: 1 },
+        { id: "linux-desktop", label: "Linux desktop (GPU)", form: "LXC", typicalReadyMs: 3100, ready: 0 },
+        { id: "linux-desktop-cpu", label: "Linux desktop", form: "LXC", typicalReadyMs: 3100, ready: 0 },
+      ],
+      boxes: 2,
+      room: {
+        ok: true,
+        message: null,
+        warm: { ready: 1, target: 1 },
+        hosts: [{ host: "pve", ok: true, limits: [{ resource: "memory", used: 22 * 1024, total: 64 * 1024, reserve: 4 * 1024, unit: "MiB" }, { resource: "cpu", used: 10, total: 16, reserve: 0, unit: "count" }, { resource: "gpu-desktops", used: 1, total: 1, reserve: 0, unit: "count" }] }],
+      },
+      status: { state: "active", problem: null, ok: true, summary: "Proxmox VE 9.2 on pve", checkedAt: Date.now() - 120_000 },
+    }),
+    // Docker on BB machines (042): one hosting boxes, one that could, one with no Docker, one offline.
+    "docker.hosts": () => ({
+      hosts: options.dockerHosts ?? [
+        { hostId: "host_1", name: "devpc", connected: true, docker: { version: "29.8.1", os: "Ubuntu 24.04", arch: "x86_64", cpus: 16, memoryMiB: 64 * 1024 }, problem: null, absent: false, backend: { id: "docker:host_1", enabled: true, boxes: 1 }, images: null },
+        { hostId: "host_2", name: "mac-mini", connected: true, docker: { version: "29.8.1", os: "Docker Desktop", arch: "arm64", cpus: 10, memoryMiB: 32 * 1024 }, problem: null, absent: false, backend: null, images: null },
+        { hostId: "host_3", name: "laptop", connected: true, docker: null, problem: null, absent: true, backend: null, images: null },
+        { hostId: "host_4", name: "attic", connected: false, docker: null, problem: "The machine is offline in BB.", absent: false, backend: { id: "docker:host_4", enabled: true, boxes: 0 }, images: null },
+      ],
+    }),
+    "docker.host.set": () => ({ result: { ok: true, problems: [] }, hosts: [] }),
+    "setup.offer": () => ({ machines: options.setups ?? [], access: options.access ?? null }),
+    "images.list": () => ({ images: options.rebuildable ?? [] }),
+    "images.progress": () => ({ progress: options.progress ?? null, running: options.progress && options.progress.ended === null ? options.progress.started : null }),
+    "images.refresh": () => ({ started: true, message: null }),
+    "setup.docker": () => ({ result: { ok: true, problems: [] }, machines: options.setups ?? [] }),
+    "machines.add": () => ({ box: null, error: options.refuse ?? null }),
+    "machines.remove": ({ box: ref }) => ({ box: null, error: null }),
+    "machines.stop": ({ box: ref }) => ({ box: null, error: null }),
+    "machines.start": ({ box: ref }) => ({ box: null, error: null }),
+    resize: (input) => (options.resize ? options.resize(input) : { box: find(input.box), from: null, to: null, plan: null, changed: false, machine: null, needsRestart: false, presets: [], largest: null, error: null }),
+    "machines.resize": (input) => (options.resize ? options.resize(input) : { box: null, from: null, to: null, plan: null, changed: false, machine: null, needsRestart: false, presets: [], largest: null, error: null }),
+    state: () => ({ boxes, kinds: options.kinds ?? KINDS, backends: BACKENDS, desktopPath: DESKTOP_PATH, terminalPath: TERMINAL_PATH, runsOn: options.runsOn ?? null, imageOffer: options.imageOffer ?? false, images: options.images ?? [], desktopOnDemand: options.desktopOnDemand ?? null }),
+    desktop: ({ box: ref }) => ({ box: find(ref) ?? (options.runsOn?.box.id === ref ? options.runsOn.box : null), desktopPath: DESKTOP_PATH, terminalPath: TERMINAL_PATH, video: options.video ?? false, sharp: options.sharp ?? null }),
+    ping: () => null,
+    allBoxes: () => [
+      ...(options.machines ?? []).map((entry) => ({ threadId: "operator", box: entry.box, owner: "yours" })),
+      ...boxes.map((candidate) => ({ threadId: THREAD, box: candidate, owner: "thread" })),
+      ...(options.threadBoxes ?? []).map(([threadId, candidate]) => ({ threadId, box: candidate, owner: "thread" })),
+    ],
+    acquire: () => ({ box: null, error: options.refuse ?? null }),
+    release: ({ box: ref }) => ({ box: find(ref), error: null }),
+    stop: ({ box: ref }) => ({ box: find(ref), error: null }),
+    start: ({ box: ref }) => ({ box: find(ref), error: null }),
+    refresh: ({ box: ref }) => ({ box: find(ref), error: null }),
+    takeControl: ({ box: ref }) => ({ box: find(ref), error: null }),
+    handBack: ({ box: ref }) => ({ box: find(ref), error: null }),
+    backends: () => BACKENDS,
+    doctor: () => DOCTOR,
+    "config.get": () => configState(options.config ?? {}),
+    "config.check": ({ test }) => ({ problems: [], doctor: test === "proxmox-lxc" ? DOCTOR_PROXMOX : null }),
+    "config.apply": ({ draft, revision }) => ({ ok: true, state: configState({ ...options.config, document: { ...draft, revision: revision + 1 } }) }),
+  };
+}
+
+/** A size as the panel's views give it. */
+const viewSize = (cores, memoryGiB, diskGiB = null) => ({ cores, memoryGiB, diskGiB, words: `${cores} cores, ${memoryGiB} GiB memory${diskGiB === null ? "" : `, ${diskGiB} GiB disk`}` });
+
+/**
+ * A box's backend resizing it (061), as the panel's RPC answers: `ways` per part, room unless `full`, and, as a real resize answers
+ * once it has looked in the box, a refusal for memory below what it uses (`inUseGiB`).
+ */
+function resizer(target, ways, options = {}) {
+  const presets = [{ name: "small", ...viewSize(2, 4) }, { name: "medium", ...viewSize(4, 8) }, { name: "large", ...viewSize(8, 16) }];
+  const largest = options.largest ?? viewSize(16, 64, 512);
+  const now = target.sizeNow;
+  return (input) => {
+    const preset = presets.find((candidate) => candidate.name === input.size?.preset);
+    const to = viewSize(input.size?.cores ?? preset?.cores ?? now.cores, input.size?.memoryGiB ?? preset?.memoryGiB ?? now.memoryGiB, input.size?.diskGiB ?? now.diskGiB);
+    const base = { box: target, from: now, to, changed: false, machine: null, needsRestart: false, presets, largest, error: null };
+    const parts = [
+      { part: "cores", from: now.cores, to: to.cores, way: ways.cores },
+      { part: "memory", from: now.memoryGiB, to: to.memoryGiB, way: ways.memory },
+      { part: "disk", from: now.diskGiB, to: to.diskGiB, way: ways.disk },
+    ].filter((part) => part.from !== part.to);
+    if (!parts.length) return { ...base, plan: null };
+    const restart = parts.some((part) => part.way === "restart");
+    const plan = { parts, room: options.full ? { ok: false, message: options.full } : { ok: true, message: null }, downSeconds: restart ? (options.down ?? 8) : null };
+    if (input.check) return { ...base, plan };
+    if (options.inUseGiB !== undefined && to.memoryGiB < now.memoryGiB) {
+      return { ...base, plan: null, error: `Box ${target.name} uses ${options.inUseGiB} GiB of memory now, so ${to.memoryGiB} GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least ${Math.ceil(options.inUseGiB + 0.5)} GiB, or free memory in it first. bb-box changed nothing.` };
+    }
+    return { ...base, plan, changed: true };
+  };
+}
+
+/** Types into a field of a React form, as a person would. */
+const typeInto = (root, label, value) => {
+  const input = root.querySelector(`input[aria-label="${label}"]`);
+  if (!input) throw new Error(`No field "${label}"`);
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const click = (root, role, name) => {
+  const element = [...root.querySelectorAll(`[role="${role}"], button, a`)].find((candidate) => (candidate.getAttribute("aria-label") ?? candidate.textContent.trim()) === name && (role === "*" || candidate.getAttribute("role") === role || candidate.tagName.toLowerCase() === role));
+  if (!element) throw new Error(`No ${role} "${name}"`);
+  element.click();
+  return element;
+};
+/** Clicks the option of a role whose text starts with the words given: an option card's title, a provider row's name. */
+const pick = (role, prefix) => {
+  const element = [...document.querySelectorAll(`[role="${role}"]`)].find((candidate) => candidate.textContent.trim().startsWith(prefix));
+  if (!element) throw new Error(`No ${role} starting "${prefix}"`);
+  element.click();
+  return element;
+};
+const openMenu = (root, name) => {
+  const trigger = [...root.querySelectorAll("button")].find((candidate) => candidate.getAttribute("aria-label") === name);
+  trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+};
+
+/** Boxes of several threads for the Boxes page's Threads tab: a thread with two, one on a Mac and one stopped. */
+const macDesktop = box({
+  id: "box_9",
+  name: "amber-finch",
+  kind: "macos-desktop",
+  kindLabel: "macOS desktop",
+  backendLabel: "Tart on studio",
+  form: "VM",
+  os: "macos",
+  arch: "arm64",
+  desktop: true,
+  display: { protocol: "rfb", resizable: false },
+  control: { owner: "agent", holder: null },
+  computerUse: true,
+  extras: [],
+  docker: false,
+  createdAt: now - 40 * 60_000,
+  size: "4 cores, 8 GiB memory, 60 GiB disk",
+});
+const THREAD_BOXES = [
+  ["thr_login", macDesktop],
+  ["thr_docs", { ...stopped, id: "box_10", name: "still-pond", createdAt: now - 3 * 3_600_000 }],
+];
+const THREAD_TITLES = { [THREAD]: "Add dark mode", thr_login: "Fix the login form", thr_docs: "Docs pass" };
+/** A machine with several threads on it, whose status line wraps on the Boxes page, as the operator's "bot" did. */
+const BOT = {
+  box: box({ id: "box_m3", name: "bot", size: "4 cores, 8 GiB memory, 32 GiB disk", address: "10.200.0.23", enrol: { state: "enrolled", hostId: "host_m3", error: null } }),
+  threads: [
+    { id: "thr_c", title: "Shopping bot", running: false },
+    { id: "thr_d", title: "Weekly grocery order from the three stores", running: false },
+    { id: "thr_e", title: "Price watch for the coffee grinder", running: false },
+  ],
+};
+/** The Boxes page with your machines and three threads' boxes. */
+const boxesPage = (extra = {}) => ({ slot: "boxes-page", width: 1000, props: { subPath: "" }, rpc: rpc([box(), desktop], { machines: [...MACHINES, BOT], threadBoxes: THREAD_BOXES }), threads: THREAD_TITLES, ...extra });
+/** Clicks a tab by its label; its count follows the label. */
+const openTab = (root, name) => [...root.querySelectorAll("[role=tab]")].find((tab) => tab.textContent.startsWith(name)).click();
+
+const boxesChrome = `<span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.8 7.2 12 11.8l8.2-4.6M12 11.8v9.5"/></svg>Box</span><span>+</span>`;
+const terminalChrome = (name) => `<span>Box</span><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>Terminal: ${name}</span><span>+</span>`;
+const desktopChrome = (name) => `<span>Box</span><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.8 7.2 12 11.8l8.2-4.6M12 11.8v9.5"/></svg>${name}</span><span>+</span>`;
+
+/**
+ * The Resize dialog (061), each at the panel's width and its narrow one: a live resize on a Proxmox LXC box, a VM's that needs a
+ * restart, the restart's question, and a refusal for memory below use on a Docker box. A box exactly a preset opens on it, as
+ * Windows on a Mac does, with the disk QEMU reads; rows say how a resize that ended while the panel reloaded went.
+ */
+function resizeScenes() {
+  // Each theme's shot says the rows' notes afresh: the page keeps what it has said in its session.
+  for (const key of Object.keys(window.sessionStorage)) if (key.startsWith("bb-box:resize-seen:")) window.sessionStorage.removeItem(key);
+  const lxc = box({ sizeNow: viewSize(2, 4, 24), size: "2 cores, 4 GiB memory, 24 GiB disk", resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } });
+  const vm = box({ id: "box_6", name: "steady-pine", backendLabel: "Proxmox QEMU on pve", form: "VM", sizeNow: viewSize(2, 4, 32), size: "2 cores, 4 GiB memory, 32 GiB disk", resizing: { cores: "restart", memory: "restart", disk: "live", shrinks: true } });
+  const windowsWays = { cores: "restart", memory: "restart", disk: "restart", shrinks: false };
+  const windows = box({ id: "box_8", name: "brisk-alder", kind: "windows-arm64-desktop", kindLabel: "Windows desktop on arm64", backendLabel: "Tart on studio", form: "VM", os: "windows", arch: "arm64", desktop: true, extras: [], docker: false, sizeNow: viewSize(4, 8, 64), size: "4 cores, 8 GiB memory, 64 GiB disk", resizing: windowsWays });
+  const resizedLately = box({ id: "box_11", name: "brisk-alder", kind: "windows-arm64-desktop", kindLabel: "Windows desktop on arm64", backendLabel: "Tart on studio", form: "VM", os: "windows", arch: "arm64", desktop: true, extras: [], docker: false, sizeNow: viewSize(6, 16, 96), size: "6 cores, 16 GiB memory, 96 GiB disk", resizing: windowsWays, lastResize: { to: viewSize(6, 16, 96), at: now - 40_000, state: "done", restart: true, ms: 15_000, error: null } });
+  const refusedLately = box({ id: "box_12", name: "steady-pine", backendLabel: "Proxmox QEMU on pve", form: "VM", sizeNow: viewSize(2, 4, 32), size: "2 cores, 4 GiB memory, 32 GiB disk", resizing: { cores: "restart", memory: "restart", disk: "live", shrinks: true }, lastResize: { to: viewSize(8, 16, 32), at: now - 70_000, state: "failed", restart: true, ms: 9_000, error: "pve has 6 GiB of memory left, and steady-pine would grow by 12 GiB. Release a box you no longer need. bb-box changed nothing." } });
+  const docker = box({ id: "box_7", name: "lively-bay", backendLabel: "Docker on devpc", form: "Docker", sizeNow: viewSize(4, 8, null), size: "4 cores, 8 GiB memory", resizing: { cores: "live", memory: "live", disk: "no", shrinks: true } });
+  const open = async (root, name) => {
+    openMenu(root, `${name} actions`);
+    await wait(300);
+    click(document.body, "menuitem", "Resize…");
+    await wait(500);
+    return document.querySelector('[role="alertdialog"]');
+  };
+  const each = {
+    "panel-resize-live": {
+      rpc: rpc([lxc], { resize: resizer(lxc, lxc.resizing) }),
+      after: async (root) => {
+        const dialog = await open(root, "calm-otter");
+        pick("radio", "Custom");
+        await wait(200);
+        typeInto(dialog, "Cores", "6");
+        typeInto(dialog, "Memory, GiB", "12");
+        typeInto(dialog, "Disk, GiB", "40");
+        await wait(700);
+      },
+    },
+    "panel-resize-restart": {
+      rpc: rpc([vm], { resize: resizer(vm, vm.resizing) }),
+      after: async (root) => {
+        await open(root, "steady-pine");
+        pick("radio", "Large");
+        await wait(700);
+      },
+    },
+    "panel-resize-confirm": {
+      rpc: rpc([vm], { resize: resizer(vm, vm.resizing) }),
+      after: async (root) => {
+        await open(root, "steady-pine");
+        pick("radio", "Large");
+        await wait(700);
+        click(document.body, "button", "Resize…");
+        await wait(400);
+      },
+    },
+    "panel-resize-preset": {
+      rpc: rpc([windows], { resize: resizer(windows, windowsWays, { largest: viewSize(12, 32, 256) }) }),
+      after: async (root) => {
+        await open(root, "brisk-alder");
+        await wait(700);
+      },
+    },
+    "panel-resize-windows-disk": {
+      rpc: rpc([windows], { resize: resizer(windows, windowsWays, { largest: viewSize(12, 32, 256) }) }),
+      after: async (root) => {
+        await open(root, "brisk-alder");
+        await wait(700);
+        pick("radio", "Custom");
+        await wait(700);
+      },
+    },
+    "panel-resize-refused": {
+      rpc: rpc([docker], { resize: resizer(docker, docker.resizing, { inUseGiB: 3.6 }) }),
+      after: async (root) => {
+        await open(root, "lively-bay");
+        pick("radio", "Small");
+        await wait(700);
+        click(document.body, "button", "Resize");
+        await wait(500);
+      },
+    },
+  };
+  return Object.fromEntries([
+    ["panel-resize-note", { slot: "boxes", chrome: boxesChrome, width: 788, height: 360, rpc: rpc([resizedLately, refusedLately]) }],
+    ["panel-resize-note-narrow", { slot: "boxes", chrome: boxesChrome, width: 568, height: 400, viewport: 600, rpc: rpc([resizedLately, refusedLately]) }],
+    ...Object.entries(each).flatMap(([name, scene]) => [
+      [name, { slot: "boxes", chrome: boxesChrome, width: 788, height: 680, ...scene }],
+      [`${name}-narrow`, { slot: "boxes", chrome: boxesChrome, width: 568, height: 760, viewport: 600, ...scene }],
+    ]),
+  ]);
+}
+
+export const scenes = {
+  "panel-empty": { slot: "boxes", chrome: boxesChrome, rpc: rpc([]) },
+  "panel-nobackend": { slot: "boxes", chrome: boxesChrome, rpc: rpc([], { kinds: [] }) },
+  // First run (the setup job): Docker on the machine that runs BB, one click; what stands in the way, with its line; the build.
+  "first-run-offer": { slot: "boxes", chrome: boxesChrome, height: 300, rpc: rpc([], { kinds: [], setups: [setupOf()] }) },
+  "first-run-fix": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 420,
+    rpc: rpc([], { kinds: [], setups: [setupOf({ state: "fix", problem: "Docker is on this machine, but BB's user, dev, cannot use it. Add dev to the docker group, then restart BB's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" })] }),
+  },
+  "first-run-building": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 300,
+    rpc: rpc([], { kinds: [], setups: [setupOf({ state: "on", build: { state: "building", targets: ["linux"], detail: "#14 12.3 Setting up git (1:2.43.0) ...", step: { at: 7, of: 12 }, startedAt: now - 150_000, endedAt: null } })] }),
+  },
+  "first-run-ready": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 300,
+    rpc: rpc([], { setups: [setupOf({ state: "on", build: { state: "built", targets: ["linux"], detail: null, startedAt: now - 430_000, endedAt: now - 5_000 } })] }),
+  },
+  // BB's machine access (the newcomer check): bb connect without a sign-in, up front and on the box that did not join.
+  "first-run-access": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 340,
+    rpc: rpc([], { kinds: [], setups: [setupOf()], access: { provider: "bb connect", message: "Sign in to your bb account to use bb connect" } }),
+  },
+  "join-failed": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 300,
+    rpc: rpc([box({ id: "box_j", name: "silver-harbor", timings: { total: 422 }, enrol: { state: "failed", hostId: null, error: "Enrolling box silver-harbor failed: Sign in to your bb account to use bb connect" } })]),
+  },
+  // A desktop whose image builds first (the setup plan's PR 4): the form says so, and the panel shows the build.
+  "desktop-on-demand-form": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 760,
+    rpc: rpc([], {
+      kinds: [{ ...KINDS[0], forms: ["Docker"], admin: true, docker: true, offers: [offer("docker:devpc", "Docker", ["devpc"], "Docker", { typicalReadyMs: 400 })] }],
+      desktopOnDemand: { hostId: "host_bb", name: "devpc", took: null, kind: { ...KINDS[2], forms: ["Docker"], offers: [offer("docker:devpc", "Docker", ["devpc"], "Docker", { resizable: true })] } },
+    }),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      pick("radio", "Desktop");
+      await wait(200);
+    },
+  },
+  "desktop-on-demand-building": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 360,
+    rpc: rpc([box({ id: "box_d", name: "warm-dune" })], { setups: [setupOf({ state: "on", build: { state: "building", targets: ["desktop"], detail: "#9 [desktop 3/9] RUN apt-get install", step: { at: 3, of: 9 }, startedAt: now - 125_000, endedAt: null } })] }),
+  },
+  "panel-list": { slot: "boxes", chrome: boxesChrome, rpc: rpc([starting, desktop, stopped]) },
+  "panel-runs-on": { slot: "boxes", chrome: boxesChrome, rpc: rpc([starting], { runsOn: { box: MACHINES[0].box, owner: "yours", threadId: null } }) },
+  "panel-runs-on-only": { slot: "boxes", chrome: boxesChrome, rpc: rpc([], { runsOn: { box: MACHINES[0].box, owner: "yours", threadId: null } }) },
+  // A desktop row's status line at the panel's 560 px: the size dropped, and the whole line on hover.
+  "panel-list-cut": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 400,
+    rpc: rpc([starting, desktop, stopped]),
+    after: async (root) => {
+      await wait(200);
+      const line = [...root.querySelectorAll("[data-status-line]")].find((candidate) => candidate.textContent.startsWith("Ready"));
+      line.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }));
+      await wait(600);
+    },
+  },
+  "panel-list-narrow": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 568,
+    height: 520,
+    viewport: 600,
+    rpc: rpc([starting, desktop, stopped, failed]),
+  },
+  "panel-list-open": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    rpc: rpc([starting, desktop, stopped]),
+    after: (root) => click(root, "button", "bold-heron: details"),
+  },
+  "panel-problems": { slot: "boxes", chrome: boxesChrome, rpc: rpc([failed, gone, refused]) },
+  // A Windows spare that waited stopped, claimed (#539): ready once it resumed, then a BB machine with the thread's access once BB shows it
+  // connected again, which its row says as a new box's says its enrolment.
+  "panel-list-claimed": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    rpc: rpc([
+      box({
+        id: "box_11",
+        name: "clever-summit",
+        kind: "windows-desktop",
+        kindLabel: "Windows desktop",
+        backendLabel: "Proxmox QEMU on pve",
+        form: "VM",
+        os: "windows",
+        desktop: true,
+        display: { protocol: "rfb", resizable: true },
+        control: { owner: "agent", holder: null },
+        computerUse: true,
+        extras: [],
+        docker: false,
+        address: "10.200.0.151",
+        size: "4 cores, 8 GiB memory, 64 GiB disk",
+        facts: [{ label: "Template", value: "9104" }],
+        timings: { spare: 3, spareResume: 4100, total: 4100, spareReconnect: 17_200 },
+      }),
+    ]),
+    after: (root) => click(root, "button", "clever-summit: details"),
+  },
+
+  // Docker and microsandbox on one host, beside Proxmox LXC (053): the provider rows must tell the two on gpu-host apart.
+  "panel-chooser-microsandbox": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 900,
+    rpc: rpc([], {
+      kinds: [
+        {
+          ...KINDS[0],
+          forms: ["LXC", "Docker", "VM"],
+          offers: [
+            offer("proxmox-lxc", "Proxmox LXC", ["pve"], "LXC", { ready: 1, typicalReadyMs: 2200 }),
+            offer("docker", "Docker", ["gpu-host"], "Docker", { typicalReadyMs: 1800 }),
+            offer("microsandbox", "microsandbox", ["gpu-host"], "VM", { typicalReadyMs: 400 }),
+          ],
+        },
+        ...KINDS.slice(1),
+      ],
+    }),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+    },
+  },
+  "panel-chooser": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 840,
+    rpc: rpc([]),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+    },
+  },
+  "panel-chooser-on": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 840,
+    rpc: rpc([]),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      // Linux has three providers: the Docker machine picked, so the request names it (044).
+      pick("radio", "docker-host");
+      await wait(200);
+    },
+  },
+  "panel-chooser-profile": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 980,
+    rpc: rpc([]),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      // The (i) on the first provider row opens its profile.
+      click(document.body, "button", "About pve");
+      await wait(400);
+    },
+  },
+  "panel-chooser-filter": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 800,
+    rpc: rpc([]),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      // Kind: Physical keeps the pool only and hides Runs on.
+      document.querySelector('[role="combobox"][aria-label="Kind"]')?.click();
+      await wait(300);
+      [...document.querySelectorAll('[role="option"]')].find((option) => option.textContent.trim() === "Physical")?.click();
+      await wait(300);
+    },
+  },
+  "panel-chooser-display": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 860,
+    rpc: rpc([], { kinds: WAYLAND_KINDS }),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      // A desktop shows the Display choice; Wayland drops the GPU and notes that X11-only apps need X11.
+      pick("radio", "Desktop");
+      await wait(200);
+      document.querySelector('[role="combobox"][aria-label="Display"]')?.click();
+      await wait(300);
+      [...document.querySelectorAll('[role="option"]')].find((option) => option.textContent.trim() === "Wayland")?.click();
+      await wait(300);
+    },
+  },
+  // A Linux box for a project with no box image (049): the footer's dim link offers to make one, opposite Create box.
+  "panel-chooser-image": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 860,
+    rpc: rpc([], { imageOffer: true }),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+    },
+  },
+  // Two projects' images cover Linux (049): a dim sub-label "Image" under the Type cards and one menu, this project's image first, open.
+  // This project's image has a spare ready on Proxmox LXC (#440), so that row says "ready now" for it.
+  "panel-chooser-images": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 860,
+    rpc: rpc([], { images: [
+      { name: "rust-tools", kinds: ["linux"], projects: [{ id: "proj_1", name: "Example" }], mine: true, builds: [{ kind: "linux", backend: "proxmox-lxc", build: "b1", built: "2026-10-02T10:00:00Z" }], spares: [{ kind: "linux", backend: "proxmox-lxc", ready: 1, making: 0 }] },
+      { name: "go-tools", kinds: ["linux"], projects: [{ id: "proj_2", name: "Another project" }], mine: false, builds: [], spares: [] },
+    ] }),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      document.querySelector('[role="combobox"][aria-label="Image"]')?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+      await wait(300);
+    },
+  },
+  "panel-chooser-windows": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 760,
+    rpc: rpc([]),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      // Windows has no server, so Type snaps to Desktop and Server says Not available.
+      pick("radio", "Windows");
+      await wait(200);
+    },
+  },
+  // A Windows spare waits stopped (#539): its provider row says ready in seconds, as the claim resumes it first.
+  "panel-chooser-windows-spare": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 760,
+    rpc: rpc([], {
+      kinds: KINDS.map((candidate) =>
+        candidate.id === "windows-desktop" ? { ...candidate, spares: { target: 1, ready: 1, making: 0 }, offers: candidate.offers.map((item) => ({ ...item, ready: 1, spareStarts: true })) } : candidate,
+      ),
+    }),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      pick("radio", "Windows");
+      await wait(200);
+    },
+  },
+  "panel-chooser-narrow": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 568,
+    height: 1000,
+    viewport: 600,
+    rpc: rpc([]),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+    },
+  },
+  "panel-chooser-custom": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 720,
+    height: 960,
+    rpc: rpc([]),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      pick("radio", "Desktop");
+      await wait(100);
+      pick("radio", "Custom");
+      await wait(300);
+    },
+  },
+  "panel-stop-refused": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 420,
+    rpc: { ...rpc([box(), desktop]), stop: () => ({ box: null, error: "Stopping the box failed: the host did not answer." }) },
+    after: async (root) => {
+      // A refused change: a red line under the toolbar, with Dismiss.
+      click(root, "button", "Stop");
+      await wait(400);
+    },
+  },
+  "panel-refused": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 940,
+    rpc: rpc([], { refuse: "pve has 10 GiB of memory free and keeps 4 GiB free, so a linux-desktop box with 8 GiB memory does not fit. Release a box, ask for less memory, or lower the memory kept free in bb-box's settings." }),
+    after: async (root) => {
+      click(root, "button", "New box");
+      await wait(300);
+      pick("radio", "Desktop");
+      pick("radio", "Large");
+      click(document.body, "button", "Create box");
+      await wait(300);
+    },
+  },
+  "panel-menu": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    height: 480,
+    rpc: rpc([starting, desktop, stopped]),
+    after: async (root) => {
+      openMenu(root, "bold-heron actions");
+      await wait(300);
+    },
+  },
+  "panel-release": {
+    slot: "boxes",
+    chrome: boxesChrome,
+    width: 788,
+    height: 460,
+    rpc: rpc([starting, desktop, stopped]),
+    after: async (root) => {
+      openMenu(root, "bold-heron actions");
+      await wait(300);
+      click(document.body, "menuitem", "Release…");
+      await wait(400);
+    },
+  },
+  ...resizeScenes(),
+  terminal: {
+    slot: "terminal",
+    chrome: terminalChrome("calm-otter"),
+    width: 720,
+    height: 420,
+    props: { threadId: THREAD, params: { box: "box_1" } },
+    rpc: rpc([box()]),
+    terminal: { output: "Welcome to Ubuntu 24.04 LTS (GNU/Linux 6.8.0 x86_64)\r\n\r\nbox@calm-otter:~$ ls\r\napp  node_modules  package.json  README.md\r\nbox@calm-otter:~$ " },
+  },
+  // What the renderer draws: bold, italic and colours, wide characters, box drawing, a link the shell marked (OSC 8), and
+  // scrollback longer than the screen.
+  "terminal-render": {
+    slot: "terminal",
+    chrome: terminalChrome("calm-otter"),
+    width: 720,
+    height: 420,
+    props: { threadId: THREAD, params: { box: "box_1" } },
+    rpc: rpc([box()]),
+    terminal: {
+      output: [
+        ...Array.from({ length: 120 }, (_, index) => `line ${index + 1} of the build log`),
+        "\x1b[1mbold\x1b[0m \x1b[3mitalic\x1b[0m \x1b[4munderline\x1b[0m \x1b[31mred\x1b[0m \x1b[32mgreen\x1b[0m \x1b[1;34mbold blue\x1b[0m \x1b[7minverse\x1b[0m",
+        "wide: 漢字かな 한국어 | emoji: 🙂🚀 | box: ┌─┬─┐ │ │ └─┴─┘ | arrows: → ← ✓ ✗",
+        "a URL: https://example.com/docs and a link: \x1b]8;;https://example.com/marked\x1b\\the docs\x1b]8;;\x1b\\ here",
+        "box@calm-otter:~$ ",
+      ].join("\r\n"),
+    },
+  },
+  "terminal-ended": {
+    slot: "terminal",
+    chrome: terminalChrome("calm-otter"),
+    width: 720,
+    height: 420,
+    props: { threadId: THREAD, params: { box: "box_1" } },
+    rpc: rpc([box()]),
+    terminal: { output: "box@calm-otter:~$ exit\r\nlogout\r\n", end: "The shell exited." },
+  },
+  "terminal-released": { slot: "terminal", chrome: terminalChrome("calm-otter"), width: 720, height: 420, props: { threadId: THREAD, params: { box: "box_1" } }, rpc: rpc([]) },
+  "terminal-stopped": { slot: "terminal", chrome: terminalChrome("wild-cove"), width: 720, height: 420, props: { threadId: THREAD, params: { box: "box_4" } }, rpc: rpc([stopped]) },
+  "desktop-connecting": { slot: "desktop", chrome: desktopChrome("bold-heron"), width: 720, height: 480, props: { threadId: THREAD, params: { box: "box_2" } }, rpc: rpc([desktop]) },
+  // A desktop shown as video (056), as every viewer's is with the setting on; the menu's Show as VNC, unticked, goes back.
+  "desktop-video-menu": {
+    slot: "desktop",
+    chrome: desktopChrome("bold-heron"),
+    width: 720,
+    height: 480,
+    props: { threadId: THREAD, params: { box: "box_2" } },
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { video: true }),
+    after: async (root) => {
+      await wait(500);
+      openMenu(root, "Desktop actions");
+      await wait(300);
+    },
+  },
+  // Video that cannot start (056): the desktop shows over VNC, and BB's toast says so for a moment, the reason under it.
+  "desktop-video-fallback": {
+    slot: "desktop",
+    chrome: desktopChrome("bold-heron"),
+    width: 720,
+    height: 480,
+    toaster: true,
+    props: { threadId: THREAD, params: { box: "box_2" } },
+    rpc: rpc([desktop], { video: true }),
+    terminal: { videoFail: "This box's desktop has no Selkies stream" },
+    after: async (root) => {
+      await wait(600);
+    },
+  },
+  // Copy to this computer while the agent has control: nothing has come from the box, and the note says why, as BB's toast, so
+  // the toolbar keeps its height (the owner's note of 18 October 2026). At the panel's usual width and a narrow one.
+  ...Object.fromEntries(
+    [
+      ["desktop-copy-note", 720],
+      ["desktop-copy-note-narrow", 420],
+    ].map(([name, width]) => [
+      name,
+      {
+        slot: "desktop",
+        chrome: desktopChrome("bold-heron"),
+        width,
+        height: 480,
+        toaster: true,
+        props: { threadId: THREAD, params: { box: "box_2" } },
+        rpc: rpc([desktop], { video: true }),
+        terminal: { video: true },
+        after: async (root) => {
+          await wait(600);
+          openMenu(root, "Desktop actions");
+          await wait(300);
+          const copy = [...document.querySelectorAll('[role="menuitem"]')].find((item) => item.textContent.trim() === "Copy to this computer");
+          if (!copy) throw new Error("No Copy to this computer");
+          copy.click();
+          await wait(900);
+        },
+      },
+    ]),
+  ),
+  "desktop-menu": {
+    slot: "desktop",
+    chrome: desktopChrome("bold-heron"),
+    width: 720,
+    height: 480,
+    props: { threadId: THREAD, params: { box: "box_2" } },
+    // This tab holds control: the holder is read when the RPC answers, by which time the tab's viewer ID is in sessionStorage.
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false }),
+    after: async (root) => {
+      await wait(300);
+      try {
+        openMenu(root, "Desktop actions");
+      } catch (error) {
+        throw new Error(`${error}; buttons=${JSON.stringify([...root.querySelectorAll("button")].map((b) => b.getAttribute("aria-label") ?? b.textContent.trim()))}`);
+      }
+      await wait(300);
+    },
+  },
+  // The Display submenu (the owner's notes of 17 October 2026): Show as VNC and High resolution, its info icon's tooltip showing.
+  "desktop-menu-display": {
+    slot: "desktop",
+    chrome: desktopChrome("bold-heron"),
+    width: 920,
+    height: 480,
+    props: { threadId: THREAD, params: { box: "box_2" } },
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false, video: true }),
+    after: async (root) => {
+      await wait(300);
+      openMenu(root, "Desktop actions");
+      await wait(300);
+      const display = [...document.querySelectorAll('[role="menuitem"]')].find((item) => item.textContent.trim() === "Display");
+      if (!display) throw new Error(`No Display item: ${[...document.querySelectorAll('[role^="menuitem"]')].map((item) => item.textContent.trim())}`);
+      display.focus();
+      display.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      await wait(400);
+    },
+  },
+  "desktop-menu-display-info": {
+    slot: "desktop",
+    chrome: desktopChrome("bold-heron"),
+    width: 920,
+    height: 480,
+    props: { threadId: THREAD, params: { box: "box_2" } },
+    rpc: rpc([{ ...desktop, control: { owner: "human", get holder() { return sessionStorage.getItem("bb-box:viewer:box_2") ?? "viewer"; }, takenFrom: null } }], { sharp: false, video: true }),
+    after: async (root) => {
+      await wait(300);
+      openMenu(root, "Desktop actions");
+      await wait(300);
+      const display = [...document.querySelectorAll('[role="menuitem"]')].find((item) => item.textContent.trim() === "Display");
+      if (!display) throw new Error(`No Display item: ${[...document.querySelectorAll('[role^="menuitem"]')].map((item) => item.textContent.trim())}`);
+      display.focus();
+      display.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      await wait(400);
+      const info = document.querySelector('[data-testid="high-resolution-info"]');
+      if (!info) throw new Error("No High resolution item");
+      info.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }));
+      await wait(500);
+    },
+  },
+  "desktop-stopped": { slot: "desktop", chrome: desktopChrome("bold-heron"), width: 720, height: 480, props: { threadId: THREAD, params: { box: "box_2" } }, rpc: rpc([{ ...desktop, state: "stopped" }]) },
+  "desktop-gone": { slot: "desktop", chrome: desktopChrome("bold-heron"), width: 720, height: 480, props: { threadId: THREAD, params: { box: "box_2" } }, rpc: rpc([{ ...desktop, state: "gone" }]) },
+  "desktop-released": { slot: "desktop", chrome: desktopChrome("bold-heron"), width: 720, height: 480, props: { threadId: THREAD, params: { box: "box_2" } }, rpc: rpc([]) },
+  "desktop-chooser": { slot: "desktop", chrome: desktopChrome("Desktop"), width: 560, props: { threadId: THREAD, params: null }, rpc: rpc([desktop, { ...desktop, id: "box_8", name: "wild-cove", kindLabel: "Linux desktop", gpu: false, state: "stopped" }]) },
+  "boxes-page": boxesPage(),
+  "boxes-page-threads": boxesPage({ after: async (root) => { openTab(root, "Threads"); await wait(300); } }),
+  "boxes-page-filters": boxesPage({
+    height: 640,
+    after: async (root) => {
+      openTab(root, "Threads");
+      await wait(200);
+      openMenu(root, "Filters");
+      await wait(300);
+    },
+  }),
+  "boxes-page-sort": boxesPage({
+    height: 560,
+    after: async (root) => {
+      openTab(root, "Threads");
+      await wait(200);
+      openMenu(root, "Sort: Name, ascending");
+      await wait(300);
+    },
+  }),
+  "boxes-page-search": boxesPage({
+    after: async (root) => {
+      openTab(root, "Threads");
+      await wait(200);
+      const input = root.querySelector('input[aria-label="Search boxes"]');
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+      set.call(input, "login");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(300);
+    },
+  }),
+  "boxes-page-empty": { slot: "boxes-page", width: 900, height: 420, props: { subPath: "" }, rpc: rpc([]) },
+  "boxes-page-menu": {
+    slot: "boxes-page",
+    width: 900,
+    height: 760,
+    props: { subPath: "" },
+    rpc: rpc([box(), desktop], { machines: MACHINES }),
+    threads: { [THREAD]: "Add dark mode" },
+    after: async (root) => {
+      // A thread's box on the page has the Box panel's menu (the operator, 5 October 2026).
+      openTab(root, "Threads");
+      await wait(200);
+      openMenu(root, "calm-otter actions");
+      await wait(300);
+    },
+  },
+  "boxes-page-add": {
+    slot: "boxes-page",
+    width: 900,
+    height: 1160,
+    props: { subPath: "" },
+    rpc: rpc([box(), desktop], { machines: MACHINES }),
+    threads: { [THREAD]: "Add dark mode" },
+    after: async (root) => {
+      // The page's New box opens the same form as settings' Add machine, with the Name step (the operator, 4 October 2026).
+      click(root, "button", "New box");
+      await wait(400);
+    },
+  },
+  "boxes-page-starting": { slot: "boxes-page", width: 900, props: { subPath: "" }, rpc: rpc([starting, desktop]), threads: { [THREAD]: "Add dark mode" } },
+  "settings": { slot: "settings", width: 860, props: {}, rpc: rpc([], { machines: MACHINES }) },
+  // First run in settings (the setup job): no backend on, so the Box panel's offer leads the page.
+  "settings-first-run": {
+    slot: "settings",
+    width: 860,
+    height: 640,
+    props: {},
+    rpc: rpc([], { setups: [setupOf()], config: { document: { schema: 1, revision: 1, backends: [], kinds: {}, general: {} } } }),
+  },
+  // The General section, with the video switch, on by default (056).
+  // Rebuild now (the operator, 11 October 2026): the due images and why, then a run image by image.
+  "settings-rebuild": {
+    slot: "settings",
+    width: 860,
+    height: 640,
+    props: {},
+    rpc: rpc([], {
+      machines: MACHINES,
+      rebuildable: [
+        { name: "docker/linux", kind: "linux", built: "build.2026-10-01, 10 days old", due: "it is 10 days old, past its 7-day interval", last: null },
+        { name: "pve/9101", kind: "linux-desktop-cpu", built: "build.2026-10-09, 2 days old", due: "it has another build of BB's app than BB's server gives", last: "Last rebuilt 2026-10-09" },
+        { name: "pve/9102", kind: "linux-desktop-wayland-cpu", built: "build.2026-10-10, 1 day old", due: null, last: "Last rebuilt 2026-10-10" },
+      ],
+    }),
+    after: async (root) => {
+      await wait(400);
+      click(root, "button", "Rebuild now");
+      await wait(300);
+      [...root.querySelectorAll("p")].find((node) => node.textContent?.trim() === "Rebuild images each night")?.scrollIntoView({ block: "start" });
+      await wait(200);
+    },
+  },
+  "settings-rebuild-running": {
+    slot: "settings",
+    width: 860,
+    height: 640,
+    props: {},
+    rpc: rpc([], {
+      machines: MACHINES,
+      progress: {
+        started: now - 380_000,
+        ended: null,
+        only: null,
+        images: [
+          { name: "docker/linux", kind: "linux", state: "refreshed", detail: "now build.2026-10-11, in 262 s" },
+          { name: "pve/9101", kind: "linux-desktop-cpu", state: "refreshing", detail: "it has another build of BB's app than BB's server gives", since: now - 118_000, line: "#9 [desktop 3/9] RUN", step: { at: 3, of: 9 } },
+          { name: "tart/mac1/bb-box-macos", kind: "macos", state: "next", detail: "it is 31 days old, past its 30-day interval" },
+        ],
+      },
+    }),
+    after: async (root) => {
+      await wait(400);
+      click(root, "button", "Rebuild now");
+      await wait(300);
+      [...root.querySelectorAll("p")].find((node) => node.textContent?.trim() === "Rebuild images each night")?.scrollIntoView({ block: "start" });
+      await wait(200);
+    },
+  },
+  "settings-general": {
+    slot: "settings",
+    width: 860,
+    height: 560,
+    props: {},
+    rpc: rpc([], { machines: MACHINES }),
+    after: async (root) => {
+      await wait(400);
+      const heading = [...root.querySelectorAll("h2, h3, p, div")].find((node) => node.textContent?.trim() === "General");
+      heading?.scrollIntoView({ block: "start" });
+      await wait(200);
+    },
+  },
+  "settings-machines-empty": { slot: "settings", width: 860, height: 420, props: {}, rpc: rpc([]) },
+  "settings-machines-add": {
+    slot: "settings",
+    width: 860,
+    height: 900,
+    props: {},
+    rpc: rpc([]),
+    after: async (root) => {
+      // Add machine is the same form with a Name step and an Add button (036).
+      click(root, "button", "Add machine");
+      await wait(300);
+    },
+  },
+  "settings-setup": {
+    slot: "settings",
+    width: 860,
+    props: {},
+    rpc: rpc([], { config: { tokenSet: false } }),
+    after: async (root) => {
+      [...root.querySelectorAll("button")].find((b) => b.textContent.trim() === "Set up")?.click();
+      await wait(300);
+    },
+  },
+  "settings-setup-off": {
+    slot: "settings",
+    width: 860,
+    props: {},
+    rpc: rpc([]),
+    after: async (root) => {
+      root.querySelector('button[aria-label="Set up Tart"]')?.click();
+      await wait(300);
+    },
+  },
+  // Windows desktops on Proxmox, with their trial as BB machines on (#539): the form shows the switch with the Windows templates.
+  "settings-windows-trial": {
+    slot: "settings",
+    width: 860,
+    props: {},
+    rpc: rpc([], {
+      config: {
+        drivers: [PROXMOX_QEMU_DRIVER],
+        document: {
+          schema: 1,
+          revision: 9,
+          backends: [
+            { id: "proxmox-lxc", type: "proxmox-lxc", enabled: true, fields: { url: "https://192.0.2.10:8006", node: "pve", "token-id": "bbbox@pve!plugin", "token-secret": { set: true }, "ssh-private-key": { set: true }, "linux-templates": "9800" } },
+            { id: "proxmox-qemu", type: "proxmox-qemu", enabled: true, fields: { "windows-templates": "9803", "windows-enrol": true, "token-secret": { set: false }, "ssh-private-key": { set: false } } },
+          ],
+          kinds: {},
+          general: {},
+        },
+        backends: [
+          { id: "proxmox-lxc", type: "proxmox-lxc", label: "Proxmox LXC on pve", form: "LXC", state: "active", problems: [], boxes: 2, kinds: ["linux"], doctor: { report: { ok: true, summary: "Proxmox VE 9.2 on pve", checks: [], notes: [] }, at: now - 60_000 }, warmShort: [] },
+          { id: "proxmox-qemu", type: "proxmox-qemu", label: "Proxmox QEMU on pve", form: "VM", state: "active", problems: [], boxes: 1, kinds: ["windows-desktop"], doctor: { report: { ok: true, summary: "Proxmox VE 9.2 on pve", checks: [], notes: [] }, at: now - 60_000 }, warmShort: [] },
+        ],
+      },
+    }),
+    after: async (root) => {
+      root.querySelector('button[aria-label="Set up Proxmox QEMU on pve"]')?.click();
+      await wait(300);
+    },
+  },
+  // Two microsandbox backends beside Docker, as an operator with a Linux host and a Mac has them (053): one named in its ID.
+  "settings-microsandbox": {
+    slot: "settings",
+    width: 860,
+    props: {},
+    rpc: rpc([], {
+      config: {
+        drivers: [MICROSANDBOX_DRIVER],
+        document: {
+          schema: 1,
+          revision: 9,
+          backends: [
+            { id: "docker", type: "docker", enabled: true, fields: { host: "ssh://box@gpu-host" } },
+            { id: "microsandbox", type: "microsandbox", enabled: true, fields: { host: "ssh://box@gpu-host" } },
+            { id: "microsandbox:mac-mini", type: "microsandbox", enabled: true, fields: { host: "bb:host_mac1", "memory-overcommit": 2 } },
+          ],
+          kinds: {},
+          general: {},
+        },
+        backends: [
+          { id: "docker", type: "docker", label: "Docker on gpu-host", form: "Docker", state: "active", problems: [], boxes: 1, kinds: ["linux", "linux-desktop-cpu"], doctor: { report: { ok: true, summary: "Docker 29.8 on gpu-host", checks: [], notes: [] }, at: now - 60_000 }, warmShort: [] },
+          { id: "microsandbox", type: "microsandbox", label: "microsandbox on gpu-host", form: "microVM", state: "active", problems: [], boxes: 2, kinds: ["linux", "linux-desktop-cpu"], doctor: { report: { ok: true, summary: "msb 0.7.7 on gpu-host", checks: [], notes: [] }, at: now - 60_000 }, warmShort: [] },
+          { id: "microsandbox:mac-mini", type: "microsandbox", label: "microsandbox on mac-mini", form: "microVM", state: "active", problems: [], boxes: 0, kinds: ["linux-arm64", "linux-arm64-desktop-cpu"], doctor: { report: { ok: true, summary: "msb 0.7.7 on mac-mini", checks: [], notes: [] }, at: now - 60_000 }, warmShort: [] },
+        ],
+      },
+    }),
+    after: async (root) => {
+      root.querySelector('button[aria-label="Set up microsandbox on mac-mini"]')?.click();
+      await wait(300);
+      click(root, "button", "Advanced");
+      await wait(300);
+    },
+  },
+  "settings-kind": {
+    slot: "settings",
+    width: 860,
+    props: {},
+    rpc: rpc([]),
+    after: async (root) => {
+      [...root.querySelectorAll("button")].filter((b) => b.textContent.trim() === "Edit")[2]?.click();
+      await wait(300);
+    },
+  },
+  // A kind whose warm pool on a backend is short for want of room (#356): its note shows under that backend's warm count.
+  "settings-kind-short": {
+    slot: "settings",
+    width: 860,
+    props: {},
+    rpc: rpc([], {
+      config: {
+        warmShort: [
+          {
+            kinds: ["linux-desktop"],
+            count: 1,
+            have: 0,
+            reason: "pve has 182.9 GiB of memory free and keeps 256 GiB free, so a linux-desktop box with 8 GiB memory does not fit. Release a box, or lower the memory kept free in bb-box's settings.",
+          },
+        ],
+      },
+    }),
+    after: async (root) => {
+      [...root.querySelectorAll("button")].filter((b) => b.textContent.trim() === "Edit")[1]?.click();
+      await wait(300);
+    },
+  },
+};

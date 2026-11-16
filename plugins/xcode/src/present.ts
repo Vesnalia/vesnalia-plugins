@@ -1,0 +1,121 @@
+/**
+ * Turning a run into text for a human or a model.
+ *
+ * Shared by the CLI and the agent tools, which must not drift: an agent that
+ * reads `bb xcode status` and one that calls `xcode_status` are asking the same
+ * question and deserve the same answer. Pure, so it tests without a server.
+ */
+
+import { formatDuration } from "./duration";
+import { durationMs, type Run, type RunStatus } from "./model";
+import type { BuildPhase } from "./types";
+
+/** What a live phase is called in agent- and CLI-facing text. */
+const PHASE_TEXT: Record<BuildPhase, string> = {
+  preparing: "preparing the build",
+  resolving: "resolving packages",
+  compiling: "compiling",
+  assets: "compiling assets",
+  linking: "linking",
+  packaging: "generating symbols",
+  signing: "signing",
+  testing: "running tests",
+};
+
+export function phaseText(phase: BuildPhase | null | undefined): string | null {
+  return phase ? PHASE_TEXT[phase] : null;
+}
+
+/** Last path segment, with any trailing slash ignored. */
+export function shortName(path: string | null): string | null {
+  if (!path) return null;
+  const trimmed = path.endsWith("/") ? path.slice(0, -1) : path;
+  const index = trimmed.lastIndexOf("/");
+  return index === -1 ? trimmed : trimmed.slice(index + 1);
+}
+
+/** The best name a run has: its scheme, else its container, else its root. */
+export function runName(run: Run): string {
+  return (
+    run.scheme ?? shortName(run.container) ?? shortName(run.root) ?? "—"
+  );
+}
+
+export interface PresentOptions {
+  /** Resolve a bb project id to its display name. */
+  projectName?(id: string): string | null;
+  /**
+   * What a live run is doing right now, from the process tree.
+   *
+   * Optional because history does not have one, and load-bearing because
+   * without it a long dependency fetch is indistinguishable from a hang. An
+   * agent that reads "running 7m 12s" and nothing else concludes the build is
+   * stuck and kills it; one that reads "resolving packages" waits.
+   */
+  phaseFor?(run: Run): BuildPhase | null;
+  /** Injected so a fixture can pin "now" when formatting a live run. */
+  now?: number;
+  /**
+   * Display name of the enrolled Mac a remote run is on. Optional: a run on
+   * this machine names none, and a name nobody can resolve falls back to the
+   * host id rather than to silence.
+   */
+  machineName?(hostId: string): string | null;
+}
+
+/** One run as a fixed-width line, as `bb xcode runs` prints them. */
+export function describeRun(run: Run, options: PresentOptions = {}): string {
+  const name = runName(run);
+  const project = run.projectId
+    ? (options.projectName?.(run.projectId) ?? run.projectId)
+    : "—";
+  const counts: string[] = [];
+  if (run.errorCount) counts.push(`${run.errorCount}E`);
+  if (run.warningCount) counts.push(`${run.warningCount}W`);
+  if (run.testFailed) counts.push(`${run.testFailed} failed`);
+  const suffix = counts.length ? `  [${counts.join(" ")}]` : "";
+  const machine =
+    run.hostId !== null ? ` on ${options.machineName?.(run.hostId) ?? run.hostId}` : "";
+  const at = `${run.branch ? ` @${run.branch}` : ""}${machine}`;
+  const live = run.status === "running";
+  const doing = live ? phaseText(options.phaseFor?.(run)) : null;
+  const time = live
+    ? `running ${formatDuration((options.now ?? Date.now()) - run.startedAt)}${doing ? `, ${doing}` : ""}`
+    : formatDuration(durationMs(run));
+  return `${run.status.padEnd(9)} ${run.kind.padEnd(7)} ${(name + at).padEnd(30)} ${project.padEnd(14)} ${time}${suffix}  ${run.id}`;
+}
+
+/**
+ * A one-clause verdict for a model to read.
+ *
+ * `xcode_build` blocks until it can say one of these, which is the entire
+ * point of it: the alternative is an agent polling `xcode_status` in a loop
+ * that this plugin then has to recognise and refuse to believe.
+ */
+export function verdictSentence(
+  status: RunStatus,
+  detail: { errorCount: number; testFailed: number | null; testTotal: number | null },
+): string {
+  switch (status) {
+    case "passed":
+      return detail.testTotal !== null
+        ? `PASSED — ${detail.testTotal} test(s), none failed.`
+        : "PASSED — build succeeded.";
+    case "warnings":
+      return detail.testTotal !== null
+        ? `PASSED with warnings — ${detail.testTotal} test(s), none failed.`
+        : "PASSED with warnings — build succeeded.";
+    case "failed":
+      if ((detail.testFailed ?? 0) > 0) {
+        return `FAILED — ${detail.testFailed} of ${detail.testTotal ?? "?"} test(s) failed.`;
+      }
+      return `FAILED — ${detail.errorCount} error(s).`;
+    case "cancelled":
+      return "CANCELLED — the build was killed before it finished.";
+    case "running":
+    case "finishing":
+      return "STILL RUNNING — no verdict yet.";
+    case "ended":
+      return "NO VERDICT — the build ended without recording an outcome.";
+  }
+}

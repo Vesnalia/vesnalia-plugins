@@ -1,0 +1,425 @@
+// The page's RPC contract and the types it carries. The app imports only types from this file, so zod stays out of its bundle.
+import { defineRpcContract, type NewThreadRequest } from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import type { ProjectHealth } from "./health";
+import type { HomeProject, HomeView, NeedItem } from "./home";
+import type { ActivityMark, Chip, CurrentItem, EventLine, InsightsFilter, InsightsNumbers, InsightsWindow, LineTone, Part, Phrase, ProjectInsights, StoryGroup, StoryItem } from "./insights";
+import type { ProjectMetrics } from "./metrics";
+import type { MergeEntry, MergeOrderView, MergeVerdict, MergeWait } from "./merge-order";
+import type { NextStep } from "./next-step";
+import type { PrSyncOutcome, PrSyncResult, PrSyncTicket } from "./pr-sync";
+import type { RolloutCheckResult, RolloutLive, RolloutMerge, RolloutMilestone, RolloutNext, RolloutRequirement, RolloutStage, RolloutStep, RolloutView, RolloutWarning, RolloutWindow } from "./rollout";
+import type { BbProjectChoice, PlanningSession, ProjectOverview, RepoOverview } from "./projects";
+import { MAX_PLANNING_REPOS } from "./prompts";
+import type { Finding } from "./review";
+import type { Moment, MomentKind, ProjectTimeline, SessionBar, TicketBar } from "./replay";
+import { RPC_TAGS } from "./rpc-tags";
+import { repoSpecSchema } from "./spec";
+import type { SpecReviewStatus } from "./spec-review";
+import type { SentNote, SpecReviewRound, SpecVersionView } from "./spec-view";
+import type { PlannerAction, PlannerStep, PlannerVersion, PlannerView, TurnStep, VersionChange } from "./planner-view";
+import type { AskAction, AskStep, PlannerAsk } from "./asks";
+import { ACK_TABS, type AckTab, type BadgeAcks } from "./badge-acks";
+import type { ActivityItem, Attempt, ChecksItem, CheckStep, Mark, MergeItem, PrFeedbackItem, PrTextItem, ReviewItem, TicketActivity } from "./activity";
+import type { ChangedFile, ChangeKind, ChangeRepo, ChangeSource, ChangesView, FilePatch } from "./changes";
+import type { MergeConfirmState } from "./auto-merge";
+import type { AuthorKind, PostKind, ProjectState, ReviewVerdict, Role, ThreadState, TicketState } from "./states";
+import { MERGE_CHOICES } from "./states";
+
+export type ProjectSummary = ProjectOverview;
+export type { ActivityMark, Chip, CurrentItem, EventLine, InsightsFilter, InsightsNumbers, InsightsWindow, LineTone, Part, Phrase, ProjectInsights, StoryGroup, StoryItem };
+export type { ChangedFile, ChangeKind, ChangeRepo, ChangeSource, ChangesView, FilePatch };
+export type { MergeEntry, MergeOrderView, MergeVerdict, MergeWait };
+export type { PrSyncOutcome, PrSyncResult, PrSyncTicket };
+export type { RolloutCheckResult, RolloutLive, RolloutMerge, RolloutMilestone, RolloutNext, RolloutRequirement, RolloutStage, RolloutStep, RolloutView, RolloutWarning, RolloutWindow };
+export type { SpecReviewRound };
+export type { AckTab, AskAction, AskStep, BadgeAcks, PlannerAction, PlannerAsk, PlannerStep, PlannerVersion, PlannerView, TurnStep, VersionChange };
+export type { ActivityItem, Attempt, BbProjectChoice, ChecksItem, CheckStep, PrFeedbackItem, PrTextItem, HomeProject, HomeView, Mark, MergeItem, Moment, MomentKind, NeedItem, NextStep, PlanningSession, ProjectHealth, ProjectTimeline, RepoOverview, ReviewItem, SentNote, SessionBar, SpecVersionView, TicketActivity, TicketBar };
+
+export interface BoardCard {
+  key: string;
+  title: string;
+  state: TicketState;
+  stateAt: number;
+  /** The ticket's [[repo]] name; null on a single-repo project. */
+  repo: string | null;
+  priority: number;
+  attempt: number;
+  reviewRound: number;
+  deps: string[];
+  /** Queued, with its dependencies done and no overlapping scope in flight or picked first: the next free worker takes it. */
+  ready: boolean;
+  /** Why a queued ticket that is not ready waits: unmet dependencies, then in-flight tickets whose scope overlaps it, then earlier picks whose scope overlaps it. */
+  waitingOn: string[];
+  /** The live worker or reviewer thread, if there is one. */
+  threadId: string | null;
+  prUrl: string | null;
+  blockedReason: string | null;
+  /** It has a commit, or a worker's worktree at work, for the Changes tab to show. */
+  hasChanges: boolean;
+  /** The open pull requests, by ticket key, whose commits this ticket's branch is built on. */
+  stackedOn: string[];
+  /** Why an approved ticket's pull request waits on its open dependencies, or that an open ticket waits for the new pull request Loom opens in place of a closed stacked one, in a short sentence; null otherwise. */
+  holding: string | null;
+  /** A queued ticket whose worker, or a ticket in review whose reviewer, did not start and waits to try again; null otherwise. */
+  startWait: StartWaitView | null;
+  /** A ticket in merging whose merge failed in a way worth waiting out, and waits to run again; null otherwise. */
+  mergeWait: MergeWaitView | null;
+  /** Work went back to the ticket's worker (a fix round, a review's changes, a merge that did not land), and it waits for a free worker slot. */
+  waitsForSlot: boolean;
+  /** An open pull request's failing and pending CI checks, as Loom last read them, on a repo that relies on CI; null otherwise. */
+  ci: { failed: number; pending: number } | null;
+  /** A pull request whose merge waits for the human's confirmation (auto_merge.mode = "manual"); null otherwise. */
+  mergeConfirm: MergeConfirmView | null;
+}
+
+/** A manual merge as the page shows it; a confirmation from the page sends back the `prUrl` and `sha` it showed. */
+export type MergeConfirmView = MergeConfirmState;
+
+export interface StartWaitView {
+  role: "worker" | "reviewer";
+  reason: string;
+  /** When Loom tries again. */
+  until: number;
+  /** Failed starts in a row. */
+  tries: number;
+  /** The environment provider said it cannot start one now, so the wait counts no attempt. */
+  unavailable: boolean;
+}
+
+export interface MergeWaitView {
+  /** Failed merges in a row, the first at `since`. */
+  failures: number;
+  since: number;
+  /** When Loom tries again. */
+  until: number;
+  /** What the last one failed with. */
+  message: string;
+}
+
+/** What the draft card shows before a project has tickets on the board. */
+export interface SpecSummary {
+  tickets: Array<{ ref: string; title: string; dependsOn: string[] }>;
+  /** The spec's [[repo]] tables; empty on a single-repo spec. `bbProjectName` is null when bb cannot tell. */
+  repos: Array<{ name: string; bbProjectId: string; bbProjectName: string | null }>;
+  checks: string[];
+  /** "provider / model", or null when the spec sets neither. */
+  reviewer: string | null;
+  warnings: string[];
+}
+
+export interface SpecPanel {
+  toml: string;
+  version: number;
+  pendingVersion: number | null;
+  summary: SpecSummary;
+}
+
+/** One planner, worker or reviewer thread row of a project. */
+export interface AgentRow {
+  threadId: string | null;
+  role: Role;
+  ticketKey: string | null;
+  ticketTitle: string | null;
+  state: ThreadState;
+  startedAt: number;
+  endedAt: number | null;
+  endReason: string | null;
+  tokens: number | null;
+  rateLimitRetries: number;
+  reviewRound: number;
+  /** The spec's "provider / model" for the role; null for a planner or when the spec sets neither. */
+  model: string | null;
+  /** When the engine ends a worker whose ticket is still being worked on; null otherwise. */
+  timeoutAt: number | null;
+}
+
+export interface ProjectView {
+  overview: ProjectOverview;
+  /** Before approval, the draft's tickets with the keys approval will give them. */
+  board: BoardCard[];
+  /** The one thing to do next, for the bar over the tabs; null for an archived project. */
+  next: NextStep | null;
+  metrics: ProjectMetrics;
+  spec: SpecPanel;
+  prUrl: string | null;
+  /** Null until the project has an approved spec. */
+  health: ProjectHealth | null;
+  /** Live rows first, then the newest. */
+  agents: AgentRow[];
+  now: number;
+  /** The event the view was rewound to; null for the live view. */
+  at: number | null;
+  /** The automatic spec review of the draft or the pending version; null in a rewound view. */
+  specReview: SpecReviewStatus | null;
+  /** The steps of the planner's newest ask (loom_ask_human) that are not done yet; none in a rewound view. */
+  askSteps: OpenAskStep[];
+  /** The items of the human's newest acknowledgement of each tab badge that takes one; none in a rewound view. */
+  badgeAcks: BadgeAcks;
+  /** The order the project's pull requests merge in, on the pull request strategy; null otherwise and in a rewound view, since what Loom read from the forge is kept only as it is now. */
+  mergeOrder: MergeOrderView | null;
+  /** The project's deploy order, advice for the human, when its spec or a ticket has one; null otherwise and in a rewound view. */
+  rollout: RolloutView | null;
+}
+
+/** A step of the planner's newest ask that is not done, by its place in the ask. */
+export interface OpenAskStep {
+  index: number;
+  action: AskAction;
+  text: string;
+  key: string | null;
+}
+
+export interface PostDto {
+  id: number;
+  parentId: number | null;
+  depth: number;
+  authorKind: AuthorKind;
+  authorThreadId: string | null;
+  kind: PostKind;
+  body: string;
+  at: number;
+}
+
+export interface ReviewDto {
+  id: number;
+  round: number;
+  verdict: ReviewVerdict;
+  /** The verdict in words, or why a pending review has none: "reviewer could not start", "ended without a verdict" or "pending". */
+  status: string;
+  summary: string | null;
+  findings: Finding[];
+  /** The reviewer's thread; null when it never started. */
+  threadId: string | null;
+  at: number;
+}
+
+export interface ThreadDto {
+  threadId: string | null;
+  role: Role;
+  /** The worker's attempt; null for a reviewer and for rows from before Loom recorded it. */
+  attempt: number | null;
+  reviewRound: number;
+  state: ThreadState;
+  startedAt: number;
+  endedAt: number | null;
+  endReason: string | null;
+}
+
+/** A ticket's pull request on the pr strategy, for the ticket page. */
+export interface TicketPr {
+  url: string | null;
+  draft: boolean;
+  forge: "gh" | "command" | "none";
+  /** The remote branch Loom pushes to, and the commit it last pushed there; null before the first push. */
+  branch: string | null;
+  pushedSha: string | null;
+  /** The commits Loom pushed: one, and one more per fix round with a change; null when the spec pushes the branch as it is. */
+  commits: number | null;
+  /** Every fix round so far, the human's included; `counted` is the rounds the pull request's feedback started since the last requeue, which `maxRounds` limits. */
+  rounds: number;
+  counted: number;
+  maxRounds: number;
+  /** Whether Loom reads the pull request's checks and reviews on this forge. */
+  follows: boolean;
+  /** The checks on the pull request's head when Loom last read them; null before the first read after a push. */
+  checks: { passed: number; failed: number; pending: number; at: number } | null;
+  /** When Loom reads the pull request next; null when it is not open. */
+  nextCheckAt: number | null;
+  /** Loom asked the worker for the pull request's text, or a fix round's commit message, at `since` and waits for it. */
+  writing: { since: number; fix: boolean; until: number } | null;
+}
+
+export interface TicketDetail {
+  slug: string;
+  projectState: ProjectState;
+  key: string;
+  title: string;
+  state: TicketState;
+  stateAt: number;
+  /** The ticket's [[repo]] name; null on a single-repo project. */
+  repo: string | null;
+  priority: number;
+  attempt: number;
+  reviewRound: number;
+  deps: string[];
+  /** The dependencies whose ticket is done. */
+  depsDone: string[];
+  blockedReason: string | null;
+  startWait: StartWaitView | null;
+  mergeWait: MergeWaitView | null;
+  branch: string | null;
+  prUrl: string | null;
+  /** Null on the integration strategy. */
+  pr: TicketPr | null;
+  body: string;
+  acceptance: string[];
+  verify: string[];
+  scope: string[];
+  posts: PostDto[];
+  reviews: ReviewDto[];
+  threads: ThreadDto[];
+  /** Who hears a reply now, by the rule Engine.humanPost delivers with. */
+  replyTo: "worker" | "planner" | null;
+  /** The state a blocked or cancelled ticket left; null otherwise. */
+  stoppedFrom: TicketState | null;
+  /** Whether Review again as is may take a blocked ticket, from what Loom stored; running it also checks the ticket's branch. */
+  reviewAgain: boolean;
+  /** As BoardCard's; null for a rewound ticket. */
+  mergeConfirm: MergeConfirmView | null;
+  activity: TicketActivity;
+  /** The event the ticket was rewound to, and the time it shows; `at` is null for the live ticket. */
+  at: number | null;
+  now: number;
+}
+
+export interface FeedRow {
+  id: number;
+  at: number;
+  kind: string;
+  actor: string;
+  ticketKey: string | null;
+  text: string;
+}
+
+export interface ThreadInfo {
+  role: Role;
+  /** null for a planning conversation that has not proposed a spec yet. */
+  slug: string | null;
+  /** The ticket's key for a worker or reviewer; null for a planner. */
+  key: string | null;
+  /** The ticket's state for a worker or reviewer, the project's for a planner, "planning" before a spec exists. */
+  state: string;
+}
+
+/** What the badge on Loom's rail button counts, less the threads the page finds waiting on the human in bb's own thread state. */
+export interface BadgeView {
+  /** The home page's Needs you items. */
+  needsYou: number;
+  /** Whether one of them is a blocked ticket. */
+  blocked: boolean;
+  /** Live Loom threads and open planning conversations, each of which counts once while it waits on the human. */
+  threadIds: string[];
+}
+
+// "review" is review again as is: a requeue with no new worker, whose note may be empty.
+export const TICKET_ACTIONS = ["requeue", "review", "block", "cancel"] as const;
+export const CONTROL_ACTIONS = ["approve", "start", "pause", "pauseNow", "resume", "land", "landDirect", "archive"] as const;
+export type TicketAction = (typeof TICKET_ACTIONS)[number];
+export type ControlAction = (typeof CONTROL_ACTIONS)[number];
+
+const slug = z.string().min(1).max(100);
+const key = z.string().min(1).max(100);
+const eventId = z.number().int().min(1);
+const commitHash = z.string().regex(/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/, "must be a full commit hash");
+// bb's RPC cannot tell the page from an agent that calls `bb plugin rpc`, so every change needs an explicit confirmation.
+// That does not stop an agent impersonating the human, here or through the CLI with its bb thread identity stripped
+// (`env -u BB_THREAD_ID`): Loom's human-only controls rely on agents not doing so, until bb reports where each call came from.
+const confirm = z.literal(true);
+const typed = <T>() => z.custom<T>();
+// bb's spawn validates the rest of the composer's request.
+const isComposerRequest = (value: unknown) => typeof value === "object" && value !== null && typeof (value as { projectId?: unknown }).projectId === "string" && Array.isArray((value as { input?: unknown }).input);
+
+export const rpcContract = defineRpcContract({
+  projects: { input: z.null(), output: typed<ProjectSummary[]>(), ...RPC_TAGS.projects },
+  home: { input: z.null(), output: typed<HomeView>(), ...RPC_TAGS.home },
+  badge: { input: z.null(), output: typed<BadgeView>(), ...RPC_TAGS.badge },
+  project: { input: z.object({ slug, at: eventId.optional() }).strict(), output: typed<ProjectView>(), ...RPC_TAGS.project },
+  ticket: { input: z.object({ key, at: eventId.optional() }).strict(), output: typed<TicketDetail>(), ...RPC_TAGS.ticket },
+  runOutput: { input: z.object({ id: z.number().int().min(1) }).strict(), output: typed<{ output: string } | null>(), ...RPC_TAGS.runOutput },
+  insights: {
+    input: z.object({ slug, window: z.union([z.enum(["all", "run", "day"]), z.object({ from: z.number().int().min(0), to: z.number().int().min(0) }).strict()]).optional(), at: eventId.optional() }).strict(),
+    output: typed<ProjectInsights>(),
+    ...RPC_TAGS.insights,
+  },
+  timeline: { input: z.object({ slug }).strict(), output: typed<ProjectTimeline>(), ...RPC_TAGS.timeline },
+  threadInfo: { input: z.object({ threadId: z.string().min(1).max(200) }).strict(), output: typed<ThreadInfo | null>(), ...RPC_TAGS.threadInfo },
+  reply: {
+    input: z.object({ key, body: z.string().min(1).max(20_000), parentId: z.number().int().min(1).optional(), confirm }).strict(),
+    output: typed<TicketDetail>(),
+    ...RPC_TAGS.reply,
+  },
+  ticketAction: {
+    input: z.object({ key, action: z.enum(TICKET_ACTIONS), note: z.string().max(4000), confirm }).strict(),
+    output: typed<TicketDetail>(),
+    ...RPC_TAGS.ticketAction,
+  },
+  // The pull request and exact commit the page showed: the server refuses one that is not the ticket's now.
+  confirmMerge: {
+    input: z.object({ key, prUrl: z.string().url().max(2000), sha: commitHash, confirm }).strict(),
+    output: typed<TicketDetail>(),
+    ...RPC_TAGS.confirmMerge,
+  },
+  control: {
+    input: z.object({ slug, action: z.enum(CONTROL_ACTIONS), version: z.number().int().min(1).optional(), repo: z.string().min(1).max(100).optional(), confirm }).strict(),
+    output: typed<ProjectView>(),
+    ...RPC_TAGS.control,
+  },
+  sendNotes: {
+    input: z
+      .object({
+        slug,
+        notes: z
+          .array(
+            z
+              .object({
+                version: z.number().int().min(1),
+                paths: z.array(z.string().min(1).max(200)).min(1).max(10),
+                body: z.string().trim().max(4000),
+                suggest: z.object({ from: z.string().max(500), to: z.string().trim().min(1).max(500) }).strict().optional(),
+              })
+              .strict()
+              .refine((note) => note.body !== "" || note.suggest !== undefined, "A note needs text or a suggested value."),
+          )
+          .min(1)
+          .max(30),
+        includeOlder: z.literal(true).optional(),
+        confirm,
+      })
+      .strict(),
+    output: typed<SpecVersionView>(),
+    ...RPC_TAGS.sendNotes,
+  },
+  planning: { input: z.null(), output: typed<PlanningSession[]>(), ...RPC_TAGS.planning },
+  planningSession: { input: z.object({ threadId: z.string().min(1).max(200) }).strict(), output: typed<PlanningSession | null>(), ...RPC_TAGS.planningSession },
+  plannerView: { input: z.object({ threadId: z.string().min(1).max(200) }).strict(), output: typed<PlannerView | null>(), ...RPC_TAGS.plannerView },
+  messagePlanner: { input: z.object({ threadId: z.string().min(1).max(200), text: z.string().trim().min(1).max(20_000), confirm }).strict(), output: typed<PlannerView | null>(), ...RPC_TAGS.messagePlanner },
+  dismissAsk: { input: z.object({ slug, ask: z.number().int().positive(), confirm }).strict(), output: typed<PlannerView | null>(), ...RPC_TAGS.dismissAsk },
+  // The human marks one step of the planner's newest ask done, by its place in the ask.
+  askStepDone: { input: z.object({ slug, ask: z.number().int().positive(), step: z.number().int().min(0).max(9), confirm }).strict(), output: typed<PlannerView | null>(), ...RPC_TAGS.askStepDone },
+  // The human acknowledges a tab badge: it hides while every item it counts is among `items`.
+  ackBadge: {
+    input: z.object({ slug, tab: z.enum(ACK_TABS), items: z.array(z.string().min(1).max(300)).min(1).max(200), confirm }).strict(),
+    output: typed<ProjectView>(),
+    ...RPC_TAGS.ackBadge,
+  },
+  // The human's Mark live on a rollout step or milestone, or with undo its undo.
+  markLive: {
+    input: z.object({ slug, target: z.string().min(1).max(100), note: z.string().trim().max(2000).optional(), undo: z.literal(true).optional(), confirm }).strict(),
+    output: typed<ProjectView>(),
+    ...RPC_TAGS.markLive,
+  },
+  // A read of the project's open pull requests now; no human.action, since it changes nothing the human decides.
+  syncPullRequests: { input: z.object({ slug, key: key.optional(), confirm }).strict(), output: typed<PrSyncResult>(), ...RPC_TAGS.syncPullRequests },
+  bbProjects: { input: z.null(), output: typed<BbProjectChoice[]>(), ...RPC_TAGS.bbProjects },
+  startPlanning: {
+    input: z
+      .object({
+        request: z.custom<NewThreadRequest>(isComposerRequest),
+        merge: z.enum(MERGE_CHOICES),
+        reviewer: z.string().max(200),
+        repos: z.array(z.string().min(1).max(100)).max(MAX_PLANNING_REPOS).optional(),
+        confirm,
+      })
+      .strict(),
+    output: typed<{ threadId: string }>(),
+    ...RPC_TAGS.startPlanning,
+  },
+  specVersion: { input: z.object({ slug, version: z.number().int().min(1).optional(), base: z.number().int().min(1).optional() }).strict(), output: typed<SpecVersionView>(), ...RPC_TAGS.specVersion },
+  changes: { input: z.object({ slug }).strict(), output: typed<ChangesView>(), ...RPC_TAGS.changes },
+  changePatch: {
+    input: z.object({ slug, path: z.string().min(1).max(4096), base: commitHash.optional(), head: commitHash.optional(), key: key.optional(), repo: repoSpecSchema.shape.name.optional() }).strict(),
+    output: typed<FilePatch>(),
+    ...RPC_TAGS.changePatch,
+  },
+});

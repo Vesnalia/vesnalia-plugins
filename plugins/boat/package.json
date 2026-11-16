@@ -1,0 +1,33 @@
+{
+  "name": "bb-plugin-boat",
+  "version": "0.3.1",
+  "type": "module",
+  "engines": {
+    "bb": ">=0.45",
+    "bbPluginSdk": ">=0.6.15"
+  },
+  "bb": {
+    "name": "Boat",
+    "description": "Run each bb thread on its own Boat cloud VM, stopped when idle and resumed on demand.",
+    "branding": {
+      "icon": "./boat.svg"
+    },
+    "server": "./server.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.15",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "description": "Boat sandboxes (boat.dev) as bb machines.",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "build": "bb plugin build"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Not-Quite-Unicorns/bb-plugin-boat.git"
+  }
+}

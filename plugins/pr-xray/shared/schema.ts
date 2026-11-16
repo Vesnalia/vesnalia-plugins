@@ -1,0 +1,237 @@
+// Wire and storage shapes shared by the server and the app. The app imports
+// these as types only, so zod stays out of the frontend bundle unless a
+// component imports a runtime value from here.
+import { GraphDoc } from "@coldtea/pr-lens-schema";
+import type { RenderAtlas } from "@coldtea/pr-lens-renderer";
+import { z } from "zod";
+
+import { COMMENT_TAGS } from "./tags";
+
+export { COMMENT_TAGS };
+export const commentTagSchema = z.enum(COMMENT_TAGS);
+export type CommentTag = z.infer<typeof commentTagSchema>;
+
+export const prRefSchema = z.object({
+  owner: z.string().min(1),
+  repo: z.string().min(1),
+  number: z.number().int().positive(),
+});
+export type PrRef = z.infer<typeof prRefSchema>;
+
+// ---- Analysis (what the hidden worker hands back) -------------------------
+
+export const reviewGroupSchema = z.object({
+  id: z.string().min(1).max(80),
+  title: z.string().min(1).max(160),
+  why: z.string().min(1).max(1200),
+  kind: z.enum(["core", "supporting", "tests", "noise"]),
+  hunkIds: z.array(z.string()).min(1),
+});
+export type ReviewGroup = z.infer<typeof reviewGroupSchema>;
+
+/** What the analysis agent submits, besides its `graph`, which the PR Lens parser checks. */
+export const analysisBaseSchema = z.object({
+  summary: z.string().min(1).max(4000),
+  ticket: z
+    .object({
+      url: z.string().nullable(),
+      title: z.string().nullable(),
+      projectTitle: z.string().nullable().default(null),
+    })
+    .default({ url: null, title: null, projectTitle: null }),
+  // Ordered as a reading path: foundations first, consumers later, noise last.
+  groups: z.array(reviewGroupSchema).min(1).max(40),
+  lookClosely: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(160),
+        reason: z.string().min(1).max(1200),
+        severity: z.enum(["high", "medium", "low"]),
+        groupIds: z.array(z.string()).default([]),
+      }),
+    )
+    .max(12)
+    .default([]),
+});
+
+/** One stored render of a diagram tab in one theme. */
+export const diagramRenderSchema = z.object({
+  svg: z.string(),
+  width: z.number(),
+  height: z.number(),
+  /** The renderer's canvas colour for this theme, so the app needn't import the renderer. */
+  background: z.string(),
+  atlas: z.custom<RenderAtlas>((value) => typeof value === "object" && value !== null),
+});
+export type DiagramRender = z.infer<typeof diagramRenderSchema>;
+
+export const analysisResultSchema = analysisBaseSchema.extend({
+  graph: GraphDoc,
+  /** Diagram tab id -> its light and dark renders. */
+  renders: z.record(z.string(), z.object({ light: diagramRenderSchema, dark: diagramRenderSchema })),
+});
+export type AnalysisResult = z.infer<typeof analysisResultSchema>;
+
+// ---- Pull request as the app sees it ---------------------------------------
+
+export const hunkSchema = z.object({
+  id: z.string(),
+  /** Content hash that survives new commits; viewed state is keyed on it. */
+  fingerprint: z.string(),
+  fileIndex: z.number(),
+  header: z.string(),
+  /** Patch text for this hunk only, starting at its `@@` line. */
+  patch: z.string(),
+  additions: z.number(),
+  deletions: z.number(),
+});
+export type Hunk = z.infer<typeof hunkSchema>;
+
+export const prFileSchema = z.object({
+  index: z.number(),
+  path: z.string(),
+  previousPath: z.string().nullable(),
+  status: z.string(),
+  additions: z.number(),
+  deletions: z.number(),
+  /** False for binary or oversized files GitHub returns without a patch. */
+  hasPatch: z.boolean(),
+  hunkIds: z.array(z.string()),
+});
+export type PrFile = z.infer<typeof prFileSchema>;
+
+export const reviewThreadCommentSchema = z.object({
+  id: z.string(),
+  databaseId: z.number(),
+  author: z.string(),
+  body: z.string(),
+  createdAt: z.string(),
+  url: z.string(),
+});
+
+export const reviewThreadSchema = z.object({
+  id: z.string(),
+  path: z.string(),
+  line: z.number().nullable(),
+  startLine: z.number().nullable(),
+  side: z.enum(["LEFT", "RIGHT"]),
+  isResolved: z.boolean(),
+  isOutdated: z.boolean(),
+  comments: z.array(reviewThreadCommentSchema),
+});
+export type ReviewThread = z.infer<typeof reviewThreadSchema>;
+
+export const prDetailsSchema = z.object({
+  ref: prRefSchema,
+  url: z.string(),
+  title: z.string(),
+  body: z.string(),
+  author: z.string(),
+  state: z.string(),
+  draft: z.boolean(),
+  headSha: z.string(),
+  headRef: z.string(),
+  /** False for a fork, or when the head repository was deleted. */
+  headInBaseRepo: z.boolean(),
+  baseRef: z.string(),
+  baseSha: z.string(),
+  viewer: z.string(),
+  isOwnPr: z.boolean(),
+  /** GitHub's count, which can exceed `files`: its file listing stops at 3000. */
+  changedFiles: z.number(),
+  files: z.array(prFileSchema),
+  hunks: z.array(hunkSchema),
+  threads: z.array(reviewThreadSchema),
+});
+export type PrDetails = z.infer<typeof prDetailsSchema>;
+
+// ---- Analysis records -------------------------------------------------------
+
+export const analysisRecordSchema = z.object({
+  id: z.string(),
+  ref: prRefSchema,
+  headSha: z.string(),
+  status: z.enum(["running", "done", "failed"]),
+  error: z.string().nullable(),
+  /** For a legacy analysis, only the base fields: no graph or renders. */
+  result: analysisResultSchema.partial({ graph: true, renders: true }).nullable(),
+  /** A finished analysis stored in a format this version can no longer draw: re-run it for diagrams. */
+  legacy: z.boolean(),
+  /** Hunk id -> content fingerprint when analysed. Null for analyses from before this was saved. */
+  hunkFingerprints: z.record(z.string(), z.string()).nullable(),
+  workerThreadId: z.string().nullable(),
+  diffOnly: z.boolean(),
+  ticketUrl: z.string().nullable(),
+  createdAt: z.string(),
+  finishedAt: z.string().nullable(),
+});
+export type AnalysisRecord = z.infer<typeof analysisRecordSchema>;
+
+// ---- Comments ----------------------------------------------------------------
+
+export const diffSideSchema = z.enum(["LEFT", "RIGHT"]);
+export type DiffSide = z.infer<typeof diffSideSchema>;
+
+export const draftCommentSchema = z.object({
+  /** The commit this comment was written on; its line numbers only hold there. */
+  headSha: z.string(),
+  path: z.string(),
+  line: z.number().int().positive(),
+  side: diffSideSchema,
+  startLine: z.number().int().positive().nullable(),
+  startSide: diffSideSchema.nullable(),
+  body: z.string().trim().min(1).max(65000),
+});
+export type DraftComment = z.infer<typeof draftCommentSchema>;
+
+export const pendingCommentSchema = draftCommentSchema.extend({
+  id: z.string(),
+  createdAt: z.string(),
+});
+export type PendingComment = z.infer<typeof pendingCommentSchema>;
+
+export const storedCommentSchema = z.object({
+  id: z.string(),
+  source: z.enum(["diff", "diagram"]),
+  ref: prRefSchema,
+  headSha: z.string(),
+  body: z.string(),
+  tag: commentTagSchema.nullable(),
+  status: z.enum(["open", "resolved", "outdated"]),
+  // Diff comments
+  githubCommentId: z.number().nullable(),
+  githubUrl: z.string().nullable(),
+  path: z.string().nullable(),
+  line: z.number().nullable(),
+  // Diagram comments
+  analysisId: z.string().nullable(),
+  diagramId: z.string().nullable(),
+  nodeId: z.string().nullable(),
+  nodeLabel: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type StoredComment = z.infer<typeof storedCommentSchema>;
+
+export const fixScopeSchema = z.enum(["mine", "all"]);
+export type FixScope = z.infer<typeof fixScopeSchema>;
+
+export const modelSelectionSchema = z.object({
+  providerId: z.string(),
+  model: z.string(),
+  reasoningLevel: z.string(),
+  serviceTier: z.string().optional(),
+});
+export type ModelSelection = z.infer<typeof modelSelectionSchema>;
+
+export const modelPurposeSchema = z.enum(["analysis", "tagging"]);
+export type ModelPurpose = z.infer<typeof modelPurposeSchema>;
+
+export const reviewSummarySchema = z.object({
+  ref: prRefSchema,
+  title: z.string(),
+  url: z.string(),
+  lastOpenedAt: z.string(),
+  analysisStatus: z.enum(["none", "running", "done", "failed"]),
+});
+export type ReviewSummary = z.infer<typeof reviewSummarySchema>;

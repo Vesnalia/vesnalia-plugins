@@ -1,0 +1,180 @@
+# Changelog
+
+All notable changes to Orchestrator Mode are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
+[Semantic Versioning](https://semver.org/).
+
+## Unreleased
+
+## 0.1.4 - 2026-10-18
+
+### Fixed
+
+- Avoid the 30-second startup dependency loop by discovering worker models and
+  recovering queues after registration. Preserve saved worker choices until
+  discovery succeeds, retry failed reads, and cancel consumers on reload.
+
+### Added
+
+- Add a worker model policy setting — **Per-unit model overrides** in the scope
+  editor, `scope --model-policy pinned|flexible` on the CLI. `Flexible` lets a
+  delegation pass `model`, `provider` and `reasoning` and keeps the contract's
+  "give a hard unit a stronger model" advice. `Pinned` refuses those three and
+  says so in the contract, while leaving stored presets reachable.
+- Add subagent policies — **Orchestrator subagents** (`read-only` default,
+  `all`, `none`; `scope --orchestrator-subagents`) and **Worker subagents**
+  (`blocked` default, `allowed`; `scope --worker-subagents`). The watchdog now
+  judges identified provider subagents instead of always allowing them. The
+  default requires launch-specific read-only provenance, which BB does not yet
+  expose; native reading support remains blocked on that upstream metadata.
+  Familiar names and cached telemetry grant no trust. Codex coordination stays allowed;
+  unrelated task arrays retain normal classification. Legacy opaque OMP calls
+  remain unverified work. Every policy is explicit in the contract and grants
+  no additional user or parent authority. Blocked workers receive
+  an injected rule against starting subagents; BB cannot remove the provider's
+  own tool, so it is an instruction rather than enforcement.
+- Queue direct child messages while an orchestrator turn is running, using
+  BB's persistent queue and delivery when idle. Global/Project settings
+  and `scope --child-messages queued|immediate` control the policy. Automatic
+  child system notices still use BB's separate delivery path.
+
+### Changed
+
+- Default the worker model policy to `Pinned`, so a delegation can no longer
+  upgrade or downgrade a worker on its own. A scope that wants the previous
+  behaviour switches to `Flexible`; scopes that never opened the setting now run
+  every worker on the stored execution or a stored preset.
+
+### Fixed
+
+- Deliver compatible queued updates from the same child together, preserving
+  all content and each child's message order, including interleaved arrivals.
+  Recover pending batches on reload and handle concurrent queue changes.
+- Preserve the per-turn delegation budget when messages join a running turn
+  or wait in the queue; reset it only when a new turn starts.
+- Treat a correction sent to a thread this orchestrator owns, including a
+  hidden child and a fork, as coordination rather than direct work.
+
+### Contributors
+
+- Thank you [@GantisStorm](https://github.com/GantisStorm) for
+  [PR #10](https://github.com/MacHatter1/bb-plugin-orchestrator-mode/pull/10):
+  pin worker models to the scope's stored execution, and
+  [PR #12](https://github.com/MacHatter1/bb-plugin-orchestrator-mode/pull/12):
+  orchestrator and worker subagent policies.
+- [@MacHatter1](https://github.com/MacHatter1) contributed queued child
+  messages, batched child updates in
+  [PR #9](https://github.com/MacHatter1/bb-plugin-orchestrator-mode/pull/9),
+  and the startup stall fix in
+  [PR #11](https://github.com/MacHatter1/bb-plugin-orchestrator-mode/pull/11).
+
+## 0.1.3 - 2026-10-07
+
+### Fixed
+
+- Remove the draft-text decoration that drew a stray edge inside the composer
+  while orchestrator mode was on; the toggle and status banner remain unchanged.
+
+## 0.1.2 - 2026-10-06
+
+### Added
+
+- Per-delegation worker provider, model, reasoning and permission controls,
+  with BB's provider/model picker, named execution presets and an optional
+  configured retry target.
+- Project-scoped settings, worker execution and appended rules, with global
+  defaults and explicit inheritance controls.
+- Shared, worktree and mixed worker workspaces. Verification workers and
+  fallback retries reuse the unit's checkout.
+- Recorded worker verdicts through `orchestrator_review` and independent
+  verification with `verify: true`.
+- Parallel-worker and per-turn delegation caps, worker-retention policies,
+  and an inspectable contract with standard, review-heavy and delegate-only
+  levels.
+
+### Fixed
+
+- Apply provider/model pins before workers start, with explicit execution
+  provenance. Support the native `providerId` alias and CLI `--provider-id`
+  and `--providerId` aliases; trim pins and reject blanks, conflicting
+  aliases and incompatible provider/model combinations.
+- Recognise `bb thread tell`/`message` follow-ups to recorded workers as
+  delegation, including literal quoted stdin heredocs, even when read-only
+  exploration is disabled.
+- Allow literal `2>/dev/null` stderr suppression on read-only commands,
+  without allowing output-file redirects or mutating `find` actions.
+- Preserve stricter shell classification: writing/execution flags,
+  executable substitutions, unsafe wrappers and mixed work chains remain
+  work. Git's program-running global options are checked after directory
+  and namespace operands, not only before them.
+- Share native and CLI worker handling, including project execution,
+  caps, verification and retention; preserve delegation in resumed sessions.
+- Harden timeline scans against malformed rows, repeated row IDs and
+  missing sequence/timing fields. Attribute block-mode intervention to
+  the live turn and retain the post-enable grace period.
+- Enforce delegation caps and review reminders under concurrency, sanitise
+  stored state, and retain workers still owed a verdict within bounded records.
+- Keep injected instructions within the 4096-character limit without
+  losing the contract tail or supported project-rules append.
+
+### Changed
+
+- Settings resolve through the plugin's Global/Project scope editor rather
+  than BB's single-install settings form; unchanged projects inherit defaults.
+- Remove the `.github` directory and GitHub Actions workflow. Verification
+  remains available through the local test, typecheck and build commands.
+
+### Contributors
+
+- Thank you [@GantisStorm](https://github.com/GantisStorm) for
+  [PR #1](https://github.com/MacHatter1/bb-plugin-orchestrator-mode/pull/1):
+  worker execution controls, scoped configuration, reviews and verification,
+  workspaces, guardrails, and classifier/watchdog hardening.
+- [@MacHatter1](https://github.com/MacHatter1) contributed the delegation and
+  watchdog usability fixes in
+  [PR #4](https://github.com/MacHatter1/bb-plugin-orchestrator-mode/pull/4)
+  and release preparation in
+  [PR #5](https://github.com/MacHatter1/bb-plugin-orchestrator-mode/pull/5).
+
+## 0.1.1 - 2026-10-05
+
+### Fixed
+
+- Notify running turns when orchestrator mode changes and provide CLI delegation
+  for existing or resumed sessions without the native tool.
+- Allow read-only `bb provider list` and `bb provider models` commands, including
+  chains with `bb status --json`.
+
+## 0.1.0 - 2026-10-01
+
+### Added
+
+- Composer toggle, `+` menu fallback and status strip for orchestrator threads.
+- Instructions that limit the orchestrator to reading, planning, asking,
+  delegating and reporting, with a tool that creates worker threads.
+- `instruct`, `guard` and `block` enforcement levels, configurable read-only
+  command handling and a corrective-message cap.
+- CLI commands to inspect and change thread mode, clear violations and set the
+  default for new threads.
+- Repository documentation, a logo using the plugin's delegation icon and an
+  MIT licence.
+
+### Changed
+
+- Explain how long-running threads can drift from delegation into direct work,
+  and how ongoing watchdog checks help catch that behaviour.
+
+### Fixed
+
+- Read incremental timeline patches and nested work in completed turns so the
+  watchdog does not miss direct work.
+- Serialize state mutations to retain simultaneous thread choices and worker
+  delegation records.
+- Count mutating Git command forms and direct image generation as work.
+- Share violation clearing between RPC and CLI, and remove unused vendored UI.
+- Apply the new-thread default only to qualifying root threads created while
+  it is enabled, on a user-initiated dispatch.
+- Refresh the metadata mirror from plugin storage before each dispatch.
+- Preserve monitoring of state saved by earlier builds.
+- Skip historical work and grant grace turns while provider sessions gain the
+  orchestrator contract; allow read-only exploration by default.

@@ -1,0 +1,2746 @@
+import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
+
+import { createFakePluginHost, experimental_scanPublicSdkOnly, makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { ProviderInfo } from "@get-bb/plugin-sdk";
+import { describe, expect, it, vi } from "vitest";
+
+import plugin, { diffReviewPlugin } from "./server";
+import { REPORT_LINE } from "./server/run-prompts";
+import { placeThread } from "./shared/anchors";
+import { parsePatchLines } from "./shared/patch-lines";
+import { checkGithubRequest } from "./server/testing/github-schema";
+import { TOOL_NAMES } from "./server/tool-names";
+import type { ReviewThread, ReviewView, Run } from "./shared/types";
+
+const ENV = "env_1";
+const sha = (content: string) => createHash("sha256").update(content).digest("hex");
+const THREAD = "thr_review";
+
+function environment(overrides: Record<string, unknown> = {}) {
+  return {
+    baseBranch: "main",
+    branchName: "feature",
+    createdAt: 1,
+    defaultBranch: "main",
+    environmentProviderId: null,
+    environmentProviderInstanceKey: null,
+    environmentProviderSelection: null,
+    hostId: "host_1",
+    hostLifecycle: "active" as const,
+    id: ENV,
+    isGitRepo: true,
+    isWorktree: true,
+    lifecycle: { phase: "active" as const, retireAt: null, teardown: null },
+    managed: true,
+    mergeBaseBranch: null,
+    name: null,
+    path: "/work/repo",
+    projectId: "proj_1",
+    status: "ready" as const,
+    updatedAt: 1,
+    workspaceProvisionType: "managed-worktree" as const,
+    ...overrides,
+  };
+}
+
+const PATCH = ["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -1,2 +1,2 @@", " const a = 1;", "-const b = 2;", "+const b = 3;", ""].join("\n");
+
+interface Setup {
+  threads?: Record<string, { environmentId: string | null; providerId?: string }>;
+  turnStarts?: number[];
+  sendFails?: boolean;
+  spawnFails?: boolean;
+  diffityignore?: string;
+  /** More files the host can read, by absolute path; `/work/repo/.git` is a directory unless listed. */
+  files?: Record<string, string>;
+  /** Awaited before answering `threads.get` for that thread, or `threads.spawn`: a test holds bb mid-call. */
+  holdThreadGet?: (threadId: string) => Promise<void>;
+  holdSpawn?: () => Promise<void>;
+  /** Awaited before answering `providers.list` (a run's start looks up the provider's modes). */
+  holdProviders?: () => Promise<void>;
+  /** Awaited before answering `environments.get` and `threads.events.list`. */
+  holdEnvironmentGet?: () => Promise<void>;
+  holdEvents?: (threadId: string) => Promise<void>;
+  /** Runs once bb has made a spawned thread but before `spawn` answers: the child acting early. */
+  duringSpawn?: (threadId: string) => Promise<void>;
+  /** More fields in bb's status answer, as a later bb may add (a time stamp, say). */
+  statusExtra?: () => Record<string, unknown>;
+  /** The host entry's revert refuses with this message. */
+  hostRevertRefuses?: string;
+  /** The GitHub CLI, for the pull request view. */
+  gh?: (args: readonly string[], stdin?: string, signal?: AbortSignal) => Promise<string>;
+  /** What bb's GitHub PR Status says the workspace's branch has. */
+  branchPull?: { url: string; title: string };
+  /** Awaited before the Git plugin answers a `patches` call, with the call's signal. */
+  holdPatches?: (signal: AbortSignal | undefined) => Promise<void>;
+  /** Called before a write lands: a string is what someone else wrote meanwhile (bb answers a conflict). */
+  beforeWrite?: (path: string) => string | undefined;
+  /** Files as committed at HEAD, by absolute path, for `files.read` with `ref`. */
+  headFiles?: Record<string, string>;
+  /** Views (`uncommitted`, `branch_committed`, …) whose diff has no files. */
+  emptyTargets?: string[];
+  /** The permission modes each provider supports, as `providers.list` reports them; every mode when unlisted. */
+  providerModes?: Record<string, ("auto" | "accept-edits" | "full")[]>;
+}
+
+async function setup(options: Setup = {}) {
+  const threads = options.threads ?? { [THREAD]: { environmentId: ENV } };
+  const turnStarts = options.turnStarts ?? [];
+  const reads: string[] = [];
+  // What the workspace holds; a test edits it to play a run that changes files.
+  const workspace = { extraFile: false, head: "abc", bigVersion: 1 };
+  // What bb would hold for spawned threads: their origin plugin and metadata.
+  const spawnedMetadata: Record<string, Record<string, unknown>> = {};
+  let spawned = 0;
+  // The workspace's files the host can read and write, by absolute path.
+  const files: Record<string, string> = { ...options.files };
+  const writes: string[] = [];
+  const hostCalls: { method: string; input: unknown; hostId: string }[] = [];
+  const bbEvents: { event: string; callback: (event: unknown) => void }[] = [];
+  // What the host says is staged; a test changes it to play `git add`.
+  const index = { key: "index-1" };
+  // bb's Git plugin: on unless a test turns it off; Viewed marks by path; every call it got, and
+  // whether bb's plugin list was asked about it. `prStatusSignals`: what each PR status read was given.
+  const git = {
+    enabled: true,
+    viewed: {} as Record<string, string>,
+    calls: [] as { method: string; input: unknown; signal?: AbortSignal }[],
+    listed: 0,
+    prStatusSignals: [] as (AbortSignal | undefined)[],
+  };
+  const revisionOf = (path: string) => (path === "big.txt" ? `rev-big-${workspace.bigVersion}` : `rev-${path}`);
+  const gitAnswer = (method: string, input: Record<string, unknown>): unknown => {
+    switch (method) {
+      case "workspaceStatus":
+        return {
+          outcome: "available" as const,
+          workspace: {
+            branch: { currentBranch: "feature", defaultBranch: "main" },
+            checkout: { kind: "branch" as const, branchName: "feature", headSha: workspace.head, ...options.statusExtra?.() },
+            mergeBase: {
+              aheadCount: 1,
+              baseRef: "origin/main",
+              behindCount: 0,
+              commits: [{ authorName: "a", authoredAt: 1, sha: "abcdef1234567", shortSha: "abcdef1", subject: "Add a" }],
+              deletions: 1,
+              files: [],
+              hasCommittedUnmergedChanges: true,
+              insertions: 1,
+              lineStatsComplete: true,
+              mergeBaseBranch: "main",
+            },
+            workingTree: { deletions: 1, files: [], hasUncommittedChanges: true, insertions: 1, lineStatsComplete: true, state: "dirty_uncommitted" as const },
+          },
+        };
+      case "files": {
+        const target = (input.target as { type: string }).type;
+        const empty = (options.emptyTargets ?? []).includes(target);
+        const entry = (path: string, changeKind: string, additions: number, deletions: number, loadMode: string, origin: string) => ({
+          path, previousPath: null, changeKind, additions, deletions, binary: false, loadMode, origin, revision: revisionOf(path),
+        });
+        return {
+          outcome: "available" as const,
+          files: empty ? [] : [
+            entry("src/a.ts", "modified", 1, 1, "auto", "tracked"),
+            entry("package-lock.json", "modified", 9, 9, "auto", "tracked"),
+            entry("big.txt", "added", 9000, 0, "on_demand", "untracked"),
+            ...(workspace.extraFile ? [entry("src/new.ts", "added", 3, 0, "auto", "untracked")] : []),
+          ],
+          initialPatches: empty ? [] : [{ path: "src/a.ts", patch: PATCH, truncated: false }],
+          mergeBaseRef: null,
+          shortstat: "",
+          truncated: false,
+        };
+      }
+      case "patches":
+        return Object.fromEntries(
+          (input.keys as string[]).map((key) => {
+            const [, , , path, revision] = JSON.parse(key) as [string, unknown, boolean, string, string];
+            // A revision that is no longer the file's is still answered, as bb's Git plugin does.
+            return [key, { outcome: "available" as const, patch: { path, patch: `patch of ${path}, version ${workspace.bigVersion} at ${revision}`, truncated: false } }];
+          }),
+        );
+      case "viewed":
+        return { files: ((input.paths as string[] | undefined) ?? []).filter((path) => git.viewed[path] !== undefined).map((path) => ({ path, revision: git.viewed[path]! })) };
+      case "markViewed":
+        git.viewed[input.path as string] = input.revision as string;
+        return { ok: true as const };
+      case "clearViewed":
+        delete git.viewed[input.path as string];
+        return { ok: true as const };
+      default:
+        throw new Error(`the fake Git plugin has no ${method}`);
+    }
+  };
+  const { bb, harness } = createFakePluginHost({
+    pluginId: "diff-review",
+    // The plugin's host entry: git on the workspace's machine, for staged, unstaged and ranges.
+    experimental_callHostRpc: (call) => {
+      hostCalls.push(call);
+      if (call.method === "indexState") return { key: index.key };
+      if (call.method === "rangeCommits") return { baseSha: "fork1234", headSha: "head5678" };
+      if (call.method === "revert") {
+        if (options.hostRevertRefuses !== undefined) throw new Error(options.hostRevertRefuses);
+        return { ok: true };
+      }
+      if (call.method === "fetchPull") return { headSha: "h".repeat(40).replace(/h/g, "a"), baseSha: "b".repeat(40) };
+      if (call.method !== "diff") throw new Error(`no host method ${call.method}`);
+      const { spec } = call.input as { spec: { kind: string } };
+      if (spec.kind === "range" && (spec as { from: string }).from === "nope") throw new Error("Unknown revision 'nope'.");
+      return {
+        files: [{ path: "src/a.ts", previousPath: null, changeKind: "modified", additions: 1, deletions: 1, binary: false, untracked: false, patch: PATCH, tooLarge: false }],
+        truncated: false,
+        baseSha: spec.kind === "range" ? "base1234" : null,
+        headSha: spec.kind === "range" ? "head5678" : null,
+      };
+    },
+    // The skill bb imports from `skills/diff-review`, which `configure` names.
+    agentSkillIds: ["diff-review"],
+    sdk: {
+      // bb's own realtime events, which a test emits through `bbEvents`.
+      subscribe: ((args: { event: string; callback: (event: unknown) => void }) => {
+        bbEvents.push(args);
+        return () => {
+          bbEvents.splice(bbEvents.indexOf(args), 1);
+        };
+      }) as never,
+      threads: {
+        get: async ({ threadId }: { threadId: string }) => {
+          await options.holdThreadGet?.(threadId);
+          const row = threads[threadId];
+          if (row === undefined) throw new Error(`thread ${threadId} not found`);
+          return makeThreadResponse({
+            id: threadId,
+            environmentId: row.environmentId,
+            providerId: row.providerId ?? "claude-code",
+            originPluginId: spawnedMetadata[threadId] === undefined ? null : "diff-review",
+          });
+        },
+        getPluginMetadata: async ({ threadId }: { threadId: string }) => spawnedMetadata[threadId] ?? {},
+        send: async () => {
+          if (options.sendFails === true) throw new Error("thread is archived");
+          return { ok: true as const, delivery: "sent" as const };
+        },
+        spawn: async (input: { pluginMetadata?: Record<string, unknown> }) => {
+          await options.holdSpawn?.();
+          if (options.spawnFails === true) throw new Error("provider not installed");
+          const id = `thr_run_${++spawned}`;
+          threads[id] = { environmentId: ENV };
+          spawnedMetadata[id] = input.pluginMetadata ?? {};
+          await options.duringSpawn?.(id);
+          return makeThreadResponse({ id, environmentId: ENV, providerId: "claude-code", originPluginId: "diff-review" });
+        },
+        archive: async () => ({ ok: true as const }),
+        events: {
+          list: async ({ threadId }: { threadId: string }) => {
+            await options.holdEvents?.(threadId);
+            return turnStarts.map((createdAt, index) => ({
+              id: `ev_${index}`,
+              scope: "thread",
+              threadId: THREAD,
+              seq: index,
+              createdAt,
+              type: "turn/started",
+              data: { providerThreadId: "p" },
+            }));
+          },
+        },
+      },
+      environments: {
+        get: async () => {
+          await options.holdEnvironmentGet?.();
+          return environment();
+        },
+      },
+      plugins: {
+        list: async () => {
+          git.listed += 1;
+          return { plugins: [{ id: "bb--git", enabled: git.enabled }] } as never;
+        },
+        // bb's Git plugin, as `bb.sdk.plugins.callRpc` reaches it; `git.calls` records each call.
+        callRpc: async ({ pluginId, method, input, outputSchema, signal }: { pluginId: string; method: string; input?: unknown; outputSchema: { parse: (value: unknown) => unknown }; signal?: AbortSignal }) => {
+          if (pluginId === "bb--github-pr-status") git.prStatusSignals.push(signal);
+          if (pluginId === "bb--github-pr-status" && options.branchPull !== undefined) {
+            return outputSchema.parse({ [(input as { keys: string[] }).keys[0]!]: { outcome: "available", pullRequest: options.branchPull } }) as never;
+          }
+          if (pluginId !== "bb--git") throw new Error(`no plugin ${pluginId}`);
+          git.calls.push({ method, input, ...(signal === undefined ? {} : { signal }) });
+          if (method === "patches") await options.holdPatches?.(signal);
+          if (!git.enabled) throw new Error("Plugin RPC failed");
+          return outputSchema.parse(gitAnswer(method, input as Record<string, unknown>)) as never;
+        },
+      },
+      providers: {
+        list: async () =>
+          (await options.holdProviders?.(),
+          Object.entries(options.providerModes ?? {})).map(([id, permissionModes]) => ({ id, capabilities: { permissionModes } }) as unknown as ProviderInfo),
+        models: async () => ({
+          modelLoadError: null,
+          models: [
+            { id: "small", model: "small", displayName: "Small", description: "", isDefault: false, defaultReasoningEffort: "low" as const, supportedReasoningEfforts: [] },
+            { id: "big", model: "big", displayName: "Big", description: "", isDefault: true, defaultReasoningEffort: "high" as const, supportedReasoningEfforts: [] },
+          ],
+          permissionCeiling: "full" as const,
+          providers: [],
+        }),
+      },
+      files: {
+        write: async ({ path, content, expectedSha256 }: { path: string; content: string; expectedSha256?: string | null }) => {
+          const current = files[path];
+          // bb answers a write whose file changed since it was read with a conflict, not an error.
+          if (expectedSha256 !== undefined && expectedSha256 !== null && (current === undefined || sha(current) !== expectedSha256)) return { outcome: "conflict", currentSha256: current === undefined ? null : sha(current) } as never;
+          if (options.beforeWrite !== undefined) {
+            const raced = options.beforeWrite(path);
+            if (raced !== undefined) {
+              files[path] = raced;
+              return { outcome: "conflict", currentSha256: sha(raced) } as never;
+            }
+          }
+          files[path] = content;
+          writes.push(path);
+          return { outcome: "written", sha256: sha(content) } as never;
+        },
+        listPaths: async ({ path, query }: { path: string; query?: string }) => ({
+          paths: Object.keys(files)
+            .filter((file) => file.startsWith(`${path}/`) && (query === undefined || file.includes(query)))
+            .map((file) => ({ kind: "file", name: file.split("/").at(-1)!, path: file, positions: [], score: 1 })),
+          truncated: false,
+        }) as never,
+        remove: async ({ path }: { path: string }) => {
+          delete files[path];
+          writes.push(`rm ${path}`);
+          return { ok: true } as never;
+        },
+        read: async ({ path, ref }: { path: string; ref?: string }) => {
+          if (ref !== undefined) {
+            const committed = options.headFiles?.[path];
+            if (committed === undefined) throw new Error("ENOENT");
+            return { content: committed, contentEncoding: "utf8", sha256: sha(committed) };
+          }
+          reads.push(path);
+          if (path === "/work/repo/.diffityignore" && options.diffityignore !== undefined) {
+            return { content: options.diffityignore, contentEncoding: "utf8", sha256: "x" };
+          }
+          const content = files[path];
+          if (content !== undefined) return { content, contentEncoding: "utf8", sha256: sha(content) };
+          if (path === "/work/repo/.git") throw new Error("EISDIR: illegal operation on a directory, read");
+          throw new Error("ENOENT");
+        },
+      },
+    },
+  });
+  await (options.gh === undefined ? plugin(bb) : diffReviewPlugin({ gh: options.gh })(bb));
+  const rpc = harness.behavior.callRpc.bind(harness.behavior) as (method: string, input?: unknown) => Promise<unknown>;
+  const view = async (target: unknown = { kind: "uncommitted" }) => (await rpc("getReview", { threadId: THREAD, target })) as Extract<ReviewView, { ok: true }>;
+  const comment = async (sessionId: string, body = "Why 3?") =>
+    ((await rpc("createThread", {
+      sessionId,
+      threadId: THREAD,
+      filePath: "src/a.ts",
+      side: "new",
+      startLine: 2,
+      endLine: 2,
+      severity: "question",
+      anchorContent: "const b = 3;",
+      body,
+    })) as { thread: ReviewThread }).thread;
+  const emitEnvironmentChanged = (changes: string[] = ["work-status-changed"]) => {
+    for (const listener of bbEvents.filter((entry) => entry.event === "environment:changed")) listener.callback({ type: "changed", entity: "environment", id: ENV, changes });
+  };
+  return { bb, harness, rpc, view, comment, threads, turnStarts, workspace, reads, git, files, writes, hostCalls, emitEnvironmentChanged, index };
+}
+
+describe("the Review tab's view", () => {
+  it("loads the thread's diff, leaving out ignored files and keeping on-demand ones unloaded", async () => {
+    const { view } = await setup({ diffityignore: "# generated\npackage-lock.json\n" });
+    const result = await view();
+    expect(result.ok).toBe(true);
+    expect(result.target).toEqual({ kind: "uncommitted" });
+    expect(result.files.map((file) => [file.path, file.patch !== null])).toEqual([
+      ["src/a.ts", true],
+      ["big.txt", false],
+    ]);
+    expect(result.files[1]!.untracked).toBe(true);
+    expect(result.ignoredPaths).toEqual(["package-lock.json"]);
+    expect(result.defaultBase).toBe("main");
+    expect(result.commits.map((commit) => commit.shortSha)).toEqual(["abcdef1"]);
+  });
+
+  it("applies the ignore setting, and skips the ignore files when told to", async () => {
+    const { harness, view } = await setup({ diffityignore: "src/\n" });
+    await harness.behavior.setSettings({ ignorePatterns: "*.json", readIgnoreFiles: false });
+    const result = await view();
+    expect(result.files.map((file) => file.path)).toEqual(["src/a.ts", "big.txt"]);
+  });
+
+  it("reads the repository's info/diffityignore from .git in a plain checkout", async () => {
+    const { view } = await setup({ files: { "/work/repo/.git/info/diffityignore": "src/\n" } });
+    expect((await view()).ignoredPaths).toEqual(["src/a.ts"]);
+  });
+
+  it("reads info/diffityignore from the common git dir in a linked worktree, whose .git is a file", async () => {
+    const { view, reads } = await setup({
+      files: {
+        "/work/repo/.git": "gitdir: /main/.git/worktrees/repo\n",
+        "/main/.git/worktrees/repo/commondir": "../..\n",
+        "/main/.git/info/diffityignore": "src/\n",
+      },
+    });
+    expect((await view()).ignoredPaths).toEqual(["src/a.ts"]);
+    expect(reads.some((path) => path.startsWith("/work/repo/.git/"))).toBe(false);
+  });
+
+  it("follows a relative gitdir, and treats a missing ignore file in a worktree as no ignores", async () => {
+    const relative = await setup({ files: { "/work/repo/.git": "gitdir: ../main/.git/worktrees/repo", "/work/main/.git/worktrees/repo/commondir": "../..", "/work/main/.git/info/diffityignore": "src/" } });
+    expect((await relative.view()).ignoredPaths).toEqual(["src/a.ts"]);
+    const missing = await setup({ files: { "/work/repo/.git": "gitdir: /main/.git/worktrees/repo\n", "/main/.git/worktrees/repo/commondir": "../..\n" } });
+    const result = await missing.view();
+    expect(result.ok).toBe(true);
+    expect(result.ignoredPaths).toEqual([]);
+  });
+
+  it("fills in the base branch, and keeps one session per view", async () => {
+    const { view } = await setup();
+    const branch = await view({ kind: "branch" });
+    expect(branch.target).toEqual({ kind: "branch", base: "main" });
+    const again = await view({ kind: "branch", base: "main" });
+    const uncommitted = await view();
+    expect(again.sessionId).toBe(branch.sessionId);
+    expect(uncommitted.sessionId).not.toBe(branch.sessionId);
+  });
+
+  it("opens on the branch's commits when there is nothing uncommitted, only when asked to pick", async () => {
+    const { rpc } = await setup({ emptyTargets: ["uncommitted"] });
+    const picked = (await rpc("getReview", { threadId: THREAD, target: { kind: "uncommitted" }, autoTarget: true })) as Extract<ReviewView, { ok: true }>;
+    expect(picked.target).toEqual({ kind: "branch", base: "main" });
+    expect(picked.files.map((file) => file.path)).toContain("src/a.ts");
+    const chosen = (await rpc("getReview", { threadId: THREAD, target: { kind: "uncommitted" } })) as Extract<ReviewView, { ok: true }>;
+    expect(chosen.target).toEqual({ kind: "uncommitted" });
+    expect(chosen.files).toEqual([]);
+  });
+
+  it("keeps the uncommitted view when the branch has nothing either, or when there are uncommitted changes", async () => {
+    const empty = await setup({ emptyTargets: ["uncommitted", "branch_committed"] });
+    expect(((await empty.rpc("getReview", { threadId: THREAD, target: { kind: "uncommitted" }, autoTarget: true })) as ReviewView & { target: unknown }).target).toEqual({ kind: "uncommitted" });
+    const dirty = await setup();
+    expect(((await dirty.rpc("getReview", { threadId: THREAD, target: { kind: "uncommitted" }, autoTarget: true })) as ReviewView & { target: unknown }).target).toEqual({ kind: "uncommitted" });
+  });
+
+  it("says why there is nothing to review", async () => {
+    const { rpc } = await setup({ threads: { [THREAD]: { environmentId: null } } });
+    expect(await rpc("getReview", { threadId: THREAD, target: { kind: "uncommitted" } })).toEqual({
+      ok: false,
+      message: "This thread has no workspace yet, so there is no diff to review.",
+    });
+  });
+
+  it("loads on-demand patches at the revision the file list gave", async () => {
+    const { rpc, view, git } = await setup();
+    const big = (await view()).files.find((file) => file.path === "big.txt")!;
+    expect(big.revision).toBe("rev-big-1");
+    expect(await rpc("loadPatches", { threadId: THREAD, target: { kind: "uncommitted" }, files: [{ path: "big.txt", revision: big.revision }] })).toEqual({
+      patches: [{ path: "big.txt", patch: "patch of big.txt, version 1 at rev-big-1", truncated: false }],
+    });
+    const call = git.calls.filter((entry) => entry.method === "patches").at(-1)!;
+    expect(call.input).toEqual({ keys: [JSON.stringify([ENV, { type: "uncommitted" }, false, "big.txt", "rev-big-1"])] });
+  });
+
+  it("sends the patches of files with a line thread with the view, so where each thread is drawn is known from the start", async () => {
+    const { rpc, view, git } = await setup();
+    const { sessionId } = await view();
+    await rpc("createThread", { sessionId, filePath: "big.txt", side: "new", startLine: 5, endLine: 5, severity: null, anchorContent: "x", body: "On a line" });
+    await rpc("createThread", { sessionId, filePath: "package-lock.json", side: null, startLine: 0, endLine: 0, severity: null, anchorContent: null, body: "On the file" });
+    git.calls.length = 0;
+    const files = (await view()).files;
+    expect(files.find((file) => file.path === "big.txt")!.patch).toBe("patch of big.txt, version 1 at rev-big-1");
+    // A whole-file thread is drawn under its file's header whatever its patch, which still loads on demand.
+    expect(files.find((file) => file.path === "package-lock.json")!.patch).toBeNull();
+    expect(git.calls.filter((entry) => entry.method === "patches").map((entry) => entry.input)).toEqual([{ keys: [JSON.stringify([ENV, { type: "uncommitted" }, false, "big.txt", "rev-big-1"])] }]);
+  });
+
+  it("reads every diff through bb's Git plugin, hiding whitespace when asked", async () => {
+    const { rpc, git } = await setup();
+    await rpc("getReview", { threadId: THREAD, target: { kind: "branch" }, ignoreWhitespace: true });
+    expect(git.calls.find((entry) => entry.method === "files" && (entry.input as { ignoreWhitespace: boolean }).ignoreWhitespace)?.input).toEqual({
+      environmentId: ENV,
+      target: { type: "branch_committed", mergeBaseBranch: "main" },
+      ignoreWhitespace: true,
+    });
+    await rpc("loadPatches", { threadId: THREAD, target: { kind: "commit", sha: "abcdef1" }, files: [{ path: "big.txt", revision: "r" }], ignoreWhitespace: true });
+    expect(git.calls.at(-1)!.input).toEqual({ keys: [JSON.stringify([ENV, { type: "commit", sha: "abcdef1" }, true, "big.txt", "r"])] });
+  });
+
+  it("says so when bb's Git plugin is turned off", async () => {
+    const { view, git } = await setup();
+    git.enabled = false;
+    const result = (await view()) as unknown as { ok: false; message: string };
+    expect(result).toEqual({ ok: false, message: expect.stringContaining("bb's Git plugin is turned off") });
+  });
+
+  it("marks and clears Viewed through bb's Git plugin, at the revision the tab showed", async () => {
+    const { rpc, view, git } = await setup();
+    await rpc("setViewed", { threadId: THREAD, target: { kind: "uncommitted" }, path: "src/a.ts", revision: "rev-src/a.ts", viewed: true });
+    expect(git.calls.at(-1)).toEqual({ method: "markViewed", input: { environmentId: ENV, target: { type: "uncommitted" }, path: "src/a.ts", revision: "rev-src/a.ts" } });
+    expect((await view()).files[0]!.viewed).toBe("yes");
+    await rpc("setViewed", { threadId: THREAD, target: { kind: "uncommitted" }, path: "src/a.ts", revision: "rev-src/a.ts", viewed: false });
+    expect((await view()).files[0]!.viewed).toBe("no");
+  });
+
+  it("keeps the revision of the file a comment was made on", async () => {
+    const { rpc, view } = await setup();
+    const { sessionId } = await view();
+    const made = (await rpc("createThread", {
+      sessionId,
+      filePath: "src/a.ts",
+      side: null,
+      startLine: 0,
+      endLine: 0,
+      severity: null,
+      anchorContent: null,
+      body: "About this file",
+      fileRevision: "rev-src/a.ts",
+    })) as { thread: ReviewThread };
+    expect(made.thread.fileRevision).toBe("rev-src/a.ts");
+    expect((await view()).threads[0]!.fileRevision).toBe("rev-src/a.ts");
+  });
+
+  it("shows bb's Viewed marks, and which files changed since they were viewed", async () => {
+    const { view, git } = await setup();
+    git.viewed["src/a.ts"] = "rev-src/a.ts";
+    git.viewed["big.txt"] = "rev-big-0";
+    expect((await view()).files.map((file) => [file.path, file.viewed])).toEqual([
+      ["src/a.ts", "yes"],
+      ["package-lock.json", "no"],
+      ["big.txt", "changed"],
+    ]);
+  });
+});
+
+describe("changing the workspace from the tab", () => {
+  const suggestion = (code: string) => `Use three:\n\`\`\`suggestion\n${code}\n\`\`\``;
+
+  it("applies a comment's suggestion to the lines as the view shows them, and resolves the thread", async () => {
+    const { rpc, view, files, harness } = await setup({ files: { "/work/repo/src/a.ts": "const a = 1;\nconst b = 3;\n" } });
+    const { sessionId } = await view();
+    const made = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: suggestion("const b = 4;") })) as { thread: ReviewThread }).thread;
+    const applied = (await rpc("applySuggestion", { threadId: THREAD, reviewThreadId: made.id, commentId: made.comments[0]!.id, startLine: 2, endLine: 2, expected: "const b = 3;", code: "const b = 4;\n" })) as { thread: ReviewThread };
+    expect(files["/work/repo/src/a.ts"]).toBe("const a = 1;\nconst b = 4;\n");
+    expect(applied.thread.status).toBe("resolved");
+    expect(harness.inspection.realtimeSignals.some((signal) => (signal.payload as { kind: string }).kind === "diff")).toBe(true);
+  });
+
+  it("refuses a suggestion the comment does not make, or lines that changed", async () => {
+    const { rpc, view, files } = await setup({ files: { "/work/repo/src/a.ts": "const a = 1;\nconst b = 9;\n" } });
+    const { sessionId } = await view();
+    const made = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: suggestion("const b = 4;") })) as { thread: ReviewThread }).thread;
+    const ask = (code: string) => rpc("applySuggestion", { threadId: THREAD, reviewThreadId: made.id, commentId: made.comments[0]!.id, startLine: 2, endLine: 2, expected: "const b = 3;", code });
+    await expect(ask("rm -rf")).rejects.toMatchObject({ code: "invalid" });
+    await expect(ask("const b = 4;\n")).rejects.toMatchObject({ code: "conflict", message: expect.stringContaining("changed since") });
+    expect(files["/work/repo/src/a.ts"]).toBe("const a = 1;\nconst b = 9;\n");
+  });
+
+  it("refuses, and leaves the thread open, when the file was written between its read and the write", async () => {
+    const { rpc, view, files } = await setup({
+      files: { "/work/repo/src/a.ts": "const a = 1;\nconst b = 3;\n" },
+      beforeWrite: () => "the agent's edit\n",
+    });
+    const { sessionId } = await view();
+    const made = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: suggestion("const b = 4;") })) as { thread: ReviewThread }).thread;
+    await expect(
+      rpc("applySuggestion", { threadId: THREAD, reviewThreadId: made.id, commentId: made.comments[0]!.id, startLine: 2, endLine: 2, expected: "const b = 3;", code: "const b = 4;\n" }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    expect(files["/work/repo/src/a.ts"]).toBe("the agent's edit\n");
+    expect((await view()).threads[0]!.status).toBe("open");
+  });
+
+  it("reverts on the workspace's machine, sending the reviewed revision and patch, never writing through bb's files", async () => {
+    const { rpc, hostCalls, writes } = await setup();
+    await expect(rpc("revertChanges", { threadId: THREAD, path: "src/a.ts", revision: "stale", hunks: [0] })).rejects.toMatchObject({ code: "conflict" });
+    await rpc("revertChanges", { threadId: THREAD, path: "src/a.ts", revision: "rev-src/a.ts", hunks: [0] });
+    expect(hostCalls.at(-1)).toEqual({ method: "revert", hostId: "host_1", input: { root: "/work/repo", path: "src/a.ts", revision: "rev-src/a.ts", hunks: [0], patch: PATCH } });
+    await rpc("revertChanges", { threadId: THREAD, path: "big.txt", revision: "rev-big-1", hunks: null });
+    expect(hostCalls.at(-1)).toMatchObject({ method: "revert", input: { path: "big.txt", hunks: null, patch: null } });
+    expect(writes).toEqual([]);
+  });
+
+  it("passes the host's refusal on as a conflict", async () => {
+    const { rpc } = await setup({ hostRevertRefuses: "src/a.ts changed since the diff was loaded; reload and try again." });
+    await expect(rpc("revertChanges", { threadId: THREAD, path: "src/a.ts", revision: "rev-src/a.ts", hunks: null })).rejects.toMatchObject({
+      code: "conflict",
+      message: expect.stringContaining("changed since the diff was loaded"),
+    });
+  });
+});
+
+describe("the staged, unstaged and range views", () => {
+  it("reads them with git on the workspace's host, every patch with the list, without Viewed marks", async () => {
+    const { view, hostCalls, rpc, git } = await setup();
+    const staged = await view({ kind: "staged" });
+    expect(hostCalls.at(-1)).toMatchObject({ method: "diff", hostId: "host_1", input: { root: "/work/repo", spec: { kind: "staged" }, ignoreWhitespace: false } });
+    expect(staged).toMatchObject({ ok: true, target: { kind: "staged" }, viewable: false, headRef: null });
+    expect(staged.files.map((file) => [file.path, file.patch !== null, file.viewed, file.revision.startsWith("h:")])).toEqual([["src/a.ts", true, "no", true]]);
+    expect(git.calls.some((call) => call.method === "viewed")).toBe(false);
+    await expect(rpc("setViewed", { threadId: THREAD, target: { kind: "staged" }, path: "src/a.ts", revision: "x", viewed: true })).rejects.toMatchObject({ code: "invalid" });
+
+    const range = await view({ kind: "range", from: "main", to: "feature", symmetric: true });
+    expect(range).toMatchObject({ target: { kind: "range", from: "main", to: "feature", symmetric: true }, mergeBaseRef: "base1234", headRef: "head5678" });
+    // Each view is its own review.
+    expect(new Set([staged.sessionId, range.sessionId, (await view({ kind: "unstaged" })).sessionId]).size).toBe(3);
+  });
+
+  it("says why when git on the host refuses", async () => {
+    const { view } = await setup();
+    expect(await view({ kind: "range", from: "nope", to: "HEAD", symmetric: false })).toEqual({ ok: false, message: expect.stringContaining("Unknown revision 'nope'") });
+  });
+
+  it("refuses an option-like revision before it reaches git", async () => {
+    const { rpc } = await setup();
+    await expect(rpc("getReview", { threadId: THREAD, target: { kind: "range", from: "--output=x", to: "HEAD", symmetric: false } })).rejects.toThrow();
+  });
+
+  it("opens a range's review from the command line", async () => {
+    const { harness } = await setup();
+    const out = await harness.behavior.runCli(["open", "--range", "main...feature"], { threadId: THREAD });
+    expect(out.stdout).toContain("the range main...feature");
+  });
+});
+
+describe("the Files view", () => {
+  it("searches the workspace's files and reads one, with its hash as its revision", async () => {
+    const { rpc } = await setup({ files: { "/work/repo/src/util.ts": "export const x = 1;\n", "/work/repo/bin.dat": "a\u0000b" } });
+    expect(await rpc("searchFiles", { threadId: THREAD, query: "util" })).toEqual({ paths: ["src/util.ts"], truncated: false });
+    expect(await rpc("readFile", { threadId: THREAD, path: "src/util.ts" })).toEqual({ path: "src/util.ts", content: "export const x = 1;\n", reason: null, revision: sha("export const x = 1;\n") });
+    expect(await rpc("readFile", { threadId: THREAD, path: "bin.dat" })).toMatchObject({ content: null, reason: "Binary file; nothing to comment on." });
+    await expect(rpc("readFile", { threadId: THREAD, path: "../etc/passwd" })).rejects.toMatchObject({ code: "invalid" });
+  });
+
+  it("keeps the Files view's comments in a review of their own, with no diff", async () => {
+    const { view } = await setup();
+    const files = await view({ kind: "files" });
+    expect(files).toMatchObject({ ok: true, target: { kind: "files" }, files: [], viewable: false });
+    expect(files.sessionId).not.toBe((await view()).sessionId);
+  });
+});
+
+describe("reviewing a GitHub pull request", () => {
+  const HEAD = "a".repeat(40);
+  const PULL = { kind: "pr", owner: "o", repo: "r", number: 7 } as const;
+
+  /** A fake `gh api graphql --input -`: answers by the query, records every request. */
+  function fakeGitHub() {
+    const requests: { query: string; variables: Record<string, unknown> }[] = [];
+    const remote = {
+      head: HEAD,
+      /** Runs as GitHub adds each review thread of a submission (a push, a reply landing meanwhile). */
+      onAddThread: async () => undefined as void,
+      /** The account's Viewed mark on each file, by path. */
+      viewed: { "src/a.ts": "VIEWED" } as Record<string, string>,
+      /** Runs as GitHub reads the Viewed marks, with the request's signal. */
+      onReadViewed: async (_signal?: AbortSignal) => undefined as void,
+      /** GitHub's error for the Viewed read, or the mark and unmark, when set. */
+      viewedFails: null as string | null,
+      markFails: null as string | null,
+      /** GitHub's error for resolving or reopening a thread, when set. */
+      resolveFails: null as string | null,
+      /** Runs as each request reaches GitHub, before it is handled (a slow request). */
+      onRequest: async (_query: string) => undefined as void,
+      /** Runs once GitHub has added a reply, before it answers (a read landing meanwhile sees it). */
+      onReply: async () => undefined as void,
+      /** Runs once GitHub has taken a review's submit, before it answers (a read landing meanwhile sees it). */
+      onSubmitted: async () => undefined as void,
+      threads: [
+        {
+          id: "PRRT_1", isResolved: false, isOutdated: false, path: "src/a.ts", line: 2, startLine: null, originalLine: 2, originalStartLine: null, diffSide: "RIGHT",
+          comments: { nodes: [{ id: "PRRC_1", body: "Why 3?", createdAt: "2026-10-01T00:00:00Z", author: { login: "octo" } }] },
+        },
+      ] as Record<string, unknown>[],
+    };
+    const gh = async (args: readonly string[], stdin?: string, signal?: AbortSignal) => {
+      expect(args).toEqual(["api", "graphql", "--input", "-"]);
+      const request = JSON.parse(stdin!) as { query: string; variables: Record<string, unknown> };
+      requests.push(request);
+      await remote.onRequest(request.query);
+      const data = (value: unknown) => JSON.stringify({ data: value });
+      if (["viewerViewedState", "FileAsViewed", "addPullRequestReviewThreadReply", "resolveReviewThread"].some((name) => request.query.includes(name))) {
+        // Checked against GitHub's own schema, as GitHub would check them.
+        expect(checkGithubRequest(request.query, request.variables)).toEqual([]);
+      }
+      if (request.query.includes("viewerViewedState")) {
+        await remote.onReadViewed(signal);
+        if (remote.viewedFails !== null) return JSON.stringify({ errors: [{ message: remote.viewedFails }] });
+        // Two pages, as GitHub pages them by 100.
+        const paths = Object.keys(remote.viewed);
+        const first = request.variables.after === undefined;
+        const page = first ? paths.slice(0, 1) : paths.slice(1);
+        return data({
+          repository: {
+            pullRequest: {
+              files: { pageInfo: { hasNextPage: first && paths.length > 1, endCursor: first ? "cursor-1" : null }, nodes: page.map((path) => ({ path, viewerViewedState: remote.viewed[path] })) },
+            },
+          },
+        });
+      }
+      if (request.query.includes("FileAsViewed")) {
+        const input = request.variables.input as { pullRequestId: string; path: string };
+        if (remote.markFails !== null) return JSON.stringify({ errors: [{ message: remote.markFails }] });
+        remote.viewed[input.path] = request.query.includes("unmarkFileAsViewed") ? "UNVIEWED" : "VIEWED";
+        return data({ [request.query.includes("unmarkFileAsViewed") ? "unmarkFileAsViewed" : "markFileAsViewed"]: { clientMutationId: null } });
+      }
+      if (request.query.includes("reviewThreads")) return data({ repository: { pullRequest: { reviewThreads: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: remote.threads } } } });
+      if (request.query.startsWith("query")) {
+        return data({ repository: { pullRequest: { id: "PR_1", number: 7, title: "Add b", url: "https://github.com/o/r/pull/7", state: "OPEN", baseRefName: "main", headRefName: "feature", headRefOid: remote.head, baseRefOid: "b".repeat(40) } } });
+      }
+      if (request.query.includes("addPullRequestReview(")) return data({ addPullRequestReview: { pullRequestReview: { id: "PRR_1", url: "https://github.com/o/r/pull/7#review-1" } } });
+      if (request.query.includes("submitPullRequestReview")) {
+        await remote.onSubmitted();
+        return data({ submitPullRequestReview: { pullRequestReview: { id: "PRR_1", url: "https://github.com/o/r/pull/7#review-1" } } });
+      }
+      if (request.query.includes("addPullRequestReviewThread(")) {
+        const input = request.variables.input as { path: string; body: string; line: number; side: string };
+        const id = `PRRT_new${remote.threads.length}`;
+        remote.threads.push({
+          id, isResolved: false, isOutdated: false, path: input.path, line: input.line, startLine: null, originalLine: input.line, originalStartLine: null, diffSide: input.side, subjectType: "LINE",
+          comments: { nodes: [{ id: `${id}_c1`, body: input.body, createdAt: "2026-10-03T00:00:00Z", author: { login: "me" } }] },
+        });
+        await remote.onAddThread();
+        return data({ addPullRequestReviewThread: { thread: { id, comments: { nodes: [{ id: `${id}_c1` }] } } } });
+      }
+      if (request.query.includes("resolveReviewThread")) {
+        if (remote.resolveFails !== null) return JSON.stringify({ errors: [{ message: remote.resolveFails }] });
+        const thread = remote.threads.find((entry) => entry.id === request.variables.id)!;
+        thread.isResolved = !request.query.includes("unresolve");
+        return data({ [request.query.includes("unresolve") ? "unresolveReviewThread" : "resolveReviewThread"]: { thread: { id: thread.id, isResolved: thread.isResolved } } });
+      }
+      if (request.query.includes("addPullRequestReviewThreadReply")) {
+        const input = request.variables.input as { pullRequestReviewThreadId: string; body: string };
+        const thread = remote.threads.find((entry) => entry.id === input.pullRequestReviewThreadId)!;
+        const nodes = (thread.comments as { nodes: unknown[] }).nodes;
+        const id = `${input.pullRequestReviewThreadId}_r${nodes.length}`;
+        nodes.push({ id, body: input.body, createdAt: "2026-10-02T00:00:00Z", author: { login: "me" } });
+        await remote.onReply();
+        return data({ addPullRequestReviewThreadReply: { comment: { id, author: { login: "me" } } } });
+      }
+      return data({});
+    };
+    return { gh, requests, remote };
+  }
+
+  /** A gate the fake GitHub waits on: `reached` once it waits, `open()` to let it go on. */
+  function gate() {
+    let open!: () => void;
+    let reached!: () => void;
+    const opened = new Promise<void>((resolve) => (open = resolve));
+    const waiting = new Promise<void>((resolve) => (reached = resolve));
+    return { wait: () => (reached(), opened), reached: waiting, open };
+  }
+
+  it("fetches the pull request on the workspace's machine, diffs it, and mirrors its review threads", async () => {
+    const github = fakeGitHub();
+    const { view, hostCalls } = await setup({ gh: github.gh });
+    const result = await view(PULL);
+    expect(hostCalls.find((call) => call.method === "fetchPull")).toMatchObject({ hostId: "host_1", input: { root: "/work/repo", url: "https://github.com/o/r.git", number: 7, baseRef: "main" } });
+    expect(hostCalls.at(-1)).toMatchObject({ method: "diff", input: { spec: { kind: "range", from: "b".repeat(40), to: HEAD, symmetric: true } } });
+    expect(result.pullRequest).toMatchObject({ number: 7, title: "Add b", headSha: HEAD, syncError: null });
+    expect(result.threads).toMatchObject([
+      { githubThreadId: "PRRT_1", filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, status: "open", anchorContent: "const b = 3;", comments: [{ authorType: "github", authorName: "octo", body: "Why 3?" }] },
+    ]);
+    // Read again, nothing doubles.
+    expect((await view(PULL)).threads).toHaveLength(1);
+  });
+
+  it("shows each file's Viewed mark from GitHub, a dismissed one as changed since viewed", async () => {
+    const github = fakeGitHub();
+    // The diff's file is on the second page of GitHub's list; GitHub dismissed its mark when it changed.
+    github.remote.viewed = { "docs/elsewhere.md": "VIEWED", "src/a.ts": "DISMISSED" };
+    const { view } = await setup({ gh: github.gh });
+    const dismissed = await view(PULL);
+    expect(dismissed).toMatchObject({ viewable: true, pullRequest: { viewedError: null } });
+    expect(dismissed.files.map((file) => [file.path, file.viewed])).toEqual([["src/a.ts", "changed"]]);
+    const reads = github.requests.filter((request) => request.query.includes("viewerViewedState"));
+    expect(reads.map((request) => request.variables)).toEqual([
+      { owner: "o", name: "r", number: 7 },
+      { owner: "o", name: "r", number: 7, after: "cursor-1" },
+    ]);
+
+    // Read again on every load: marked on GitHub meanwhile.
+    github.remote.viewed["src/a.ts"] = "VIEWED";
+    expect((await view(PULL)).files.map((file) => file.viewed)).toEqual(["yes"]);
+    github.remote.viewed["src/a.ts"] = "UNVIEWED";
+    expect((await view(PULL)).files.map((file) => file.viewed)).toEqual(["no"]);
+  });
+
+  it("marks and clears a file's Viewed mark on GitHub, and refuses a file the view does not show", async () => {
+    const github = fakeGitHub();
+    github.remote.viewed = { "src/a.ts": "UNVIEWED" };
+    const { view, rpc } = await setup({ gh: github.gh });
+    const [file] = (await view(PULL)).files;
+    await rpc("setViewed", { threadId: THREAD, target: PULL, path: "src/a.ts", revision: file!.revision, viewed: true });
+    expect(github.remote.viewed["src/a.ts"]).toBe("VIEWED");
+    await rpc("setViewed", { threadId: THREAD, target: PULL, path: "src/a.ts", revision: file!.revision, viewed: false });
+    expect(github.remote.viewed["src/a.ts"]).toBe("UNVIEWED");
+    const sent = github.requests.filter((request) => request.query.includes("FileAsViewed"));
+    expect(sent.map((request) => [request.query.includes("unmark") ? "unmark" : "mark", request.variables])).toEqual([
+      ["mark", { input: { pullRequestId: "PR_1", path: "src/a.ts" } }],
+      ["unmark", { input: { pullRequestId: "PR_1", path: "src/a.ts" } }],
+    ]);
+    // Nothing else is written to GitHub.
+    expect(github.requests.filter((request) => request.query.startsWith("mutation"))).toHaveLength(2);
+
+    await expect(rpc("setViewed", { threadId: THREAD, target: PULL, path: "src/other.ts", revision: "x", viewed: true })).rejects.toMatchObject({
+      code: "conflict",
+      message: expect.stringContaining("not in the pull request's diff"),
+    });
+    github.remote.markFails = "Resource not accessible by integration";
+    await expect(rpc("setViewed", { threadId: THREAD, target: PULL, path: "src/a.ts", revision: file!.revision, viewed: true })).rejects.toMatchObject({
+      code: "conflict",
+      message: "Resource not accessible by integration",
+    });
+    expect(github.remote.viewed["src/a.ts"]).toBe("UNVIEWED");
+  });
+
+  it("marks a file Viewed on GitHub after a plugin reload, asking GitHub for the pull request first", async () => {
+    const github = fakeGitHub();
+    const { rpc } = await setup({ gh: github.gh });
+    // No load since the plugin started: the tab still shows the view it loaded before.
+    await rpc("setViewed", { threadId: THREAD, target: PULL, path: "src/a.ts", revision: "h:1", viewed: false });
+    expect(github.requests.map((request) => (request.query.startsWith("mutation") ? request.variables : "read"))).toEqual(["read", { input: { pullRequestId: "PR_1", path: "src/a.ts" } }]);
+  });
+
+  it("shows the diff without Viewed boxes when GitHub's marks cannot be read, and says why", async () => {
+    const github = fakeGitHub();
+    github.remote.viewedFails = "API rate limit exceeded for user ID 1.";
+    const { view, harness } = await setup({ gh: github.gh });
+    const result = await view(PULL);
+    expect(result).toMatchObject({ viewable: false, pullRequest: { viewedError: "API rate limit exceeded for user ID 1.", syncError: null } });
+    expect(result.files.map((file) => [file.path, file.viewed, file.patch !== null])).toEqual([["src/a.ts", "no", true]]);
+    expect(harness.inspection.logEntries.some((entry) => entry.message.includes("Could not read the Viewed marks of https://github.com/o/r/pull/7"))).toBe(true);
+  });
+
+  it("hands the Viewed read the caller's signal, and still shows the diff when the caller leaves", async () => {
+    const github = fakeGitHub();
+    const caller = new AbortController();
+    const signals: (AbortSignal | undefined)[] = [];
+    github.remote.onReadViewed = async (signal) => {
+      signals.push(signal);
+      caller.abort();
+      signal?.throwIfAborted();
+    };
+    const { harness } = await setup({ gh: github.gh });
+    const result = (await harness.behavior.callRpc("getReview", { threadId: THREAD, target: PULL }, { signal: caller.signal })) as Extract<ReviewView, { ok: true }>;
+    expect(signals.map((signal) => signal?.aborted)).toEqual([true]);
+    expect(result).toMatchObject({ viewable: false, files: [{ path: "src/a.ts" }] });
+    // Nobody waits for it, so nothing is worth a warning.
+    expect(harness.inspection.logEntries.filter((entry) => entry.message.includes("Viewed marks"))).toEqual([]);
+    // The other reads are not the caller's to cut short.
+    expect(github.requests.filter((request) => request.query.includes("reviewThreads"))).toHaveLength(1);
+  });
+
+  it("checks the Viewed requests against GitHub's schema, so a wrong name fails here", () => {
+    expect(checkGithubRequest("mutation($input:MarkFileAsViewedInput!){markFileViewed(input:$input){clientMutationId}}", { input: { pullRequestId: "PR_1", path: "a" } })).toEqual([
+      "mutation.markFileViewed: Mutation has no field markFileViewed.",
+    ]);
+    expect(checkGithubRequest("mutation($input:MarkFileAsViewedInput!){markFileAsViewed(input:$input){clientMutationId}}", { input: { pullRequestID: "PR_1", path: "a" } })).toEqual([
+      "$input: MarkFileAsViewedInput has no field pullRequestID.",
+      "$input.pullRequestId: required (ID!).",
+    ]);
+    expect(checkGithubRequest("query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){files(first:100){nodes{path viewedState}}}}}", { owner: "o", name: "r", number: 7 })).toEqual([
+      "query.repository.pullRequest.files.nodes.viewedState: PullRequestChangedFile has no field viewedState.",
+    ]);
+    expect(checkGithubRequest("query($owner:String!,$name:String!,$number:String!){repository(owner:$owner,name:$name){pullRequest(number:$number){id}}}", { owner: "o", name: "r", number: "7" })).toEqual([
+      "query.repository.pullRequest(number): $number is String!, it wants Int!.",
+    ]);
+  });
+
+  it("replies on, resolves and reopens a GitHub thread on GitHub, and refuses to dismiss or edit it", async () => {
+    const github = fakeGitHub();
+    const { view, rpc } = await setup({ gh: github.gh });
+    const [mirror] = (await view(PULL)).threads;
+    const replied = (await rpc("addComment", { reviewThreadId: mirror!.id, body: "Because 3 > 2." })) as { thread: ReviewThread };
+    expect(github.requests.find((request) => request.query.includes("addPullRequestReviewThreadReply"))!.variables).toEqual({ input: { pullRequestReviewThreadId: "PRRT_1", body: "Because 3 > 2." } });
+    expect(replied.thread.comments.map((comment) => [comment.authorType, comment.body])).toEqual([["github", "Why 3?"], ["github", "Because 3 > 2."]]);
+    expect(((await rpc("setStatus", { reviewThreadId: mirror!.id, status: "resolved" })) as { thread: ReviewThread }).thread.status).toBe("resolved");
+    expect(((await rpc("setStatus", { reviewThreadId: mirror!.id, status: "open" })) as { thread: ReviewThread }).thread.status).toBe("open");
+    await expect(rpc("setStatus", { reviewThreadId: mirror!.id, status: "dismissed" })).rejects.toMatchObject({ code: "invalid" });
+    await expect(rpc("editComment", { commentId: mirror!.comments[0]!.id, body: "x" })).rejects.toMatchObject({ code: "forbidden" });
+  });
+
+  describe("an agent's answers on GitHub threads", () => {
+    /** The pull request's view with its GitHub thread and a thread of the plugin's own, both sent to the agent. */
+    async function sentPull() {
+      const github = fakeGitHub();
+      const context = await setup({ gh: github.gh });
+      const { sessionId, threads } = await context.view(PULL);
+      const mirror = threads[0]!;
+      const local = ((await context.rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: "Local one" })) as { thread: ReviewThread }).thread;
+      await context.rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [mirror.id, local.id], note: "" });
+      const mutations = () => github.requests.filter((request) => request.query.startsWith("mutation"));
+      const row = async (id: string) => ((await context.rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads.find((thread) => thread.id === id)!;
+      return { ...context, github, sessionId, mirror, local, mutations, row };
+    }
+
+    it("keeps an agent's resolve of a GitHub thread as a draft that resolves it when posted, which a sync cannot undo", async () => {
+      const { harness, view, mirror, local, mutations, row } = await sentPull();
+      const resolved = await harness.behavior.runCli(["resolve", mirror.id, "Renamed", "it."], { threadId: THREAD });
+      expect(resolved).toMatchObject({ exitCode: 0, stdout: `Drafted a reply on GitHub thread ${mirror.id} (src/a.ts:2 (new side)) that resolves it on GitHub when the user posts it; it stays open on GitHub until then.\n` });
+      // A thread of the plugin's own resolves as before.
+      expect((await harness.behavior.runCli(["resolve", local.id, "Done."], { threadId: THREAD })).stdout).toBe(`Resolved ${local.id} (src/a.ts:2 (new side)).\n`);
+      expect(mutations()).toEqual([]);
+
+      let thread = await row(mirror.id);
+      expect(thread.status).toBe("open");
+      expect(thread.delivery!.state).toBe("answered");
+      expect(thread.comments.at(-1)).toMatchObject({ authorType: "agent", authorName: "Claude Code", body: "Renamed it.", githubDraft: "resolve" });
+      // Read again from GitHub, which still has the thread open: the agent's resolution is still there.
+      await view(PULL);
+      thread = await row(mirror.id);
+      expect(thread.comments.map((comment) => [comment.authorType, comment.githubDraft ?? null])).toEqual([["github", null], ["agent", "resolve"]]);
+      expect((await row(local.id)).status).toBe("resolved");
+      // Done, as far as the agent goes: neither is listed as open any more.
+      expect((await harness.behavior.runCli(["list"], { threadId: THREAD })).stdout).toBe("No open comment threads were sent to this thread.\n");
+
+      const replied = await harness.behavior.runCli(["reply", mirror.id, "Also", "renamed", "the", "test."], { threadId: THREAD });
+      expect(replied.stdout).toBe(`Drafted a reply on GitHub thread ${mirror.id} (src/a.ts:2 (new side)); the user posts it to GitHub.\n`);
+      expect((await row(mirror.id)).comments.at(-1)).toMatchObject({ githubDraft: "reply" });
+      expect(mutations()).toEqual([]);
+    });
+
+    it("posts a draft to GitHub as the user, exactly as the tab showed it, then resolves the thread", async () => {
+      const { harness, rpc, view, mirror, mutations, row, github } = await sentPull();
+      await harness.behavior.runCli(["resolve", mirror.id, "Renamed", "it."], { threadId: THREAD });
+      const draft = (await row(mirror.id)).comments.at(-1)!;
+      await expect(rpc("postDraft", { commentId: draft.id, body: "Something else" })).rejects.toMatchObject({ code: "conflict", message: expect.stringContaining("changed since the tab showed it") });
+      expect(mutations()).toEqual([]);
+
+      const posted = ((await rpc("postDraft", { commentId: draft.id, body: "Renamed it." })) as { thread: ReviewThread }).thread;
+      expect(mutations().map((request) => [request.query.includes("addPullRequestReviewThreadReply") ? "reply" : request.query.includes("unresolve") ? "unresolve" : "resolve", request.variables])).toEqual([
+        ["reply", { input: { pullRequestReviewThreadId: "PRRT_1", body: "Renamed it." } }],
+        ["resolve", { id: "PRRT_1" }],
+      ]);
+      expect(posted.status).toBe("resolved");
+      expect(posted.comments.map((comment) => [comment.id === draft.id, comment.authorType, comment.authorName, comment.body, comment.githubDraft ?? null])).toEqual([
+        [false, "github", "octo", "Why 3?", null],
+        [true, "github", "me", "Renamed it.", null],
+      ]);
+      // GitHub's copy is that same row: read again, nothing doubles.
+      expect((await view(PULL)).threads.find((thread) => thread.id === mirror.id)!.comments).toHaveLength(2);
+      expect(github.remote.threads[0]!.isResolved).toBe(true);
+      await expect(rpc("postDraft", { commentId: draft.id, body: "Renamed it." })).rejects.toMatchObject({ code: "conflict" });
+    });
+
+    it("posts a draft once when Post is pressed twice", async () => {
+      const { harness, rpc, mirror, mutations, row } = await sentPull();
+      await harness.behavior.runCli(["reply", mirror.id, "Once."], { threadId: THREAD });
+      const draft = (await row(mirror.id)).comments.at(-1)!;
+      const results = await Promise.allSettled([rpc("postDraft", { commentId: draft.id, body: "Once." }), rpc("postDraft", { commentId: draft.id, body: "Once." })]);
+      expect(results.map((result) => result.status).sort()).toEqual(["fulfilled", "rejected"]);
+      expect(mutations()).toHaveLength(1);
+    });
+
+    it("lets the user edit or discard a draft first, and nothing else of the agent's", async () => {
+      const { harness, rpc, mirror, local, mutations, row } = await sentPull();
+      await harness.behavior.runCli(["reply", mirror.id, "First", "try."], { threadId: THREAD });
+      await harness.behavior.runCli(["reply", local.id, "Local", "answer."], { threadId: THREAD });
+      const draft = (await row(mirror.id)).comments.at(-1)!;
+      await rpc("editComment", { commentId: draft.id, body: "Better words." });
+      expect((await row(mirror.id)).comments.at(-1)).toMatchObject({ body: "Better words.", githubDraft: "reply", editedAt: expect.any(Number) });
+      await rpc("postDraft", { commentId: draft.id, body: "Better words." });
+      expect(mutations().map((request) => request.variables)).toEqual([{ input: { pullRequestReviewThreadId: "PRRT_1", body: "Better words." } }]);
+      // A reply draft leaves the thread open.
+      expect((await row(mirror.id)).status).toBe("open");
+
+      await harness.behavior.runCli(["reply", mirror.id, "Not", "this."], { threadId: THREAD });
+      const discard = (await row(mirror.id)).comments.at(-1)!;
+      await rpc("deleteComment", { commentId: discard.id });
+      expect((await row(mirror.id)).comments.map((comment) => comment.body)).toEqual(["Why 3?", "Better words."]);
+      const agentLocal = (await row(local.id)).comments.at(-1)!;
+      await expect(rpc("editComment", { commentId: agentLocal.id, body: "x" })).rejects.toMatchObject({ code: "forbidden" });
+      await expect(rpc("postDraft", { commentId: agentLocal.id, body: "Local answer." })).rejects.toMatchObject({ code: "conflict" });
+    });
+
+    it("says so when GitHub took the reply but would not resolve the thread", async () => {
+      const { harness, rpc, mirror, row, github } = await sentPull();
+      await harness.behavior.runCli(["dismiss", mirror.id, "Intended."], { threadId: THREAD });
+      const draft = (await row(mirror.id)).comments.at(-1)!;
+      expect(draft.githubDraft).toBe("resolve");
+      github.remote.resolveFails = "Resource not accessible by integration";
+      await expect(rpc("postDraft", { commentId: draft.id, body: "Intended." })).rejects.toMatchObject({
+        code: "conflict",
+        message: "Posted the reply, but could not resolve the thread on GitHub: Resource not accessible by integration",
+      });
+      const thread = await row(mirror.id);
+      expect(thread.status).toBe("open");
+      expect(thread.comments.at(-1)).toMatchObject({ authorType: "github", body: "Intended." });
+    });
+
+    it("posts drafts with Submit review as replies in the review, then resolves the ones that resolve", async () => {
+      const { harness, rpc, mirror, sessionId, github, row } = await sentPull();
+      await harness.behavior.runCli(["resolve", mirror.id, "Renamed", "it."], { threadId: THREAD });
+      const draft = (await row(mirror.id)).comments.at(-1)!;
+      const plan = (await rpc("reviewPlan", { sessionId })) as { replies: unknown[] };
+      expect(plan.replies).toEqual([{ reviewThreadId: mirror.id, commentId: draft.id, location: "src/a.ts:2 (new side)", author: "Claude Code", body: "Renamed it.", resolve: true }]);
+      await expect(rpc("submitReview", { sessionId, event: "COMMENT", body: "", headSha: HEAD, items: [], replies: [{ commentId: draft.id, body: "Edited elsewhere" }] })).rejects.toMatchObject({ code: "conflict" });
+
+      const result = (await rpc("submitReview", { sessionId, event: "COMMENT", body: "", headSha: HEAD, items: [], replies: [{ commentId: draft.id, body: "Renamed it." }] })) as { posted: number; warnings: string[] };
+      expect(result).toMatchObject({ posted: 1, warnings: [] });
+      const sent = github.requests.filter((request) => request.query.startsWith("mutation"));
+      expect(sent.map((request) => request.variables)).toEqual([
+        { input: { pullRequestId: "PR_1", commitOID: HEAD } },
+        { input: { pullRequestReviewThreadId: "PRRT_1", body: "Renamed it.", pullRequestReviewId: "PRR_1" } },
+        { input: { pullRequestReviewId: "PRR_1", event: "COMMENT" } },
+        { id: "PRRT_1" },
+      ]);
+      const thread = await row(mirror.id);
+      expect(thread.status).toBe("resolved");
+      expect(thread.comments.map((comment) => [comment.authorType, comment.body, comment.githubDraft ?? null])).toEqual([["github", "Why 3?", null], ["github", "Renamed it.", null]]);
+      expect(((await rpc("reviewPlan", { sessionId })) as { replies: unknown[] }).replies).toEqual([]);
+    });
+
+    const replies = (github: ReturnType<typeof fakeGitHub>) => github.requests.filter((request) => request.query.includes("addPullRequestReviewThreadReply"));
+    const submitDraft = (rpc: (method: string, input?: unknown) => Promise<unknown>, sessionId: string, draft: { id: string; body: string }) =>
+      rpc("submitReview", { sessionId, event: "COMMENT", body: "", headSha: HEAD, items: [], replies: [{ commentId: draft.id, body: draft.body }] });
+
+    it("refuses Post while Submit review is posting the same draft (another window, GitHub slow)", async () => {
+      const { harness, rpc, mirror, sessionId, github, row } = await sentPull();
+      await harness.behavior.runCli(["reply", mirror.id, "Once."], { threadId: THREAD });
+      const draft = (await row(mirror.id)).comments.at(-1)!;
+      const slow = gate();
+      github.remote.onRequest = async (query) => {
+        if (query.includes("addPullRequestReview(")) await slow.wait();
+      };
+      const submitting = submitDraft(rpc, sessionId, draft);
+      await slow.reached;
+      await expect(rpc("postDraft", { commentId: draft.id, body: "Once." })).rejects.toMatchObject({ code: "conflict", message: "That draft is being posted already." });
+      slow.open();
+      await expect(submitting).resolves.toMatchObject({ posted: 1 });
+      expect(replies(github)).toHaveLength(1);
+      expect((await row(mirror.id)).comments.map((comment) => [comment.authorType, comment.body])).toEqual([["github", "Why 3?"], ["github", "Once."]]);
+    });
+
+    it("refuses Submit review of a draft while its Post is under way", async () => {
+      const { harness, rpc, mirror, sessionId, github, row } = await sentPull();
+      await harness.behavior.runCli(["reply", mirror.id, "Once."], { threadId: THREAD });
+      const draft = (await row(mirror.id)).comments.at(-1)!;
+      const slow = gate();
+      github.remote.onRequest = async (query) => {
+        if (query.includes("addPullRequestReviewThreadReply")) await slow.wait();
+      };
+      const posting = rpc("postDraft", { commentId: draft.id, body: "Once." });
+      await slow.reached;
+      await expect(submitDraft(rpc, sessionId, draft)).rejects.toMatchObject({ code: "conflict", message: "That draft is being posted already." });
+      // Nothing of the review went to GitHub.
+      expect(github.requests.some((request) => request.query.includes("addPullRequestReview("))).toBe(false);
+      slow.open();
+      await posting;
+      expect(replies(github)).toHaveLength(1);
+      // Once posted, it is no draft any more, and Submit says so.
+      await expect(submitDraft(rpc, sessionId, draft)).rejects.toMatchObject({ code: "conflict", message: expect.stringContaining("gone or closed") });
+    });
+
+    for (const path of ["Post", "Submit review"] as const) {
+      it(`keeps one copy of a draft posted with ${path} when a read imported GitHub's copy first`, async () => {
+        const { harness, rpc, view, mirror, sessionId, github, row } = await sentPull();
+        await harness.behavior.runCli(["reply", mirror.id, "Once."], { threadId: THREAD });
+        const draft = (await row(mirror.id)).comments.at(-1)!;
+        // GitHub has the reply; before it answers, a Sync or a reconnect elsewhere reads it.
+        const slow = gate();
+        github.remote.onReply = () => slow.wait();
+        const posting = path === "Post" ? rpc("postDraft", { commentId: draft.id, body: "Once." }) : submitDraft(rpc, sessionId, draft);
+        await slow.reached;
+        await view(PULL);
+        slow.open();
+        await posting;
+        const expected = [[true, "github", "Once."]];
+        const ours = async () => (await row(mirror.id)).comments.slice(1).map((comment) => [comment.id === draft.id, comment.authorType, comment.body]);
+        expect(await ours()).toEqual(expected);
+        await view(PULL);
+        expect(await ours()).toEqual(expected);
+        expect(replies(github)).toHaveLength(1);
+      });
+    }
+
+    it("answers a Post on the copy with the kept thread when Submit folds the copy while GitHub takes it", async () => {
+      const { harness, rpc, view, sessionId, github } = await sentPull();
+      const line = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: "Name it c." })) as { thread: ReviewThread }).thread;
+      const held = gate();
+      github.remote.onSubmitted = () => held.wait();
+      const plan = (await rpc("reviewPlan", { sessionId })) as { lines: { reviewThreadId: string; body: string }[] };
+      const submitting = rpc("submitReview", { sessionId, event: "COMMENT", body: "", headSha: HEAD, items: plan.lines.filter((entry) => entry.reviewThreadId === line.id).map((entry) => ({ reviewThreadId: entry.reviewThreadId, body: entry.body })) });
+      await held.reached;
+      const copy = (await view(PULL)).threads.find((thread) => thread.githubThreadId === "PRRT_new1" && thread.id !== line.id)!;
+      await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [copy.id], note: "" });
+      await harness.behavior.runCli(["reply", copy.id, "Agreed."], { threadId: THREAD });
+      const draft = (await rpc("listThreads", { sessionId }) as { threads: ReviewThread[] }).threads.find((thread) => thread.id === copy.id)!.comments.at(-1)!;
+      const slow = gate();
+      github.remote.onReply = () => slow.wait();
+      const posting = rpc("postDraft", { commentId: draft.id, body: "Agreed." });
+      await slow.reached;
+      held.open();
+      await submitting;
+      slow.open();
+      const { thread } = (await posting) as { thread: ReviewThread };
+      expect(thread.id).toBe(line.id);
+      expect(thread.comments.map((comment) => [comment.id === draft.id, comment.authorType, comment.body]).sort()).toEqual([[false, "github", "Name it c."], [true, "github", "Agreed."]]);
+      expect(replies(github)).toHaveLength(1);
+    });
+  });
+
+  it("keeps a reply that asks the reviewer on a GitHub thread in the tab, and asks the reviewer", async () => {
+    const github = fakeGitHub();
+    const { view, rpc, harness } = await setup({ gh: github.gh });
+    const [mirror] = (await view(PULL)).threads;
+    const asked = (await rpc("addComment", { reviewThreadId: mirror!.id, body: "@reviewer is 3 right?" })) as { thread: ReviewThread };
+    // Not posted: on GitHub it would notify the accounts named reviewer or agent.
+    expect(github.requests.some((request) => request.query.includes("addPullRequestReviewThreadReply"))).toBe(false);
+    expect(asked.thread.comments.map((comment) => [comment.authorType, comment.body])).toEqual([["github", "Why 3?"], ["user", "@reviewer is 3 right?"]]);
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
+    expect((harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as { prompt: string }).prompt).toContain(`- Thread: \`${mirror!.id}\``);
+    // Read again from GitHub, the thread keeps the question.
+    const again = (await view(PULL)).threads.find((thread) => thread.id === mirror!.id)!;
+    expect(again.comments.map((comment) => comment.body)).toEqual(["Why 3?", "@reviewer is 3 right?"]);
+  });
+
+  /** Submit as the dialog does: the plan's comments, with the text it showed. */
+  async function submitAll(rpc: (method: string, input?: unknown) => Promise<unknown>, sessionId: string, event: string, body: string) {
+    const plan = (await rpc("reviewPlan", { sessionId })) as { lines: { reviewThreadId: string; body: string }[]; body: { reviewThreadId: string; body: string }[] };
+    const items = [...plan.lines, ...plan.body].map((entry) => ({ reviewThreadId: entry.reviewThreadId, body: entry.body }));
+    return rpc("submitReview", { sessionId, event, body, headSha: HEAD, items }) as Promise<{ posted: number; url: string }>;
+  }
+
+  it("submits the user's comments as one review with the verdict, keeping every comment it did not post", async () => {
+    const github = fakeGitHub();
+    const { view, rpc } = await setup({ gh: github.gh });
+    const { sessionId } = await view(PULL);
+    const line = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: "Name it c." })) as { thread: ReviewThread }).thread;
+    await rpc("addComment", { reviewThreadId: line.id, body: "UNPOSTED USER FOLLOWUP" });
+    const general = ((await rpc("createThread", { sessionId, filePath: "__general__", side: null, startLine: 0, endLine: 0, severity: null, anchorContent: null, body: "Looks good overall." })) as { thread: ReviewThread }).thread;
+    const gone = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 1, endLine: 1, severity: null, anchorContent: "not there", body: "Lost" })) as { thread: ReviewThread }).thread;
+    const plan = (await rpc("reviewPlan", { sessionId })) as { lines: unknown[]; body: unknown[]; blocked: { reviewThreadId: string }[] };
+    expect(plan).toMatchObject({
+      lines: [{ reviewThreadId: line.id, location: "src/a.ts:2 (new side)", path: "src/a.ts", line: 2, body: "Name it c." }],
+      body: [{ reviewThreadId: general.id, location: "the whole diff", body: "Looks good overall." }],
+      blocked: [{ reviewThreadId: gone.id, location: "src/a.ts:1 (new side)" }],
+    });
+    // A reply lands while GitHub is taking the review.
+    github.remote.onAddThread = async () => {
+      await rpc("addComment", { reviewThreadId: line.id, body: "WRITTEN DURING SUBMIT" });
+    };
+
+    const result = await submitAll(rpc, sessionId, "APPROVE", "Thanks!");
+    expect(result).toMatchObject({ posted: 2, url: "https://github.com/o/r/pull/7#review-1" });
+    const sent = github.requests.filter((request) => request.query.startsWith("mutation"));
+    expect(sent.map((request) => request.variables.input)).toEqual([
+      { pullRequestId: "PR_1", commitOID: HEAD },
+      { pullRequestReviewId: "PRR_1", path: "src/a.ts", body: "Name it c.", line: 2, side: "RIGHT" },
+      { pullRequestReviewId: "PRR_1", event: "APPROVE", body: "Thanks!\n\nLooks good overall." },
+    ]);
+    const threads = (await view(PULL)).threads;
+    // The line comment is now GitHub's thread; its first comment is GitHub's copy, the replies stay here.
+    const posted = threads.find((thread) => thread.id === line.id)!;
+    expect(posted.githubThreadId).toBe("PRRT_new1");
+    expect(posted.comments.map((comment) => [comment.authorType, comment.body])).toEqual([
+      ["github", "Name it c."],
+      ["user", "UNPOSTED USER FOLLOWUP"],
+      ["user", "WRITTEN DURING SUBMIT"],
+    ]);
+    expect(threads.filter((thread) => thread.githubThreadId === "PRRT_new1")).toHaveLength(1);
+    // The whole-diff comment went into the review's body: resolved, still here.
+    expect(threads.find((thread) => thread.id === general.id)).toMatchObject({ status: "resolved", githubThreadId: null });
+    expect(threads.find((thread) => thread.id === gone.id)).toMatchObject({ status: "open", githubThreadId: null });
+  });
+
+  for (const moment of ["while GitHub builds the review", "after GitHub took the review"] as const) {
+    it(`keeps one thread for a line comment when a read imported its GitHub thread ${moment}`, async () => {
+      const github = fakeGitHub();
+      const { view, rpc } = await setup({ gh: github.gh });
+      const { sessionId } = await view(PULL);
+      const line = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: "Name it c." })) as { thread: ReviewThread }).thread;
+      await rpc("addComment", { reviewThreadId: line.id, body: "UNPOSTED USER FOLLOWUP" });
+      // GitHub has the new thread; before Submit links the comment to it, a Sync or a reconnect reads it.
+      const slow = gate();
+      if (moment === "while GitHub builds the review") github.remote.onAddThread = () => slow.wait();
+      else github.remote.onSubmitted = () => slow.wait();
+      const submitting = submitAll(rpc, sessionId, "COMMENT", "");
+      await slow.reached;
+      const during = (await view(PULL)).threads.filter((thread) => thread.filePath === "src/a.ts" && thread.id !== line.id && thread.githubThreadId === "PRRT_new1");
+      // The trigger: that read imported GitHub's thread as a thread of its own.
+      expect(during).toHaveLength(1);
+      slow.open();
+      await expect(submitting).resolves.toMatchObject({ posted: 1 });
+      const ours = async () =>
+        (await view(PULL)).threads
+          .filter((thread) => thread.githubThreadId === "PRRT_new1")
+          .map((thread) => [thread.id === line.id, thread.comments.map((comment) => [comment.authorType, comment.body])]);
+      const expected = [[true, [["github", "Name it c."], ["user", "UNPOSTED USER FOLLOWUP"]]]];
+      expect(await ours()).toEqual(expected);
+      // Read again, it stays one thread.
+      expect(await ours()).toEqual(expected);
+    });
+  }
+
+  /** A line comment, Submit review held once GitHub took it, and the copy a read imported meanwhile. */
+  async function heldSubmit() {
+    const github = fakeGitHub();
+    const context = await setup({ gh: github.gh });
+    const { sessionId } = await context.view(PULL);
+    const line = ((await context.rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: "Name it c." })) as { thread: ReviewThread }).thread;
+    const held = gate();
+    github.remote.onSubmitted = () => held.wait();
+    const submitting = submitAll(context.rpc, sessionId, "COMMENT", "");
+    await held.reached;
+    const copy = (await context.view(PULL)).threads.find((thread) => thread.githubThreadId === "PRRT_new1" && thread.id !== line.id)!;
+    expect(copy).toBeDefined();
+    const finish = async () => {
+      held.open();
+      await expect(submitting).resolves.toMatchObject({ posted: 1 });
+    };
+    return { ...context, github, sessionId, line, copy, finish };
+  }
+
+  for (const action of ["Reply", "Resolve"] as const) {
+    it(`answers a ${action} on the copy with the kept thread when Submit folds the copy while GitHub takes it`, async () => {
+      const { rpc, github, line, copy, finish } = await heldSubmit();
+      const slow = gate();
+      if (action === "Reply") github.remote.onReply = () => slow.wait();
+      else github.remote.onRequest = async (query) => (query.includes("resolveReviewThread") ? slow.wait() : undefined);
+      const answering = action === "Reply" ? rpc("addComment", { reviewThreadId: copy.id, body: "On the copy." }) : rpc("setStatus", { reviewThreadId: copy.id, status: "resolved" });
+      await slow.reached;
+      await finish();
+      slow.open();
+      const { thread } = (await answering) as { thread: ReviewThread };
+      expect(thread.id).toBe(line.id);
+      const mutation = action === "Reply" ? "addPullRequestReviewThreadReply" : "resolveReviewThread";
+      expect(github.requests.filter((request) => request.query.includes(mutation))).toHaveLength(1);
+      // GitHub's reply dates from before the local comment's own time, so the order is not the point.
+      if (action === "Reply") expect(thread.comments.map((comment) => [comment.authorType, comment.body]).sort()).toEqual([["github", "Name it c."], ["github", "On the copy."]]);
+      else expect(thread.status).toBe("resolved");
+    });
+  }
+
+  it("moves a reply typed on the copy to the kept thread, even when the tab saves it again after the fold", async () => {
+    const { rpc, view, sessionId, line, copy, finish } = await heldSubmit();
+    const state = (savedAt: number, drafts: Record<string, string>) => ({
+      drafts: Object.fromEntries(Object.entries(drafts).map(([key, body]) => [key, { body, severity: null, range: null }])),
+      collapsed: {},
+      expandedThreads: { [copy.id]: true },
+      scroll: null,
+      savedAt,
+    });
+    await rpc("saveViewState", { threadId: THREAD, sessionId, state: state(1, { [`reply:${copy.id}`]: "Typed on the copy" }) });
+    await finish();
+    let shown = await view(PULL);
+    expect(shown.aliases).toEqual({ [copy.id]: line.id });
+    expect(shown.viewState).toMatchObject({ drafts: { [`reply:${line.id}`]: { body: "Typed on the copy" } }, expandedThreads: { [line.id]: true } });
+    // A tab that has not heard of the fold saves its state again, newer: the draft still lands on the kept thread.
+    await rpc("saveViewState", { threadId: THREAD, sessionId, state: state(2, { [`reply:${copy.id}`]: "Typed on the copy, then more" }) });
+    shown = await view(PULL);
+    expect(shown.viewState!.drafts).toEqual({ [`reply:${line.id}`]: { body: "Typed on the copy, then more", severity: null, range: null } });
+    expect(((await rpc("listThreads", { sessionId })) as { aliases: unknown }).aliases).toEqual({ [copy.id]: line.id });
+  });
+
+  it("keeps both of two long replies typed on the two copies whole, though together they are over a comment's limit", async () => {
+    const { rpc, view, sessionId, line, copy, finish } = await heldSubmit();
+    const first = "a".repeat(12_000);
+    const second = "b".repeat(12_000);
+    const reply = (body: string) => ({ body, severity: null, range: null });
+    await rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: { [`reply:${line.id}`]: reply(first), [`reply:${copy.id}`]: reply(second) }, collapsed: {}, scroll: null, savedAt: 1 } });
+    await finish();
+    expect((await view(PULL)).viewState!.drafts).toEqual({ [`reply:${line.id}`]: reply(`${first}\n\n${second}`) });
+  });
+
+  it("refuses a comment edited since the dialog read it, posting nothing", async () => {
+    const github = fakeGitHub();
+    const { view, rpc } = await setup({ gh: github.gh });
+    const { sessionId } = await view(PULL);
+    const line = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: "Approved text" })) as { thread: ReviewThread }).thread;
+    await rpc("editComment", { commentId: line.comments[0]!.id, body: "Edited after the dialog opened" });
+    await expect(rpc("submitReview", { sessionId, event: "COMMENT", body: "", headSha: HEAD, items: [{ reviewThreadId: line.id, body: "Approved text" }] })).rejects.toMatchObject({
+      code: "conflict",
+      message: expect.stringContaining("changed since you opened the dialog"),
+    });
+    expect(github.requests.some((request) => request.query.startsWith("mutation"))).toBe(false);
+  });
+
+  it("deletes the pending review and keeps every comment when the pull request gets a push during the submission", async () => {
+    const github = fakeGitHub();
+    const { view, rpc } = await setup({ gh: github.gh });
+    const { sessionId } = await view(PULL);
+    const line = ((await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: "const b = 3;", body: "Name it c." })) as { thread: ReviewThread }).thread;
+    github.remote.onAddThread = async () => {
+      github.remote.head = "c".repeat(40);
+    };
+    await expect(submitAll(rpc, sessionId, "APPROVE", "")).rejects.toMatchObject({ code: "conflict", message: expect.stringContaining("new commits") });
+    const mutations = github.requests.filter((request) => request.query.startsWith("mutation")).map((request) => request.query.match(/^mutation[^{]*\{(\w+)/)![1]);
+    expect(mutations).toEqual(["addPullRequestReview", "addPullRequestReviewThread", "deletePullRequestReview"]);
+    expect((await view(PULL)).threads.find((thread) => thread.id === line.id)).toMatchObject({ status: "open", githubThreadId: null });
+  });
+
+  it("lets an AI review and an explanation of the pull request comment on its files' lines", async () => {
+    const github = fakeGitHub();
+    const { view, rpc, harness } = await setup({ gh: github.gh });
+    const { sessionId } = await view(PULL);
+    const callTool = (name: string, input: unknown, threadId: string) => harness.behavior.callAgentTool(name, input, { threadId, projectId: "proj_1" });
+    const failed = (result: unknown) => typeof result !== "string" && (result as { isError?: boolean }).isError === true;
+    const execution = { providerId: "claude-code", model: "big", reasoningLevel: "high" };
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as { run: { threadId: string } };
+    expect(failed(await callTool("diff_review_comment", { file: "src/a.ts", startLine: 2, body: "b must stay 2" }, run.threadId))).toBe(false);
+    expect(failed(await callTool("diff_review_comment", { file: "src/a.ts", startLine: 0, body: "About the file" }, run.threadId))).toBe(false);
+    expect(failed(await callTool("diff_review_comment", { file: "src/a.ts", startLine: 9, body: "Not shown" }, run.threadId))).toBe(true);
+    const explained = (await rpc("startExplain", { sessionId, threadId: THREAD, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, code: "const b = 3;" })) as { run: { threadId: string } };
+    expect(failed(await callTool("diff_review_comment", { file: "src/a.ts", startLine: 2, body: "It sets b." }, explained.run.threadId))).toBe(false);
+    const mine = (await view(PULL)).threads.filter((thread) => thread.githubThreadId === null);
+    expect(mine.map((thread) => [thread.startLine, thread.comments[0]!.body])).toEqual([[2, "b must stay 2"], [0, "About the file"], [2, "It sets b."]]);
+  });
+
+  it("keeps an outdated GitHub thread's original text, so it is not pinned to other code, on first read and after a push", async () => {
+    const github = fakeGitHub();
+    github.remote.threads.push({
+      id: "PRRT_old", isResolved: false, isOutdated: true, path: "src/a.ts", line: null, startLine: null, originalLine: 1, originalStartLine: null, diffSide: "RIGHT", subjectType: "LINE",
+      comments: { nodes: [{ id: "PRRC_old", body: "Was z?", createdAt: "2026-10-01T00:00:00Z", diffHunk: "@@ -0,0 +1 @@\n+const z = 0;", author: { login: "octo" } }] },
+    });
+    const { view } = await setup({ gh: github.gh });
+    const first = (await view(PULL)).threads.find((thread) => thread.githubThreadId === "PRRT_old")!;
+    expect(first).toMatchObject({ startLine: 1, endLine: 1, anchorContent: "const z = 0;" });
+    // Line 1 now reads `const a = 1;`: the thread is not placed there.
+    expect(placeThread(first, parsePatchLines(PATCH)).state).toBe("outdated");
+
+    // A push makes the current thread outdated; the next read takes GitHub's original text.
+    Object.assign(github.remote.threads[0]!, { isOutdated: true, line: null });
+    (github.remote.threads[0]!.comments as { nodes: Record<string, unknown>[] }).nodes[0]!.diffHunk = "@@ -1,2 +1,2 @@\n const a = 1;\n+const b = 9;";
+    const after = (await view(PULL)).threads.find((thread) => thread.githubThreadId === "PRRT_1")!;
+    expect(after).toMatchObject({ startLine: 2, endLine: 2, anchorContent: "const b = 9;" });
+    expect(placeThread(after, parsePatchLines(PATCH)).state).toBe("outdated");
+  });
+
+  it("mirrors a GitHub comment on a whole file, and replies and resolves on GitHub", async () => {
+    const github = fakeGitHub();
+    github.remote.threads.push({
+      id: "PRRT_file", isResolved: false, isOutdated: false, path: "src/a.ts", line: null, startLine: null, originalLine: null, originalStartLine: null, diffSide: "RIGHT", subjectType: "FILE",
+      comments: { nodes: [{ id: "PRRC_file", body: "Split this file", createdAt: "2026-10-01T00:00:00Z", diffHunk: null, author: { login: "octo" } }] },
+    });
+    const { view, rpc } = await setup({ gh: github.gh });
+    const mirror = (await view(PULL)).threads.find((thread) => thread.githubThreadId === "PRRT_file")!;
+    expect(mirror).toMatchObject({ filePath: "src/a.ts", side: null, startLine: 0, endLine: 0, comments: [{ authorType: "github", body: "Split this file" }] });
+    await rpc("addComment", { reviewThreadId: mirror.id, body: "Will do." });
+    expect(github.requests.find((request) => request.query.includes("addPullRequestReviewThreadReply"))!.variables).toEqual({ input: { pullRequestReviewThreadId: "PRRT_file", body: "Will do." } });
+    expect(((await rpc("setStatus", { reviewThreadId: mirror.id, status: "resolved" })) as { thread: ReviewThread }).thread.status).toBe("resolved");
+  });
+
+  it("refuses to submit once the pull request has new commits", async () => {
+    const github = fakeGitHub();
+    const { view, rpc } = await setup({ gh: github.gh });
+    const { sessionId } = await view(PULL);
+    github.remote.head = "c".repeat(40);
+    await expect(rpc("submitReview", { sessionId, event: "COMMENT", body: "x", headSha: HEAD, items: [] })).rejects.toMatchObject({ code: "conflict", message: expect.stringContaining("new commits") });
+    expect(github.requests.some((request) => request.query.startsWith("mutation"))).toBe(false);
+  });
+
+  it("fixes a pull request's comments in a new worktree that checks it out", async () => {
+    const github = fakeGitHub();
+    const { view, rpc, harness } = await setup({ gh: github.gh });
+    const { sessionId, threads } = await view(PULL);
+    const execution = { providerId: "claude-code", model: "big", reasoningLevel: "high" };
+    await rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: [threads[0]!.id], note: "", execution });
+    const spawn = harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as Record<string, unknown>;
+    expect(spawn).toMatchObject({ title: "PR #7 fixes: 1 comment", environment: { type: "host", hostId: "host_1", workspace: { type: "managed-worktree", baseBranch: { kind: "default" } } } });
+    expect(spawn.prompt).toContain("gh pr checkout 7 --repo o/r");
+  });
+
+  it("opens a pull request's review from the command line by its address", async () => {
+    const { harness } = await setup({ gh: fakeGitHub().gh });
+    const out = await harness.behavior.runCli(["open", "https://github.com/o/r/pull/7"], { threadId: THREAD });
+    expect(out.stdout).toContain("pull request o/r#7");
+    expect(harness.inspection.realtimeSignals.at(-1)).toEqual({ channel: "open-review", payload: { threadId: THREAD, target: PULL, file: null } });
+  });
+
+  it("offers the review of the branch's pull request, from bb's GitHub PR Status", async () => {
+    const { view } = await setup({ branchPull: { url: "https://github.com/o/r/pull/7", title: "Add b" } });
+    expect((await view()).branchPullRequest).toEqual({ owner: "o", repo: "r", number: 7, title: "Add b" });
+  });
+});
+
+describe("a caller that stops waiting", () => {
+  // A call whose signal fires rejects (bb's `callRpc` stops waiting, though bb 0.48.1's Git plugin finishes
+  // its own work); this one answers nothing until then. These tests cover this plugin's side only.
+  const abandoned = (signal: AbortSignal | undefined) =>
+    new Promise<void>((_resolve, reject) => {
+      if (signal?.aborted === true) reject(signal.reason);
+      signal?.addEventListener("abort", () => reject(signal.reason));
+    });
+
+  it("abandons on-demand patches when the tab stops waiting, without asking whether Git is off", async () => {
+    let hold = false;
+    const { harness, view, git } = await setup({ holdPatches: (signal) => (hold ? abandoned(signal) : Promise.resolve()) });
+    const big = (await view()).files.find((file) => file.path === "big.txt")!;
+    hold = true;
+    const caller = new AbortController();
+    const loading = harness.behavior.callRpc(
+      "loadPatches",
+      { threadId: THREAD, target: { kind: "uncommitted" }, files: [{ path: "big.txt", revision: big.revision }] },
+      { signal: caller.signal },
+    );
+    await vi.waitFor(() => expect(git.calls.at(-1)?.method).toBe("patches"));
+    const listed = git.listed;
+    caller.abort();
+    await expect(loading).rejects.toThrow();
+    expect(git.calls.at(-1)!.signal?.aborted).toBe(true);
+    expect(git.listed).toBe(listed);
+  });
+
+  it("hands the view's PR status read and commented files' patches the caller's signal", async () => {
+    const { rpc, harness, view, git } = await setup({ branchPull: { url: "https://github.com/o/r/pull/7", title: "Add b" } });
+    const { sessionId } = await view();
+    await rpc("createThread", { sessionId, filePath: "big.txt", side: "new", startLine: 5, endLine: 5, severity: null, anchorContent: "x", body: "On a line" });
+    git.calls.length = 0;
+    git.prStatusSignals.length = 0;
+    const caller = new AbortController();
+    await harness.behavior.callRpc("getReview", { threadId: THREAD, target: { kind: "uncommitted" } }, { signal: caller.signal });
+    caller.abort();
+    expect(git.prStatusSignals.map((signal) => signal?.aborted)).toEqual([true]);
+    expect(git.calls.filter((entry) => entry.method === "patches").map((entry) => entry.signal?.aborted)).toEqual([true]);
+    // The diff itself is read whatever the caller does, so an abandoned load never leaves a view half written.
+    expect(git.calls.filter((entry) => entry.method === "files").every((entry) => entry.signal === undefined)).toBe(true);
+  });
+
+  it("leaves the commented files' patches to load on demand when the caller leaves mid-view, without a warning", async () => {
+    let caller: AbortController | null = null;
+    const { rpc, harness, view, git } = await setup({
+      // The tab goes while the view's patches are on their way.
+      holdPatches: (signal) => {
+        if (caller === null) return Promise.resolve();
+        caller.abort();
+        return abandoned(signal);
+      },
+    });
+    const { sessionId } = await view();
+    await rpc("createThread", { sessionId, filePath: "big.txt", side: "new", startLine: 5, endLine: 5, severity: null, anchorContent: "x", body: "On a line" });
+    caller = new AbortController();
+    const result = (await harness.behavior.callRpc("getReview", { threadId: THREAD, target: { kind: "uncommitted" } }, { signal: caller.signal })) as Extract<ReviewView, { ok: true }>;
+    expect(result.files.find((file) => file.path === "big.txt")!.patch).toBeNull();
+    expect(harness.inspection.logEntries.filter((entry) => entry.message.includes("left to load on demand"))).toEqual([]);
+    expect(git.calls.at(-1)!.method).toBe("patches");
+  });
+});
+
+describe("bb diff-review open", () => {
+  it("asks the windows to open the thread's review on a view and file, and prints the page", async () => {
+    const { harness } = await setup();
+    const out = await harness.behavior.runCli(["open", "src/a.ts", "--view", "branch"], { threadId: THREAD });
+    expect(out.exitCode).toBe(0);
+    const target = { kind: "branch", base: "main" };
+    expect(harness.inspection.realtimeSignals.at(-1)).toEqual({ channel: "open-review", payload: { threadId: THREAD, target, file: "src/a.ts" } });
+    expect(out.stdout).toContain("Opening the review of committed changes since main for thr_review");
+    expect(out.stdout).toContain(`/plugins/diff-review/reviews/${THREAD}/`);
+    expect(out.stdout).not.toContain("is not in that view");
+  });
+
+  it("says when the file is not in the view, and refuses mixed-up options", async () => {
+    const { harness } = await setup();
+    expect((await harness.behavior.runCli(["open", "nope.ts"], { threadId: THREAD })).stdout).toContain("nope.ts is not in that view.");
+    expect((await harness.behavior.runCli(["open", "--commit", "zzz"], { threadId: THREAD })).exitCode).not.toBe(0);
+    expect((await harness.behavior.runCli(["open", "--base", "main"], { threadId: THREAD })).exitCode).not.toBe(0);
+    expect((await harness.behavior.runCli(["open"], {})).exitCode).not.toBe(0);
+  });
+});
+
+describe("changes made outside a turn", () => {
+  const diffSignals = (harness: Awaited<ReturnType<typeof setup>>["harness"]) =>
+    harness.inspection.realtimeSignals.filter((signal) => signal.channel === `environment:${ENV}` && (signal.payload as { kind: string }).kind === "diff").length;
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 600));
+  const watch = (rpc: (method: string, input?: unknown) => Promise<unknown>, active: boolean, view = "uncommitted", tab = "tab1") => rpc("watchWorkspace", { threadId: THREAD, tab, view, active });
+
+  it("reloads a showing tab when bb sees an edit that keeps every line count, and not again for nothing", async () => {
+    const { view, rpc, harness, workspace, emitEnvironmentChanged } = await setup();
+    await view();
+    await watch(rpc, true);
+    // The same number of lines, other content: only the patch tells.
+    workspace.bigVersion = 2;
+    emitEnvironmentChanged();
+    emitEnvironmentChanged();
+    await settle();
+    expect(diffSignals(harness)).toBe(1);
+    // bb says something changed, but nothing did: no reload, so the check cannot loop.
+    emitEnvironmentChanged();
+    await settle();
+    expect(diffSignals(harness)).toBe(1);
+    // Changes bb sends that are not about files are ignored.
+    workspace.bigVersion = 3;
+    emitEnvironmentChanged(["metadata-changed"]);
+    await settle();
+    expect(diffSignals(harness)).toBe(1);
+  });
+
+  it("reloads a showing staged or unstaged view when only the index changes", async () => {
+    const { view, rpc, harness, emitEnvironmentChanged, index } = await setup();
+    await view({ kind: "staged" });
+    await watch(rpc, true, "staged");
+    index.key = "index-2";
+    emitEnvironmentChanged();
+    await settle();
+    expect(diffSignals(harness)).toBe(1);
+  });
+
+  it("reads nothing for a workspace no tab shows, and checks it once when a tab shows it again", async () => {
+    const { view, rpc, harness, workspace, git, hostCalls, emitEnvironmentChanged } = await setup();
+    await view({ kind: "staged" });
+    await watch(rpc, true, "staged");
+    await watch(rpc, false, "staged");
+    const reads = () => git.calls.length + hostCalls.filter((call) => call.method === "indexState").length;
+    const before = reads();
+    workspace.bigVersion = 2;
+    emitEnvironmentChanged();
+    emitEnvironmentChanged();
+    await settle();
+    expect(reads()).toBe(before);
+    expect(diffSignals(harness)).toBe(0);
+    // Shown again: one check, which finds the change.
+    await watch(rpc, true, "uncommitted", "tab2");
+    await settle();
+    expect(diffSignals(harness)).toBe(1);
+    // A staged view visited once does not keep the index scanned once no tab shows one.
+    await watch(rpc, false, "uncommitted", "tab2");
+    await watch(rpc, true, "uncommitted", "tab3");
+    const indexReads = hostCalls.filter((call) => call.method === "indexState").length;
+    workspace.bigVersion = 3;
+    emitEnvironmentChanged();
+    await settle();
+    expect(hostCalls.filter((call) => call.method === "indexState").length).toBe(indexReads);
+  });
+
+  it("does no work for a workspace that was loaded but that no tab shows", async () => {
+    const { view, harness, workspace, git, emitEnvironmentChanged } = await setup();
+    await view();
+    const before = git.calls.length;
+    workspace.bigVersion = 2;
+    emitEnvironmentChanged();
+    await settle();
+    expect(git.calls.length).toBe(before);
+    expect(diffSignals(harness)).toBe(0);
+  });
+
+  it("lets a lease lapse when its tab stops renewing it", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const { view, rpc, git, emitEnvironmentChanged } = await setup();
+      await view();
+      await watch(rpc, true);
+      vi.setSystemTime(Date.now() + 91_000);
+      const before = git.calls.length;
+      emitEnvironmentChanged();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      vi.useRealTimers();
+      await settle();
+      expect(git.calls.length).toBe(before);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("refusals", () => {
+  it("answers a caller's mistake as bb's expected refusal, not a handler crash", async () => {
+    const { rpc } = await setup();
+    await expect(rpc("setStatus", { reviewThreadId: "nonexistent01", status: "resolved" })).rejects.toMatchObject({ code: "not_found", message: expect.stringContaining("nonexistent01") });
+  });
+});
+
+describe("the Reviews page", () => {
+  it("lists reviews with comment threads, each with the thread to open it in, and counts them", async () => {
+    const { rpc, view, comment, harness } = await setup();
+    const { sessionId } = await view();
+    expect(await rpc("listReviews", {})).toEqual({ reviews: [] });
+    const made = await comment(sessionId);
+    await comment(sessionId, "And this?");
+    await rpc("setStatus", { reviewThreadId: made.id, status: "resolved" });
+    // The tab keeps state for the review, which names the thread it opens in.
+    await rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: {}, collapsed: {}, scroll: null, savedAt: 1 } });
+    expect(((await rpc("listReviews", {})) as { reviews: unknown[] }).reviews).toEqual([
+      expect.objectContaining({ sessionId, environmentId: ENV, target: { kind: "uncommitted" }, openCount: 1, totalCount: 2, threadId: THREAD, projectId: expect.any(String) }),
+    ]);
+    expect(await rpc("reviewCounts", {})).toEqual({ open: 1, total: 2 });
+    expect(await rpc("reviewCounts", { environmentId: ENV })).toEqual({ open: 1, total: 2 });
+    expect(await rpc("reviewCounts", { environmentId: "env_other" })).toEqual({ open: 0, total: 0 });
+    expect(harness.inspection.realtimeSignals.some((event) => event.channel === "reviews")).toBe(true);
+  });
+
+  it("counts for the badge only the reviews it lists: one whose workspace is archived is in neither", async () => {
+    const { rpc, view, comment, harness } = await setup();
+    const { sessionId } = await view();
+    await comment(sessionId);
+    await comment(sessionId, "And this?");
+    await rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: {}, collapsed: {}, scroll: null, savedAt: 1 } });
+    expect(await rpc("reviewCounts", {})).toEqual({ open: 2, total: 2 });
+    // The thread is archived, its worktree with it, and no other thread works there.
+    harness.sdk.stub("threads.get", async ({ threadId }: { threadId: string }) => makeThreadResponse({ id: threadId, environmentId: ENV, archivedAt: 1 }));
+    harness.sdk.stub("threads.list", async () => []);
+    expect(await rpc("listReviews", {})).toEqual({ reviews: [] });
+    expect(await rpc("reviewCounts", {})).toEqual({ open: 0, total: 0 });
+  });
+  /** A review with two open comment threads, whose tab `THREAD` showed. */
+  async function reviewed() {
+    const context = await setup();
+    const { sessionId } = await context.view();
+    await context.comment(sessionId);
+    await context.comment(sessionId, "And this?");
+    await context.rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: {}, collapsed: {}, scroll: null, savedAt: 1 } });
+    return { ...context, sessionId };
+  }
+  const archived = (harness: Awaited<ReturnType<typeof setup>>["harness"], archivedAt: number | null = 1) => {
+    harness.sdk.stub("threads.get", async ({ threadId }: { threadId: string }) => makeThreadResponse({ id: threadId, environmentId: ENV, archivedAt }));
+    harness.sdk.stub("threads.list", async () => []);
+  };
+
+  it("finds the reviews no live thread can open and whose workspace is gone, and deletes only those it is asked to", async () => {
+    const { rpc, harness, sessionId } = await reviewed();
+    expect(await rpc("orphanReviews", {})).toEqual({ reviews: [] });
+    // Every thread archived, but the workspace is still there: not an orphan.
+    archived(harness);
+    expect(await rpc("orphanReviews", {})).toEqual({ reviews: [] });
+    // A workspace bb cannot answer for is not taken for gone.
+    harness.sdk.stub("environments.get", async () => {
+      throw new Error("bb is busy");
+    });
+    expect(await rpc("orphanReviews", {})).toEqual({ reviews: [] });
+    harness.sdk.stub("environments.get", async () => environment({ status: "destroyed", path: null }) as never);
+    expect(await rpc("orphanReviews", {})).toEqual({
+      reviews: [{ sessionId, environmentId: ENV, target: { kind: "uncommitted" }, openCount: 2, totalCount: 2, updatedAt: expect.any(Number) }],
+    });
+
+    // Only a review it offered goes.
+    expect(await rpc("deleteOrphanReviews", { sessionIds: ["0123456789ab"] })).toEqual({ deleted: 0, deletedThreads: 0 });
+    expect(((await rpc("orphanReviews", {})) as { reviews: unknown[] }).reviews).toHaveLength(1);
+    expect(await rpc("deleteOrphanReviews", { sessionIds: [sessionId] })).toEqual({ deleted: 1, deletedThreads: 2 });
+    expect(await rpc("orphanReviews", {})).toEqual({ reviews: [] });
+    await expect(rpc("listThreads", { sessionId })).rejects.toThrow(`No review session ${sessionId}`);
+    expect(harness.inspection.realtimeSignals.filter((event) => event.channel === "reviews").at(-1)!.payload).toEqual({ kind: "threads", sessionId });
+  });
+
+  /** A gate a fake bb call waits at: `reached` resolves when the call gets there, `open()` lets it on. */
+  function gate() {
+    let arrive = () => undefined as void;
+    let open = () => undefined as void;
+    const reached = new Promise<void>((resolve) => (arrive = resolve));
+    const opened = new Promise<void>((resolve) => (open = resolve));
+    return { reached, open, wait: () => (arrive(), opened) };
+  }
+  const execution = { providerId: "claude-code", model: "big", reasoningLevel: "high" };
+  /** The review's workspace destroyed and every thread archived, but those `live` names (in `env_fix`). */
+  const retire = (harness: Awaited<ReturnType<typeof setup>>["harness"], live: readonly string[] = [], hold?: { threadId: string; wait(): Promise<void> }) => {
+    harness.sdk.stub("threads.get", async ({ threadId }: { threadId: string }) => {
+      if (hold?.threadId === threadId) await hold.wait();
+      return makeThreadResponse({ id: threadId, environmentId: live.includes(threadId) ? "env_fix" : ENV, archivedAt: live.includes(threadId) ? null : 1 });
+    });
+    harness.sdk.stub("threads.list", async () => []);
+    harness.sdk.stub("environments.get", async () => environment({ status: "destroyed", path: null }) as never);
+  };
+  const recordArchives = (harness: Awaited<ReturnType<typeof setup>>["harness"]) => {
+    const archived: string[] = [];
+    harness.sdk.stub("threads.archive", async ({ threadId }: { threadId: string }) => (archived.push(threadId), { ok: true as const }));
+    return archived;
+  };
+  const threadIdsOf = async (rpc: Awaited<ReturnType<typeof setup>>["rpc"], sessionId: string) =>
+    ((await rpc("listThreads", { sessionId })) as { threads: { id: string }[] }).threads.map((thread) => thread.id);
+
+  it("keeps a review whose fixer is still live, in another workspace, and archives nothing", async () => {
+    const { rpc, harness, sessionId } = await reviewed();
+    const fixed = (await rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: await threadIdsOf(rpc, sessionId), note: "", execution })) as { run: { threadId: string } };
+    expect(fixed.run.threadId).toBe("thr_run_1");
+    const archived = recordArchives(harness);
+    retire(harness, ["thr_run_1"]);
+    expect(await rpc("orphanReviews", {})).toEqual({ reviews: [] });
+    expect(await rpc("deleteOrphanReviews", { sessionIds: [sessionId] })).toEqual({ deleted: 0, deletedThreads: 0 });
+    // Once the fixer is archived as well, nothing of the review is live: it is an orphan.
+    retire(harness);
+    expect(await rpc("deleteOrphanReviews", { sessionIds: [sessionId] })).toEqual({ deleted: 1, deletedThreads: 2 });
+    expect(archived).toEqual([]);
+  });
+
+  for (const held of ["provider lookup", "spawn"] as const) {
+    it(`keeps a review whose run is still starting (held at its ${held}), and the run starts as asked`, async () => {
+      const hold = gate();
+      const context = await setup(held === "spawn" ? { holdSpawn: hold.wait } : { holdProviders: hold.wait });
+      const { sessionId } = await context.view();
+      await context.comment(sessionId);
+      await context.rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: {}, collapsed: {}, scroll: null, savedAt: 1 } });
+      const ids = await threadIdsOf(context.rpc, sessionId);
+      const starting = context.rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: ids, note: "", execution });
+      await hold.reached;
+      const archived = recordArchives(context.harness);
+      retire(context.harness);
+      expect(await context.rpc("orphanReviews", {})).toEqual({ reviews: [] });
+      expect(await context.rpc("deleteOrphanReviews", { sessionIds: [sessionId] })).toEqual({ deleted: 0, deletedThreads: 0 });
+      hold.open();
+      expect(((await starting) as { run: { status: string; threadId: string } }).run).toMatchObject({ status: "running", threadId: "thr_run_1" });
+      expect(archived).toEqual([]);
+    });
+  }
+
+  it("keeps a review that started a run while the delete was checking it", async () => {
+    const { rpc, harness, sessionId } = await reviewed();
+    const ids = await threadIdsOf(rpc, sessionId);
+    // An earlier fixer, archived since: it alone would not keep the review.
+    await rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: ids, note: "", execution });
+    const hold = gate();
+    retire(harness, [], { threadId: "thr_run_1", wait: hold.wait });
+    const deleting = rpc("deleteOrphanReviews", { sessionIds: [sessionId] });
+    // The check is asking about the old fixer when a new fix starts.
+    await hold.reached;
+    const starting = rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: ids, note: "", execution });
+    hold.open();
+    expect(await deleting).toEqual({ deleted: 0, deletedThreads: 0 });
+    expect(((await starting) as { run: { threadId: string } }).run.threadId).toBe("thr_run_2");
+  });
+
+  it("checks each review right before its own delete: a worker brought back while another review is checked keeps its review", async () => {
+    const { rpc, harness, view, comment } = await setup();
+    const older = (await view()).sessionId;
+    await comment(older);
+    const newer = (await view({ kind: "branch", base: "main" })).sessionId;
+    await rpc("createThread", { sessionId: newer, threadId: THREAD, filePath: "__general__", side: null, startLine: 0, endLine: 0, severity: null, anchorContent: null, body: "Overall?" });
+    for (const sessionId of [older, newer]) await rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: {}, collapsed: {}, scroll: null, savedAt: 1 } });
+    // Each review's fixer: thr_run_1 for the older one, thr_run_2 for the newer.
+    for (const sessionId of [older, newer]) await rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: await threadIdsOf(rpc, sessionId), note: "", execution });
+    const live = new Set<string>();
+    const hold = gate();
+    let holding = false;
+    harness.sdk.stub("threads.get", async ({ threadId }: { threadId: string }) => {
+      if (holding && threadId === "thr_run_1") await hold.wait();
+      return makeThreadResponse({ id: threadId, environmentId: live.has(threadId) ? "env_fix" : ENV, archivedAt: live.has(threadId) ? null : 1 });
+    });
+    harness.sdk.stub("threads.list", async () => []);
+    harness.sdk.stub("environments.get", async () => environment({ status: "destroyed", path: null }) as never);
+    const archived = recordArchives(harness);
+    expect(((await rpc("orphanReviews", {})) as { reviews: unknown[] }).reviews).toHaveLength(2);
+    // Deleting both: while the older review's fixer is being asked about, the newer one's comes back.
+    holding = true;
+    const deleting = rpc("deleteOrphanReviews", { sessionIds: [older, newer] });
+    await hold.reached;
+    live.add("thr_run_2");
+    hold.open();
+    expect(await deleting).toEqual({ deleted: 1, deletedThreads: 1 });
+    expect(((await rpc("listThreads", { sessionId: newer })) as { threads: unknown[] }).threads).toHaveLength(1);
+    await expect(rpc("listThreads", { sessionId: older })).rejects.toThrow(`No review session ${older}`);
+    expect(archived).toEqual([]);
+  });
+
+  it("counts a start that failed before it had a thread as no worker: its review can be deleted", async () => {
+    for (const failure of ["before spawn", "spawn refused"] as const) {
+      const context = await setup(failure === "spawn refused" ? { spawnFails: true } : {});
+      const { sessionId } = await context.view();
+      await context.comment(sessionId);
+      await context.rpc("saveViewState", { threadId: THREAD, sessionId, state: { drafts: {}, collapsed: {}, scroll: null, savedAt: 1 } });
+      if (failure === "before spawn") {
+        context.harness.sdk.stub("environments.get", async () => {
+          throw new Error("bb is restarting");
+        });
+      }
+      const { run } = (await context.rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: await threadIdsOf(context.rpc, sessionId), note: "", execution })) as { run: { status: string; threadId: string | null } };
+      expect(run, failure).toMatchObject({ status: "failed", threadId: null });
+      retire(context.harness);
+      expect(((await context.rpc("orphanReviews", {})) as { reviews: unknown[] }).reviews, failure).toHaveLength(1);
+      expect(await context.rpc("deleteOrphanReviews", { sessionIds: [sessionId] }), failure).toEqual({ deleted: 1, deletedThreads: 1 });
+    }
+  });
+
+  it("keeps a review that a thread can open again by the time the delete is confirmed", async () => {
+    const { rpc, harness, sessionId } = await reviewed();
+    archived(harness);
+    harness.sdk.stub("environments.get", async () => environment({ status: "destroyed", path: null }) as never);
+    expect(((await rpc("orphanReviews", {})) as { reviews: unknown[] }).reviews).toHaveLength(1);
+    // The thread is brought back from the archive before the user confirms.
+    archived(harness, null);
+    expect(await rpc("deleteOrphanReviews", { sessionIds: [sessionId] })).toEqual({ deleted: 0, deletedThreads: 0 });
+    expect(((await rpc("listReviews", {})) as { reviews: unknown[] }).reviews).toHaveLength(1);
+  });
+});
+
+describe("the tab's kept state", () => {
+  const state = (drafts: Record<string, unknown> = {}) => ({
+    drafts,
+    collapsed: { "src/a.ts": true },
+    scroll: { path: "src/a.ts", index: 0, offset: 40 },
+    savedAt: 5,
+  });
+
+  it("keeps drafts, folds and the scroll place per thread and view, and drops drafts whose thread or comment is gone", async () => {
+    const { rpc, view, comment } = await setup({ threads: { [THREAD]: { environmentId: ENV }, thr_other: { environmentId: ENV } } });
+    const first = await view();
+    expect(first.viewState).toBeNull();
+    const kept = await comment(first.sessionId, "Keep me");
+    const gone = await comment(first.sessionId, "Delete me");
+    const saved = state({
+      general: { body: "Half a thought", severity: "nit", range: null },
+      "line:src/a.ts": { body: "On b", severity: null, range: { side: "new", startLine: 2, endLine: 2 } },
+      [`reply:${kept.id}`]: { body: "Not sure", severity: null, range: null },
+      [`reply:${gone.id}`]: { body: "Lost", severity: null, range: null },
+      [`edit:${kept.comments[0]!.id}`]: { body: "Keep me, edited", severity: null, range: null },
+    });
+    expect(await rpc("saveViewState", { threadId: THREAD, sessionId: first.sessionId, state: saved })).toEqual({ ok: true });
+    await rpc("deleteComment", { commentId: gone.comments[0]!.id });
+
+    const { [`reply:${gone.id}`]: _dropped, ...expected } = saved.drafts;
+    expect((await view()).viewState).toEqual({ ...saved, drafts: expected, expandedThreads: {} });
+    // Another thread's tab and another view start empty.
+    expect(((await rpc("getReview", { threadId: "thr_other", target: { kind: "uncommitted" } })) as { viewState: unknown }).viewState).toBeNull();
+    expect((await view({ kind: "branch" })).viewState).toBeNull();
+  });
+
+  it("keeps the copy saved last when an older one arrives after it", async () => {
+    const { rpc, view } = await setup();
+    const { sessionId } = await view();
+    const newer = { ...state({ general: { body: "Newer", severity: null, range: null } }), savedAt: 20 };
+    const older = { ...state({ general: { body: "Older", severity: null, range: null } }), savedAt: 10 };
+    await rpc("saveViewState", { threadId: THREAD, sessionId, state: newer });
+    await rpc("saveViewState", { threadId: THREAD, sessionId, state: older });
+    expect((await view()).viewState).toEqual({ ...newer, expandedThreads: {} });
+  });
+
+  it("refuses a state that is too big or for an unknown session", async () => {
+    const { rpc, view } = await setup();
+    const { sessionId } = await view();
+    const drafts = Object.fromEntries(Array.from({ length: 201 }, (_, index) => [`file:f${index}`, { body: "x", severity: null, range: null }]));
+    await expect(rpc("saveViewState", { threadId: THREAD, sessionId, state: state(drafts) })).rejects.toThrow();
+    await expect(rpc("saveViewState", { threadId: THREAD, sessionId: "nope", state: state() })).rejects.toThrow();
+  });
+});
+
+describe("comments", () => {
+  it("stores line, file and whole-diff threads and signals the workspace's channel", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const line = await comment(sessionId);
+    expect(line).toMatchObject({ filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, status: "open", severity: "question", delivery: null });
+    expect(line.comments.map((c) => [c.authorType, c.body])).toEqual([["user", "Why 3?"]]);
+
+    const file = (await rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 0, endLine: 7, severity: null, anchorContent: "x", body: "Split this file" })) as { thread: ReviewThread };
+    expect(file.thread).toMatchObject({ side: null, startLine: 0, endLine: 0, anchorContent: null });
+    const general = (await rpc("createThread", { sessionId, filePath: "__general__", side: "old", startLine: 3, endLine: 3, severity: null, anchorContent: null, body: "Add tests" })) as { thread: ReviewThread };
+    expect(general.thread).toMatchObject({ side: null, startLine: 0 });
+
+    const listed = (await rpc("listThreads", { sessionId })) as { threads: ReviewThread[] };
+    expect(listed.threads.map((thread) => thread.id)).toEqual([line.id, file.thread.id, general.thread.id]);
+    expect(harness.inspection.realtimeSignals.filter((signal) => signal.channel === `environment:${ENV}`).at(-1)).toEqual({ channel: `environment:${ENV}`, payload: { kind: "threads", sessionId } });
+  });
+
+  it("refuses a range that ends before it starts, and an empty comment", async () => {
+    const { rpc, view } = await setup();
+    const { sessionId } = await view();
+    await expect(rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 5, endLine: 2, severity: null, anchorContent: null, body: "x" })).rejects.toThrow(
+      "A range must end at or after its start.",
+    );
+    await expect(rpc("createThread", { sessionId, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, severity: null, anchorContent: null, body: "  " })).rejects.toThrow("The comment is empty.");
+  });
+
+  it("replies, edits, resolves and deletes", async () => {
+    const { rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const thread = await comment(sessionId);
+    const replied = ((await rpc("addComment", { reviewThreadId: thread.id, body: "Also 4?" })) as { thread: ReviewThread }).thread;
+    expect(replied.comments).toHaveLength(2);
+    const edited = ((await rpc("editComment", { commentId: replied.comments[1]!.id, body: "Also 5?" })) as { thread: ReviewThread }).thread;
+    expect(edited.comments[1]).toMatchObject({ body: "Also 5?" });
+    expect(edited.comments[1]!.editedAt).not.toBeNull();
+    const resolved = ((await rpc("setStatus", { reviewThreadId: thread.id, status: "resolved" })) as { thread: ReviewThread }).thread;
+    expect(resolved.status).toBe("resolved");
+    await rpc("deleteComment", { commentId: replied.comments[1]!.id });
+    await rpc("deleteComment", { commentId: replied.comments[0]!.id });
+    expect(((await rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads).toEqual([]);
+  });
+});
+
+describe("sending to the agent and its answers", () => {
+  async function sent(options: Setup = {}) {
+    const context = await setup(options);
+    const { sessionId } = await context.view();
+    const thread = await context.comment(sessionId);
+    const result = await context.rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "Keep it small." });
+    return { ...context, sessionId, thread, result };
+  }
+
+  it("sends the threads, queued behind the current turn, in a message that lists them", async () => {
+    const { harness, thread, result } = await sent();
+    expect(result).toEqual({ delivery: "sent", count: 1 });
+    const call = harness.inspection.sdk.callsTo("threads.send")[0]![0] as { threadId: string; mode: string; input: { text: string }[] };
+    expect(call.threadId).toBe(THREAD);
+    expect(call.mode).toBe("queue-if-active");
+    const text = call.input[0]!.text;
+    expect(text).toContain(`### Thread \`${thread.id}\` — src/a.ts:2 (new side) · question`);
+    expect(text).toContain("> Why 3?");
+    expect(text).toContain("## Review summary\n\nKeep it small.");
+    expect(text).toContain("bb diff-review reply <thread-id> --text-base64-stdin");
+  });
+
+  it("marks the threads as sent to that thread", async () => {
+    const { rpc, sessionId } = await sent();
+    const [thread] = ((await rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads;
+    expect(thread!.delivery).toMatchObject({ state: "sent", threadId: THREAD });
+  });
+
+  it("forgets a send bb refused", async () => {
+    const context = await setup({ sendFails: true });
+    const { sessionId } = await context.view();
+    const thread = await context.comment(sessionId);
+    await expect(context.rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" })).rejects.toThrow("thread is archived");
+    const [row] = ((await context.rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads;
+    expect(row!.delivery).toBeNull();
+  });
+
+  it("refuses a thread in another workspace, and a thread that is not open", async () => {
+    const context = await setup({ threads: { [THREAD]: { environmentId: ENV }, thr_other: { environmentId: "env_2" } } });
+    const { sessionId } = await context.view();
+    const thread = await context.comment(sessionId);
+    await expect(context.rpc("send", { sessionId, threadId: "thr_other", reviewThreadIds: [thread.id], note: "" })).rejects.toThrow("another workspace");
+    await context.rpc("setStatus", { reviewThreadId: thread.id, status: "resolved" });
+    await expect(context.rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" })).rejects.toThrow("is resolved");
+  });
+
+  it("lets the agent list, reply and resolve, by id prefix and base64 text", async () => {
+    const { harness, rpc, sessionId, thread } = await sent();
+    const listed = await harness.behavior.runCli(["list"], { threadId: THREAD });
+    expect(listed.stdout).toContain(`${thread.id}  open · src/a.ts:2 (new side) · question`);
+    expect(listed.stdout).toContain("    Why 3?");
+
+    const reply = await harness.behavior.runCli(["reply", thread.id.slice(0, 6), "--text-base64", Buffer.from("Because `b` grew.\nSee src/a.ts:2\n").toString("base64")], { threadId: THREAD });
+    expect(reply).toMatchObject({ exitCode: 0, stdout: `Replied on ${thread.id} (src/a.ts:2 (new side)).\n` });
+    let [row] = ((await rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads;
+    expect(row!.comments.at(-1)).toMatchObject({ authorType: "agent", authorName: "Claude Code", body: "Because `b` grew.\nSee src/a.ts:2" });
+    expect(row!.delivery!.state).toBe("answered");
+    expect(row!.status).toBe("open");
+
+    const resolve = await harness.behavior.runCli(["resolve", thread.id, "Fixed:", "renamed", "b."], { threadId: THREAD });
+    expect(resolve.exitCode).toBe(0);
+    [row] = ((await rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads;
+    expect(row!.status).toBe("resolved");
+    expect(row!.comments.at(-1)!.body).toBe("Fixed: renamed b.");
+    expect((await harness.behavior.runCli(["list"], { threadId: THREAD })).stdout).toBe("No open comment threads were sent to this thread.\n");
+    expect((await harness.behavior.runCli(["list", "--all", "--json"], { threadId: THREAD })).stdout).toContain(thread.id);
+  });
+
+  it("refuses an answer from any other thread, or from outside a thread", async () => {
+    const { harness, thread } = await sent({ threads: { [THREAD]: { environmentId: ENV }, thr_other: { environmentId: ENV } } });
+    const other = await harness.behavior.runCli(["dismiss", thread.id, "nope"], { threadId: "thr_other" });
+    expect(other.exitCode).not.toBe(0);
+    expect(other.stderr).toContain("was not sent to this thread");
+    const outside = await harness.behavior.runCli(["reply", thread.id, "hi"]);
+    expect(outside.exitCode).not.toBe(0);
+    expect(outside.stderr).toContain("Run this inside the bb thread");
+    const bad = await harness.behavior.runCli(["reply", thread.id, "--text-base64", "not base64!"], { threadId: THREAD });
+    expect(bad.stderr).toContain("not valid base64");
+  });
+
+  it("marks unanswered threads 'no reply' once a turn that started after the send ends", async () => {
+    const context = await sent();
+    const { harness, rpc, sessionId, turnStarts } = context;
+    const idle = () => harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: THREAD, environmentId: ENV }), lastAssistantText: "done" });
+
+    // The turn that was running when the comments were queued ends first: not their turn.
+    turnStarts.splice(0, turnStarts.length, 0);
+    await idle();
+    let [row] = ((await rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads;
+    expect(row!.delivery!.state).toBe("sent");
+
+    turnStarts.splice(0, turnStarts.length, Date.now() + 60_000);
+    await idle();
+    [row] = ((await rpc("listThreads", { sessionId })) as { threads: ReviewThread[] }).threads;
+    expect(row!.delivery!.state).toBe("no_reply");
+    // The workspace did not change since the first turn's end, so only the threads are re-read.
+    expect(harness.inspection.realtimeSignals.filter((signal) => signal.channel === `environment:${ENV}`).at(-1)).toEqual({ channel: `environment:${ENV}`, payload: { kind: "threads", sessionId } });
+  });
+
+  it("tells the tabs to reload only when a turn ends with the workspace changed", async () => {
+    const { harness, view, workspace } = await setup();
+    await view();
+    const diffSignals = () => harness.inspection.realtimeSignals.filter((signal) => (signal.payload as { kind: string }).kind === "diff").length;
+    const idle = () => harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: THREAD, environmentId: ENV }), lastAssistantText: "done" });
+    // The tab's load recorded the state, so even the first turn end since the plugin loaded knows a
+    // turn that changed nothing (an answer to a question, a notice read): no reload.
+    await idle();
+    await idle();
+    expect(diffSignals()).toBe(0);
+    workspace.extraFile = true;
+    await idle();
+    expect(diffSignals()).toBe(1);
+    workspace.head = "def";
+    await idle();
+    expect(diffSignals()).toBe(2);
+    await idle();
+    expect(diffSignals()).toBe(2);
+    expect(harness.inspection.logEntries.some((entry) => entry.level === "debug" && /ended; env_1 changed from \(head abc.*\) to \(head def/.test(entry.message))).toBe(true);
+  });
+
+  it("signals once for turns that end together, and ignores fields of bb's status it does not use", async () => {
+    const { harness, view, workspace } = await setup({ statusExtra: () => ({ checkedAt: Date.now() + Math.random() }) });
+    await view();
+    const diffSignals = () => harness.inspection.realtimeSignals.filter((signal) => (signal.payload as { kind: string }).kind === "diff").length;
+    const idle = (id: string) => harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id, environmentId: ENV }), lastAssistantText: "done" });
+    await idle(THREAD);
+    expect(diffSignals()).toBe(0);
+    workspace.extraFile = true;
+    await Promise.all([idle(THREAD), idle("thr_reviewer")]);
+    expect(diffSignals()).toBe(1);
+  });
+});
+
+describe("AI runs", () => {
+  type RunResult = { run: Run };
+  const execution = { providerId: "claude-code", model: "big", reasoningLevel: "high" };
+  const sessionState = async (rpc: (method: string, input?: unknown) => Promise<unknown>, sessionId: string) =>
+    (await rpc("listThreads", { sessionId })) as { threads: ReviewThread[]; runs: Run[] };
+  const tool = (harness: Awaited<ReturnType<typeof setup>>["harness"], name: string, input: unknown, threadId: string) =>
+    harness.behavior.callAgentTool(name, input, { threadId, projectId: "proj_1" });
+  const textOf = (result: unknown) =>
+    typeof result === "string" ? result : (result as { content: { text: string }[] }).content.map((part) => part.text).join("");
+  const isError = (result: unknown) => typeof result !== "string" && (result as { isError?: boolean }).isError === true;
+
+  it("starts the pickers on the settings' provider and its default model", async () => {
+    const { rpc } = await setup();
+    expect(await rpc("runDefaults", { threadId: THREAD })).toEqual({
+      execution: { providerId: "claude-code", model: "big", reasoningLevel: "high" },
+      message: null,
+      permissionMode: "auto",
+    });
+  });
+
+  it("starts an AI review as a child of the thread under review, in its workspace, in Approve for me mode", async () => {
+    const { harness, rpc, view } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: ["Security", "Tests"], instructions: "Check the auth path.", execution })) as RunResult;
+    expect(run).toMatchObject({ kind: "review", focus: "Security, Tests", status: "running", threadId: "thr_run_1", providerId: "claude-code", model: "big" });
+    const spawn = harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as Record<string, unknown>;
+    expect(spawn).toMatchObject({
+      projectId: "proj_1",
+      title: "Review: Security, Tests",
+      environment: { type: "reuse", environmentId: ENV },
+      providerId: "claude-code",
+      model: "big",
+      reasoningLevel: "high",
+      permissionMode: "auto",
+      parentThreadId: THREAD,
+      pluginMetadata: { diffReviewRunId: run.id },
+    });
+    expect(spawn.visibility).toBeUndefined();
+    expect(spawn.prompt).toContain("- Focus: Security, Tests");
+    expect(spawn.prompt).toContain("Check the auth path.");
+    // Its final message, which bb posts to the parent, says it is a report.
+    expect(spawn.prompt).toContain(`Start your final message with this line, exactly: "${REPORT_LINE}"`);
+    expect((await view()).runs.map((row) => row.id)).toEqual([run.id]);
+  });
+
+  it("tells every run on a range view the commits the tab compares, read on the workspace's machine", async () => {
+    const { harness, rpc, view, comment, hostCalls } = await setup();
+    const { sessionId } = await view({ kind: "range", from: "main", to: "feature", symmetric: true });
+    // A question with no reviewer yet starts one, whose first message says how to read the diff.
+    await comment(sessionId, "@reviewer why?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    await rpc("startSummary", { sessionId, threadId: THREAD, execution });
+    await rpc("startExplain", { sessionId, threadId: THREAD, filePath: "src/a.ts", side: null, startLine: 0, endLine: 0, code: null });
+    const prompts = harness.inspection.sdk.callsTo("threads.spawn").map((call) => (call[0] as { prompt: string }).prompt);
+    expect(prompts).toHaveLength(4);
+    for (const prompt of prompts) {
+      expect(prompt).toContain("`git diff fork1234 head5678` (the commits the tab compares for main...feature)");
+      expect(prompt).not.toContain("`git diff main...feature`");
+    }
+    expect(hostCalls.filter((call) => call.method === "rangeCommits").map((call) => call.input)).toContainEqual({ root: "/work/repo", spec: { kind: "range", from: "main", to: "feature", symmetric: true } });
+  });
+
+  it("starts a summary that leaves its result as a comment on the whole diff, and is no reviewer", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startSummary", { sessionId, threadId: THREAD, execution })) as RunResult;
+    expect(run).toMatchObject({ kind: "summary", status: "running", threadId: "thr_run_1" });
+    const spawn = harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as Record<string, unknown>;
+    expect(spawn).toMatchObject({ title: "Summary of the changes", parentThreadId: THREAD, permissionMode: "auto" });
+    expect(spawn.prompt).toContain("diff_review_general_comment");
+    expect(spawn.prompt).toContain(REPORT_LINE);
+    await tool(harness, "diff_review_general_comment", { body: "**Overview**: b becomes 3." }, run.threadId!);
+    expect((await sessionState(rpc, sessionId)).threads.map((row) => row.comments[0]!.body)).toEqual(["**Overview**: b becomes 3."]);
+    // An @reviewer question starts a reviewer of its own: a summary is not the view's reviewer.
+    await comment(sessionId, "@reviewer why?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(2));
+    expect((harness.inspection.sdk.callsTo("threads.spawn")[1]![0] as { prompt: string }).prompt).toContain("A question about a review thread");
+  });
+
+  it("starts an explanation of lines with the settings' agent, and lets it comment there", async () => {
+    const { harness, rpc, view } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startExplain", { sessionId, threadId: THREAD, filePath: "src/a.ts", side: "new", startLine: 2, endLine: 2, code: "const b = 3;" })) as RunResult;
+    expect(run).toMatchObject({ kind: "explain", focus: "src/a.ts:2", status: "running" });
+    const spawn = harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as Record<string, unknown>;
+    expect(spawn).toMatchObject({ title: "Explain a.ts:2", providerId: "claude-code" });
+    expect(spawn.reasoningLevel).toBeUndefined();
+    expect(spawn.prompt).toContain("# Explain line 2 of `src/a.ts` (the new side)");
+    expect(spawn.prompt).toContain("const b = 3;");
+    const ok = await tool(harness, "diff_review_comment", { file: "src/a.ts", startLine: 2, body: "It sets b." }, run.threadId!);
+    expect(isError(ok)).toBe(false);
+  });
+
+  it("lets an explanation in the Files view comment on the file's own lines", async () => {
+    const { rpc, view, harness } = await setup({ files: { "/work/repo/src/util.ts": "export const x = 1;\nexport const y = 2;\n" } });
+    const { sessionId } = await view({ kind: "files" });
+    const { run } = (await rpc("startExplain", { sessionId, threadId: THREAD, filePath: "src/util.ts", side: "new", startLine: 2, endLine: 2, code: "export const y = 2;" })) as RunResult;
+    const ok = await tool(harness, "diff_review_comment", { file: "src/util.ts", startLine: 2, body: "y is two." }, run.threadId!);
+    expect(isError(ok)).toBe(false);
+    const made = (await sessionState(rpc, sessionId)).threads[0]!;
+    expect(made).toMatchObject({ anchorContent: "export const y = 2;", fileRevision: sha("export const x = 1;\nexport const y = 2;\n") });
+    expect(isError(await tool(harness, "diff_review_comment", { file: "src/util.ts", startLine: 9, body: "x" }, run.threadId!))).toBe(true);
+  });
+
+  it("gives the tools only to run threads, and the skill to every thread", async () => {
+    const { harness } = await setup();
+    const runThread = await harness.behavior.resolveAgentConfiguration(makePluginAgentConfigurationContext({ pluginMetadata: { diffReviewRunId: "0123456789ab" } }));
+    expect(runThread.tools.map((entry) => entry.name).sort()).toEqual([...TOOL_NAMES].sort());
+    expect(runThread.skills).toEqual(["diff-review"]);
+    const other = await harness.behavior.resolveAgentConfiguration(makePluginAgentConfigurationContext());
+    expect(other.tools).toEqual([]);
+    expect(other.skills).toEqual(["diff-review"]);
+  });
+
+  it("lets a review run comment on lines shown in the diff, and says which are when they are not", async () => {
+    const { harness, rpc, view } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    const ok = await tool(harness, "diff_review_comment", { file: "src/a.ts", startLine: 2, severity: "must-fix", body: "b must stay 2" }, run.threadId!);
+    expect(textOf(ok)).toMatch(/^Added [0-9a-f]{12} on src\/a.ts:2 \(new side\)\.$/);
+    const bad = await tool(harness, "diff_review_comment", { file: "src/a.ts", startLine: 9, body: "x" }, run.threadId!);
+    expect(isError(bad)).toBe(true);
+    expect(textOf(bad)).toContain("Lines shown there: 1-2.");
+    const gone = await tool(harness, "diff_review_comment", { file: "nope.ts", startLine: 1, body: "x" }, run.threadId!);
+    expect(textOf(gone)).toContain("nope.ts is not in the diff under review.");
+    await tool(harness, "diff_review_general_comment", { body: "One must-fix." }, run.threadId!);
+
+    const { threads } = await sessionState(rpc, sessionId);
+    expect(threads.map((row) => [row.filePath, row.startLine, row.severity, row.anchorContent, row.comments[0]!.authorType])).toEqual([
+      ["src/a.ts", 2, "must-fix", "const b = 3;", "agent"],
+      ["__general__", 0, null, null, "agent"],
+    ]);
+    // The thread under review is not a review run: it answers, it does not comment.
+    expect(isError(await tool(harness, "diff_review_comment", { file: "src/a.ts", startLine: 2, body: "x" }, THREAD))).toBe(true);
+    // A review run may resolve any thread of its review, through the tool or the command.
+    const general = threads[1]!;
+    const resolved = await harness.behavior.runCli(["resolve", general.id, "Summary", "posted."], { threadId: run.threadId! });
+    expect(resolved.exitCode).toBe(0);
+  });
+
+  it("closes a review run when its turn ends, listing files that changed while it ran", async () => {
+    const { harness, rpc, view, workspace } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    workspace.extraFile = true;
+    await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: run.threadId!, environmentId: ENV }), lastAssistantText: "1 must-fix" });
+    const [finished] = (await sessionState(rpc, sessionId)).runs;
+    expect(finished).toMatchObject({ status: "done", summary: "1 must-fix", changedFiles: ["src/new.ts"] });
+  });
+
+  it("sends an @reviewer question to the view's reviewer as a follow-up turn, which answers with a review run's rights", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: run.threadId!, environmentId: ENV }), lastAssistantText: "1 must-fix" });
+    expect((await sessionState(rpc, sessionId)).runs[0]!.status).toBe("done");
+
+    const thread = await comment(sessionId, "@reviewer is this right?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1));
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
+    const send = harness.inspection.sdk.callsTo("threads.send")[0]![0] as { threadId: string; mode: string; input: { text: string }[] };
+    expect(send).toMatchObject({ threadId: run.threadId, mode: "queue-if-active" });
+    expect(send.input[0]!.text).toContain("The user asked you, the reviewer of this view");
+    expect(send.input[0]!.text).toContain(`- Thread: \`${thread.id}\``);
+    expect(send.input[0]!.text).toContain(REPORT_LINE);
+    const state = await sessionState(rpc, sessionId);
+    expect(state.runs).toMatchObject([{ id: run.id, status: "running" }]);
+    expect(state.threads[0]!.delivery).toMatchObject({ state: "sent", threadId: run.threadId });
+
+    // The follow-up turn still has a review run's rights: it answers, and may comment.
+    expect(isError(await tool(harness, "diff_review_reply", { threadId: thread.id, text: "Yes: b is 3 on purpose." }, run.threadId!))).toBe(false);
+    expect(isError(await tool(harness, "diff_review_general_comment", { body: "Also check c." }, run.threadId!))).toBe(false);
+    await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: run.threadId!, environmentId: ENV }), lastAssistantText: "Answered." });
+    expect((await sessionState(rpc, sessionId)).runs).toMatchObject([{ id: run.id, status: "done", summary: "Answered." }]);
+
+    // @agent means the same.
+    await comment(sessionId, "@agent and this one?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(2));
+    expect((harness.inspection.sdk.callsTo("threads.send")[1]![0] as { threadId: string }).threadId).toBe(run.threadId);
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
+  });
+
+  it("starts a reviewer for a view without one, which then takes the next questions", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const first = await comment(sessionId, "@agent why 3?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
+    const spawn = harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as Record<string, unknown>;
+    expect(spawn).toMatchObject({ providerId: "claude-code", permissionMode: "auto", parentThreadId: THREAD, title: "Reviewer: src/a.ts:2 (new side)" });
+    // The settings' provider at its default model, as no model is set.
+    expect(spawn.model).toBeUndefined();
+    expect(spawn.prompt).toContain("You are the reviewer of a diff in Diff Review");
+    expect(spawn.prompt).toContain(`- Thread: \`${first.id}\``);
+    await vi.waitFor(async () => expect((await sessionState(rpc, sessionId)).threads[0]!.delivery).toMatchObject({ state: "sent", threadId: "thr_run_1" }));
+    expect((await sessionState(rpc, sessionId)).runs).toMatchObject([{ kind: "review", threadId: "thr_run_1" }]);
+
+    await comment(sessionId, "@reviewer and here?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1));
+    expect((harness.inspection.sdk.callsTo("threads.send")[0]![0] as { threadId: string }).threadId).toBe("thr_run_1");
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
+
+    // Once closed, it is no longer the reviewer: the next question starts another.
+    const [reviewer] = (await sessionState(rpc, sessionId)).runs;
+    await rpc("closeRun", { runId: reviewer!.id });
+    await comment(sessionId, "@reviewer again?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(2));
+  });
+
+  it("starts a new reviewer when the reviewer's thread is gone", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    harness.sdk.stub("threads.send", async () => {
+      throw new Error("thread is archived");
+    });
+    await comment(sessionId, "@reviewer still there?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(2));
+    await vi.waitFor(async () => expect((await sessionState(rpc, sessionId)).runs.map((run) => run.threadId)).toEqual(["thr_run_2"]));
+  });
+
+  it("starts nothing for provider names, which no longer start agents", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    await comment(sessionId, "@claude, @codex or @opencode: why?");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
+    expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(0);
+  });
+
+  it("never sends one question twice: concurrent questions start one reviewer, and a thread already queued is not queued again", async () => {
+    // The reviewer's latest turn started at 1, before any question: a question sent now waits behind it.
+    const { harness, rpc, view, comment } = await setup({ turnStarts: [1] });
+    const { sessionId } = await view();
+    const a = await comment(sessionId, "Why?");
+    const b = await comment(sessionId, "And this?");
+    await Promise.all([
+      rpc("addComment", { reviewThreadId: a.id, body: "@reviewer?" }),
+      rpc("addComment", { reviewThreadId: b.id, body: "@agent?" }),
+    ]);
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1));
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
+    // Asked again while its question is still queued: the queued turn reads the thread as it is then.
+    await rpc("addComment", { reviewThreadId: b.id, body: "@agent, and also this?" });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1);
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
+  });
+
+  it("keeps a reviewer running while a question is queued behind its turn", async () => {
+    const { harness, rpc, view, comment, turnStarts } = await setup({ turnStarts: [1] });
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    await comment(sessionId, "@reviewer while you review?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1));
+    // The review's own turn ends; the question was queued after it started, so the next turn takes it.
+    await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: run.threadId!, environmentId: ENV }), lastAssistantText: "Review done." });
+    expect((await sessionState(rpc, sessionId)).runs[0]!.status).toBe("running");
+    // The next turn ends without answering it: no reply, and the run is done.
+    turnStarts.splice(0, turnStarts.length, Date.now() + 60_000);
+    await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: run.threadId!, environmentId: ENV }), lastAssistantText: "Nothing." });
+    const state = await sessionState(rpc, sessionId);
+    expect(state.runs[0]!.status).toBe("done");
+    expect(state.threads[0]!.delivery!.state).toBe("no_reply");
+  });
+
+  it("does not ask the reviewer for a mention inside code", async () => {
+    const { harness, view, comment } = await setup();
+    const { sessionId } = await view();
+    await comment(sessionId, "Rename `@reviewer` here");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(0);
+  });
+
+  it("fixes in a new thread: the comments go there, and only that thread may answer them", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Use a constant");
+    const result = (await rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "Small please", execution })) as { run: Run; count: number };
+    expect(result).toMatchObject({ count: 1, run: { kind: "fix", threadId: "thr_run_1", status: "running" } });
+    const spawn = harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as { prompt: string; title: string; parentThreadId?: string };
+    expect(spawn.title).toBe("Review fixes: 1 comment");
+    expect(spawn.parentThreadId).toBe(THREAD);
+    expect(spawn.prompt).toContain(REPORT_LINE);
+    expect(spawn.prompt).toContain(`### Thread \`${thread.id}\``);
+    expect(spawn.prompt).toContain("Small please");
+    const refused = await harness.behavior.runCli(["resolve", thread.id, "Fixed."], { threadId: THREAD });
+    expect(refused.stderr).toContain("was not sent to this thread");
+    const resolved = await tool(harness, "diff_review_resolve", { threadId: thread.id, text: "Fixed: added a constant." }, "thr_run_1");
+    expect(isError(resolved)).toBe(false);
+    expect((await sessionState(rpc, sessionId)).threads[0]!.status).toBe("resolved");
+  });
+
+  it("starts runs in Accept edits mode when the settings say so", async () => {
+    const { harness, rpc, view } = await setup();
+    await harness.behavior.setSettings({ aiPermissionMode: "accept-edits" });
+    const { sessionId } = await view();
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    expect(harness.inspection.sdk.callsTo("threads.spawn")[0]![0]).toMatchObject({ permissionMode: "accept-edits" });
+    expect(((await rpc("runDefaults", { threadId: THREAD })) as { permissionMode: string }).permissionMode).toBe("accept-edits");
+  });
+
+  it("starts a run in full mode when its provider does not support the configured mode", async () => {
+    const { harness, rpc, view } = await setup({ providerModes: { "acp-opencode": ["accept-edits", "full"], "claude-code": ["auto", "accept-edits", "full"] } });
+    const { sessionId } = await view();
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution: { ...execution, providerId: "acp-opencode" } });
+    expect(harness.inspection.sdk.callsTo("threads.spawn")[0]![0]).toMatchObject({ providerId: "acp-opencode", permissionMode: "full" });
+    // A provider that supports the configured mode keeps it.
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    expect(harness.inspection.sdk.callsTo("threads.spawn")[1]![0]).toMatchObject({ providerId: "claude-code", permissionMode: "auto" });
+  });
+
+  it("starts a run without a parent when the tab's thread works in another workspace", async () => {
+    const { harness, rpc, view } = await setup({ threads: { [THREAD]: { environmentId: ENV }, thr_elsewhere: { environmentId: "env_2" } } });
+    const { sessionId } = await view();
+    await rpc("startReview", { sessionId, threadId: "thr_elsewhere", focuses: [], instructions: "", execution });
+    expect((harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as { parentThreadId?: string }).parentThreadId).toBeUndefined();
+  });
+
+  it("tells a thread with run children that their completion notices are reports, and no other thread", async () => {
+    const { harness, rpc, view } = await setup();
+    const { sessionId } = await view();
+    const instructions = harness.inspection.registrations.instructionProvider!;
+    expect(instructions({ threadId: THREAD, projectId: "proj_1" })).toBeNull();
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    expect(instructions({ threadId: THREAD, projectId: "proj_1" })).toContain("are status reports");
+    expect(instructions({ threadId: "thr_run_1", projectId: "proj_1" })).toBeNull();
+  });
+
+  it("never starts a run from an agent's comment, so a run's report cannot set off another run", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Why?");
+    await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" });
+    await harness.behavior.runCli(["reply", thread.id, "Ask", "@reviewer", "about", "it."], { threadId: THREAD });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(0);
+  });
+
+  it("shows a run whose thread could not start as failed, with the reason", async () => {
+    const { rpc, view } = await setup({ spawnFails: true });
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    expect(run).toMatchObject({ status: "failed", threadId: null, summary: "Could not start the thread: provider not installed" });
+  });
+
+  it("closes a run by archiving its thread", async () => {
+    const { harness, rpc, view } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    await rpc("closeRun", { runId: run.id });
+    expect(harness.inspection.sdk.callsTo("threads.archive")[0]![0]).toMatchObject({ threadId: run.threadId });
+    expect((await sessionState(rpc, sessionId)).runs).toEqual([]);
+  });
+
+  it("clears a review: every thread of the view goes, its runs close and their threads are archived, and the runs lose their rights", async () => {
+    const { harness, rpc, view, comment } = await setup();
+    const { sessionId } = await view();
+    const other = await view({ kind: "branch" });
+    const kept = await comment(other.sessionId, "Another view's comment");
+    const { run: review } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    await tool(harness, "diff_review_general_comment", { body: "Looks fine." }, review.threadId!);
+    const mine = await comment(sessionId, "Use a constant");
+    await rpc("setStatus", { reviewThreadId: mine.id, status: "resolved" });
+    const fix = await comment(sessionId, "Rename b");
+    const { run: fixRun } = (await rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: [fix.id], note: "", execution })) as { run: Run };
+
+    expect(await rpc("clearReview", { sessionId })).toEqual({ deletedThreads: 3, closedRuns: 2 });
+    expect(await sessionState(rpc, sessionId)).toEqual({ threads: [], runs: [], aliases: {} });
+    expect(harness.inspection.sdk.callsTo("threads.archive").map((call) => (call[0] as { threadId: string }).threadId).sort()).toEqual([review.threadId, fixRun.threadId].sort());
+    // Another view's review is not this one.
+    expect((await sessionState(rpc, other.sessionId)).threads.map((row) => row.id)).toEqual([kept.id]);
+
+    // A run still working when its thread is archived can no longer comment or answer.
+    expect(isError(await tool(harness, "diff_review_general_comment", { body: "Late." }, review.threadId!))).toBe(true);
+    expect(isError(await tool(harness, "diff_review_resolve", { threadId: fix.id, text: "Fixed." }, fixRun.threadId!))).toBe(true);
+    expect((await sessionState(rpc, sessionId)).threads).toEqual([]);
+    // The parent keeps the notice instructions: bb may still report the archived runs to it.
+    expect(harness.inspection.registrations.instructionProvider!({ threadId: THREAD, projectId: "proj_1" })).toContain("are status reports");
+
+    // The tab starts fresh: new comments and runs work as before.
+    await comment(sessionId, "After the clear");
+    expect((await sessionState(rpc, sessionId)).threads).toHaveLength(1);
+  });
+
+  it("drops a review run's comment that was in flight when Clear review closed the run", async () => {
+    // Hold the author lookup, the last thing the comment awaits before it is stored.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const { harness, rpc, view } = await setup({ holdThreadGet: (threadId) => (threadId === "thr_run_1" ? gate : Promise.resolve()) });
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    const late = tool(harness, "diff_review_general_comment", { body: "Late finding." }, run.threadId!);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await rpc("clearReview", { sessionId });
+    release();
+    expect(isError(await late)).toBe(true);
+    expect((await sessionState(rpc, sessionId)).threads).toEqual([]);
+  });
+
+  it("archives a run's thread that bb started after the run was closed, and sends it nothing", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const { harness, rpc, view, comment } = await setup({ holdSpawn: () => gate });
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Rename b");
+    const fixing = rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "", execution });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(await rpc("clearReview", { sessionId })).toEqual({ deletedThreads: 1, closedRuns: 1 });
+    expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
+    release();
+    const { run } = (await fixing) as { run: Run };
+    expect(run).toMatchObject({ status: "closed", threadId: "thr_run_1" });
+    expect(harness.inspection.sdk.callsTo("threads.archive").map((call) => (call[0] as { threadId: string }).threadId)).toEqual(["thr_run_1"]);
+    expect(await sessionState(rpc, sessionId)).toEqual({ threads: [], runs: [], aliases: {} });
+  });
+
+  // Review loop, pass 1 (findings numbered as in the review).
+
+  it("1: tells the tabs to reload after an edit that keeps an on-demand file's line counts", async () => {
+    const { harness, view, workspace } = await setup();
+    await view();
+    const diffSignals = () => harness.inspection.realtimeSignals.filter((signal) => (signal.payload as { kind: string }).kind === "diff").length;
+    const idle = () => harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: THREAD, environmentId: ENV }), lastAssistantText: "done" });
+    await idle();
+    expect(diffSignals()).toBe(0);
+    // big.txt loads on demand; its patch changes, its kind and line counts do not.
+    workspace.bigVersion = 2;
+    await idle();
+    expect(diffSignals()).toBe(1);
+  });
+
+  it("2: refuses an answer whose send moved to another thread while bb looked up the author, leaving every row as it was", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let armed = false;
+    const { harness, rpc, view, comment } = await setup({
+      threads: { [THREAD]: { environmentId: ENV }, thr_other: { environmentId: ENV } },
+      holdThreadGet: (threadId) => (armed && threadId === THREAD ? gate : Promise.resolve()),
+    });
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Rename b");
+    await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" });
+    armed = true;
+    const late = harness.behavior.runCli(["resolve", thread.id, "Done."], { threadId: THREAD });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    armed = false;
+    await rpc("send", { sessionId, threadId: "thr_other", reviewThreadIds: [thread.id], note: "" });
+    release();
+    expect((await late).stderr).toContain("was not sent to this thread");
+    const [row] = (await sessionState(rpc, sessionId)).threads;
+    expect(row).toMatchObject({ status: "open", delivery: { state: "sent", threadId: "thr_other" } });
+    expect(row!.comments).toHaveLength(1);
+  });
+
+  it("2 and 6: a closed run loses its rights from sends too, after Close and for an answer already in flight", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let armed = false;
+    const { harness, rpc, view, comment } = await setup({ holdThreadGet: (threadId) => (armed && threadId === "thr_run_1" ? gate : Promise.resolve()) });
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    const asked = await comment(sessionId, "@reviewer why?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1));
+    armed = true;
+    const inFlight = tool(harness, "diff_review_reply", { threadId: asked.id, text: "Late." }, run.threadId!);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    armed = false;
+    await rpc("closeRun", { runId: run.id });
+    release();
+    expect(isError(await inFlight)).toBe(true);
+    // After Close: the question sent to it is neither listed nor answerable.
+    expect(textOf(await tool(harness, "diff_review_threads", {}, run.threadId!))).toBe("No open review threads for this thread.");
+    expect(isError(await tool(harness, "diff_review_resolve", { threadId: asked.id, text: "Done." }, run.threadId!))).toBe(true);
+    expect((await sessionState(rpc, sessionId)).threads[0]!.comments).toHaveLength(1);
+    // The thread under review keeps the rights its sends give it.
+    await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [asked.id], note: "" });
+    expect(isError(await tool(harness, "diff_review_reply", { threadId: asked.id, text: "Here." }, THREAD))).toBe(false);
+  });
+
+  it("3: Clear review cancels starts still on their way, before and after their run is written", async () => {
+    let release!: () => void;
+    let gate = new Promise<void>((resolve) => (release = resolve));
+    let armed = false;
+    const { harness, rpc, view, comment } = await setup({ holdEnvironmentGet: () => (armed ? gate : Promise.resolve()) });
+    const { sessionId } = await view();
+    armed = true;
+    // An AI review held on its first read of bb.
+    const review = rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(await rpc("clearReview", { sessionId })).toEqual({ deletedThreads: 0, closedRuns: 1 });
+    release();
+    expect(((await review) as RunResult).run.status).toBe("closed");
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(0);
+
+    // A question to a view without a reviewer, held the same way: no reviewer appears afterwards.
+    gate = new Promise<void>((resolve) => (release = resolve));
+    await comment(sessionId, "@reviewer why?");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await rpc("clearReview", { sessionId });
+    release();
+    armed = false;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(0);
+    expect(await sessionState(rpc, sessionId)).toEqual({ threads: [], runs: [], aliases: {} });
+  });
+
+  it("3: a question waiting on the reviewer's turn lookup sends nothing once the review is cleared", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let armed = false;
+    const { harness, rpc, view, comment } = await setup({ turnStarts: [1], holdEvents: () => (armed ? gate : Promise.resolve()) });
+    const { sessionId } = await view();
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    const asked = await comment(sessionId, "@reviewer why?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1));
+    armed = true;
+    await rpc("addComment", { reviewThreadId: asked.id, body: "@reviewer again?" });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await rpc("clearReview", { sessionId });
+    armed = false;
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1);
+    expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1);
+    expect(await sessionState(rpc, sessionId)).toEqual({ threads: [], runs: [], aliases: {} });
+  });
+
+  it("4: a fix run's thread can answer, and end its turn, before bb has answered its start", async () => {
+    let early: { answered: boolean; listed: string } | null = null;
+    const context: { harness?: Awaited<ReturnType<typeof setup>>["harness"] } = {};
+    const { harness, rpc, view, comment } = await setup({
+      duringSpawn: async (threadId) => {
+        const h = context.harness!;
+        const listed = textOf(await tool(h, "diff_review_threads", {}, threadId));
+        const answered = !isError(await tool(h, "diff_review_resolve", { threadId: listed.slice(0, 12), text: "Fixed: a constant." }, threadId));
+        await h.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: threadId, environmentId: ENV }), lastAssistantText: "Fixed." });
+        early = { answered, listed };
+      },
+    });
+    context.harness = harness;
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Use a constant");
+    const { run } = (await rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "", execution })) as { run: Run };
+    expect(early).toMatchObject({ answered: true });
+    expect(early!.listed.startsWith(thread.id)).toBe(true);
+    expect(run).toMatchObject({ threadId: "thr_run_1", status: "done", summary: "Fixed." });
+    expect((await sessionState(rpc, sessionId)).threads[0]).toMatchObject({ status: "resolved", delivery: { state: "answered", threadId: "thr_run_1" } });
+  });
+
+  it("4: a review run's thread can comment before bb has answered its start", async () => {
+    const context: { harness?: Awaited<ReturnType<typeof setup>>["harness"]; result?: unknown } = {};
+    const { harness, rpc, view } = await setup({
+      duringSpawn: async (threadId) => {
+        context.result = await tool(context.harness!, "diff_review_general_comment", { body: "Early." }, threadId);
+      },
+    });
+    context.harness = harness;
+    const { sessionId } = await view();
+    await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution });
+    expect(isError(context.result)).toBe(false);
+    expect((await sessionState(rpc, sessionId)).threads.map((row) => row.comments[0]!.body)).toEqual(["Early."]);
+  });
+
+  it("4: a thread that only claims a run in its metadata, but was not started by the plugin, gains nothing", async () => {
+    const { harness, rpc, view, comment } = await setup({ threads: { [THREAD]: { environmentId: ENV }, thr_intruder: { environmentId: ENV } } });
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Use a constant");
+    harness.sdk.stub("threads.getPluginMetadata", async () => ({ diffReviewRunId: "0123456789ab" }));
+    expect(isError(await tool(harness, "diff_review_resolve", { threadId: thread.id, text: "Mine now." }, "thr_intruder"))).toBe(true);
+    void rpc;
+  });
+
+  it("5: a question asked again after the reviewer's turn took the first gets a turn of its own, and the earlier answer does not count for it", async () => {
+    const { harness, rpc, view, comment, turnStarts } = await setup({ turnStarts: [1] });
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    const pause = () => new Promise((resolve) => setTimeout(resolve, 5));
+    const asked = await comment(sessionId, "@reviewer why 3?");
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1));
+    // Still queued behind the review's own turn: asking again adds nothing.
+    await rpc("addComment", { reviewThreadId: asked.id, body: "@reviewer (still why?)" });
+    await pause();
+    expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(1);
+    // The turn that takes the question starts; a new question now needs a turn of its own.
+    await pause();
+    turnStarts.splice(0, turnStarts.length, Date.now());
+    await pause();
+    await rpc("addComment", { reviewThreadId: asked.id, body: "@reviewer and what about 4?" });
+    await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(2));
+    // That turn answers the first question: the second stays waiting.
+    await tool(harness, "diff_review_reply", { threadId: asked.id, text: "3 because of b." }, run.threadId!);
+    expect((await sessionState(rpc, sessionId)).threads[0]!.delivery!.state).toBe("sent");
+    // The next turn answers it.
+    await pause();
+    turnStarts.splice(0, turnStarts.length, Date.now());
+    await tool(harness, "diff_review_reply", { threadId: asked.id, text: "4 would break c." }, run.threadId!);
+    expect((await sessionState(rpc, sessionId)).threads[0]!.delivery!.state).toBe("answered");
+  });
+
+  it("7: a failed resend gives the thread back to the agent it was sent to before", async () => {
+    const { harness, rpc, view, comment } = await setup({ threads: { [THREAD]: { environmentId: ENV }, thr_other: { environmentId: ENV } } });
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Rename b");
+    await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" });
+    harness.sdk.stub("threads.send", async (input: { threadId: string }) => {
+      if (input.threadId === "thr_other") throw new Error("thread is archived");
+      return { ok: true as const, delivery: "sent" as const };
+    });
+    await expect(rpc("send", { sessionId, threadId: "thr_other", reviewThreadIds: [thread.id], note: "" })).rejects.toThrow("thread is archived");
+    expect((await sessionState(rpc, sessionId)).threads[0]!.delivery).toMatchObject({ state: "sent", threadId: THREAD });
+    expect(isError(await tool(harness, "diff_review_reply", { threadId: thread.id, text: "On it." }, THREAD))).toBe(false);
+  });
+
+  describe("9: overlapping failed sends", () => {
+    /** Sends to thr_a and thr_b wait until the test settles them; sends to THREAD succeed. */
+    async function overlapping() {
+      const settle: Record<string, { resolve: () => void; reject: (error: Error) => void }> = {};
+      const context = await setup({ threads: { [THREAD]: { environmentId: ENV }, thr_a: { environmentId: ENV }, thr_b: { environmentId: ENV } } });
+      const { harness, rpc, view, comment } = context;
+      harness.sdk.stub("threads.send", (input: { threadId: string }) =>
+        input.threadId === THREAD
+          ? Promise.resolve({ ok: true as const, delivery: "sent" as const })
+          : new Promise((resolve, reject) => (settle[input.threadId] = { resolve: () => resolve({ ok: true as const, delivery: "sent" as const }), reject })),
+      );
+      const { sessionId } = await view();
+      const thread = await comment(sessionId, "Rename b");
+      await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" });
+      const toA = rpc("send", { sessionId, threadId: "thr_a", reviewThreadIds: [thread.id], note: "" });
+      const toB = rpc("send", { sessionId, threadId: "thr_b", reviewThreadIds: [thread.id], note: "" });
+      await vi.waitFor(() => expect(Object.keys(settle).sort()).toEqual(["thr_a", "thr_b"]));
+      const delivery = async () => (await sessionState(rpc, sessionId)).threads[0]!.delivery;
+      return { ...context, sessionId, thread, settle, toA, toB, delivery };
+    }
+
+    it("the earlier failing first, then the later: the thread goes back to its first, delivered send", async () => {
+      const { harness, settle, toA, toB, thread, delivery } = await overlapping();
+      settle.thr_a!.reject(new Error("a is archived"));
+      await expect(toA).rejects.toThrow("a is archived");
+      expect(await delivery()).toMatchObject({ state: "sent", threadId: "thr_b" });
+      settle.thr_b!.reject(new Error("b is archived"));
+      await expect(toB).rejects.toThrow("b is archived");
+      expect(await delivery()).toMatchObject({ state: "sent", threadId: THREAD });
+      expect(isError(await tool(harness, "diff_review_reply", { threadId: thread.id, text: "On it." }, THREAD))).toBe(false);
+    });
+
+    it("the later failing first, then the earlier: the same", async () => {
+      const { harness, settle, toA, toB, thread, delivery } = await overlapping();
+      settle.thr_b!.reject(new Error("b is archived"));
+      await expect(toB).rejects.toThrow("b is archived");
+      expect(await delivery()).toMatchObject({ state: "sent", threadId: "thr_a" });
+      settle.thr_a!.reject(new Error("a is archived"));
+      await expect(toA).rejects.toThrow("a is archived");
+      expect(await delivery()).toMatchObject({ state: "sent", threadId: THREAD });
+      expect(isError(await tool(harness, "diff_review_reply", { threadId: thread.id, text: "On it." }, THREAD))).toBe(false);
+    });
+
+    it("a later send that succeeds keeps the thread when an earlier one fails", async () => {
+      const { settle, toA, toB, delivery } = await overlapping();
+      settle.thr_b!.resolve();
+      await toB;
+      settle.thr_a!.reject(new Error("a is archived"));
+      await expect(toA).rejects.toThrow("a is archived");
+      expect(await delivery()).toMatchObject({ state: "sent", threadId: "thr_b" });
+    });
+  });
+
+  describe("10: a fixer closed while it is being set up", () => {
+    async function pendingFixer(opts: { sentBefore: boolean; sentMeanwhile?: boolean }) {
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      let armed = false;
+      const context = await setup({
+        threads: { [THREAD]: { environmentId: ENV }, thr_other: { environmentId: ENV } },
+        holdEnvironmentGet: () => (armed ? gate : Promise.resolve()),
+      });
+      const { harness, rpc, view, comment } = context;
+      const { sessionId } = await view();
+      const thread = await comment(sessionId, "Use a constant");
+      if (opts.sentBefore) await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" });
+      armed = true;
+      const fixing = rpc("fixInNewThread", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "", execution });
+      await vi.waitFor(async () => expect((await sessionState(rpc, sessionId)).runs).toHaveLength(1));
+      armed = false;
+      if (opts.sentMeanwhile === true) await rpc("send", { sessionId, threadId: "thr_other", reviewThreadIds: [thread.id], note: "" });
+      const [run] = (await sessionState(rpc, sessionId)).runs;
+      await rpc("closeRun", { runId: run!.id });
+      release();
+      const { run: closed } = (await fixing) as { run: Run };
+      expect(closed.status).toBe("closed");
+      expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(0);
+      return { ...context, sessionId, thread, row: (await sessionState(rpc, sessionId)).threads[0]! };
+    }
+
+    it("gives the comment back to the thread it was sent to before", async () => {
+      const { harness, thread, row } = await pendingFixer({ sentBefore: true });
+      expect(row.delivery).toMatchObject({ state: "sent", threadId: THREAD });
+      expect(isError(await tool(harness, "diff_review_reply", { threadId: thread.id, text: "On it." }, THREAD))).toBe(false);
+    });
+
+    it("leaves a comment never sent before unsent, so the send dialog offers it again", async () => {
+      const { row } = await pendingFixer({ sentBefore: false });
+      expect(row.delivery).toBeNull();
+    });
+
+    it("keeps a send made to another thread meanwhile", async () => {
+      const { row } = await pendingFixer({ sentBefore: true, sentMeanwhile: true });
+      expect(row.delivery).toMatchObject({ state: "sent", threadId: "thr_other" });
+    });
+  });
+
+  it("8: a turn's end does not mark a send made while it was being closed out", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let armed = false;
+    const { harness, rpc, view, comment, turnStarts } = await setup({
+      threads: { [THREAD]: { environmentId: ENV }, thr_other: { environmentId: ENV } },
+      holdEvents: (threadId) => (armed && threadId === THREAD ? gate : Promise.resolve()),
+    });
+    const { sessionId } = await view();
+    const thread = await comment(sessionId, "Rename b");
+    await rpc("send", { sessionId, threadId: THREAD, reviewThreadIds: [thread.id], note: "" });
+    // THREAD's turn that took the send ends without answering; its close-out is held on bb.
+    turnStarts.splice(0, turnStarts.length, Date.now() + 60_000);
+    armed = true;
+    const ended = harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: THREAD, environmentId: ENV }), lastAssistantText: "done" });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    armed = false;
+    await rpc("send", { sessionId, threadId: "thr_other", reviewThreadIds: [thread.id], note: "" });
+    release();
+    await ended;
+    expect((await sessionState(rpc, sessionId)).threads[0]!.delivery).toMatchObject({ state: "sent", threadId: "thr_other" });
+  });
+
+  it("lets a review run comment through the command too, on the whole diff with --general", async () => {
+    const { harness, rpc, view } = await setup();
+    const { sessionId } = await view();
+    const { run } = (await rpc("startReview", { sessionId, threadId: THREAD, focuses: [], instructions: "", execution })) as RunResult;
+    const general = await harness.behavior.runCli(["comment", "--general", "No", "issues", "found."], { threadId: run.threadId! });
+    expect(general).toMatchObject({ exitCode: 0 });
+    const line = await harness.behavior.runCli(["comment", "src/a.ts", "--line", "1", "--severity", "nit", "Name", "it", "better."], { threadId: run.threadId! });
+    expect(line.stdout).toContain("on src/a.ts:1 (new side)");
+    expect((await sessionState(rpc, sessionId)).threads.map((row) => row.comments[0]!.body)).toEqual(["No issues found.", "Name it better."]);
+  });
+});
+
+describe("the package", () => {
+  it("imports only public SDK entry points", () => {
+    // Beyond the SDK: the vendored UI (`@/`), the host-shimmed packages, the bundled ones, and test tools.
+    const allow = [
+      /^@\//,
+      /^react(-dom)?(\/.*)?$/,
+      /^@radix-ui\//,
+      /^@pierre\/diffs(\/.*)?$/,
+      /^(sonner|vaul|clsx|tailwind-merge|class-variance-authority|ignore|better-sqlite3)$/,
+      /^(vitest|vitest\/config|@testing-library\/react|esbuild|playwright-core)$/,
+    ];
+    const scan = experimental_scanPublicSdkOnly(fileURLToPath(new URL(".", import.meta.url)), { allow });
+    expect(scan.violations).toEqual([]);
+    expect(scan.privateDependencies).toEqual([]);
+  });
+});

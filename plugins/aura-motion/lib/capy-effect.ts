@@ -1,0 +1,365 @@
+import { VERTEX_SHADER, DITHERING_SHADER } from "./capy-shaders.ts";
+import { ANIMATED_PHOTO_SHADER, patternUniforms } from "./photo-shader.ts";
+import { isAnimatedImage, isVideo, type BackgroundSettings } from "./model.ts";
+import { mountVideo, type VideoWallpaper } from "./video.ts";
+import { openAnimatedImage, type FramePlayer } from "./animated-image.ts";
+
+export const CAPY_CSS = `
+.aura-motion-capy-layer { position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden; border-radius:inherit; }
+.aura-motion-capy-air, .aura-motion-capy-ink, .aura-motion-capy-fade { position:absolute; inset:0; pointer-events:none; }
+.aura-motion-capy-air { background:linear-gradient(180deg in oklab, var(--aura-motion-panel, #f9fafc) 0%, var(--background, #fff) 100%); }
+.aura-motion-capy-ink { background-position:center; background-repeat:no-repeat; background-size:var(--aura-motion-fit, cover); }
+
+.aura-motion-capy-ink video { display:block; position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.aura-motion-capy-ink canvas { display:block; position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+.aura-motion-capy-focus { position:absolute; top:46%; left:50%; width:1360px; height:680px; transform:translate(-50%,-50%); }
+.aura-motion-capy-focus::after { content:""; position:absolute; inset:160px; border-radius:48px; background:rgba(255,255,255,.88); filter:blur(88px); }
+.aura-motion-capy-fade { background:linear-gradient(to bottom,rgba(255,255,255,0) 30%,rgba(255,255,255,.48) 48%,rgba(255,255,255,.86) 66%,#fff 82%); }
+.dark .aura-motion-capy-air { display:none; }
+.dark .aura-motion-capy-focus::after { background:rgba(0,0,0,.9); }
+.dark .aura-motion-capy-fade { background:linear-gradient(to bottom,rgba(0,0,0,0) 12%,rgba(0,0,0,.3) 34%,rgba(0,0,0,.68) 52%,rgba(0,0,0,.92) 70%,#000 88%); }
+.aura-motion-capy-ink[data-half-wallpaper] {
+  -webkit-mask-image:linear-gradient(to bottom, #000 0%, #000 25%, transparent 50%, transparent 100%);
+  mask-image:linear-gradient(to bottom, #000 0%, #000 25%, transparent 50%, transparent 100%);
+}
+
+/* Chat glass: one still, floating sheet behind the message column, modeled on
+   Apple's materials (heavy blur with vibrancy, a lit rim, grain against banding). */
+.aura-motion-capy-sheet {
+  display:none; position:absolute; top:10px; bottom:10px; pointer-events:none;
+  left:calc(50% - min(380px, 50% - 16px)); width:min(760px, calc(100% - 32px));
+  border-radius:26px; corner-shape:squircle;
+  --aura-motion-sheet-fill:color-mix(in oklab,var(--background) 66%,transparent);
+  --aura-motion-sheet-filter:blur(40px) saturate(1.5) brightness(1.08);
+  background-color:var(--aura-motion-sheet-fill);
+  background-image:linear-gradient(162deg,rgba(255,255,255,.12),rgba(255,255,255,0) 32%);
+  -webkit-backdrop-filter:var(--aura-motion-sheet-filter); backdrop-filter:var(--aura-motion-sheet-filter);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(255,255,255,.28),
+    0 1px 2px rgba(0,0,0,.06), 0 24px 64px rgba(0,0,0,.16);
+}
+.aura-motion-capy-sheet[data-surface] { display:block; }
+@media (max-width: 640px) { .aura-motion-capy-sheet { border-radius:20px; } }
+.aura-motion-capy-sheet::after {
+  content:""; position:absolute; inset:0; border-radius:inherit; corner-shape:squircle;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.05; mix-blend-mode:overlay;
+}
+/* Dark glass dims what it covers, so bright video frames cannot wash out text. */
+.dark .aura-motion-capy-sheet {
+  --aura-motion-sheet-fill:color-mix(in oklab,var(--background) 60%,transparent);
+  --aura-motion-sheet-filter:blur(40px) saturate(1.4) brightness(.78);
+  background-image:linear-gradient(162deg,rgba(255,255,255,.07),rgba(255,255,255,0) 30%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px rgba(255,255,255,.06),
+    0 1px 2px rgba(0,0,0,.3), 0 30px 80px rgba(0,0,0,.5);
+}
+.aura-motion-capy-sheet[data-surface="sheer"] {
+  --aura-motion-sheet-fill:color-mix(in oklab,var(--background) 34%,transparent);
+  --aura-motion-sheet-filter:blur(12px) saturate(1.2) brightness(1.1);
+}
+.dark .aura-motion-capy-sheet[data-surface="sheer"] { --aura-motion-sheet-filter:blur(12px) saturate(1.2) brightness(.7); }
+@media (prefers-reduced-transparency: reduce) {
+  .aura-motion-capy-sheet, .dark .aura-motion-capy-sheet, .aura-motion-capy-sheet[data-surface="sheer"], .dark .aura-motion-capy-sheet[data-surface="sheer"] {
+    --aura-motion-sheet-fill:var(--background); --aura-motion-sheet-filter:none;
+  }
+}
+`;
+
+// The host's scrolling message column, which the chat glass sheet follows.
+export const CHAT_COLUMN = ".thread-scrollbar > div > .mx-auto";
+// Gap kept between the sheet and the panel edges and header, at every width.
+export const SHEET_INSET = 10;
+type Box = { left: number; right: number; top: number; width?: number };
+/** Sheet position inside the panel layer: the column's span, kept SHEET_INSET
+ *  clear of the panel sides on narrow windows where the column fills the panel. */
+export function sheetBox(panel: Box, column: Box, scroller: Box | null): { left: number; width: number; top: number | null } {
+  const left = Math.max(column.left, panel.left + SHEET_INSET);
+  const right = Math.min(column.right, panel.right - SHEET_INSET);
+  return { left: left - panel.left, width: Math.max(0, right - left), top: scroller ? scroller.top - panel.top + SHEET_INSET : null };
+}
+
+export interface CapyEffect { update(settings: BackgroundSettings, image: string | null): void; dispose(): void; }
+
+export const QUALITY_SCALE: Record<BackgroundSettings["quality"], number> = {
+  performance: 1 / 4,
+  balanced: 1 / 3,
+  sharp: 1 / 2,
+};
+export const MAX_IMAGE_FRAMEBUFFER_PIXELS = 2_073_600;
+
+// Settings whose change needs a fresh shader program and uniforms.
+const SHADER_KEYS = ["effect", "enabled", "tint", "fit", "fps", "quality", "pattern", "dither", "photoMotion"] as const;
+export function shaderSettingsChanged(previous: BackgroundSettings, next: BackgroundSettings): boolean {
+  return SHADER_KEYS.some(key => previous[key] !== next[key]);
+}
+
+/** A still photo with no texture motion only needs redrawing on resize. */
+export function shaderAnimates(settings: BackgroundSettings, imageUrl: string | null): boolean {
+  return !imageUrl || settings.photoMotion !== "still" || isAnimatedImage(imageUrl) || isVideo(imageUrl);
+}
+
+export function frameIsDue(lastDraw: number | null, now: number, fps: BackgroundSettings["fps"]): boolean {
+  return lastDraw === null || now - lastDraw >= 1000 / fps;
+}
+
+export function canvasSize(width: number, height: number, quality: BackgroundSettings["quality"], imageBacked: boolean): { width: number; height: number } {
+  const requestedScale = QUALITY_SCALE[quality];
+  const scale = imageBacked
+    ? Math.min(requestedScale, Math.sqrt(MAX_IMAGE_FRAMEBUFFER_PIXELS / (width * height)))
+    : requestedScale;
+  const round = imageBacked ? Math.floor : Math.round;
+  return {
+    width: Math.max(1, round(width * scale)),
+    height: Math.max(1, round(height * scale)),
+  };
+}
+
+export function mountCapyEffect(parent: HTMLElement, initial: BackgroundSettings, imageUrl: string | null): CapyEffect {
+  const layer = document.createElement("div"); layer.className = "aura-motion-capy-layer"; layer.ariaHidden = "true";
+  const air = document.createElement("div"); air.className = "aura-motion-capy-air";
+  const ink = document.createElement("div"); ink.className = "aura-motion-capy-ink";
+  const focus = document.createElement("div"); focus.className = "aura-motion-capy-focus";
+  const fade = document.createElement("div"); fade.className = "aura-motion-capy-fade";
+  const sheet = document.createElement("div"); sheet.className = "aura-motion-capy-sheet";
+  layer.append(air, ink, focus, fade, sheet); parent.prepend(layer);
+  // The sheet stays still while messages scroll, so it tracks the column's
+  // horizontal position and width, and starts below the thread header.
+  // BB can swap the column on navigation.
+  let column: HTMLElement | null = null;
+  const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => placeSheet());
+  resize?.observe(parent);
+  const recheck = setInterval(() => { if (sheet.dataset.surface && !column?.isConnected) placeSheet(); }, 1000);
+  function placeSheet(): void {
+    if (!sheet.dataset.surface) return;
+    if (!column?.isConnected) {
+      if (column) resize?.unobserve(column);
+      column = parent.querySelector<HTMLElement>(CHAT_COLUMN);
+      if (column) resize?.observe(column);
+    }
+    if (!column) { sheet.style.left = ""; sheet.style.width = ""; sheet.style.top = ""; return; }
+    const box = sheetBox(layer.getBoundingClientRect(), column.getBoundingClientRect(), column.closest(".thread-scrollbar")?.getBoundingClientRect() ?? null);
+    sheet.style.left = `${box.left}px`; sheet.style.width = `${box.width}px`;
+    if (box.top !== null) sheet.style.top = `${box.top}px`;
+  }
+  let settings = initial;
+  let currentImage: string | null | undefined;
+  let disposeShader = () => {};
+  let video: VideoWallpaper | null = null;
+  let videoUrl: string | null = null;
+  let stopped = false;
+  const theme = new MutationObserver(() => update(settings, currentImage ?? null, true));
+  theme.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-color-theme", "data-theme"] });
+  function update(next: BackgroundSettings, image: string | null, refresh = false): void {
+    if (stopped) return;
+    const previous = settings;
+    settings = next;
+    const dark = document.documentElement.classList.contains("dark");
+    layer.style.display = settings.enabled ? "" : "none";
+    ink.style.opacity = String(image ? settings.imageOpacity : Math.min(1, settings.intensity * (dark ? 1.1 : 1)));
+    ink.style.mixBlendMode = image ? "normal" : dark ? "screen" : "multiply";
+    ink.style.backgroundSize = settings.fit;
+    // The settings toggle affects New thread only: show the top half of the
+    // wallpaper with a fade to the theme background at the midpoint.
+    const conversation = parent.id === "thread-detail-timeline-panel";
+    if (conversation && settings.chatSurface !== "solid") { sheet.dataset.surface = settings.chatSurface; placeSheet(); }
+    else delete sheet.dataset.surface;
+    fade.style.opacity = "0";
+    focus.style.opacity = "0";
+    if (settings.dimmerEnabled && !conversation) ink.dataset.halfWallpaper = "";
+    else delete ink.dataset.halfWallpaper;
+    const playing = settings.enabled && isVideo(image) ? image : null;
+    if (playing !== videoUrl) {
+      // A new video (or none) forces a new shader texture source too.
+      video?.dispose(); video = playing ? mountVideo(ink, playing, settings.fit) : null; videoUrl = playing; refresh = true;
+    }
+    video?.setFit(settings.fit);
+    if (image && !isVideo(image)) { ink.dataset.image = ""; ink.style.backgroundImage = `url("${image}")`; }
+    else { if (image) ink.dataset.image = ""; else delete ink.dataset.image; ink.style.backgroundImage = "none"; }
+    if (image !== currentImage || refresh || shaderSettingsChanged(previous, settings)) {
+      currentImage = image;
+      disposeShader(); disposeShader = () => {};
+      if (settings.enabled && settings.effect === "pixels") {
+        const color = settings.tint === "theme" ? getComputedStyle(parent).getPropertyValue("--primary").trim() || "#5e6ad2" : dark ? "#606acc" : "#5e6ad2";
+        disposeShader = mountShader(ink, image, color, settings, video?.element ?? null);
+      }
+    }
+  }
+  update(initial, imageUrl);
+  return { update, dispose() { if (stopped) return; stopped = true; theme.disconnect(); resize?.disconnect(); clearInterval(recheck); disposeShader(); video?.dispose(); video = null; layer.remove(); } };
+}
+
+function mountShader(parent: HTMLElement, imageUrl: string | null, color: string, settings: BackgroundSettings, video: HTMLVideoElement | null): () => void {
+  const canvas = document.createElement("canvas");
+  const gl = canvas.getContext("webgl2", { alpha:true, antialias:false, depth:false, stencil:false, premultipliedAlpha:true, preserveDrawingBuffer:false });
+  if (!gl) return () => {}; // Keep the source image/gradient when WebGL is unavailable.
+  let disposed = false;
+  let frame = 40000;
+  let raf = 0;
+  let previous: number | null = null;
+  let lastDraw: number | null = null;
+  let visible = true;
+  let lost = false;
+  let imageReady = imageUrl === null;
+  let image: HTMLImageElement | null = null;
+  let texture: WebGLTexture | null = null;
+  let timeUniform: WebGLUniformLocation | null = null;
+  let resolutionUniform: WebGLUniformLocation | null = null;
+  let pixelRatioUniform: WebGLUniformLocation | null = null;
+  const shaders: WebGLShader[] = [];
+  const program = gl.createProgram();
+  const buffer = gl.createBuffer();
+  function releaseGl() {
+    if (texture) gl!.deleteTexture(texture);
+    if (buffer) gl!.deleteBuffer(buffer);
+    if (program) gl!.deleteProgram(program);
+    shaders.forEach(shader => gl!.deleteShader(shader));
+  }
+  try {
+    if (!program || !buffer) throw new Error("WebGL allocation failed");
+    for (const [type, source] of [[gl.VERTEX_SHADER, VERTEX_SHADER], [gl.FRAGMENT_SHADER, imageUrl ? ANIMATED_PHOTO_SHADER : DITHERING_SHADER]] as const) {
+      const shader = gl.createShader(type);
+      if (!shader) throw new Error("Shader allocation failed");
+      shaders.push(shader);
+      const precision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT);
+      gl.shaderSource(shader, precision && precision.precision < 23 ? source.replace(/precision mediump float/g, "precision highp float") : source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) ?? "Shader compile failed");
+      gl.attachShader(program, shader);
+    }
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) ?? "Shader link failed");
+    gl.useProgram(program);
+    timeUniform = gl.getUniformLocation(program, "u_time");
+    resolutionUniform = gl.getUniformLocation(program, "u_resolution");
+    pixelRatioUniform = gl.getUniformLocation(program, "u_pixelRatio");
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+    const position = gl.getAttribLocation(program, "a_position");
+    gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+    const values: Record<string, number> = { u_originX:.5,u_originY:.5,u_worldWidth:0,u_worldHeight:0,u_fit:imageUrl ? (settings.fit === "cover" ? 2 : 1) : 0,u_scale:imageUrl ? 1 : 2,u_rotation:0,u_offsetX:0,u_offsetY:0,...patternUniforms(settings),u_pxSize:imageUrl ? 2 : 3,u_colorSteps:4 };
+    for (const [key, value] of Object.entries(values)) gl.uniform1f(gl.getUniformLocation(program, key), value);
+    const probe = document.createElement("canvas"); probe.width = probe.height = 1;
+    const ctx = probe.getContext("2d");
+    let rgba = [94/255,106/255,210/255,1];
+    if (ctx) { ctx.fillStyle = color; ctx.fillRect(0,0,1,1); rgba = Array.from(ctx.getImageData(0,0,1,1).data).map(v=>v/255); }
+    gl.uniform4fv(gl.getUniformLocation(program,"u_colorFront"),rgba);
+    gl.uniform4f(gl.getUniformLocation(program,"u_colorBack"),0,0,0,0);
+    if (imageUrl) {
+      gl.uniform1i(gl.getUniformLocation(program,"u_originalColors"),1);
+      gl.uniform1i(gl.getUniformLocation(program,"u_inverted"),0);
+      gl.uniform4f(gl.getUniformLocation(program,"u_colorHighlight"),1,1,1,1);
+    }
+  } catch (error) {
+    console.warn("Aura Motion: Capy shader unavailable", error);
+    releaseGl(); gl.getExtension("WEBGL_lose_context")?.loseContext(); return () => {};
+  }
+  parent.append(canvas);
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const frameInterval = 1000 / settings.fps;
+  const animates = shaderAnimates(settings, imageUrl);
+  let player: FramePlayer | null = null;
+  const loading = new AbortController();
+  function draw(now = performance.now()): void {
+    if (disposed || lost || !imageReady || !canvas.width || !canvas.height) return;
+    gl!.useProgram(program);
+    gl!.uniform1f(timeUniform,frame * .001);
+    gl!.clear(gl!.COLOR_BUFFER_BIT); gl!.drawArrays(gl!.TRIANGLES,0,6);
+    lastDraw = now;
+    if (canvas.dataset.rendered !== "true") canvas.dataset.rendered = "true";
+  }
+  function tick(now: number) {
+    raf = 0;
+    if (disposed || lost || document.hidden || !visible || reduced.matches) return;
+    if (previous !== null) frame += Math.min(now-previous, frameInterval) * .5;
+    previous = now;
+    // A due GIF frame draws immediately so the FPS cap never drops its frames.
+    const gifFrame = player?.advance(now) ?? null;
+    if (gifFrame) upload(gifFrame);
+    const due = frameIsDue(lastDraw, now, settings.fps);
+    // Re-upload the video only when it has a frame the texture has not seen.
+    if (video && texture && due && videoFrameDirty && video.readyState >= 2) { upload(video); videoFrameDirty = !frameCallbacks; }
+    if (gifFrame || due) draw(now);
+    raf = requestAnimationFrame(tick);
+  }
+  function schedule() {
+    cancelAnimationFrame(raf); raf = 0; previous = null;
+    if (!disposed && !lost && !document.hidden && visible) {
+      const now = performance.now();
+      if (frameIsDue(lastDraw, now, settings.fps)) draw(now);
+      if (animates && !reduced.matches) raf = requestAnimationFrame(tick);
+    }
+  }
+  function resize() {
+    const {width,height} = parent.getBoundingClientRect();
+    if (disposed || lost || width <= 0 || height <= 0) return;
+    const size = canvasSize(width, height, settings.quality, Boolean(imageUrl));
+    canvas.width = size.width; canvas.height = size.height;
+    gl!.viewport(0,0,canvas.width,canvas.height);
+    gl!.useProgram(program);
+    gl!.uniform2f(resolutionUniform,canvas.width,canvas.height);
+    gl!.uniform1f(pixelRatioUniform,canvas.width/width);
+    draw();
+  }
+  function upload(source: TexImageSource): void {
+    gl!.bindTexture(gl!.TEXTURE_2D,texture);
+    gl!.texImage2D(gl!.TEXTURE_2D,0,gl!.RGBA,gl!.RGBA,gl!.UNSIGNED_BYTE,source);
+  }
+  function useTexture(source: TexImageSource, width: number, height: number): void {
+    texture = gl!.createTexture(); gl!.activeTexture(gl!.TEXTURE0); gl!.bindTexture(gl!.TEXTURE_2D,texture);
+    gl!.texParameteri(gl!.TEXTURE_2D,gl!.TEXTURE_WRAP_S,gl!.CLAMP_TO_EDGE); gl!.texParameteri(gl!.TEXTURE_2D,gl!.TEXTURE_WRAP_T,gl!.CLAMP_TO_EDGE);
+    gl!.texParameteri(gl!.TEXTURE_2D,gl!.TEXTURE_MIN_FILTER,gl!.LINEAR); gl!.texParameteri(gl!.TEXTURE_2D,gl!.TEXTURE_MAG_FILTER,gl!.LINEAR);
+    upload(source);
+    gl!.useProgram(program); gl!.uniform1i(gl!.getUniformLocation(program!,"u_image"),0);
+    gl!.uniform1f(gl!.getUniformLocation(program!,"u_imageAspectRatio"),width/height);
+    imageReady = true; resize(); schedule();
+  }
+  function loadStill(url: string): void {
+    image = new Image();
+    image.onload = () => { if (!disposed && !lost && image) useTexture(image, image.naturalWidth, image.naturalHeight); };
+    image.onerror = () => { canvas.style.visibility = "hidden"; };
+    image.src = url;
+  }
+  let videoFrameDirty = true;
+  let frameCallback = 0;
+  const frameCallbacks = Boolean(video && "requestVideoFrameCallback" in video);
+  function onVideoFrame(): void {
+    videoFrameDirty = true;
+    if (!disposed && video) frameCallback = video.requestVideoFrameCallback(onVideoFrame);
+  }
+  function onVideoData(): void {
+    if (disposed || lost || !video || texture) return;
+    useTexture(video, video.videoWidth || 1, video.videoHeight || 1);
+    if (frameCallbacks) frameCallback = video.requestVideoFrameCallback(onVideoFrame);
+  }
+  if (video) {
+    if (video.readyState >= 2) onVideoData(); else video.addEventListener("loadeddata", onVideoData);
+  } else if (imageUrl && isAnimatedImage(imageUrl)) {
+    openAnimatedImage(imageUrl, loading.signal).then(opened => {
+      if (!opened) { if (!disposed) loadStill(imageUrl); return; } // No WebCodecs: show the first frame.
+      if (disposed || lost) { opened.dispose(); return; }
+      player = opened;
+      const first = opened.current as VideoFrame;
+      useTexture(first, first.displayWidth || 1, first.displayHeight || 1);
+    }).catch(error => {
+      if (disposed) return;
+      console.warn("Aura Motion: animated image unavailable", error);
+      loadStill(imageUrl);
+    });
+  } else if (imageUrl) loadStill(imageUrl);
+  function onLost(event: Event) { event.preventDefault(); lost = true; cancelAnimationFrame(raf); canvas.style.visibility = "hidden"; }
+  // A context loss falls back to the original image/gradient. A plugin reload
+  // or appearance change retries with a fresh context.
+  canvas.addEventListener("webglcontextlost",onLost);
+  const resizeObserver = new ResizeObserver(resize); resizeObserver.observe(parent);
+  const intersection = new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting??true;schedule();}); intersection.observe(parent);
+  document.addEventListener("visibilitychange",schedule); reduced.addEventListener("change",schedule);
+  resize(); schedule();
+  return () => {
+    if (disposed) return; disposed = true; cancelAnimationFrame(raf);
+    resizeObserver.disconnect(); intersection.disconnect(); document.removeEventListener("visibilitychange",schedule); reduced.removeEventListener("change",schedule);
+    canvas.removeEventListener("webglcontextlost",onLost);
+    if (image) { image.onload = null; image.onerror = null; image.src = ""; }
+    loading.abort(); player?.dispose(); player = null;
+    if (video) { video.removeEventListener("loadeddata", onVideoData); if (frameCallback) video.cancelVideoFrameCallback(frameCallback); }
+    releaseGl(); gl!.getExtension("WEBGL_lose_context")?.loseContext(); canvas.remove();
+  };
+}

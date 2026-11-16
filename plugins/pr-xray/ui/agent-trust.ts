@@ -1,0 +1,25 @@
+// Whether an agent is about to read text written by someone other than the user.
+import { isViewer } from "../shared/fix-scope";
+import type { PrDetails } from "../shared/schema";
+
+export type AgentJob = "analysis" | "chat" | "fix";
+
+/** The user said no. The caller stops, and this isn't an error worth showing. */
+export class AgentDeclined extends Error {}
+
+export function needsAgentWarning(pr: PrDetails, job: AgentJob): boolean {
+  if (!pr.isOwnPr) return true;
+  // Analysis and fixes read the PR's own content. Chat also reads its review threads.
+  return job === "chat" && pr.threads.some((thread) => thread.comments.some((comment) => !isViewer(comment.author, pr.viewer)));
+}
+
+/** Skips the trust prompt when the user turned them off in Settings; asks if that can't be read. */
+export async function askUnlessSkipped(skipTrustPrompts: () => Promise<boolean>, ask: () => Promise<boolean>): Promise<boolean> {
+  const skip = await skipTrustPrompts().catch(() => false);
+  return skip || ask();
+}
+
+/** Turns Skip trust prompts on only for a ticked "Don't ask again" plus Continue. A failed save is reported, never blocks the run. */
+export function rememberDontAskAgain(accepted: boolean, ticked: boolean, save: () => Promise<unknown>, onError: (cause: unknown) => void): void {
+  if (accepted && ticked) save().catch(onError);
+}

@@ -1,0 +1,560 @@
+import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import { ProjectIconCache } from "./src/project-icon-cache.js";
+import {
+  findProjectArtwork,
+  type ProjectArtwork,
+} from "./src/project-icons.js";
+import { COMPACT_COLUMN_OPTIONS, WORKSPACE_REFRESH_OPTIONS } from "./src/settings.js";
+import type { WorkspaceStatus, WorkspaceWorktree } from "./src/workspace-status.js";
+import {
+  WorkspaceStatusService,
+  type WorkspaceEnvironment,
+  type WorkspaceStatusReading,
+} from "./src/workspace-status-service.js";
+
+const FOUND_CACHE_CONTROL = "private, max-age=300";
+const MISSING_CACHE_CONTROL = "private, max-age=60";
+const PINNED_PROJECTS_KEY = "pinned-projects";
+const HIDDEN_PROJECTS_KEY = "hidden-projects";
+const PROJECT_GROUPS_KEY = "project-groups";
+const MAX_PROJECT_GROUPS = 100;
+const MAX_STORED_PROJECT_IDS = 10_000;
+const MAX_STATUS_PROJECT_IDS = 500;
+const ENVIRONMENT_PAGE_SIZE = 200;
+const MAX_ENVIRONMENT_PAGES = 25;
+
+const workspaceChangesSchema = z
+  .object({
+    files: z.number().int().min(0),
+    insertions: z.number().int().min(0),
+    deletions: z.number().int().min(0),
+    lineStatsComplete: z.boolean(),
+  })
+  .strict();
+
+const workspaceStatusSchema: z.ZodType<WorkspaceStatus> = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("available"),
+      environmentId: z.string(),
+      branch: z.string().nullable(),
+      defaultBranch: z.string().nullable(),
+      changes: workspaceChangesSchema,
+      worktrees: z.number().int().min(0),
+      fetchedAt: z.number(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("unavailable"),
+      environmentId: z.string(),
+      message: z.string(),
+      fetchedAt: z.number(),
+    })
+    .strict(),
+  z.object({ kind: z.literal("none"), fetchedAt: z.number() }).strict(),
+]);
+
+const workspaceWorktreeSchema: z.ZodType<WorkspaceWorktree> = z
+  .object({
+    environmentId: z.string(),
+    name: z.string().nullable(),
+    branch: z.string().nullable(),
+    status: workspaceStatusSchema,
+  })
+  .strict();
+
+const projectGroupSchema = z
+  .object({
+    id: z.string().min(1).max(100),
+    name: z.string().trim().min(1).max(80),
+    projectIds: z.array(z.string().min(1)).max(10_000),
+  })
+  .strict();
+
+export type ProjectGroup = z.infer<typeof projectGroupSchema>;
+
+export const rpcContract = defineRpcContract({
+  getProjectOpenContext: {
+    input: z.object({ projectId: z.string().min(1) }).strict(),
+    output: z.object({
+      source: z.object({ hostId: z.string(), path: z.string() }).nullable(),
+      ports: z.array(z.number().int().min(1).max(65535)),
+    }),
+  },
+  listPinnedProjects: {
+    input: z.null(),
+    output: z.object({ projectIds: z.array(z.string()) }),
+  },
+  setProjectPinned: {
+    input: z.object({ projectId: z.string().min(1), pinned: z.boolean() }).strict(),
+    output: z.object({ projectIds: z.array(z.string()) }),
+  },
+  listProjectGroups: {
+    input: z.null(),
+    output: z.object({ groups: z.array(projectGroupSchema) }),
+  },
+  createProjectGroup: {
+    input: z
+      .object({
+        name: z.string().trim().min(1).max(80),
+        projectId: z.string().min(1).optional(),
+      })
+      .strict(),
+    output: z.object({ groups: z.array(projectGroupSchema) }),
+  },
+  renameProjectGroup: {
+    input: z
+      .object({
+        groupId: z.string().min(1),
+        name: z.string().trim().min(1).max(80),
+      })
+      .strict(),
+    output: z.object({ groups: z.array(projectGroupSchema) }),
+  },
+  deleteProjectGroup: {
+    input: z.object({ groupId: z.string().min(1) }).strict(),
+    output: z.object({ groups: z.array(projectGroupSchema) }),
+  },
+  reorderProjectGroups: {
+    input: z
+      .object({ groupIds: z.array(z.string().min(1)).max(MAX_PROJECT_GROUPS) })
+      .strict(),
+    output: z.object({ groups: z.array(projectGroupSchema) }),
+  },
+  setProjectGroup: {
+    input: z
+      .object({
+        projectId: z.string().min(1),
+        groupId: z.string().min(1).nullable(),
+      })
+      .strict(),
+    output: z.object({ groups: z.array(projectGroupSchema) }),
+  },
+  listHiddenProjects: {
+    input: z.null(),
+    output: z.object({ projectIds: z.array(z.string()) }),
+  },
+  setProjectHidden: {
+    input: z.object({ projectId: z.string().min(1), hidden: z.boolean() }).strict(),
+    output: z.object({ projectIds: z.array(z.string()) }),
+  },
+  resetHiddenProjects: {
+    input: z.null(),
+    output: z.object({ projectIds: z.array(z.string()) }),
+  },
+  renameProject: {
+    input: z
+      .object({
+        projectId: z.string().min(1),
+        name: z.string().trim().min(1).max(200),
+      })
+      .strict(),
+    output: z.object({ projectId: z.string(), name: z.string() }),
+  },
+  getProjectArtwork: {
+    input: z.object({ projectId: z.string().min(1) }).strict(),
+    output: z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("glyph"), svg: z.string() }),
+      z.object({ kind: z.literal("image") }),
+      z.object({ kind: z.literal("missing") }),
+    ]),
+  },
+  getProjectWorkspaceStatuses: {
+    input: z
+      .object({
+        projectIds: z.array(z.string().min(1)).max(MAX_STATUS_PROJECT_IDS),
+        refresh: z.boolean().optional(),
+      })
+      .strict(),
+    output: z.object({ statuses: z.record(z.string(), workspaceStatusSchema) }),
+  },
+  listProjectWorktrees: {
+    input: z
+      .object({ projectId: z.string().min(1), refresh: z.boolean().optional() })
+      .strict(),
+    output: z.object({ worktrees: z.array(workspaceWorktreeSchema) }),
+  },
+});
+
+export default function plugin(bb: BbPluginApi) {
+  bb.settings.define({
+    showChatCounts: {
+      type: "boolean",
+      label: "Show chat counts",
+      default: true,
+    },
+    showUnusedProjects: {
+      type: "boolean",
+      label: "Show projects without chats",
+      default: true,
+    },
+    includePersonalProject: {
+      type: "boolean",
+      label: "Include Personal",
+      default: true,
+    },
+    loadProjectIcons: {
+      type: "boolean",
+      label: "Load project artwork",
+      description: "Discover icons and logos from project files.",
+      default: true,
+    },
+    showWorkspaceStatus: {
+      type: "boolean",
+      label: "Show checkout status",
+      description:
+        "Show each project's checkout branch and uncommitted changes on its card. Runs git status in every listed checkout.",
+      default: true,
+    },
+    workspaceRefresh: {
+      type: "select",
+      label: "Refresh checkout status",
+      description:
+        "How often cards re-read checkout status on their own. The refresh button always works.",
+      options: [...WORKSPACE_REFRESH_OPTIONS],
+      default: "Manual",
+    },
+    compactCards: {
+      type: "boolean",
+      label: "Compact cards",
+      description:
+        "Hide activity sparklines and checkout changes, and fit more cards per row on wide screens.",
+      default: false,
+    },
+    compactColumns: {
+      type: "select",
+      label: "Compact card columns",
+      description: "Cards per row on wide screens while Compact cards is on.",
+      options: [...COMPACT_COLUMN_OPTIONS],
+      default: "3 columns",
+    },
+  });
+
+  async function listReadyEnvironments(signal: AbortSignal): Promise<WorkspaceEnvironment[]> {
+    const environments: WorkspaceEnvironment[] = [];
+    for (let page = 0; page < MAX_ENVIRONMENT_PAGES; page += 1) {
+      const batch = await bb.sdk.environments.list({
+        status: "ready",
+        limit: ENVIRONMENT_PAGE_SIZE,
+        offset: page * ENVIRONMENT_PAGE_SIZE,
+        signal,
+      });
+      for (const environment of batch) {
+        environments.push({
+          id: environment.id,
+          projectId: environment.projectId,
+          name: environment.name,
+          branchName: environment.branchName,
+          isGitRepo: environment.isGitRepo,
+          isWorktree: environment.isWorktree,
+          status: environment.status,
+          lifecycle: { phase: environment.lifecycle.phase },
+          workspaceProvisionType: environment.workspaceProvisionType,
+          environmentProviderId: environment.environmentProviderId,
+          updatedAt: environment.updatedAt,
+        });
+      }
+      if (batch.length < ENVIRONMENT_PAGE_SIZE) break;
+    }
+    return environments;
+  }
+
+  async function readWorkspaceStatus(
+    environmentId: string,
+    signal: AbortSignal,
+  ): Promise<WorkspaceStatusReading> {
+    const result = await bb.sdk.environments.status({ environmentId, signal });
+    if (result.outcome === "not_applicable") {
+      return { outcome: "unavailable", message: result.message };
+    }
+    if (result.outcome === "unavailable") {
+      return { outcome: "unavailable", message: result.failure.message };
+    }
+    const { workspace } = result;
+    return {
+      outcome: "available",
+      branch:
+        workspace.branch.currentBranch ??
+        (workspace.checkout.kind === "branch" ? workspace.checkout.branchName : null),
+      defaultBranch: workspace.branch.defaultBranch,
+      files: workspace.workingTree.files.length,
+      insertions: workspace.workingTree.insertions,
+      deletions: workspace.workingTree.deletions,
+      lineStatsComplete: workspace.workingTree.lineStatsComplete,
+    };
+  }
+
+  const workspaceStatuses = new WorkspaceStatusService({
+    listEnvironments: listReadyEnvironments,
+    readStatus: readWorkspaceStatus,
+  });
+  bb.onDispose(() => workspaceStatuses.dispose());
+
+  function normalizeStoredProjectIds(stored: unknown): string[] {
+    if (!Array.isArray(stored)) return [];
+    return [...new Set(
+      stored.filter((value): value is string =>
+        typeof value === "string" && value.length > 0,
+      ),
+    )].slice(0, MAX_STORED_PROJECT_IDS);
+  }
+
+  async function readPinnedProjects(): Promise<string[]> {
+    const stored = await bb.storage.kv.get<unknown>(PINNED_PROJECTS_KEY);
+    return normalizeStoredProjectIds(stored);
+  }
+
+  async function readHiddenProjects(): Promise<string[]> {
+    const stored = await bb.storage.kv.get<unknown>(HIDDEN_PROJECTS_KEY);
+    return normalizeStoredProjectIds(stored);
+  }
+
+  async function readProjectGroups(): Promise<ProjectGroup[]> {
+    const stored = await bb.storage.kv.get<unknown>(PROJECT_GROUPS_KEY);
+    if (!Array.isArray(stored)) return [];
+
+    const groups: ProjectGroup[] = [];
+    const groupIds = new Set<string>();
+    const assignedProjectIds = new Set<string>();
+    for (const value of stored) {
+      const parsed = projectGroupSchema.safeParse(value);
+      if (!parsed.success || groupIds.has(parsed.data.id)) continue;
+
+      groupIds.add(parsed.data.id);
+      const projectIds = [...new Set(parsed.data.projectIds)].filter((projectId) => {
+        if (assignedProjectIds.has(projectId)) return false;
+        assignedProjectIds.add(projectId);
+        return true;
+      });
+      groups.push({ ...parsed.data, projectIds });
+      if (groups.length === MAX_PROJECT_GROUPS) break;
+    }
+    return groups;
+  }
+
+  async function writeProjectGroups(groups: ProjectGroup[]): Promise<ProjectGroup[]> {
+    await bb.storage.kv.set(PROJECT_GROUPS_KEY, groups);
+    bb.realtime.publish("project-groups-changed", null);
+    return groups;
+  }
+
+  let preferenceMutationTail: Promise<void> = Promise.resolve();
+  function runPreferenceMutation<Result>(
+    mutation: () => Promise<Result>,
+  ): Promise<Result> {
+    const result = preferenceMutationTail.then(mutation);
+    preferenceMutationTail = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }
+
+  bb.rpc.register(rpcContract, {
+    async listPinnedProjects() {
+      return { projectIds: await readPinnedProjects() };
+    },
+    setProjectPinned({ projectId, pinned }) {
+      return runPreferenceMutation(async () => {
+        const current = await readPinnedProjects();
+        const next = pinned
+          ? current.includes(projectId)
+            ? current
+            : [...current, projectId]
+          : current.filter((id) => id !== projectId);
+        if (next.length !== current.length) {
+          await bb.storage.kv.set(PINNED_PROJECTS_KEY, next);
+          bb.realtime.publish("pins-changed", null);
+        }
+        return { projectIds: next };
+      });
+    },
+    async listProjectGroups() {
+      return { groups: await readProjectGroups() };
+    },
+    createProjectGroup({ name, projectId }) {
+      return runPreferenceMutation(async () => {
+        const current = await readProjectGroups();
+        if (current.length >= MAX_PROJECT_GROUPS) {
+          throw new Error(`A maximum of ${MAX_PROJECT_GROUPS} project groups is allowed.`);
+        }
+
+        const groups = projectId
+          ? current.map((group) => ({
+              ...group,
+              projectIds: group.projectIds.filter((id) => id !== projectId),
+            }))
+          : [...current];
+        groups.push({
+          id: crypto.randomUUID(),
+          name,
+          projectIds: projectId ? [projectId] : [],
+        });
+        return { groups: await writeProjectGroups(groups) };
+      });
+    },
+    renameProjectGroup({ groupId, name }) {
+      return runPreferenceMutation(async () => {
+        const current = await readProjectGroups();
+        if (!current.some((group) => group.id === groupId)) {
+          throw new Error("Project group not found.");
+        }
+        const groups = current.map((group) =>
+          group.id === groupId ? { ...group, name } : group,
+        );
+        return { groups: await writeProjectGroups(groups) };
+      });
+    },
+    deleteProjectGroup({ groupId }) {
+      return runPreferenceMutation(async () => {
+        const current = await readProjectGroups();
+        const groups = current.filter((group) => group.id !== groupId);
+        if (groups.length === current.length) return { groups: current };
+        return { groups: await writeProjectGroups(groups) };
+      });
+    },
+    reorderProjectGroups({ groupIds }) {
+      return runPreferenceMutation(async () => {
+        const current = await readProjectGroups();
+        const groupsById = new Map(current.map((group) => [group.id, group]));
+        const orderedIds = [...new Set(groupIds)].filter((id) => groupsById.has(id));
+        const requestedIds = new Set(orderedIds);
+        const groups = [
+          ...orderedIds.map((id) => groupsById.get(id)!),
+          ...current.filter((group) => !requestedIds.has(group.id)),
+        ];
+        if (groups.every((group, index) => group.id === current[index]?.id)) {
+          return { groups: current };
+        }
+        return { groups: await writeProjectGroups(groups) };
+      });
+    },
+    setProjectGroup({ projectId, groupId }) {
+      return runPreferenceMutation(async () => {
+        const current = await readProjectGroups();
+        if (groupId !== null && !current.some((group) => group.id === groupId)) {
+          throw new Error("Project group not found.");
+        }
+        const groups = current.map((group) => ({
+          ...group,
+          projectIds: group.projectIds.filter((id) => id !== projectId),
+        }));
+        if (groupId !== null) {
+          const target = groups.find((group) => group.id === groupId)!;
+          target.projectIds.push(projectId);
+        }
+        const changed = current.some((group, index) =>
+          group.projectIds.join("\0") !== groups[index]!.projectIds.join("\0"),
+        );
+        return { groups: changed ? await writeProjectGroups(groups) : current };
+      });
+    },
+    async listHiddenProjects() {
+      return { projectIds: await readHiddenProjects() };
+    },
+    setProjectHidden({ projectId, hidden }) {
+      return runPreferenceMutation(async () => {
+        const current = await readHiddenProjects();
+        const next = hidden
+          ? current.includes(projectId)
+            ? current
+            : [...current, projectId]
+          : current.filter((id) => id !== projectId);
+        if (next.length !== current.length) {
+          await bb.storage.kv.set(HIDDEN_PROJECTS_KEY, next);
+          bb.realtime.publish("hidden-projects-changed", null);
+        }
+        return { projectIds: next };
+      });
+    },
+    resetHiddenProjects() {
+      return runPreferenceMutation(async () => {
+        const current = await readHiddenProjects();
+        if (current.length > 0) {
+          await bb.storage.kv.delete(HIDDEN_PROJECTS_KEY);
+          bb.realtime.publish("hidden-projects-changed", null);
+        }
+        return { projectIds: [] };
+      });
+    },
+    async renameProject({ projectId, name }) {
+      const project = await bb.sdk.projects.update({ projectId, name });
+      return { projectId: project.id, name: project.name };
+    },
+    async getProjectOpenContext({ projectId }) {
+      const [project, config] = await Promise.all([
+        bb.sdk.projects.get({ projectId }),
+        bb.sdk.system.config(),
+      ]);
+      const source = project.sources.find((source) => source.isDefault) ?? project.sources[0];
+      return {
+        source: source ? { hostId: source.hostId, path: source.path } : null,
+        ports: config.localHelperPorts,
+      };
+    },
+    async getProjectArtwork({ projectId }) {
+      const artwork = await iconCache.get(projectId);
+      if (artwork === null) return { kind: "missing" as const };
+      return artwork.kind === "glyph"
+        ? { kind: "glyph" as const, svg: artwork.svg }
+        : { kind: "image" as const };
+    },
+    async getProjectWorkspaceStatuses({ projectIds, refresh }) {
+      return {
+        statuses: await workspaceStatuses.getCheckoutStatuses(projectIds, refresh === true),
+      };
+    },
+    async listProjectWorktrees({ projectId, refresh }) {
+      return {
+        worktrees: await workspaceStatuses.getWorktrees(projectId, refresh === true),
+      };
+    },
+  });
+
+  const iconCache = new ProjectIconCache<ProjectArtwork>((projectId, signal) =>
+    findProjectArtwork(
+      {
+        listFiles: (args) => bb.sdk.projects.files(args),
+        readFile: (args) => bb.sdk.projects.fileContent(args),
+      },
+      projectId,
+      signal,
+    ),
+  );
+  bb.onDispose(() => iconCache.dispose());
+
+  bb.http.route("GET", "/project-icon", async (context) => {
+    const projectId = context.req.query("projectId")?.trim();
+    if (!projectId) return new Response(null, { status: 400 });
+
+    try {
+      const icon = await iconCache.get(projectId);
+
+      if (icon === null || icon.kind !== "image") {
+        return new Response(null, {
+          status: 404,
+          headers: { "cache-control": MISSING_CACHE_CONTROL },
+        });
+      }
+
+      return new Response(icon.bytes, {
+        headers: {
+          "cache-control": FOUND_CACHE_CONTROL,
+          "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'",
+          "content-type": icon.mimeType,
+          "x-content-type-options": "nosniff",
+        },
+      });
+    } catch (error) {
+      bb.log.debug(
+        `Could not load an icon for project ${projectId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return new Response(null, {
+        status: 404,
+        headers: { "cache-control": MISSING_CACHE_CONTROL },
+      });
+    }
+  });
+}

@@ -1,0 +1,606 @@
+/* ============================================================================
+   E Corp / Executive Systems — bb-plugin-e-corp
+   A BB palette built on one continuous, faintly textured blue field that is
+   anchored to the application window and shared by every large surface.
+
+   Dark is the workstation at night, lit only by its own screen. Light is the
+   same room, the same window, at first light: identical field geometry — the
+   bloom low and slightly right of centre, shade at the top edge and outer
+   corners — re-exposed as cold daylight. Every rule below exists in both
+   modes; only the exposure changes.
+
+   Assets are inlined: bb ships theme.css to the client as a CSS *string*, so a
+   relative url() has nothing to resolve against and the theme folder is not
+   served over HTTP. Regenerate with source/build.sh — do not hand-edit
+   themes/e-corp.css.
+   ========================================================================= */
+
+__FONTFACES__
+
+/* ---------------------------------------------------------------------------
+   1. Palette
+   ------------------------------------------------------------------------ */
+
+/* Mode-independent: geometry, type, motion.
+   bb derives every corner from --radius: rounded-md = r-2, rounded-lg = r,
+   rounded-xl = r+4. r:4px gives 2px controls, 4px panels, 8px dialogs. */
+:root {
+  --radius: 4px;
+
+  --font-sans: "IBM Plex Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-serif: Georgia, "Times New Roman", serif;
+
+  --sub-transition: 120ms;
+}
+
+/* ---- Light: the same field, exposed for daylight -------------------------
+   Two things do not survive a naive inversion and are mirrored by *intent*
+   instead of by value:
+     - depth. Dark can drop its corners 32 L* below the bloom because nothing
+       has to stay legible down there. Light cannot: the shaded corners are
+       where the dimmest text tier is measured, so the composition is carried
+       by the glow and the vignettes are held to a whisper (5-6%).
+     - direction. Every dark token that *lifts* off the field (pale cyan at low
+       alpha) becomes a token that *settles* into it (deep teal at low alpha).
+       The rule is unchanged: state colour is the accent hue, pushed away from
+       the field; only which way is away has flipped. */
+.light, :root:not(.dark) {
+  color-scheme: light;
+
+  /* anchors — the flat stand-ins sit at the field's median, so any surface
+     that does not repaint the field does not read as a patch. */
+  --canvas: #E4EDEE;
+  --ink: #15303C;
+
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: #F5F9F7;          /* Raised surface — toward the light, as in dark */
+  --popover: #F5F9F7;
+  --sidebar: #DEE8EA;
+  --sidebar-foreground: var(--ink);
+
+  --secondary: #1D5B7014;   /* Hover surface — translucent, so it settles over
+                               any part of the field instead of bleaching it */
+  --accent: #1D5B7014;
+  --muted: #1D5B700F;
+  --border: #2E5E7038;      /* Subtle divider */
+  --border-hairline: #2E5E7024;
+  --border-seam: #2E5E7024;
+  --input: #1D4E6159;       /* Strong boundary */
+  --surface-recessed: #15303C0F;
+  --surface-raised: #FFFFFF73;
+  --surface-scrim: #E4EDEEE0;
+  --state-hover: #1D5B7012;
+  --state-active: #1D5B7021;
+  --sidebar-accent: #C9DCE2;
+  --sidebar-border: var(--border-seam);
+
+  /* Interactive accent stays deep and crisp so controls separate from the
+     wallpaper; keyboard focus is a distinctly more electric tier. */
+  --primary: #0F5A6E;
+  --primary-foreground: #F4FAFB;
+  --ring: #04617D;
+  --sidebar-ring: var(--ring);
+  --surface-selected: #12657D24; /* Selected surface */
+  --surface-selected-border: #12657D66;
+  --file-accent: #0F5A6E;
+
+  --muted-foreground: #32505D;   /* Secondary text */
+  /* The dimmest tier, and the one that sets the floor on how deep the shading
+     may go: it must clear 4.5:1 in the shaded corners, and the tiers above it
+     must stay far enough apart to still read as a hierarchy. */
+  --subtle-foreground: #425E69;
+  --readback-foreground: #3E5A65;
+
+  --destructive: #8E4238;
+  --destructive-foreground: #FBF6F5;
+  --destructive-text: #853D33;
+  --warning: #6E5219;
+  --warning-text: #674C16;
+  --attention: #6E5219;
+  --success: #34604A;
+  --diff-added: #34604A;
+  --diff-removed: #8E4238;
+  --pr-merged: #584B81;
+
+  /* Flat workstation chrome; elevation is reserved for floating overlays. */
+  --shadow-color: #23495B;
+  --shadow-2xs: 0 1px 0 #23495B0A;
+  --shadow-xs: 0 1px 1px #23495B14;
+  --shadow-sm: 0 1px 2px #23495B1A;
+  --shadow-md: 0 3px 8px #23495B1F;
+  --shadow-lg: 0 6px 18px #23495B26;
+  --shadow-xl: 0 10px 28px #23495B2E;
+  --shadow-2xl: 0 16px 40px #23495B36;
+  --shadow-inner: inset 0 1px 2px #23495B1A;
+  --promptbox-shadow: inset 0 1px 0 #FFFFFFCC, 0 2px 6px #23495B14;
+
+  /* ---- the atmospheric field ------------------------------------------- */
+  /* Same ellipse, same origin as dark. Overcast daylight entering low, cool
+     steel shade at the top edge and outer corners. The texture keeps its
+     soft-light blend in both modes: it is a high-pass centred on 128, so
+     soft-light is the only blend that leaves its mean untouched — and on a
+     light backdrop it modulates roughly twice as far as it does on a dark
+     one, which is what keeps the daylight field from going inert. */
+  --sub-base: #D2DDE4;
+  --sub-glow: radial-gradient(ellipse 66% 94% at 58% 88%,
+      #FAFCFA 0%, #F3F8F5 22%, #EAF1F1 42%, #E1EAEC 60%, #DAE4E9 76%, #D5E0E6 90%, #D2DDE4 100%);
+  --sub-vignette-edge: linear-gradient(to bottom,
+      #4E6F800E 0%, #4E6F800A 20%, #4E6F8006 40%, #4E6F8003 62%, #4E6F8000 80%);
+  --sub-vignette-corner: radial-gradient(ellipse 80% 92% at 50% 58%,
+      #456A7C00 60%, #456A7C05 82%, #456A7C0D 100%);
+  --sub-veil: linear-gradient(#00000000, #00000000);
+  --sub-texture-blend: soft-light;
+  --sub-grain-blend: soft-light;
+
+  /* Terminal — the same hue families as dark, re-registered as ink. Each is
+     >=7:1 on the panel; bright means further from the background, which here
+     means darker. The one exception mirrors dark's: there, 0/8 sit next to the
+     panel and cannot separate from it; here it is 7/15. */
+  --ansi-0:  #16262F;  --ansi-8:  #42575F;
+  --ansi-1:  #81413C;  --ansi-9:  #693431;
+  --ansi-2:  #345C48;  --ansi-10: #2A4A3A;
+  --ansi-3:  #694F1D;  --ansi-11: #554018;
+  --ansi-4:  #2C577D;  --ansi-12: #244665;
+  --ansi-5:  #594B80;  --ansi-13: #483D68;
+  --ansi-6:  #125B6F;  --ansi-14: #0F4A5A;
+  --ansi-7:  #BCCBD1;  --ansi-15: #EBF1F2;
+  --ansi-bg-fg-0:  #F5F9FA; --ansi-bg-fg-8:  #F5F9FA;
+  --ansi-bg-fg-1:  #F5F9FA; --ansi-bg-fg-9:  #F5F9FA;
+  --ansi-bg-fg-2:  #F5F9FA; --ansi-bg-fg-10: #F5F9FA;
+  --ansi-bg-fg-3:  #F5F9FA; --ansi-bg-fg-11: #F5F9FA;
+  --ansi-bg-fg-4:  #F5F9FA; --ansi-bg-fg-12: #F5F9FA;
+  --ansi-bg-fg-5:  #F5F9FA; --ansi-bg-fg-13: #F5F9FA;
+  --ansi-bg-fg-6:  #F5F9FA; --ansi-bg-fg-14: #F5F9FA;
+  --ansi-bg-fg-7:  #16262F; --ansi-bg-fg-15: #16262F;
+
+  --sub-seam: #04617D;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* anchors — "Primary panel" and "Primary text" from the spec */
+  --canvas: #12232D;
+  --ink: #DEE7E9;
+
+  --background: #12232D;
+  --foreground: var(--ink);
+  --card: #192E39;          /* Raised surface — menus/dialogs stay fully opaque */
+  --popover: #192E39;
+  --sidebar: #10212A;
+  --sidebar-foreground: var(--ink);
+
+  --secondary: #9FD0DE1F;   /* Hover surface — translucent, so it lifts over any
+                               part of the field instead of darkening the lit end */
+  --accent: #9FD0DE1F;
+  --muted: #8FC4D416;
+  --border: #AACAD633;      /* Subtle divider */
+  --border-hairline: #AACAD626;
+  --border-seam: #AACAD626;
+  --input: #C2DEE84D;       /* Strong boundary */
+  --surface-recessed: #09182066;
+  --surface-raised: #91C8D40D;
+  --surface-scrim: #12232DE0;
+  --state-hover: #91C8D414;
+  --state-active: #91C8D424;
+  --sidebar-accent: #233D4A;
+  --sidebar-border: var(--border-seam);
+
+  /* Interactive accent stays pale and crisp so controls separate from the
+     wallpaper; keyboard focus is a distinctly brighter tier. */
+  --primary: #91C8D4;
+  --primary-foreground: #07131A;
+  --ring: #B5E5EC;
+  --sidebar-ring: var(--ring);
+  --surface-selected: #8FCBDE2E; /* Selected surface */
+  --surface-selected-border: #A6D8E85C;
+  --file-accent: #91C8D4;
+
+  --muted-foreground: #C8D3D8;   /* Secondary text */
+  /* Spec starts this tier at #7F949E. This tier sets the ceiling on how bright
+     the blast may go: it must clear 4.5:1 on the lit end, and the tiers above
+     it must stay far enough apart to still read as a hierarchy. */
+  --subtle-foreground: #B0C1C8;
+  --readback-foreground: #B9C8CE;
+
+  --destructive: #E6B0AF;
+  --destructive-foreground: #1B0F0F;
+  --destructive-text: #E9AFAE;
+  --warning: #D4BA87;
+  --warning-text: #DCC493;
+  --attention: #D4BA87;
+  --success: #A7C4B6;
+  --diff-added: #A7C4B6;
+  --diff-removed: #E6B0AF;
+  --pr-merged: #C3B9D6;
+
+  /* Flat workstation chrome; elevation is reserved for floating overlays. */
+  --shadow-color: #061018;
+  --shadow-2xs: 0 1px 0 #9AC9D408;
+  --shadow-xs: 0 1px 1px #06101833;
+  --shadow-sm: 0 1px 2px #06101844;
+  --shadow-md: 0 3px 8px #06101866;
+  --shadow-lg: 0 6px 18px #06101880;
+  --shadow-xl: 0 10px 28px #06101899;
+  --shadow-2xl: 0 16px 40px #061018AA;
+  --shadow-inner: inset 0 1px 2px #06101855;
+  --promptbox-shadow: inset 0 1px 0 #B5E5EC0D, 0 2px 6px #06101833;
+
+  /* ---- the atmospheric field ------------------------------------------- */
+  /* A wider petroleum-blue glow and gentler upper/corner shading lift the
+     field while retaining the wallpaper's dark-to-teal composition. Text tiers
+     are lifted alongside it to preserve readability at the illuminated end. */
+  --sub-base: #10232D;
+  --sub-glow: radial-gradient(ellipse 66% 94% at 58% 88%,
+      #1C4050 0%, #193B49 22%, #163440 42%, #142D38 60%, #102631 76%, #0E222C 90%, #10232D 100%);
+  --sub-vignette-edge: linear-gradient(to bottom,
+      #0A192080 0%, #0A192059 20%, #0A192030 40%, #06121B14 62%, #06121B00 80%);
+  --sub-vignette-corner: radial-gradient(ellipse 80% 92% at 50% 58%,
+      #07141D00 60%, #07141D1C 82%, #06111A45 100%);
+  --sub-veil: linear-gradient(#00000000, #00000000);
+  --sub-texture-blend: soft-light;
+  --sub-grain-blend: soft-light;
+
+  /* Terminal — distinct hues held to the same muted register as the palette.
+     Each is >=7:1 on the panel; every --ansi-bg-fg-* is the more readable of
+     the two extremes when that colour is used as a background. */
+  --ansi-0:  #0A1015;  --ansi-8:  #5C737D;
+  --ansi-1:  #D58F8C;  --ansi-9:  #E3A6A3;
+  --ansi-2:  #9BBCAC;  --ansi-10: #ACC9B5;
+  --ansi-3:  #D0B47C;  --ansi-11: #DFC694;
+  --ansi-4:  #8AAECB;  --ansi-12: #A3C2D9;
+  --ansi-5:  #B0A3C9;  --ansi-13: #C4B8D9;
+  --ansi-6:  #91C8D4;  --ansi-14: #A2CFD9;
+  --ansi-7:  #C4D2D6;  --ansi-15: #EDF3F4;
+  --ansi-bg-fg-0:  #EDF3F4; --ansi-bg-fg-8:  #EDF3F4;
+  --ansi-bg-fg-1:  #07131A; --ansi-bg-fg-9:  #07131A;
+  --ansi-bg-fg-2:  #07131A; --ansi-bg-fg-10: #07131A;
+  --ansi-bg-fg-3:  #07131A; --ansi-bg-fg-11: #07131A;
+  --ansi-bg-fg-4:  #07131A; --ansi-bg-fg-12: #07131A;
+  --ansi-bg-fg-5:  #07131A; --ansi-bg-fg-13: #07131A;
+  --ansi-bg-fg-6:  #07131A; --ansi-bg-fg-14: #07131A;
+  --ansi-bg-fg-7:  #07131A; --ansi-bg-fg-15: #07131A;
+
+  --sub-seam: #B5E5EC;
+
+  /* Status hues lifted to clear 4.5:1 on the lit end of the field
+     (measured p99.9 transcript background #2A4F5E). At the v5 blast
+     brightness the v4 values fell to 4.28 / 4.42 / 3.74. */
+}
+
+/* Texture + grain are mode-independent; strength is carried in the images. */
+:root {
+  --sub-texture: url("__TEXTURE__");
+  --sub-grain: url("__GRAIN__");
+}
+
+/* ---------------------------------------------------------------------------
+   2. The field
+
+   One composition, painted at viewport coordinates. Every surface that opts in
+   paints the *same* opaque stack, so repeated paint is idempotent: a nested
+   container cannot multiply alphas into a darker patch, and no panel restarts
+   the gradient at its own top-left corner. `background-attachment: fixed` is
+   what anchors each element's slice to the window — it is load-bearing.
+
+   Layer order (top to bottom):
+     veil    per-surface tier modulation (the only thing that varies)
+     grain   fine dither; also breaks 8-bit banding across the dark upper third
+     corner  outer-corner falloff
+     edge    upper-third falloff
+     texture the wallpaper's mottling and wear, high-passed
+     glow    petroleum-blue light at 58% x, 90% y
+     base    near-black blue foundation
+   ------------------------------------------------------------------------ */
+
+html,
+/* Chrome that sits outside the panes — page header, secondary panel — opts in
+   too; a flat token fill would read as a patch wherever the field is shaded. */
+:has(> [data-testid="app-page-header-content-row"]),
+aside:has([data-testid="thread-secondary-panel-top-chrome"]),
+aside:has([data-testid="thread-secondary-panel-top-chrome"]) :is(div, section).bg-sidebar,
+[data-testid="thread-secondary-panel-top-chrome"],
+[data-split-pane-id],
+[data-thread-window],
+[data-sidebar="sidebar"],
+/* Content and sticky labels must repaint the same opaque viewport field. */
+[data-sidebar="sidebar"] .bg-sidebar,
+/* Sticky-header shields cover scrolling rows above and below each heading. */
+[data-sidebar="sidebar"] [data-sidebar-sticky-stack] [data-sidebar-sticky-tier]::before,
+[data-sidebar="sidebar"] [data-sidebar-sticky-stack] [data-sidebar-sticky-tier]::after,
+[data-app-terminal],
+[data-app-terminal] .bg-sidebar,
+[data-split-pane-id] .bg-background:not(.rounded-full),
+[data-thread-window] .bg-background:not(.rounded-full),
+[data-app-composer-role="primary"] [data-promptbox] {
+  background-color: var(--sub-base);
+  background-image:
+      var(--sub-veil),
+      var(--sub-grain),
+      var(--sub-vignette-corner),
+      var(--sub-vignette-edge),
+      var(--sub-texture),
+      var(--sub-glow);
+  background-size: cover, 256px 256px, cover, cover, cover, cover;
+  background-position: center, center, center, center, center, center;
+  background-repeat: no-repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-attachment: fixed, fixed, fixed, fixed, fixed, fixed;
+  background-blend-mode:
+      normal,
+      var(--sub-grain-blend),
+      normal,
+      normal,
+      var(--sub-texture-blend),
+      normal;
+}
+
+/* html already carries the field; body must not paint over it. */
+body { background-color: transparent; background-image: none; }
+
+/* ---------------------------------------------------------------------------
+   3. Surface hierarchy
+
+   The spec's opacity table is expressed as a veil rather than as an alpha on
+   the surface itself. Painting flat ~80–97% fills over the field was measured
+   first and rejected: it left a 7/255 swing across the whole window, which is
+   below the threshold at which the eye reads illumination at all, so the
+   wallpaper simply disappeared. The veil keeps each tier's *relative* density
+   and ordering while letting the composition still read as light.
+   ------------------------------------------------------------------------ */
+
+/* The sidebar is the one chrome tier that reads denser than the canvas: it
+   recedes from the field by the same step in both modes, into shadow in dark
+   and into cool steel shade in light. */
+.dark [data-sidebar="sidebar"] {
+  --sub-veil: linear-gradient(#0E202B59, #0E202B59);
+}
+.light [data-sidebar="sidebar"],
+:root:not(.dark) [data-sidebar="sidebar"] {
+  --sub-veil: linear-gradient(#A9C3CF40, #A9C3CF40);
+}
+
+/* Editor and terminal — near-flat for stable text contrast. */
+[data-app-terminal],
+[data-app-terminal] .bg-sidebar,
+.monaco-editor,
+.monaco-editor-background,
+.monaco-editor .margin {
+  --sub-veil: linear-gradient(var(--canvas), var(--canvas));
+}
+
+/* Composer — a solid-feeling inset surface, slightly lighter than around it. */
+[data-app-composer-role="primary"] [data-promptbox] {
+  --sub-veil: linear-gradient(color-mix(in srgb, var(--card) 65%, transparent), color-mix(in srgb, var(--card) 65%, transparent));
+  border-color: var(--border);
+  box-shadow: var(--promptbox-shadow);
+}
+[data-app-composer-role="primary"] [data-promptbox]:focus-within {
+  border-color: var(--surface-selected-border);
+  box-shadow: var(--promptbox-shadow), 0 0 0 1px var(--surface-selected-border);
+}
+
+/* The dock and the transcript paint the same field, so bb's fade-to-background
+   above the composer has nothing to dissolve into and only smears a strip. */
+:has(> .chat-prompt-box) > [data-overflow-fade] { background-image: none; }
+
+/* Menus, tooltips and dialogs are overlays: fully opaque, clear borders, short
+   shadows. They are portaled outside the panes, so the field never reaches
+   them — this only stops a translucent token from letting text show through. */
+[data-bb-portaled-overlay],
+[role="menu"], [role="dialog"], [role="tooltip"], [role="listbox"] {
+  backdrop-filter: none;
+}
+
+/* bb's narrow layout is a push drawer: the sidebar panel sits behind the shell
+   at z-0 while closed. It is already inert; hiding it stops doubled text and a
+   hard vertical edge showing through at the drawer's width. */
+[data-sidebar="panel"][data-state="closed"] { opacity: 0; pointer-events: none; }
+
+/* ---------------------------------------------------------------------------
+   4. Signature detail: the illuminated seam
+
+   A hairline on the top boundary of the focused pane only — a short pale-blue
+   centre fading into the ordinary border toward both ends. It changes with
+   focus and never pulses. The pane is already positioned (it hosts bb's
+   absolutely-placed focus scrim at z-20), so ::after needs no layout change.
+   ------------------------------------------------------------------------ */
+
+[data-split-pane-id][data-focused="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  z-index: 30;
+  pointer-events: none;
+  background-image: linear-gradient(to right,
+      var(--border) 0%,
+      var(--border) 42%,
+      color-mix(in oklab, var(--sub-seam) 30%, var(--border)) 47%,
+      var(--sub-seam) 49%,
+      var(--sub-seam) 51%,
+      color-mix(in oklab, var(--sub-seam) 30%, var(--border)) 53%,
+      var(--border) 58%,
+      var(--border) 100%);
+}
+[data-split-pane-id]:not([data-focused="true"])::after { content: none; }
+
+/* ---------------------------------------------------------------------------
+   5. Components
+   ------------------------------------------------------------------------ */
+
+/* Selected thread: flat blue-gray fill plus a 2px marker on the leading edge. */
+[data-sidebar="content"] [aria-current="page"] {
+  position: relative;
+  background-color: var(--surface-selected);
+}
+[data-sidebar="content"] [aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 2px;
+  width: 2px;
+  border-radius: 1px;
+  background-color: var(--primary);
+}
+
+/* Keyboard focus stays distinguishable from hover and from selection. */
+:where(button, input, textarea, select, a, [role="button"], [role="tab"], [role="option"]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------------------
+   6. Motion and accessibility
+   ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: no-preference) {
+  .transition-colors { transition-duration: var(--sub-transition); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .transition-colors { transition-duration: 1ms; }
+}
+
+/* Reduced transparency: drop the photographic layers and keep the same
+   hierarchy on solid fills. The palette and the seam are unchanged. */
+@media (prefers-reduced-transparency: reduce) {
+  :root, .light, .dark { --sub-texture: none; --sub-grain: none; }
+  .dark {
+    --sub-base: #12232D;
+    --sub-glow: radial-gradient(ellipse 95% 86% at 58% 90%,
+        #1C3A49 0%, #17313E 40%, #12232D 100%);
+  }
+  .light, :root:not(.dark) {
+    --sub-base: #DCE6EA;
+    --sub-glow: radial-gradient(ellipse 95% 86% at 58% 90%,
+        #F6FAF8 0%, #E9F0F0 40%, #DCE6EA 100%);
+  }
+}
+
+/* Conversation reading area: 16px prose, with room between lines. */
+[data-message-column].group\/message,
+[data-message-column] .text-sm.leading-relaxed {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+/* Executive Systems: reading/navigation use Sans; technical chrome uses Mono. */
+time, [data-sidebar="group-label"],
+[data-app-terminal], .monaco-editor, code, kbd {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+[role="tab"] {
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+}
+[data-sidebar="group-label"] {
+  letter-spacing: 0.035em;
+}
+[role="tab"][aria-selected="true"] {
+  box-shadow: inset 0 -1px 0 var(--primary);
+}
+/* Code is the one surface pushed past the field rather than veiled into it —
+   further from the light in dark, further into it in light — so syntax colour
+   is read against a fixed backdrop and matches the bundled Pierre themes. */
+.dark [data-app-terminal],
+.dark [data-app-terminal] .bg-sidebar,
+.dark .monaco-editor, .dark .monaco-editor-background, .dark .monaco-editor .margin {
+  --sub-veil: linear-gradient(#0C1B23EB, #0C1B23EB);
+  background-color: #0C1B23;
+}
+.dark pre {
+  background-color: #0C1B23;
+  border-color: var(--border-hairline);
+}
+.light [data-app-terminal],
+.light [data-app-terminal] .bg-sidebar,
+.light .monaco-editor, .light .monaco-editor-background, .light .monaco-editor .margin,
+:root:not(.dark) [data-app-terminal],
+:root:not(.dark) [data-app-terminal] .bg-sidebar,
+:root:not(.dark) .monaco-editor,
+:root:not(.dark) .monaco-editor-background,
+:root:not(.dark) .monaco-editor .margin {
+  --sub-veil: linear-gradient(#F2F6F5EB, #F2F6F5EB);
+  background-color: #F2F6F5;
+}
+.light pre,
+:root:not(.dark) pre {
+  background-color: #F2F6F5;
+  border-color: var(--border-hairline);
+}
+[data-sidebar="content"] [aria-current="page"] {
+  border-radius: 2px;
+  background-image: linear-gradient(to right, color-mix(in srgb, var(--primary) 8%, transparent), transparent);
+}
+
+/* Footer: the stock fade ends in a flat sidebar fill, leaving a dark shelf
+   against the continuous wallpaper. Use a quiet, inset hairline instead. */
+[data-sidebar="footer"] > [data-overflow-fade="above"][data-overflow-fade-tone="sidebar"] {
+  display: none;
+}
+[data-sidebar="footer"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent,
+      color-mix(in srgb, var(--sidebar-foreground) 10%, transparent) 30%,
+      color-mix(in srgb, var(--sidebar-foreground) 10%, transparent) 70%,
+      transparent);
+}
+
+/* The composer dock sits outside the scrolling transcript. Let its parent
+   field show through instead of repainting it across a separate paint layer. */
+:root :is([data-thread-window], [data-split-pane-id]) :has(> .chat-prompt-box),
+:root .chat-prompt-box,
+:root [data-app-composer-role="primary"][data-promptbox-shell] {
+  background: transparent;
+}
+:root :has(> .chat-prompt-box) > [data-overflow-fade] {
+  display: none;
+}
+
+/* A single translucent sheet: local sheen above the blurred, continuous field.
+   Screen glass at night; window glass at first light. Same construction — a
+   145deg sheen falling to the field's own hue, a bright inset top edge, one
+   hairline border — at the two exposures. */
+:root.dark [data-app-composer-role="primary"] [data-promptbox],
+:root .dark [data-app-composer-role="primary"] [data-promptbox] {
+  background: linear-gradient(145deg, #B5E5EC14, #B5E5EC03 48%, #76AEB90A) padding-box,
+      #10283385;
+  -webkit-backdrop-filter: blur(14px) saturate(112%);
+  backdrop-filter: blur(14px) saturate(112%);
+  border-color: #A5D4DF40;
+  box-shadow: inset 0 1px 0 #D4F4F92B, inset 0 -1px 0 #07182033,
+      0 5px 18px #05131C26;
+}
+:root.light [data-app-composer-role="primary"] [data-promptbox],
+:root .light [data-app-composer-role="primary"] [data-promptbox],
+:root:not(.dark) [data-app-composer-role="primary"] [data-promptbox] {
+  background: linear-gradient(145deg, #FFFFFF9E, #FFFFFF4F 48%, #B9D3DE33) padding-box,
+      #EDF4F4B8;
+  -webkit-backdrop-filter: blur(14px) saturate(112%);
+  backdrop-filter: blur(14px) saturate(112%);
+  border-color: #3F6F8340;
+  box-shadow: inset 0 1px 0 #FFFFFFCC, inset 0 -1px 0 #23495B14,
+      0 5px 18px #23495B1F;
+}
+:root [data-app-composer-role="primary"] [data-promptbox]:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root.dark [data-app-composer-role="primary"] [data-promptbox],
+  :root .dark [data-app-composer-role="primary"] [data-promptbox],
+  :root.light [data-app-composer-role="primary"] [data-promptbox],
+  :root .light [data-app-composer-role="primary"] [data-promptbox],
+  :root:not(.dark) [data-app-composer-role="primary"] [data-promptbox] {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

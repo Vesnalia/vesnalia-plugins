@@ -1,0 +1,178 @@
+import { join } from "node:path";
+
+export type JsonObject = Record<string, unknown>;
+export type CustomAgent = JsonObject & { id?: unknown; command?: unknown; env?: unknown };
+
+// The ACP adapters whose `customAgents` setting can carry Droid. bb 0.46
+// shipped the rebuilt adapter as the opt-in `bb--provider-acp-next`, which
+// disabled `provider-acp` when enabled; from bb 0.47 the rebuilt adapter is
+// `provider-acp` itself. At most one of these answers a settings read.
+export const ACP_PLUGIN_IDS = ["bb--provider-acp-next", "provider-acp"] as const;
+export type AcpPluginId = (typeof ACP_PLUGIN_IDS)[number];
+
+export const PROFILE = {
+  id: "droid",
+  providerId: "acp-droid",
+  displayName: "Factory Droid",
+  binary: "droid",
+  args: ["exec", "--output-format", "acp"],
+  // Directories Droid actually reads (https://docs.factory.ai/cli/configuration/skills).
+  // User roots resolve from the home directory; project roots from the workspace.
+  // Compatibility roots are the `.agents` / `.agent` conventions Droid scans in
+  // addition to `.factory/skills`. `--help` has no skill subcommand.
+  nativeSkillRoots: {
+    user: [".factory/skills", ".agents/skills", ".agent/skills"],
+    project: [".factory/skills", ".agents/skills", ".agent/skills"],
+  },
+  // bb's permission modes as Droid exec launch flags. These are exec options,
+  // so insertAfterArgs: 1 places them after `exec` rather than before it.
+  // "full" is Droid's own skip-all-checks switch. "accept-edits" maps to
+  // `--auto low` (file creation/modification, no system changes). bb's default
+  // "auto" mode adds nothing, so every request comes through ACP as before.
+  permissionCli: {
+    full: ["--skip-permissions-unsafe"],
+    workspaceWrite: ["--auto", "low"],
+    insertAfterArgs: 1,
+  },
+  // Droid's ACP session exposes a `reasoning_effort` select (category
+  // thought_level), so bb sets effort over ACP. A launch flag would not work:
+  // bb puts reasoning flags before `exec`, where Droid starts its TUI instead.
+  nativeReasoning: {
+    configId: "reasoning_effort",
+    supportedLevels: ["none", "low", "medium", "high", "xhigh", "max"],
+    defaultLevel: "medium",
+  },
+  installHint: "Install and authenticate Factory Droid, then run `bb plugin reload droid`.",
+} as const;
+
+// Droid keeps its login under ~/.factory in one of these files, depending on
+// the credential backend: the OS keyring, the macOS login keychain, or a plain
+// file. Droid's own logged-in check accepts any of them. `auth.v2.key` is only
+// an encryption key and does not mean a login exists.
+export const FACTORY_LOGIN_FILES = ["auth.v2.keyring", "auth.v2.loginkeychain", "auth.v2.file"] as const;
+
+export function findFactoryLogin(factoryDir: string, exists: (path: string) => boolean): string | null {
+  for (const name of FACTORY_LOGIN_FILES) {
+    const path = join(factoryDir, name);
+    if (exists(path)) return path;
+  }
+  return null;
+}
+
+export function isObject(value: unknown): value is JsonObject {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function isOwnAgent(agent: CustomAgent | undefined): boolean {
+  return agent?.id === PROFILE.id;
+}
+
+export function findOwnAgent(agents: CustomAgent[]): CustomAgent | undefined {
+  return agents.find(isOwnAgent);
+}
+
+export function parseCustomAgents(value: unknown, pluginId: AcpPluginId = "provider-acp"): CustomAgent[] {
+  if (value === undefined || value === null || value === "") return [];
+  if (typeof value !== "string") {
+    throw new Error(`${pluginId} customAgents must be a string`);
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch (error) {
+    throw new Error(`${pluginId} customAgents is not valid JSON; refusing to overwrite it: ${String(error)}`);
+  }
+  if (!Array.isArray(parsed)) {
+    throw new Error(`${pluginId} customAgents must be a JSON array; refusing to overwrite it`);
+  }
+  return parsed as CustomAgent[];
+}
+
+export type SettingAgents = { pluginId: AcpPluginId; agents: CustomAgent[] };
+
+// Returns the `customAgents` of the first ACP adapter that answers. A failed
+// read means that adapter is disabled or not up yet, so the next one is
+// tried; a malformed setting throws instead, so it is never overwritten.
+export async function readActiveAcpSetting(
+  getSettings: (pluginId: AcpPluginId) => Promise<Record<string, unknown>>,
+): Promise<{ setting: SettingAgents | null; failures: string[] }> {
+  const failures: string[] = [];
+  for (const pluginId of ACP_PLUGIN_IDS) {
+    let values: Record<string, unknown>;
+    try {
+      values = await getSettings(pluginId);
+    } catch (error) {
+      failures.push(`${pluginId}: ${String(error)}`);
+      continue;
+    }
+    return { setting: { pluginId, agents: parseCustomAgents(values.customAgents, pluginId) }, failures };
+  }
+  return { setting: null, failures };
+}
+
+export function stringifyCustomAgents(agents: CustomAgent[]): string {
+  return `${JSON.stringify(agents, null, 2)}\n`;
+}
+
+export function managedEnv(existing?: CustomAgent, factoryApiKey?: string): JsonObject | undefined {
+  const env = isObject(existing?.env) ? { ...existing.env } : {};
+  if (typeof factoryApiKey === "string") {
+    if (factoryApiKey.length > 0) env.FACTORY_API_KEY = factoryApiKey;
+    else delete env.FACTORY_API_KEY;
+  }
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
+export function managedAgent(binary: string, existing?: CustomAgent, factoryApiKey?: string): CustomAgent {
+  const env = managedEnv(existing, factoryApiKey);
+  const agent: CustomAgent = {
+    // Keys the user added themselves (cwd, dialect, modelCli, ...) survive a
+    // reload; the fields below are ours and are rewritten every time.
+    ...(existing ?? {}),
+    id: PROFILE.id,
+    displayName: PROFILE.displayName,
+    command: binary,
+    args: [...PROFILE.args],
+    nativeSkillRoots: {
+      user: [...PROFILE.nativeSkillRoots.user],
+      project: [...PROFILE.nativeSkillRoots.project],
+    },
+    permissionCli: {
+      full: [...PROFILE.permissionCli.full],
+      workspaceWrite: [...PROFILE.permissionCli.workspaceWrite],
+      insertAfterArgs: PROFILE.permissionCli.insertAfterArgs,
+    },
+    nativeReasoning: {
+      configId: PROFILE.nativeReasoning.configId,
+      supportedLevels: [...PROFILE.nativeReasoning.supportedLevels],
+      defaultLevel: PROFILE.nativeReasoning.defaultLevel,
+    },
+  };
+  delete agent.logo;
+  // bb prefers reasoningCli over nativeReasoning and prepends its flag before
+  // `exec`, which launches Droid's TUI and breaks the ACP session.
+  delete agent.reasoningCli;
+  if (env) agent.env = env;
+  else delete agent.env;
+  // bb 0.40 requires modelCli.listArgs when modelCli is present. Droid has no
+  // list-models command; ACP session discovery supplies the catalog instead.
+  if (!isObject(agent.modelCli) || !Array.isArray(agent.modelCli.listArgs)) {
+    delete agent.modelCli;
+  }
+  return agent;
+}
+
+export function upsertAgent(agents: CustomAgent[], next: CustomAgent): { agents: CustomAgent[]; changed: boolean } {
+  const index = agents.findIndex(isOwnAgent);
+  const copy = [...agents];
+  if (index >= 0) copy[index] = next;
+  else copy.push(next);
+  return { agents: copy, changed: JSON.stringify(copy) !== JSON.stringify(agents) };
+}
+
+export function removeAgent(agents: CustomAgent[]): { agents: CustomAgent[]; changed: boolean } {
+  const next = agents.filter((agent) => !isOwnAgent(agent));
+  return { agents: next, changed: next.length !== agents.length };
+}

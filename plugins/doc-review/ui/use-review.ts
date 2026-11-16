@@ -1,0 +1,136 @@
+// Data hooks for the review panel: the opened document, its content version,
+// and its comments, kept current by polling and the server's realtime signal.
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useRealtime,
+  useRealtimeConnectionState,
+  useRpc,
+  type PluginFileOpenerSource,
+} from "@get-bb/plugin-sdk/app";
+import type { RpcContract } from "../src/contract";
+import type { ReviewComment, ReviewDoc } from "../src/types";
+import { localizeError } from "./labels";
+
+/** How often an open panel checks whether the file changed on disk. */
+const VERSION_POLL_MS = 4000;
+
+/** An error's message as the server or the browser wrote it, in English. */
+export function rawErrorText(cause: unknown): string {
+  if (cause instanceof Error) return cause.message;
+  if (typeof cause === "object" && cause && "message" in cause) {
+    return String((cause as { message: unknown }).message);
+  }
+  return String(cause);
+}
+
+/** An error's message for a person, in the panel's language where it is known. */
+export function errorText(cause: unknown): string {
+  return localizeError(rawErrorText(cause));
+}
+
+export function useReviewRpc() {
+  return useRpc<RpcContract>();
+}
+
+export function useReviewDoc(path: string, source: PluginFileOpenerSource) {
+  const rpc = useReviewRpc();
+  const [doc, setDoc] = useState<ReviewDoc | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { kind, threadId, environmentId, projectId } = source;
+  const hostId = source.experimental_hostId ?? null;
+
+  useEffect(() => {
+    let alive = true;
+    setDoc(null);
+    setError(null);
+    rpc
+      .call("doc.open", {
+        path,
+        source: { kind, threadId, environmentId, projectId, experimental_hostId: hostId },
+      })
+      .then(
+        (result) => alive && setDoc(result.doc),
+        (cause: unknown) => alive && setError(errorText(cause)),
+      );
+    return () => {
+      alive = false;
+    };
+  }, [rpc, path, kind, threadId, environmentId, projectId, hostId]);
+
+  useDocVersion(doc, setDoc);
+  return { doc, error };
+}
+
+/** The agent edits the file while it is on screen; follow its new versions. */
+export function useDocVersion(doc: ReviewDoc | null, setDoc: Dispatch<SetStateAction<ReviewDoc | null>>) {
+  const rpc = useReviewRpc();
+  const docId = doc?.id ?? null;
+  const version = doc?.version ?? null;
+  useEffect(() => {
+    if (!docId) return;
+    // A file on another machine can take longer than one interval to check;
+    // the next check waits for it instead of piling up behind it.
+    let checking = false;
+    const timer = window.setInterval(() => {
+      if (checking || document.visibilityState !== "visible") return;
+      checking = true;
+      rpc
+        .call("doc.version", { docId })
+        .then(
+          (result) => {
+            if (result.version && result.version !== version) {
+              setDoc((current) =>
+                current && current.id === docId ? { ...current, version: result.version! } : current,
+              );
+            }
+          },
+          () => undefined,
+        )
+        .finally(() => {
+          checking = false;
+        });
+    }, VERSION_POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [rpc, docId, version, setDoc]);
+}
+
+export function useComments(docId: string | null) {
+  const rpc = useReviewRpc();
+  const [comments, setComments] = useState<ReviewComment[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const latest = useRef(0);
+
+  const refetch = useCallback(() => {
+    if (!docId) return;
+    const request = ++latest.current;
+    rpc.call("comments.list", { docId }).then(
+      (result) => {
+        if (request !== latest.current) return;
+        setComments(result.comments);
+        setError(null);
+      },
+      (cause: unknown) => request === latest.current && setError(errorText(cause)),
+    );
+  }, [rpc, docId]);
+
+  useEffect(() => {
+    setComments(null);
+    refetch();
+  }, [refetch]);
+
+  useRealtime("review-changed", (payload: unknown) => {
+    const ids = (payload as { docIds?: unknown } | null)?.docIds;
+    if (!docId || !Array.isArray(ids) || ids.includes(docId)) refetch();
+  });
+
+  // Signals are not replayed: reconcile after a reconnect.
+  const connection = useRealtimeConnectionState();
+  const seenConnected = useRef(false);
+  useEffect(() => {
+    if (connection !== "connected") return;
+    if (seenConnected.current) refetch();
+    seenConnected.current = true;
+  }, [connection, refetch]);
+
+  return { comments, error, refetch, setComments };
+}

@@ -1,0 +1,51 @@
+// `ContributorHost`, `ContributorCall`, `ContributorAnswer` — 07 §The call. No imports.
+
+/** Where a host has contributors, how the server lists and calls them. spec 07 §The call, §Discovery per host */
+export interface ContributorHost {
+  /** Every enabled contributor with its raw declaration. Rejects only when the host cannot list. */
+  list(): Promise<{ id: string; declaration: unknown }[]>;
+  /** One call. Rejects only when the contributor cannot be reached; its own failure is an answer. */
+  invoke(contributorId: string, call: ContributorCall): Promise<ContributorAnswer>;
+  /** The session's workspace as a contributor needs it: the folder the session works in, on which machine. null when the host has no folder for it. Rejects only when the host cannot say. spec 07 §The call (U44) */
+  workspaceOf(sessionId: string): Promise<ContributorWorkspace | null>;
+  /** One page-script ask to a contributor that declares `pageScript`; resolves to its answer as it came, checked by the server. Rejects only when the contributor cannot be reached. Absent: no contributor is asked. spec 07 §A page script */
+  pageScript?(contributorId: string, ask: PageScriptAsk): Promise<unknown>;
+}
+
+/** One page-script ask: the session whose document is served (null on the built-in home), its path in the page, and the version the server holds. spec 07 R5.88 */
+export interface PageScriptAsk {
+  caller: { sessionId: string | null; workspace: ContributorWorkspace | null };
+  documentPath: string;
+  have: string | null;
+}
+
+/** What a contributor answers to a page-script ask: none for this document, or its script's version with the text (left out when `version` equals `have`). spec 07 R5.88, R5.89 */
+export type PageScriptAnswer = null | { version: string; script?: string };
+
+/** Who is calling, as far as a contributor is concerned: the session's workspace id (as the host reports it everywhere else), its folder, and the machine the folder is on. spec 07 §The call (U44) */
+export interface ContributorWorkspace {
+  id: string;
+  path: string;                                                   // absolute, as it is on `machine`; host → contributor only, never to a page (03 R-C5)
+  machine: string | null;                                         // the host's name for the machine; null where the host has one machine
+}
+
+/** The `html` frame a contributed call came from: the folder its page bound it to and its title (a label, not a proof), each null when none was given. spec 07 R5.84c (B-0155) */
+export interface ContributorFrame {
+  scope: string | null;
+  title: string | null;
+}
+
+/** One contributed call as the contributor receives it. spec 07 §The call, R5.48, R5.49, R5.84, R5.84c */
+export interface ContributorCall {
+  method: string;
+  params: unknown;                                                // validated in params mode before the call (07 R5.48)
+  caller: { sessionId: string | null; scope: string | null;      // from the action token; null session on the built-in home (R5.49)
+            frame?: ContributorFrame;                             // a call from an html frame, whatever session it is for; absent on every other (R5.84c)
+            workspace: ContributorWorkspace | null };             // the host's, for that session; null on the built-in home (U44)
+  requestId: string;
+}
+
+/** What a contributor answers: a result, or a failure in the fixed code set with a declared reason. spec 07 §The call, 03 R5.41b */
+export type ContributorAnswer =
+  | { ok: true; result: unknown }
+  | { ok: false; error: { code: string; message?: string; reason?: string; detail?: unknown } };

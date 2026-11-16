@@ -1,0 +1,1264 @@
+import "./check-test-machine.mjs";
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { after, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
+import { deviceModel, type OfferedDeviceOf } from "../src/core/device.ts";
+import { deviceHubScript, parseDeviceHub } from "../src/core/device-delivery.ts";
+import { hasPicture, isKeyFrame, nalUnits, spsPictureSize, startsWithStartCode } from "../src/device/annexb.ts";
+import type { EncodedFrame } from "../src/device/driver.ts";
+import { FrameFanout } from "../src/device/frame-fanout.ts";
+import { streamsEncodingIn, type StreamOutput } from "../src/device/idb.ts";
+import type { IosEncoderMode } from "../src/device/simulator-video.ts";
+import { HID_DAEMON, HID_DAEMON_ACTIVE, IOS_MOBILE_UID, IosDriver, SPRINGBOARD, changesShowAtStart, contentOrientation, parseProcessStart, type AppInfo, type IosDriverOptions, type ProcessStart } from "../src/device/ios-driver.ts";
+import { overridesListed, statusBarOverride } from "../src/device/ios-controls.ts";
+import { HID_USAGES, INERT_KEY_USAGE, PasteboardAccess, hidKey, runningApps } from "../src/device/ios-input.ts";
+import { PASTE_LOG_PREDICATE, PASTE_NOTICE_SCENE } from "../src/device/ios-paste-watch.ts";
+import { IosVideo, scaledBack } from "../src/device/ios-video.ts";
+import { evenScaled, spsOfSize } from "./sps.ts";
+import { devicePaths } from "../src/device/paths.ts";
+import { PASTEBOARD_NOT_ANSWERING_EXIT, Simctl, appOfProgram, disabledLabels, installedApps, runningServicePid, type LineSpawner, type Ran, type Runner } from "../src/device/simctl.ts";
+import type { BoxRecord } from "../src/core/boxes.ts";
+import { testDeviceOffer } from "../src/core/device.ts";
+import { wantsDevice } from "../src/plugin/devices.ts";
+import { boxLine, deviceLines, devicesText } from "../src/plugin/views.ts";
+import { tempDir } from "./helpers.ts";
+
+const IPHONE_SPS = "27640032ac13142404c0149e6a9a80868083c2010898";
+const START = [0, 0, 0, 1];
+const annexB = (...units: number[][]) => Uint8Array.from(units.flatMap((unit) => [...START, ...unit]));
+const KEY = annexB([...Buffer.from(IPHONE_SPS, "hex")], [0x68, 0xee, 0x3c, 0x80], [0x65, 0x88, 0x84, 0x00]);
+const DELTA = annexB([0x41, 0x9a, 0x02]);
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function until(what: string, check: () => boolean | Promise<boolean>, ms = 5000): Promise<void> {
+  const deadline = Date.now() + ms;
+  while (!(await check())) {
+    if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`);
+    await wait(10);
+  }
+}
+
+describe("H.264 Annex B", () => {
+  test("splits NAL units, tells key frames, and reads the picture's size from the SPS, cropping and all", () => {
+    const units = nalUnits(KEY);
+    assert.deepEqual(units.map((unit) => unit.type), [7, 8, 5]);
+    assert.ok(isKeyFrame(units) && hasPicture(units) && startsWithStartCode(KEY));
+    assert.ok(!isKeyFrame(nalUnits(DELTA)) && hasPicture(nalUnits(DELTA)));
+    assert.ok(!hasPicture(nalUnits(annexB([0x67, 0x64]))));
+    assert.deepEqual(spsPictureSize(units[0]!), { width: 1206, height: 2622 });
+    assert.equal(spsPictureSize(units[1]!), null);
+    assert.equal(spsPictureSize({ type: 7, body: Uint8Array.of(0x67, 0x64) }), null);
+  });
+});
+
+function encoded(key: boolean, at = 0): EncodedFrame {
+  return { data: key ? KEY : DELTA, key, generation: 1, monotonicMs: at, width: 1206, height: 2622 };
+}
+
+describe("the frame fan-out", () => {
+  test("gives every reader every frame, and drops a reader that falls behind to the next key frame", async () => {
+    let behind = 0;
+    const fanout = new FrameFanout({ mostQueued: 3, onBehind: () => behind++ });
+    const stop = new AbortController();
+    const quick: boolean[] = [];
+    const reading = (async () => {
+      for await (const frame of fanout.frames(stop.signal)) quick.push(frame.key);
+    })();
+    const slow = fanout.frames(stop.signal)[Symbol.asyncIterator]();
+    const first = slow.next();
+    await until("two readers", () => fanout.readers === 2);
+    fanout.push(encoded(true));
+    assert.equal((await first).value.key, true);
+    for (const key of [false, false, false, false, false, false, true, false]) {
+      fanout.push(encoded(key));
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    await until("the quick reader", () => quick.length === 9);
+    assert.equal(behind, 1);
+    const kept: boolean[] = [];
+    for (let index = 0; index < 2; index++) kept.push((await slow.next()).value.key);
+    assert.deepEqual(kept, [true, false]);
+    stop.abort();
+    await reading;
+  });
+});
+
+describe("the iOS video", () => {
+  function fakeStreams(options: { still?: boolean; failFirst?: boolean } = {}) {
+    let opened = 0;
+    const open = (stopped: Promise<void>, signal: AbortSignal): AsyncIterable<StreamOutput> => {
+      opened++;
+      const which = opened;
+      return (async function* () {
+        if (options.failFirst && which === 1) {
+          yield { data: KEY, log: null };
+          throw new Error("Premature close");
+        }
+        yield { data: null, log: "starting" };
+        yield { data: KEY, log: null };
+        let ended = false;
+        void stopped.then(() => (ended = true));
+        while (!ended && !signal.aborted) {
+          await wait(15);
+          if (!options.still) yield { data: DELTA, log: null };
+        }
+      })();
+    };
+    return { open, opened: () => opened };
+  }
+
+  test("sends key frames on demand: the last again on a still screen, a new stream otherwise, and recovers a stream that fails", async () => {
+    const streams = fakeStreams({ still: true });
+    const sizes: string[] = [];
+    const logs: string[] = [];
+    const video = new IosVideo({ open: streams.open, recover: async () => undefined, sized: (size) => (sizes.push(`${size.width}x${size.height}`), sizes.length), log: (line) => logs.push(line) });
+    const stop = new AbortController();
+    const frames: EncodedFrame[] = [];
+    void (async () => {
+      for await (const frame of video.frames(stop.signal)) frames.push(frame);
+    })();
+    video.want("full");
+    video.start();
+    await until("the first key frame", () => frames.length === 1);
+    assert.deepEqual(sizes, ["1206x2622"]);
+    assert.deepEqual({ key: frames[0]!.key, generation: frames[0]!.generation, width: frames[0]!.width }, { key: true, generation: 1, width: 1206 });
+    video.keyframe();
+    await until("the replayed key frame", () => frames.length === 2);
+    assert.equal(frames[1]!.data, frames[0]!.data);
+    assert.equal(streams.opened(), 1);
+    assert.ok(logs.some((line) => line.includes("idb_companion says: starting")));
+    await video.stop();
+    stop.abort();
+
+    const busy = fakeStreams();
+    const busyVideo = new IosVideo({ open: busy.open, recover: async () => undefined, sized: () => 1, log: () => undefined });
+    const seen: EncodedFrame[] = [];
+    const halt = new AbortController();
+    void (async () => {
+      for await (const frame of busyVideo.frames(halt.signal)) seen.push(frame);
+    })();
+    busyVideo.want("full");
+    busyVideo.start();
+    await until("deltas", () => seen.filter((frame) => !frame.key).length >= 2);
+    busyVideo.keyframe();
+    await until("a new stream's key frame", () => busy.opened() === 2 && seen.filter((frame) => frame.key).length === 2);
+    assert.equal(busyVideo.restarts, 1);
+    await busyVideo.stop();
+    halt.abort();
+
+    let recovered = 0;
+    const failing = fakeStreams({ failFirst: true });
+    const failingVideo = new IosVideo({ open: failing.open, recover: async () => void recovered++, sized: () => 1, log: () => undefined });
+    const keys: EncodedFrame[] = [];
+    const end = new AbortController();
+    void (async () => {
+      for await (const frame of failingVideo.frames(end.signal)) if (frame.key) keys.push(frame);
+    })();
+    failingVideo.want("full");
+    failingVideo.start();
+    await until("a key frame after the failure", () => keys.length === 2);
+    assert.equal(recovered, 1);
+    await failingVideo.stop();
+    end.abort();
+  });
+});
+
+describe("the iOS video, at the viewer's size", () => {
+  function scaledStreams() {
+    const scales: number[] = [];
+    const endings: string[] = [];
+    let open = 0;
+    const streams = (stopped: Promise<void>, signal: AbortSignal, scale: number): AsyncIterable<StreamOutput> => {
+      scales.push(scale);
+      open++;
+      let stoppedFirst = false;
+      void stopped.then(() => (stoppedFirst = !signal.aborted));
+      return (async function* () {
+        try {
+          yield { data: annexB([...spsOfSize(evenScaled(1206, scale), evenScaled(2622, scale))], [0x68, 0xee, 0x3c, 0x80], [0x65, 0x88, 0x84, 0x00]), log: null };
+          let ended = false;
+          void stopped.then(() => (ended = true));
+          while (!ended && !signal.aborted) {
+            await wait(15);
+            yield { data: DELTA, log: null };
+          }
+        } finally {
+          await Promise.resolve();
+          endings.push(stoppedFirst ? "stop" : "cancelled");
+          open--;
+        }
+      })();
+    };
+    return { streams, scales, endings, open: () => open };
+  }
+
+  const toPhone = (frame: { readonly width: number; readonly height: number }, scale: number) => {
+    const back = scaledBack(frame, scale);
+    return Math.abs(back.width - 1206) <= 4 && Math.abs(back.height - 2622) <= 4 ? { width: 1206, height: 2622 } : back;
+  };
+
+  test("peeks once at a third to learn the screen, opens only while wanted, at the step's scale, and keeps the generation through a step change", async () => {
+    const fake = scaledStreams();
+    const sizes: string[] = [];
+    const video = new IosVideo({ open: fake.streams, recover: async () => undefined, sized: (size) => (sizes.push(`${size.width}x${size.height}`), sizes.length), fullSize: toPhone, log: () => undefined });
+    const frames: EncodedFrame[] = [];
+    const stop = new AbortController();
+    void (async () => {
+      for await (const frame of video.frames(stop.signal)) frames.push(frame);
+    })();
+    video.start();
+    await until("the peek's key frame", () => frames.length >= 1);
+    await until("the peek to close", () => !video.running && fake.open() === 0);
+    assert.deepEqual(fake.scales, [1 / 3]);
+    assert.deepEqual(video.size, { width: 1206, height: 2622 });
+    assert.deepEqual(video.frameSize, { width: 402, height: 874 });
+    assert.deepEqual(sizes, ["1206x2622"]);
+    assert.equal(frames[0]!.unchanged, true);
+    video.keyframe();
+    await wait(50);
+    assert.equal(fake.scales.length, 1, "a key frame asked for while nothing wants the video opens nothing");
+
+    video.want("half");
+    await until("a stream at a half", () => frames.some((frame) => frame.width === 604));
+    assert.deepEqual(fake.scales, [1 / 3, 1 / 2]);
+    const half = frames.find((frame) => frame.width === 604)!;
+    assert.deepEqual({ height: half.height, generation: half.generation, key: half.key, unchanged: half.unchanged }, { height: 1312, generation: 1, key: true, unchanged: true });
+    await until("deltas at a half", () => frames.filter((frame) => frame.width === 604 && !frame.key).length >= 2);
+    assert.ok(frames.filter((frame) => !frame.key).every((frame) => !frame.unchanged), "a delta is a change on the screen");
+
+    video.want("full");
+    await until("a stream at full size", () => frames.some((frame) => frame.width === 1206));
+    assert.deepEqual(fake.scales, [1 / 3, 1 / 2, 1]);
+    assert.deepEqual(sizes, ["1206x2622"], "a step change is not a change of the device's size");
+    assert.ok(frames.every((frame) => frame.generation === 1));
+
+    video.want(null);
+    await until("the stream to close", () => !video.running && fake.open() === 0);
+    assert.deepEqual(fake.endings, ["stop", "stop", "stop"], "every stream ends with idb's stop, as idb_companion encodes on for good a stream whose call is only cancelled");
+    const closedAt = frames.length;
+    await wait(80);
+    assert.equal(frames.length, closedAt, "no frame comes once nothing wants the video");
+    assert.deepEqual(video.size, { width: 1206, height: 2622 }, "the device's size outlives the stream");
+
+    video.regenerate(5);
+    await until("a peek after a turn", () => fake.scales.length === 4);
+    assert.equal(fake.scales[3], 1 / 3);
+    await until("the peek to close again", () => !video.running && fake.open() === 0);
+    await video.stop();
+    stop.abort();
+  });
+});
+
+describe("idb_companion's log", () => {
+  test("counts the video streams it encodes now by their stats, which it writes every 5 s for each", () => {
+    const at = (time: string, offset = "+0000") => `2026-10-26 ${time}${offset} [C6E6A352-C4EA-4769-B08E-2CBA6B3183A3]`;
+    const log = [
+      `${at("22:05:30.100")} Video stats (interval): 290 callbacks in 5.0s (58.0 fps, 300 kbps, 1.3 ms/frame encode)`,
+      `${at("22:05:35.120")} Framebuffer stats (interval): 330 frames in 5.0s (65.8/s)`,
+      `${at("22:05:35.134")} Video stats (interval): 294 callbacks in 5.0s (58.7 fps, 2324 kbps, 1.25 ms/frame encode)`,
+      `${at("22:05:35.134")} Video stats (total): 22916 callbacks in 1049.0s`,
+      `${at("22:05:35.153")} Video stats (interval): 292 callbacks in 5.0s (58.2 fps, 291 kbps, 1.38 ms/frame encode)`,
+      `${at("23:05:35.160", "+0100")} Video stats (interval): 0 callbacks in 5.0s (0.0 fps, 0 kbps, 0 ms/frame encode)`,
+    ].join("\n");
+    const now = Date.parse("2026-10-26T22:05:37Z");
+    assert.equal(streamsEncodingIn(log, now), 3);
+    assert.equal(streamsEncodingIn(log, now + 10_000), 0, "stats older than one and a half periods are of streams that ended");
+    assert.equal(streamsEncodingIn("2026-10-26 22:05:35.153+0000 video_stream called with: []", now), 0);
+  });
+});
+
+describe("iOS helpers", () => {
+  test("reads launchctl's disabled services, the content's orientation, and what the doctor saw of Device Hub", () => {
+    assert.deepEqual([...disabledLabels('disabled services = {\n\t"com.apple.a" => disabled\n\t"com.apple.b" => enabled\n\t"com.apple.c" => true\n}')], ["com.apple.a", "com.apple.c"]);
+    const phone = deviceModel("iPhone 18 Pro");
+    assert.equal(contentOrientation("upright", { width: 1206, height: 2622 }, phone), "upright");
+    assert.equal(contentOrientation("turned-right", { width: 2622, height: 1206 }, phone), "turned-right");
+    assert.equal(contentOrientation("upright", { width: 2622, height: 1206 }, phone), "turned-left");
+    assert.equal(contentOrientation("turned-left", { width: 1206, height: 2622 }, phone), "upright");
+    assert.deepEqual(parseDeviceHub('none\n{"killed":2,"last":1000}\n'), { running: false, killed: 2, last: 1000 });
+    assert.deepEqual(parseDeviceHub("running\n"), { running: true, killed: 0, last: null });
+    assert.equal(parseDeviceHub(""), null);
+    assert.match(deviceHubScript(), /pgrep -x -U "\$\(id -u\)" DeviceHub/);
+  });
+});
+
+const LIST = ["com.apple.one", "com.apple.two", "com.apple.three"];
+const UDID = "11111111-2222-3333-4444-555555555555";
+
+const LAUNCHD_SIM_PID = 7_000_000;
+const SPRINGBOARD_PID = 7_000_001;
+const HID_DAEMON_PID = 7_000_002;
+
+class FakeSimulator {
+  #state = "Shutdown";
+  bootedAt = 0;
+  hidDaemonRunning = false;
+  hidDaemonTakesMs = 0;
+  hidDaemonActiveAt: number | null = null;
+  readonly disabled = new Set<string>();
+  readonly calls: string[] = [];
+  appearance = "light";
+  contentSize = "large";
+  statusBar: string[] = [];
+  installed = new Set<string>();
+  idbLog: string | null = null;
+  bootFailures = 0;
+  bootstatusTimeouts = 0;
+  clipboard = "";
+  clipboardBefore = "";
+  clipboardLagsReads = 0;
+  clipboardLagLeft = 0;
+  pasteboardSilentCalls = 0;
+  pasteReader: string | null = "dev.example.probe";
+  pasteNoticeMs = 50;
+  get state(): string {
+    return this.#state;
+  }
+  set state(to: string) {
+    if (to === "Booted" && this.#state !== "Booted") this.bootedAt = Date.now();
+    if (to !== "Booted") this.hidDaemonRunning = false;
+    this.#state = to;
+  }
+  bootsAgainOutsideTheServer(): void {
+    this.bootedAt = Date.now() + 1;
+    this.hidDaemonRunning = false;
+  }
+  #companionStarts(): Map<number, number> {
+    const lines = this.idbLog && existsSync(this.idbLog) ? readFileSync(this.idbLog, "utf8").split("\n") : [];
+    return new Map(lines.flatMap((line) => {
+      const match = /^(\d+) listening \S+ at (\d+)$/.exec(line);
+      return match ? [[Number(match[1]), Number(match[2])] as [number, number]] : [];
+    }));
+  }
+  readonly processStart = async (pid: number): Promise<ProcessStart | null> => {
+    if (pid === SPRINGBOARD_PID) return { parentPid: LAUNCHD_SIM_PID, startedAt: this.bootedAt };
+    if (pid === LAUNCHD_SIM_PID) return { parentPid: 1, startedAt: this.bootedAt };
+    const companion = this.#companionStarts().get(pid);
+    return companion === undefined ? null : { parentPid: 1, startedAt: companion };
+  };
+  #inertKeyFromALiveCompanion(after: number): boolean {
+    const starts = this.#companionStarts();
+    const lines = this.idbLog && existsSync(this.idbLog) ? readFileSync(this.idbLog, "utf8").split("\n").slice(after) : [];
+    return lines.some((line) => {
+      const match = /^(\d+) hid (.*)$/.exec(line);
+      const event = match ? (JSON.parse(match[2]!) as { press?: { action?: { key?: { keycode?: number } }; direction?: number } }) : null;
+      return !!match && event?.press?.action?.key?.keycode === INERT_KEY_USAGE && event.press.direction === 1 && (starts.get(Number(match[1])) ?? 0) >= this.bootedAt;
+    });
+  }
+  #pasteKeyAfter(after: number): boolean {
+    const lines = this.idbLog && existsSync(this.idbLog) ? readFileSync(this.idbLog, "utf8").split("\n").slice(after) : [];
+    return lines.some((line) => line.includes(" hid ") && line.includes(`"keycode":${HID_USAGES.KeyV}}`) && !line.includes('"direction":1'));
+  }
+  readonly lines: LineSpawner = async function* (this: FakeSimulator, _program: string, args: readonly string[], signal: AbortSignal) {
+    if (!args.includes("stream")) return;
+    const from = this.idbLog && existsSync(this.idbLog) ? readFileSync(this.idbLog, "utf8").split("\n").length - 1 : 0;
+    yield `Filtering the log data using "${args.at(-1)}"`;
+    if (args.at(-1) === PASTE_LOG_PREDICATE) {
+      while (!signal.aborted && !this.#pasteKeyAfter(from)) await wait(5);
+      if (!signal.aborted && this.pasteReader !== null) {
+        yield `2026-10-28 23:28:20.848 Df pasted[11053:c089] [com.apple.Pasteboard:Pasteboard] Bundle ID ${this.pasteReader} from team None is requesting item 0 from pasteboard named com.apple.UIKit.pboard.general`;
+        yield `2026-10-28 23:33:58.967 Df SpringBoard[13837:ee6e] [com.apple.SpringBoard:KeyboardFocus] deferFromSBWindowScene: adding rule for <token: com.apple.BannerKit:${PASTE_NOTICE_SCENE}.druid.1>`;
+        await wait(this.pasteNoticeMs);
+        yield `2026-10-28 23:34:01.522 Df SpringBoard[13837:ee6e] [com.apple.SpringBoard:KeyboardFocus] deferFromSBWindowScene: invalidate for <token: com.apple.BannerKit:${PASTE_NOTICE_SCENE}.druid.1>`;
+      }
+      while (!signal.aborted) await wait(5);
+      return;
+    }
+    while (!signal.aborted) {
+      if (this.#inertKeyFromALiveCompanion(from)) {
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(resolve, this.hidDaemonTakesMs);
+          signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
+        });
+        if (signal.aborted) return;
+        this.hidDaemonRunning = true;
+        this.hidDaemonActiveAt = Date.now();
+        yield `2026-10-26 19:01:36.721 Df backboardd[23778:13767] (SimulatorHID) SimHIDVirtualServiceManager: ${HID_DAEMON_ACTIVE}`;
+        return;
+      }
+      await wait(10);
+    }
+  }.bind(this);
+  locked(): number {
+    const presses = this.idbLog && existsSync(this.idbLog) ? [...readFileSync(this.idbLog, "utf8").matchAll(/"button":\{"button":(\d)\}\}(?!,"direction":1)/g)].map((match) => Number(match[1])) : [];
+    return presses.at(-1) === 2 ? 1 : 0;
+  }
+  readonly runner: Runner = async (_program, args, options) => {
+    const [, verb, ...rest] = args;
+    const ok = (stdout = ""): Ran => ({ code: 0, stdout, stderr: "" });
+    this.calls.push([verb, ...rest].join(" "));
+    if ((verb === "pbcopy" || verb === "pbpaste") && this.pasteboardSilentCalls > 0) {
+      this.pasteboardSilentCalls--;
+      return { code: PASTEBOARD_NOT_ANSWERING_EXIT, stdout: "", stderr: "The operation couldn’t be completed. Operation timed out" };
+    }
+    switch (verb) {
+      case "pbcopy":
+        this.clipboardBefore = this.clipboard;
+        this.clipboard = options.input ?? "";
+        this.clipboardLagLeft = this.clipboardLagsReads;
+        return ok();
+      case "pbpaste":
+        if (this.clipboardLagLeft > 0) {
+          this.clipboardLagLeft--;
+          return ok(this.clipboardBefore);
+        }
+        return ok(this.clipboard);
+      case "list":
+        return ok(JSON.stringify({ devices: { "com.apple.CoreSimulator.SimRuntime.iOS-27-0": [{ udid: UDID, name: "iPhone 18 Pro", deviceTypeIdentifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro", state: this.state, isAvailable: true }] } }));
+      case "boot":
+        if (this.state === "Booted") return { code: 149, stdout: "", stderr: "Unable to boot device in current state: Booted" };
+        if (this.bootFailures > 0) {
+          this.bootFailures--;
+          return { code: 1, stdout: "", stderr: "Unable to boot the Simulator." };
+        }
+        this.state = "Booted";
+        return ok();
+      case "bootstatus":
+        if (this.bootstatusTimeouts > 0) {
+          this.bootstatusTimeouts--;
+          return { code: -1, stdout: "", stderr: "timed out after 120000 ms" };
+        }
+        return ok();
+      case "shutdown":
+        this.state = "Shutdown";
+        return ok();
+      case "ui": {
+        const [, option, value] = rest;
+        const key = option === "appearance" ? "appearance" : "contentSize";
+        if (value === undefined) return ok(`${key === "contentSize" && this.contentSize === "small" ? "Small" : this[key]}\n`);
+        this[key] = value;
+        return ok();
+      }
+      case "status_bar": {
+        const [, operation, ...flags] = rest;
+        if (operation === "clear") this.statusBar = [];
+        else if (operation === "override") this.statusBar = [...flags];
+        return ok(`Current Status Bar Overrides:\n=============================\n${this.statusBar.length ? `${this.statusBar.join(" ")}\n` : ""}`);
+      }
+      case "install":
+        this.installed.add(rest[1]!);
+        return ok();
+      case "get_app_container":
+        return this.installed.size ? ok("/container") : { code: 2, stdout: "", stderr: "No such app" };
+      case "spawn": {
+        const [, , command, target] = rest;
+        if (rest[1] === "notifyutil") return ok(`${rest[3]} ${this.locked()}\n`);
+        if (command === "list") return ok(`PID\tStatus\tLabel\n${SPRINGBOARD_PID}\t0\t${SPRINGBOARD}\n${this.hidDaemonRunning ? HID_DAEMON_PID : "-"}\t0\t${HID_DAEMON}\n`);
+        if (command === "print-disabled") return ok(`disabled services = {\n${[...this.disabled].map((label) => `\t"${label}" => disabled`).join("\n")}\n}`);
+        const label = target!.replace("system/", "");
+        if (command === "disable") this.disabled.add(label);
+        else this.disabled.delete(label);
+        return ok();
+      }
+      default:
+        return ok();
+    }
+  };
+}
+
+describe("the iOS driver, against a fake simctl and a fake idb_companion", () => {
+  const started: IosDriver[] = [];
+  const sleepers: number[] = [];
+  const homes: string[] = [];
+  after(async () => {
+    for (const driver of started) driver.close();
+    for (const home of homes) {
+      const record = join(devicePaths(home).dir, "companion.json");
+      if (existsSync(record)) sleepers.push((JSON.parse(readFileSync(record, "utf8")) as { pid: number }).pid);
+    }
+    for (const pid of sleepers) {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {}
+    }
+  });
+
+  function setUp() {
+    const home = tempDir("ios");
+    homes.push(home);
+    const paths = devicePaths(home);
+    mkdirSync(paths.dir, { recursive: true, mode: 0o700 });
+    const lists = join(home, "lists");
+    mkdirSync(lists);
+    writeFileSync(join(lists, "ios-test.txt"), `${LIST.join("\n")}\n`);
+    const program = join(home, "idb_companion");
+    const fake = fileURLToPath(new URL("./fake-idb.ts", import.meta.url));
+    writeFileSync(program, `#!/bin/sh\nexec "${process.execPath}" "${fake}" "$@"\n`);
+    chmodSync(program, 0o755);
+    const log = join(home, "companion-calls.log");
+    process.env.FAKE_IDB_LOG = log;
+    const target: OfferedDeviceOf<"ios"> = {
+      model: "iPhone 18 Pro",
+      native: "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro",
+      runtime: { platform: "ios", os: "27.0", build: "24A434", xcode: "27.0", companion: "1.7.7" },
+      slim: { list: "ios-test", labels: LIST.length, sha256: "0".repeat(64) },
+    };
+    return { home, paths, lists, program, log, target };
+  }
+
+  function driverOf(setup: ReturnType<typeof setUp>, simulator: FakeSimulator, options: { slim?: boolean; hubs?: () => number[]; wallAhead?: () => number; access?: PasteboardAccess; appInfo?: (app: string) => Promise<AppInfo | null>; orientationEveryMs?: number; hidDaemonActiveWaitMs?: number; encoder?: IosEncoderMode; softwareEncoder?: string; uid?: number; more?: Partial<IosDriverOptions> } = {}) {
+    simulator.idbLog = setup.log;
+    const logs: string[] = [];
+    const driver = new IosDriver({
+      clock: { now: () => Date.now() + (options.wallAhead?.() ?? 0), monotonic: () => performance.now() },
+      clockTickMs: 20,
+      paths: setup.paths,
+      slim: options.slim ?? true,
+      log: (line) => logs.push(line),
+      simctl: new Simctl({ run: simulator.runner, lines: simulator.lines }),
+      companionProgram: setup.program,
+      processStart: simulator.processStart,
+      ...(options.hidDaemonActiveWaitMs ? { hidDaemonActiveWaitMs: options.hidDaemonActiveWaitMs } : {}),
+      slimLists: setup.lists,
+      watchMs: 50,
+      ...(options.orientationEveryMs ? { orientationEveryMs: options.orientationEveryMs } : {}),
+      processes: async () => options.hubs?.() ?? [],
+      access: options.access,
+      appInfo: options.appInfo,
+      buttonSettleMs: 20,
+      uid: options.uid ?? IOS_MOBILE_UID,
+      ...(options.encoder ? { encoder: options.encoder } : {}),
+      ...(options.softwareEncoder ? { softwareEncoder: options.softwareEncoder } : {}),
+      ...options.more,
+    });
+    started.push(driver);
+    return { driver, logs };
+  }
+
+  test("boots its device by name and type, keeps it slim, streams it, and reattaches after a restart with the same idb_companion", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    simulator.disabled.add(LIST[0]!);
+    const { driver, logs } = driverOf(setup, simulator);
+    assert.equal(await driver.attach(setup.target, AbortSignal.timeout(20_000)), "booted");
+    assert.deepEqual([...simulator.disabled].sort(), [...LIST].sort());
+    assert.ok(simulator.calls.includes("shutdown " + UDID), "rebooted after slimming");
+    assert.ok(logs.some((line) => line.includes("has 1 of the 3 services of ios-test off")));
+    const frames: EncodedFrame[] = [];
+    const stop = new AbortController();
+    void (async () => {
+      for await (const frame of driver.video().frames(stop.signal)) frames.push(frame);
+    })();
+    driver.video().want?.("full");
+    driver.video().keyframe();
+    await until("frames", () => frames.some((frame) => frame.key) && frames.length > 2);
+    const state = await driver.readBack();
+    assert.equal(state.power.is, "booted");
+    assert.deepEqual(state.geometry, { generation: 1, physical: "upright", content: "upright", video: { width: 1206, height: 2622 } });
+    assert.deepEqual([...(await driver.screenshot())], [137, 80, 78, 71]);
+    driver.video().want?.("half");
+    await until("frames at a half", () => frames.some((frame) => frame.width === 604 && frame.height === 1312));
+    assert.deepEqual((await driver.readBack()).geometry, state.geometry, "the device's geometry stays in its own pixels at a half");
+    assert.match(readFileSync(setup.log, "utf8"), /stream \S+ scale 0\.5/);
+    stop.abort();
+    driver.close();
+
+    const again = driverOf(setup, simulator);
+    simulator.calls.length = 0;
+    assert.equal(await again.driver.attach(setup.target, AbortSignal.timeout(20_000)), "reattached");
+    assert.ok(!simulator.calls.some((call) => call.startsWith("shutdown")));
+    const companions = readFileSync(setup.log, "utf8").split("\n").filter((line) => line.includes("listening"));
+    assert.equal(companions.length, 1, "the same idb_companion serves the reattached driver");
+    again.driver.close();
+    await again.driver.shutdown(AbortSignal.timeout(5000));
+    assert.equal(simulator.state, "Shutdown");
+  });
+
+  test("turns every service of the list on and reboots when slim is off, and kills Device Hub when it starts", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const sleeper = spawn("sleep", ["30"]);
+    sleepers.push(sleeper.pid!);
+    let hubs = [sleeper.pid!];
+    const exited = new Promise<string | null>((resolve) => sleeper.on("exit", (_code, signal) => resolve(signal)));
+    const seen = () => {
+      const now = hubs;
+      hubs = [];
+      return now;
+    };
+    const { driver, logs } = driverOf(setup, simulator, { slim: false, hubs: seen });
+    assert.equal(await driver.attach(setup.target, AbortSignal.timeout(20_000)), "booted");
+    assert.equal(simulator.disabled.size, 0);
+    assert.ok(simulator.calls.includes("shutdown " + UDID));
+    assert.equal(await exited, "SIGKILL");
+    await until("the kill's record", async () => (await driver.deviceHubKills()).killed === 1);
+    assert.ok(logs.some((line) => line.startsWith("device hub: Device Hub started")));
+    driver.close();
+  });
+
+  test("boots a device that stopped by itself once, and leaves it failed when it stops again within 5 minutes", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const { driver, logs } = driverOf(setup, simulator);
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    simulator.state = "Shutdown";
+    await until("the device back", () => logs.some((line) => line.includes("is back")), 10_000);
+    assert.equal(simulator.state, "Booted");
+    simulator.state = "Shutdown";
+    await until("the device failed", async () => (await driver.readBack()).power.is === "failed", 10_000);
+    const power = (await driver.readBack()).power;
+    assert.ok(power.is === "failed" && power.error.code === "device-exited" && /stopped twice within 5 minutes/.test(power.error.words));
+    driver.close();
+  });
+
+  test("starts a new idb_companion whenever its device boots, as one from before the boot has lost its HID connection: after the device stopped by itself, after slimming rebooted it on a reattach, and after a reboot; a plain reattach keeps the one it has", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    simulator.idbLog = setup.log;
+    for (const label of LIST) simulator.disabled.add(label);
+    const companion = () => (JSON.parse(readFileSync(join(setup.paths.dir, "companion.json"), "utf8")) as { pid: number }).pid;
+    const replaced = (before: number) => {
+      assert.notEqual(companion(), before, "a new idb_companion");
+      assert.throws(() => process.kill(before, 0), "the one from before the boot is gone");
+    };
+    const first = driverOf(setup, simulator);
+    await first.driver.attach(setup.target, AbortSignal.timeout(20_000));
+
+    let before = companion();
+    simulator.state = "Shutdown";
+    await until("the device back", () => first.logs.some((line) => line.includes("is back")), 10_000);
+    replaced(before);
+    first.driver.close();
+
+    before = companion();
+    const plain = driverOf(setup, simulator);
+    assert.equal(await plain.driver.attach(setup.target, AbortSignal.timeout(20_000)), "reattached");
+    assert.equal(companion(), before, "a reattach to a device that kept running keeps its idb_companion");
+    plain.driver.close();
+
+    simulator.disabled.delete(LIST[0]!);
+    const slimmed = driverOf(setup, simulator);
+    assert.equal(await slimmed.driver.attach(setup.target, AbortSignal.timeout(20_000)), "booted");
+    assert.ok(slimmed.logs.some((line) => line.includes("turning the rest off, then rebooting it")));
+    replaced(before);
+
+    before = companion();
+    await slimmed.driver.control({ action: "reboot" }, AbortSignal.timeout(20_000), { personHasControl: false });
+    replaced(before);
+    slimmed.driver.close();
+    await slimmed.driver.shutdown(AbortSignal.timeout(5000));
+  });
+
+  test("a reboot whose wait for the boot times out reads the device, and attaches to it where it booted; a failed device can be rebooted (F-8)", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const { driver, logs } = driverOf(setup, simulator);
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const reboot = () => driver.control({ action: "reboot" }, AbortSignal.timeout(20_000), { personHasControl: false });
+
+    simulator.bootstatusTimeouts = 1;
+    await reboot();
+    assert.equal((await driver.readBack()).power.is, "booted", "booted, as simctl reads it");
+    assert.ok(logs.some((line) => /reads Booted, though its start said: simctl could not wait for the device to boot/.test(line)), logs.join("\n"));
+
+    simulator.bootFailures = 1;
+    await assert.rejects(reboot(), /could not boot the device/);
+    assert.equal((await driver.readBack()).power.is, "failed", "a device that did not boot is failed");
+
+    await reboot();
+    assert.equal((await driver.readBack()).power.is, "booted", "the failed device rebooted");
+    await assert.doesNotReject(driver.control({ action: "home" }, AbortSignal.timeout(20_000), { personHasControl: false }));
+    driver.close();
+  });
+
+  test("says its device is booted, or back after it stopped by itself, only once the device's HID daemon, which starts at the first input, took input", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    simulator.hidDaemonTakesMs = 300;
+    for (const label of LIST) simulator.disabled.add(label);
+    const { driver, logs } = driverOf(setup, simulator);
+    const powers: string[] = [];
+    driver.onChange(() => void driver.readBack().then((state) => powers.push(state.power.is)));
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const attached = Date.now();
+    assert.ok(simulator.hidDaemonActiveAt !== null && simulator.hidDaemonActiveAt <= attached, "attach answers after the HID daemon took input");
+    assert.ok(logs.some((line) => /^input: the iPhone 18 Pro's HID daemon, which starts at its first input, took it in \d+\.\d s$/.test(line)));
+
+    simulator.hidDaemonActiveAt = null;
+    simulator.state = "Shutdown";
+    await until("the device back", () => logs.some((line) => line.includes("is back")), 10_000);
+    const back = logs.findIndex((line) => line.includes("is back"));
+    const took = logs.map((line, index) => (line.includes("HID daemon") && line.includes("took it") ? index : -1)).filter((index) => index > logs.findIndex((line) => line.includes("stopped (Shutdown)"))).at(-1) ?? -1;
+    assert.ok(simulator.hidDaemonActiveAt !== null, "the HID daemon was started again after the device's boot");
+    assert.ok(took >= 0 && took < back, "back only after the HID daemon took input");
+    driver.close();
+
+    const reattach = driverOf(setup, simulator);
+    const keyUps = () => readFileSync(setup.log, "utf8").split("\n").filter((line) => line.includes(`"keycode":${INERT_KEY_USAGE}`)).length;
+    const before = keyUps();
+    assert.equal(await reattach.driver.attach(setup.target, AbortSignal.timeout(20_000)), "reattached");
+    assert.equal(keyUps(), before, "a running HID daemon needs no first input");
+    reattach.driver.close();
+  });
+
+  test("on a reattach, starts a new idb_companion when the one it finds started before its device last booted, as with a version that left it, so the HID daemon takes input", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const companion = () => (JSON.parse(readFileSync(join(setup.paths.dir, "companion.json"), "utf8")) as { pid: number }).pid;
+    const first = driverOf(setup, simulator);
+    await first.driver.attach(setup.target, AbortSignal.timeout(20_000));
+    first.driver.close();
+    const stale = companion();
+
+    simulator.bootsAgainOutsideTheServer();
+    simulator.hidDaemonActiveAt = null;
+    const again = driverOf(setup, simulator);
+    assert.equal(await again.driver.attach(setup.target, AbortSignal.timeout(20_000)), "reattached");
+    assert.notEqual(companion(), stale, "a new idb_companion");
+    assert.throws(() => process.kill(stale, 0), "the one from before the boot is gone");
+    assert.ok(again.logs.includes(`companion: idb_companion ${stale} started before the iPhone 18 Pro last booted, so its HID connection is gone; starting a new one`));
+    assert.ok(simulator.hidDaemonActiveAt !== null, "the new companion's first input started the HID daemon");
+    again.driver.close();
+  });
+
+  test("says so, and goes on, when the HID daemon never says it took input", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    simulator.hidDaemonTakesMs = 60_000;
+    const { driver, logs } = driverOf(setup, simulator, { hidDaemonActiveWaitMs: 200 });
+    assert.equal(await driver.attach(setup.target, AbortSignal.timeout(20_000)), "booted");
+    assert.ok(logs.includes("input: the iPhone 18 Pro's HID daemon did not say it took input within 0.2 s, so the first input may wait"));
+    assert.equal((await driver.readBack()).power.is, "booted");
+    driver.close();
+  });
+
+  test("reads a process's parent and start from ps, and a running service's pid from launchctl list", () => {
+    assert.deepEqual(parseProcessStart(" 24845 Mon Oct 26 19:02:55 2026    \n"), { parentPid: 24845, startedAt: Date.parse("Mon Oct 26 19:02:55 2026") });
+    assert.equal(parseProcessStart(""), null);
+    const listed = "PID\tStatus\tLabel\n24848\t0\tcom.apple.SpringBoard\n-\t0\tcom.apple.coredevice.dtuhidd\n";
+    assert.equal(runningServicePid(listed, "com.apple.SpringBoard"), 24848);
+    assert.equal(runningServicePid(listed, "com.apple.coredevice.dtuhidd"), null);
+    assert.equal(runningServicePid(listed, "com.apple.other"), null);
+  });
+
+  test("starts a new idb_companion after the box's suspend, as one from before it grows without bound, and streams again", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    let ahead = 0;
+    const { driver, logs } = driverOf(setup, simulator, { wallAhead: () => ahead });
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const keys: EncodedFrame[] = [];
+    const stop = new AbortController();
+    void (async () => {
+      for await (const frame of driver.video().frames(stop.signal)) if (frame.key) keys.push(frame);
+    })();
+    const before = (JSON.parse(readFileSync(join(setup.paths.dir, "companion.json"), "utf8")) as { pid: number }).pid;
+    driver.video().want?.("full");
+    driver.video().keyframe();
+    await until("a key frame", () => keys.length > 0);
+    await wait(100);
+    const seen = keys.length;
+    ahead = 3_600_000;
+    await until("a new companion", () => (JSON.parse(readFileSync(join(setup.paths.dir, "companion.json"), "utf8")) as { pid: number }).pid !== before, 10_000);
+    await until("a key frame from it", () => keys.length > seen, 10_000);
+    assert.ok(logs.some((line) => line.startsWith("resume: the clock moved 3600 s")));
+    assert.throws(() => process.kill(before, 0), "the companion from before the suspend is gone");
+    stop.abort();
+    driver.close();
+    await driver.shutdown(AbortSignal.timeout(5000));
+  });
+
+  test("watches the orientation through a shutdown and a boot again, as a switch does, without reading a companion that is not there", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const { driver } = driverOf(setup, simulator, { orientationEveryMs: 5 });
+    const rejections: unknown[] = [];
+    const rejected = (reason: unknown) => rejections.push(reason);
+    process.on("unhandledRejection", rejected);
+    try {
+      await driver.attach(setup.target, AbortSignal.timeout(20_000));
+      await driver.shutdown(AbortSignal.timeout(5000));
+      await wait(100);
+      await driver.attach(setup.target, AbortSignal.timeout(20_000));
+      await wait(100);
+      assert.deepEqual(rejections, []);
+    } finally {
+      process.off("unhandledRejection", rejected);
+      driver.close();
+      await driver.shutdown(AbortSignal.timeout(5000));
+    }
+  });
+
+  test("starts idb_companion again when it is killed, and the stream comes back with a key frame", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const { driver } = driverOf(setup, simulator);
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const keys: EncodedFrame[] = [];
+    const stop = new AbortController();
+    void (async () => {
+      for await (const frame of driver.video().frames(stop.signal)) if (frame.key) keys.push(frame);
+    })();
+    driver.video().want?.("full");
+    driver.video().keyframe();
+    await until("a key frame", () => keys.length >= 1);
+    const record = JSON.parse(readFileSync(join(setup.paths.dir, "companion.json"), "utf8")) as { pid: number };
+    process.kill(record.pid, "SIGKILL");
+    const before = keys.length;
+    await until("a key frame from a new companion", () => keys.length > before, 10_000);
+    const now = JSON.parse(readFileSync(join(setup.paths.dir, "companion.json"), "utf8")) as { pid: number };
+    assert.notEqual(now.pid, record.pid);
+    assert.ok(existsSync(join(setup.paths.dir, "idb.sock")));
+    stop.abort();
+    driver.close();
+    await driver.shutdown(AbortSignal.timeout(5000));
+  });
+
+  test("sends touches in points, keys by W3C name, idb's pinch for two fingers, and a paste with the running apps let paste", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const statements: string[] = [];
+    const access = new PasteboardAccess({
+      udid: () => UDID,
+      log: () => undefined,
+      devicesDir: "/devices",
+      processes: async () => [`/devices/${UDID}/data/Containers/Bundle/Application/X/Probe.app/Probe`, "/runtime/RuntimeRoot/Applications/MobileSafari.app/MobileSafari", "/usr/bin/other"],
+      bundleId: async (app) => (app.endsWith("Probe.app") ? "dev.example.probe" : "com.apple.mobilesafari"),
+      sql: async (_database, statement) => {
+        statements.push(statement);
+        return statement.startsWith("select") ? "com.apple.mobilesafari|3\n" : "";
+      },
+    });
+    const { driver } = driverOf(setup, simulator, { access });
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const events = () =>
+      readFileSync(setup.log, "utf8")
+        .split("\n")
+        .filter((line) => line.includes(" hid ") && !line.includes(`"keycode":${INERT_KEY_USAGE}`))
+        .map((line) => JSON.parse(line.slice(line.indexOf(" hid ") + 5)) as { press?: { action: { touch?: { point: { x: number; y: number } }; key?: { keycode: number } }; direction?: number }; pinch?: { center: { x: number; y: number }; scale: number; radius: number; duration: number } });
+    await driver.prepareInput();
+    await driver.touch([{ id: 0, x: 300, y: 600 }]);
+    await driver.touch([{ id: 0, x: 330, y: 660 }]);
+    await driver.touch([]);
+    await until("the tap's three events", () => events().length >= 3);
+    assert.deepEqual(
+      events().map((event) => [event.press?.action.touch?.point, event.press?.direction ?? 0]),
+      [
+        [{ x: 100, y: 200 }, 0],
+        [{ x: 110, y: 220 }, 0],
+        [{ x: 110, y: 220 }, 1],
+      ],
+    );
+    await driver.key("A", true);
+    await driver.key("A", false);
+    await driver.key("Enter", true);
+    await driver.key("Enter", false);
+    await until("the keys", () => events().length >= 9);
+    assert.deepEqual(
+      events().slice(3).map((event) => [event.press?.action.key?.keycode, event.press?.direction ?? 0]),
+      [
+        [225, 0],
+        [4, 0],
+        [4, 1],
+        [225, 1],
+        [40, 0],
+        [40, 1],
+      ],
+    );
+    await assert.rejects(driver.key("Hyper", true), /iOS has no key named "Hyper"/);
+    const beforeAccent = events().length;
+    assert.equal(driver.typesAsKeys("ü"), true);
+    assert.equal(driver.typesAsKeys("日"), false);
+    await driver.key("Ü", true);
+    await driver.key("Ü", false);
+    await until("the accented letter", () => events().length >= beforeAccent + 8);
+    assert.deepEqual(
+      events().slice(beforeAccent).map((event) => [event.press?.action.key?.keycode, event.press?.direction ?? 0]),
+      [
+        [226, 0],
+        [24, 0],
+        [24, 1],
+        [226, 1],
+        [225, 0],
+        [24, 0],
+        [24, 1],
+        [225, 1],
+      ],
+    );
+    await driver.touch([
+      { id: 0, x: 503, y: 1311 },
+      { id: 1, x: 703, y: 1311 },
+    ]);
+    await driver.touch([
+      { id: 0, x: 403, y: 1311 },
+      { id: 1, x: 803, y: 1311 },
+    ]);
+    await driver.touch([]);
+    await until("the pinch", () => events().some((event) => event.pinch));
+    const pinch = events().find((event) => event.pinch)!.pinch!;
+    assert.deepEqual(pinch.center, { x: 201, y: 437 });
+    assert.ok(Math.abs(pinch.scale - 2) < 1e-9 && Math.abs(pinch.radius - 100 / 3) < 1e-9 && pinch.duration >= 0.2);
+    await driver.pinch({ centre: { x: 603, y: 1311 }, from: 600, to: 300, ms: 20 }, AbortSignal.timeout(1000));
+    await until("the agent's pinch", () => events().filter((event) => event.pinch).length === 2);
+    assert.deepEqual(events().filter((event) => event.pinch)[1]!.pinch, { center: { x: 201, y: 437 }, scale: 0.5, duration: 0.02, radius: 100 });
+    const before = events().length;
+    await driver.paste();
+    await until("the paste chord", () => events().length >= before + 4);
+    assert.deepEqual(
+      events().slice(before).map((event) => [event.press?.action.key?.keycode, event.press?.direction ?? 0]),
+      [
+        [227, 0],
+        [25, 0],
+        [25, 1],
+        [227, 1],
+      ],
+    );
+    assert.match(statements[0]!, /^select client/);
+    assert.match(statements[1]!, /^insert into access .*'dev\.example\.probe', 0, 2.*'com\.apple\.mobilesafari', 0, 2.*do update set auth_value = 2;$/);
+    await access.putBack();
+    assert.equal(statements[2], "delete from access where service = 'kTCCServicePasteboard' and client = 'dev.example.probe' and client_type = 0; update access set auth_value = 3 where service = 'kTCCServicePasteboard' and client = 'com.apple.mobilesafari' and client_type = 0;");
+    driver.close();
+  });
+
+  test("does each iOS control, reads the settings back, and keeps what it set through a restart of the server (063, 6.3)", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    simulator.idbLog = setup.log;
+    const app = join(setup.home, "Probe.app");
+    mkdirSync(app);
+    const device = join(setup.home, "Device.app");
+    mkdirSync(device);
+    const appInfo = async (path: string): Promise<AppInfo> => ({ bundleId: "dev.example.probe", platforms: [path === device ? "iPhoneOS" : "iPhoneSimulator"] });
+    const { driver, logs } = driverOf(setup, simulator, { appInfo });
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const signal = () => AbortSignal.timeout(10_000);
+    const agent = { personHasControl: false };
+    const settings = async () => {
+      const state = await driver.readBack();
+      assert.equal(state.platform, "ios");
+      return state.platform === "ios" ? state.settings : null!;
+    };
+    const first = (await settings()).appearance;
+    assert.ok(first.known && first.value === "light" && first.by === "bb-box", "read as the server attached");
+
+    await driver.control({ action: "appearance", to: "dark" }, signal(), agent);
+    assert.equal(simulator.appearance, "dark");
+    const dark = (await settings()).appearance;
+    assert.ok(dark.known && dark.value === "dark" && dark.by === "bb-box");
+
+    await driver.control({ action: "text_size", to: "small" }, signal(), agent);
+    assert.equal(simulator.contentSize, "small");
+    const small = (await settings()).textSize;
+    assert.ok(small.known && small.value === "small", "simctl's Small reads back as small");
+    await driver.control({ action: "text_size", to: "larger" }, signal(), agent);
+    assert.equal(simulator.contentSize, "medium");
+    await driver.control({ action: "text_size", to: "default" }, signal(), agent);
+    assert.equal(simulator.contentSize, "large");
+
+    simulator.appearance = "light";
+    await driver.readSettings(signal());
+    const outside = (await settings()).appearance;
+    assert.ok(outside.known && outside.value === "light" && outside.by === "outside", "a change by simctl in box_run is the outside's");
+
+    await driver.control({ action: "status_bar", to: "clean" }, signal(), agent);
+    assert.deepEqual(simulator.statusBar, [...statusBarOverride({ clean: true, battery: { level: 100, charging: false } })]);
+    assert.ok(simulator.statusBar.includes("9:41") && simulator.statusBar.includes("discharging"));
+    await driver.control({ action: "battery", to: { level: 20, charging: true } }, signal(), agent);
+    assert.deepEqual((await settings()).statusBar.set, { clean: true, battery: { level: 20, charging: true } });
+    await driver.control({ action: "battery", to: null }, signal(), agent);
+    assert.deepEqual((await settings()).statusBar.set, { clean: true, battery: null });
+    assert.ok(!simulator.statusBar.includes("--batteryLevel"));
+    await driver.control({ action: "battery", to: { level: 5, charging: false } }, signal(), agent);
+    await driver.control({ action: "status_bar", to: "live" }, signal(), agent);
+    assert.deepEqual(simulator.statusBar, []);
+    assert.equal((await settings()).statusBar.set, null, "the status bar going live clears the battery too");
+
+    await driver.control({ action: "location", to: { latitude: 51.5, longitude: -0.12 } }, signal(), agent);
+    assert.ok(simulator.calls.includes(`location ${UDID} set 51.5,-0.12`));
+    assert.deepEqual((await settings()).location.set, { latitude: 51.5, longitude: -0.12 });
+
+    await driver.control({ action: "home" }, signal(), agent);
+    await driver.control({ action: "lock" }, signal(), agent);
+    assert.deepEqual((await driver.readBack()).power, { is: "booted", awake: false });
+    await driver.control({ action: "wake" }, signal(), agent);
+    assert.deepEqual((await driver.readBack()).power, { is: "booted", awake: true });
+    const presses = [...readFileSync(setup.log, "utf8").matchAll(/"button":\{"button":(\d)\}\}(?!,"direction":1)/g)].map((match) => Number(match[1]));
+    assert.deepEqual(presses, [1, 2, 1]);
+
+    await driver.control({ action: "rotate", turn: "left" }, signal(), agent);
+    assert.equal((await driver.readBack()).geometry?.physical, "turned-left");
+    await driver.control({ action: "rotate", to: "upright" }, signal(), agent);
+    assert.equal((await driver.readBack()).geometry?.physical, "upright");
+    assert.match(readFileSync(setup.log, "utf8"), /orientation 2\n[\s\S]*orientation 0\n/);
+
+    await assert.rejects(driver.control({ action: "install", paths: [device] }, signal(), agent), /is a build for a physical device \(iPhoneOS\)\. Build for the simulator/);
+    await assert.rejects(driver.control({ action: "install", paths: [join(setup.home, "Gone.app")] }, signal(), agent), /There is no \.app folder at /);
+    await driver.control({ action: "install", paths: [app] }, signal(), { personHasControl: true });
+    await assert.rejects(driver.control({ action: "install", paths: [app] }, signal(), { personHasControl: true }), (error: unknown) => error instanceof Error && (error as { code?: string }).code === "person-has-control");
+    await driver.control({ action: "install", paths: [app] }, signal(), agent);
+    assert.ok(logs.some((line) => line.startsWith("install: dev.example.probe from ")));
+    await assert.rejects(driver.control({ action: "back" }, signal(), agent), /iOS has no back control/);
+    driver.close();
+
+    simulator.statusBar = [];
+    const again = driverOf(setup, simulator, { appInfo });
+    simulator.calls.length = 0;
+    await again.driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const kept = await again.driver.readBack();
+    assert.ok(kept.platform === "ios" && kept.settings.location.set?.latitude === 51.5, "the location BB Box set is kept across a restart");
+    assert.ok(simulator.calls.includes(`location ${UDID} set 51.5,-0.12`), "and set again on the device");
+    again.driver.close();
+  });
+
+  test("reboots the device after appearance or text size where its user's uid is not iOS's 501, as iOS shows such a change there only at its start (F-20)", async () => {
+    assert.equal(changesShowAtStart(IOS_MOBILE_UID), false);
+    assert.equal(changesShowAtStart(80065), true);
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    const { driver, logs } = driverOf(setup, simulator, { uid: 80065 });
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const agent = { personHasControl: false };
+    const shutdowns = () => simulator.calls.filter((call) => call === `shutdown ${UDID}`).length;
+    assert.equal(driver.rebootsFor({ action: "appearance", to: "dark" }), true);
+    assert.equal(driver.rebootsFor({ action: "text_size", to: "larger" }), true);
+    assert.equal(driver.rebootsFor({ action: "status_bar", to: "clean" }), false);
+    const state = await driver.readBack();
+    assert.ok(state.platform === "ios" && state.settings.changesShowAtStart === true, "the state says so, for the answer's words");
+    const before = shutdowns();
+    await driver.control({ action: "appearance", to: "dark" }, AbortSignal.timeout(20_000), agent);
+    assert.equal(simulator.appearance, "dark");
+    assert.equal(shutdowns(), before + 1, "rebooted to show it");
+    assert.ok(logs.some((line) => line.includes("shows a change to appearance only at its start")));
+    await driver.control({ action: "status_bar", to: "clean" }, AbortSignal.timeout(20_000), agent);
+    assert.equal(shutdowns(), before + 1, "a status bar change shows at once");
+    driver.close();
+
+    const second = setUp();
+    const dedicated = driverOf(second, new FakeSimulator());
+    await dedicated.driver.attach(second.target, AbortSignal.timeout(20_000));
+    assert.equal(dedicated.driver.rebootsFor({ action: "appearance", to: "dark" }), false);
+    const own = await dedicated.driver.readBack();
+    assert.ok(own.platform === "ios" && own.settings.changesShowAtStart === undefined);
+    dedicated.driver.close();
+  });
+
+  test("finds the app a process runs from its program's path, as the front app's name when iOS gives none (F-20)", () => {
+    const root = "/Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot";
+    const apps = installedApps({
+      "com.apple.mobilesafari": { CFBundleDisplayName: "Safari", CFBundleName: "MobileSafari", ApplicationType: "System", Path: `${root}/Applications/MobileSafari.app` },
+      "com.apple.Preferences": { CFBundleDisplayName: "Settings", ApplicationType: "System", Path: `${root}/Applications/Preferences.app/` },
+      "dev.example.probe": { CFBundleName: "Probe", ApplicationType: "User" },
+    });
+    assert.equal(apps.find((app) => app.id === "com.apple.Preferences")?.path, `${root}/Applications/Preferences.app`);
+    assert.equal(appOfProgram(`${root}/Applications/MobileSafari.app/MobileSafari`, apps)?.name, "Safari");
+    assert.equal(appOfProgram(`${root}/Applications/Preferences.app/Preferences`, apps)?.id, "com.apple.Preferences");
+    assert.equal(appOfProgram(`${root}/Applications/MobileSafari.appx/MobileSafari`, apps), null);
+    assert.equal(appOfProgram(`${root}/System/Library/CoreServices/SpringBoard.app/SpringBoard`, apps), null);
+  });
+
+  test("reads simctl's list of status bar overrides", () => {
+    assert.equal(overridesListed("Current Status Bar Overrides:\n=============================\n"), false);
+    assert.equal(overridesListed("Current Status Bar Overrides:\n=============================\nBattery State: 1, Battery Level: 50, Not Charging: 0\n"), true);
+    assert.deepEqual(statusBarOverride({ clean: false, battery: { level: 50, charging: true } }), ["--batteryState", "charging", "--batteryLevel", "50"]);
+  });
+
+  test("names the apps a booted device runs, and maps W3C keys to HID usages", () => {
+    assert.deepEqual(runningApps([`/d/${UDID}/data/Containers/Bundle/Application/A/One.app/One`, "/x/RuntimeRoot/Applications/MobileSafari.app/MobileSafari", "/x/RuntimeRoot/System/Library/CoreServices/SpringBoard.app/SpringBoard", "/Applications/Xcode.app/Contents/MacOS/Xcode"], `/d/${UDID}/data`), [`/d/${UDID}/data/Containers/Bundle/Application/A/One.app`, "/x/RuntimeRoot/Applications/MobileSafari.app"]);
+    assert.deepEqual(hidKey("a"), { usage: 4, shift: false });
+    assert.deepEqual(hidKey("?"), { usage: 56, shift: true });
+    assert.deepEqual(hidKey(" "), { usage: 44, shift: false });
+    assert.deepEqual(hidKey("ArrowUp"), { usage: 82, shift: false });
+    assert.deepEqual(hidKey("Meta"), { usage: 227, shift: false });
+    assert.equal(hidKey("é"), null);
+  });
+
+  function fakeSoftwareEncoder(home: string): { readonly helper: string; readonly log: string } {
+    const helper = join(home, "bb-box-h264");
+    const fake = fileURLToPath(new URL("./fake-simulator-h264.ts", import.meta.url));
+    writeFileSync(helper, `#!/bin/sh\nexec "${process.execPath}" "${fake}" "$@"\n`);
+    chmodSync(helper, 0o755);
+    const log = join(home, "h264-calls.log");
+    process.env.FAKE_H264_LOG = log;
+    return { helper, log };
+  }
+
+  test("streams in software from the device's framebuffer when asked to, at the viewer's step, and reports the cores it takes (065)", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    const encoder = fakeSoftwareEncoder(setup.home);
+    const { driver } = driverOf(setup, simulator, { encoder: "software", softwareEncoder: encoder.helper });
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    const frames: EncodedFrame[] = [];
+    const stop = new AbortController();
+    void (async () => {
+      for await (const frame of driver.video().frames(stop.signal)) frames.push(frame);
+    })();
+    driver.video().want?.("full");
+    await until("software frames at full size", () => frames.some((frame) => frame.key && frame.width === 1206 && frame.height === 2622) && frames.length > 3);
+    driver.video().want?.("half");
+    await until("software frames at a half", () => frames.some((frame) => frame.width === 604 && frame.height === 1312));
+    assert.deepEqual((await driver.readBack()).geometry?.video, { width: 1206, height: 2622 }, "the device's geometry stays in its own pixels");
+    const calls = readFileSync(encoder.log, "utf8");
+    assert.match(calls, new RegExp(`simulator ${UDID} scale 1000`));
+    assert.match(calls, new RegExp(`simulator ${UDID} scale 500`));
+    assert.ok(!readFileSync(setup.log, "utf8").includes("stream "), "idb's stream is never opened");
+    const encoding = driver.video().encoding?.();
+    assert.equal(encoding?.way, "software");
+    assert.equal(encoding?.encoder, "x264 0.165, source b35605ace3ddf7c1a5d67a2eb553f034aef41d55");
+    assert.equal(typeof encoding?.cores, "number", JSON.stringify(encoding));
+    stop.abort();
+  });
+
+  test("falls back to software when the Mac's hardware encoder fails, as on a Mac with none, and stays hardware-only when told to (065)", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    const encoder = fakeSoftwareEncoder(setup.home);
+    process.env.FAKE_IDB_NO_ENCODER = "1";
+    try {
+      const { driver, logs } = driverOf(setup, simulator, { softwareEncoder: encoder.helper });
+      await driver.attach(setup.target, AbortSignal.timeout(20_000));
+      assert.equal(driver.video().encoding?.()?.way, "hardware");
+      const frames: EncodedFrame[] = [];
+      const stop = new AbortController();
+      void (async () => {
+        for await (const frame of driver.video().frames(stop.signal)) frames.push(frame);
+      })();
+      driver.video().want?.("two-thirds");
+      await until("software frames after the fallback", () => frames.some((frame) => frame.key && frame.width === 804 && frame.height === 1748));
+      assert.ok(logs.some((line) => /hardware H\.264 encoder failed \(VideoToolbox encode error: OSStatus -12915\); streaming in software/.test(line)), logs.join("\n"));
+      assert.equal(driver.video().encoding?.()?.way, "software");
+      stop.abort();
+
+      const strict = driverOf(setUp(), new FakeSimulator(), { encoder: "hardware", softwareEncoder: encoder.helper });
+      await strict.driver.attach(setup.target, AbortSignal.timeout(20_000));
+      const none: EncodedFrame[] = [];
+      const halt = new AbortController();
+      void (async () => {
+        for await (const frame of strict.driver.video().frames(halt.signal)) none.push(frame);
+      })();
+      strict.driver.video().want?.("half");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      assert.equal(none.length, 0);
+      assert.equal(strict.driver.video().encoding?.()?.way, "hardware");
+      halt.abort();
+    } finally {
+      delete process.env.FAKE_IDB_NO_ENCODER;
+    }
+  });
+
+  test("sets the clipboard only once the device reads the text back, and says so when it never does (F-21)", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    const { driver } = driverOf(setup, simulator, { more: { clipboardHoldsWait: { mostMs: 200, everyMs: 10 } } });
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    simulator.clipboard = "the device's own";
+    simulator.clipboardLagsReads = 3;
+    simulator.calls.length = 0;
+    await driver.setClipboard("bbtest ✓ 日本");
+    assert.deepEqual(simulator.calls.map((call) => call.split(" ")[0]).filter((verb) => verb!.startsWith("pb")), ["pbcopy", "pbpaste", "pbpaste", "pbpaste", "pbpaste"], "read back until the device holds it");
+    assert.equal(await driver.clipboard(), "bbtest ✓ 日本");
+    simulator.clipboardLagsReads = Number.POSITIVE_INFINITY;
+    await assert.rejects(driver.setClipboard("never held"), /The iPhone 18 Pro's clipboard still held other text 0\.\d s and \d+ reads after simctl set it\./);
+    driver.close();
+  });
+
+  test("a paste returns once the app has read the clipboard, and the next keys wait until iOS's paste notice has gone (F-21)", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    simulator.pasteNoticeMs = 400;
+    const { driver, logs } = driverOf(setup, simulator, { more: { pasteWatchMs: { read: 1_000, noticeAfterRead: 500, noticeShown: 3_000, noticeSettled: 20 } } });
+    await driver.attach(setup.target, AbortSignal.timeout(20_000));
+    await driver.prepareInput();
+    const keyAt = () =>
+      readFileSync(setup.log, "utf8")
+        .split("\n")
+        .filter((line) => line.includes(" hid ") && line.includes(`"keycode":${HID_USAGES.KeyA}}`)).length;
+    const began = performance.now();
+    await driver.paste();
+    const pasted = performance.now() - began;
+    assert.ok(pasted < 1_000, `the paste returned at the app's read, in ${Math.round(pasted)} ms`);
+    await driver.key("a", true);
+    await driver.key("a", false);
+    const keyed = performance.now() - began;
+    await until("the key", () => keyAt() >= 2);
+    assert.ok(keyed >= 400 && keyed < 2_000, `the key waited for the notice to go, not iOS's 2.6 s: ${Math.round(keyed)} ms`);
+    assert.ok(!logs.some((line) => /could not be watched|no app read/.test(line)), logs.join("\n"));
+    simulator.pasteReader = null;
+    await driver.paste();
+    assert.ok(logs.includes("paste: no app read the clipboard within 1 s of the paste key, so it is put back now"), logs.join("\n"));
+    driver.close();
+  });
+
+  test("says its device booted only once the device's accessibility and pasteboard answer, as on a host just made; says so, and goes on, if they never do (F-21)", async () => {
+    const setup = setUp();
+    const simulator = new FakeSimulator();
+    for (const label of LIST) simulator.disabled.add(label);
+    simulator.pasteboardSilentCalls = 4;
+    process.env.FAKE_IDB_AX_UNANSWERED = "3";
+    try {
+      const { driver, logs } = driverOf(setup, simulator, { more: { servicesAnswerWait: { mostMs: 5_000, everyMs: 20, readMs: 2_000, worthSayingMs: 0 } } });
+      assert.equal(await driver.attach(setup.target, AbortSignal.timeout(20_000)), "booted");
+      assert.equal(readFileSync(setup.log, "utf8").split("\n").filter((line) => line.endsWith("accessibility unanswered")).length, 3);
+      assert.equal(simulator.pasteboardSilentCalls, 0);
+      assert.ok(logs.some((line) => /^device: the iPhone 18 Pro's accessibility and pasteboard took \d+\.\d s more to answer after it booted$/.test(line)), logs.join("\n"));
+      driver.close();
+    } finally {
+      delete process.env.FAKE_IDB_AX_UNANSWERED;
+    }
+    const silent = new FakeSimulator();
+    for (const label of LIST) silent.disabled.add(label);
+    silent.pasteboardSilentCalls = Number.POSITIVE_INFINITY;
+    const quiet = setUp();
+    const { driver, logs } = driverOf(quiet, silent, { more: { servicesAnswerWait: { mostMs: 100, everyMs: 20, readMs: 2_000, worthSayingMs: 0 } } });
+    assert.equal(await driver.attach(quiet.target, AbortSignal.timeout(20_000)), "booted");
+    assert.ok(logs.some((line) => /^device: the iPhone 18 Pro's pasteboard did not answer in 0\.\d s more after it booted, so reads of its screen or its clipboard may fail until it does$/.test(line)), logs.join("\n"));
+    driver.close();
+  });
+});
+
+describe("an ios box in BB Box's words", () => {
+  const offer = {
+    platform: "ios",
+    devices: [
+      { model: "iPhone 18 Pro", native: "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro", runtime: { platform: "ios", os: "27.0", build: "24A434", xcode: "27.0", companion: "1.7.7" } },
+      { model: "iPhone 17", native: "com.apple.CoreSimulator.SimDeviceType.iPhone-17", runtime: { platform: "ios", os: "27.0", build: "24A434", xcode: "27.0", companion: "1.7.7" } },
+    ],
+  };
+  const box = (change: Partial<BoxRecord> = {}) =>
+    ({ id: "bx1", name: "calm-otter", state: "ready", kind: "ios", kindLabel: "iOS Simulator", timings: {}, enrol: { state: "off" }, role: "box", capabilities: { device: offer, displays: [], gpu: false }, ...change }) as unknown as BoxRecord;
+
+  test("a real device box wants its server whether or not it named a device; a test device only when asked for", () => {
+    assert.ok(wantsDevice(box()));
+    assert.ok(!wantsDevice(box({ state: "stopped" })));
+    const test = box({ capabilities: { device: testDeviceOffer("ios"), displays: [], gpu: false } as never });
+    assert.ok(!wantsDevice(test));
+    assert.ok(wantsDevice({ ...test, askedDevice: "iPhone 17" } as BoxRecord));
+  });
+
+  test("box_list names the kind's devices and a box's; box_status gives the device's runtime, state, commands and slimming", () => {
+    assert.equal(devicesText({ devices: { platform: "ios", models: ["iPhone 18 Pro", "iPhone 17"] } }), " Devices: iPhone 18 Pro (default), iPhone 17.");
+    assert.equal(devicesText({ devices: null }), "");
+    assert.match(boxLine(box({ askedDevice: "iPhone 17" })), /; device: iPhone 17$/);
+    const state = {
+      platform: "ios",
+      model: "iPhone 17",
+      power: { is: "booted", awake: true },
+      geometry: { generation: 1, physical: "upright", content: "upright", video: { width: 1206, height: 2622 } },
+      settings: { appearance: { known: false, why: "" }, textSize: { known: false, why: "" }, location: { set: null, at: null }, statusBar: { set: null, at: null } },
+      at: 0,
+    } as const;
+    assert.deepEqual(deviceLines(box({ slim: false }), state, null), [
+      "Device: iPhone 17, iOS 27.0 (24A434), Xcode 27.0, idb_companion 1.7.7",
+      "Device state: booted, upright, 1206x2622",
+      "Device actions, for box_device: home, lock, wake, rotate, appearance, text_size, location, status_bar, battery, install, switch, reboot",
+      "Device commands: simctl in box_run takes booted as the iOS device, as in xcrun simctl openurl booted <url>",
+      "Slim: off. The device runs every service iOS starts",
+    ]);
+    assert.match(deviceLines(box(), null, null)[1]!, /^Device state: not known yet/);
+    assert.match(deviceLines(box(), null, null)[3]!, /^Slim: on\./);
+  });
+});

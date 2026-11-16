@@ -1,0 +1,93 @@
+import { LANGUAGE_OPTIONS } from "./languages";
+import { appearanceSettingSchema, defaultTabAppearance } from "./tab-appearance";
+
+/** Shared labels/defaults: English for the CLI, translated in the settings slot. */
+export const SETTINGS = {
+  tabAppearance: {
+    type: "string",
+    label: "Tab appearance",
+    description:
+      "Palette, project aliases and individual tab colors. Changes apply in every workspace.",
+    experimental_multiline: true,
+    experimental_schema: appearanceSettingSchema,
+    default: JSON.stringify(defaultTabAppearance()),
+  },
+  language: {
+    type: "select",
+    label: "Language",
+    description:
+      "Choose the language for Chat Tabs, including these settings. Auto uses the BB page or browser language.",
+    options: [...LANGUAGE_OPTIONS],
+    default: "Auto",
+  },
+  searchArchivedChats: {
+    type: "boolean",
+    label: "Include archived chats in search",
+    description:
+      "Adds archived chats to title search results. They have struck-through titles and cannot be opened here. Deleted chats are excluded.",
+    default: false,
+  },
+  enableWorkspaces: {
+    type: "boolean",
+    label: "Enable workspaces",
+    description:
+      "Use separate tabs and favorites for each workspace. Turning this off uses Work (or the first remaining workspace) without deleting other sets.",
+    default: true,
+  },
+  showPinnedTabsList: {
+    type: "boolean",
+    label: "Show tabs on New chat",
+    description: "Shows your pinned tabs below the message input on the New chat screen.",
+    default: true,
+  },
+  showTabsOnDesktop: {
+    type: "boolean",
+    label: "Show top tabs on desktop",
+    description:
+      "Shows the chat tab strip below the BB header on desktop. Turning it off keeps your pins and history.",
+    default: true,
+  },
+  showTabsOnMobile: {
+    type: "boolean",
+    label: "Show top tabs on mobile",
+    description:
+      "Shows the chat tab strip below the BB header on mobile. Turning it off keeps your pins and history.",
+    default: true,
+  },
+  showTabListButton: {
+    type: "boolean",
+    label: "Show the tab list button",
+    description:
+      "Adds a button to the tab strip that opens a menu with chat search, pinned chats, and history.",
+    default: true,
+  },
+  showTabListPinned: {
+    type: "boolean",
+    label: "Show pinned chats in the tab list",
+    description:
+      "Shows the Pinned section in the tab list menu. Turning it off does not unpin chats.",
+    default: true,
+  },
+  showTabListHistory: {
+    type: "boolean",
+    label: "Show history in the tab list",
+    description:
+      "Shows recently visited chats in the tab list menu. Turning it off hides the section but keeps recording visits.",
+    default: true,
+  },
+  showChatListAsTree: {
+    type: "boolean",
+    label: "Show chats as a tree",
+    description:
+      "Groups nested chats under their parents in the chat list. Search results stay flat. Turning this off shows a flat list.",
+    default: true,
+  },
+  tabListButtonPosition: {
+    type: "select",
+    label: "Tab list button position",
+    description: "Places the tab list button on the left or right of the chat tab strip.",
+    options: ["Left", "Right"],
+    default: "Left",
+  },
+} as const;
+export type SettingKey = keyof typeof SETTINGS;

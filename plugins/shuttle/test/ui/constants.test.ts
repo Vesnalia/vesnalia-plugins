@@ -1,0 +1,125 @@
+import { describe, expect, it } from "vitest";
+import { OPERATIONS } from "../../src/config";
+import { PROMPT_VARIABLES } from "../../src/templates";
+import { CONVERSATION_OPERATIONS, MANAGE_OPERATIONS, OPERATION_LABELS, READ_OPERATIONS } from "../../src/ui/constants";
+import { checkName, duration, initials, keyLabel, sizeOf } from "../../src/ui/format";
+import { formatRoute, parseRoute } from "../../src/ui/route";
+import { sampleReviewVariables } from "../../src/ui/settings/prompt";
+
+const key = "lab:acme/app#2261179";
+
+describe("page routes", () => {
+  it("reads and writes the four areas, a selected PR in each, and a looked-up PR", () => {
+    expect(parseRoute("")).toEqual({ view: "inbox", key: null });
+    expect(parseRoute("mine")).toEqual({ view: "mine", key: null });
+    expect(parseRoute("done")).toEqual({ view: "done", key: null });
+    expect(parseRoute("reviewed")).toEqual({ view: "reviewed", key: null });
+    expect(parseRoute("reviews")).toEqual({ view: "reviews", source: "all", key: null });
+    expect(parseRoute("reviews~team")).toEqual({ view: "reviews", source: "team", key: null });
+    expect(parseRoute("insights")).toEqual({ view: "insights", tab: "overview" });
+    expect(parseRoute("insights/log")).toEqual({ view: "insights", tab: "log" });
+    expect(parseRoute("insights/sync")).toEqual({ view: "insights", tab: "sync" });
+    // The Usage tab's period: a range, then the last day; the newest 7 days have neither, and a day that is no day reads as today.
+    expect(parseRoute("insights/usage")).toEqual({ view: "insights", tab: "usage" });
+    expect(parseRoute("insights/usage/7d")).toEqual({ view: "insights", tab: "usage" });
+    expect(parseRoute("insights/usage/day")).toEqual({ view: "insights", tab: "usage", period: { range: "today", end: null } });
+    expect(parseRoute("insights/usage/day/2026-11-05")).toEqual({ view: "insights", tab: "usage", period: { range: "today", end: "2026-11-05" } });
+    expect(parseRoute("insights/usage/90d/2026-02-30")).toEqual({ view: "insights", tab: "usage", period: { range: "90d", end: null } });
+    expect(parseRoute("insights/usage/week")).toEqual({ view: "insights", tab: "usage" });
+    expect(formatRoute({ view: "insights", tab: "usage", period: { range: "today", end: "2026-11-05" } })).toBe("insights/usage/day/2026-11-05");
+    expect(formatRoute({ view: "insights", tab: "usage", period: { range: "30d", end: null } })).toBe("insights/usage/30d");
+    expect(formatRoute({ view: "insights", tab: "usage", period: { range: "7d", end: "2026-10-30" } })).toBe("insights/usage/7d/2026-10-30");
+    expect(parseRoute("nonsense")).toEqual({ view: "inbox", key: null });
+
+    expect(formatRoute({ view: "inbox", key: null })).toBe("inbox");
+    expect(parseRoute("inbox")).toEqual({ view: "inbox", key: null });
+    expect(formatRoute({ view: "inbox", key })).toBe("inbox/lab/acme/app/2261179");
+    expect(formatRoute({ view: "reviews", source: "all", key })).toBe("reviews/lab/acme/app/2261179");
+    expect(formatRoute({ view: "reviews", source: "asked", key: null })).toBe("reviews~asked");
+    expect(formatRoute({ view: "insights", tab: "log" })).toBe("insights/log");
+    expect(formatRoute({ view: "insights", tab: "sync" })).toBe("insights/sync");
+    expect(formatRoute({ view: "pr", key })).toBe("pr/lab/acme/app/2261179");
+    for (const route of [
+      { view: "inbox", key }, { view: "mine", key }, { view: "done", key }, { view: "reviewed", key }, { view: "reviewed", key: null }, { view: "reviews", source: "team", key }, { view: "reviews", source: "tracked", key: null },
+      { view: "pr", key: "gitlab:group/sub/proj#77" }, { view: "insights", tab: "overview" },
+    ] as const) {
+      expect(parseRoute(formatRoute(route))).toEqual(route);
+    }
+    expect(parseRoute("pr/github/a/%E0%A4%A/1")).toEqual({ view: "inbox", key: null });
+  });
+
+  it("keeps any search words in one segment, with a selected PR after them", () => {
+    expect(parseRoute("search")).toEqual({ view: "search", query: "", key: null });
+    expect(formatRoute({ view: "search", query: "edge cache", key: null })).toBe("search/edge%20cache");
+    // No words, no results: a selection has nothing to stand in.
+    expect(formatRoute({ view: "search", query: "", key })).toBe("search");
+    for (const query of ["edge", "kd/edge-retries #2213", "100% done?", "a~b"]) {
+      for (const route of [{ view: "search", query, key: null }, { view: "search", query, key }] as const) expect(parseRoute(formatRoute(route))).toEqual(route);
+    }
+    expect(parseRoute("search/100%")).toEqual({ view: "search", query: "100%", key: null });
+  });
+
+  it("never reads a Reviews source as a server id", () => {
+    expect(parseRoute("reviews~team/team/acme/app/12")).toEqual({ view: "reviews", source: "team", key: "team:acme/app#12" });
+    expect(parseRoute("reviews/team/acme/app/12")).toEqual({ view: "reviews", source: "all", key: "team:acme/app#12" });
+  });
+
+  it("opens 0.2's sections in the new areas, keeping a selected PR", () => {
+    expect(parseRoute("needs")).toEqual({ view: "inbox", key: null });
+    expect(parseRoute("needs/lab/acme/app/2261179")).toEqual({ view: "inbox", key });
+    expect(parseRoute("requested")).toEqual({ view: "reviews", source: "asked", key: null });
+    expect(parseRoute("requested/github/acme/cdn-tools/1494")).toEqual({ view: "reviews", source: "asked", key: "github:acme/cdn-tools#1494" });
+    expect(parseRoute("team")).toEqual({ view: "reviews", source: "team", key: null });
+    expect(parseRoute("mentioned")).toEqual({ view: "reviews", source: "mentioned", key: null });
+    expect(parseRoute("watching/lab/acme/app/2261179")).toEqual({ view: "reviews", source: "tracked", key });
+    expect(parseRoute("inflight/lab/acme/app/2261179")).toEqual({ view: "mine", key });
+    expect(parseRoute("done")).toEqual({ view: "done", key: null });
+    expect(parseRoute("activity")).toEqual({ view: "insights", tab: "log" });
+  });
+});
+
+describe("small formatting", () => {
+  it("badges a server by its capitals, or its first two letters", () => {
+    expect(initials("GitHub")).toBe("GH");
+    expect(initials("GitLab (self-hosted)")).toBe("GL");
+    expect(initials("lab")).toBe("La");
+  });
+
+  it("drops the server from a key", () => {
+    expect(keyLabel("lab:acme/app#2261179")).toBe("acme/app#2261179");
+  });
+
+  it("sizes a change by its changed lines", () => {
+    expect(sizeOf({ additions: 40, deletions: 9 })).toBe("S");
+    expect(sizeOf({ additions: 250, deletions: 49 })).toBe("M");
+    expect(sizeOf({ additions: 900, deletions: 99 })).toBe("L");
+    expect(sizeOf({ additions: 900, deletions: 100 })).toBe("XL");
+    expect(sizeOf({ additions: null, deletions: 3 })).toBeNull();
+  });
+
+  it("writes medians short, and a dash without data", () => {
+    expect(duration(null)).toBe("—");
+    expect(duration(41 * 60_000)).toBe("41m");
+    expect(duration(7.5 * 60 * 60_000)).toBe("7.5h");
+    expect(duration(2.6 * 24 * 60 * 60_000)).toBe("2.6d");
+  });
+
+  it("names a failed check from its item's body", () => {
+    expect(checkName("rspec (shard 3) failed")).toBe("rspec (shard 3)");
+    expect(checkName("lint")).toBe("lint");
+  });
+
+  it("fills every prompt variable the server offers in the preview's sample", () => {
+    expect(Object.keys(sampleReviewVariables("")).sort()).toEqual([...PROMPT_VARIABLES].sort());
+  });
+});
+
+describe("server commands", () => {
+  it("labels every operation and puts each in exactly one group of the form", () => {
+    expect(Object.keys(OPERATION_LABELS).sort()).toEqual([...OPERATIONS].sort());
+    expect(OPERATION_LABELS.merge).toBe("Merge a PR");
+    expect(OPERATION_LABELS.reviewed).toBe("PRs you reviewed");
+    expect([...READ_OPERATIONS, ...MANAGE_OPERATIONS, ...CONVERSATION_OPERATIONS].sort()).toEqual([...OPERATIONS].sort());
+    expect(CONVERSATION_OPERATIONS).toEqual(["merge", "merge_options", "comment", "review", "reply", "resolve"]);
+  });
+});

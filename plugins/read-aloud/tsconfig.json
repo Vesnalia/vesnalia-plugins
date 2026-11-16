@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "server.ts",
+    "synth.ts",
+    "synth.test.ts",
+    "server.test.ts",
+    "app.tsx",
+    "components",
+    "lib",
+    "hooks"
+  ]
+}

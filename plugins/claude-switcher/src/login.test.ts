@@ -1,0 +1,600 @@
+import { describe, expect, it } from "vitest";
+import {
+  LoginFlow,
+  type LoginIo,
+  type LoginProcess,
+  type LoginStatus,
+} from "./login.js";
+
+const NOW = Date.parse("2026-09-30T10:00:00.000Z");
+const URL =
+  "https://claude.com/cai/oauth/authorize?code=true&client_id=x&state=abc";
+/**
+ * What `claude auth login` prints, as captured from Claude Code 2.1.285 on
+ * 2026-09-30 (the address replaced): two chunks, the second with an OSC 8
+ * hyperlink closed by BEL. It prints both whether or not $BROWSER worked.
+ */
+const OPENING = "Opening browser to sign in…\n";
+const BANNER = `If the browser didn't open, visit: \u001b]8;;${URL}\u0007${URL}\u001b]8;;\u0007\nPaste code here if prompted > `;
+/** The same link closed by ST, as other terminals' tools write it. */
+const BANNER_ST = `If the browser didn't open, visit: \u001b]8;;${URL}\u001b\\${URL}\u001b]8;;\u001b\\\nPaste code here if prompted > `;
+
+interface Spawned {
+  command: string;
+  env: Record<string, string>;
+  written: string[];
+  killed: boolean;
+  emit: (chunk: string) => void;
+  exit: (code: number | null, error?: string) => void;
+}
+
+function fakeIo(existing: string[] = []): {
+  io: LoginIo;
+  spawned: Spawned[];
+  made: string[];
+  links: [string, string][];
+} {
+  const spawned: Spawned[] = [];
+  const made: string[] = [];
+  const links: [string, string][] = [];
+  const paths = new Set(existing);
+  const io: LoginIo = {
+    spawn({ command, env }) {
+      let onOutput: (chunk: string) => void = () => {};
+      let resolveExit!: (result: {
+        code: number | null;
+        error?: string;
+      }) => void;
+      const exited = new Promise<{ code: number | null; error?: string }>(
+        (resolve) => {
+          resolveExit = resolve;
+        },
+      );
+      const entry: Spawned = {
+        command,
+        env,
+        written: [],
+        killed: false,
+        emit: (chunk) => onOutput(chunk),
+        exit: (code, error) =>
+          resolveExit(error === undefined ? { code } : { code, error }),
+      };
+      spawned.push(entry);
+      const process: LoginProcess = {
+        write: (text) => entry.written.push(text),
+        kill: () => {
+          entry.killed = true;
+          resolveExit({ code: null });
+        },
+        onOutput: (cb) => {
+          onOutput = cb;
+        },
+        exited,
+      };
+      return process;
+    },
+    async mkdir(dir) {
+      made.push(dir);
+      if (paths.has(dir)) return false;
+      paths.add(dir);
+      return true;
+    },
+    async entries() {
+      return [];
+    },
+    async link(target, path) {
+      if (!paths.has(target) || paths.has(path)) return false;
+      paths.add(path);
+      links.push([target, path]);
+      return true;
+    },
+  };
+  return { io, spawned, made, links };
+}
+
+function flow(
+  io: LoginIo,
+  overrides: Partial<ConstructorParameters<typeof LoginFlow>[1]> = {},
+) {
+  const changes: LoginStatus[] = [];
+  const f = new LoginFlow(io, {
+    command: () => "claude",
+    helper: "/plugin/bin/open-login.sh",
+    timeoutMs: 10 * 60_000,
+    now: () => NOW,
+    onChange: (status) => changes.push(status),
+    ...overrides,
+  });
+  return { f, changes };
+}
+
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+describe("LoginFlow", () => {
+  it("runs `claude auth login` for the account's directory with the browser helper, and completes on exit 0", async () => {
+    const { io, spawned, made } = fakeIo();
+    const { f, changes } = flow(io);
+    const status = await f.start({
+      name: "team",
+      configDir: "/home/.claude-accounts/team",
+    });
+    expect(made).toEqual(["/home/.claude-accounts/team"]);
+    expect(spawned[0]?.command).toBe("claude");
+    expect(spawned[0]?.env).toMatchObject({
+      CLAUDE_CONFIG_DIR: "/home/.claude-accounts/team",
+      BROWSER: "/plugin/bin/open-login.sh",
+    });
+    expect(status).toEqual({
+      name: "team",
+      phase: "running",
+      startedAt: NOW,
+      manualUrl: null,
+      wantsCode: false,
+      message: null,
+    });
+    spawned[0]!.emit(OPENING);
+    expect(f.status()).toMatchObject({ manualUrl: null, wantsCode: false });
+    spawned[0]!.emit(BANNER);
+    expect(f.status()).toMatchObject({ manualUrl: URL, wantsCode: true });
+    spawned[0]!.exit(0);
+    await tick();
+    expect(f.status()).toMatchObject({ phase: "done", message: null });
+    // Announced on start, when the banner arrived, and at the end.
+    expect(changes.map((c) => [c.phase, c.wantsCode])).toEqual([
+      ["running", false],
+      ["running", true],
+      // The address and the prompt go with the login that ended.
+      ["done", false],
+    ]);
+    expect(f.status()).toMatchObject({ manualUrl: null, wantsCode: false });
+  });
+
+  it("reads the fallback address from a link closed by ST too", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(BANNER_ST);
+    expect(f.status()).toMatchObject({ manualUrl: URL, wantsCode: true });
+  });
+
+  it("logs the default account in without CLAUDE_CONFIG_DIR, whatever the plugin's own environment says", async () => {
+    const { io, spawned, made } = fakeIo();
+    const { f } = flow(io);
+    await f.start(
+      { name: "main", configDir: null },
+      { PATH: "/bin", CLAUDE_CONFIG_DIR: "/elsewhere", GONE: undefined },
+    );
+    expect(made).toEqual([]);
+    expect(spawned[0]?.env).toEqual({
+      PATH: "/bin",
+      BROWSER: "/plugin/bin/open-login.sh",
+    });
+  });
+
+  it("passes a pasted code to the login and refuses one when no login is running", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    expect(() => f.code("abc")).toThrow(/no login/i);
+    await f.start({ name: "team", configDir: "/d/team" });
+    f.code("  abc#123 \n");
+    expect(spawned[0]?.written).toEqual(["abc#123\n"]);
+  });
+
+  it("fails with the login's last line when it exits with an error, without any URL", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(`${BANNER}\nInvalid code. See ${URL} for help\n`);
+    spawned[0]!.exit(1);
+    await tick();
+    expect(f.status()).toMatchObject({
+      phase: "failed",
+      message: "Invalid code. See <url> for help (exit code 1)",
+    });
+  });
+
+  it("keeps reading after the banner: the failure it reports is the last thing printed", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(OPENING);
+    spawned[0]!.emit(BANNER);
+    spawned[0]!.emit("\nLogin failed: Request failed with status code 400\n");
+    spawned[0]!.exit(1);
+    await tick();
+    expect(f.status()).toMatchObject({
+      phase: "failed",
+      message:
+        "Login failed: Request failed with status code 400 (exit code 1)",
+    });
+  });
+
+  it("keeps the fallback address however much the login prints after it", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(BANNER);
+    for (let i = 0; i < 40; i++) spawned[0]!.emit(`${"x".repeat(1023)}\n`);
+    expect(f.status()).toMatchObject({ manualUrl: URL, wantsCode: true });
+  });
+
+  it("reports a login command that could not start", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.exit(null, "spawn claude ENOENT");
+    await tick();
+    expect(f.status()).toMatchObject({
+      phase: "failed",
+      message: "could not run claude: spawn claude ENOENT",
+    });
+  });
+
+  it("cancels a running login, and a cancel afterwards clears the outcome", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    f.cancel();
+    await tick();
+    expect(spawned[0]?.killed).toBe(true);
+    expect(f.status()).toMatchObject({ phase: "cancelled" });
+    f.cancel();
+    expect(f.status()).toBeNull();
+  });
+
+  it("allows one login at a time, and another once the last one ended", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    await expect(
+      f.start({ name: "side", configDir: "/d/side" }),
+    ).rejects.toThrow(/login of team is still running/);
+    spawned[0]!.exit(0);
+    await tick();
+    await f.start({ name: "side", configDir: "/d/side" });
+    expect(f.status()).toMatchObject({ name: "side", phase: "running" });
+  });
+
+  it("starts one login when two are asked for at the same moment", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    const results = await Promise.allSettled([
+      f.start({ name: "team", configDir: "/d/team" }),
+      f.start({ name: "side", configDir: "/d/side" }),
+    ]);
+    expect(results.map((r) => r.status)).toEqual(["fulfilled", "rejected"]);
+    expect(String((results[1] as PromiseRejectedResult).reason)).toMatch(
+      /login of team is still starting/,
+    );
+    expect(spawned).toHaveLength(1);
+    expect(f.status()).toMatchObject({ name: "team", phase: "running" });
+  });
+
+  it("does not start a login cancelled while its directory was being made", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    const starting = f.start({ name: "team", configDir: "/d/team" });
+    f.cancel();
+    await expect(starting).rejects.toThrow(/cancelled/);
+    expect(spawned).toHaveLength(0);
+    expect(f.status()).toBeNull();
+    // And the next one starts normally.
+    await f.start({ name: "team", configDir: "/d/team" });
+    expect(spawned).toHaveLength(1);
+  });
+
+  it("gives up after the timeout", async () => {
+    let now = NOW;
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io, { timeoutMs: 1_000, now: () => now });
+    await f.start({ name: "team", configDir: "/d/team" });
+    now = NOW + 1_500;
+    await new Promise((r) => setTimeout(r, 1_050));
+    expect(spawned[0]?.killed).toBe(true);
+    expect(f.status()).toMatchObject({
+      phase: "failed",
+      message: "timed out after 1 minute",
+    });
+  });
+
+  it("shares the default account's settings and transcripts with a directory it creates", async () => {
+    const { io, links } = fakeIo([
+      "/home/.claude/projects",
+      "/home/.claude/settings.json",
+      "/home/.claude/skills",
+      "/home/.claude/todos",
+    ]);
+    const shared: string[][] = [];
+    const { f } = flow(io, { onShared: (_name, names) => shared.push(names) });
+    await f.start({
+      name: "team",
+      configDir: "/accounts/team",
+      shareFrom: "/home/.claude",
+    });
+    // What exists there among the shared names, and nothing else (no todos).
+    expect(links).toEqual([
+      ["/home/.claude/projects", "/accounts/team/projects"],
+      ["/home/.claude/settings.json", "/accounts/team/settings.json"],
+      ["/home/.claude/skills", "/accounts/team/skills"],
+    ]);
+    expect(shared).toEqual([["projects", "settings.json", "skills"]]);
+  });
+
+  it("links the rest, and still logs in, when one entry cannot be linked", async () => {
+    const { io, links, spawned } = fakeIo([
+      "/home/.claude/projects",
+      "/home/.claude/hooks",
+      "/home/.claude/skills",
+    ]);
+    const link = io.link;
+    io.link = async (target, path) => {
+      if (target.endsWith("/hooks"))
+        throw new Error("EACCES: permission denied");
+      return link(target, path);
+    };
+    const shared: [string[], string[]][] = [];
+    const { f } = flow(io, {
+      onShared: (_name, linked, failed) => shared.push([linked, failed]),
+    });
+    await f.start({
+      name: "team",
+      configDir: "/accounts/team",
+      shareFrom: "/home/.claude",
+    });
+    expect(links.map(([, path]) => path)).toEqual([
+      "/accounts/team/projects",
+      "/accounts/team/skills",
+    ]);
+    expect(shared).toEqual([
+      [["projects", "skills"], ["hooks: EACCES: permission denied"]],
+    ]);
+    expect(spawned).toHaveLength(1);
+  });
+
+  it("reports a command the system refuses to run, and lets the next login start", async () => {
+    const { io, spawned } = fakeIo();
+    const spawn = io.spawn;
+    let refuse = true;
+    io.spawn = (args) => {
+      if (refuse)
+        throw new Error(
+          "The argument 'file' must be a string without null bytes",
+        );
+      return spawn(args);
+    };
+    const { f } = flow(io);
+    const status = await f.start({ name: "team", configDir: "/d/team" });
+    expect(status).toMatchObject({
+      phase: "failed",
+      message:
+        "could not run claude: The argument 'file' must be a string without null bytes",
+    });
+    expect(f.status()).toMatchObject({ phase: "failed" });
+    refuse = false;
+    await f.start({ name: "team", configDir: "/d/team" });
+    expect(spawned).toHaveLength(1);
+    expect(f.status()).toMatchObject({ phase: "running" });
+  });
+
+  it("leaves a directory that already existed as it is", async () => {
+    const { io, links } = fakeIo(["/accounts/team", "/home/.claude/projects"]);
+    const { f } = flow(io);
+    await f.start({
+      name: "team",
+      configDir: "/accounts/team",
+      shareFrom: "/home/.claude",
+    });
+    expect(links).toEqual([]);
+  });
+
+  it("reports a directory that could not be created", async () => {
+    const { io } = fakeIo();
+    io.mkdir = async () => {
+      throw new Error("EACCES: permission denied");
+    };
+    const { f } = flow(io);
+    await expect(
+      f.start({ name: "team", configDir: "/d/team" }),
+    ).rejects.toThrow(/EACCES/);
+    expect(f.status()).toBeNull();
+  });
+
+  it("takes only an https address for the login page", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(
+      "If the browser didn't open, visit: http://claude.example/authorize?x=1\nPaste code here if prompted > ",
+    );
+    expect(f.status()).toMatchObject({ manualUrl: null, wantsCode: true });
+  });
+
+  it("keeps a piece of an address cut in two lines out of the failure it reports", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(
+      "If the browser didn't open, visit: https://claude.com/authorize?code_challenge=AAAA\nBBBB&state=SECRET\n",
+    );
+    spawned[0]!.exit(1);
+    await tick();
+    expect(f.status()?.phase).toBe("failed");
+    expect(f.status()?.message).toBe(
+      "the login ended without a message (exit code 1)",
+    );
+  });
+
+  it("does not hand the credentials of the plugin's environment to the login", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start(
+      { name: "team", configDir: "/d/team" },
+      {
+        PATH: "/usr/bin",
+        ANTHROPIC_API_KEY: "k",
+        ANTHROPIC_AUTH_TOKEN: "t",
+        CLAUDE_CODE_OAUTH_TOKEN: "o",
+        CLAUDE_CODE_OAUTH_REFRESH_TOKEN: "r",
+        CLAUDE_CODE_USE_BEDROCK: "0",
+      },
+    );
+    expect(spawned[0]?.env).toEqual({
+      PATH: "/usr/bin",
+      CLAUDE_CODE_USE_BEDROCK: "0",
+      CLAUDE_CONFIG_DIR: "/d/team",
+      BROWSER: "/plugin/bin/open-login.sh",
+    });
+  });
+
+  it("stops the process before it reports the end, so a report that fails leaves none running", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io, {
+      onChange: (status) => {
+        if (status.phase !== "running") throw new Error("the host is gone");
+      },
+    });
+    await f.start({ name: "team", configDir: "/d/team" });
+    expect(() => f.cancel()).toThrow(/the host is gone/);
+    expect(spawned[0]?.killed).toBe(true);
+  });
+
+  it("has stopped the process by the time it reports the timeout", async () => {
+    const { io, spawned } = fakeIo();
+    let killedAtReport: boolean | undefined;
+    const { f } = flow(io, {
+      timeoutMs: 20,
+      onChange: (status) => {
+        if (status.phase === "failed") killedAtReport = spawned[0]?.killed;
+      },
+    });
+    await f.start({ name: "team", configDir: "/d/team" });
+    await new Promise((r) => setTimeout(r, 60));
+    expect(f.status()?.phase).toBe("failed");
+    expect(killedAtReport).toBe(true);
+  });
+
+  it("keeps the error the login printed right after its prompt", async () => {
+    // The prompt ends without a line break; what comes next is glued to it.
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(OPENING);
+    spawned[0]!.emit(`${BANNER}OAuth login failed: boom\n`);
+    spawned[0]!.exit(1);
+    await tick();
+    expect(f.status()?.message).toBe("OAuth login failed: boom (exit code 1)");
+  });
+
+  it("keeps a one-word error that no address precedes", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(`${OPENING}error=access_denied\n`);
+    spawned[0]!.exit(1);
+    await tick();
+    expect(f.status()?.message).toBe("error=access_denied (exit code 1)");
+  });
+
+  it("blanks a pasted code the login printed back", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(BANNER);
+    f.code("  PASTED-code#state ");
+    spawned[0]!.emit("PASTED-code#state\nInvalid code PASTED-code#state\n");
+    spawned[0]!.exit(1);
+    await tick();
+    expect(f.status()?.message).toBe("Invalid code <code> (exit code 1)");
+  });
+
+  it("cuts a long message and drops the control characters in it", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    spawned[0]!.emit(`${"x".repeat(9_000)}\n`);
+    spawned[0]!.exit(1);
+    await tick();
+    const message = f.status()?.message ?? "";
+    expect(message.length).toBeLessThanOrEqual(200 + "… (exit code 1)".length);
+    expect(message.endsWith("… (exit code 1)")).toBe(true);
+  });
+
+  it("takes a code of one line only", async () => {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    expect(() => f.code("abc\nrm -rf")).toThrow(/one line/);
+    expect(() => f.code("abc\u001b[2J")).toThrow(/one line/);
+    expect(spawned[0]?.written).toEqual([]);
+    f.code(" abc#def \n");
+    expect(spawned[0]?.written).toEqual(["abc#def\n"]);
+  });
+
+  /** The message of a login that printed `chunks` and ended with exit code 1. */
+  async function failure(
+    chunks: string[],
+    code: string | null = null,
+  ): Promise<string | null> {
+    const { io, spawned } = fakeIo();
+    const { f } = flow(io);
+    await f.start({ name: "team", configDir: "/d/team" });
+    const [first, ...rest] = chunks;
+    spawned[0]!.emit(first ?? "");
+    if (code !== null) f.code(code);
+    for (const chunk of rest) spawned[0]!.emit(chunk);
+    spawned[0]!.exit(1);
+    await tick();
+    return f.status()?.message ?? null;
+  }
+  const NOTHING = "the login ended without a message (exit code 1)";
+  const VISIT = "If the browser didn't open, visit: ";
+
+  it("reports no piece of an address cut in lines, whatever the piece looks like", async () => {
+    // No = & or % in the tail: it is a piece of the address all the same.
+    expect(
+      await failure([
+        `${VISIT}https://claude.com/authorize?challenge=AAAA\nqwertyuiop\nasdfghjkl\n`,
+      ]),
+    ).toBe(NOTHING);
+    // Cut by a lone carriage return.
+    expect(
+      await failure([
+        `${VISIT}https://claude.com/authorize?cod\re_challenge=AAAA&state=SECRET\n`,
+      ]),
+    ).toBe(NOTHING);
+    // The line of the address alone is not an error either.
+    expect(await failure([BANNER])).toBe(NOTHING);
+  });
+
+  it("keeps an error of one word printed after the prompt", async () => {
+    expect(await failure([`${BANNER}error=access_denied\n`])).toBe(
+      "error=access_denied (exit code 1)",
+    );
+  });
+
+  it("blanks an address in capitals, a local one, and either half of a pasted code", async () => {
+    expect(
+      await failure(
+        [
+          BANNER,
+          "\nInvalid state secondHALF456 for FIRSThalf123 at HTTPS://claude.com/x?state=S or http://localhost:4000/callback?code=C\n",
+        ],
+        "firstHALF123#SECONDhalf456",
+      ),
+    ).toBe("Invalid state <code> for <code> at <url> or <url> (exit code 1)");
+  });
+
+  it("leaves a few pasted characters as they are: they are no code", async () => {
+    expect(await failure([BANNER, "\nabc is not a code\n"], "abc")).toBe(
+      "abc is not a code (exit code 1)",
+    );
+  });
+
+  it("drops the escapes and control characters of the line it reports", async () => {
+    expect(
+      await failure([
+        "\u001b[?25lLogin fai\u0007led: bo\u0001om\u001b[?25h\u001b[1;31m!\u001b[0m\n",
+      ]),
+    ).toBe("Login failed: boom! (exit code 1)");
+  });
+});

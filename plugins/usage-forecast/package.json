@@ -1,0 +1,52 @@
+{
+  "name": "bb-plugin-usage-forecast",
+  "version": "0.4.20",
+  "description": "Provider usage limits with a reset forecast, the thread context-window fill and auto-compact.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "ponomr",
+  "repository": {
+    "url": "https://github.com/ponomr/bb-plugin-usage-forecast.git",
+    "type": "git"
+  },
+  "engines": {
+    "bbPluginSdk": ">=0.6.132 <0.7.0",
+    "bb": ">=0.49.0 <1.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "bb plugin build"
+  },
+  "bb": {
+    "name": "Usage Forecast",
+    "description": "Provider usage limits with a reset forecast, the thread context-window fill and auto-compact.",
+    "branding": {
+      "icon": "./assets/usage-forecast.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "@get-bb/plugin-sdk": "0.6.132",
+    "@radix-ui/react-slot": "^1.5.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "jsdom": "^31.0.0",
+    "tailwind-merge": "^3.7.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.12"
+  }
+}

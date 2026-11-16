@@ -1,0 +1,409 @@
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { CodeEditor } from "./CodeEditor";
+import { ExcalidrawEditor } from "./ExcalidrawEditor";
+import { MarkdownEditor } from "./MarkdownEditor";
+import type { SaveState, TabState } from "../hooks/useFilesWorkspace";
+
+function isMarkdown(path: string): boolean {
+  return /\.(?:md|mdx|markdown)$/iu.test(path);
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
+}
+
+function SaveLabel({ state, dirty }: { state: SaveState; dirty: boolean }) {
+  const label =
+    state.kind === "saving"
+      ? "Saving…"
+      : state.kind === "conflict"
+        ? "Conflict"
+        : state.kind === "error"
+          ? "Save failed"
+          : dirty
+            ? "Unsaved"
+            : "Saved";
+  return (
+    <span
+      className={
+        state.kind === "conflict" || state.kind === "error"
+          ? "text-xs text-destructive-text"
+          : "text-xs text-muted-foreground"
+      }
+      role="status"
+      aria-live="polite"
+    >
+      {label}
+    </span>
+  );
+}
+
+export function getFileIconForEditor(name: string) {
+  const lower = name.toLowerCase();
+  if (/\.(ts|tsx|js|jsx|json|css|scss|html|xml|yaml|yml|sh|bash|sql)$/.test(lower)) return "Code";
+  if (/\.excalidraw$/.test(lower)) return "Edit";
+  if (/\.(md|txt|csv|log)$/.test(lower)) return "FileText";
+  if (/\.(png|jpg|jpeg|gif|svg|webp|ico|icns)$/.test(lower)) return "FileAttachment";
+  return "File";
+}
+
+function isSqlPath(path: string): boolean {
+  return /\.sql$/iu.test(path);
+}
+
+export function EditorPane({
+  tabs,
+  activePath,
+  narrow,
+  onTabSelect,
+  onTabClose,
+  onChange,
+  onOverwrite,
+  onReload,
+  onSave,
+  onDownload,
+  onOpenInAnnotate,
+  showAnnotate,
+  onOpenInSql,
+  showSql,
+  onOpenPreferred,
+  onToggleSidebar,
+  isSidebarOpen,
+  getDownloadUrl,
+}: {
+  tabs: TabState[];
+  activePath: string | null;
+  narrow: boolean;
+  onTabSelect(path: string): void;
+  onTabClose(path: string): void;
+  onChange(path: string, value: string): void;
+  onOverwrite(path: string): void;
+  onReload(path: string): void;
+  onSave(path: string): void;
+  onDownload(path: string): void;
+  onOpenInAnnotate(path: string): void;
+  showAnnotate: boolean;
+  onOpenInSql(path: string): void;
+  showSql: boolean;
+  onOpenPreferred(path: string): void;
+  onToggleSidebar?(): void;
+  isSidebarOpen?: boolean;
+  getDownloadUrl(path: string): Promise<string>;
+}) {
+  const [mode, setMode] = useState<"preview" | "raw">("raw");
+  const [copied, setCopied] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  
+  const activeTab = tabs.find(t => t.path === activePath);
+  const file = activeTab?.file || null;
+  const draftText = activeTab?.draftText || "";
+  const saveState = activeTab?.saveState || { kind: "saved" };
+  const fileLoading = activeTab?.loading || false;
+  const isDirty = file?.state === "text" && draftText !== activeTab?.savedText;
+
+  const markdown = file !== null && isMarkdown(file.path);
+  const isHtml = file !== null && /\.(html|htm)$/i.test(file.path);
+  const isExcalidraw =
+    file?.state === "text" && /\.excalidraw$/i.test(file.path);
+  const isImage = file !== null && file.state === "unsupported" && Boolean(file.mimeType?.startsWith("image/"));
+  const previewSrc = previewUrl && file ? `${previewUrl}${previewUrl.includes("?") ? "&" : "?"}t=${encodeURIComponent(file.sha256)}` : null;
+
+  useEffect(() => setMode(markdown || isHtml ? "preview" : "raw"), [file?.path, markdown, isHtml]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if ((isImage || isHtml) && file) {
+      getDownloadUrl(file.path).then((url) => {
+        if (!cancelled) setPreviewUrl(url);
+      }).catch(() => {
+        if (!cancelled) setPreviewUrl(null);
+      });
+    } else {
+      setPreviewUrl(null);
+    }
+    return () => void (cancelled = true);
+  }, [file?.path, file?.sha256, isImage, isHtml, getDownloadUrl]);
+
+  return (
+    <section className="flex h-full min-h-0 min-w-0 flex-col bg-background">
+      {/* TAB BAR */}
+      <div className="relative flex h-8 shrink-0 items-center overflow-hidden bg-background/50">
+        <div className="flex h-full min-w-0 flex-1 items-center overflow-x-auto no-scrollbar">
+          <div className="flex h-full shrink-0 flex-nowrap items-center">
+            {tabs.map(tab => {
+            const isActive = tab.path === activePath;
+            const tabIsDirty = tab.file?.state === "text" && tab.draftText !== tab.savedText;
+            const name = tab.path.split("/").pop() || "";
+            return (
+              <div 
+                key={tab.path}
+                onClick={() => onTabSelect(tab.path)}
+                className={`group relative flex h-[30px] max-w-[200px] shrink-0 cursor-pointer items-center gap-1.5 px-2.5 text-xs transition-colors ${
+                  isActive ? "bg-background text-foreground" : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                }`}
+              >
+                <Icon name={getFileIconForEditor(name) as any} className="h-3.5 w-3.5 opacity-80" />
+                <span className="min-w-0 flex-1 truncate select-none">
+                  {name}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTabClose(tab.path);
+                  }}
+                  className="grid h-4 w-4 shrink-0 place-items-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted-foreground/20 hover:text-foreground group-hover:opacity-100"
+                  aria-label="Close file"
+                >
+                  {tabIsDirty ? (
+                    <div className="h-2 w-2 rounded-full bg-foreground opacity-100" />
+                  ) : (
+                    <Icon name="X" className="h-3 w-3" />
+                  )}
+                </button>
+                {/* Always show dirty dot when not hovered */}
+                {tabIsDirty && (
+                  <div className="absolute right-3.5 h-2 w-2 rounded-full bg-foreground opacity-100 group-hover:opacity-0 transition-opacity pointer-events-none" />
+                )}
+              </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="relative flex h-full shrink-0 items-center gap-0.5 bg-background px-1 before:pointer-events-none before:absolute before:inset-y-0 before:right-full before:w-4 before:bg-gradient-to-r before:from-transparent before:to-background">
+          {isHtml && file?.state === "text" ? (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+              aria-label="Open preview"
+              disabled={!previewSrc}
+              onClick={() => {
+                if (!previewSrc) return;
+                window.open(previewSrc, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <Icon name="ExternalLink" className="h-3.5 w-3.5" />
+            </Button>
+          ) : null}
+          {(markdown || isHtml) && file?.state === "text" ? (
+            <div
+              className="mr-0.5 flex shrink-0 items-center gap-0.5"
+              role="group"
+              aria-label="View mode"
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-[22px] rounded-sm px-2 text-[11px] text-muted-foreground aria-pressed:text-foreground"
+                aria-pressed={mode === "preview"}
+                onClick={() => setMode("preview")}
+              >
+                Preview
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-[22px] rounded-sm px-2 text-[11px] text-muted-foreground aria-pressed:text-foreground"
+                aria-pressed={mode === "raw"}
+                onClick={() => setMode("raw")}
+              >
+                Raw
+              </Button>
+            </div>
+          ) : null}
+          {file !== null ? (
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                aria-label="Open with preferred opener"
+                onClick={() => onOpenPreferred(activePath!)}
+              >
+                <Icon name="ExternalLink" className="h-3.5 w-3.5" />
+              </Button>
+              {showSql && isSqlPath(activePath ?? "") ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  aria-label="Open in SQL"
+                  onClick={() => onOpenInSql(activePath!)}
+                >
+                  <Icon name="Terminal" className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
+              {markdown && showAnnotate ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  aria-label="Open in Annotate"
+                  onClick={() => onOpenInAnnotate(activePath!)}
+                >
+                  <Icon name="MessageSquare" className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                aria-label="Download file"
+                onClick={() => onDownload(activePath!)}
+              >
+                <Icon name="Download" className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                aria-label={copied ? "Copied" : "Copy file content"}
+                disabled={file.state !== "text"}
+                onClick={async () => {
+                  if (file.state !== "text") return;
+                  try {
+                    await navigator.clipboard.writeText(draftText);
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 1200);
+                  } catch {
+                    /* clipboard unavailable */
+                  }
+                }}
+              >
+                <Icon name={copied ? "Check" : "Copy"} className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          ) : null}
+
+          {!isSidebarOpen && onToggleSidebar ? (
+            <>
+              {file !== null ? <div className="w-[1px] h-4 bg-border-seam mx-1" /> : null}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                aria-label="Show sidebar"
+                onClick={onToggleSidebar}
+              >
+                <Icon name="PanelRight" className="h-4 w-4" />
+              </Button>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      {/* MAIN CONTENT AREA */}
+      {fileLoading && file === null ? (
+        <div className="grid h-full place-items-center text-sm text-muted-foreground" role="status">
+          Loading file…
+        </div>
+      ) : file === null ? (
+        <div className="grid h-full place-items-center p-6 text-center text-sm text-muted-foreground bg-background">
+          <div className="opacity-50 select-none">
+            <Icon name="Code" className="mx-auto mb-4 h-16 w-16 stroke-[1px]" aria-hidden />
+            <p className="font-medium text-base tracking-tight">BB Files Editor</p>
+            <p className="mt-1 text-xs">Select a file from the explorer to begin.</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {saveState.kind === "conflict" ? (
+            <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-surface-destructive-border bg-surface-destructive px-3 py-2 text-xs text-destructive-text" role="alert">
+              The file changed outside this editor. Your draft is preserved.
+              <Button size="sm" variant="outline" className="ml-auto h-6 text-xs" onClick={() => onReload(activePath!)}>
+                Reload
+              </Button>
+              <Button size="sm" variant="destructive" className="h-6 text-xs" onClick={() => onOverwrite(activePath!)}>
+                Overwrite
+              </Button>
+            </div>
+          ) : saveState.kind === "error" ? (
+            <div className="flex shrink-0 items-center gap-2 border-b border-surface-destructive-border bg-surface-destructive px-3 py-2 text-xs text-destructive-text" role="alert">
+              {saveState.message}
+              <Button size="sm" variant="outline" className="ml-auto h-6 text-xs" onClick={() => onSave(activePath!)}>
+                Retry
+              </Button>
+            </div>
+          ) : null}
+
+          <div className="min-h-0 flex-1 overflow-hidden relative">
+            {isExcalidraw ? (
+              <ExcalidrawEditor
+                content={draftText}
+                filePath={file.path}
+                onChange={(value) => onChange(activePath!, value)}
+                onSave={() => onSave(activePath!)}
+              />
+            ) : isImage ? (
+              <div className="grid h-full place-items-center bg-[var(--canvas)] p-6 checkerboard-bg">
+                {previewUrl ? (
+                  <img 
+                    src={previewUrl} 
+                    alt={file.path} 
+                    className="max-h-full max-w-full object-contain drop-shadow-md"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Loading image preview…</p>
+                )}
+              </div>
+            ) : file.state === "unsupported" ? (
+              <div className="grid h-full place-items-center p-6 text-center bg-background">
+                <div className="max-w-sm">
+                  <Icon name="FileQuestion" className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-50" aria-hidden />
+                  <p className="text-sm font-medium text-foreground">
+                    {file.reason === "binary" ? "Binary file" : "File is too large"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatBytes(file.sizeBytes)} · This file is available as metadata only and cannot be edited here.
+                  </p>
+                </div>
+              </div>
+            ) : (markdown || isHtml) && mode === "preview" ? (
+              <div className="h-full overflow-hidden bg-background">
+                {markdown ? (
+                  <MarkdownEditor
+                    filePath={file.path}
+                    value={draftText}
+                    onChange={(value) => onChange(activePath!, value)}
+                    onSave={() => onSave(activePath!)}
+                  />
+                ) : (
+                  <iframe 
+                    src={previewSrc ?? "about:blank"} 
+                    className="w-full h-full border-0 bg-white"
+                    title="HTML Preview"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  />
+                )}
+              </div>
+            ) : (
+              <CodeEditor
+                filePath={file.path}
+                value={draftText}
+                onChange={(val) => onChange(activePath!, val)}
+                onSave={() => onSave(activePath!)}
+              />
+            )}
+          </div>
+          <div className="flex h-6 shrink-0 items-center justify-between bg-background px-3 text-[11px] text-muted-foreground select-none">
+            <div className="flex items-center gap-3">
+              {file.state === "text" ? (
+                <span className="flex items-center gap-1.5">
+                  <div className={`h-1.5 w-1.5 rounded-full ${isDirty ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                  {isDirty ? 'Unsaved' : 'Saved'}
+                </span>
+              ) : null}
+              <span>{file.state === "text" ? "UTF-8" : file.reason === "binary" ? "Binary" : "Unsupported"}</span>
+            </div>
+            <span>{formatBytes(file.sizeBytes)}</span>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}

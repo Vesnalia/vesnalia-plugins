@@ -1,0 +1,105 @@
+import type { ReactNode } from "react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { Icon } from "@/components/ui/icon";
+import type { FileTreeEntry } from "../hooks/useFilesWorkspace";
+
+export type FileAction =
+  | "create-file"
+  | "create-directory"
+  | "rename"
+  | "duplicate"
+  | "delete"
+  | "copy-path"
+  | "download"
+  | "upload"
+  | "annotate"
+  | "open-sql"
+  | "open-preferred";
+
+function isMarkdownPath(path: string): boolean {
+  return /\.(?:md|mdx|markdown)$/iu.test(path);
+}
+
+function isSqlPath(path: string): boolean {
+  return /\.sql$/iu.test(path);
+}
+
+export function FileContextMenu({
+  children,
+  entry,
+  onAction,
+  showAnnotate,
+  showSql,
+}: {
+  children: ReactNode;
+  entry: FileTreeEntry;
+  onAction(action: FileAction, entry: FileTreeEntry): void;
+  showAnnotate: boolean;
+  showSql: boolean;
+}) {
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="w-56">
+        {entry.kind === "directory" ? (
+          <>
+            <ContextMenuItem onSelect={() => onAction("create-file", entry)}>
+              <Icon name="File" /> New file
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => onAction("create-directory", entry)}
+            >
+              <Icon name="FolderPlus" /> New folder
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => onAction("upload", entry)}>
+              <Icon name="ArrowUp" /> Upload files
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        ) : (
+          <>
+            <ContextMenuItem onSelect={() => onAction("open-preferred", entry)}>
+              <Icon name="ExternalLink" /> Open with preferred…
+            </ContextMenuItem>
+            {showSql && isSqlPath(entry.path) ? (
+              <ContextMenuItem onSelect={() => onAction("open-sql", entry)}>
+                <Icon name="Terminal" /> Open in SQL
+              </ContextMenuItem>
+            ) : null}
+            {showAnnotate && isMarkdownPath(entry.path) ? (
+              <ContextMenuItem onSelect={() => onAction("annotate", entry)}>
+                <Icon name="MessageSquare" /> Open in Annotate
+              </ContextMenuItem>
+            ) : null}
+            <ContextMenuItem onSelect={() => onAction("download", entry)}>
+              <Icon name="Download" /> Download
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        )}
+        <ContextMenuItem onSelect={() => onAction("rename", entry)}>
+          <Icon name="Edit" /> Rename
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => onAction("duplicate", entry)}>
+          <Icon name="Copy" /> Duplicate
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => onAction("copy-path", entry)}>
+          <Icon name="Copy" /> Copy relative path
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          className="text-destructive-text focus:text-destructive-text"
+          onSelect={() => onAction("delete", entry)}
+        >
+          <Icon name="Trash2" /> Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}

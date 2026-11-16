@@ -1,0 +1,639 @@
+import type { ReactNode } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { ANCHORED_OVERLAY_MOTION } from "@/components/ui/motion";
+import { cn } from "@/lib/utils";
+import { usePortalScopeProps } from "@/lib/portal-scope";
+import type { SidebarView } from "./server";
+import {
+  AGE_FILTER_LABELS,
+  machineGroupIcon,
+  STATUS_FILTER_LABELS,
+  THREADS_PER_GROUP_VALUES,
+  VIEW_AGE_FILTERS,
+  VIEW_GROUP_BY,
+  VIEW_STATUS_FILTERS,
+  ageFilterPatch,
+  allAgeFilterPatch,
+  allEnvironmentFilterPatch,
+  allProjectFilterPatch,
+  allPrFilterPatch,
+  prFilterPatch,
+  PR_FILTER_LABELS,
+  VIEW_PR_FILTERS,
+  type ViewPrFilter,
+  allStatusFilterPatch,
+  environmentFilterPatch,
+  projectFilterPatch,
+  type ProjectIdentity,
+  sidebarViewSyncNotice,
+  statusFilterPatch,
+  threadsPerGroupLabel,
+  type EnvironmentIdentity,
+  type SidebarViewSync,
+  type ThreadsPerGroup,
+  type ViewAgeFilter,
+  type ViewConversationOrder,
+  type ViewGroupBy,
+  type ViewProjectOrder,
+  type ViewStatusFilter,
+} from "./sidebar-view";
+
+export interface SidebarViewMenuTriggerProps {
+  /** Whether the shown view is saved, saving, unsaved or unreadable. */
+  sync: SidebarViewSync;
+  /** Replaces the default toolbar trigger sizing when the menu sits on a heading. */
+  triggerClassName?: string;
+}
+
+export interface SidebarViewMenuRootProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: ReactNode;
+  view: SidebarView;
+  sync: SidebarViewSync;
+  onRetry: () => void;
+  onUpdate: (patch: Partial<SidebarView>) => void;
+  /** Environments present in the loaded ordinary conversations. */
+  environmentOptions: readonly EnvironmentIdentity[];
+  /** True when a loaded ordinary conversation has no environment. */
+  /** Projects present in the loaded conversations, for the project filter. */
+  projectOptions: readonly ProjectIdentity[];
+  /** Every collapsible target in the controlled scope, for the bulk toggle. */
+  anyCollapsed: boolean;
+  onExpandAll: () => void;
+  onCollapseAll: () => void;
+  /** Unread ordinary conversations the bulk read covers. */
+  unreadOrdinaryCount: number;
+  markReadBusy: boolean;
+  onMarkAllRead: () => void;
+  /** Archive every listed thread that is not pinned or working, after a confirm. */
+  onArchiveAll: () => void;
+}
+
+/**
+ * The menu surface and row shared with the project switcher, so a second menu
+ * in the same sidebar cannot drift from this one's look and focus treatment.
+ */
+export const GROUPING_HEADINGS: Record<ViewGroupBy, string> = {
+  workspace: "Repositories",
+  updated: "Chats",
+  status: "Chats",
+  environment: "Chats",
+  none: "Threads",
+};
+
+export const VIEW_MENU_CONTENT =
+  `cs-view-menu z-50 w-max max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md ${ANCHORED_OVERLAY_MOTION}`;
+export const VIEW_MENU_ITEM =
+  "flex min-h-7 cursor-pointer select-none items-center gap-2 rounded py-1 pl-2 pr-3 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground";
+const CONTENT = VIEW_MENU_CONTENT;
+const ITEM = VIEW_MENU_ITEM;
+const OPTION =
+  "relative flex min-h-7 cursor-pointer select-none items-center gap-2 rounded py-1 pl-2 pr-6 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground text-muted-foreground data-[state=checked]:text-foreground";
+const SECTION_LABEL =
+  "px-2 py-1 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70";
+
+/** The tick sits at the right edge. */
+function CheckMark() {
+  return (
+    <span className="absolute right-1.5 flex size-3.5 items-center justify-center">
+      <DropdownMenu.ItemIndicator>
+        <Icon name="Check" className="size-3.5 text-primary" />
+      </DropdownMenu.ItemIndicator>
+    </span>
+  );
+}
+
+function OptionIcon({ icon }: { icon?: IconName | undefined }) {
+  return icon === undefined ? null : (
+    <Icon name={icon} className="size-3.5 shrink-0 text-muted-foreground/70" aria-hidden="true" />
+  );
+}
+
+function ChoiceItem({ value, label, icon }: { value: string; label: string; icon?: IconName }) {
+  return (
+    <DropdownMenu.RadioItem value={value} onSelect={(event) => event.preventDefault()} className={OPTION}>
+      <CheckMark />
+      <OptionIcon icon={icon} />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+    </DropdownMenu.RadioItem>
+  );
+}
+
+function ToggleItem({
+  checked,
+  label,
+  icon,
+  onToggle,
+}: {
+  checked: boolean;
+  label: string;
+  icon?: IconName;
+  onToggle: (next: boolean) => void;
+}) {
+  return (
+    <DropdownMenu.CheckboxItem
+      checked={checked}
+      onCheckedChange={onToggle}
+      onSelect={(event) => event.preventDefault()}
+      className={OPTION}
+    >
+      <CheckMark />
+      <OptionIcon icon={icon} />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+    </DropdownMenu.CheckboxItem>
+  );
+}
+
+/** A submenu row: label, its current value, then the chevron. */
+function SubTrigger({ label, value }: { label: string; value?: string | undefined }) {
+  return (
+    <DropdownMenu.SubTrigger className={SUB_TRIGGER}>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {value === undefined ? null : (
+        <span className="shrink-0 text-2xs text-muted-foreground/60">{value}</span>
+      )}
+      <Icon name="ChevronRight" className="size-3.5 shrink-0 text-muted-foreground/60" />
+    </DropdownMenu.SubTrigger>
+  );
+}
+
+function Section({ children }: { children: ReactNode }) {
+  return (
+    <DropdownMenu.Sub>
+      {children}
+    </DropdownMenu.Sub>
+  );
+}
+
+/** The All / None pair that heads a filter submenu. */
+function FilterHeader({ label, onAll, onNone }: { label: string; onAll: () => void; onNone: () => void }) {
+  const className =
+    "rounded px-1 text-2xs text-muted-foreground/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring";
+  return (
+    <div className="flex items-center justify-between px-2 py-1">
+      <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">{label}</span>
+      <span className="flex items-center gap-1">
+        <button type="button" onClick={onAll} className={className}>All</button>
+        <button type="button" onClick={onNone} className={className}>None</button>
+      </span>
+    </div>
+  );
+}
+
+const GROUPING_LABELS: Record<ViewGroupBy, string> = {
+  workspace: "Repository",
+  updated: "Updated",
+  status: "Status",
+  environment: "Environment",
+  none: "None",
+};
+
+const GROUPING_ICONS: Record<ViewGroupBy, IconName> = {
+  workspace: "FolderGit",
+  updated: "Clock",
+  status: "Spinner",
+  environment: "Cloud",
+  none: "ListView",
+};
+
+const PR_FILTER_ICONS: Record<ViewPrFilter, IconName> = {
+  draft: "GitPullRequestDraft",
+  open: "GitPullRequest",
+  merged: "GitMerge",
+  closed: "GitPullRequestClosed",
+  none: "Circle",
+};
+
+const STATUS_ICONS: Record<ViewStatusFilter, IconName> = {
+  input: "MessageQuestion",
+  failed: "CircleX",
+  working: "Spinner",
+  unread: "BellDot",
+  idle: "Circle",
+  draft: "Edit",
+};
+
+const SUB_TRIGGER = cn(
+  ITEM,
+  "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+);
+
+/**
+ * The persistent feedback for a save or read failure, with one bounded retry.
+ * It stays until a later successful write clears it, so a recovery read never
+ * makes an unsaved choice look saved.
+ */
+export function SidebarViewSyncNotice({
+  sync,
+  onRetry,
+  className,
+}: {
+  sync: SidebarViewSync;
+  onRetry: () => void;
+  className?: string;
+}) {
+  const notice = sidebarViewSyncNotice(sync);
+  if (notice === null) return null;
+  return (
+    <div
+      role="status"
+      className={cn(
+        "flex items-start gap-1.5 px-3 pb-1 text-2xs leading-tight",
+        notice.tone === "warning" ? "text-warning-text" : "text-destructive",
+        className,
+      )}
+    >
+      <Icon
+        name={notice.tone === "warning" ? "AlertTriangle" : "CircleX"}
+        className="mt-px size-3 shrink-0"
+        aria-hidden="true"
+      />
+      <span className="min-w-0 max-w-56 flex-1">{notice.text}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="shrink-0 rounded underline decoration-dotted underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The compact view menu. It groups the controls as submenus (Grouping,
+ * Ordering, Threads per group, Show, Filters) over the one persisted
+ * SidebarView, using BB's theme tokens. Grouping is one radio: Projects, Updated, Status,
+ * Environment or None — selecting one replaces the current extra grouping; they
+ * never stack. Ordering chooses how conversations, projects and group sections
+ * are sorted; None has no sections, so it offers only the conversation order. Radix menu primitives supply real arrow-key navigation, roving focus
+ * and typeahead, so the radio and checkbox semantics work from the keyboard,
+ * not from role attributes alone.
+ *
+ * The root and the trigger are separate pieces: the root holds the open state
+ * and the menu surface, while a trigger only draws the toolbar button. The list
+ * owns the root, so changing grouping, which moves the trigger to a different
+ * heading, leaves the open menu in place.
+ */
+export function SidebarViewMenuTrigger({ sync, triggerClassName }: SidebarViewMenuTriggerProps) {
+  const notice = sidebarViewSyncNotice(sync);
+  return (
+    <DropdownMenu.Trigger asChild>
+      <button
+        type="button"
+        aria-label={notice === null ? "Customize sidebar view" : `Customize sidebar view. ${notice.text}`}
+        title={notice === null ? "Customize" : notice.text}
+        className={
+          triggerClassName ??
+          "flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground/55 hover:text-foreground data-[state=open]:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring max-md:size-9 pointer-coarse:size-9"
+        }
+      >
+        <Icon name="ListFilter" className="size-3.5" />
+        {notice !== null ? (
+          <Icon
+            name={notice.tone === "warning" ? "AlertTriangle" : "CircleX"}
+            className={cn("size-3.5", notice.tone === "warning" ? "text-warning-text" : "text-destructive")}
+            aria-hidden="true"
+          />
+        ) : null}
+      </button>
+    </DropdownMenu.Trigger>
+  );
+}
+
+export function SidebarViewMenuRoot({
+  open,
+  onOpenChange,
+  children,
+  view,
+  sync,
+  onRetry,
+  onUpdate,
+  environmentOptions,
+  projectOptions,
+  anyCollapsed,
+  onExpandAll,
+  onCollapseAll,
+  unreadOrdinaryCount,
+  markReadBusy,
+  onMarkAllRead,
+  onArchiveAll,
+}: SidebarViewMenuRootProps) {
+  const scope = usePortalScopeProps();
+  const notice = sidebarViewSyncNotice(sync);
+  const environmentKeys = environmentOptions.map((environment) => environment.id);
+  const toggleStatus = (status: ViewStatusFilter, on: boolean) =>
+    onUpdate(statusFilterPatch(view, status, on));
+  const setAllStatuses = (on: boolean) => onUpdate(allStatusFilterPatch(on));
+  const toggleAge = (bucket: ViewAgeFilter, on: boolean) =>
+    onUpdate(ageFilterPatch(view, bucket, on));
+  const setAllAges = (on: boolean) => onUpdate(allAgeFilterPatch(on));
+  const environmentSelected = (id: string) =>
+    view.environmentFilter === null || view.environmentFilter.includes(id);
+  const toggleEnvironment = (id: string, on: boolean) =>
+    onUpdate(environmentFilterPatch(view, id, environmentKeys, on));
+  const setAllEnvironments = (on: boolean) => onUpdate(allEnvironmentFilterPatch(on));
+  const projectKeys = projectOptions.map((project) => project.id);
+  const projectSelected = (id: string) => view.projectFilter === null || view.projectFilter.includes(id);
+  const toggleProject = (id: string, on: boolean) => onUpdate(projectFilterPatch(view, id, projectKeys, on));
+  const setAllProjects = (on: boolean) => onUpdate(allProjectFilterPatch(on));
+  const prSelected = (state: ViewPrFilter) => view.prFilter === null || view.prFilter.includes(state);
+  const prFilterValue =
+    view.prFilter === null
+      ? "All"
+      : view.prFilter.length === 1
+        ? PR_FILTER_LABELS[view.prFilter[0]!]
+        : `${view.prFilter.length} selected`;
+  const projectFilterValue = (() => {
+    if (view.projectFilter === null) return "All";
+    if (view.projectFilter.length === 1) {
+      return projectOptions.find((project) => project.id === view.projectFilter![0])?.label ?? "1 selected";
+    }
+    return `${view.projectFilter.length} selected`;
+  })();
+  const statusFilterValue =
+    view.statusFilter.length === VIEW_STATUS_FILTERS.length
+      ? "All"
+      : `${view.statusFilter.length} selected`;
+  const ageFilterValue =
+    view.ageFilter.length === VIEW_AGE_FILTERS.length
+      ? "All"
+      : view.ageFilter.length === 1
+        ? AGE_FILTER_LABELS[view.ageFilter[0]!]
+        : `${view.ageFilter.length} selected`;
+  const environmentFilterValue = (() => {
+    if (view.environmentFilter === null) return "All";
+    if (view.environmentFilter.length === 1) {
+      const only = view.environmentFilter[0]!;
+      return environmentOptions.find((environment) => environment.id === only)?.label ?? "1 selected";
+    }
+    return `${view.environmentFilter.length} selected`;
+  })();
+
+  return (
+    <DropdownMenu.Root open={open} onOpenChange={onOpenChange}>
+      {children}
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          {...scope}
+          align="start"
+          sideOffset={4}
+          className={CONTENT}
+          // Selecting a grouping moves the trigger to another heading, which
+          // unmounts the focused button. Without this the menu would close on
+          // that focus change; Escape, a click outside, or picking an action
+          // still closes it.
+          onFocusOutside={(event) => event.preventDefault()}
+        >
+          {notice !== null ? <SidebarViewSyncNotice sync={sync} onRetry={onRetry} /> : null}
+          <Section>
+            <SubTrigger label="Grouping" value={GROUPING_LABELS[view.groupBy]} />
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                <DropdownMenu.RadioGroup
+                  value={view.groupBy}
+                  onValueChange={(value) => onUpdate({ groupBy: value as ViewGroupBy })}
+                >
+                  {VIEW_GROUP_BY.map((groupBy) => (
+                    <ChoiceItem
+                      key={groupBy}
+                      value={groupBy}
+                      label={GROUPING_LABELS[groupBy]}
+                      icon={GROUPING_ICONS[groupBy]}
+                    />
+                  ))}
+                </DropdownMenu.RadioGroup>
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </Section>
+
+          <Section>
+            <SubTrigger label="Ordering" />
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                <DropdownMenu.Label className={SECTION_LABEL}>
+                  Chats
+                </DropdownMenu.Label>
+                <DropdownMenu.RadioGroup
+                  value={view.sortConversationsBy}
+                  onValueChange={(value) =>
+                    onUpdate({ sortConversationsBy: value as ViewConversationOrder })
+                  }
+                >
+                  <ChoiceItem value="updated" label="Updated" icon="Clock" />
+                  <ChoiceItem value="status" label="Status" icon="Spinner" />
+                </DropdownMenu.RadioGroup>
+                {view.groupBy === "none" ? null : (
+                  <>
+                    <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                    {view.groupBy === "workspace" ? (
+                      <>
+                        <DropdownMenu.Label className={SECTION_LABEL}>
+                          Projects
+                        </DropdownMenu.Label>
+                        <DropdownMenu.RadioGroup
+                          value={view.sortProjectsBy}
+                          onValueChange={(value) =>
+                            onUpdate({ sortProjectsBy: value as ViewProjectOrder })
+                          }
+                        >
+                          <ChoiceItem value="manual" label="Manual" icon="ArrowUpDown" />
+                          <ChoiceItem value="status" label="Status" icon="Spinner" />
+                        </DropdownMenu.RadioGroup>
+                      </>
+                    ) : (
+                      <>
+                        <DropdownMenu.Label className={SECTION_LABEL}>
+                          Groups
+                        </DropdownMenu.Label>
+                        <DropdownMenu.RadioGroup
+                          value={view.sortGroupsBy}
+                          onValueChange={(value) =>
+                            onUpdate({ sortGroupsBy: value as "manual" | "updated" })
+                          }
+                        >
+                          <ChoiceItem value="updated" label="Updated" icon="Clock" />
+                          {/* "manual" is the persisted default; no drag writes a
+                              group order, so it reads as the canonical one. */}
+                          <ChoiceItem value="manual" label="Default" icon="ArrowUpDown" />
+                        </DropdownMenu.RadioGroup>
+                      </>
+                    )}
+                  </>
+                )}
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </Section>
+
+          <Section>
+            <SubTrigger
+              label="Threads per group"
+              value={threadsPerGroupLabel(view.threadsPerGroup)}
+            />
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                <DropdownMenu.RadioGroup
+                  value={view.threadsPerGroup === null ? "all" : String(view.threadsPerGroup)}
+                  onValueChange={(value) =>
+                    onUpdate({
+                      threadsPerGroup:
+                        value === "all" ? null : (Number(value) as ThreadsPerGroup),
+                    })
+                  }
+                >
+                  {THREADS_PER_GROUP_VALUES.map((count) => (
+                    <ChoiceItem key={count} value={String(count)} label={String(count)} />
+                  ))}
+                  <ChoiceItem value="all" label="All" />
+                </DropdownMenu.RadioGroup>
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </Section>
+
+          <Section>
+            <SubTrigger label="Show" />
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                <ToggleItem checked={view.show.updated} label="Updated time" icon="Clock" onToggle={(next) => onUpdate({ show: { ...view.show, updated: next } })} />
+                <ToggleItem checked={view.show.environment} label="Environment" icon="Cloud" onToggle={(next) => onUpdate({ show: { ...view.show, environment: next } })} />
+                <ToggleItem checked={view.show.branch} label="Branch" icon="GitBranch" onToggle={(next) => onUpdate({ show: { ...view.show, branch: next } })} />
+                <ToggleItem checked={view.show.host} label="Machine" icon="Monitor" onToggle={(next) => onUpdate({ show: { ...view.show, host: next } })} />
+                <ToggleItem checked={view.show.pr} label="Pull / merge request" icon="GitPullRequest" onToggle={(next) => onUpdate({ show: { ...view.show, pr: next } })} />
+                <ToggleItem checked={view.show.providerIcons} label="Provider icons" icon="Bot" onToggle={(next) => onUpdate({ show: { ...view.show, providerIcons: next } })} />
+                <ToggleItem checked={view.show.projectIcons} label="Project icons" icon="Folder" onToggle={(next) => onUpdate({ show: { ...view.show, projectIcons: next } })} />
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </Section>
+
+          <DropdownMenu.Separator className="my-1 h-px bg-border" />
+          <DropdownMenu.Label className={SECTION_LABEL}>Filters</DropdownMenu.Label>
+          <Section>
+            <SubTrigger label="Status" value={statusFilterValue} />
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                <FilterHeader
+                  label="Status"
+                  onAll={() => setAllStatuses(true)}
+                  onNone={() => setAllStatuses(false)}
+                />
+                {VIEW_STATUS_FILTERS.map((status) => (
+                  <ToggleItem
+                    key={status}
+                    checked={view.statusFilter.includes(status)}
+                    label={STATUS_FILTER_LABELS[status]}
+                    icon={STATUS_ICONS[status]}
+                    onToggle={(next) => toggleStatus(status, next)}
+                  />
+                ))}
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </Section>
+
+          <Section>
+            <SubTrigger label="PR / MR" value={prFilterValue} />
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                <FilterHeader label="PR / MR" onAll={() => onUpdate(allPrFilterPatch(true))} onNone={() => onUpdate(allPrFilterPatch(false))} />
+                {VIEW_PR_FILTERS.map((state) => (
+                  <ToggleItem
+                    key={state}
+                    checked={prSelected(state)}
+                    label={PR_FILTER_LABELS[state]}
+                    icon={PR_FILTER_ICONS[state]}
+                    onToggle={(next) => onUpdate(prFilterPatch(view, state, next))}
+                  />
+                ))}
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </Section>
+
+          <Section>
+            <SubTrigger label="Age" value={ageFilterValue} />
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                <FilterHeader
+                  label="Age"
+                  onAll={() => setAllAges(true)}
+                  onNone={() => setAllAges(false)}
+                />
+                {VIEW_AGE_FILTERS.map((bucket) => (
+                  <ToggleItem
+                    key={bucket}
+                    checked={view.ageFilter.includes(bucket)}
+                    label={AGE_FILTER_LABELS[bucket]}
+                    icon="Calendar"
+                    onToggle={(next) => toggleAge(bucket, next)}
+                  />
+                ))}
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </Section>
+
+          {projectOptions.length > 1 ? (
+            <Section>
+              <SubTrigger label="Repository" value={projectFilterValue} />
+              <DropdownMenu.Portal>
+                <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                  <FilterHeader label="Repository" onAll={() => setAllProjects(true)} onNone={() => setAllProjects(false)} />
+                  {projectOptions.map((project) => (
+                    <ToggleItem
+                      key={project.id}
+                      checked={projectSelected(project.id)}
+                      label={project.label}
+                      icon="Folder"
+                      onToggle={(next) => toggleProject(project.id, next)}
+                    />
+                  ))}
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Portal>
+            </Section>
+          ) : null}
+
+          {environmentOptions.length > 0 ? (
+            <Section>
+              <SubTrigger label="Environment" value={environmentFilterValue} />
+              <DropdownMenu.Portal>
+                <DropdownMenu.SubContent {...scope} sideOffset={4} alignOffset={-4} className={CONTENT}>
+                  <FilterHeader
+                    label="Environment"
+                    onAll={() => setAllEnvironments(true)}
+                    onNone={() => setAllEnvironments(false)}
+                  />
+                  {environmentOptions.map((environment) => (
+                    <ToggleItem
+                      key={environment.id}
+                      checked={environmentSelected(environment.id)}
+                      label={environment.label}
+                      icon={machineGroupIcon(environment.id) ?? "Monitor"}
+                      onToggle={(next) => toggleEnvironment(environment.id, next)}
+                    />
+                  ))}
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Portal>
+            </Section>
+          ) : null}
+
+          <DropdownMenu.Separator className="my-1 h-px bg-border" />
+          <DropdownMenu.Item
+            className={ITEM}
+            onSelect={() => (anyCollapsed ? onExpandAll() : onCollapseAll())}
+          >
+            {anyCollapsed ? "Expand All" : "Collapse All"}
+          </DropdownMenu.Item>
+          <DropdownMenu.Item
+            className={ITEM}
+            disabled={markReadBusy || unreadOrdinaryCount === 0}
+            onSelect={() => onMarkAllRead()}
+          >
+            {markReadBusy ? "Marking as read…" : "Mark All as Read"}
+          </DropdownMenu.Item>
+          <DropdownMenu.Item className={ITEM} onSelect={() => onArchiveAll()}>
+            Archive All…
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}

@@ -1,0 +1,964 @@
+// @vitest-environment node
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+import { AdapterError, type Adapter } from "../src/adapters/adapter";
+import { CommandAdapter, MERGE_DEFAULTS } from "../src/adapters/command";
+import type { RunOptions, RunResult } from "../src/adapters/exec";
+import { checkRunOf, GithubAdapter, isPlacementError, listFields, searchQuery, timelineOf, toActivity, toMergeOptions, toSummary } from "../src/adapters/github";
+import { hunkLines } from "../src/model";
+import { DEFAULT_CONFIG, parseConfig, type ServerConfig } from "../src/config";
+
+interface Call {
+  bin: string;
+  args: string[];
+  env: Record<string, string>;
+  stdin: string | undefined;
+}
+
+/** Records every process the adapter starts and answers each from `respond`. */
+function recorder(respond: (call: Call) => Partial<RunResult> | unknown = () => ({})) {
+  const calls: Call[] = [];
+  const run = async (bin: string, args: readonly string[], options: RunOptions): Promise<RunResult> => {
+    const call = { bin, args: [...args], env: options.env ?? {}, stdin: options.stdin };
+    calls.push(call);
+    const answer = respond(call) as Partial<RunResult> & { json?: unknown };
+    const stdout = answer.json === undefined ? (answer.stdout ?? "") : JSON.stringify(answer.json);
+    return { code: answer.code ?? 0, stdout, stderr: answer.stderr ?? "", timedOut: false };
+  };
+  return { calls, run };
+}
+
+const github = (hostname?: string): ServerConfig => ({ id: "github", name: "GitHub", kind: "github", enabled: true, sep: "#", commands: {}, ...(hostname ? { hostname } : {}) });
+
+type Node = Parameters<typeof toSummary>[0];
+const node = (extra: Partial<Node> = {}): Node => ({
+  number: 7, title: "T", url: "https://github.com/acme/api/pull/7", isDraft: false, state: "OPEN", reviewDecision: "REVIEW_REQUIRED",
+  headRefOid: "h2", headRefName: "sam/x", baseRefName: "main", createdAt: "2026-10-20T10:00:00Z", updatedAt: "2026-10-23T10:00:00Z",
+  closedAt: null, mergedAt: null, additions: 1, deletions: 2, changedFiles: 3, author: { login: "sam", __typename: "User" },
+  repository: { nameWithOwner: "acme/api" }, autoMergeRequest: null, commits: { nodes: [] }, labels: { nodes: [] },
+  latestReviews: { nodes: [] }, reviewRequests: { nodes: [] },
+  ...extra,
+});
+const at = (iso: string) => Date.parse(iso);
+
+describe("GitHub summaries", () => {
+  it("counts the head's checks by outcome from the rollup's counts", () => {
+    const summary = toSummary(node({
+      commits: { nodes: [{ commit: { statusCheckRollup: { state: "FAILURE", contexts: {
+        totalCount: 12,
+        checkRunCountsByState: [
+          { state: "SUCCESS", count: 2 }, { state: "NEUTRAL", count: 1 }, { state: "SKIPPED", count: 1 },
+          { state: "FAILURE", count: 1 }, { state: "TIMED_OUT", count: 1 }, { state: "STARTUP_FAILURE", count: 1 },
+          { state: "IN_PROGRESS", count: 1 }, { state: "QUEUED", count: 1 }, { state: "STALE", count: 0 },
+        ],
+        statusContextCountsByState: [{ state: "SUCCESS", count: 1 }, { state: "ERROR", count: 1 }, { state: "EXPECTED", count: 1 }, { state: "PENDING", count: 0 }],
+      } } } }] },
+    }));
+    expect(summary.checks).toBe("failed");
+    expect(summary.checkCounts).toEqual({ passed: 5, failed: 4, pending: 3, total: 12 });
+    expect(toSummary(node()).checkCounts).toEqual({ passed: 0, failed: 0, pending: 0, total: 0 });
+  });
+
+  it("reads when it opened and closed, auto-merge and a bot author", () => {
+    const merged = toSummary(node({ state: "MERGED", closedAt: "2026-10-23T11:00:00Z", mergedAt: "2026-10-23T10:59:00Z", autoMergeRequest: { enabledAt: "2026-10-23T09:00:00Z" }, author: { login: "renovate[bot]" } }));
+    expect(merged).toMatchObject({ state: "merged", createdAt: at("2026-10-20T10:00:00Z"), closedAt: at("2026-10-23T10:59:00Z"), autoMerge: true, authorBot: true });
+    expect(toSummary(node({ state: "CLOSED", closedAt: "2026-10-23T11:00:00Z" })).closedAt).toBe(at("2026-10-23T11:00:00Z"));
+    expect(toSummary(node({ closedAt: "2026-10-01T00:00:00Z" }))).toMatchObject({ closedAt: null, autoMerge: false, authorBot: false });
+    expect(toSummary(node({ author: { login: "dependabot", __typename: "Bot" } })).authorBot).toBe(true);
+  });
+
+  it("gives reviewers the time and commit of their latest review, and keeps mine when I am asked again", () => {
+    const summary = toSummary(node({
+      reviewRequests: { nodes: [{ requestedReviewer: { __typename: "User", login: "me" } }, { requestedReviewer: { __typename: "Team", combinedSlug: "acme/edge" } }] },
+      latestReviews: { nodes: [
+        { state: "CHANGES_REQUESTED", submittedAt: "2026-10-21T10:00:00Z", viewerDidAuthor: true, commit: { oid: "h1" }, author: { login: "me" } },
+        { state: "APPROVED", submittedAt: "2026-10-22T10:00:00Z", viewerDidAuthor: false, commit: { oid: "h2" }, author: { login: "bo" } },
+      ] },
+    }));
+    expect(summary.reviewers).toEqual([
+      { login: "me", team: false, state: "requested", at: at("2026-10-21T10:00:00Z"), head: "h1" },
+      { login: "acme/edge", team: true, state: "requested", at: null, head: null },
+      { login: "bo", team: false, state: "approved", at: at("2026-10-22T10:00:00Z"), head: "h2" },
+    ]);
+    expect(summary.myReview).toEqual({ verdict: "changes", at: at("2026-10-21T10:00:00Z"), head: "h1" });
+    expect(toSummary(node({ latestReviews: { nodes: [{ state: "PENDING", viewerDidAuthor: true, author: { login: "me" } }] } })).myReview).toBeNull();
+  });
+
+  it("takes the newest request of me or of a team still asked, and none on my own PR", () => {
+    const timeline = { nodes: [
+      { createdAt: "2026-10-21T10:00:00Z", requestedReviewer: { __typename: "User", isViewer: true } },
+      { createdAt: "2026-10-22T10:00:00Z", requestedReviewer: { __typename: "Team", combinedSlug: "acme/edge" } },
+      { createdAt: "2026-10-23T10:00:00Z", requestedReviewer: { __typename: "Team", combinedSlug: "acme/other" } },
+      { createdAt: "2026-10-23T11:00:00Z", requestedReviewer: { __typename: "User", isViewer: false } },
+      null,
+    ] };
+    const asks = { reviewRequests: { nodes: [{ requestedReviewer: { __typename: "Team", combinedSlug: "acme/edge" } }] } };
+    expect(toSummary(node({ ...asks, timelineItems: timeline })).requestedAt).toBe(at("2026-10-22T10:00:00Z"));
+    expect(toSummary(node({ timelineItems: timeline })).requestedAt).toBe(at("2026-10-21T10:00:00Z"));
+    expect(toSummary(node({ ...asks, timelineItems: timeline, viewerDidAuthor: true })).requestedAt).toBeNull();
+    expect(toSummary(node()).requestedAt).toBeNull();
+  });
+
+  it("finds the first review by someone other than the author and bots", () => {
+    const reviews = { nodes: [
+      { state: "COMMENTED", submittedAt: "2026-10-20T11:00:00Z", author: { login: "sam" } },
+      { state: "COMMENTED", submittedAt: "2026-10-20T12:00:00Z", author: { login: "copilot", __typename: "Bot" } },
+      { state: "PENDING", submittedAt: null, author: { login: "ana" } },
+      { state: "APPROVED", submittedAt: "2026-10-21T12:00:00Z", author: { login: "bo" } },
+      { state: "COMMENTED", submittedAt: "2026-10-21T09:00:00Z", author: { login: "ana" } },
+    ] };
+    expect(toSummary(node({ reviews })).firstReviewAt).toBe(at("2026-10-21T09:00:00Z"));
+    expect(toSummary(node()).firstReviewAt).toBeNull();
+  });
+
+  it("reads requests only on the request lists and the first review only on the author's", () => {
+    expect(listFields("authored")).toContain("reviews(first: 20)");
+    expect(listFields("authored")).not.toContain("timelineItems");
+    for (const op of ["review_requested", "team_requested", "reviewed"] as const) {
+      expect(listFields(op)).toContain("timelineItems(itemTypes: [REVIEW_REQUESTED_EVENT]");
+      expect(listFields(op)).not.toContain("reviews(first");
+    }
+    expect(listFields("mentioned")).not.toMatch(/timelineItems|reviews\(first/u);
+    // Every list reads descriptions, for the keyword filters.
+    for (const op of ["authored", "review_requested", "team_requested", "mentioned", "reviewed"] as const) expect(listFields(op)).toMatch(/\sbody(\s|$)/u);
+    expect(listFields("reviewed", { state: "closed" })).toMatch(/\sbody(\s|$)/u);
+    expect(searchQuery("reviewed", {})).toBe("is:pr archived:false sort:updated-desc is:open reviewed-by:@me -author:@me");
+  });
+
+  it("reads the merged and closed PRs you reviewed from the exact time, without the request fields", () => {
+    const closed = { state: "closed" as const, since: "2026-07-25", sinceAt: "2026-07-25T12:00:00+00:00" };
+    expect(searchQuery("reviewed", closed)).toBe("is:pr archived:false sort:updated-desc is:closed reviewed-by:@me -author:@me updated:>=2026-07-25T12:00:00+00:00");
+    expect(listFields("reviewed", closed)).not.toMatch(/timelineItems|reviews\(first/u);
+    expect(listFields("reviewed", closed)).toContain("latestReviews(first: 30)");
+  });
+
+  it("lists reviewed PRs with the request fields, on the server's host", async () => {
+    const { calls, run } = recorder(() => ({ json: { data: { search: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [node({ timelineItems: { nodes: [] } }), {}] } } } }));
+    const list = await new GithubAdapter(github("ghe.acme.io"), run).list("reviewed", {});
+    expect(list).toMatchObject({ complete: true, rows: [{ number: 7, requestedAt: null }] });
+    expect(calls[0]!.args.slice(0, 4)).toEqual(["api", "graphql", "--hostname", "ghe.acme.io"]);
+    expect(calls[0]!.args.find((a) => a.startsWith("query="))).toContain("timelineItems");
+    expect(calls[0]!.args).toContain("q=is:pr archived:false sort:updated-desc is:open reviewed-by:@me -author:@me");
+  });
+
+  it("tries a timed-out search page twice more from the same cursor, each time asking for half as many PRs", async () => {
+    const first = (call: Call) => call.args.find((a) => a.startsWith("first="));
+    const after = (call: Call) => call.args.find((a) => a.startsWith("after=")) ?? null;
+    const page = (hasNextPage: boolean) => ({ json: { data: { search: { pageInfo: { hasNextPage, endCursor: hasNextPage ? "Y3Vyc29yOjI1" : null }, nodes: [node()] } } } });
+    const answers = [page(true), { code: 1, stderr: "gh: HTTP 502" }, { code: 1, stderr: "unexpected end of JSON input" }, page(false)];
+    const flaky = recorder(() => answers.shift());
+    expect((await new GithubAdapter(github(), flaky.run).list("team_requested", {})).rows).toHaveLength(2);
+    expect(flaky.calls.map(first)).toEqual(["first=25", "first=25", "first=12", "first=6"]);
+    expect(flaky.calls.map(after)).toEqual([null, "after=Y3Vyc29yOjI1", "after=Y3Vyc29yOjI1", "after=Y3Vyc29yOjI1"]);
+    const down = recorder(() => ({ code: 1, stderr: "gh: HTTP 504" }));
+    const gaveUp = await new GithubAdapter(github(), down.run).list("mentioned", {}).catch((error: unknown) => error);
+    expect(gaveUp).toBeInstanceOf(AdapterError);
+    // A sync does not try again on top of these tries.
+    expect((gaveUp as AdapterError).detail).toEqual({ command: "gh api graphql", exit: 1, output: "gh: HTTP 504", retried: true });
+    expect(down.calls).toHaveLength(3);
+    const denied = recorder(() => ({ code: 1, stderr: "gh: HTTP 401" }));
+    await expect(new GithubAdapter(github(), denied.run).list("mentioned", {})).rejects.toThrow(/HTTP 401/u);
+    expect(denied.calls).toHaveLength(1);
+  });
+
+  it("stops a search at 300 PRs and says the list is incomplete", async () => {
+    const pages = recorder((call) => {
+      const size = Number(call.args.find((a) => a.startsWith("first="))!.slice("first=".length));
+      return { json: { data: { search: { pageInfo: { hasNextPage: true, endCursor: "next" }, nodes: Array.from({ length: size }, () => node()) } } } };
+    });
+    const list = await new GithubAdapter(github(), pages.run).list("review_requested", {});
+    expect(list).toMatchObject({ complete: false });
+    expect(list.rows).toHaveLength(300);
+    expect(pages.calls).toHaveLength(12);
+  });
+});
+
+describe("GitHub activity", () => {
+  const who = (login: string) => ({ login, __typename: "User" });
+  const activity = toActivity({
+    headRefOid: "abc",
+    reviews: { nodes: [{ id: "R1", state: "APPROVED", body: "ok", url: null, submittedAt: "2026-10-22T10:00:00Z", author: who("ana") }] },
+    reviewThreads: { nodes: [
+      { id: "T1", isResolved: false, path: "a.rs", line: 4, comments: { nodes: [{ id: "C1", body: "here", url: null, createdAt: "2026-10-22T11:00:00Z", author: who("tom") }] } },
+      { id: "T2", isResolved: true, path: "b.rs", line: 1, comments: { nodes: [{ id: "C2", body: "done", url: null, createdAt: "2026-10-22T12:00:00Z", author: who("tom") }] } },
+    ] },
+    comments: { nodes: [{ id: "IC1", body: "hi", url: null, createdAt: "2026-10-22T13:00:00Z", author: who("bo") }] },
+    commits: { nodes: [{ commit: { statusCheckRollup: { contexts: { nodes: [
+      { __typename: "CheckRun", id: "CK1", name: "lint", conclusion: "FAILURE", detailsUrl: "d", completedAt: "2026-10-22T14:00:00Z" },
+      { __typename: "StatusContext", id: "SC1", context: "ci", state: "ERROR", targetUrl: "t", createdAt: "2026-10-22T15:00:00Z" },
+    ] } } } }] },
+  });
+
+  it("keeps every id as before, and adds when, which thread and whether it is resolved", () => {
+    expect(activity.items.map((i) => [i.id, i.at, i.thread, i.resolved])).toEqual([
+      ["R1:APPROVED", at("2026-10-22T10:00:00Z"), null, null],
+      ["T1:C1", at("2026-10-22T11:00:00Z"), "T1", false],
+      ["T2:C2", at("2026-10-22T12:00:00Z"), "T2", true],
+      ["IC1", at("2026-10-22T13:00:00Z"), null, null],
+      ["CK1:abc", at("2026-10-22T14:00:00Z"), null, null],
+      ["SC1:abc", at("2026-10-22T15:00:00Z"), null, null],
+    ]);
+    expect(activity.details).toBeNull();
+  });
+
+  it("asks for the PR view's details only with detail, so watching stays light", async () => {
+    const empty = { headRefOid: "abc", reviews: { nodes: [] }, reviewThreads: { nodes: [] }, comments: { nodes: [] }, commits: { nodes: [] } };
+    const { calls, run } = recorder(() => ({ json: { data: { repository: { pullRequest: empty } } } }));
+    const gh = new GithubAdapter(github(), run);
+    await gh.activity("acme/api", 7);
+    await gh.activity("acme/api", 7, undefined, { detail: true });
+    const query = (index: number) => calls[index]!.args.find((arg) => arg.startsWith("query="))!;
+    for (const field of ["files(first: 100)", "commitList: commits(last: 100)", "timelineItems(", "mergeStateStatus", "diffHunk", "isRequired"]) {
+      expect(query(0)).not.toContain(field);
+      expect(query(1)).toContain(field);
+    }
+  });
+
+  it("reads every check, the commits, the files, the timeline, the merge state and each thread's hunk with detail", () => {
+    const detailed = toActivity({
+      headRefOid: "abc",
+      reviews: { nodes: [] },
+      reviewThreads: { nodes: [{
+        id: "T1", isResolved: false, path: "a.rs", line: 2, first: { nodes: [{ diffHunk: "@@ -1,2 +1,3 @@\n fn a() {\n+  b();\n }" }] },
+        comments: { nodes: [
+          { id: "C1", body: "here", url: null, createdAt: "2026-10-22T11:00:00Z", author: who("tom"), pullRequestReview: { id: "PRR1" } },
+          { id: "C2", body: "and", url: null, createdAt: "2026-10-22T11:05:00Z", author: who("ana"), pullRequestReview: { id: "PRR2" } },
+        ] },
+      }] },
+      comments: { nodes: [] },
+      commits: { nodes: [{ commit: { statusCheckRollup: { state: "FAILURE", contexts: { totalCount: 130, nodes: [
+        { __typename: "CheckRun", id: "CK1", name: "lint", status: "COMPLETED", conclusion: "TIMED_OUT", detailsUrl: "d", startedAt: "2026-10-22T13:58:00Z", completedAt: "2026-10-22T14:00:00Z", isRequired: true, checkSuite: { workflowRun: { workflow: { name: "CI" } }, app: { name: "GitHub Actions" } } },
+        { __typename: "CheckRun", id: "CK2", name: "e2e", status: "IN_PROGRESS", conclusion: null, detailsUrl: null, startedAt: "2026-10-22T13:59:00Z", completedAt: null, isRequired: false, checkSuite: { workflowRun: null, app: { name: "Buildkite" } } },
+        { __typename: "StatusContext", id: "SC1", context: "deploy", state: "SUCCESS", targetUrl: "t", createdAt: "2026-10-22T15:00:00Z", description: "Preview is up", isRequired: false },
+      ] } } } }] },
+      isDraft: false, mergeable: "MERGEABLE", mergeStateStatus: "BLOCKED", reviewDecision: "CHANGES_REQUESTED",
+      commitList: { totalCount: 140, nodes: [{ commit: { oid: "abc1234def", messageHeadline: "Fix it", committedDate: "2026-10-22T12:00:00Z", author: { name: "Tom", user: { login: "tom" } } } }] },
+      files: { totalCount: 2400, nodes: [{ path: "a.rs", additions: 3, deletions: 1, changeType: "MODIFIED" }, { path: "b.rs", additions: 0, deletions: 9, changeType: "DELETED" }] },
+      timelineItems: { nodes: [{ __typename: "ReviewRequestedEvent", createdAt: "2026-10-22T09:00:00Z", actor: { login: "sam" }, requestedReviewer: { __typename: "Team", combinedSlug: "acme/web" } }] },
+    });
+    const [first, second] = detailed.items;
+    expect(first).toMatchObject({ id: "T1:C1", hunk: "@@ -1,2 +1,3 @@\n fn a() {\n+  b();\n }", review: "PRR1" });
+    expect(second).toMatchObject({ id: "T1:C2", review: "PRR2" });
+    expect(second).not.toHaveProperty("hunk");
+    expect(detailed.items.find((i) => i.kind === "check")!.id).toBe("CK1:abc");
+    expect(detailed.details).toEqual({
+      checks: { total: 130, items: [
+        { name: "lint", group: "CI", state: "failed", detail: "timed out", required: true, url: "d", startedAt: at("2026-10-22T13:58:00Z"), completedAt: at("2026-10-22T14:00:00Z"), itemId: "CK1:abc" },
+        { name: "e2e", group: "Buildkite", state: "running", detail: "in progress", required: false, url: null, startedAt: at("2026-10-22T13:59:00Z"), completedAt: null, itemId: null },
+        { name: "deploy", group: null, state: "passed", detail: "Preview is up", required: false, url: "t", startedAt: at("2026-10-22T15:00:00Z"), completedAt: null, itemId: null },
+      ] },
+      commits: { total: 140, items: [{ sha: "abc1234def", message: "Fix it", author: "tom", at: at("2026-10-22T12:00:00Z") }] },
+      files: { total: 2400, items: [{ path: "a.rs", additions: 3, deletions: 1, change: "modified" }, { path: "b.rs", additions: 0, deletions: 9, change: "removed" }] },
+      timeline: [{ kind: "review_requested", at: at("2026-10-22T09:00:00Z"), actor: "sam", subject: "@acme/web", detail: null }],
+      merge: { state: "blocked", detail: "A reviewer requested changes." },
+    });
+  });
+
+  it("names how each check ended in the server's words", () => {
+    const run = (status: string, conclusion: string | null) => checkRunOf({ __typename: "CheckRun", id: "X", name: "n", status, conclusion }, "h");
+    expect(["SUCCESS", "NEUTRAL", "SKIPPED", "STALE", "FAILURE", "CANCELLED", "ACTION_REQUIRED"].map((c) => [run("COMPLETED", c).state, run("COMPLETED", c).detail])).toEqual([
+      ["passed", null], ["passed", "neutral"], ["skipped", null], ["skipped", "stale"], ["failed", null], ["failed", "cancelled"], ["failed", "action required"],
+    ]);
+    expect([run("QUEUED", null).state, run("QUEUED", null).detail]).toEqual(["running", "queued"]);
+    const status = (state: string) => checkRunOf({ __typename: "StatusContext", id: "S", context: "ci", state }, "h").state;
+    expect(["SUCCESS", "FAILURE", "ERROR", "PENDING", "EXPECTED"].map(status)).toEqual(["passed", "failed", "failed", "running", "running"]);
+  });
+
+  it("keeps a merge's close out of the timeline, but not a close of its own", () => {
+    const event = (__typename: string, createdAt: string, extra = {}) => ({ __typename, createdAt, actor: { login: "sam" }, ...extra });
+    expect(timelineOf([
+      event("ClosedEvent", "2026-10-20T10:00:00Z"),
+      event("ReopenedEvent", "2026-10-21T10:00:00Z"),
+      event("LabeledEvent", "2026-10-21T11:00:00Z", { label: { name: "ship" } }),
+      event("HeadRefForcePushedEvent", "2026-10-21T12:00:00Z", { beforeCommit: { abbreviatedOid: "aaa1111" }, afterCommit: { abbreviatedOid: "bbb2222" } }),
+      event("MergedEvent", "2026-10-22T10:00:00Z", { commit: { abbreviatedOid: "ccc3333" }, mergeRefName: "main" }),
+      event("ClosedEvent", "2026-10-22T10:00:01Z"),
+      null,
+    ]).map((e) => [e.kind, e.subject, e.detail])).toEqual([
+      ["closed", null, null], ["reopened", null, null], ["labeled", "ship", null], ["force_pushed", "bbb2222", "aaa1111"], ["merged", "ccc3333", "main"],
+    ]);
+  });
+});
+
+describe("GitHub reads for link cards", () => {
+  it("reads a commit with its checks and its PRs", async () => {
+    const { calls, run } = recorder(() => ({ json: { data: { repository: { object: {
+      __typename: "Commit", oid: "1a2b3c4d5e", messageHeadline: "Fix the retry", committedDate: "2026-10-22T10:00:00Z", additions: 4, deletions: 1,
+      author: { name: "Ana", user: { login: "ana" } }, statusCheckRollup: { state: "FAILURE" }, associatedPullRequests: { nodes: [{ number: 12 }] },
+    } } } } }));
+    expect(await new GithubAdapter(github(), run).commit("acme/api", "1a2b3c4")).toEqual({
+      sha: "1a2b3c4d5e", message: "Fix the retry", author: "ana", at: at("2026-10-22T10:00:00Z"), additions: 4, deletions: 1, checks: "failed", prs: [12],
+    });
+    expect(calls[0]!.args).toContain("sha=1a2b3c4");
+  });
+
+  it("reads a check run by id, and a workflow run when the link names only the run", async () => {
+    const { calls, run } = recorder((call) => (call.args.some((arg) => arg.includes("check-runs"))
+      ? { json: { name: "lint", status: "completed", conclusion: "timed_out", html_url: "https://github.com/acme/api/runs/5", started_at: "2026-10-22T10:00:00Z", completed_at: "2026-10-22T10:02:00Z", head_sha: "h1", app: { name: "GitHub Actions" }, pull_requests: [{ number: 12 }] } }
+      : { json: { name: "CI", display_title: "Fix the retry", status: "in_progress", conclusion: null, html_url: "https://github.com/acme/api/actions/runs/8", event: "pull_request", run_started_at: "2026-10-22T10:00:00Z", updated_at: "2026-10-22T10:01:00Z", head_sha: "h1", pull_requests: [] } }));
+    const gh = new GithubAdapter(github(), run);
+    expect(await gh.checkRun("acme/api", { checkRun: 5, run: 8 })).toMatchObject({
+      run: { name: "lint", group: "GitHub Actions", state: "failed", detail: "timed out", url: "https://github.com/acme/api/runs/5", startedAt: at("2026-10-22T10:00:00Z"), completedAt: at("2026-10-22T10:02:00Z") },
+      head: "h1", prs: [12],
+    });
+    expect(await gh.checkRun("acme/api", { checkRun: null, run: 8 })).toMatchObject({ run: { name: "CI · Fix the retry", group: "CI · on pull request", state: "running", completedAt: null }, prs: [] });
+    expect(calls.map((call) => call.args.at(-1))).toEqual(["repos/acme/api/check-runs/5", "repos/acme/api/actions/runs/8"]);
+  });
+
+  it("reads an issue with why it closed, the start of its description and the PRs that close it, and says when the number is a PR's", async () => {
+    const issue = {
+      __typename: "Issue", number: 40, title: "Retries hide gateway outages", state: "CLOSED", stateReason: "NOT_PLANNED", url: "https://github.com/acme/api/issues/40",
+      body: "x".repeat(2000), createdAt: "2026-10-20T10:00:00Z", closedAt: "2026-10-22T10:00:00Z", author: { login: "sam" },
+      labels: { nodes: [{ name: "bug", color: "d73a4a" }] }, assignees: { nodes: [{ login: "ana" }] }, comments: { totalCount: 3 },
+      closedByPullRequestsReferences: { nodes: [
+        { number: 12, title: "Retry only on 504", state: "MERGED", isDraft: false, url: "https://github.com/acme/api/pull/12", repository: { nameWithOwner: "acme/api" } },
+        { number: 3, title: "Docs", state: "OPEN", isDraft: true, url: "https://github.com/acme/docs/pull/3", repository: { nameWithOwner: "acme/docs" } },
+      ] },
+    };
+    let node: unknown = issue;
+    const { calls, run } = recorder(() => ({ json: { data: { repository: { issueOrPullRequest: node } } } }));
+    const gh = new GithubAdapter(github(), run);
+    const read = await gh.issue("acme/api", 40);
+    expect(read).toMatchObject({
+      pr: false, number: 40, title: "Retries hide gateway outages", state: "not_planned", author: "sam", createdAt: at("2026-10-20T10:00:00Z"), closedAt: at("2026-10-22T10:00:00Z"),
+      labels: [{ name: "bug", color: "d73a4a" }], assignees: ["ana"], comments: 3,
+      closedBy: [{ repo: "acme/api", number: 12, state: "merged" }, { repo: "acme/docs", number: 3, state: "draft" }],
+    });
+    expect(read.body).toHaveLength(600);
+    expect(calls[0]!.args).toEqual(expect.arrayContaining(["owner=acme", "name=api", "number=40"]));
+    node = { ...issue, stateReason: null };
+    expect((await gh.issue("acme/api", 40)).state).toBe("completed");
+    node = { ...issue, state: "OPEN", stateReason: "REOPENED", closedAt: null };
+    expect(await gh.issue("acme/api", 40)).toMatchObject({ state: "open", closedAt: null });
+    node = { __typename: "PullRequest", number: 40, title: "A PR", url: "https://github.com/acme/api/pull/40" };
+    expect(await gh.issue("acme/api", 40)).toMatchObject({ pr: true, number: 40 });
+    node = null;
+    await expect(gh.issue("acme/api", 40)).rejects.toThrow("acme/api#40 was not found");
+  });
+});
+
+describe("diff hunks", () => {
+  it("keeps the last lines, numbered as in the new file, and skips the no-newline note", () => {
+    expect(hunkLines("@@ -10,4 +20,5 @@ fn main\n ctx\n-old\n+new\n+more\n\\ No newline at end of file\n tail", 3)).toEqual([
+      { kind: "add", text: "new", line: 21 },
+      { kind: "add", text: "more", line: 22 },
+      { kind: "context", text: "tail", line: 23 },
+    ]);
+    expect(hunkLines("@@ -1 +1 @@\n-gone")).toEqual([{ kind: "del", text: "gone", line: null }]);
+    expect(hunkLines("no header")).toBeNull();
+    expect(hunkLines(null)).toBeNull();
+  });
+});
+
+describe("GitHub merges", () => {
+  const input = { head: "abc123", auto: false, deleteBranch: false };
+
+  it("merges with each method, only at the head it was shown", async () => {
+    const { calls, run } = recorder();
+    const gh = new GithubAdapter(github(), run);
+    for (const method of ["squash", "merge", "rebase"] as const) expect(await gh.merge("acme/api", 7, { ...input, method })).toEqual({ merged: true });
+    expect(calls.map((c) => c.args)).toEqual([
+      ["pr", "merge", "7", "-R", "acme/api", "--squash", "--match-head-commit", "abc123"],
+      ["pr", "merge", "7", "-R", "acme/api", "--merge", "--match-head-commit", "abc123"],
+      ["pr", "merge", "7", "-R", "acme/api", "--rebase", "--match-head-commit", "abc123"],
+    ]);
+  });
+
+  it("turns on auto-merge, deletes the branch, sets the title, and names the host", async () => {
+    const { calls, run } = recorder();
+    const gh = new GithubAdapter(github("ghe.acme.io"), run);
+    expect(await gh.merge("acme/api", 7, { ...input, method: "squash", auto: true, deleteBranch: true, subject: "Ship it (#7)" })).toEqual({ merged: false });
+    await gh.cancelAutoMerge("acme/api", 7);
+    expect(calls.map((c) => c.args)).toEqual([
+      ["pr", "merge", "7", "-R", "ghe.acme.io/acme/api", "--squash", "--match-head-commit", "abc123", "--auto", "--delete-branch", "--subject", "Ship it (#7)"],
+      ["pr", "merge", "7", "-R", "ghe.acme.io/acme/api", "--disable-auto"],
+    ]);
+  });
+
+  it("says what failed", async () => {
+    const { run } = recorder(() => ({ code: 1, stderr: "Head branch was modified. Review and try the merge again." }));
+    await expect(new GithubAdapter(github(), run).merge("acme/api", 7, { ...input, method: "merge" })).rejects.toThrow(/gh exited 1: Head branch was modified/u);
+  });
+});
+
+describe("GitHub merge options", () => {
+  type Repo = Parameters<typeof toMergeOptions>[0];
+  const repo = (pr: Partial<Repo["pullRequest"]> = {}, extra: Partial<Repo> = {}): Repo => ({
+    squashMergeAllowed: true, mergeCommitAllowed: true, rebaseMergeAllowed: false, autoMergeAllowed: true, deleteBranchOnMerge: true, viewerDefaultMergeMethod: "MERGE",
+    pullRequest: { isDraft: false, mergeable: "MERGEABLE", mergeStateStatus: "CLEAN", viewerCanEnableAutoMerge: true, reviewDecision: "APPROVED", commits: { nodes: [{ commit: { statusCheckRollup: { state: "SUCCESS" } } }] }, ...pr },
+    ...extra,
+  });
+  const pending = { commits: { nodes: [{ commit: { statusCheckRollup: { state: "PENDING" } } }] } };
+
+  it("lists the allowed methods with the default first", () => {
+    expect(toMergeOptions(repo())).toEqual({ methods: ["merge", "squash"], default: "merge", deleteBranch: true, canAuto: true, state: "clean", detail: null });
+    expect(toMergeOptions(repo({}, { viewerDefaultMergeMethod: "REBASE", rebaseMergeAllowed: false, autoMergeAllowed: false }))).toMatchObject({ methods: ["squash", "merge"], default: "squash", canAuto: false });
+    expect(toMergeOptions(repo({ viewerCanEnableAutoMerge: false })).canAuto).toBe(false);
+  });
+
+  it("says why it cannot merge", () => {
+    const state = (pr: Partial<Repo["pullRequest"]>) => {
+      const { state: s, detail } = toMergeOptions(repo(pr));
+      return [s, detail];
+    };
+    expect(state({ mergeStateStatus: "HAS_HOOKS" })).toEqual(["clean", null]);
+    expect(state({ isDraft: true, mergeStateStatus: "BLOCKED" })).toEqual(["blocked", "It is a draft."]);
+    expect(state({ mergeStateStatus: "DRAFT" })).toEqual(["blocked", "It is a draft."]);
+    expect(state({ mergeStateStatus: "DIRTY" })[0]).toBe("conflicts");
+    expect(state({ mergeStateStatus: "UNKNOWN", mergeable: "CONFLICTING" })[0]).toBe("conflicts");
+    expect(state({ mergeStateStatus: "BLOCKED", reviewDecision: "REVIEW_REQUIRED" })).toEqual(["blocked", "It needs an approving review."]);
+    expect(state({ mergeStateStatus: "BLOCKED", reviewDecision: "CHANGES_REQUESTED" })).toEqual(["blocked", "A reviewer requested changes."]);
+    expect(state({ mergeStateStatus: "BLOCKED", ...pending })).toEqual(["pending", "Required checks are still running."]);
+    expect(state({ mergeStateStatus: "BLOCKED" })).toEqual(["blocked", "A required check or branch rule blocks it."]);
+    expect(state({ mergeStateStatus: "BEHIND" })[0]).toBe("behind");
+    expect(state({ mergeStateStatus: "UNSTABLE" })).toEqual(["pending", "Some checks have not passed."]);
+    expect(state({ mergeStateStatus: "UNKNOWN", ...pending })[0]).toBe("pending");
+    expect(state({ mergeStateStatus: "UNKNOWN", mergeable: "UNKNOWN" })[0]).toBe("unknown");
+  });
+
+  it("reads them through GraphQL on the server's host", async () => {
+    const { calls, run } = recorder(() => ({ json: { data: { repository: repo() } } }));
+    expect((await new GithubAdapter(github("ghe.acme.io"), run).mergeOptions("acme/api", 7)).state).toBe("clean");
+    expect(calls[0]!.args).toEqual(expect.arrayContaining(["--hostname", "ghe.acme.io", "owner=acme", "name=api", "number=7"]));
+    const missing = recorder(() => ({ json: { data: { repository: { ...repo(), pullRequest: null } } } }));
+    await expect(new GithubAdapter(github(), missing.run).mergeOptions("acme/api", 7)).rejects.toThrow(/acme\/api#7 was not found/u);
+  });
+});
+
+describe("GitHub comments and reviews", () => {
+  const post = { verdict: "changes" as const, body: "Please fix.", head: "abc123", comments: [{ path: "a.rs", line: 4, body: "Off by one." }, { path: "b.rs", line: null, body: "Split this file.\nIt is long." }] };
+
+  it("comments with the body on stdin", async () => {
+    const { calls, run } = recorder();
+    await new GithubAdapter(github("ghe.acme.io"), run).comment("acme/api", 7, "-x $(rm -rf /) `id`");
+    expect(calls[0]).toMatchObject({ args: ["pr", "comment", "7", "-R", "ghe.acme.io/acme/api", "--body-file", "-"], stdin: "-x $(rm -rf /) `id`" });
+  });
+
+  it("posts one review with its line and file comments", async () => {
+    const { calls, run } = recorder(() => ({ json: { id: 1 } }));
+    expect(await new GithubAdapter(github("ghe.acme.io"), run).review("acme/api", 7, post)).toEqual({ placed: 2, inBody: 0 });
+    expect(calls[0]!.args).toEqual(["api", "--hostname", "ghe.acme.io", "-X", "POST", "repos/acme/api/pulls/7/reviews", "--input", "-"]);
+    expect(JSON.parse(calls[0]!.stdin!)).toEqual({
+      commit_id: "abc123", body: "Please fix.", event: "REQUEST_CHANGES",
+      comments: [{ path: "a.rs", line: 4, side: "RIGHT", body: "Off by one." }, { path: "b.rs", body: "Split this file.\nIt is long.", subject_type: "file" }],
+    });
+  });
+
+  it("maps each verdict and leaves out an unknown head and an empty comment list", async () => {
+    const { calls, run } = recorder();
+    const gh = new GithubAdapter(github(), run);
+    expect(await gh.review("acme/api", 7, { verdict: "approve", body: "", head: null, comments: [] })).toEqual({ placed: 0, inBody: 0 });
+    await gh.review("acme/api", 7, { verdict: "comment", body: "Nice", head: null, comments: [] });
+    expect(calls.map((c) => JSON.parse(c.stdin!))).toEqual([{ body: "", event: "APPROVE" }, { body: "Nice", event: "COMMENT" }]);
+  });
+
+  it("moves every comment into the body when GitHub cannot place a line", async () => {
+    const { calls, run } = recorder((call) =>
+      JSON.parse(call.stdin!).comments ? { code: 1, stderr: "gh: Unprocessable Entity (HTTP 422)", stdout: '{"message":"Unprocessable Entity","errors":["Line could not be resolved"]}' } : { json: { id: 2 } });
+    expect(await new GithubAdapter(github(), run).review("acme/api", 7, post)).toEqual({ placed: 0, inBody: 2 });
+    expect(calls).toHaveLength(2);
+    expect(JSON.parse(calls[1]!.stdin!)).toEqual({
+      commit_id: "abc123", event: "REQUEST_CHANGES",
+      body: "Please fix.\n\n- `a.rs:4` Off by one.\n- `b.rs` Split this file.\n  It is long.",
+    });
+  });
+
+  it("does not retry other failures, and refuses an empty comment review", async () => {
+    const { calls, run } = recorder(() => ({ code: 1, stderr: "gh: Not Found (HTTP 404)", stdout: '{"message":"Not Found"}' }));
+    const gh = new GithubAdapter(github(), run);
+    await expect(gh.review("acme/api", 7, post)).rejects.toThrow(/HTTP 404.*Not Found/u);
+    expect(calls).toHaveLength(1);
+    await expect(gh.review("acme/api", 7, { verdict: "comment", body: "  ", head: null, comments: [] })).rejects.toThrow(/needs a body or at least one comment/u);
+    expect(calls).toHaveLength(1);
+    const noLines = recorder(() => ({ code: 1, stderr: "gh: Unprocessable Entity (HTTP 422)", stdout: '{"message":"Can not approve your own pull request"}' }));
+    await expect(new GithubAdapter(github(), noLines.run).review("acme/api", 7, { verdict: "approve", body: "", head: null, comments: [] })).rejects.toThrow(/approve your own/u);
+    expect(noLines.calls).toHaveLength(1);
+  });
+
+  it("moves comments into the body only when GitHub refuses where one goes, never for a 422 about the review itself", async () => {
+    for (const refusal of [
+      '{"message":"Unprocessable Entity","errors":["No commit found for SHA: abc123"]}',
+      '{"message":"Validation Failed","errors":[{"resource":"PullRequestReview","code":"invalid","field":"commit_id"}]}',
+      '{"message":"Unprocessable Entity","errors":["User can only have one pending review per pull request"]}',
+    ]) {
+      const { calls, run } = recorder(() => ({ code: 1, stderr: "gh: Unprocessable Entity (HTTP 422)", stdout: refusal }));
+      await expect(new GithubAdapter(github(), run).review("acme/api", 7, post)).rejects.toThrow(/HTTP 422/u);
+      expect(calls).toHaveLength(1);
+    }
+    expect(isPlacementError('Validation Failed; {"resource":"PullRequestReviewComment","code":"invalid","field":"line"}')).toBe(true);
+    expect(isPlacementError("pull_request_review_thread.line must be part of the diff")).toBe(true);
+    expect(isPlacementError("Path could not be resolved")).toBe(true);
+    expect(isPlacementError("pull_request_review_thread.start_line must precede the end line")).toBe(true);
+    expect(isPlacementError("commit_id is not the head of the pull request")).toBe(false);
+    expect(isPlacementError("Can not approve your own pull request")).toBe(false);
+  });
+});
+
+describe("GitHub replies and resolving", () => {
+  const vars = (call: Call) => Object.fromEntries(call.args.filter((a, i) => call.args[i - 1] === "-f").map((a) => [a.slice(0, a.indexOf("=")), a.slice(a.indexOf("=") + 1)]));
+
+  it("replies in the thread by its node id", async () => {
+    const { calls, run } = recorder(() => ({ json: { data: { addPullRequestReviewThreadReply: { comment: { id: "C9" } } } } }));
+    await new GithubAdapter(github("ghe.acme.io"), run).reply("acme/api", 7, "PRRT_1", "Fixed in abc.\n\n```ts\nx = 1\n```");
+    expect(calls[0]!.args.slice(0, 4)).toEqual(["api", "graphql", "--hostname", "ghe.acme.io"]);
+    expect(vars(calls[0]!)).toMatchObject({ thread: "PRRT_1", body: "Fixed in abc.\n\n```ts\nx = 1\n```" });
+    expect(vars(calls[0]!).query).toMatch(/^mutation\(\$thread: ID!, \$body: String!\) \{ addPullRequestReviewThreadReply\(input: \{ pullRequestReviewThreadId: \$thread, body: \$body \}\)/u);
+  });
+
+  it("resolves and reopens a thread", async () => {
+    const { calls, run } = recorder((call) => {
+      const field = vars(call).query!.includes("unresolveReviewThread") ? "unresolveReviewThread" : "resolveReviewThread";
+      return { json: { data: { [field]: { thread: { isResolved: field === "resolveReviewThread" } } } } };
+    });
+    const gh = new GithubAdapter(github(), run);
+    await gh.resolve("acme/api", 7, "PRRT_1", true);
+    await gh.resolve("acme/api", 7, "PRRT_1", false);
+    expect(calls.map((c) => vars(c).query!.match(/\{ (\w+)\(input: \{ threadId: \$thread \}\)/u)?.[1])).toEqual(["resolveReviewThread", "unresolveReviewThread"]);
+    expect(calls.map((c) => vars(c).thread)).toEqual(["PRRT_1", "PRRT_1"]);
+  });
+
+  it("says what GitHub refused", async () => {
+    const { run } = recorder(() => ({ json: { data: { resolveReviewThread: null }, errors: [{ message: "Resource not accessible by integration" }] } }));
+    await expect(new GithubAdapter(github(), run).resolve("acme/api", 7, "PRRT_1", true)).rejects.toThrow(/GitHub: Resource not accessible/u);
+  });
+
+  it("offers every operation", () => {
+    expect(new GithubAdapter(github()).operations()).toEqual(expect.arrayContaining(["reviewed", "merge_options", "merge", "comment", "review", "reply", "resolve"]));
+  });
+});
+
+const forge = (commands: Record<string, string>) =>
+  parseConfig({
+    ...DEFAULT_CONFIG,
+    servers: [{ id: "forge", name: "Forge", kind: "command", pattern: "^https://forge\\.test/(?<repo>[^/]+/[^/]+)/pull/(?<number>\\d+)", link: "https://forge.test/{repo}/pull/{number}", commands: { view: "v", ...commands } }],
+  }).servers[0]!;
+const WRITES = { merge: "m", comment: "c", review: "rv", reply: "rp", resolve: "rs" };
+const ref = { SHUTTLE_REPO: "acme/app", SHUTTLE_NUMBER: "7", SHUTTLE_URL: "https://forge.test/acme/app/pull/7" };
+
+describe("command server reads", () => {
+  it("passes the new summary and activity fields through", async () => {
+    const { run } = recorder((call) => {
+      const op = call.env.SHUTTLE_OPERATION;
+      if (op === "view") return { json: {
+        repo: "acme/app", number: 7, title: "T", state: "merged", created_at: "2026-10-20T10:00:00Z", closed_at: 1792800000000,
+        check_counts: { passed: 3, failed: 1, pending: 0, total: 4 }, my_review: { state: "changes", at: "2026-10-21T10:00:00Z", head: "h1" },
+        auto_merge: false, author_bot: true, requested_at: "2026-10-20T11:00:00Z", first_review_at: "2026-10-20T12:00:00Z",
+        reviewers: [{ login: "ana", state: "approved", at: "2026-10-22T10:00:00Z", head: "h2" }],
+      } };
+      if (op === "activity") return { json: { head: "h2", items: [{ id: "c1", kind: "thread", at: "2026-10-22T11:00:00Z", thread: "t-1", resolved: true }] } };
+      if (op === "reviewed") return { json: [{ repo: "acme/app", number: 8, title: "U", state: "open", created_at: "2026-10-19T10:00:00Z" }] };
+      return { code: 1 };
+    });
+    const adapter = new CommandAdapter(forge({ activity: "a", reviewed: "r" }), run);
+    expect(await adapter.view("acme/app", 7)).toMatchObject({
+      createdAt: at("2026-10-20T10:00:00Z"), closedAt: 1792800000000, checkCounts: { passed: 3, failed: 1, pending: 0, total: 4 },
+      myReview: { verdict: "changes", at: at("2026-10-21T10:00:00Z"), head: "h1" }, autoMerge: false, authorBot: true,
+      requestedAt: at("2026-10-20T11:00:00Z"), firstReviewAt: at("2026-10-20T12:00:00Z"),
+      reviewers: [{ login: "ana", team: false, state: "approved", at: at("2026-10-22T10:00:00Z"), head: "h2" }],
+    });
+    expect((await adapter.activity("acme/app", 7)).items[0]).toMatchObject({ at: at("2026-10-22T11:00:00Z"), thread: "t-1", resolved: true });
+    expect((await adapter.activity("acme/app", 7)).details).toBeNull();
+    expect((await adapter.list("reviewed", {})).rows[0]).toMatchObject({ number: 8, createdAt: at("2026-10-19T10:00:00Z"), myReview: null, url: "https://forge.test/acme/app/pull/8" });
+    expect(adapter.operations()).toEqual(["reviewed", "view", "activity"]);
+  });
+});
+
+describe("command server PR details", () => {
+  it("asks with SHUTTLE_DETAIL and reads every part it prints", async () => {
+    const { calls, run } = recorder(() => ({ json: {
+      head: "h2",
+      items: [{ id: "c1", kind: "thread", hunk: "@@ -1 +1,2 @@\n a\n+b", review: 12 }],
+      checks: [{ name: "ci", state: "failed", started_at: "2026-10-22T10:00:00Z", item: "check:ci:h2" }],
+      commits: { total: 300, items: [{ sha: "abc", message: "Fix", at: "2026-10-22T09:00:00Z" }] },
+      files: { total: 1500, items: [{ path: "a.rs", additions: 1, deletions: 0 }] },
+      timeline: [{ kind: "labeled", at: "2026-10-22T08:00:00Z", actor: "sam", subject: "ship" }, { kind: "closed", at: null }],
+      merge: { state: "conflicts", detail: "It has conflicts." },
+    } }));
+    const adapter = new CommandAdapter(forge({ activity: "a" }), run);
+    const activity = await adapter.activity("acme/app", 7, undefined, { detail: true });
+    expect(calls[0]!.env).toMatchObject({ SHUTTLE_OPERATION: "activity", SHUTTLE_DETAIL: "1" });
+    expect(activity.items[0]).toMatchObject({ hunk: "@@ -1 +1,2 @@\n a\n+b", review: "12" });
+    expect(activity.details).toEqual({
+      checks: { total: 1, items: [{ name: "ci", group: null, state: "failed", detail: null, required: null, url: null, startedAt: at("2026-10-22T10:00:00Z"), completedAt: null, itemId: "check:ci:h2" }] },
+      commits: { total: 300, items: [{ sha: "abc", message: "Fix", author: null, at: at("2026-10-22T09:00:00Z") }] },
+      files: { total: 1500, items: [{ path: "a.rs", additions: 1, deletions: 0, change: "modified" }] },
+      timeline: [{ kind: "labeled", at: at("2026-10-22T08:00:00Z"), actor: "sam", subject: "ship", detail: null }],
+      merge: { state: "conflicts", detail: "It has conflicts." },
+    });
+    await adapter.activity("acme/app", 7);
+    expect(calls[1]!.env).not.toHaveProperty("SHUTTLE_DETAIL");
+  });
+
+  it("gives every command the reference folder of this copy", async () => {
+    const { calls, run } = recorder(() => ({ json: { items: [] } }));
+    await new CommandAdapter(forge({ activity: "a" }), run).activity("acme/app", 7);
+    const dir = calls[0]!.env.SHUTTLE_SCRIPTS!;
+    expect(dir).toBe(fileURLToPath(new URL("../skills/shuttle/references", import.meta.url)));
+    expect(spawnSync("/bin/sh", ["-c", 'test -d "$SHUTTLE_SCRIPTS"'], { env: { ...process.env, SHUTTLE_SCRIPTS: dir } }).status).toBe(0);
+  });
+
+  it("takes a hunk of any length, and cuts long lists to what the view keeps instead of failing the read", async () => {
+    const hunk = `@@ -1,3 +1,4000 @@\n${Array.from({ length: 4000 }, (_, i) => `+line ${i}`).join("\n")}`;
+    const commits = Array.from({ length: 150 }, (_, i) => ({ sha: `c${i}`, message: `m${i}` }));
+    const files = Array.from({ length: 150 }, (_, i) => ({ path: `f${i}.rs` }));
+    const checks = Array.from({ length: 150 }, (_, i) => ({ name: `ci ${i}`, state: i === 149 ? "failed" : "passed" }));
+    const { run } = recorder(() => ({ json: { items: [{ id: "t1", kind: "thread", hunk }], commits, files: { total: 900, items: files }, checks } }));
+    const activity = await new CommandAdapter(forge({ activity: "a" }), run).activity("acme/app", 7, undefined, { detail: true });
+    expect(hunk.length).toBeGreaterThan(20_000);
+    expect(activity.items[0]!.hunk).toBe(hunk);
+    expect(activity.details?.commits).toMatchObject({ total: 150 });
+    expect(activity.details?.commits?.items.map((c) => c.sha)).toEqual(commits.slice(-100).map((c) => c.sha));
+    expect(activity.details?.files?.total).toBe(900);
+    expect(activity.details?.files?.items.map((f) => f.path)).toEqual(files.slice(0, 100).map((f) => f.path));
+    // Every check is kept, so the failing one at the end still shows.
+    expect(activity.details?.checks?.items).toHaveLength(150);
+    expect(activity.details?.checks?.items.at(-1)).toMatchObject({ name: "ci 149", state: "failed" });
+  });
+
+  it("refuses a details part in the wrong shape, like any other field", async () => {
+    const { run } = recorder(() => ({ json: { items: [], checks: [{ name: "ci", state: "exploded" }] } }));
+    await expect(new CommandAdapter(forge({ activity: "a" }), run).activity("acme/app", 7, undefined, { detail: true })).rejects.toThrow(/activity printed JSON in the wrong shape: checks/u);
+  });
+});
+
+describe("command server merge options", () => {
+  it("are the defaults without a command", async () => {
+    const { calls, run } = recorder();
+    expect(await new CommandAdapter(forge({}), run).mergeOptions("acme/app", 7)).toEqual({ methods: ["squash", "merge"], default: "squash", deleteBranch: false, canAuto: false, state: "unknown", detail: null });
+    expect(calls).toHaveLength(0);
+    expect(MERGE_DEFAULTS.methods).toEqual(["squash", "merge"]);
+  });
+
+  it("fill what the command leaves out, and put the default first", async () => {
+    const answers: unknown[] = [{}, { methods: ["merge", "squash"], default: "squash", delete_branch: true, can_auto: true, state: "blocked", detail: "Needs a review." }, { methods: ["merge"] }, { methods: ["merge"], default: "squash" }, { state: "nope" }];
+    const { calls, run } = recorder(() => ({ json: answers.shift() }));
+    const adapter = new CommandAdapter(forge({ merge_options: "mo" }), run);
+    expect(await adapter.mergeOptions("acme/app", 7)).toEqual({ methods: ["squash", "merge"], default: "squash", deleteBranch: false, canAuto: false, state: "unknown", detail: null });
+    expect(calls[0]!.env).toMatchObject({ SHUTTLE_OPERATION: "merge_options", ...ref });
+    expect(await adapter.mergeOptions("acme/app", 7)).toEqual({ methods: ["squash", "merge"], default: "squash", deleteBranch: true, canAuto: true, state: "blocked", detail: "Needs a review." });
+    expect(await adapter.mergeOptions("acme/app", 7)).toMatchObject({ methods: ["merge"], default: "merge" });
+    await expect(adapter.mergeOptions("acme/app", 7)).rejects.toThrow(/default squash is not one of its methods/u);
+    await expect(adapter.mergeOptions("acme/app", 7)).rejects.toThrow(/wrong shape: state/u);
+  });
+});
+
+describe("command server writes", () => {
+  const envOf = (calls: Call[], op: string) => calls.find((c) => c.env.SHUTTLE_OPERATION === op)!.env;
+
+  it("give each command the PR and what to write", async () => {
+    const { calls, run } = recorder();
+    const adapter = new CommandAdapter(forge(WRITES), run);
+    expect(await adapter.merge("acme/app", 7, { method: "squash", head: "abc", auto: false, deleteBranch: true })).toEqual({ merged: true });
+    expect(await adapter.merge("acme/app", 7, { method: "merge", head: "abc", auto: true, deleteBranch: false, subject: "Ship it" })).toEqual({ merged: false });
+    await adapter.comment("acme/app", 7, "Looks good.");
+    await adapter.reply("acme/app", 7, "t-1", "Done.");
+    await adapter.resolve("acme/app", 7, "t-1", true);
+    await adapter.resolve("acme/app", 7, "t-1", false);
+    const merges = calls.filter((c) => c.env.SHUTTLE_OPERATION === "merge").map((c) => c.env);
+    expect(merges[0]).toMatchObject({ ...ref, SHUTTLE_METHOD: "squash", SHUTTLE_HEAD: "abc", SHUTTLE_AUTO: "0", SHUTTLE_DELETE_BRANCH: "1", SHUTTLE_SUBJECT: "" });
+    expect(merges[1]).toMatchObject({ SHUTTLE_METHOD: "merge", SHUTTLE_AUTO: "1", SHUTTLE_DELETE_BRANCH: "0", SHUTTLE_SUBJECT: "Ship it" });
+    expect(envOf(calls, "comment")).toMatchObject({ ...ref, SHUTTLE_BODY: "Looks good." });
+    expect(envOf(calls, "reply")).toMatchObject({ ...ref, SHUTTLE_THREAD: "t-1", SHUTTLE_BODY: "Done." });
+    expect(calls.filter((c) => c.env.SHUTTLE_OPERATION === "resolve").map((c) => c.env.SHUTTLE_RESOLVED)).toEqual(["1", "0"]);
+    expect((adapter as Adapter).cancelAutoMerge).toBeUndefined();
+    expect(adapter.operations()).toEqual(["view", "merge", "comment", "review", "reply", "resolve"]);
+  });
+
+  it("pass a review's comments as JSON and read how many were placed", async () => {
+    const answers = ["", '{"placed": 1, "in_body": 1}', "nope"];
+    const { calls, run } = recorder(() => ({ stdout: answers.shift() }));
+    const adapter = new CommandAdapter(forge(WRITES), run);
+    const post = { verdict: "approve" as const, body: "LGTM", head: null, comments: [{ path: "a.rs", line: 4, body: "nit" }, { path: "b.rs", line: null, body: "file" }] };
+    expect(await adapter.review("acme/app", 7, post)).toEqual({ placed: 2, inBody: 0 });
+    expect(envOf(calls, "review")).toMatchObject({ ...ref, SHUTTLE_VERDICT: "approve", SHUTTLE_BODY: "LGTM", SHUTTLE_HEAD: "" });
+    expect(JSON.parse(envOf(calls, "review").SHUTTLE_COMMENTS!)).toEqual([{ path: "a.rs", line: 4, body: "nit" }, { path: "b.rs", line: null, body: "file" }]);
+    expect(await adapter.review("acme/app", 7, { ...post, head: "abc" })).toEqual({ placed: 1, inBody: 1 });
+    expect(calls[1]!.env.SHUTTLE_HEAD).toBe("abc");
+    await expect(adapter.review("acme/app", 7, post)).rejects.toThrow(/review did not print JSON/u);
+  });
+
+  it("fail without their command, and with the command's error", async () => {
+    const { run } = recorder(() => ({ code: 3, stderr: "Lab has no auto-merge" }));
+    await expect(new CommandAdapter(forge({}), run).comment("acme/app", 7, "x")).rejects.toThrow(/Forge has no comment command/u);
+    await expect(new CommandAdapter(forge({}), run).review("acme/app", 7, { verdict: "approve", body: "", head: null, comments: [] })).rejects.toThrow(/has no review command/u);
+    await expect(new CommandAdapter(forge(WRITES), run).merge("acme/app", 7, { method: "squash", head: "a", auto: true, deleteBranch: false })).rejects.toThrow(/merge exited 3: Lab has no auto-merge/u);
+  });
+});
+
+describe("GitHub reviewers who are bots", () => {
+  it("marks reviewers GitHub reports as a Bot, so Insights keeps them apart from people", () => {
+    const summary = toSummary(node({
+      reviewRequests: { nodes: [{ requestedReviewer: { __typename: "Bot", login: "ci-reviewer" } }] },
+      latestReviews: { nodes: [
+        { state: "COMMENTED", submittedAt: "2026-10-22T10:00:00Z", commit: { oid: "abc" }, author: { login: "review-bot", __typename: "Bot" } },
+        { state: "APPROVED", submittedAt: "2026-10-22T11:00:00Z", commit: { oid: "abc" }, author: { login: "pascal", __typename: "User" } },
+      ] },
+    }));
+    expect(summary.reviewers?.map((r) => [r.login, r.bot === true])).toEqual([["ci-reviewer", true], ["review-bot", true], ["pascal", false]]);
+  });
+});
+
+describe("merge queues and fresh state", () => {
+  const query = (call: Call) => call.args.find((arg) => arg.startsWith("query="))!;
+  const empty = { headRefOid: "abc", reviews: { nodes: [] }, reviewThreads: { nodes: [] }, comments: { nodes: [] }, commits: { nodes: [] } };
+
+  it("reads whether a GitHub PR waits in the merge queue, and says nothing when GitHub did not", async () => {
+    expect(toSummary(node({ isInMergeQueue: true })).inMergeQueue).toBe(true);
+    expect(toSummary(node({ isInMergeQueue: false })).inMergeQueue).toBe(false);
+    expect(toSummary(node()).inMergeQueue).toBeNull();
+    const { calls, run } = recorder(() => ({ json: { data: { repository: { pullRequest: node({ isInMergeQueue: true }) } } } }));
+    expect((await new GithubAdapter(github(), run).view("acme/api", 7)).inMergeQueue).toBe(true);
+    expect(query(calls[0]!)).toContain("isInMergeQueue");
+  });
+
+  it("asks again without the merge queue on a GitHub Enterprise server that lacks it, and remembers", async () => {
+    const missing = { code: 1, stderr: "gh: Field 'isInMergeQueue' doesn't exist on type 'PullRequest'", stdout: JSON.stringify({ errors: [{ message: "Field 'isInMergeQueue' doesn't exist on type 'PullRequest'" }] }) };
+    const { calls, run } = recorder((call) => (query(call).includes("isInMergeQueue") ? missing : query(call).includes("search(")
+      ? { json: { data: { search: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [node()] } } } }
+      : { json: { data: { repository: { pullRequest: node() } } } }));
+    const gh = new GithubAdapter(github("ghe.acme.io"), run);
+    expect(await gh.view("acme/api", 7)).toMatchObject({ number: 7, inMergeQueue: null });
+    expect((await gh.list("authored", {})).rows).toHaveLength(1);
+    expect(calls.map((call) => query(call).includes("isInMergeQueue"))).toEqual([true, false, false]);
+    // Exit 0 with only errors, as some servers answer, is the same refusal.
+    const quiet = recorder((call) => (query(call).includes("isInMergeQueue") ? { json: { errors: [{ message: "Field 'isInMergeQueue' doesn't exist on type 'PullRequest'" }] } } : { json: { data: { repository: { pullRequest: node() } } } }));
+    expect((await new GithubAdapter(github(), quiet.run).view("acme/api", 7)).number).toBe(7);
+    expect(quiet.calls).toHaveLength(2);
+    // Any other refusal fails as before.
+    const other = recorder(() => ({ code: 1, stderr: "gh: Field 'nope' doesn't exist on type 'PullRequest'" }));
+    await expect(new GithubAdapter(github(), other.run).view("acme/api", 7)).rejects.toThrow(/nope/u);
+    expect(other.calls).toHaveLength(1);
+  });
+
+  it("asks again without the merge queue for every request that asked for it, when two were sent at once", async () => {
+    const missing = { code: 1, stderr: "gh: Field 'isInMergeQueue' doesn't exist on type 'PullRequest'" };
+    const { calls, run } = recorder((call) => (query(call).includes("isInMergeQueue") ? missing : { json: { data: { repository: { pullRequest: node() } } } }));
+    const gh = new GithubAdapter(github("ghe.acme.io"), run);
+    const both = await Promise.allSettled([gh.view("acme/api", 7), gh.view("acme/api", 7)]);
+    expect(both.map((read) => read.status)).toEqual(["fulfilled", "fulfilled"]);
+    expect(calls.map((call) => query(call).includes("isInMergeQueue"))).toEqual([true, true, false, false]);
+  });
+
+  it("counts a PR whose read has an error under its alias as not read, even when the rest of it came", async () => {
+    const { run } = recorder(() => ({
+      code: 1,
+      stderr: "gh: Something went wrong while executing your query.",
+      stdout: JSON.stringify({
+        data: { p0: { pullRequest: node({ number: 1 }) }, p1: { pullRequest: node({ number: 2 }) } },
+        errors: [{ path: ["p0", "pullRequest", "autoMergeRequest"], message: "Something went wrong while executing your query." }],
+      }),
+    }));
+    const out = await new GithubAdapter(github(), run).viewMany([{ repo: "acme/api", number: 1 }, { repo: "acme/api", number: 2 }]);
+    expect(out[0]).toEqual({ repo: "acme/api", number: 1, summary: null, error: "Something went wrong while executing your query." });
+    expect(out[1]).toMatchObject({ number: 2, summary: { number: 2 }, error: null });
+  });
+
+  it("reads many PRs in batches of ten, and keeps the PRs GitHub found when it could not find one", async () => {
+    const { calls, run } = recorder((call) => {
+      const aliases = [...query(call).matchAll(/(p\d+): repository/gu)].map((m) => m[1]!);
+      const data: Record<string, unknown> = {};
+      const errors: unknown[] = [];
+      for (const alias of aliases) {
+        const number = Number(call.args.find((arg) => arg.startsWith(`${alias}n=`))!.split("=")[1]);
+        if (number === 13) {
+          data[alias] = { pullRequest: null };
+          errors.push({ type: "NOT_FOUND", path: [alias, "pullRequest"], message: "Could not resolve to a PullRequest with the number of 13." });
+        } else data[alias] = { pullRequest: node({ number, state: number === 4 ? "MERGED" : "OPEN", mergedAt: number === 4 ? "2026-10-23T11:00:00Z" : null, isInMergeQueue: number === 5 }) };
+      }
+      // gh exits 1 when the answer has errors, and still prints it.
+      return errors.length ? { code: 1, stderr: "gh: Could not resolve to a PullRequest with the number of 13.", stdout: JSON.stringify({ data, errors }) } : { json: { data } };
+    });
+    const gh = new GithubAdapter(github(), run);
+    const refs = Array.from({ length: 23 }, (_, i) => ({ repo: "acme/api", number: i + 1 }));
+    const out = await gh.viewMany(refs);
+    expect(calls.map((call) => [...query(call).matchAll(/: repository\(/gu)].length)).toEqual([10, 10, 3]);
+    expect(out).toHaveLength(23);
+    expect(out[3]).toMatchObject({ repo: "acme/api", number: 4, summary: { state: "merged", closedAt: at("2026-10-23T11:00:00Z") }, error: null });
+    expect(out[4]!.summary!.inMergeQueue).toBe(true);
+    expect(out[12]).toEqual({ repo: "acme/api", number: 13, summary: null, error: "Could not resolve to a PullRequest with the number of 13." });
+    expect(out.filter((row) => row.summary !== null)).toHaveLength(22);
+    expect(query(calls[0]!)).toContain("p0: repository(owner: $p0o, name: $p0r) { pullRequest(number: $p0n)");
+
+    // A batch that fails as a whole fails only its own PRs.
+    let first = true;
+    const flaky = recorder((call) => {
+      if (first) {
+        first = false;
+        return { code: 1, stderr: "gh: HTTP 502" };
+      }
+      const aliases = [...query(call).matchAll(/(p\d+): repository/gu)].map((m) => m[1]!);
+      return { json: { data: Object.fromEntries(aliases.map((alias) => [alias, { pullRequest: node({ number: Number(call.args.find((arg) => arg.startsWith(`${alias}n=`))!.split("=")[1]) }) }])) } };
+    });
+    const mixed = await new GithubAdapter(github(), flaky.run).viewMany(refs.slice(0, 12));
+    expect(mixed.slice(0, 10).every((row) => row.summary === null && /HTTP 502/u.test(row.error ?? ""))).toBe(true);
+    expect(mixed.slice(10).map((row) => row.summary?.number)).toEqual([11, 12]);
+  });
+
+  it("reads the PR's state with watching's light activity read, not with the PR view's", async () => {
+    const { calls, run } = recorder(() => ({ json: { data: { repository: { pullRequest: { ...empty, state: "MERGED", isDraft: false, mergedAt: "2026-10-23T11:00:00Z", closedAt: "2026-10-23T11:00:00Z", updatedAt: "2026-10-23T11:00:01Z" } } } } }));
+    const gh = new GithubAdapter(github(), run);
+    expect((await gh.activity("acme/api", 7)).pr).toEqual({ state: "merged", closedAt: at("2026-10-23T11:00:00Z"), updatedAt: at("2026-10-23T11:00:01Z") });
+    await gh.activity("acme/api", 7, undefined, { detail: true });
+    expect(query(calls[0]!)).toMatch(/\bstate isDraft mergedAt closedAt updatedAt\b/u);
+    expect(query(calls[1]!)).not.toContain("mergedAt");
+    expect(toActivity({ ...empty, state: "OPEN", isDraft: true, updatedAt: "2026-10-23T11:00:01Z" }).pr).toEqual({ state: "draft", closedAt: null, updatedAt: at("2026-10-23T11:00:01Z") });
+    expect(toActivity(empty).pr).toBeNull();
+  });
+
+  it("takes a command server's merge queue and an activity read's state when it prints them", async () => {
+    const { run } = recorder((call) => {
+      if (call.env.SHUTTLE_OPERATION === "view") return { json: { repo: "acme/app", number: 7, title: "T", state: "open", in_merge_queue: true } };
+      return { json: { head: "h2", items: [], state: "merged", closed_at: "2026-10-23T11:00:00Z", updated_at: "2026-10-23T11:00:01Z" } };
+    });
+    const adapter = new CommandAdapter(forge({ activity: "a" }), run);
+    expect((await adapter.view("acme/app", 7)).inMergeQueue).toBe(true);
+    expect((await adapter.activity("acme/app", 7)).pr).toEqual({ state: "merged", closedAt: at("2026-10-23T11:00:00Z"), updatedAt: at("2026-10-23T11:00:01Z") });
+    const plain = recorder((call) => (call.env.SHUTTLE_OPERATION === "view" ? { json: { repo: "acme/app", number: 7, title: "T", state: "open" } } : { json: { items: [], state: "open", draft: true } }));
+    const bare = new CommandAdapter(forge({ activity: "a" }), plain.run);
+    expect((await bare.view("acme/app", 7)).inMergeQueue).toBeNull();
+    expect((await bare.activity("acme/app", 7)).pr).toEqual({ state: "draft", closedAt: null, updatedAt: null });
+    expect((bare as Adapter).viewMany).toBeUndefined();
+  });
+});
+
+describe("GitHub checks that a newer run replaced", () => {
+  const query = (call: Call) => call.args.find((arg) => arg.startsWith("query="))!;
+  type Context = NonNullable<Parameters<typeof toActivity>[0]["commits"]["nodes"][number]["commit"]["statusCheckRollup"]>["contexts"]["nodes"][number];
+  const actions = (runId: number, event: string, workflow = { id: "W1", name: "CI" }): Context["checkSuite"] => ({ workflowRun: { databaseId: runId, event, workflow }, app: { name: "GitHub Actions" } });
+  const job = (databaseId: number, name: string, conclusion: string | null, checkSuite: Context["checkSuite"]): Context => ({
+    __typename: "CheckRun", id: `CK${databaseId}`, databaseId, name, status: conclusion === null ? "IN_PROGRESS" : "COMPLETED", conclusion, detailsUrl: null, completedAt: "2026-10-22T14:00:00Z", checkSuite,
+  });
+  // CI ran twice for pull_request: the first run was cancelled once the second started, and its gate job failed on that.
+  const contexts: Context[] = [
+    job(1, "build", "CANCELLED", actions(100, "pull_request")),
+    job(2, "gate", "FAILURE", actions(100, "pull_request")),
+    job(3, "shard (${{ matrix.n }})", "CANCELLED", actions(100, "pull_request")),
+    job(10, "build", "SKIPPED", actions(200, "pull_request")),
+    job(11, "gate", "SUCCESS", actions(200, "pull_request")),
+    // Another event's run, and another workflow file with the same name, are not replaced by it.
+    job(5, "build", "FAILURE", actions(150, "pull_request_review")),
+    job(4, "lint", "FAILURE", actions(90, "pull_request", { id: "W2", name: "CI" })),
+    // A check re-run outside Actions: the newer attempt wins.
+    job(20, "e2e", "FAILURE", { workflowRun: null, app: { name: "Buildkite" } }),
+    job(30, "e2e", "SUCCESS", { workflowRun: null, app: { name: "Buildkite" } }),
+    { __typename: "StatusContext", id: "SC1", context: "deploy", state: "ERROR", targetUrl: "t", createdAt: "2026-10-22T15:00:00Z" },
+  ];
+  const head = (nodes: Context[], extra: object = {}) => ({ headRefOid: "h2", reviews: { nodes: [] }, reviewThreads: { nodes: [] }, comments: { nodes: [] }, commits: { nodes: [{ commit: { statusCheckRollup: { state: "FAILURE", contexts: { totalCount: nodes.length, nodes } } } }] }, ...extra });
+
+  it("sends an agent only the failures of each check's newest run", () => {
+    expect(toActivity(head(contexts)).items.map((item) => item.body)).toEqual(["build failed", "lint failed", "deploy failed"]);
+  });
+
+  it("lists only each check's newest run in the PR view, and counts the rest out of the total", () => {
+    const detail = { isDraft: false, mergeable: "MERGEABLE", mergeStateStatus: "BLOCKED", reviewDecision: null, commitList: { totalCount: 0, nodes: [] }, files: null, timelineItems: { nodes: [] } };
+    const checks = toActivity(head(contexts, detail)).details!.checks!;
+    expect(checks.items.map((run) => [run.name, run.state])).toEqual([
+      ["build", "skipped"], ["gate", "passed"], ["build", "failed"], ["lint", "failed"], ["e2e", "passed"], ["deploy", "failed"],
+    ]);
+    expect(checks.total).toBe(6);
+    // Runs past the first page still count: only the runs read come out.
+    const cut = head(contexts, detail);
+    cut.commits.nodes[0]!.commit.statusCheckRollup.contexts.totalCount = 130;
+    expect(toActivity(cut).details!.checks!.total).toBe(126);
+  });
+
+  it("does not send an agent a check GitHub refused to start over billing, and says why in the PR view", () => {
+    const refused = "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings";
+    const billed = (databaseId: number, name: string, message: string): Context => ({ ...job(databaseId, name, "FAILURE", actions(300, "pull_request")), annotations: { nodes: [{ message }] } });
+    const nodes = [billed(40, "build", refused), billed(41, "lint", "Process completed with exit code 1.")];
+    expect(toActivity(head(nodes)).items.map((item) => item.body)).toEqual(["lint failed"]);
+    const detail = { isDraft: false, mergeable: "MERGEABLE", mergeStateStatus: "BLOCKED", reviewDecision: null, commitList: { totalCount: 0, nodes: [] }, files: null, timelineItems: { nodes: [] } };
+    expect(toActivity(head(nodes, detail)).details!.checks!.items.map((run) => [run.name, run.state, run.detail])).toEqual([
+      ["build", "failed", "GitHub refused to start it over the account's billing"],
+      ["lint", "failed", null],
+    ]);
+  });
+
+  it("asks for each run and workflow in both activity reads, and for every check in watching's", async () => {
+    const { calls, run } = recorder(() => ({ json: { data: { repository: { pullRequest: head([]) } } } }));
+    const gh = new GithubAdapter(github(), run);
+    await gh.activity("acme/api", 7);
+    await gh.activity("acme/api", 7, undefined, { detail: true });
+    for (const call of calls) expect(query(call)).toContain("databaseId name status conclusion");
+    for (const call of calls) expect(query(call)).toContain("workflowRun { databaseId event workflow { id name } }");
+    for (const call of calls) expect(query(call)).toContain("annotations(first: 3) { nodes { message } }");
+    expect(query(calls[0]!)).toContain("contexts(first: 100)");
+  });
+
+  // GitHub counts all five runs, the replaced ones too, and calls the head failing.
+  const counted = { state: "FAILURE", contexts: { totalCount: 5, checkRunCountsByState: [{ state: "CANCELLED", count: 1 }, { state: "FAILURE", count: 1 }, { state: "SKIPPED", count: 1 }, { state: "SUCCESS", count: 2 }], statusContextCountsByState: [] } };
+  const failing = (extra: Partial<Node> = {}) => node({ commits: { nodes: [{ commit: { statusCheckRollup: counted } }] }, ...extra });
+  const runs = [
+    { ...job(1, "build", "CANCELLED", actions(100, "pull_request")), status: "COMPLETED" },
+    job(2, "gate", "FAILURE", actions(100, "pull_request")),
+    job(10, "build", "SKIPPED", actions(200, "pull_request")),
+    job(11, "gate", "SUCCESS", actions(200, "pull_request")),
+    job(12, "Graphite / mergeability_check", "SUCCESS", { workflowRun: null, app: { name: "Graphite App" } }),
+  ];
+  const latest = (headRefOid = "h2", nodes: object[] = runs) => ({ headRefOid, commits: { nodes: [{ commit: { statusCheckRollup: { ...counted, contexts: { ...counted.contexts, nodes } } } }] } });
+  const isLatest = (call: Call) => query(call).includes("fragment pr on PullRequest { headRefOid");
+  const server = (rows: Node[], answer: (call: Call) => unknown = () => ({ json: { data: { p0: { pullRequest: latest() } } } })) => recorder((call) => {
+    if (isLatest(call)) return answer(call);
+    if (query(call).includes("search(")) return { json: { data: { search: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: rows } } } };
+    if (query(call).includes("fragment pr on PullRequest")) return { json: { data: Object.fromEntries(rows.map((row, i) => [`p${i}`, { pullRequest: row }])) } };
+    return { json: { data: { repository: { pullRequest: rows[0] } } } };
+  });
+
+  it("reads a PR GitHub calls failing again, and leaves the replaced runs out of its state and counts", async () => {
+    const { calls, run } = server([failing()]);
+    const gh = new GithubAdapter(github(), run);
+    expect(toSummary(failing())).toMatchObject({ checks: "failed", checkCounts: { passed: 3, failed: 2, pending: 0, total: 5 } });
+    expect((await gh.list("authored", { state: "open" })).rows[0]).toMatchObject({ checks: "passed", checkCounts: { passed: 3, failed: 0, pending: 0, total: 3 } });
+    expect(calls.filter(isLatest)).toHaveLength(1);
+    expect(calls.find(isLatest)!.args).toEqual(expect.arrayContaining(["p0o=acme", "p0r=api", "p0n=7"]));
+    // The same head with the same counts is not read again, by a list, a view or a batched view.
+    expect(await gh.view("acme/api", 7)).toMatchObject({ checks: "passed", checkCounts: { failed: 0, total: 3 } });
+    expect((await gh.viewMany([{ repo: "acme/api", number: 7 }]))[0]!.summary).toMatchObject({ checks: "passed" });
+    expect(calls.filter(isLatest)).toHaveLength(1);
+  });
+
+  it("reads it again once its head or counts change, and keeps a check that still fails", async () => {
+    let rollup = counted;
+    let nodes: object[] = runs;
+    const { calls, run } = recorder((call) => (isLatest(call)
+      ? { json: { data: { p0: { pullRequest: { headRefOid: "h2", commits: { nodes: [{ commit: { statusCheckRollup: { ...rollup, contexts: { ...rollup.contexts, nodes } } } }] } } } } } }
+      : { json: { data: { repository: { pullRequest: failing({ commits: { nodes: [{ commit: { statusCheckRollup: rollup } }] } }) } } } }));
+    const gh = new GithubAdapter(github(), run);
+    expect(await gh.view("acme/api", 7)).toMatchObject({ checks: "passed" });
+    // The newest run's deploy job times out.
+    rollup = { ...counted, contexts: { ...counted.contexts, totalCount: 6, checkRunCountsByState: [...counted.contexts.checkRunCountsByState, { state: "TIMED_OUT", count: 1 }] } };
+    nodes = [...runs, job(13, "deploy", "TIMED_OUT", actions(200, "pull_request"))];
+    expect(await gh.view("acme/api", 7)).toMatchObject({ checks: "failed", checkCounts: { passed: 3, failed: 1, total: 4 } });
+    expect(calls.filter(isLatest)).toHaveLength(2);
+  });
+
+  it("keeps GitHub's word when the second read fails, finds another head, or nothing was replaced", async () => {
+    const down = server([failing()], () => ({ code: 1, stderr: "gh: HTTP 502" }));
+    expect((await new GithubAdapter(github(), down.run).list("authored", { state: "open" })).rows[0]).toMatchObject({ checks: "failed", checkCounts: { failed: 2, total: 5 } });
+    const pushed = server([failing()], () => ({ json: { data: { p0: { pullRequest: latest("h3") } } } }));
+    const gh = new GithubAdapter(github(), pushed.run);
+    expect(await gh.view("acme/api", 7)).toMatchObject({ checks: "failed", checkCounts: { failed: 2 } });
+    // Nothing was kept for the old head, so the next read asks again.
+    await gh.view("acme/api", 7);
+    expect(pushed.calls.filter(isLatest)).toHaveLength(2);
+    const plain = server([failing()], () => ({ json: { data: { p0: { pullRequest: latest("h2", runs.slice(2)) } } } }));
+    expect(await new GithubAdapter(github(), plain.run).view("acme/api", 7)).toMatchObject({ checks: "failed", checkCounts: { failed: 2, total: 5 } });
+  });
+
+  it("reads only open PRs GitHub calls failing, ten at a time", async () => {
+    const rows = [
+      ...Array.from({ length: 12 }, (_, i) => failing({ number: i + 1 })),
+      failing({ number: 20, state: "MERGED", mergedAt: "2026-10-23T11:00:00Z" }),
+      node({ number: 21, commits: { nodes: [{ commit: { statusCheckRollup: { state: "SUCCESS", contexts: { totalCount: 2, checkRunCountsByState: [{ state: "SUCCESS", count: 2 }], statusContextCountsByState: [] } } } }] } }),
+    ];
+    const { calls, run } = server(rows, (call) => {
+      const aliases = [...query(call).matchAll(/(p\d+): repository/gu)].map((m) => m[1]!);
+      return { json: { data: Object.fromEntries(aliases.map((alias) => [alias, { pullRequest: latest() }])) } };
+    });
+    const list = await new GithubAdapter(github(), run).list("review_requested", {});
+    expect(calls.filter(isLatest).map((call) => [...query(call).matchAll(/: repository\(/gu)].length)).toEqual([10, 2]);
+    expect(list.rows.filter((row) => row.checks === "passed").map((row) => row.number)).toEqual([...Array.from({ length: 12 }, (_, i) => i + 1), 21]);
+    expect(list.rows.find((row) => row.number === 20)).toMatchObject({ checks: "failed", checkCounts: { failed: 2 } });
+  });
+});

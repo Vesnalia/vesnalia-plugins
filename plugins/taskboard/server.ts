@@ -1,0 +1,3255 @@
+import { createGiteaAdapter, parseGiteaRef } from './sources/gitea.js';
+import { registerPreparation } from './preparation/server.js';
+import { createTicketImprovementService } from './ticket-improvement-service.js';
+import {
+  PLUGIN_CLI_OUTPUT_MAX_BYTES,
+  type BbPluginApi,
+  type PluginRpcHandlers
+} from '@get-bb/plugin-sdk';
+import {
+  FILTER_PRESET_STATE_JSON_MAX_LENGTH,
+  bbProjectIdSchema,
+  createIssueMetadataSchema,
+  escapeExternalInlineText,
+  escapeExternalJsonOutput,
+  filterPresetStateSchema,
+  filterPresetSummary,
+  formatWorkItemContext,
+  LINEAR_FINISHED_DAYS_MAX,
+  normalizePresetName,
+  projectConfigMutationSchema,
+  projectCredentialsInteractionResponseSchema,
+  projectSourceConfigSchema,
+  sourceName,
+  workItemInspectorSchema,
+  workSourceSchema,
+  workStatusOptionSchema,
+  taskboardRpcContract,
+  type CreateIssueContext,
+  type CreateIssueInput,
+  type CreateIssueMetadata,
+  type FilterPreset,
+  type ProjectConfigMutation,
+  type ProjectConfigView,
+  type ProjectSourceConfig,
+  type SecretMutation,
+  type TrackerProject,
+  type WorkItem,
+  type WorkItemDetail,
+  type WorkItemFilterField,
+  type WorkItemFieldMutation,
+  type WorkItemInspector,
+  type WorkSource,
+  type WorkStatusOption,
+  type WorkSourceStatus
+} from './contract.js';
+import { filterWorkItemsByAttributes } from './browse.js';
+import {
+  assertExpectedConnectorRevision,
+  assertExpectedIssueSource,
+  createSafeIssueMetadataFailure,
+  reconcileIssueCreation
+} from './create-issue.js';
+import {
+  createProjectCredentialVault,
+  type CredentialSource
+} from './credentials.js';
+import {
+  createGithubAdapter,
+  discoverGithubRepositories
+} from './sources/github.js';
+import {
+  createGitlabAdapter,
+  glabStatusProbe,
+  parseGitlabRef
+} from './sources/gitlab.js';
+import { createJiraAdapter } from './sources/jira.js';
+import { jiraProjectKeysFromJql } from './sources/jira-scope.js';
+import { createLinearAdapter } from './sources/linear.js';
+import {
+  withoutComments,
+  type ExternalWorkItemCreateResult,
+  type ExternalWorkItem,
+  type ExternalWorkItemDetail,
+  type ExternalWorkItemFieldMutation,
+  type ExternalWorkItemInspectorOptions,
+  type WorkSourceAdapter
+} from './sources/types.js';
+import { createWorkItemStore } from './store.js';
+import { decodeTicketImage } from './ticket-images-server.js';
+import { createFactoryStore } from './factory/store.js';
+import { createFactoryService } from './factory/service.js';
+import { factoryProjectPolicySchema, type FactoryIdentity, type FactoryStatusTarget } from './factory/contract.js';
+import { threadExecution } from './factory/native-dispatch.js';
+import { factoryKey } from './factory/state.js';
+import { createEmpiricalObservationQueue } from './empirical/serial.js';
+import { hostContract } from './preparation/contract.js';
+import { doneStatus, progressStatus, reviewStatus, statusTargetLabel } from './factory/tracker.js';
+
+const SOURCES: readonly WorkSource[] = ['linear', 'github', 'jira', 'gitlab', 'gitea'];
+const CREDENTIAL_SOURCES: readonly CredentialSource[] = ['linear', 'jira'];
+const SYNC_INTERVAL_MS = 5 * 60_000;
+const BOOT_SYNC_DELAY_MS = 2_500;
+const SYNC_TROUBLE_BACKOFF_MS = 15 * 60_000;
+const suspendedSync = new Set<string>();
+const suspendedSyncAt = new Map<string, number>();
+const KEEP_SECRET = { operation: 'keep' } as const;
+const DEFAULT_PROJECT_CONFIG = {
+  source: 'github',
+  linearTeamKey: '',
+  linearFinishedDays: 0,
+  jiraBaseUrl: '',
+  jiraEmail: '',
+  jiraJql:
+    'assignee = currentUser() AND resolution = Unresolved ORDER BY updated DESC',
+  gitlabProjectRef: '',
+  giteaLogin: '',
+  giteaProjectRef: ''
+} satisfies Omit<ProjectSourceConfig, 'projectId'>;
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+
+export function formatFilterPresetCliJson(value: unknown): string {
+  const output = escapeExternalJsonOutput(JSON.stringify(value));
+  if (new TextEncoder().encode(output).byteLength > PLUGIN_CLI_OUTPUT_MAX_BYTES) {
+    throw new Error('Filter preset output exceeds the plugin CLI limit');
+  }
+  return output;
+}
+
+function scopedItem(projectId: string, item: ExternalWorkItem): WorkItem {
+  return { bbProjectId: projectId, ...item };
+}
+
+function scopedItemDetail(
+  projectId: string,
+  item: ExternalWorkItemDetail
+): WorkItemDetail {
+  return { bbProjectId: projectId, ...item };
+}
+
+function mentionId(item: WorkItem): string {
+  return `${item.bbProjectId}:${item.source}:${item.locator}`;
+}
+
+function parseMentionId(value: string): {
+  projectId: string;
+  source: WorkSource;
+  locator: string;
+} {
+  const firstSeparator = value.indexOf(':');
+  const secondSeparator = value.indexOf(':', firstSeparator + 1);
+  const projectId = value.slice(0, firstSeparator);
+  const source = value.slice(firstSeparator + 1, secondSeparator);
+  const locator = value.slice(secondSeparator + 1);
+  const parsedProjectId = bbProjectIdSchema.safeParse(projectId);
+  const parsedSource = workSourceSchema.safeParse(source);
+  if (
+    !parsedProjectId.success ||
+    !parsedSource.success ||
+    !locator ||
+    firstSeparator < 0 ||
+    secondSeparator < 0
+  ) {
+    throw new Error('Invalid Taskboard mention');
+  }
+  return {
+    projectId: parsedProjectId.data,
+    source: parsedSource.data,
+    locator
+  };
+}
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return Promise.resolve();
+  return new Promise(resolve => {
+    const finish = () => {
+      clearTimeout(timeout);
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    const timeout = setTimeout(finish, ms);
+    signal.addEventListener('abort', finish, { once: true });
+  });
+}
+
+interface ParsedCliArguments {
+  positionals: string[];
+  projectId: string | undefined;
+  source: string | undefined;
+  query: string | undefined;
+  linearTeam: string | undefined;
+  linearFinishedDays: number | undefined;
+  jiraUrl: string | undefined;
+  jiraEmail: string | undefined;
+  jiraJql: string | undefined;
+  gitlabProject: string | undefined;
+  giteaProject: string | undefined;
+  giteaLogin: string | undefined;
+  statusId: string | undefined;
+  preset: string | undefined;
+  fromState: string | undefined;
+  json: boolean;
+  cached: boolean;
+}
+
+const CLI_OPTIONS_BY_COMMAND = new Map<string, ReadonlySet<string>>([
+  ['status', new Set(['--project', '--json'])],
+  ['factory', new Set(['--project', '--json'])],
+  [
+    'list',
+    new Set([
+      '--project',
+      '--source',
+      '--query',
+      '--preset',
+      '--cached',
+      '--json'
+    ])
+  ],
+  ['show', new Set(['--project', '--json'])],
+  ['refresh', new Set(['--project', '--json'])],
+  ['transitions', new Set(['--project', '--json'])],
+  ['move', new Set(['--project', '--status', '--json'])],
+  [
+    'config',
+    new Set([
+      '--project',
+      '--source',
+      '--linear-team',
+      '--linear-finished-days',
+      '--jira-url',
+      '--jira-email',
+      '--jira-jql',
+      '--gitlab-project',
+      '--gitea-project',
+      '--gitea-login',
+      '--json'
+    ])
+  ],
+  ['credentials', new Set(['--project', '--json'])],
+  ['presets', new Set(['--project', '--from-state', '--json'])]
+]);
+
+export function parseTaskboardCliArguments(
+  command: string,
+  argv: string[]
+): ParsedCliArguments {
+  const allowedOptions = CLI_OPTIONS_BY_COMMAND.get(command);
+  if (!allowedOptions) throw new Error('Unknown bb taskboard command');
+
+  const positionals: string[] = [];
+  const seenOptions = new Set<string>();
+  let projectId: string | undefined;
+  let source: string | undefined;
+  let query: string | undefined;
+  let linearTeam: string | undefined;
+  let linearFinishedDays: number | undefined;
+  let jiraUrl: string | undefined;
+  let jiraEmail: string | undefined;
+  let jiraJql: string | undefined;
+  let gitlabProject: string | undefined;
+  let giteaProject: string | undefined;
+  let giteaLogin: string | undefined;
+  let statusId: string | undefined;
+  let preset: string | undefined;
+  let fromState: string | undefined;
+  let json = false;
+  let cached = false;
+
+  const valueAfter = (flag: string, index: number): string => {
+    const value = argv[index + 1];
+    if (
+      value === undefined ||
+      value.startsWith('--') ||
+      (value.length === 0 &&
+        ![
+          '--linear-team',
+          '--jira-url',
+          '--jira-email',
+          '--query'
+        ].includes(flag))
+    ) {
+      throw new Error(`${flag} requires a value`);
+    }
+    return value;
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index]!;
+    if (!argument.startsWith('--')) {
+      positionals.push(argument);
+      continue;
+    }
+    if (!allowedOptions.has(argument)) {
+      throw new Error('Unsupported bb taskboard option');
+    }
+    if (seenOptions.has(argument)) {
+      throw new Error(`${argument} may only be provided once`);
+    }
+    seenOptions.add(argument);
+    if (argument === '--project') {
+      projectId = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--source') {
+      source = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--query') {
+      query = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--linear-team') {
+      linearTeam = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--linear-finished-days') {
+      const value = valueAfter(argument, index);
+      const days = /^\d+$/u.test(value) ? Number(value) : Number.NaN;
+      if (!(days <= LINEAR_FINISHED_DAYS_MAX)) {
+        throw new Error(
+          `--linear-finished-days requires whole days from 0 to ${LINEAR_FINISHED_DAYS_MAX}`
+        );
+      }
+      linearFinishedDays = days;
+      index += 1;
+    } else if (argument === '--jira-url') {
+      jiraUrl = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--jira-email') {
+      jiraEmail = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--jira-jql') {
+      jiraJql = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--gitea-project') {
+      giteaProject = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--gitea-login') {
+      giteaLogin = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--gitlab-project') {
+      gitlabProject = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--status') {
+      statusId = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--preset') {
+      preset = valueAfter(argument, index);
+      index += 1;
+    } else if (argument === '--from-state') {
+      fromState = valueAfter(argument, index);
+      if (fromState.length > FILTER_PRESET_STATE_JSON_MAX_LENGTH) {
+        throw new Error('--from-state is too large');
+      }
+      index += 1;
+    } else if (argument === '--json') {
+      json = true;
+    } else if (argument === '--cached') {
+      cached = true;
+    }
+  }
+
+  if (
+    command === 'presets' &&
+    fromState !== undefined &&
+    (positionals[0] ?? 'list') !== 'save'
+  ) {
+    throw new Error('--from-state is only valid with presets save');
+  }
+
+  return {
+    positionals,
+    projectId,
+    source,
+    query,
+    linearTeam,
+    linearFinishedDays,
+    jiraUrl,
+    jiraEmail,
+    jiraJql,
+    gitlabProject,
+    giteaProject,
+    giteaLogin,
+    statusId,
+    preset,
+    fromState,
+    json,
+    cached
+  };
+}
+
+export function resolvePresetListSelection(
+  preset: FilterPreset | undefined,
+  explicitSource: WorkSource | undefined,
+  explicitQuery: string | undefined,
+  enabledFilters: readonly WorkItemFilterField[]
+) {
+  const enabled = new Set(enabledFilters);
+  const presetSource =
+    preset && preset.state.source !== 'all'
+      ? preset.state.source
+      : undefined;
+  return {
+    source: explicitSource ?? presetSource,
+    query: explicitQuery ?? preset?.state.query,
+    stateCategories:
+      preset && enabled.has('state') ? preset.state.stateCategories : [],
+    attributeFilters: preset
+      ? {
+          statuses: enabled.has('status') ? preset.state.statuses : [],
+          assignees: enabled.has('assignee') ? preset.state.assignees : [],
+          priorities: enabled.has('priority')
+            ? preset.state.priorities
+            : [],
+          projects: enabled.has('project')
+            ? preset.state.externalProjects
+            : [],
+          labels: enabled.has('labels') ? preset.state.labels : []
+        }
+      : null
+  };
+}
+
+function formatProjectConfig(config: ProjectConfigView): string {
+  return [
+    `Project\t${config.projectId}`,
+    `Source\t${sourceName(config.source)}`,
+    `GitHub repos\t${config.githubRepos.join(', ') || 'none mapped'}`,
+    `Linear team\t${config.linearTeamKey || 'not configured'}`,
+    `Linear finished issues\t${config.linearFinishedDays ? `last ${config.linearFinishedDays} days` : 'hidden'}`,
+    `Linear credential\t${config.linearCredentialConfigured ? 'configured' : 'not configured'}`,
+    `Jira URL\t${config.jiraBaseUrl || 'not configured'}`,
+    `Jira email\t${config.jiraEmail || 'not configured'}`,
+    `Jira credential\t${config.jiraCredentialConfigured ? 'configured' : 'not configured'}`,
+    `Jira JQL\t${config.jiraJql}`,
+    `Gitea repository\t${config.giteaProjectRef || 'not configured'}`,
+    `Gitea tea login\t${config.giteaLogin || 'not configured'}`,
+    `GitLab project\t${config.gitlabProjectRef || 'not configured'}`,
+    `GitLab (glab)\t${config.gitlabConfigured ? 'authenticated' : 'not authenticated'}`
+  ].join('\n');
+}
+
+function formatCredentialStatus(config: ProjectConfigView): string {
+  return [
+    `Project\t${config.projectId}`,
+    `Linear credential\t${config.linearCredentialConfigured ? 'configured' : 'not configured'}`,
+    `Jira credential\t${config.jiraCredentialConfigured ? 'configured' : 'not configured'}`
+  ].join('\n');
+}
+
+function credentialStatus(config: ProjectConfigView) {
+  return {
+    projectId: config.projectId,
+    linearCredentialConfigured: config.linearCredentialConfigured,
+    jiraCredentialConfigured: config.jiraCredentialConfigured
+  };
+}
+
+function refreshedItemCount(
+  statuses: WorkSourceStatus[],
+  source: WorkSource | undefined
+): number {
+  return statuses
+    .filter(entry => source === undefined || entry.source === source)
+    .reduce((total, entry) => total + entry.itemCount, 0);
+}
+
+export default async function plugin(bb: BbPluginApi) {
+  bb.settings.define({
+    showThreadHeaderProgress: {
+      type: 'boolean',
+      label: 'Show task progress in thread headers',
+      default: true
+    },
+    showThreadHeaderPin: {
+      type: 'boolean',
+      label: 'Show Taskboard pin and open button',
+      default: true
+    }
+  });
+  const store = createWorkItemStore(bb);
+  const factoryStore = createFactoryStore(bb.storage.database());
+  const empiricalHost = bb.hosts.experimental_client({ contract: hostContract });
+  const factory = createFactoryService(bb.sdk, factoryStore, projectId =>
+    bb.realtime.publish('taskboard:factory', { projectId }), {
+      getItem: identity => store.get(identity.projectId, identity.source, identity.locator) ?? null,
+      async markStatus(item, target: FactoryStatusTarget) {
+        const live = await getLiveItem(item.bbProjectId, item.source, item.locator);
+        if (target !== 'done' && ['done', 'canceled'].includes(live.stateCategory)) {
+          return {
+            status: 'unavailable', target,
+            message: 'Issue is closed or canceled. Reopen it to update its status.'
+          };
+        }
+        if (target === 'done' && live.stateCategory === 'done') {
+          return { status: 'synced', message: null, target, statusName: live.status };
+        }
+        const options = await liveStatusOptions(item.bbProjectId, item.source, item.locator);
+        const option = target === 'review' ? reviewStatus(options)
+          : target === 'done' ? doneStatus(options)
+          : progressStatus(options);
+        if (!option) {
+          return {
+            status: 'unavailable', target,
+            message: `${sourceName(item.source)} has no ${statusTargetLabel(target)} transition for this issue. Agent work is tracked here.`
+          };
+        }
+        if (option.current) {
+          return { status: 'synced', message: null, target, statusName: option.name };
+        }
+        const updated = await updateItemStatus(item.bbProjectId, item.source, item.locator, option.id);
+        if (updated.stateCategory !== option.stateCategory) {
+          throw new Error(`The tracker did not confirm ${statusTargetLabel(target)}.`);
+        }
+        return { status: 'synced', message: null, target, statusName: option.name };
+      }
+    }, {
+      provider: projectId => projectConfig(projectId, true).source,
+      async candidates(policy, excludeLocators) {
+        const statuses = await syncAll(policy.projectId, policy.provider, true);
+        const status = statuses.find(candidate => candidate.source === policy.provider);
+        if (!status?.available) throw new Error(status?.message ?? 'Provider is unavailable.');
+        return store.list({
+          projectId: policy.projectId, source: policy.provider, stateCategories: ['todo'],
+          excludeLocators, limit: 500
+        });
+      },
+      liveItem: identity => getLiveItem(identity.projectId, identity.source, identity.locator)
+    }
+  );
+  const queueEmpiricalObservation = createEmpiricalObservationQueue();
+  function observeFactoryEmpirical(input: FactoryIdentity) {
+    return queueEmpiricalObservation(factoryKey(input), () => readFactoryEmpirical(input));
+  }
+  async function readFactoryEmpirical(input: FactoryIdentity) {
+    const record = factoryStore.get(input);
+    const run = [...(record?.runs ?? [])].reverse().find(candidate =>
+      candidate.threadId && candidate.environmentId);
+    if (!run?.threadId || !run.environmentId) {
+      return { kind: 'unbound' as const, reason: 'Start task to link an agent workspace.' };
+    }
+    const prior = factoryStore.getEmpirical(input);
+    const lastKnown = prior && prior.hostId === run.hostId &&
+      prior.environmentId === run.environmentId &&
+      prior.checkoutRoot === run.checkoutRoot ? prior : null;
+    try {
+      const [thread, environment] = await Promise.all([
+        bb.sdk.threads.get({ threadId: run.threadId }),
+        bb.sdk.environments.get({ environmentId: run.environmentId })
+      ]);
+      if (thread.projectId !== input.projectId || thread.environmentId !== run.environmentId ||
+        environment.projectId !== input.projectId || !environment.hostId || !environment.path ||
+        (run.hostId && run.hostId !== environment.hostId) ||
+        (run.checkoutRoot && run.checkoutRoot !== environment.path)) {
+        return { kind: 'unbound' as const, reason: 'The linked session workspace changed or is unavailable.' };
+      }
+      const response = await empiricalHost.call('observeEmpirical',
+        { root: environment.path, environmentId: environment.id },
+        { hostId: environment.hostId, signal: AbortSignal.timeout(55_000) });
+      if (response.environmentId !== environment.id || response.root !== environment.path) {
+        return { kind: 'unbound' as const, reason: 'Empirical responded from another workspace.' };
+      }
+      const status = response.status;
+      const observedAt = Date.now();
+      if (status.kind === 'feature' || status.kind === 'empty') {
+        factoryStore.saveEmpirical(input, {
+          hostId: environment.hostId, environmentId: environment.id,
+          checkoutRoot: environment.path, observedAt, status
+        });
+      }
+      return {
+        kind: 'observation' as const,
+        hostId: environment.hostId,
+        environmentId: environment.id,
+        checkoutRoot: environment.path,
+        threadId: run.threadId,
+        observedAt,
+        status,
+        lastKnown: status.kind === 'feature' || status.kind === 'empty' ? null : lastKnown
+      };
+    } catch {
+      if (!run.hostId || !run.checkoutRoot) {
+        return { kind: 'unbound' as const, reason: 'The linked session workspace is offline or unavailable.' };
+      }
+      return {
+        kind: 'observation' as const,
+        hostId: run.hostId,
+        environmentId: run.environmentId,
+        checkoutRoot: run.checkoutRoot,
+        threadId: run.threadId,
+        observedAt: Date.now(),
+        status: { kind: 'unavailable' as const, reason: 'The host is offline or Empirical did not respond.' },
+        lastKnown
+      };
+    }
+  }
+  const empiricalState = new Map<string, string>();
+  bb.background.service('taskboard-empirical-reconciliation', {
+    async start(signal) {
+      let offset = 0;
+      while (!signal.aborted) {
+        const records = factoryStore.all().filter(record =>
+          record.runs.some(run => run.threadId && run.environmentId));
+        const batch = records.slice(offset, offset + 32);
+        offset = offset + batch.length >= records.length ? 0 : offset + batch.length;
+        for (let index = 0; index < batch.length && !signal.aborted; index += 4) {
+          await Promise.allSettled(batch.slice(index, index + 4).map(async record => {
+            const key = JSON.stringify([record.projectId, record.source, record.locator]);
+            const observed = await observeFactoryEmpirical(record);
+            const fingerprint = JSON.stringify(observed.kind === 'observation'
+              ? [observed.hostId, observed.environmentId, observed.checkoutRoot, observed.status]
+              : [observed.kind, observed.reason]);
+            if (empiricalState.get(key) !== fingerprint) {
+              empiricalState.set(key, fingerprint);
+              bb.realtime.publish('taskboard:factory', { projectId: record.projectId });
+            }
+          }));
+        }
+        await sleep(8000, signal);
+      }
+    }
+  });
+  bb.background.service('taskboard-factory-progress', {
+    async start(signal) {
+      await factory.recover();
+      while (!signal.aborted) {
+        try {
+          await factory.scan();
+          await factory.poll(signal);
+        }
+        catch (error) { if (!signal.aborted) bb.log.warn(`Factory progress: ${errorMessage(error)}`); }
+        await sleep(2500, signal);
+      }
+    }
+  });
+  const credentials = createProjectCredentialVault(bb);
+
+  let projectRemotesForProbe: Awaited<
+    ReturnType<BbPluginApi['sdk']['projects']['list']>
+  > | null = null;
+
+  const GITLAB_SSH_REMOTE =
+    /^(?:ssh:\/\/)?(?:[^@/\s]+@)?(?<host>[^:/\s]+):(?<path>[^/\s]+\.git)$/u;
+
+  function gitlabHostFromRemote(
+    remote: string
+  ): string | null {
+    const ssh = GITLAB_SSH_REMOTE.exec(remote);
+    if (ssh?.groups) return ssh.groups.host!;
+    try {
+      const host = new URL(remote.replace(/^[^@/\s]+@/u, 'https://'))
+        .hostname;
+      return host || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function gitlabProbeHosts(config: ProjectSourceConfig): string[] {
+    if (config.gitlabProjectRef) {
+      const firstSlash = config.gitlabProjectRef.indexOf('/');
+      if (firstSlash > 0) {
+        return [config.gitlabProjectRef.slice(0, firstSlash)];
+      }
+    }
+    const hosts = new Set<string>();
+    for (const project of projectRemotesForProbe ?? []) {
+      const host = project.gitRemoteUrl
+        ? gitlabHostFromRemote(project.gitRemoteUrl)
+        : null;
+      if (host) hosts.add(host);
+    }
+    if (hosts.size === 0) hosts.add('gitlab.com');
+    return [...hosts];
+  }
+
+  async function liveProjects() {
+    const projects = await bb.sdk.projects.list({ includePersonal: true });
+    projectRemotesForProbe = projects;
+    return projects;
+  }
+
+  async function listProjects(): Promise<TrackerProject[]> {
+    const projects = await liveProjects();
+    return projects
+      .map(project => ({ id: project.id, name: project.name }))
+      .sort(
+        (left, right) =>
+          left.name.localeCompare(right.name) || left.id.localeCompare(right.id)
+      );
+  }
+
+  async function projectById(projectId: string): Promise<TrackerProject> {
+    const projects = await listProjects();
+    const project = projects.find(entry => entry.id === projectId);
+    if (!project) throw new Error('BB project was not found');
+    return project;
+  }
+
+  async function assertProjectExists(projectId: string): Promise<void> {
+    await projectById(projectId);
+  }
+
+  const resolvePresetByName = (
+    projectId: string,
+    name: string
+  ): FilterPreset => {
+    const presets = store.listFilterPresets(projectId);
+    const normalized = normalizePresetName(name);
+    const match = presets.find(
+      candidate => normalizePresetName(candidate.name) === normalized
+    );
+    if (match) return match;
+    const available = presets.map(candidate => candidate.name).join(', ');
+    throw new Error(
+      available
+        ? `Unknown filter preset "${name}". Available: ${available}`
+        : `Unknown filter preset "${name}". This project has no presets.`
+    );
+  };
+
+  function publishFilterPresetsChanged(projectId: string): void {
+    bb.realtime.publish('taskboard:presets-changed', { projectId });
+  }
+
+  async function assertPresetProviderIsCurrent(
+    projectId: string,
+    preset: FilterPreset
+  ): Promise<void> {
+    await waitForMutations(projectId, SOURCES);
+    const provider = projectConfig(projectId, true).source;
+    if (preset.state.provider !== provider) {
+      const savedProvider = preset.state.provider
+        ? sourceName(preset.state.provider)
+        : 'an unknown provider';
+      throw new Error(
+        `Filter preset "${preset.name}" was saved for ${savedProvider} but this project now uses ${sourceName(provider)}`
+      );
+    }
+  }
+
+  function assertPresetStateMatchesCurrentProvider(
+    projectId: string,
+    state: FilterPreset['state']
+  ): void {
+    const provider = projectConfig(projectId, true).source;
+    if (state.provider !== provider) {
+      throw new Error(
+        `Preset provider must match this project's ${sourceName(provider)} provider`
+      );
+    }
+  }
+
+  function assertPresetWriteMatchesCurrentProvider(
+    projectId: string,
+    id: string | undefined,
+    state: FilterPreset['state']
+  ): void {
+    if (id) {
+      const existing = store
+        .listFilterPresets(projectId)
+        .find(preset => preset.id === id);
+      if (!existing) throw new Error(`Unknown filter preset: ${id}`);
+      if (JSON.stringify(existing.state) !== JSON.stringify(state)) {
+        throw new Error('Renaming a filter preset cannot change its state');
+      }
+      return;
+    }
+    assertPresetStateMatchesCurrentProvider(projectId, state);
+  }
+
+  function saveFilterPresetLinearized(input: {
+    projectId: string;
+    id?: string;
+    name: string;
+    state: FilterPreset['state'];
+  }): Promise<{ preset: FilterPreset; presets: FilterPreset[] }> {
+    return enqueueMutation(input.projectId, SOURCES, async () => {
+      assertPresetWriteMatchesCurrentProvider(
+        input.projectId,
+        input.id,
+        input.state
+      );
+      const preset = store.saveFilterPreset(input);
+      const presets = store.listFilterPresets(input.projectId);
+      publishFilterPresetsChanged(input.projectId);
+      return { preset, presets };
+    });
+  }
+
+  async function githubReposForProject(projectId: string): Promise<string[]> {
+    const [project, system] = await Promise.all([
+      bb.sdk.projects.get({ projectId }),
+      bb.sdk.system.config()
+    ]);
+    return discoverGithubRepositories({
+      project,
+      primaryHostId: system.primaryHostId
+    });
+  }
+
+  function projectConfig(
+    projectId: string,
+    ensure: boolean
+  ): ProjectSourceConfig {
+    return ensure
+      ? store.ensureProjectConfig(projectId, DEFAULT_PROJECT_CONFIG)
+      : store.projectConfig(projectId, DEFAULT_PROJECT_CONFIG);
+  }
+
+  function syncKey(projectId: string, source: WorkSource): string {
+    return `${projectId}:${source}`;
+  }
+
+  const sourceRevisions = new Map<string, number>();
+  const connectorRevisions = new Map<string, number>();
+  type SourceRevisionSnapshot = Record<WorkSource, number>;
+  interface ExpectedProjectMutationState {
+    config: ProjectSourceConfig;
+    revisions: SourceRevisionSnapshot;
+  }
+
+  function currentRevision(projectId: string, source: WorkSource): number {
+    return sourceRevisions.get(syncKey(projectId, source)) ?? 0;
+  }
+
+  function currentConnectorRevision(
+    projectId: string,
+    source: WorkSource
+  ): number {
+    return connectorRevisions.get(syncKey(projectId, source)) ?? 0;
+  }
+
+  function revisionSnapshot(projectId: string): SourceRevisionSnapshot {
+    return {
+      linear: currentRevision(projectId, 'linear'),
+      github: currentRevision(projectId, 'github'),
+      jira: currentRevision(projectId, 'jira'),
+      gitlab: currentRevision(projectId, 'gitlab'),
+      gitea: currentRevision(projectId, 'gitea')
+    };
+  }
+
+  function sameRevisions(
+    projectId: string,
+    expected: SourceRevisionSnapshot
+  ): boolean {
+    return SOURCES.every(
+      source => currentRevision(projectId, source) === expected[source]
+    );
+  }
+
+  function advanceSourceRevision(
+    projectId: string,
+    source: WorkSource
+  ): number {
+    const next = currentRevision(projectId, source) + 1;
+    sourceRevisions.set(syncKey(projectId, source), next);
+    return next;
+  }
+
+  function invalidateSource(projectId: string, source: WorkSource): void {
+    advanceSourceRevision(projectId, source);
+    connectorRevisions.set(
+      syncKey(projectId, source),
+      currentConnectorRevision(projectId, source) + 1
+    );
+    store.clearSource(projectId, source);
+  }
+
+  const mutationTails = new Map<string, Promise<void>>();
+  let activeConfigMutations = 0;
+  let migrationBarrier: Promise<void> | null = null;
+  let releaseMigrationBarrier: (() => void) | null = null;
+  const configIdleWaiters = new Set<() => void>();
+
+  async function withConfigMutation<T>(
+    operation: () => Promise<T>
+  ): Promise<T> {
+    for (;;) {
+      const barrier = migrationBarrier;
+      if (!barrier) {
+        activeConfigMutations += 1;
+        break;
+      }
+      await barrier;
+    }
+    try {
+      return await operation();
+    } finally {
+      activeConfigMutations -= 1;
+      if (activeConfigMutations === 0) {
+        for (const resolve of configIdleWaiters) resolve();
+        configIdleWaiters.clear();
+      }
+    }
+  }
+
+  async function withExclusiveMigration<T>(
+    operation: () => Promise<T>
+  ): Promise<T> {
+    while (migrationBarrier) await migrationBarrier;
+    migrationBarrier = new Promise<void>(resolve => {
+      releaseMigrationBarrier = resolve;
+    });
+    if (activeConfigMutations > 0) {
+      await new Promise<void>(resolve => configIdleWaiters.add(resolve));
+    }
+    try {
+      return await operation();
+    } finally {
+      const release = releaseMigrationBarrier;
+      releaseMigrationBarrier = null;
+      migrationBarrier = null;
+      release?.();
+    }
+  }
+
+  function enqueueMutation<T>(
+    projectId: string,
+    sources: readonly WorkSource[],
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const keys = [
+      ...new Set(sources.map(source => syncKey(projectId, source)))
+    ].sort();
+    const previous = Promise.all(
+      keys.map(key => mutationTails.get(key) ?? Promise.resolve())
+    );
+    const result = previous.then(operation);
+    const tail = result.then(
+      () => undefined,
+      () => undefined
+    );
+    for (const key of keys) mutationTails.set(key, tail);
+    void tail.finally(() => {
+      for (const key of keys) {
+        if (mutationTails.get(key) === tail) mutationTails.delete(key);
+      }
+    });
+    return result;
+  }
+
+  async function waitForMutations(
+    projectId: string,
+    sources: readonly WorkSource[]
+  ): Promise<void> {
+    await Promise.all(
+      sources.map(
+        source =>
+          mutationTails.get(syncKey(projectId, source)) ?? Promise.resolve()
+      )
+    );
+  }
+
+  async function buildProjectConfigView(
+    config: ProjectSourceConfig
+  ): Promise<ProjectConfigView> {
+    const [linearCredentialConfigured, jiraCredentialConfigured, gitlabConfigured, githubRepos] =
+      await Promise.all([
+        credentials.configured(config.projectId, 'linear'),
+        credentials.configured(config.projectId, 'jira'),
+        // Non-blocking: infer glab auth from the last successful sync; the
+        // network probe runs in the background and refreshes the view via
+        // realtime when it settles.
+        glabGlabOkHeuristic(config),
+        githubReposForProject(config.projectId).catch(() => [])
+      ]);
+    return {
+      ...config,
+      githubRepos,
+      linearCredentialConfigured,
+      jiraCredentialConfigured,
+      gitlabConfigured
+    };
+  }
+
+  let glabProbeAt = 0;
+  let glabLastProbeResult = false;
+  const GLAB_PROBE_TTL_MS = 60_000;
+
+  function glabGlabOkHeuristic(config: ProjectSourceConfig): boolean {
+    // Warm the cached probe in the background; reads never block on it.
+    if (Date.now() - glabProbeAt > GLAB_PROBE_TTL_MS) {
+      glabProbeAt = Date.now();
+      void glabStatusProbe(gitlabProbeHosts(config))
+        .then(status => {
+          glabLastProbeResult = status.glabOk;
+        })
+        .catch(() => {
+          glabLastProbeResult = false;
+        });
+    }
+    return glabLastProbeResult;
+  }
+
+  async function readConsistentProjectConfigView(
+    projectId: string,
+    ensure = false
+  ): Promise<{
+    config: ProjectConfigView;
+    revisions: SourceRevisionSnapshot;
+  }> {
+    for (;;) {
+      await waitForMutations(projectId, SOURCES);
+      const before = revisionSnapshot(projectId);
+      const config = await buildProjectConfigView(
+        projectConfig(projectId, ensure)
+      );
+      const after = revisionSnapshot(projectId);
+      if (SOURCES.every(source => before[source] === after[source])) {
+        return { config, revisions: after };
+      }
+    }
+  }
+
+  async function readProjectConfigView(
+    projectId: string,
+    ensure = false
+  ): Promise<ProjectConfigView> {
+    return (await readConsistentProjectConfigView(projectId, ensure)).config;
+  }
+
+  async function getCreateIssueContext(
+    projectId: string
+  ): Promise<CreateIssueContext> {
+    const [project, config, currentAdapters] = await Promise.all([
+      projectById(projectId),
+      readProjectConfigView(projectId, true),
+      adapters(projectId, true)
+    ]);
+    const adapter = currentAdapters.get(config.source);
+    if (!adapter) throw new Error(`Missing ${config.source} adapter`);
+
+    const destinationLabel =
+      config.source === 'github' || config.source === 'gitea'
+        ? 'Repository'
+        : config.source === 'linear'
+          ? 'Team'
+          : config.source === 'gitlab'
+            ? 'GitLab project'
+            : 'Project key';
+    const destinationIds =
+      config.source === 'github'
+        ? config.githubRepos
+        : config.source === 'gitea'
+          ? config.giteaProjectRef ? [config.giteaProjectRef] : []
+        : config.source === 'linear'
+          ? config.linearTeamKey
+            ? [config.linearTeamKey]
+            : []
+          : config.source === 'gitlab'
+            ? config.gitlabProjectRef
+              ? [config.gitlabProjectRef]
+              : []
+            : jiraProjectKeysFromJql(config.jiraJql);
+    const destinations = destinationIds.map(id => ({ id, label: id }));
+    const missingDestinationMessage =
+      config.source === 'gitea' && destinations.length === 0
+        ? 'Choose a tea login and Gitea repository in Manage.'
+        : config.source === 'github' && destinations.length === 0
+        ? 'Map at least one GitHub repository to this BB project.'
+        : config.source === 'linear' && destinations.length === 0
+          ? 'Choose a Linear team key for this BB project in Manage.'
+          : config.source === 'gitlab' && destinations.length === 0
+            ? 'Choose a GitLab project (host/path) for this BB project in Manage.'
+            : null;
+    const configurationMessage = adapter.configured()
+      ? null
+      : adapter.configurationMessage();
+
+    return {
+      projectId,
+      projectName: project.name,
+      source: config.source,
+      available:
+        configurationMessage === null && missingDestinationMessage === null,
+      message: configurationMessage ?? missingDestinationMessage,
+      destinationLabel,
+      destinations,
+      defaultDestinationId: destinations[0]?.id ?? null,
+      allowsCustomDestination: config.source === 'jira',
+      defaultIssueType: config.source === 'jira' ? 'Task' : null
+    };
+  }
+
+  async function getCreateIssueMetadata(input: {
+    projectId: string;
+    expectedSource: WorkSource;
+    destinationId: string;
+    issueType: string | null;
+  }) {
+    await waitForMutations(input.projectId, SOURCES);
+    const config = projectConfig(input.projectId, true);
+    const source = assertExpectedIssueSource(
+      input.expectedSource,
+      config.source
+    );
+    const connectorRevision = currentConnectorRevision(input.projectId, source);
+    const adapter = (await adapters(input.projectId, true)).get(source);
+    if (!adapter) throw new Error(`Missing ${source} adapter`);
+    assertExpectedConnectorRevision(
+      connectorRevision,
+      currentConnectorRevision(input.projectId, source),
+      source
+    );
+    if (!adapter.configured()) {
+      throw new Error(
+        adapter.configurationMessage() ??
+          `${sourceName(source)} is not configured`
+      );
+    }
+    let metadata: CreateIssueMetadata;
+    try {
+      metadata = createIssueMetadataSchema.parse(
+        await adapter.createMetadata({
+          destinationId: input.destinationId,
+          issueType: input.issueType
+        })
+      );
+    } catch (error) {
+      return createSafeIssueMetadataFailure(source, error);
+    }
+    assertExpectedConnectorRevision(
+      connectorRevision,
+      currentConnectorRevision(input.projectId, source),
+      source
+    );
+    return { ok: true as const, metadata, connectorRevision };
+  }
+
+  function readCredentialFormSnapshot(projectId: string) {
+    return readConsistentProjectConfigView(projectId);
+  }
+
+  async function adapters(
+    projectId: string,
+    ensureConfig = false
+  ): Promise<Map<WorkSource, WorkSourceAdapter>> {
+    for (;;) {
+      await waitForMutations(projectId, SOURCES);
+      const before = revisionSnapshot(projectId);
+      const config = projectConfig(projectId, ensureConfig);
+      const credential =
+        config.source === 'linear' || config.source === 'jira'
+          ? await credentials.read(projectId, config.source)
+          : undefined;
+      const githubRepos =
+        config.source === 'github'
+          ? await githubReposForProject(projectId)
+          : [];
+      const after = revisionSnapshot(projectId);
+      if (!SOURCES.every(source => before[source] === after[source])) continue;
+      const adapter =
+        config.source === 'linear'
+          ? createLinearAdapter({
+              enabled: true,
+              apiKey: credential,
+              teamKey: config.linearTeamKey,
+              finishedDays: config.linearFinishedDays
+            })
+          : config.source === 'jira'
+            ? createJiraAdapter({
+                enabled: true,
+                baseUrl: config.jiraBaseUrl,
+                email: config.jiraEmail,
+                apiToken: credential,
+                jql: config.jiraJql
+              })
+            : config.source === 'gitlab'
+              ? createGitlabAdapter(bb, true, projectId, config.gitlabProjectRef)
+              : config.source === 'gitea'
+                ? createGiteaAdapter({ enabled: true, login: config.giteaLogin, projectRef: config.giteaProjectRef })
+                : createGithubAdapter({
+                    enabled: true,
+                    repositories: githubRepos
+                  });
+      return new Map([[config.source, adapter]]);
+    }
+  }
+
+  async function statuses(
+    projectId: string,
+    currentAdapters?: Map<WorkSource, WorkSourceAdapter>
+  ): Promise<WorkSourceStatus[]> {
+    const availableAdapters = currentAdapters ?? (await adapters(projectId));
+    const [entry] = availableAdapters.entries();
+    if (!entry) throw new Error('Missing selected source adapter');
+    const [source, adapter] = entry;
+    const sync = store.syncState(projectId, source);
+    const configured = adapter.configured();
+    return [
+      {
+        source,
+        configured,
+        available:
+          configured && sync.error === null && sync.lastSyncedAt !== null,
+        message: configured ? sync.error : adapter.configurationMessage(),
+        lastSyncedAt: sync.lastSyncedAt,
+        itemCount: sync.itemCount
+      }
+    ];
+  }
+
+  function assertSelectedSource(
+    projectId: string,
+    source: WorkSource,
+    config = projectConfig(projectId, false)
+  ): void {
+    if (config.source !== source) {
+      throw new Error(
+        `${sourceName(source)} is not the selected tracker for this BB project`
+      );
+    }
+  }
+
+  async function assertSelectedSourceAfterMutations(
+    projectId: string,
+    source: WorkSource
+  ): Promise<void> {
+    await waitForMutations(projectId, SOURCES);
+    assertSelectedSource(projectId, source);
+  }
+
+  async function syncOne(
+    projectId: string,
+    source: WorkSource,
+    currentAdapters: Map<WorkSource, WorkSourceAdapter>,
+    revision: number,
+    forceRefresh: boolean
+  ): Promise<boolean> {
+    const adapter = currentAdapters.get(source);
+    if (!adapter) throw new Error(`Missing ${source} adapter`);
+    if (!adapter.configured()) {
+      if (currentRevision(projectId, source) === revision) {
+        store.setSourceError(
+          projectId,
+          source,
+          adapter.configurationMessage() ??
+            `${sourceName(source)} is not configured`
+        );
+      }
+      return false;
+    }
+    try {
+      const items = (await adapter.list({ refresh: forceRefresh })).map(item =>
+        scopedItem(projectId, item)
+      );
+      if (currentRevision(projectId, source) !== revision) return false;
+      const fingerprint = JSON.stringify(
+        items.map(item => [item.locator, item.status, item.updatedAt])
+      );
+      const unchanged =
+        lastSyncFingerprint.get(syncKey(projectId, source)) === fingerprint;
+      lastSyncFingerprint.set(syncKey(projectId, source), fingerprint);
+      if (unchanged && !forceRefresh) {
+        // Nothing changed since the last snapshot — keep the board quiet
+        // (no store write, no realtime publish from this sync).
+        return false;
+      }
+      store.replaceSource(projectId, source, items, new Date().toISOString());
+      if (suspendedSync.delete(projectId)) {
+        suspendedSyncAt.delete(projectId);
+      }
+      return true;
+    } catch (error) {
+      const message = errorMessage(error);
+      if (currentRevision(projectId, source) !== revision) return false;
+      store.setSourceError(projectId, source, message);
+      bb.log.warn(
+        `${sourceName(source)} sync failed for ${projectId}: ${message}`
+      );
+      suspendSync(projectId, message);
+      return false;
+    }
+  }
+
+  const activeSyncs = new Map<
+    string,
+    { revision: number; forceRefresh: boolean; promise: Promise<boolean> }
+  >();
+  const lastSyncFingerprint = new Map<string, string>();
+  function suspendSync(projectId: string, message: string) {
+    const environmentTrouble =
+      message.includes('HTTP 404') ||
+      message.toLowerCase().includes('unknown plugin') ||
+      message.toLowerCase().includes('not authenticated') ||
+      message.toLowerCase().includes('not available');
+    if (!environmentTrouble) return;
+    suspendedSync.add(projectId);
+    suspendedSyncAt.set(projectId, Date.now());
+  }
+  function syncSource(
+    projectId: string,
+    source: WorkSource,
+    currentAdapters: Map<WorkSource, WorkSourceAdapter>,
+    revision: number,
+    forceRefresh: boolean
+  ): Promise<boolean> {
+    const key = syncKey(projectId, source);
+    if (currentRevision(projectId, source) !== revision) {
+      return Promise.resolve(false);
+    }
+    const active = activeSyncs.get(key);
+    if (
+      active?.revision === revision &&
+      (active.forceRefresh || !forceRefresh)
+    ) {
+      return active.promise;
+    }
+    const run = () =>
+      syncOne(projectId, source, currentAdapters, revision, forceRefresh);
+    const pending =
+      active?.revision === revision
+        ? active.promise.then(changed => {
+            if (currentRevision(projectId, source) !== revision) return false;
+            // Chain after an in-flight sync only when it missed updates.
+            if (changed && !forceRefresh) return false;
+            return run();
+          })
+        : run();
+    const promise = pending.finally(() => {
+      if (activeSyncs.get(key)?.promise === promise) activeSyncs.delete(key);
+    });
+    activeSyncs.set(key, { revision, forceRefresh, promise });
+    return promise;
+  }
+
+  async function syncAll(
+    projectId: string,
+    source: WorkSource | undefined,
+    forceRefresh: boolean
+  ): Promise<WorkSourceStatus[]> {
+    let selected: WorkSource;
+    let revision: number;
+    let currentAdapters: Map<WorkSource, WorkSourceAdapter>;
+    for (;;) {
+      const config = projectConfig(projectId, true);
+      if (source) assertSelectedSource(projectId, source, config);
+      selected = config.source;
+      revision = currentRevision(projectId, selected);
+      currentAdapters = await adapters(projectId, true);
+      if (currentAdapters.has(selected)) break;
+      if (source) assertSelectedSource(projectId, source);
+    }
+    const changed = await syncSource(
+      projectId,
+      selected,
+      currentAdapters,
+      revision,
+      forceRefresh
+    );
+    const nextStatuses = await statuses(projectId);
+    if (changed) {
+      bb.realtime.publish('taskboard:changed', {
+        projectId,
+        source: source ?? null
+      });
+    }
+    return nextStatuses;
+  }
+
+  function scheduleSources(
+    projectId: string,
+    sources: readonly WorkSource[]
+  ): void {
+    void Promise.all(
+      sources.map(source => syncAll(projectId, source, false))
+    ).catch((error: unknown) => {
+      bb.log.warn(
+        `Taskboard sync failed for ${projectId}: ${errorMessage(error)}`
+      );
+    });
+  }
+
+  function changedSources(
+    previous: ProjectSourceConfig,
+    next: ProjectConfigMutation
+  ): WorkSource[] {
+    if (previous.source !== next.source) return [...SOURCES];
+    const changed = new Set<WorkSource>();
+    if (
+      previous.linearTeamKey !== next.linearTeamKey ||
+      previous.linearFinishedDays !== next.linearFinishedDays ||
+      next.linearCredential.operation !== 'keep'
+    ) {
+      changed.add('linear');
+    }
+    if (
+      previous.jiraBaseUrl !== next.jiraBaseUrl ||
+      previous.jiraEmail !== next.jiraEmail ||
+      previous.jiraJql !== next.jiraJql ||
+      next.jiraCredential.operation !== 'keep'
+    ) {
+      changed.add('jira');
+    }
+    if (previous.giteaLogin !== next.giteaLogin || previous.giteaProjectRef !== next.giteaProjectRef) changed.add('gitea');
+    if (previous.gitlabProjectRef !== next.gitlabProjectRef) changed.add('gitlab');
+    return [...changed];
+  }
+
+  async function restoreCredential(
+    projectId: string,
+    source: CredentialSource,
+    previous: string | undefined
+  ): Promise<void> {
+    const mutation: SecretMutation = previous
+      ? { operation: 'set', value: previous }
+      : { operation: 'clear' };
+    await credentials.mutate(projectId, source, mutation);
+  }
+
+  function sameProjectConfig(
+    left: ProjectSourceConfig,
+    right: ProjectSourceConfig
+  ): boolean {
+    return (
+      left.projectId === right.projectId &&
+      left.source === right.source &&
+      left.linearTeamKey === right.linearTeamKey &&
+      left.linearFinishedDays === right.linearFinishedDays &&
+      left.jiraBaseUrl === right.jiraBaseUrl &&
+      left.jiraEmail === right.jiraEmail &&
+      left.jiraJql === right.jiraJql &&
+      left.gitlabProjectRef === right.gitlabProjectRef &&
+      left.giteaLogin === right.giteaLogin &&
+      left.giteaProjectRef === right.giteaProjectRef
+    );
+  }
+
+  async function persistProjectConfig(
+    rawInput: ProjectConfigMutation,
+    expectedState?: ExpectedProjectMutationState
+  ): Promise<ProjectConfigView> {
+    const input = projectConfigMutationSchema.parse(rawInput);
+    const affectedSourceSet = new Set<WorkSource>();
+    const savedConfig = await withConfigMutation(() =>
+      // Register every source tail synchronously once the config gate is held.
+      // New adapter snapshots wait here; an already-running snapshot is
+      // rejected by the revision bump inside the queued operation.
+      enqueueMutation(input.projectId, SOURCES, async () => {
+        const previous = store.projectConfig(
+          input.projectId,
+          DEFAULT_PROJECT_CONFIG
+        );
+        if (
+          expectedState &&
+          (!sameProjectConfig(previous, expectedState.config) ||
+            !sameRevisions(input.projectId, expectedState.revisions))
+        ) {
+          throw new Error(
+            'Project connector state changed while the credential form was open; reopen it and confirm the current settings'
+          );
+        }
+        for (const source of changedSources(previous, input)) {
+          affectedSourceSet.add(source);
+        }
+        if (affectedSourceSet.size === 0) {
+          await assertProjectExists(input.projectId);
+          return previous;
+        }
+        const jiraIdentityChanged =
+          previous.jiraBaseUrl !== input.jiraBaseUrl ||
+          previous.jiraEmail !== input.jiraEmail;
+        let projectValidated = false;
+        if (jiraIdentityChanged && input.jiraCredential.operation === 'keep') {
+          await assertProjectExists(input.projectId);
+          projectValidated = true;
+          if (await credentials.configured(input.projectId, 'jira')) {
+            throw new Error(
+              'Changing the Jira URL or email requires a replacement token or explicit token removal'
+            );
+          }
+        }
+        // After the rejection-only keep-token preflight, invalidate before
+        // any mutation I/O. Tails block new snapshots and the revision rejects
+        // already-running ones.
+        for (const source of affectedSourceSet) {
+          invalidateSource(input.projectId, source);
+        }
+        if (!projectValidated) await assertProjectExists(input.projectId);
+        const needsPreviousLinearCredential =
+          input.linearCredential.operation !== 'keep';
+        const needsPreviousJiraCredential =
+          input.jiraCredential.operation !== 'keep';
+        const [previousLinearCredential, previousJiraCredential] =
+          await Promise.all([
+            needsPreviousLinearCredential
+              ? credentials.read(input.projectId, 'linear')
+              : Promise.resolve(undefined),
+            needsPreviousJiraCredential
+              ? credentials.read(input.projectId, 'jira')
+              : Promise.resolve(undefined)
+          ]);
+        const config = projectSourceConfigSchema.parse({
+          projectId: input.projectId,
+          source: input.source,
+          linearTeamKey: input.linearTeamKey,
+          linearFinishedDays: input.linearFinishedDays,
+          jiraBaseUrl: input.jiraBaseUrl,
+          jiraEmail: input.jiraEmail,
+          jiraJql: input.jiraJql,
+          gitlabProjectRef: input.gitlabProjectRef,
+          giteaLogin: input.giteaLogin,
+          giteaProjectRef: input.giteaProjectRef
+        });
+
+        if (jiraIdentityChanged) {
+          let linearMutated = false;
+          try {
+            if (input.linearCredential.operation !== 'keep') {
+              await credentials.mutate(
+                input.projectId,
+                'linear',
+                input.linearCredential
+              );
+              linearMutated = true;
+            }
+            // Remove the old destination binding before persisting the new one.
+            // A failure from this point leaves Jira without a token, never with a
+            // token paired to the wrong origin or account.
+            await credentials.mutate(input.projectId, 'jira', {
+              operation: 'clear'
+            });
+          } catch (error) {
+            if (linearMutated) {
+              await restoreCredential(
+                input.projectId,
+                'linear',
+                previousLinearCredential
+              );
+            }
+            throw error;
+          }
+
+          let savedConfig: ProjectSourceConfig;
+          try {
+            savedConfig = store.saveProjectConfig(config);
+          } catch (error) {
+            const restorationResults = await Promise.allSettled([
+              linearMutated
+                ? restoreCredential(
+                    input.projectId,
+                    'linear',
+                    previousLinearCredential
+                  )
+                : Promise.resolve(),
+              restoreCredential(input.projectId, 'jira', previousJiraCredential)
+            ]);
+            if (
+              restorationResults.some(result => result.status === 'rejected')
+            ) {
+              throw new Error(
+                'Connector save failed and the previous credential state could not be fully restored'
+              );
+            }
+            throw error;
+          }
+          if (input.jiraCredential.operation === 'set') {
+            try {
+              await credentials.mutate(
+                input.projectId,
+                'jira',
+                input.jiraCredential
+              );
+            } catch {
+              let configRolledBack = false;
+              try {
+                store.saveProjectConfig(previous);
+                configRolledBack = true;
+              } catch {
+                // The new destination stays tokenless when its config cannot
+                // be rolled back; restoring the old token would misbind it.
+              }
+              const restorationResults = await Promise.allSettled([
+                linearMutated
+                  ? restoreCredential(
+                      input.projectId,
+                      'linear',
+                      previousLinearCredential
+                    )
+                  : Promise.resolve(),
+                configRolledBack
+                  ? restoreCredential(
+                      input.projectId,
+                      'jira',
+                      previousJiraCredential
+                    )
+                  : Promise.resolve()
+              ]);
+              bb.realtime.publish('taskboard:changed', {
+                projectId: input.projectId,
+                source: null
+              });
+              if (
+                restorationResults.some(result => result.status === 'rejected')
+              ) {
+                throw new Error(
+                  'Jira credential save failed and the previous credential state could not be fully restored'
+                );
+              }
+              throw new Error(
+                configRolledBack
+                  ? 'Jira credential could not be saved; the previous Jira bundle was restored'
+                  : 'Jira credential could not be saved; Jira was left unconfigured'
+              );
+            }
+          }
+          return savedConfig;
+        }
+
+        let linearMutated = false;
+        let jiraMutated = false;
+        try {
+          if (input.linearCredential.operation !== 'keep') {
+            await credentials.mutate(
+              input.projectId,
+              'linear',
+              input.linearCredential
+            );
+            linearMutated = true;
+          }
+          if (input.jiraCredential.operation !== 'keep') {
+            await credentials.mutate(
+              input.projectId,
+              'jira',
+              input.jiraCredential
+            );
+            jiraMutated = true;
+          }
+          const savedConfig = store.saveProjectConfig(config);
+          return savedConfig;
+        } catch (error) {
+          const restorationResults = await Promise.allSettled([
+            linearMutated
+              ? restoreCredential(
+                  input.projectId,
+                  'linear',
+                  previousLinearCredential
+                )
+              : Promise.resolve(),
+            jiraMutated
+              ? restoreCredential(
+                  input.projectId,
+                  'jira',
+                  previousJiraCredential
+                )
+              : Promise.resolve()
+          ]);
+          if (restorationResults.some(result => result.status === 'rejected')) {
+            throw new Error(
+              'Credential save failed and the previous credential state could not be fully restored'
+            );
+          }
+          throw error;
+        }
+      })
+    );
+
+    bb.realtime.publish('taskboard:changed', {
+      projectId: savedConfig.projectId,
+      source: null
+    });
+    if (affectedSourceSet.has(savedConfig.source)) {
+      scheduleSources(savedConfig.projectId, [savedConfig.source]);
+    }
+    return buildProjectConfigView(savedConfig);
+  }
+
+  async function getLiveItem(
+    projectId: string,
+    source: WorkSource,
+    locator: string
+  ): Promise<WorkItemDetail> {
+    assertSelectedSource(projectId, source);
+    await waitForMutations(projectId, [source]);
+    assertSelectedSource(projectId, source);
+    if (!store.get(projectId, source, locator)) {
+      throw new Error(
+        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+      );
+    }
+    const revision = currentRevision(projectId, source);
+    const adapter = (await adapters(projectId)).get(source);
+    if (!adapter) {
+      assertSelectedSource(projectId, source);
+      throw new Error(`Missing ${source} adapter`);
+    }
+    if (currentRevision(projectId, source) !== revision) {
+      throw new Error(
+        `${sourceName(source)} settings changed while loading the item; reopen it`
+      );
+    }
+    if (!adapter.configured()) {
+      throw new Error(
+        adapter.configurationMessage() ??
+          `${sourceName(source)} is not configured`
+      );
+    }
+    let externalItem: ExternalWorkItemDetail;
+    try {
+      externalItem = await adapter.get(locator);
+    } catch {
+      throw new Error(
+        `${sourceName(source)} could not load the requested item`
+      );
+    }
+    if (currentRevision(projectId, source) !== revision) {
+      throw new Error(
+        `${sourceName(source)} settings changed while loading the item; reopen it`
+      );
+    }
+    return scopedItemDetail(projectId, externalItem);
+  }
+
+  async function liveStatusOptions(
+    projectId: string,
+    source: WorkSource,
+    locator: string
+  ): Promise<WorkStatusOption[]> {
+    assertSelectedSource(projectId, source);
+    await waitForMutations(projectId, [source]);
+    assertSelectedSource(projectId, source);
+    if (!store.get(projectId, source, locator)) {
+      throw new Error(
+        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+      );
+    }
+    const revision = currentRevision(projectId, source);
+    const adapter = (await adapters(projectId)).get(source);
+    if (!adapter) {
+      assertSelectedSource(projectId, source);
+      throw new Error(`Missing ${source} adapter`);
+    }
+    if (currentRevision(projectId, source) !== revision) {
+      throw new Error(
+        `${sourceName(source)} settings changed while loading statuses; try again`
+      );
+    }
+    if (!adapter.configured()) {
+      throw new Error(
+        adapter.configurationMessage() ??
+          `${sourceName(source)} is not configured`
+      );
+    }
+    let options: WorkStatusOption[];
+    try {
+      options = workStatusOptionSchema
+        .array()
+        .parse(await adapter.statusOptions(locator));
+    } catch (error) {
+      const message = errorMessage(error);
+      throw new Error(
+        message.includes('outside the configured scope')
+          ? message
+          : `${sourceName(source)} could not load valid statuses for this item`
+      );
+    }
+    if (currentRevision(projectId, source) !== revision) {
+      throw new Error(
+        `${sourceName(source)} settings changed while loading statuses; try again`
+      );
+    }
+    if (new Set(options.map(option => option.id)).size !== options.length) {
+      throw new Error(`${sourceName(source)} returned duplicate status ids`);
+    }
+    if (!options.some(option => option.current)) {
+      throw new Error(
+        `${sourceName(source)} did not return the current status`
+      );
+    }
+    return options;
+  }
+
+  async function updateItemStatus(
+    projectId: string,
+    source: WorkSource,
+    locator: string,
+    statusId: string
+  ): Promise<WorkItem> {
+    assertSelectedSource(projectId, source);
+    await waitForMutations(projectId, [source]);
+    assertSelectedSource(projectId, source);
+    const cached = store.get(projectId, source, locator);
+    if (!cached) {
+      throw new Error(
+        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+      );
+    }
+    const revision = currentRevision(projectId, source);
+    const adapter = (await adapters(projectId)).get(source);
+    if (!adapter) {
+      assertSelectedSource(projectId, source);
+      throw new Error(`Missing ${source} adapter`);
+    }
+    if (!adapter.configured()) {
+      throw new Error(
+        adapter.configurationMessage() ??
+          `${sourceName(source)} is not configured`
+      );
+    }
+    const mutation = enqueueMutation(projectId, [source], async () => {
+      if (currentRevision(projectId, source) !== revision) {
+        throw new Error(
+          `${sourceName(source)} settings changed before the status update; try again`
+        );
+      }
+      if (!store.get(projectId, source, locator)) {
+        throw new Error(
+          `${sourceName(source)} item is no longer cached for this BB project`
+        );
+      }
+      advanceSourceRevision(projectId, source);
+      let externalItem: ExternalWorkItemDetail;
+      try {
+        externalItem = await adapter.updateStatus(locator, statusId);
+      } catch (error) {
+        const message = errorMessage(error);
+        throw new Error(
+          message.includes('not available') ||
+            message.includes('outside the configured scope')
+            ? message
+            : `${sourceName(source)} could not update this item status: ${message}`
+        );
+      }
+      if (externalItem.source !== source || externalItem.locator !== locator) {
+        throw new Error(
+          `${sourceName(source)} returned an invalid status update result`
+        );
+      }
+      const item = scopedItem(projectId, withoutComments(externalItem));
+      store.upsert(item);
+      bb.realtime.publish('taskboard:changed', { projectId, source });
+      return item;
+    });
+    void mutation
+      .then(
+        () => syncAll(projectId, source, false),
+        () => syncAll(projectId, source, false)
+      )
+      .catch((error: unknown) => {
+        bb.log.warn(
+          `${sourceName(source)} reconciliation failed for ${projectId}: ${errorMessage(error)}`
+        );
+      });
+    return mutation;
+  }
+
+  async function liveInspector(
+    projectId: string,
+    source: WorkSource,
+    locator: string
+  ): Promise<WorkItemInspector> {
+    assertSelectedSource(projectId, source);
+    await waitForMutations(projectId, [source]);
+    assertSelectedSource(projectId, source);
+    if (!store.get(projectId, source, locator)) {
+      throw new Error(
+        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+      );
+    }
+    const revision = currentRevision(projectId, source);
+    const adapter = (await adapters(projectId)).get(source);
+    if (!adapter) {
+      assertSelectedSource(projectId, source);
+      throw new Error(`Missing ${source} adapter`);
+    }
+    if (!adapter.configured()) {
+      throw new Error(
+        adapter.configurationMessage() ??
+          `${sourceName(source)} is not configured`
+      );
+    }
+    if (!adapter.inspectorOptions) {
+      return {
+        priorityOptions: [],
+        assigneeOptions: [],
+        projectOptions: [],
+        supportsPriority: false,
+        supportsAssignee: false,
+        supportsProject: false,
+        supportsComments: false
+      };
+    }
+    let externalOptions: ExternalWorkItemInspectorOptions;
+    try {
+      externalOptions = await adapter.inspectorOptions(locator);
+    } catch (error) {
+      const message = errorMessage(error);
+      throw new Error(
+        message.includes('outside the configured scope')
+          ? message
+          : `${sourceName(source)} could not load editable fields for this item`
+      );
+    }
+    if (currentRevision(projectId, source) !== revision) {
+      throw new Error(
+        `${sourceName(source)} settings changed while loading editable fields; try again`
+      );
+    }
+    for (const [field, value] of Object.entries({
+      priority: externalOptions.priority,
+      assignee: externalOptions.assignee,
+      project: externalOptions.project
+    })) {
+      if (!value.supported) {
+        if (value.options.length > 0) {
+          throw new Error(`${sourceName(source)} returned options for unsupported ${field}`);
+        }
+        continue;
+      }
+      const ids = value.options.map(option => option.id);
+      if (new Set(ids).size !== ids.length) {
+        throw new Error(`${sourceName(source)} returned duplicate ${field} ids`);
+      }
+      if (value.options.filter(option => option.current).length !== 1) {
+        throw new Error(`${sourceName(source)} did not return one current ${field}`);
+      }
+    }
+    return workItemInspectorSchema.parse({
+      priorityOptions: externalOptions.priority.options.filter(
+        option => option.id !== null
+      ),
+      assigneeOptions: externalOptions.assignee.options.filter(
+        option => option.id !== null
+      ),
+      projectOptions: externalOptions.project.options.filter(
+        option => option.id !== null
+      ),
+      supportsPriority: externalOptions.priority.supported,
+      supportsAssignee: externalOptions.assignee.supported,
+      supportsProject: externalOptions.project.supported,
+      supportsComments: externalOptions.comments.supported
+    });
+  }
+
+  async function mutateLiveItem(
+    projectId: string,
+    source: WorkSource,
+    locator: string,
+    operation: (adapter: WorkSourceAdapter) => Promise<ExternalWorkItemDetail>,
+    description: string
+  ): Promise<WorkItemDetail> {
+    assertSelectedSource(projectId, source);
+    await waitForMutations(projectId, [source]);
+    assertSelectedSource(projectId, source);
+    if (!store.get(projectId, source, locator)) {
+      throw new Error(
+        `${sourceName(source)} item is not cached for this BB project; refresh the project tracker first`
+      );
+    }
+    const revision = currentRevision(projectId, source);
+    const adapter = (await adapters(projectId)).get(source);
+    if (!adapter) {
+      assertSelectedSource(projectId, source);
+      throw new Error(`Missing ${source} adapter`);
+    }
+    if (!adapter.configured()) {
+      throw new Error(
+        adapter.configurationMessage() ??
+          `${sourceName(source)} is not configured`
+      );
+    }
+    const mutation = enqueueMutation(projectId, [source], async () => {
+      if (currentRevision(projectId, source) !== revision) {
+        throw new Error(
+          `${sourceName(source)} settings changed before the ${description}; try again`
+        );
+      }
+      if (!store.get(projectId, source, locator)) {
+        throw new Error(
+          `${sourceName(source)} item is no longer cached for this BB project`
+        );
+      }
+      advanceSourceRevision(projectId, source);
+      let externalItem: ExternalWorkItemDetail;
+      try {
+        externalItem = await operation(adapter);
+      } catch (error) {
+        const detail = errorMessage(error);
+        throw new Error(
+          detail.includes('not available') ||
+            detail.includes('outside the configured scope') ||
+            detail.includes('not supported') ||
+            detail.includes('cannot be empty')
+            ? detail
+            : `${sourceName(source)} could not ${description}: ${detail}`
+        );
+      }
+      if (externalItem.source !== source || externalItem.locator !== locator) {
+        throw new Error(
+          `${sourceName(source)} returned an invalid ${description} result`
+        );
+      }
+      store.upsert(scopedItem(projectId, withoutComments(externalItem)));
+      bb.realtime.publish('taskboard:changed', { projectId, source });
+      return scopedItemDetail(projectId, externalItem);
+    });
+    void mutation
+      .then(
+        () => syncAll(projectId, source, false),
+        () => syncAll(projectId, source, false)
+      )
+      .catch((error: unknown) => {
+        bb.log.warn(
+          `${sourceName(source)} reconciliation failed for ${projectId}: ${errorMessage(error)}`
+        );
+      });
+    return mutation;
+  }
+
+  async function updateItemField(
+    projectId: string,
+    source: WorkSource,
+    locator: string,
+    fieldMutation: WorkItemFieldMutation
+  ): Promise<WorkItemDetail> {
+    return mutateLiveItem(
+      projectId,
+      source,
+      locator,
+      adapter => {
+        if (!adapter.updateField) {
+          throw new Error(`${sourceName(source)} ${fieldMutation.field} editing is not supported`);
+        }
+        return adapter.updateField(
+          locator,
+          {
+            field: fieldMutation.field,
+            optionId: fieldMutation.valueId
+          } as ExternalWorkItemFieldMutation
+        );
+      },
+      `update this item ${fieldMutation.field}`
+    );
+  }
+
+  async function addItemComment(
+    projectId: string,
+    source: WorkSource,
+    locator: string,
+    body: string
+  ): Promise<WorkItemDetail> {
+    return mutateLiveItem(
+      projectId,
+      source,
+      locator,
+      adapter => {
+        if (!adapter.addComment) {
+          throw new Error(`${sourceName(source)} comments are not supported`);
+        }
+        return adapter.addComment(locator, body);
+      },
+      'add this comment'
+    );
+  }
+
+  async function createWorkItem(
+    input: CreateIssueInput
+  ): Promise<{
+    item: WorkItem;
+    warnings: string[];
+    assigneeConfirmation: ExternalWorkItemCreateResult['assigneeConfirmation'];
+  }> {
+    await waitForMutations(input.projectId, SOURCES);
+    const config = projectConfig(input.projectId, true);
+    const source = assertExpectedIssueSource(
+      input.expectedSource,
+      config.source
+    );
+    const connectorRevision = currentConnectorRevision(input.projectId, source);
+    assertExpectedConnectorRevision(
+      input.connectorRevision,
+      connectorRevision,
+      source
+    );
+    const revision = currentRevision(input.projectId, source);
+    const adapter = (await adapters(input.projectId, true)).get(source);
+    if (!adapter) throw new Error(`Missing ${source} adapter`);
+    if (!adapter.configured()) {
+      throw new Error(
+        adapter.configurationMessage() ?? `${sourceName(source)} is not configured`
+      );
+    }
+
+    const mutation = enqueueMutation(input.projectId, [source], async () => {
+      if (currentRevision(input.projectId, source) !== revision) {
+        throw new Error(
+          `${sourceName(source)} settings changed before the issue was created; try again`
+        );
+      }
+      assertExpectedConnectorRevision(
+        input.connectorRevision,
+        currentConnectorRevision(input.projectId, source),
+        source
+      );
+      advanceSourceRevision(input.projectId, source);
+      let externalItem: ExternalWorkItemDetail;
+      let warnings: string[];
+      // Preserve the provider-native confirmation separately from display text.
+      let assigneeConfirmation: ExternalWorkItemCreateResult['assigneeConfirmation'];
+      try {
+        let description = input.description;
+        if (input.images?.length) {
+          if (!adapter.uploadImage) throw new Error('Image uploads are currently supported for Linear only. Remove the images or select a Linear project.');
+          const images = input.images.map(decodeTicketImage);
+          const links: string[] = [];
+          for (const image of images) {
+            const url = await adapter.uploadImage(image);
+            links.push(`![${image.name.replace(/[\\[\]\r\n]/g, '')}](<${url}>)`);
+          }
+          description = `${description}\n\n${links.join('\n\n')}`.trim();
+        }
+        const result = await adapter.create({
+          title: input.title,
+          description,
+          destinationId: input.destinationId,
+          issueType: input.issueType,
+          statusId: input.statusId,
+          assigneeId: input.assigneeId,
+          priorityId: input.priorityId,
+          labelIds: input.labelIds,
+          dueDate: input.dueDate,
+          milestoneId: input.milestoneId
+        });
+        externalItem = result.item;
+        warnings = result.warnings;
+        assigneeConfirmation = result.assigneeConfirmation;
+      } catch (error) {
+        throw new Error(
+          `${sourceName(source)} could not create the issue. ${errorMessage(error)}`
+        );
+      }
+      if (externalItem.source !== source || !externalItem.locator) {
+        throw new Error(
+          `${sourceName(source)} returned an invalid new issue`
+        );
+      }
+      const item = scopedItem(input.projectId, withoutComments(externalItem));
+      store.upsert(item);
+      bb.realtime.publish('taskboard:changed', {
+        projectId: input.projectId,
+        source
+      });
+      return { item, warnings, assigneeConfirmation };
+    });
+    void reconcileIssueCreation(mutation, forceRefresh =>
+      syncAll(input.projectId, source, forceRefresh)
+    )
+      .catch((error: unknown) => {
+        bb.log.warn(
+          `${sourceName(source)} reconciliation failed for ${input.projectId}: ${errorMessage(error)}`
+        );
+      });
+    return mutation;
+  }
+
+  const ticketImprovement = createTicketImprovementService(bb);
+  bb.background.service('ticket-improvement-cleanup', {
+    async start(signal) {
+      while (!signal.aborted) {
+        try { await ticketImprovement.sweep(); }
+        catch { if (!signal.aborted) bb.log.warn('Ticket improvement cleanup will retry.'); }
+        await sleep(30_000, signal);
+      }
+    }
+  });
+  const handlers: PluginRpcHandlers<typeof taskboardRpcContract> = {
+    async factoryGetProject(input) {
+      await assertProjectExists(input.projectId);
+      const provider = projectConfig(input.projectId, true).source;
+      return { policy: factoryStore.getProjectPolicy(input.projectId, provider),
+        status: factoryStore.projectStatus(input.projectId, provider) };
+    },
+    async factorySaveProject(input) {
+      await assertProjectExists(input.projectId);
+      assertSelectedSource(input.projectId, input.provider);
+      const policy = factoryStore.saveProjectPolicy(factoryProjectPolicySchema.parse({
+        ...input, updatedAt: new Date().toISOString()
+      }));
+      bb.realtime.publish('taskboard:factory', { projectId: input.projectId });
+      return { policy, status: factoryStore.projectStatus(input.projectId, input.provider) };
+    },
+    async factoryExecutionOptions(input) {
+      await assertProjectExists(input.projectId);
+      const provider = projectConfig(input.projectId, true).source;
+      const policy = factoryStore.getProjectPolicy(input.projectId, provider);
+      const context = input.threadId
+        ? await bb.sdk.threads.get({ threadId: input.threadId }).catch(() => null)
+        : null;
+      const routing = context?.environmentId
+        ? { kind: 'environment' as const, environmentId: context.environmentId }
+        : null;
+      const [projectDefaults, threadDefaults] = await Promise.all([
+        bb.sdk.projects.defaultExecutionOptions({ projectId: input.projectId }).catch(() => null),
+        context && context.projectId === input.projectId && !context.deletedAt && !context.archivedAt
+          ? bb.sdk.threads.defaultExecutionOptions({ threadId: context.id }).then(value =>
+              value ? threadExecution(context.providerId, value) : null).catch(() => null)
+          : Promise.resolve(null)
+      ]);
+      return {
+        defaults: threadDefaults ?? projectDefaults ?? null,
+        selected: policy.execution ?? null,
+        routing
+      };
+    },
+    async factoryScanProject(input) {
+      await assertProjectExists(input.projectId);
+      await factory.scan(input.projectId);
+      return { status: factoryStore.projectStatus(input.projectId, projectConfig(input.projectId, true).source) };
+    },
+    async improveTicket(input) {
+      await assertProjectExists(input.projectId);
+      return ticketImprovement.start(input);
+    },
+    async ticketImprovement(input) {
+      await assertProjectExists(input.projectId);
+      return ticketImprovement.get(input);
+    },
+    async cancelTicketImprovement(input) {
+      await assertProjectExists(input.projectId);
+      return ticketImprovement.cancel(input);
+    },
+    async factoryDiff(input) {
+      await assertProjectExists(input.projectId);
+      return factory.diff(input, input.runId, input.path);
+    },
+    async factoryEmpirical(input) {
+      await assertProjectExists(input.projectId);
+      return observeFactoryEmpirical(input);
+    },
+    async factoryStartTask(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.startTask(item, input.contextThreadId, input.execution) };
+    },
+    async factoryRetryStatus(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.retryStatus(item) };
+    },
+    async factoryRecover(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.linkRecovered(item, input.expectedVersion, input.threadId) };
+    },
+    async factoryAdoptCoordinator(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.adoptCoordinator(item, input.expectedVersion) };
+    },
+    async factoryRetryCoordinator(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.retryCoordinator(item, input.expectedVersion, input.intentId) };
+    },
+    async factoryRecoverCoordinator(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.recoverCoordinator(item, input.expectedVersion, input.intentId, input.threadId) };
+    },
+    async factoryGet(input) {
+      await assertProjectExists(input.projectId);
+      const item = store.get(input.projectId, input.source, input.locator);
+      return { record: item ? await factory.get(item) : null };
+    },
+    async factoryForThread(input) {
+      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      await assertProjectExists(thread.projectId);
+      const record = factory.forThread(input.threadId);
+      if (record && record.projectId !== thread.projectId) throw new Error('Thread project mismatch.');
+      return { record };
+    },
+    async factoryStart(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.start(item, input) };
+    },
+    async factorySetExecution(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.setExecution(item, input.execution) };
+    },
+    async factorySavePlan(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.savePlan(item, input.expectedVersion, input.body) };
+    },
+    async factoryApprovePlan(input) {
+      await assertProjectExists(input.projectId);
+      const item = await getLiveItem(input.projectId, input.source, input.locator);
+      return { record: await factory.approve(item, input.expectedVersion, input.digest) };
+    },
+    async listProjects() {
+      return { projects: await listProjects() };
+    },
+    async threadProject(input) {
+      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      await assertProjectExists(thread.projectId);
+      return { projectId: thread.projectId };
+    },
+    async status(input) {
+      await assertProjectExists(input.projectId);
+      return { sources: await statuses(input.projectId) };
+    },
+    async listItems(input) {
+      if (input.projectId) {
+        await assertProjectExists(input.projectId);
+        await waitForMutations(input.projectId, SOURCES);
+        if (input.source) {
+          await assertSelectedSourceAfterMutations(
+            input.projectId,
+            input.source
+          );
+        }
+        return {
+          items: store.list(input),
+          provider: projectConfig(input.projectId, true).source
+        };
+      }
+      const projects = await listProjects();
+      return {
+        items: store.list({
+          ...input,
+          projectIds: projects.map(project => project.id)
+        }),
+        provider: null
+      };
+    },
+    async refresh(input) {
+      await assertProjectExists(input.projectId);
+      // A manual refresh always retries despite trouble-suspension.
+      suspendedSync.delete(input.projectId);
+      const nextStatuses = await syncAll(input.projectId, input.source, true);
+      return {
+        sources: nextStatuses,
+        itemCount: refreshedItemCount(nextStatuses, input.source)
+      };
+    },
+    async getItem(input) {
+      await assertProjectExists(input.projectId);
+      return {
+        item: await getLiveItem(input.projectId, input.source, input.locator)
+      };
+    },
+    async statusOptions(input) {
+      await assertProjectExists(input.projectId);
+      return {
+        options: await liveStatusOptions(
+          input.projectId,
+          input.source,
+          input.locator
+        )
+      };
+    },
+    async updateItemStatus(input) {
+      await assertProjectExists(input.projectId);
+      return {
+        item: await updateItemStatus(
+          input.projectId,
+          input.source,
+          input.locator,
+          input.statusId
+        )
+      };
+    },
+    async getItemInspector(input) {
+      await assertProjectExists(input.projectId);
+      return {
+        inspector: await liveInspector(
+          input.projectId,
+          input.source,
+          input.locator
+        )
+      };
+    },
+    async updateItemField(input) {
+      await assertProjectExists(input.projectId);
+      return {
+        item: await updateItemField(
+          input.projectId,
+          input.source,
+          input.locator,
+          input.mutation
+        )
+      };
+    },
+    async addItemComment(input) {
+      await assertProjectExists(input.projectId);
+      return {
+        item: await addItemComment(
+          input.projectId,
+          input.source,
+          input.locator,
+          input.body
+        )
+      };
+    },
+    async getCreateIssueContext(input) {
+      await assertProjectExists(input.projectId);
+      return { context: await getCreateIssueContext(input.projectId) };
+    },
+    async getCreateIssueMetadata(input) {
+      await assertProjectExists(input.projectId);
+      return getCreateIssueMetadata(input);
+    },
+    async createIssue(input) {
+      await assertProjectExists(input.projectId);
+      const { item, warnings, assigneeConfirmation } =
+        await createWorkItem(input);
+      return {
+        item,
+        warnings,
+        assigneeConfirmation,
+        mention: {
+          provider: 'external-work-item',
+          id: mentionId(item),
+          label: item.key
+        }
+      };
+    },
+    async getProjectConfig(input) {
+      await assertProjectExists(input.projectId);
+      return { config: await readProjectConfigView(input.projectId) };
+    },
+    async saveProjectConfig(input) {
+      return { config: await persistProjectConfig(input) };
+    },
+    async getProjectBoardSettings(input) {
+      await assertProjectExists(input.projectId);
+      return { settings: store.projectBoardSettings(input.projectId) };
+    },
+    async saveProjectBoardSettings(input) {
+      await assertProjectExists(input.projectId);
+      const settings = store.saveProjectBoardSettings(input);
+      bb.realtime.publish('taskboard:changed', {
+        projectId: settings.projectId,
+        source: null
+      });
+      return { settings };
+    },
+    async listFilterPresets(input) {
+      await assertProjectExists(input.projectId);
+      return { presets: store.listFilterPresets(input.projectId) };
+    },
+    async saveFilterPreset(input) {
+      await assertProjectExists(input.projectId);
+      const result = await saveFilterPresetLinearized({
+        projectId: input.projectId,
+        ...(input.id ? { id: input.id } : {}),
+        name: input.name,
+        state: input.state
+      });
+      return {
+        preset: filterPresetSummary(result.preset),
+        presets: result.presets
+      };
+    },
+    async deleteFilterPreset(input) {
+      await assertProjectExists(input.projectId);
+      const presets = store.deleteFilterPreset(input.projectId, input.id);
+      publishFilterPresetsChanged(input.projectId);
+      return { presets };
+    },
+    async reorderFilterPresets(input) {
+      await assertProjectExists(input.projectId);
+      const presets = store.reorderFilterPresets(input.projectId, input.ids);
+      publishFilterPresetsChanged(input.projectId);
+      return { presets };
+    }
+  };
+  bb.rpc.register(taskboardRpcContract, handlers);
+  const preparation = registerPreparation(bb, {
+    assertProject: assertProjectExists,
+    async task(projectId, source, locator) {
+      await assertProjectExists(projectId);
+      await assertSelectedSourceAfterMutations(projectId, source);
+      const item = await getLiveItem(projectId, source, locator);
+      return { projectId, source, locator, title: item.title, key: item.key, url: item.url };
+    }
+  });
+
+  bb.ui.registerMentionProvider({
+    id: 'external-work-item',
+    label: 'Taskboard',
+    triggers: ['@', '#'],
+    async search({ query, projectId }) {
+      const trimmed = query.trim();
+      if (!projectId || trimmed.length < 2) return [];
+      try {
+        await assertProjectExists(projectId);
+      } catch {
+        return [];
+      }
+      return store.list({ projectId, query: trimmed, limit: 10 }).map(item => ({
+        id: mentionId(item),
+        title: `${item.key} ${item.title}`,
+        subtitle: `${sourceName(item.source)} · ${item.status}${item.assignee ? ` · ${item.assignee}` : ''}`
+      }));
+    },
+    async resolve(itemId) {
+      const { projectId, source, locator } = parseMentionId(itemId);
+      await assertProjectExists(projectId);
+      assertSelectedSource(projectId, source);
+      const item = store.get(projectId, source, locator);
+      if (!item) throw new Error('Taskboard item is no longer available');
+      return { context: formatWorkItemContext(item) };
+    }
+  });
+
+  bb.cli.register({
+    name: 'taskboard',
+    summary: 'Browse tasks and inspect durable preparation briefs',
+    commands: [
+      { name: 'factory', summary: 'Inspect, enable, pause, or scan the project factory',
+        usage: 'bb taskboard factory status|enable [concurrency]|pause|scan [--project <proj_id>] [--json]' },
+      {name: 'prepare', summary: 'List, inspect or export preparation packets without starting implementation', usage: 'bb taskboard prepare list [--project <id>] | show <id> | export <id>'},
+      {
+        name: 'status',
+        summary: 'Show connector status for a BB project',
+        usage: 'bb taskboard status [--project <proj_id>] [--json]'
+      },
+      {
+        name: 'list',
+        summary: 'List cached project work, refreshing first by default',
+        usage:
+          'bb taskboard list [--project <proj_id>] ' +
+          '[--source linear|github|jira|gitlab|gitea] [--query <text>] ' +
+          '[--preset <name>] [--cached] [--json]'
+      },
+      {
+        name: 'show',
+        summary: 'Fetch one external issue in a BB project',
+        usage:
+          'bb taskboard show <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+      },
+      {
+        name: 'transitions',
+        summary: 'List valid status targets for one external issue',
+        usage:
+          'bb taskboard transitions <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+      },
+      {
+        name: 'move',
+        summary: 'Move one external issue to an exact listed status id',
+        usage:
+          'bb taskboard move <linear|github|jira|gitlab|gitea> <locator> --status <id> [--project <proj_id>] [--json]'
+      },
+      {
+        name: 'refresh',
+        summary: "Refresh a BB project's external issue caches",
+        usage:
+          'bb taskboard refresh [linear|github|jira|gitlab|gitea] [--project <proj_id>] [--json]'
+      },
+      {
+        name: 'config',
+        summary: 'Show or update nonsecret project connector configuration',
+        usage:
+          'bb taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab|gitea] [--linear-team <key>] [--jira-url <url>] [--jira-email <email>] [--jira-jql <text>] [--gitlab-project <ref>] [--gitea-login <name>] [--gitea-project <host/owner/repo>] [--json]'
+      },
+      {
+        name: 'credentials',
+        summary: 'Open a secure form for project connector credentials',
+        usage: 'bb taskboard credentials [--project <proj_id>] [--json]'
+      },
+      {
+        name: 'presets',
+        summary: 'List, save, rename, or delete project filter presets',
+        usage:
+          'bb taskboard presets list [--project <proj_id>] [--json]\n' +
+          'bb taskboard presets save <name> --from-state <json> ' +
+          '[--project <proj_id>] [--json]\n' +
+          'bb taskboard presets rename <name> <new-name> ' +
+          '[--project <proj_id>] [--json]\n' +
+          'bb taskboard presets delete <name> ' +
+          '[--project <proj_id>] [--json]'
+      }
+    ],
+    async run(argv, ctx) {
+      try {
+        if (argv[0] === 'prepare') {
+          const verb = argv[1] ?? 'list';
+          const projectIndex = argv.indexOf('--project');
+          const projectId = projectIndex >= 0 ? argv[projectIndex + 1] : ctx.projectId;
+          if (!projectId) throw new Error('Choose a project with --project <id>.');
+          await assertProjectExists(projectId);
+          const input = {id: argv[2] ?? '', projectId};
+          let output: unknown;
+          if (verb === 'list') output = await preparation.handlers.prepareList({projectId});
+          else if (verb === 'show') output = await preparation.handlers.prepareGet(input);
+          else if (verb === 'export') output = await preparation.handlers.prepareExport(input);
+          else throw new Error('Use prepare list, show <id>, or export <id>.');
+          return {exitCode: 0, stdout: formatFilterPresetCliJson(output)};
+        }
+        const firstArgument = argv[0];
+        const hasExplicitCommand = Boolean(
+          firstArgument && !firstArgument.startsWith('--')
+        );
+        const command = hasExplicitCommand ? firstArgument! : 'status';
+        const args = parseTaskboardCliArguments(
+          command,
+          hasExplicitCommand ? argv.slice(1) : argv
+        );
+        const requireProject = async (): Promise<TrackerProject> => {
+          const parsedProject = bbProjectIdSchema.safeParse(
+            args.projectId ?? ctx.projectId
+          );
+          if (!parsedProject.success) {
+            throw new Error(
+              'Choose a BB project with --project <proj_id> or run this command from a project thread'
+            );
+          }
+          return projectById(parsedProject.data);
+        };
+
+        if (command === 'factory') {
+          const project = await requireProject();
+          const verb = args.positionals[0] ?? 'status';
+          const snapshot = await handlers.factoryGetProject({ projectId: project.id });
+          let result = snapshot;
+          if (verb === 'enable' || verb === 'pause') {
+            const concurrency = args.positionals[1] === undefined
+              ? factoryProjectPolicySchema.parse(snapshot.policy).maxConcurrent : Number(args.positionals[1]);
+            if (args.positionals.length > (verb === 'enable' ? 2 : 1)) {
+              throw new Error('Use factory enable [concurrency] or factory pause.');
+            }
+            result = await handlers.factorySaveProject({
+              projectId: project.id, provider: projectConfig(project.id, true).source,
+              enabled: verb === 'enable', intake: 'todo', maxConcurrent: concurrency,
+              execution: snapshot.policy.execution ?? null
+            });
+          } else if (verb === 'scan' && args.positionals.length <= 1) {
+            const scanned = await handlers.factoryScanProject({ projectId: project.id });
+            result = { policy: scanned.status.policy, status: scanned.status };
+          } else if (verb !== 'status' || args.positionals.length > 1) {
+            throw new Error('Use factory status, enable [concurrency], pause, or scan.');
+          }
+          return { exitCode: 0, stdout: formatFilterPresetCliJson(result) };
+        }
+        if (command === 'status') {
+          if (args.positionals.length > 0) {
+            throw new Error(
+              'Usage: bb taskboard status [--project <proj_id>] [--json]'
+            );
+          }
+          const project = await requireProject();
+          const result = {
+            projectId: project.id,
+            sources: await statuses(project.id)
+          };
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? JSON.stringify(result, null, 2)
+              : result.sources
+                  .map(
+                    entry =>
+                      `${sourceName(entry.source)}\t${entry.available ? 'ready' : entry.configured ? 'unavailable' : 'not configured'}\t${entry.message ?? ''}`
+                  )
+                  .join('\n')
+          };
+        }
+        if (command === 'refresh') {
+          if (args.positionals.length > 1) {
+            throw new Error(
+              'Usage: bb taskboard refresh [linear|github|jira|gitlab|gitea] [--project <proj_id>] [--json]'
+            );
+          }
+          const project = await requireProject();
+          const sourceValue = args.positionals[0];
+          const parsedSource = sourceValue
+            ? workSourceSchema.safeParse(sourceValue)
+            : null;
+          if (parsedSource && !parsedSource.success) {
+            throw new Error('Source must be linear, github, jira, gitlab, or gitea');
+          }
+          const source = parsedSource?.data;
+          const sources = await syncAll(project.id, source, true);
+          const result = {
+            projectId: project.id,
+            sources,
+            itemCount: refreshedItemCount(sources, source)
+          };
+          const failures = source
+            ? sources.filter(
+                entry => entry.source === source && !entry.available
+              )
+            : sources.filter(entry => entry.configured && !entry.available);
+          if (failures.length > 0) {
+            return {
+              exitCode: 1,
+              stderr: `${failures
+                .map(
+                  entry =>
+                    `${sourceName(entry.source)} refresh failed: ${entry.message ?? 'connector unavailable'}`
+                )
+                .join('\n')}\n`
+            };
+          }
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? JSON.stringify(result, null, 2)
+              : `Refreshed ${result.itemCount} work items for ${project.id}.`
+          };
+        }
+        if (command === 'list') {
+          if (args.positionals.length > 0) {
+            throw new Error(
+              'Usage: bb taskboard list [--project <proj_id>] ' +
+                '[--source linear|github|jira|gitlab|gitea] [--query <text>] ' +
+                '[--preset <name>] [--cached] [--json]'
+            );
+          }
+          const sourceValue = args.source;
+          const parsedSource = sourceValue
+            ? workSourceSchema.safeParse(sourceValue)
+            : null;
+          if (parsedSource && !parsedSource.success) {
+            throw new Error('Source must be linear, github, jira, gitlab, or gitea');
+          }
+          const project = await requireProject();
+          // Explicit --source/--query flags beat a --preset's saved values;
+          // a preset source of "all" means the preset applies no filter.
+          const preset = args.preset
+            ? resolvePresetByName(project.id, args.preset)
+            : undefined;
+          if (preset) {
+            await assertPresetProviderIsCurrent(project.id, preset);
+          }
+          const selection = resolvePresetListSelection(
+            preset,
+            parsedSource?.data,
+            args.query,
+            store.projectBoardSettings(project.id).enabledFilters
+          );
+          const { source, query } = selection;
+          if (source) {
+            await assertSelectedSourceAfterMutations(project.id, source);
+          }
+          if (!args.cached) await syncAll(project.id, source, true);
+          // Sync may wait behind a project reconfiguration. Recheck the
+          // preset's provider at the read boundary so old-provider facets can
+          // never filter a freshly switched provider's items.
+          if (preset) {
+            await assertPresetProviderIsCurrent(project.id, preset);
+          }
+          const items = store.list({
+            projectId: project.id,
+            ...(source ? { source } : {}),
+            ...(query ? { query } : {}),
+            ...(selection.stateCategories.length > 0
+              ? { stateCategories: selection.stateCategories }
+              : {}),
+            limit: 500
+          });
+          const narrowedItems = (
+            selection.attributeFilters
+              ? filterWorkItemsByAttributes(
+                  items,
+                  selection.attributeFilters
+                )
+              : items
+          ).slice(0, 200);
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? escapeExternalJsonOutput(
+                  JSON.stringify({ items: narrowedItems }, null, 2)
+                )
+              : narrowedItems
+                  .map(
+                    item =>
+                      `${escapeExternalInlineText(item.bbProjectId)}\t${sourceName(item.source)}\t${escapeExternalInlineText(item.key)}\t${escapeExternalInlineText(item.status)}\t${escapeExternalInlineText(item.assignee ?? '-')}\t${escapeExternalInlineText(item.title)}`
+                  )
+                  .join('\n')
+          };
+        }
+        if (command === 'show') {
+          if (args.positionals.length !== 2) {
+            throw new Error(
+              'Usage: bb taskboard show <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+            );
+          }
+          const project = await requireProject();
+          const parsedSource = workSourceSchema.safeParse(args.positionals[0]);
+          const locator = args.positionals[1]!;
+          if (!parsedSource.success) {
+            throw new Error('Source must be linear, github, jira, gitlab, or gitea');
+          }
+          const item = await getLiveItem(
+            project.id,
+            parsedSource.data,
+            locator
+          );
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? escapeExternalJsonOutput(JSON.stringify({ item }, null, 2))
+              : formatWorkItemContext(item)
+          };
+        }
+        if (command === 'transitions') {
+          if (args.positionals.length !== 2) {
+            throw new Error(
+              'Usage: bb taskboard transitions <linear|github|jira|gitlab|gitea> <locator> [--project <proj_id>] [--json]'
+            );
+          }
+          const project = await requireProject();
+          const parsedSource = workSourceSchema.safeParse(args.positionals[0]);
+          if (!parsedSource.success) {
+            throw new Error('Source must be linear, github, jira, gitlab, or gitea');
+          }
+          const locator = args.positionals[1]!;
+          const options = await liveStatusOptions(
+            project.id,
+            parsedSource.data,
+            locator
+          );
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? escapeExternalJsonOutput(
+                  JSON.stringify(
+                    {
+                      projectId: project.id,
+                      source: parsedSource.data,
+                      locator,
+                      options
+                    },
+                    null,
+                    2
+                  )
+                )
+              : options
+                  .map(
+                    option =>
+                      `${escapeExternalInlineText(option.id)}\t${escapeExternalInlineText(option.name)}\t${option.stateCategory}\t${option.current ? 'current' : 'available'}`
+                  )
+                  .join('\n')
+          };
+        }
+        if (command === 'move') {
+          if (args.positionals.length !== 2 || !args.statusId) {
+            throw new Error(
+              'Usage: bb taskboard move <linear|github|jira|gitlab|gitea> <locator> --status <id> [--project <proj_id>] [--json]'
+            );
+          }
+          const project = await requireProject();
+          const parsedSource = workSourceSchema.safeParse(args.positionals[0]);
+          if (!parsedSource.success) {
+            throw new Error('Source must be linear, github, jira, gitlab, or gitea');
+          }
+          const item = await updateItemStatus(
+            project.id,
+            parsedSource.data,
+            args.positionals[1]!,
+            args.statusId
+          );
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? escapeExternalJsonOutput(JSON.stringify({ item }, null, 2))
+              : formatWorkItemContext(item)
+          };
+        }
+        if (command === 'config') {
+          if (args.positionals.length > 0) {
+            throw new Error(
+              'Usage: bb taskboard config [--project <proj_id>] [--source linear|github|jira|gitlab|gitea] [--linear-team <key>] [--jira-url <url>] [--jira-email <email>] [--jira-jql <text>] [--gitlab-project <ref>] [--gitea-login <name>] [--gitea-project <host/owner/repo>] [--json]'
+            );
+          }
+          const parsedSource = args.source
+            ? workSourceSchema.safeParse(args.source)
+            : null;
+          if (parsedSource && !parsedSource.success) {
+            throw new Error('--source must be linear, github, jira, gitlab, or gitea');
+          }
+          if (args.jiraJql !== undefined && !args.jiraJql.trim()) {
+            throw new Error('--jira-jql requires a non-empty value');
+          }
+          if (args.gitlabProject !== undefined) {
+            try {
+              parseGitlabRef(args.gitlabProject.trim());
+            } catch {
+              throw new Error(
+                '--gitlab-project requires a host-qualified ref like gitlab.com/group/app'
+              );
+            }
+          }
+          if (args.giteaProject !== undefined) parseGiteaRef(args.giteaProject.trim());
+          const project = await requireProject();
+          const snapshot = await readCredentialFormSnapshot(project.id);
+          const previous = snapshot.config;
+          const changed =
+            parsedSource !== null ||
+            args.linearTeam !== undefined ||
+            args.linearFinishedDays !== undefined ||
+            args.jiraUrl !== undefined ||
+            args.jiraEmail !== undefined ||
+            args.jiraJql !== undefined ||
+            args.gitlabProject !== undefined ||
+            args.giteaProject !== undefined ||
+            args.giteaLogin !== undefined;
+          const config = changed
+            ? await persistProjectConfig(
+                {
+                  projectId: previous.projectId,
+                  source: parsedSource?.data ?? previous.source,
+                  linearTeamKey: args.linearTeam ?? previous.linearTeamKey,
+                  linearFinishedDays:
+                    args.linearFinishedDays ?? previous.linearFinishedDays,
+                  jiraBaseUrl: args.jiraUrl ?? previous.jiraBaseUrl,
+                  jiraEmail: args.jiraEmail ?? previous.jiraEmail,
+                  jiraJql: args.jiraJql ?? previous.jiraJql,
+                  gitlabProjectRef:
+                    args.gitlabProject ?? previous.gitlabProjectRef,
+                  giteaLogin: args.giteaLogin ?? previous.giteaLogin,
+                  giteaProjectRef: args.giteaProject ?? previous.giteaProjectRef,
+                  linearCredential: KEEP_SECRET,
+                  jiraCredential: KEEP_SECRET
+                },
+                { config: previous, revisions: snapshot.revisions }
+              )
+            : previous;
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? JSON.stringify({ config }, null, 2)
+              : formatProjectConfig(config)
+          };
+        }
+        if (command === 'credentials') {
+          if (args.positionals.length > 0) {
+            throw new Error(
+              'Usage: bb taskboard credentials [--project <proj_id>] [--json]'
+            );
+          }
+          if (!ctx.threadId) {
+            throw new Error(
+              'bb taskboard credentials must run from an active BB thread'
+            );
+          }
+          const project = await requireProject();
+          const snapshot = await readCredentialFormSnapshot(project.id);
+          const previous = snapshot.config;
+          const result = await bb.ui.requestInput(
+            {
+              threadId: ctx.threadId,
+              rendererId: 'taskboard-credentials',
+              title: `Manage credentials for ${project.name}`,
+              payload: {
+                projectId: project.id,
+                projectName: project.name,
+                linearTeamKey: previous.linearTeamKey,
+                linearFinishedDays: previous.linearFinishedDays,
+                jiraBaseUrl: previous.jiraBaseUrl,
+                jiraEmail: previous.jiraEmail,
+                linearCredentialConfigured: previous.linearCredentialConfigured,
+                jiraCredentialConfigured: previous.jiraCredentialConfigured
+              }
+            },
+            { signal: ctx.signal }
+          );
+          if (result.outcome === 'cancelled') {
+            return {
+              exitCode: 1,
+              stderr: 'Credential update cancelled.\n'
+            };
+          }
+          const parsedResponse =
+            projectCredentialsInteractionResponseSchema.safeParse(result.value);
+          if (!parsedResponse.success) {
+            throw new Error('Credential form response was invalid');
+          }
+          const response = parsedResponse.data;
+          const config = await persistProjectConfig(
+            {
+              projectId: previous.projectId,
+              source: previous.source,
+              linearTeamKey: previous.linearTeamKey,
+              linearFinishedDays: previous.linearFinishedDays,
+              jiraBaseUrl: previous.jiraBaseUrl,
+              jiraEmail: previous.jiraEmail,
+              jiraJql: previous.jiraJql,
+              gitlabProjectRef: previous.gitlabProjectRef,
+              giteaLogin: previous.giteaLogin,
+              giteaProjectRef: previous.giteaProjectRef,
+              linearCredential: response.linearCredential,
+              jiraCredential: response.jiraCredential
+            },
+            { config: previous, revisions: snapshot.revisions }
+          );
+          return {
+            exitCode: 0,
+            stdout: args.json
+              ? JSON.stringify(credentialStatus(config), null, 2)
+              : formatCredentialStatus(config)
+          };
+        }
+        if (command === 'presets') {
+          const verb = args.positionals[0] ?? 'list';
+          const rest = args.positionals.slice(1);
+          if (!['list', 'save', 'rename', 'delete'].includes(verb)) {
+            throw new Error(
+              'Usage: bb taskboard presets <list|save|rename|delete> ...'
+            );
+          }
+          const project = await requireProject();
+
+          if (verb === 'list') {
+            if (rest.length > 0) {
+              throw new Error(
+                'Usage: bb taskboard presets list ' +
+                  '[--project <proj_id>] [--json]'
+              );
+            }
+            const presets = store.listFilterPresets(project.id);
+            return {
+              exitCode: 0,
+              stdout: args.json
+                ? formatFilterPresetCliJson({ presets })
+                : presets.length > 0
+                  ? presets
+                      .map(item => escapeExternalInlineText(item.name))
+                      .join('\n')
+                  : 'This project has no filter presets.'
+            };
+          }
+
+          if (verb === 'save') {
+            if (rest.length !== 1 || !args.fromState) {
+              throw new Error(
+                'Usage: bb taskboard presets save <name> ' +
+                  '--from-state <json> [--project <proj_id>] [--json]'
+              );
+            }
+            let fromStateJson: unknown;
+            try {
+              fromStateJson = JSON.parse(args.fromState);
+            } catch {
+              throw new Error('--from-state must be valid JSON');
+            }
+            const parsedState =
+              filterPresetStateSchema.safeParse(fromStateJson);
+            if (!parsedState.success) {
+              throw new Error(
+                '--from-state is not a valid project browse preference state'
+              );
+            }
+            const { preset } = await saveFilterPresetLinearized({
+              projectId: project.id,
+              name: rest[0]!,
+              state: parsedState.data
+            });
+            return {
+              exitCode: 0,
+              stdout: args.json
+                ? formatFilterPresetCliJson({ preset })
+                : `Saved preset "${escapeExternalInlineText(preset.name)}"`
+            };
+          }
+
+          if (verb === 'rename') {
+            if (rest.length !== 2) {
+              throw new Error(
+                'Usage: bb taskboard presets rename <name> <new-name> ' +
+                  '[--project <proj_id>] [--json]'
+              );
+            }
+            const existing = resolvePresetByName(project.id, rest[0]!);
+            const { preset } = await saveFilterPresetLinearized({
+              projectId: project.id,
+              id: existing.id,
+              name: rest[1]!,
+              state: existing.state
+            });
+            return {
+              exitCode: 0,
+              stdout: args.json
+                ? formatFilterPresetCliJson({ preset })
+                : `Renamed preset "${escapeExternalInlineText(existing.name)}" to "${escapeExternalInlineText(preset.name)}"`
+            };
+          }
+
+          if (verb === 'delete') {
+            if (rest.length !== 1) {
+              throw new Error(
+                'Usage: bb taskboard presets delete <name> ' +
+                  '[--project <proj_id>] [--json]'
+              );
+            }
+            const existing = resolvePresetByName(project.id, rest[0]!);
+            const presets = store.deleteFilterPreset(project.id, existing.id);
+            publishFilterPresetsChanged(project.id);
+            return {
+              exitCode: 0,
+              stdout: args.json
+                ? formatFilterPresetCliJson({ presets })
+                : `Deleted preset "${escapeExternalInlineText(existing.name)}"`
+            };
+          }
+        }
+        throw new Error('Unknown bb taskboard command');
+      } catch (error) {
+        return { exitCode: 1, stderr: `${errorMessage(error)}\n` };
+      }
+    }
+  });
+
+  async function configuredLiveProjectIds(): Promise<string[]> {
+    const liveProjectIds = new Set(
+      (await listProjects()).map(project => project.id)
+    );
+    return store
+      .configuredProjectIds()
+      .filter(projectId => liveProjectIds.has(projectId));
+  }
+
+  async function migrateLegacyCredential(
+    source: CredentialSource,
+    liveProjectIds: ReadonlySet<string>
+  ): Promise<void> {
+    const selectedProjectIds = store
+      .selectedProjectIds(source)
+      .filter(projectId => liveProjectIds.has(projectId));
+    const connectorStates = await Promise.all(
+      selectedProjectIds.map(async projectId => ({
+        projectId,
+        credentialConfigured: await credentials.configured(projectId, source),
+        scopeConfigured: (() => {
+          const config = store.projectConfig(projectId, DEFAULT_PROJECT_CONFIG);
+          return source === 'linear'
+            ? Boolean(config.linearTeamKey)
+            : Boolean(config.jiraBaseUrl && config.jiraEmail);
+        })()
+      }))
+    );
+    const unavailableProjectIds = connectorStates
+      .filter(entry => !entry.credentialConfigured || !entry.scopeConfigured)
+      .map(entry => entry.projectId);
+
+    if (selectedProjectIds.length !== 1) {
+      if (selectedProjectIds.length > 1) {
+        for (const projectId of unavailableProjectIds) {
+          invalidateSource(projectId, source);
+        }
+        await Promise.all(
+          unavailableProjectIds.map(projectId =>
+            enqueueMutation(projectId, [source], async () => undefined)
+          )
+        );
+      }
+      const result = await credentials.migrateLegacy(
+        source,
+        selectedProjectIds
+      );
+      if (result.outcome === 'ambiguous-projects') {
+        bb.log.warn(
+          `${sourceName(source)} legacy credential needs manual project assignment`
+        );
+      }
+      return;
+    }
+
+    const projectId = selectedProjectIds[0]!;
+    if (source === 'jira') {
+      const config = store.projectConfig(projectId, DEFAULT_PROJECT_CONFIG);
+      if (!config.jiraBaseUrl || !config.jiraEmail) {
+        invalidateSource(projectId, source);
+        await enqueueMutation(projectId, [source], async () => undefined);
+        const result = await credentials.migrateLegacy(source, []);
+        if (result.outcome === 'no-eligible-project') {
+          bb.log.warn(
+            'Jira legacy credential was preserved because the enabled project needs a Jira URL and email; assign the full credential bundle in Manage'
+          );
+        }
+        return;
+      }
+    }
+    if (unavailableProjectIds.includes(projectId)) {
+      invalidateSource(projectId, source);
+    }
+    await enqueueMutation(projectId, [source], async () => {
+      const result = await credentials.migrateLegacy(source, [projectId]);
+      if (
+        result.outcome === 'migrated' ||
+        result.outcome === 'already-migrated'
+      ) {
+        bb.realtime.publish('taskboard:changed', {
+          projectId,
+          source
+        });
+      } else if (result.outcome === 'destination-conflict') {
+        bb.log.warn(
+          `${sourceName(source)} legacy credential conflicts with the configured project credential`
+        );
+      }
+    });
+  }
+
+  async function migrateLegacyCredentials(): Promise<void> {
+    await withExclusiveMigration(async () => {
+      const liveProjectIds = new Set(
+        (await listProjects()).map(project => project.id)
+      );
+      for (const source of CREDENTIAL_SOURCES) {
+        await migrateLegacyCredential(source, liveProjectIds);
+      }
+    });
+  }
+
+  bb.background.service('sync', {
+    async start(signal) {
+      // Let the UI paint from the SQLite cache first; sync right after.
+      await sleep(BOOT_SYNC_DELAY_MS, signal);
+      let legacyMigrationFinished = false;
+      while (!signal.aborted) {
+        if (!legacyMigrationFinished) {
+          try {
+            await migrateLegacyCredentials();
+            legacyMigrationFinished = true;
+          } catch (error) {
+            bb.log.warn(
+              `Legacy credential migration deferred: ${errorMessage(error)}`
+            );
+          }
+        }
+        try {
+          const projectIds = await configuredLiveProjectIds();
+          await Promise.all(
+            projectIds
+              .filter(projectId => !suspendedSync.has(projectId))
+              .map(projectId => syncAll(projectId, undefined, false))
+              .concat(
+                // Suspended projects retry on their slower cadence.
+                suspendedSync.size > 0
+                  ? [...suspendedSync]
+                      .filter(
+                        projectId =>
+                          Date.now() - (suspendedSyncAt.get(projectId) ?? 0) >
+                          SYNC_TROUBLE_BACKOFF_MS
+                      )
+                      .slice(0, 1)
+                      .map(projectId => {
+                        // Un-suspend so a persistent failure re-suspends
+                        // with a fresh timestamp.
+                        suspendedSync.delete(projectId);
+                        return syncAll(projectId, undefined, false);
+                      })
+                  : []
+              )
+          );
+        } catch (error) {
+          bb.log.warn(`Background sync failed: ${errorMessage(error)}`);
+        }
+        await sleep(SYNC_INTERVAL_MS, signal);
+      }
+    }
+  });
+
+  bb.log.info(
+    'Taskboard registered project-scoped Linear, GitHub, GitLab, Gitea, and Jira sources'
+  );
+}

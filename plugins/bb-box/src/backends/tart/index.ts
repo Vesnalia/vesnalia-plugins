@@ -1,0 +1,24 @@
+import type { BackendDriver } from "../types.ts";
+import { TartBackend } from "./backend.ts";
+import { IOS_IMAGE_KIND, TART_FIELDS, TART_HOST_FIELDS, TART_KINDS, TART_SETTINGS, parseTartPart, readEarlierTart, type TartConfig } from "./config.ts";
+
+export const tartDriver: BackendDriver<TartConfig> = {
+  type: "tart",
+  label: "Tart",
+  description: "macOS boxes, iOS Simulator boxes, and Linux and Windows boxes on arm64, as VMs on your Macs with Apple silicon.",
+  nature: "virtual",
+  form: "VM",
+  kinds: [...TART_KINDS, IOS_IMAGE_KIND],
+  warmKinds: ["macos", "macos-desktop", "windows-arm64-desktop"],
+  fields: TART_FIELDS,
+  offWhenEmpty: ["macos-image", "macos-desktop-image", "linux-image", "linux-desktop-image", "windows-image", "ios-image"],
+  hostFields: TART_HOST_FIELDS,
+  setup: {
+    guide: "setup/tart/README.md",
+    scripts: ["setup/tart/prepare-image.sh", "setup/tart/prepare-linux-image.sh", "setup/tart/prepare-ios-image.sh"],
+    needs: "A Mac with Apple silicon on macOS 14 or later, with Tart and an image from prepare-image.sh.",
+  },
+  parse: parseTartPart,
+  create: (config, context) => new TartBackend(config, context),
+  earlier: { settings: TART_SETTINGS, read: readEarlierTart },
+};

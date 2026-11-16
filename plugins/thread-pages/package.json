@@ -1,0 +1,54 @@
+{
+  "name": "@unifedev/thread-pages",
+  "version": "1.14.13",
+  "description": "Thread Pages for bb: every agent session gets one directly editable HTML page you can read and answer from, on any device. The bb host of Unife Pages.",
+  "license": "MIT",
+  "author": "Bartosz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unifedev/bb-thread-pages.git"
+  },
+  "homepage": "https://github.com/unifedev/bb-thread-pages",
+  "bugs": {
+    "url": "https://github.com/unifedev/bb-thread-pages/issues"
+  },
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "unife",
+    "thread-pages",
+    "pages",
+    "agents",
+    "html"
+  ],
+  "type": "module",
+  "private": false,
+  "engines": {
+    "bb": ">=0.42",
+    "bbPluginSdk": ">=0.4.47"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "bb plugin build"
+  },
+  "dependencies": {
+    "parse5": "^8.0.1"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.47",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.10.0",
+    "hono": "^4.13.13",
+    "typescript": "^5.7.2",
+    "zod": "^4.3.6"
+  },
+  "bb": {
+    "name": "Thread Pages",
+    "description": "Gives every agent session a web page it writes for its task, and lets you answer from that page instead of chat. Each page is built for the task at hand: a diagram you click, a decision sheet, a report that shows what failed. Your choices and notes on the page arrive as the agent's next message, from bb or from your phone. A home page lists your sessions by what needs you and by workspace. Pages run sandboxed with no bb credentials, and anything that touches another session asks you first.",
+    "branding": {
+      "icon": "FileText"
+    },
+    "server": "./server.ts",
+    "skills": []
+  }
+}

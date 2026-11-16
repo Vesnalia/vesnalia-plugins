@@ -1,0 +1,346 @@
+import { useEffect, useState } from "react";
+
+export interface TerminalAttachmentChunk {
+  seq: number;
+  bytes: Uint8Array;
+}
+
+export interface TerminalAttachment {
+  readonly terminalId: string;
+  subscribe(listener: (chunk: TerminalAttachmentChunk) => void): () => void;
+  sendInput(bytes: Uint8Array): boolean;
+  sendResize(cols: number, rows: number): boolean;
+  detach(): void;
+}
+
+interface OutputChunk {
+  seq: number;
+  dataBase64: string;
+}
+
+interface AttachedMessage {
+  type: "attached";
+  nextSeq: number;
+}
+
+interface OutputMessage {
+  type: "output";
+  chunk: OutputChunk;
+}
+
+type TerminalServerMessage = AttachedMessage | OutputMessage;
+
+export class LegacyTerminalAttachment implements TerminalAttachment {
+  readonly terminalId: string;
+  private attachedNextSeq: number | null = null;
+  private detached = false;
+  private lastDeliveredSeq = -1;
+  private lastResizeCols = 0;
+  private lastResizeRows = 0;
+  private reconnectAttempts = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly listeners = new Set<
+    (chunk: TerminalAttachmentChunk) => void
+  >();
+  private readonly pendingBeforeAttach = new Map<number, OutputChunk>();
+  private readonly pendingBeforeSubscribe: TerminalAttachmentChunk[] = [];
+  private readonly pendingInputs: string[] = [];
+  private readonly pendingLive = new Map<number, OutputChunk>();
+  private pendingReplay: OutputChunk[] = [];
+  private pendingResize: string | null = null;
+  private socket: WebSocket | null = null;
+
+  constructor(terminalId: string) {
+    this.terminalId = terminalId;
+  }
+
+  connect(): void {
+    if (this.detached || this.socket !== null) return;
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.attachedNextSeq = null;
+    this.pendingBeforeAttach.clear();
+    this.pendingLive.clear();
+    this.pendingReplay = [];
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const endpoint = `${protocol}//${window.location.host}/ws/terminals/${encodeURIComponent(this.terminalId)}`;
+    const socket = new WebSocket(endpoint);
+    this.socket = socket;
+    socket.onmessage = (event) => {
+      if (this.socket === socket) this.handleMessage(event.data);
+    };
+    socket.onopen = () => {
+      if (this.socket !== socket) return;
+      this.reconnectAttempts = 0;
+      this.flushPendingSends(socket);
+    };
+    socket.onclose = () => {
+      if (this.socket !== socket) return;
+      this.socket = null;
+      this.scheduleReconnect();
+    };
+  }
+
+  subscribe(listener: (chunk: TerminalAttachmentChunk) => void): () => void {
+    this.listeners.add(listener);
+    const pending = this.pendingBeforeSubscribe.splice(0);
+    for (const chunk of pending) listener(chunk);
+    return () => this.listeners.delete(listener);
+  }
+
+  sendInput(bytes: Uint8Array): boolean {
+    return this.sendInputMessage(
+      JSON.stringify({ type: "input", dataBase64: encodeBase64(bytes) }),
+    );
+  }
+
+  sendResize(cols: number, rows: number): boolean {
+    if (!Number.isSafeInteger(cols) || cols <= 0) return false;
+    if (!Number.isSafeInteger(rows) || rows <= 0) return false;
+    if (cols === this.lastResizeCols && rows === this.lastResizeRows)
+      return true;
+    this.lastResizeCols = cols;
+    this.lastResizeRows = rows;
+    return this.sendResizeMessage(
+      JSON.stringify({ type: "resize", cols, rows }),
+    );
+  }
+
+  detach(): void {
+    if (this.detached) return;
+    this.detached = true;
+    const socket = this.socket;
+    this.socket = null;
+    if (socket) {
+      socket.onclose = null;
+      socket.onmessage = null;
+      socket.onopen = null;
+      socket.close();
+    }
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.listeners.clear();
+    this.pendingBeforeAttach.clear();
+    this.pendingBeforeSubscribe.length = 0;
+    this.pendingInputs.length = 0;
+    this.pendingLive.clear();
+    this.pendingReplay = [];
+    this.pendingResize = null;
+  }
+
+  private handleMessage(raw: unknown): void {
+    const message = parseTerminalServerMessage(raw);
+    if (!message) return;
+    if (message.type === "attached") {
+      this.attachedNextSeq = message.nextSeq;
+      for (const chunk of this.pendingBeforeAttach.values()) {
+        this.pendingLive.set(chunk.seq, chunk);
+      }
+      this.pendingBeforeAttach.clear();
+      this.flushWhenReplayComplete();
+      return;
+    }
+    if (message.chunk.seq <= this.lastDeliveredSeq) return;
+    if (this.attachedNextSeq === null) {
+      this.pendingBeforeAttach.set(message.chunk.seq, message.chunk);
+      return;
+    }
+    if (message.chunk.seq < this.attachedNextSeq) {
+      this.insertReplay(message.chunk);
+      this.flushWhenReplayComplete();
+      return;
+    }
+    if (
+      this.attachedNextSeq > 0 &&
+      this.lastDeliveredSeq < this.attachedNextSeq - 1
+    ) {
+      this.pendingLive.set(message.chunk.seq, message.chunk);
+      return;
+    }
+    this.deliver(message.chunk);
+  }
+
+  private insertReplay(chunk: OutputChunk): void {
+    if (this.pendingReplay.some((pending) => pending.seq === chunk.seq)) return;
+    let index = 0;
+    while (
+      index < this.pendingReplay.length &&
+      this.pendingReplay[index]!.seq < chunk.seq
+    ) {
+      index += 1;
+    }
+    this.pendingReplay.splice(index, 0, chunk);
+  }
+
+  private flushWhenReplayComplete(): void {
+    if (this.attachedNextSeq === null) return;
+    const replayCaughtUp =
+      this.attachedNextSeq === 0 ||
+      this.lastDeliveredSeq >= this.attachedNextSeq - 1 ||
+      this.pendingReplay.some(
+        (chunk) => chunk.seq === this.attachedNextSeq! - 1,
+      );
+    if (!replayCaughtUp) return;
+    const replay = this.pendingReplay;
+    this.pendingReplay = [];
+    for (const chunk of replay) this.deliver(chunk);
+    const live = [...this.pendingLive.values()].sort(
+      (left, right) => left.seq - right.seq,
+    );
+    this.pendingLive.clear();
+    for (const chunk of live) this.deliver(chunk);
+  }
+
+  private deliver(chunk: OutputChunk): void {
+    if (chunk.seq <= this.lastDeliveredSeq) return;
+    this.lastDeliveredSeq = chunk.seq;
+    const decoded = { seq: chunk.seq, bytes: decodeBase64(chunk.dataBase64) };
+    if (this.listeners.size === 0) {
+      this.pendingBeforeSubscribe.push(decoded);
+      return;
+    }
+    for (const listener of this.listeners) listener(decoded);
+  }
+
+  private queueWhileSocketSettles(
+    kind: "input" | "resize",
+    message: string,
+  ): boolean {
+    if (kind === "resize") this.pendingResize = message;
+    else this.pendingInputs.push(message);
+    if (this.socket === null) this.connect();
+    return true;
+  }
+
+  private sendInputMessage(message: string): boolean {
+    if (this.detached) return false;
+    if (this.socket === null || this.socket.readyState !== WebSocket.OPEN) {
+      if (this.socket?.readyState === WebSocket.CONNECTING) {
+        this.pendingInputs.push(message);
+        return true;
+      }
+      return this.queueWhileSocketSettles("input", message);
+    }
+    this.socket.send(message);
+    return true;
+  }
+
+  private sendResizeMessage(message: string): boolean {
+    if (this.detached) return false;
+    if (this.socket === null || this.socket.readyState !== WebSocket.OPEN) {
+      if (this.socket?.readyState === WebSocket.CONNECTING) {
+        this.pendingResize = message;
+        return true;
+      }
+      return this.queueWhileSocketSettles("resize", message);
+    }
+    this.socket.send(message);
+    return true;
+  }
+
+  private flushPendingSends(socket: WebSocket): void {
+    if (this.pendingResize !== null) socket.send(this.pendingResize);
+    this.pendingResize = null;
+    for (const message of this.pendingInputs) socket.send(message);
+    this.pendingInputs.length = 0;
+  }
+
+  private scheduleReconnect(): void {
+    if (this.detached || this.reconnectTimer !== null) return;
+    const delay =
+      this.reconnectAttempts === 0
+        ? 0
+        : Math.min(2_000, 100 * 2 ** this.reconnectAttempts);
+    this.reconnectAttempts += 1;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect();
+    }, delay);
+  }
+}
+
+export function useLegacyTerminalAttachment(
+  terminalId: string,
+): TerminalAttachment | null {
+  const [attachment, setAttachment] = useState<TerminalAttachment | null>(null);
+  useEffect(() => {
+    const next = new LegacyTerminalAttachment(terminalId);
+    next.connect();
+    setAttachment(next);
+    return () => {
+      setAttachment(null);
+      next.detach();
+    };
+  }, [terminalId]);
+  return attachment;
+}
+
+function parseTerminalServerMessage(
+  raw: unknown,
+): TerminalServerMessage | null {
+  if (typeof raw !== "string") return null;
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (
+    record.type === "attached" &&
+    Number.isSafeInteger(record.nextSeq) &&
+    Number(record.nextSeq) >= 0
+  ) {
+    return { type: "attached", nextSeq: Number(record.nextSeq) };
+  }
+  if (
+    record.type !== "output" ||
+    !record.chunk ||
+    typeof record.chunk !== "object"
+  ) {
+    return null;
+  }
+  const chunk = record.chunk as Record<string, unknown>;
+  if (
+    !Number.isSafeInteger(chunk.seq) ||
+    Number(chunk.seq) < 0 ||
+    typeof chunk.dataBase64 !== "string"
+  ) {
+    return null;
+  }
+  return {
+    type: "output",
+    chunk: { seq: Number(chunk.seq), dataBase64: chunk.dataBase64 },
+  };
+}
+
+export function decodeBase64(value: string): Uint8Array {
+  const fromBase64 = (
+    Uint8Array as unknown as {
+      fromBase64?: (input: string) => Uint8Array;
+    }
+  ).fromBase64;
+  if (fromBase64) return fromBase64(value);
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+export function encodeBase64(bytes: Uint8Array): string {
+  const native = bytes as Uint8Array & { toBase64?: () => string };
+  if (typeof native.toBase64 === "function") return native.toBase64();
+  const CHUNK = 8192;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}

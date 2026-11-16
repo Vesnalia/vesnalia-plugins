@@ -1,0 +1,263 @@
+// Every check bb box doctor can report, by its ID (#500). A DoctorCheck's ID
+// must match one of these, so a new check does not compile until it is here,
+// and the reference (docs/reference/checks.md) is made from this list. A part
+// in angle brackets, such as <vmid>, stands for any text.
+import { PRODUCT } from "../brand.ts";
+
+export interface CheckInfo {
+  /** The check's name, as the doctor shows it; angle brackets as in the ID. */
+  readonly name: string;
+  /** Who reports it: a backend type, or "bb-box" for the plugin itself. */
+  readonly from: readonly string[];
+  /** What it checks, in a sentence or two, for people. */
+  readonly what: string;
+}
+
+export const CHECKS = {
+  // bb-box itself.
+  doctor: { name: "Checks", from: ["bb-box"], what: "A backend's checks did not finish within their time limit." },
+  "config.<path>": { name: "Settings", from: ["bb-box"], what: `A part of ${PRODUCT}'s configuration that needs fixing, by its path, such as general.defaultKind.` },
+  "offers.<kind>": { name: "Offers of <kind>", from: ["bb-box"], what: "Where several backends offer a kind: they agree on what the kind promises, and each has the features it requires." },
+  "overlap.<backend>.<backend>": { name: "<backend> and <backend>", from: ["bb-box"], what: "Two backends whose boxes could take the same guest IDs or addresses." },
+  "projects.<backend>": { name: "Projects of <backend>", from: ["bb-box"], what: "A backend kept for certain BB projects (#1458): the projects it serves, and a warning when none of them is still in BB, so no thread can use it." },
+  "warm.<kinds>": { name: "Warm pool of <kinds>", from: ["bb-box"], what: "A warm pool that has fewer ready boxes than its count asks for, and no room for another." },
+  "sizes.<kind>.<preset>": { name: "Box sizes", from: ["bb-box"], what: "A Linux preset with less than 2 GiB memory, so its boxes can run out of memory as they become BB machines." },
+  "box-files": { name: "Files for every box", from: ["bb-box"], what: `The files ${PRODUCT} writes into each box as it joins BB, and whether the last write worked.` },
+  "box-history": { name: "Box history's file", from: ["bb-box"], what: `Where ${PRODUCT} will keep each box's readings over time (069): box-history.db beside its database, attached with its own cap, or its database itself where BB's handle refused to attach the file.` },
+  "box-log": { name: "Box log", from: ["bb-box"], what: `Where ${PRODUCT} keeps who stopped, started, resized and released each box (069): box-log.db beside its database, or its database itself where BB's handle refused to attach the file; and whether its writes failed.` },
+  "snapshots": { name: "Snapshots' records", from: ["bb-box"], what: `Where ${PRODUCT} keeps its records of snapshots and their operations (070): snapshots.db beside its database, or its database itself where BB's handle refused to attach the file; and whether its writes failed. While it cannot write them, ${PRODUCT} takes and deletes no snapshots.` },
+  "snapshots.locked.<box>": {
+    name: "<box> locked",
+    from: ["bb-box"],
+    what: `A box with snapshots whose guest its provider left locked (070), as Proxmox does when a task dies part way: ${PRODUCT} takes, deletes and restores none of its snapshots until the lock is gone, and only root on the host can remove it. Says the host's command.`,
+  },
+  "snapshots.restore.<box>": {
+    name: "Restore of <box>",
+    from: ["bb-box"],
+    what: `A restore of a box that ${PRODUCT} could not confirm (070), as when ${PRODUCT} restarted while Proxmox rolled the box back: it keeps the snapshots it used and checks again at each sweep.`,
+  },
+  "gpu-userspace": {
+    name: "NVIDIA userspace",
+    from: ["bb-box"],
+    what: `How many boxes with a GPU have NVIDIA's userspace for their host's driver, as ${PRODUCT} reads it in each running box at this check (071). ${PRODUCT} never updates a box's userspace by itself.`,
+  },
+  "gpu-userspace.<box>": {
+    name: "NVIDIA userspace in <box>",
+    from: ["bb-box"],
+    what: `A box with a GPU whose NVIDIA userspace is not the host's driver, is half-installed, or whose last update did not finish, so nvidia-smi and CUDA fail or may fail in it (071). A stopped box is named as ${PRODUCT} last read it. It says the command that updates it: bb box gpu update.`,
+  },
+  "join.<box>": {
+    name: "<box> joining BB",
+    from: ["bb-box"],
+    what: `A box that did not join BB at its first try. ${PRODUCT} tries again after 30 s, 2 min, 10 min and 30 min, then every 30 minutes for up to 24 hours from the first failure, when what failed can pass, such as a DNS lookup that timed out. It warns while it tries, and when other boxes on the same backend joined. It fails once no box on the backend can reach BB, which is a setup problem.`,
+  },
+  "identity-reset.<box>": {
+    name: "Identity reset of <box>",
+    from: ["bb-box"],
+    what: `A box of ${PRODUCT}'s whose identity reset at a boot (070), which took its BB machine with it: ${PRODUCT} keeps the box and enrols it again as a new BB machine. It warns once that is done, and fails until it is. A box that is not a copy of another should never reset.`,
+  },
+  "images.nightly": { name: "Nightly rebuilds", from: ["bb-box"], what: "When bb box images refresh last ended. It warns when no run ended for 8 days." },
+  "images.bb-update": { name: "Refresh after a BB update", from: ["bb-box"], what: "After a BB update, which Linux images have another build of BB's app than BB's server gives, and when their refresh starts. Only while Rebuild each night is on." },
+  "images.<backend>/<ref>": { name: "Rebuild of <backend>/<ref>", from: ["bb-box"], what: "A standard image whose last rebuild failed, or waits for room." },
+  "images.bake.<image>.<backend>.<kind>": { name: "Build of <image> for <kind> on <backend>", from: ["bb-box"], what: "A project image whose last build failed. Its boxes run its script as they start meanwhile." },
+  "device-hub.<box>": {
+    name: "Device Hub in <box>",
+    from: ["bb-box"],
+    what: "An ios box's macOS host has no Device Hub running (063): it takes the device's pasteboard, and quitting it shuts the device down, so the device server kills it within 5 s of its start. Says how often it has.",
+  },
+  "device.<box>": { name: "Device server of <box>", from: ["bb-box"], what: `A device box's server (063): the version it runs against the one this ${PRODUCT} delivers, a delivery waiting for a person or a recording, a version marked bad after it did not answer, and a server its service manager gave up on.` },
+  "recording.<kind>": {
+    name: "Recordings on <kind>",
+    from: ["bb-box"],
+    what: `What box_record makes on a kind (059, 063): a desktop's or a device's screen with captioned steps, or nothing; the ffmpeg it needs there, which ${PRODUCT} fetches into a box that has none fit; and what the kind's last recording start found.`,
+  },
+  "devices.<mac>": {
+    name: "iOS devices on <mac>",
+    from: ["ssh-pool", "tart", "namespace"],
+    what: `What a Mac offers iOS devices, as ${PRODUCT} last measured it there (065): the iOS Simulator, and a hardware or software H.264 encoder for their video. A Mac that cannot run the Simulator or stream lends no ios slot.`,
+  },
+  "encoder.<mac>": {
+    name: "Video encoder on <mac>",
+    from: ["bb-box"],
+    what: `A Mac's video encoder, shared by every iOS device ${PRODUCT} streams on it (064): its budget, from the chip or a probe, how much of it the streams use, and which are shown at a lower resolution to keep within it.`,
+  },
+  monitor: { name: "Monitor", from: ["bb-box"], what: "The Monitor's settings (066): whether it is on, how often machine status reads while it is open, and whether background monitoring and its notifications are on." },
+  "monitor.background": { name: "Background monitoring", from: ["bb-box"], what: "While background monitoring is on: when it last wrote its minute's summary of BB's server's CPU and memory, and whether its last sample or write failed." },
+  "spares.<kind>": {
+    name: "Spare <kind> boxes",
+    from: ["bb-box"],
+    what: `A kind's spares (032, 063): how many ${PRODUCT} keeps, how many are ready or being made, and what each costs while it waits. For ios and android it says when spares are off, as they are by default. It warns when the kind has fewer than its count and why.`,
+  },
+  "spares.image.<image>.<backend>.<kind>": { name: "Spare of <image> for <kind> on <backend>", from: ["bb-box"], what: `A project image's spare whose build failed to start a box, so ${PRODUCT} makes none of that build for a day. Its boxes start from the build meanwhile.` },
+
+  // Proxmox LXC and Proxmox QEMU.
+  "proxmox.api": { name: "Proxmox API", from: ["proxmox-lxc", "proxmox-qemu"], what: `The API answers at its URL, with a certificate ${PRODUCT} trusts, and the token works.` },
+  "proxmox.node": { name: "Node", from: ["proxmox-lxc", "proxmox-qemu"], what: "The node exists and is online." },
+  "proxmox.memory": { name: "Node memory", from: ["proxmox-lxc", "proxmox-qemu"], what: "How much of the node's memory is free beyond the reserve." },
+  "proxmox.pool": { name: "Resource pool", from: ["proxmox-lxc", "proxmox-qemu"], what: "The resource pool exists and the token may use it." },
+  "proxmox.bridge": { name: "Network bridge", from: ["proxmox-lxc", "proxmox-qemu"], what: "The bridge exists on the node." },
+  "proxmox.vmids": { name: "VMID range", from: ["proxmox-lxc", "proxmox-qemu"], what: `The VMID range is free of guests ${PRODUCT} did not make.` },
+  "proxmox.sizes": { name: "Room for each kind", from: ["proxmox-lxc", "proxmox-qemu"], what: "The node holds a box of each kind at its default size." },
+  "proxmox.snapshots": {
+    name: "Snapshots",
+    from: ["proxmox-lxc", "proxmox-qemu"],
+    what: "Whether the token may take and restore snapshots, with VM.Snapshot and VM.Snapshot.Rollback on the pool, and what each template's storage restores: any snapshot on LVM-thin, Ceph RBD, BTRFS and qcow2 files, the newest only on ZFS, none on LVM or raw files (070).",
+  },
+  "template.<vmid>": { name: "<flavour> template <vmid>", from: ["proxmox-lxc", "proxmox-qemu"], what: "A template is there, is a template, and has what its kind needs." },
+  "template.<vmid>.image": { name: "Image of <flavour> template <vmid>", from: ["proxmox-lxc", "proxmox-qemu"], what: `The template's image record: its age, pins and tools, against this ${PRODUCT}'s.` },
+  "proxmox.android-kvm": { name: "KVM for Android", from: ["proxmox-qemu"], what: "Where Android templates are listed, the host allows nested virtualization, as the linux-kvm setting says: the Android emulator needs KVM." },
+  "proxmox.android-disk": { name: "Disk for Android", from: ["proxmox-qemu"], what: "The storage of each Android template has room beyond the reserve for a refresh's build and trial boxes and an Android box in use." },
+  "proxmox.gpu-helper": {
+    name: "Host's GPU helper",
+    from: ["proxmox-lxc"],
+    what: `Where host/setup-gpu.sh has installed the GPU helper, bb-box-gpu: it reported under 3 minutes ago, speaks a protocol this ${PRODUCT} speaks, serves this install's pool, runs on a pve-container version it was tested on, and has writes on. It warns while the helper runs with writes off, a dry run, and on a node with cards and no helper, where servers get no GPU (071).`,
+  },
+  "proxmox.gpu-cards": {
+    name: "Boxes on their cards",
+    from: ["proxmox-lxc"],
+    what: `Where the GPU helper reports: every running box with a GPU lists its claimed card in nvidia-smi, as ${PRODUCT} checks every 10 minutes, and the helper reports no running guest on another card's lines. It fails naming each box on the wrong card or none (071).`,
+  },
+  "proxmox.gpu-migration": {
+    name: "Markers on GPU guests",
+    from: ["proxmox-lxc"],
+    what: "Where the GPU helper, bb-box-gpu, reports: every guest of this install whose device lines name a card carries the marker bb box gpu mark gives it, the helper answered each, and, in its dry run, it would write no guest (071). It names the guests that fail.",
+  },
+  "proxmox.gpu-report": { name: "Host's GPU report", from: ["proxmox-lxc"], what: "The host's report of each GPU's memory, which the GPU helper, bb-box-gpu, or else bb-box-gpu-memory.timer writes in a VM's notes: there, current, and naming each GPU." },
+  "gpu.<gpu>": { name: "GPU <gpu>", from: ["proxmox-lxc"], what: `A GPU's free memory, as ${PRODUCT} last read it in a GPU desktop, against what a GPU desktop needs.` },
+  "gpu.<gpu>.whole": { name: "GPU <gpu> whole", from: ["proxmox-lxc", "docker"], what: "A card a box holds whole has no other holder. It fails, naming the guests, when a claim went wrong (071)." },
+  "gpu.<gpu>.limit": { name: "GPU <gpu> boxes", from: ["docker"], what: "A card has no more boxes than the boxes per card. It warns, naming the boxes over the limit, which keep running while no new box goes on the card (071)." },
+  "ssh.key": { name: "SSH key", from: ["proxmox-lxc", "proxmox-qemu", "ssh-pool"], what: `${PRODUCT}'s SSH key reads, and, where ${PRODUCT} made it, its public key to install.` },
+
+  // Docker.
+  "docker.snapshots": { name: "Snapshots", from: ["docker"], what: "Docker's image store, the space snapshots need and the disk's use." },
+  "docker.snapshot-leftovers": { name: "Snapshot leftovers", from: ["docker"], what: "Interrupted snapshot tasks and paused boxes waiting for recovery, and Docker volumes a restore's copy left that maintenance could not remove after 3 tries, by name." },
+  "docker.kept-snapshots": { name: "Kept snapshots", from: ["docker"], what: "What kept snapshots hold on Docker's disk, and until when. Removing the backend is refused while it holds any snapshot." },
+  "docker.snapshot-layers": { name: "Snapshot layers", from: ["docker"], what: "Box images near Docker's layer limit. A take refuses from 120 layers." },
+  "docker.cli": { name: "docker CLI", from: ["docker"], what: "The docker CLI runs on BB's server." },
+  "docker.daemon": { name: "Docker daemon", from: ["docker"], what: "The Docker host answers, runs Linux containers, and its architecture." },
+  "docker.attach": {
+    name: "Attached output",
+    from: ["docker"],
+    what: "On a Windows machine, a Docker host at tcp://127.0.0.1, or a BB machine whose Docker there is, returns an attached command's output. WSL's localhost forwarder does not: docker run and docker exec print nothing and exit 0. For a BB machine, set machine-docker-host to wsl://<distro>.",
+  },
+  "docker.ssh": { name: "SSH connection reuse", from: ["docker"], what: "Over ssh://, whether the docker calls share one SSH connection." },
+  "docker.limits": { name: "CPU and memory limits", from: ["docker"], what: "Docker can limit a container's CPU and memory, as each box needs." },
+  "docker.cpuset": { name: "Cores a box sees", from: ["docker"], what: "Docker can pin each box to as many CPUs as it has cores, so nproc in a box says its cores." },
+  "docker.apparmor": { name: "Programs in boxes under the host's AppArmor", from: ["docker"], what: "A setgid program in a box, as sudo runs, works under the Docker host's AppArmor profiles, which on a host that is itself a container cannot name a box's files." },
+  "docker.lxcfs": { name: "Memory and CPUs a box sees", from: ["docker"], what: "The host runs LXCFS, so free, /proc/meminfo and /proc/cpuinfo in a box say its own memory and CPUs, and no running box's LXCFS files have broken." },
+  "docker.network": { name: "Network <network>", from: ["docker"], what: `${PRODUCT}'s network for its boxes, made by ${PRODUCT}.` },
+  "docker.privileged": { name: "Docker in boxes", from: ["docker"], what: "Whether boxes are privileged, so they can run Docker inside." },
+  "docker.one-backend": { name: "One backend for this daemon", from: ["docker"], what: `No other backend of this install that is on reaches the same Docker daemon, known by its engine ID, its name and its Docker root together. Where two do, ${PRODUCT} places GPU boxes there through the one whose ID sorts first, as each would count only its own boxes on the cards; boxes with no GPU are made through either (071).` },
+  "docker.gpus": { name: "GPUs", from: ["docker"], what: `The NVIDIA cards Docker lists as CDI devices, for GPU boxes, as nvidia-smi in a container given them reads them; whether every box can open every card there; another install's GPU boxes on the host; and a box with a whole card that ${PRODUCT} cannot match to a card it reads, which stops GPU boxes there (071).` },
+  "docker.capacity": { name: "Room on <host>", from: ["docker"], what: "Room on the host for a Linux box at its default size." },
+  "docker.sizes": { name: "Room for each kind", from: ["docker"], what: "The host holds a box of each kind at its default size." },
+
+  // Hetzner Cloud.
+  "hetzner.api": { name: "Hetzner Cloud API", from: ["hetzner"], what: "The API answers and the token reads the project." },
+  "hetzner.reach": { name: "Reaching hosts", from: ["hetzner"], what: `How ${PRODUCT} reaches a host's Docker: over the tailnet, or over the internet from the addresses in SSH from.` },
+  "hetzner.unclaimed": { name: "Servers no host claims", from: ["hetzner"], what: `Servers with this install's label that are not hosts ${PRODUCT} knows. The sweep adopts a host's server, as after lost storage, and deletes any other 10 minutes after it was made.` },
+  "hetzner.type": { name: "Server type <type>", from: ["hetzner"], what: "The hosts' server type is sold at the location, with its size and price." },
+  "hetzner.image": { name: "Host image", from: ["hetzner"], what: "The snapshot new hosts start from, with Docker, Tailscale and the box images in it: its age, the snapshots kept and their cost, and the last build." },
+  "hetzner.arm-type": { name: "Server type <type>", from: ["hetzner"], what: "The Arm hosts' server type, for linux-arm64 boxes, is an Arm type sold at the location, with its size and price." },
+  "hetzner.arm-image": { name: "Arm host image", from: ["hetzner"], what: "The snapshot new Arm hosts start from: its age, the snapshots kept and their cost, and the last build." },
+  "hetzner.hosts": { name: "Hosts", from: ["hetzner"], what: `Each host ${PRODUCT} made: its state, age, boxes and cost this month.` },
+  "hetzner.spend": { name: "This month's spend", from: ["hetzner"], what: "What the hosts cost this month before VAT, against the monthly limit." },
+  "hetzner.host.<host>": { name: "Docker on <host>", from: ["hetzner"], what: "A host's Docker, as the Docker backend's checks find it." },
+  "hetzner.snapshots.<host>": { name: "Snapshots on <host>", from: ["hetzner"], what: "On a host where a box took snapshots: Docker's snapshot lines for that host, with how full its disk is, and that Keep is off as a release deletes them." },
+  "image.<image>": { name: "Image <image>", from: ["docker", "microsandbox"], what: `An image a kind runs is on the host, built by ${PRODUCT}'s build script, and not too old.` },
+
+  // microsandbox.
+  "microsandbox.host": { name: "Host <host>", from: ["microsandbox"], what: "The host answers, runs Linux on x86_64, and its cores, memory and free disk." },
+  "microsandbox.msb": { name: "msb", from: ["microsandbox"], what: `${PRODUCT}'s msb is installed on the host at the release this ${PRODUCT} pins.` },
+  "microsandbox.kvm": { name: "KVM", from: ["microsandbox"], what: "The host has /dev/kvm, and BB's user may use it." },
+  "microsandbox.snapshots": { name: "Snapshots", from: ["microsandbox"], what: `The host's msb is the release whose snapshots ${PRODUCT}'s checks measured, so ${PRODUCT} takes, restores, forks and deletes snapshots there.` },
+  "microsandbox.lxc": { name: "LXC", from: ["microsandbox"], what: "The host is an LXC container, where msb's snapshots and flat roots fail." },
+  "microsandbox.overcommit": { name: "Memory overcommit", from: ["microsandbox"], what: `Above 1, whether it applies on the host: a Mac keeps the memory a box has used, so ${PRODUCT} counts each box there at its full size.` },
+  "microsandbox.capacity": { name: "Room on <host>", from: ["microsandbox"], what: "Room on the host for a box at its default size." },
+  "microsandbox.sizes": { name: "Room for each kind", from: ["microsandbox"], what: "The host holds a box of each kind at its default size." },
+
+  "tailnet.client": { name: "OAuth client", from: ["bb-box"], what: `Tailscale signs in the OAuth client in the General settings, with which ${PRODUCT} makes a single-use key for each machine it makes.` },
+  "tailnet.devices": { name: "Devices", from: ["bb-box"], what: `This install's devices on the tailnet, which ${PRODUCT} removes when their machine went without logging out, and how many other devices carry the same tags, unnamed: ${PRODUCT} leaves those alone.` },
+  "namespace.token": { name: "API token", from: ["namespace"], what: "Namespace's API answers to the token in BB Box's settings." },
+  "namespace.machines": { name: "Machines", from: ["namespace"], what: `The Namespace machines ${PRODUCT} has, each with its age and when it ends, and any no box claims.` },
+  "namespace.limits": { name: "Workspace limits", from: ["namespace"], what: `The Mac cores and memory the workspace allows at once and has in use, read from Namespace, from which ${PRODUCT} refuses a Mac up front; a warning when the token may not read them.` },
+  "namespace.snapshots.<machine>": { name: "Snapshots on <machine>", from: ["namespace"], what: "On a Linux machine where its box took snapshots: Docker's snapshot lines for that machine, and when the machine ends with them." },
+  "namespace.grants": { name: "macOS permissions on Namespace's Macs", from: ["namespace"], what: `Whether box_grant works on Namespace's Macs: whether System Integrity Protection is off and TCC's database is one ${PRODUCT} knows, as measured on the Macs that macos and macos-desktop boxes started on most recently, and their macOS; a warning, with the reason, when the latest measurement of a Mac failed (058).` },
+  "namespace.images": { name: "Linux images", from: ["namespace"], what: `${PRODUCT}'s Linux images in the workspace's registry: when each was built, whether a new one is due, and whether one is being built.` },
+  "boat.api": { name: "boat.dev API", from: ["boat"], what: "boat's API answers to the API key in BB Box's settings, and on which plan." },
+  "boat.limits": { name: "Plan limits", from: ["boat"], what: "What the boat plan allows now: sandboxes at once, starts left in each window, the sizes and their prices, and the trial's compute hours left." },
+  "boat.bb": { name: "Reaching BB", from: ["boat"], what: "Whether boat's sandboxes can reach BB's server, through the tailnet or a URL on the internet, so boat boxes become BB machines. It warns when BB's URL is on a private network and the tailnet is off." },
+  "boat.android": { name: "Android", from: ["boat"], what: "Whether boat.dev offers Android boxes: the Android SDK's licence accepted in its settings, its Android template and the devices in it, and the largest size the plan allows them." },
+  "boat.templates": { name: "Templates", from: ["boat"], what: "The stopped template sandbox each kind's boxes fork: when it was built, whether a new one is due, and whether one is being built." },
+  "boat.sandboxes": { name: "Sandboxes", from: ["boat"], what: `The boat sandboxes ${PRODUCT} holds for its boxes, each with its state, size, price an hour and age, and any no box claims.` },
+
+  // Tart.
+  "tart.ssh-key": { name: "SSH key", from: ["tart"], what: `${PRODUCT}'s SSH key for the Macs reads, and its public key to install.` },
+  "tart.hosts": { name: "Macs", from: ["tart"], what: "At least one Mac is set up." },
+  "host.<mac>": { name: "Mac <mac>", from: ["tart"], what: "The Mac answers over SSH, is Apple silicon, and has Tart." },
+  "image.<mac>.<kind>": {
+    name: "<kind> image on <mac>",
+    from: ["tart"],
+    what: "The VM a kind's boxes are cloned from is on the Mac, of the right OS, and not too old. For the iOS image, also that it offers iOS devices, built on the macOS image's current build, with an idb_companion and Xcode an image check has passed together.",
+  },
+  "forks.<mac>": { name: "macOS forks on <mac>", from: ["tart"], what: `Whether the Mac's diskutil can attach a fork's disk, so ${PRODUCT} can clean it of its source's identity before the fork first boots (070 unit 9). Without it, macOS boxes there take and restore snapshots, but make no forks and keep none past a release.` },
+  "spotlight.<mac>": { name: "Spotlight on <mac>", from: ["tart"], what: "Whether Spotlight indexes the folder of Tart's VMs, so it opens each new VM's disk, and how to keep it out (F-12)." },
+  "qemu.<mac>": { name: "QEMU on <mac>", from: ["tart"], what: "QEMU, the Hypervisor framework and UEFI firmware, for Windows boxes on the Mac." },
+  "qemu-video.<mac>": { name: "Windows video on <mac>", from: ["tart"], what: `${PRODUCT}'s build of bb-box-stream on the Mac, which gives Windows boxes video from QEMU's VNC server (#865).` },
+  "capacity.<mac>": { name: "Room on <mac>", from: ["tart"], what: "Room on the Mac for a macOS box at its default size." },
+  "sizes.<mac>": { name: "Room for each kind on <mac>", from: ["tart"], what: "The Mac holds a box of each kind at its default size." },
+  "ios-hosts.<mac>": {
+    name: "Shared iOS hosts on <mac>",
+    from: ["tart", "namespace"],
+    what: "The shared iOS hosts on the Mac (064), or on Namespace (065): each host's state, its slots held, ready, making and sweeping, its free disk and memory, and each held slot's cores, memory and home; Namespace's host's end and how its video is encoded; or, with none, whether one can start.",
+  },
+
+  // SSH host pool.
+  machines: { name: "Machines", from: ["ssh-pool"], what: "At least one machine is listed." },
+  docker: { name: "Docker", from: ["ssh-pool"], what: "Whether the pool's Linux machines lend Docker to their boxes." },
+  xcode: { name: "Xcode", from: ["ssh-pool"], what: "Whether the pool's Macs have Xcode." },
+  "snapshot-offers": { name: "Snapshots on the pool's machines", from: ["ssh-pool"], what: "How many of the pool's machines could offer home snapshots, and how many machine snapshots by a hook." },
+  "machine.<machine>.ssh": { name: "<machine>: SSH", from: ["ssh-pool"], what: "The machine answers over SSH with its pinned host key." },
+  "machine.<machine>.sizes": { name: "<machine>: room for each kind", from: ["ssh-pool"], what: "The machine holds a box of each of its kinds at the default size." },
+  "machine.<machine>.helper": { name: "<machine>: helper", from: ["ssh-pool"], what: `${PRODUCT}'s helper is installed on the machine, at this ${PRODUCT}'s version.` },
+  "machine.<machine>.arch": { name: "<machine>: architecture", from: ["ssh-pool"], what: "The machine's architecture is the one its kinds need." },
+  "machine.<machine>.tools": { name: "<machine>: tools", from: ["ssh-pool"], what: "The tools its kinds need are on the machine." },
+  "machine.<machine>.docker": { name: "<machine>: Docker", from: ["ssh-pool"], what: "Docker runs on the machine, for its boxes." },
+  "machine.<machine>.state": { name: "<machine>: state", from: ["ssh-pool"], what: "Whether the machine is free, lent, being reset or out of service." },
+  "machine.<machine>.filevault": { name: "<machine>: FileVault", from: ["ssh-pool"], what: "On a Mac, FileVault is off, so it signs a box user in after a restart." },
+  "machine.<machine>.signin": { name: "<machine>: sign-in", from: ["ssh-pool"], what: "On a Mac, the next box user is signed in at the console." },
+  "machine.<machine>.fulldisk": { name: "<machine>: Full Disk Access", from: ["ssh-pool"], what: "On a Mac, the helper has Full Disk Access, which a reset needs." },
+  "machine.<machine>.sip": { name: "<machine>: System Integrity Protection", from: ["ssh-pool"], what: `On a Mac, whether System Integrity Protection is on, and so whether ${PRODUCT} can grant box users' programs macOS permissions (058).` },
+  "machine.<machine>.slots": {
+    name: "<machine>: iOS slots",
+    from: ["ssh-pool"],
+    what: "On a Mac whose line lists ios (064): that its iOS slots are set up, whether it lends slots or is lent whole, its slots held, ready, making and sweeping, the iOS runtime and seed they are made with, each held slot's load, and what its last sweeps found and left.",
+  },
+  "machine.<machine>.homes": { name: "<machine>: people's homes", from: ["ssh-pool"], what: "On a Mac, box users cannot enter any person's home, such as an administrator's with BB's or an agent CLI's credentials." },
+  "machine.<machine>.xcode": { name: "<machine>: Xcode", from: ["ssh-pool"], what: "On a Mac, Xcode and its iOS runtime." },
+  "machine.<machine>.screensharing": { name: "<machine>: Screen Sharing", from: ["ssh-pool"], what: "On a Mac with desktops, Screen Sharing is on." },
+  "machine.<machine>.grants": { name: "<machine>: Cua Driver's grants", from: ["ssh-pool"], what: "On a Mac with desktops, Cua Driver has Accessibility and Screen Recording." },
+  "machine.<machine>.snapshots": {
+    name: "<machine>: snapshots",
+    from: ["ssh-pool"],
+    what: `What snapshots the machine could offer: home snapshots where box homes are on a filesystem that clones or snapshots, and machine snapshots where an operator installed a snapshot hook. ${PRODUCT} takes no snapshots on pool machines yet.`,
+  },
+  "machine.<machine>.input": { name: "<machine>: viewer's input", from: ["ssh-pool"], what: "On a Mac with desktops, a viewer's keys and clicks reach the desktop." },
+} as const satisfies Readonly<Record<string, CheckInfo>>;
+
+/** An ID pattern as a type: each <part> stands for any text. */
+type Pattern<S extends string> = S extends `${infer A}<${string}>${infer B}` ? `${A}${string}${Pattern<B>}` : S;
+export type CheckId = Pattern<keyof typeof CHECKS & string>;
+
+/** The catalog entry an ID is of, or null: the most specific pattern that matches. */
+export function checkOf(id: string): { readonly pattern: string; readonly info: CheckInfo } | null {
+  const matches = Object.entries(CHECKS as Readonly<Record<string, CheckInfo>>).filter(([pattern]) => checkPattern(pattern).test(id));
+  matches.sort(([a], [b]) => b.replace(/<[^>]*>/g, "").length - a.replace(/<[^>]*>/g, "").length);
+  const [found] = matches;
+  return found ? { pattern: found[0], info: found[1] } : null;
+}
+
+/** A pattern as a regular expression, each <part> any text. */
+export function checkPattern(pattern: string): RegExp {
+  return new RegExp(`^${pattern.split(/<[^>]*>/).map((part) => part.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")).join(".+")}$`);
+}

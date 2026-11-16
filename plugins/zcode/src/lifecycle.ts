@@ -1,0 +1,876 @@
+import { createHash, randomUUID } from "node:crypto";
+import { z } from "zod";
+import type {
+  ThreadDelta,
+  DeltaItemShape,
+  WorkflowAgentSnapshot,
+  WorkflowAgentState,
+  WorkflowProgressSnapshot,
+} from "@get-bb/plugin-sdk/provider-bridge";
+import { LOCAL_WORKFLOW_TASK_TYPE } from "@get-bb/plugin-sdk/provider-bridge";
+import type { ZCodeConnection } from "./client.js";
+import { ProtocolError } from "./client.js";
+import { record, text } from "./protocol.js";
+
+const rowSchema = z
+  .object({
+    rowId: z.number().int().nonnegative(),
+    entityId: z.string().optional(),
+    kind: z.string(),
+    turnId: z.string().optional(),
+    state: z.string().optional(),
+    actions: z
+      .object({
+        canFork: z.boolean().optional(),
+        canRewindFiles: z.boolean().optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const rangeSchema = z.object({
+  rows: z.array(rowSchema).max(200),
+  atSeq: z.number().int().nonnegative(),
+  atRevision: z.number().int().nonnegative(),
+  atLogEpoch: z.string().min(1),
+  hasMore: z.boolean(),
+});
+type Range = z.infer<typeof rangeSchema>;
+type Row = Range["rows"][number];
+const tokenSchema = z
+  .object({
+    v: z.literal(1),
+    sessionId: z.string().min(1),
+    epoch: z.string().min(1),
+    rowId: z.number().int().nonnegative(),
+    entityId: z.string().min(1),
+    fingerprint: z.string().length(64),
+  })
+  .strict();
+const fail = (message: string): never => {
+  throw new ProtocolError(message, -32000);
+};
+
+/** Bounded v4 control queries; the legacy stream remains the only prompt lane. */
+export class History {
+  constructor(
+    private client: ZCodeConnection,
+    readonly sessionId: string,
+  ) {}
+  async rows(beforeRowId?: number): Promise<Range> {
+    const raw = await this.client.request("v4/conversation/rowsRange", {
+      sessionId: this.sessionId,
+      limit: 200,
+      ...(beforeRowId === undefined ? {} : { beforeRowId }),
+    });
+    const parsed = rangeSchema.safeParse(raw);
+    if (!parsed.success)
+      return fail(
+        "This ZCode CLI does not expose compatible v4 history controls. Update ZCode.",
+      );
+    const rows = parsed.data.rows;
+    if (
+      rows.some((r, i) => i > 0 && r.rowId <= rows[i - 1]!.rowId) ||
+      (beforeRowId !== undefined && rows.some((r) => r.rowId >= beforeRowId))
+    )
+      return fail("ZCode returned inconsistent history rows.");
+    return parsed.data;
+  }
+  encode(range: Range, row: Row) {
+    return (
+      "zcode-v1-" +
+      Buffer.from(
+        JSON.stringify({
+          v: 1,
+          sessionId: this.sessionId,
+          epoch: range.atLogEpoch,
+          rowId: row.rowId,
+          entityId: row.entityId,
+          fingerprint: createHash("sha256")
+            .update(text(row.text))
+            .digest("hex"),
+        }),
+      ).toString("base64url")
+    );
+  }
+  latest(range: Range) {
+    const row = [...range.rows]
+      .reverse()
+      .find(
+        (r) =>
+          r.kind === "assistantText" &&
+          r.state === "complete" &&
+          r.actions?.canFork === true &&
+          r.entityId,
+      );
+    // Never silently drop a newer unfinished/empty logical turn.
+    if (
+      !row ||
+      range.rows.some(
+        (r) => r.rowId > row.rowId && r.turnId && r.turnId !== row.turnId,
+      )
+    )
+      return undefined;
+    return row;
+  }
+  async checkpoint(afterRowId: number) {
+    const range = await this.rows();
+    const row = this.latest(range);
+    return row && row.rowId > afterRowId ? this.encode(range, row) : undefined;
+  }
+  async target(checkpoint?: string): Promise<{ range: Range; row: Row }> {
+    let token: z.infer<typeof tokenSchema> | undefined;
+    if (checkpoint !== undefined) {
+      try {
+        if (!checkpoint.startsWith("zcode-v1-") || checkpoint.length > 4096)
+          throw new Error();
+        token = tokenSchema.parse(
+          JSON.parse(
+            Buffer.from(checkpoint.slice(9), "base64url").toString("utf8"),
+          ),
+        );
+        if (token.sessionId !== this.sessionId) throw new Error();
+      } catch {
+        return fail(
+          "Invalid checkpoint or checkpoint belongs to another ZCode session.",
+        );
+      }
+    }
+    let range = await this.rows();
+    if (!token) {
+      const row = this.latest(range);
+      if (!row)
+        return fail(
+          "No stable assistant checkpoint at the ZCode conversation tip.",
+        );
+      return { range, row };
+    }
+    const revision = range.atRevision,
+      epoch = range.atLogEpoch;
+    for (let page = 0; page < 50; page++) {
+      if (range.atLogEpoch !== epoch || range.atRevision !== revision)
+        return fail(
+          "ZCode history changed; the checkpoint is stale. Retry from the current history.",
+        );
+      const row = range.rows.find(
+        (r) =>
+          (epoch !== token!.epoch || r.rowId === token!.rowId) &&
+          r.entityId === token!.entityId,
+      );
+      if (row) {
+        if (
+          createHash("sha256").update(text(row.text)).digest("hex") !==
+          token.fingerprint
+        )
+          return fail(
+            "ZCode checkpoint content changed; no other row was substituted.",
+          );
+        if (
+          row.kind !== "assistantText" ||
+          row.state !== "complete" ||
+          row.actions?.canFork !== true
+        )
+          return fail("ZCode checkpoint is no longer forkable.");
+        return { range, row };
+      }
+      if (
+        !range.hasMore ||
+        !range.rows.length ||
+        (epoch === token.epoch && range.rows[0]!.rowId <= token.rowId)
+      )
+        break;
+      range = await this.rows(range.rows[0]!.rowId);
+    }
+    return fail(
+      "ZCode checkpoint is missing or outside the bounded history window; no later checkpoint was substituted.",
+    );
+  }
+  async command(type: string, payload: unknown, range?: Range) {
+    const commandId = randomUUID();
+    const ack = record(
+      await this.client.request("v4/command", {
+        commandId,
+        clientId: "bb-zcode",
+        sessionId: this.sessionId,
+        type,
+        payload,
+        issuedAt: Date.now(),
+        ...(range
+          ? { baseRevision: range.atRevision, baseLogEpoch: range.atLogEpoch }
+          : {}),
+      }),
+    );
+    if (
+      ack.commandId !== commandId ||
+      !["accepted", "duplicate"].includes(text(ack.status))
+    )
+      return fail(
+        `ZCode ${type} did not succeed (${text(ack.status, "invalid acknowledgement")}: ${text(ack.reasonCode, text(ack.message))}).`,
+      );
+    return record(ack.result);
+  }
+  private preview?: {
+    id: string;
+    range: Range;
+    target: { rowId: number; entityId: string };
+    expires: number;
+  };
+  async previewFiles(checkpoint?: string) {
+    this.preview = undefined;
+    let { range, row } = await this.target(checkpoint);
+    const revision = range.atRevision,
+      epoch = range.atLogEpoch;
+    let header = range.rows.find(
+      (r) => r.kind === "turnHeader" && r.turnId === row.turnId,
+    );
+    for (
+      let page = 0;
+      !header && range.hasMore && range.rows.length && page < 50;
+      page++
+    ) {
+      range = await this.rows(range.rows[0]!.rowId);
+      if (range.atRevision !== revision || range.atLogEpoch !== epoch)
+        return fail("History changed during file preview; retry.");
+      header = range.rows.find(
+        (r) => r.kind === "turnHeader" && r.turnId === row.turnId,
+      );
+    }
+    if (!header?.entityId || header.actions?.canRewindFiles !== true)
+      return fail("No native file-rewind checkpoint for this turn.");
+    const target = { rowId: header.rowId, entityId: header.entityId };
+    const result = record(
+      await this.client.request("v4/conversation/fileRewindPreview", {
+        sessionId: this.sessionId,
+        target,
+        baseRevision: range.atRevision,
+        baseLogEpoch: range.atLogEpoch,
+      }),
+    );
+    if (
+      typeof result.canApply !== "boolean" ||
+      !Array.isArray(result.safeFiles) ||
+      !Array.isArray(result.unsafeFiles) ||
+      !Array.isArray(result.ignoredFiles)
+    )
+      return fail("Invalid native file-rewind preview.");
+    const details = JSON.stringify(result, null, 2);
+    if (!result.canApply || result.unsafeFiles.length)
+      return `${details}\nFile rewind is blocked by native safety checks.`;
+    const id = `preview-${randomUUID()}`;
+    this.preview = { id, range, target, expires: Date.now() + 5 * 60_000 };
+    return `${details}\nTo apply this file-only rewind within five minutes: /zcode-file-rewind ${id}`;
+  }
+  async rewindFiles(id: string) {
+    const preview = this.preview;
+    this.preview = undefined;
+    if (!preview || preview.id !== id || Date.now() > preview.expires)
+      return fail(
+        "Run /zcode-file-preview first, then use its session-specific preview token.",
+      );
+    const current = await this.rows();
+    if (
+      current.atRevision !== preview.range.atRevision ||
+      current.atLogEpoch !== preview.range.atLogEpoch
+    )
+      return fail(
+        "History changed after the preview. Preview again before rewinding files.",
+      );
+    const result = await this.command(
+      "applyFileRewind",
+      { target: preview.target },
+      preview.range,
+    );
+    if (result.type !== "applyFileRewind" || result.applied !== true)
+      return fail(
+        "ZCode did not apply the file rewind. Preview again to inspect conflicts.",
+      );
+    return text(result.response, "ZCode file rewind applied.");
+  }
+  async fork(checkpoint?: string) {
+    const { range, row } = await this.target(checkpoint);
+    const result = await this.command(
+      "forkAssistant",
+      { target: { rowId: row.rowId, entityId: row.entityId } },
+      range,
+    );
+    if (
+      result.type !== "forkAssistant" ||
+      typeof result.sessionId !== "string" ||
+      !result.sessionId ||
+      result.sessionId === this.sessionId
+    )
+      return fail("ZCode did not return a new fork session identity.");
+    return result.sessionId;
+  }
+}
+
+type Job = Record<string, unknown>;
+export const managementCommands: Array<Record<string, string>> = [
+  {
+    name: "zcode-file-preview",
+    description: "Preview native file rollback at a conversation checkpoint",
+    inputHint: "[checkpoint-id]",
+  },
+  {
+    name: "zcode-file-rewind",
+    description:
+      "Apply the previewed file-only rollback (Full Access required)",
+    inputHint: "<preview-token>",
+  },
+  { name: "zcode-tasks", description: "List ZCode background work" },
+  {
+    name: "zcode-task-output",
+    description: "Read bounded native background Bash output",
+    inputHint: "<task-id>",
+  },
+  {
+    name: "zcode-task-stop",
+    description: "Cancel one native background task",
+    inputHint: "<task-id>",
+  },
+  {
+    name: "zcode-check",
+    description:
+      "Test native model connectivity with one real request (idle session)",
+    inputHint: "[providerId/modelId]",
+  },
+  {
+    name: "zcode-plugin",
+    description:
+      "Manage native ZCode plugins: list, install, update, uninstall, enable, disable, marketplace",
+    inputHint: "<action> [args]",
+  },
+  {
+    name: "zcode-automations",
+    description: "List ZCode scheduled tasks with their next runs",
+  },
+  {
+    name: "zcode-automation-delete",
+    description: "Delete one ZCode scheduled task by id",
+    inputHint: "<automation-id>",
+  },
+  {
+    name: "zcode-offpeak",
+    description: "List ZCode idle-time (off-peak) tasks with queue states",
+  },
+  {
+    name: "zcode-offpeak-cancel",
+    description: "Cancel one ZCode idle-time task by id",
+    inputHint: "<task-id>",
+  },
+];
+/**
+ * Live state of one dynamic-workflow run, folded from the run journal's
+ * cursor-paged event stream (`v4/conversation/workflowRunEvents`). The
+ * journal is the same source the Desktop lamps consume; run-level rows in
+ * the session projection carry no per-agent detail (POC-verified 0.17.0).
+ */
+type AgentLampState = "queued" | "running" | "done" | "failed" | "skipped";
+interface TrackedActor {
+  siteId: string;
+  name?: string;
+  phaseName?: string;
+  state: AgentLampState;
+  cached?: boolean;
+  lastProgressAt: number;
+  /** Node sites currently in flight for this actor (site → live state). */
+  outstanding: Map<string, AgentLampState>;
+}
+interface RunFold {
+  afterSequence: number;
+  phaseNames: string[];
+  actors: Map<string, TrackedActor>;
+  /** Ask/world-read site → the actor site that owns it. */
+  nodeActor: Map<string, string>;
+  spentTokens?: number;
+  settled?: { status: string; stopReason?: string; message?: string };
+  /** Consecutive failed journal pulls; one flaky timeout must not degrade. */
+  journalFailures: number;
+}
+const newFold = (): RunFold => ({
+  afterSequence: -1,
+  phaseNames: [],
+  actors: new Map(),
+  nodeActor: new Map(),
+  journalFailures: 0,
+});
+/**
+ * A terminal row may close degraded (run-level status only) only after this
+ * many consecutive journal failures — a persistently unsupported surface.
+ * One transient timeout keeps the row open so the next refresh can retry.
+ */
+const JOURNAL_FAILURE_LIMIT = 3;
+const NODE_LIVE: Record<string, AgentLampState> = {
+  queued: "queued",
+  waiting: "queued",
+  dispatched: "running",
+  executing: "running",
+  repairing: "running",
+  nudged: "running",
+};
+/**
+ * An actor is running while any of its in-flight nodes is running; a pending
+ * mix shows as queued. This keeps cross-node interleaves from flickering the
+ * lamp backwards (executing node 1 + queued node 2 stays "running").
+ */
+const liveStateOf = (
+  outstanding: Map<string, AgentLampState>,
+): AgentLampState =>
+  [...outstanding.values()].includes("running") ? "running" : "queued";
+/** Map one journal event onto the fold; unknown types are ignored. */
+function foldRunEvent(fold: RunFold, event: Record<string, unknown>) {
+  const type = text(event.type);
+  const payload = record(event.payload);
+  const now = Date.now();
+  // Journal references are {siteId, ordinal}; loop/fan-out executions reuse
+  // a siteId across ordinals, so the ordinal is part of the runtime
+  // identity of both actors and node instances.
+  const refKey = (raw: unknown): string | undefined => {
+    // text() falls back to "" (not nullish); normalize so ?? map lookups work.
+    const ref = record(raw);
+    const siteId = text(ref.siteId);
+    if (!siteId) return undefined;
+    return typeof ref.ordinal === "number"
+      ? `${siteId}#${ref.ordinal}`
+      : siteId;
+  };
+  if (type === "run-launched") {
+    const names = payload.phaseNames;
+    if (Array.isArray(names))
+      fold.phaseNames = names.map((name) => text(name)).filter(Boolean);
+  } else if (type === "actor-created") {
+    const actorKey = refKey(payload.actor);
+    if (actorKey)
+      fold.actors.set(actorKey, {
+        siteId: actorKey,
+        ...(text(payload.name) ? { name: text(payload.name) } : {}),
+        ...(text(payload.phaseName)
+          ? { phaseName: text(payload.phaseName) }
+          : {}),
+        state: "queued",
+        lastProgressAt: now,
+        outstanding: new Map(),
+      });
+  } else if (type.startsWith("node-")) {
+    const instance = refKey(payload.instance);
+    if (!instance) return;
+    // Settle events name only the node; earlier dispatch events carry the
+    // owning actor, so remember that edge when it is present.
+    const dispatchActor = refKey(payload.actor);
+    const actorSite = dispatchActor ?? fold.nodeActor.get(instance);
+    if (dispatchActor) fold.nodeActor.set(instance, actorSite!);
+    if (!actorSite) return;
+    const actor = fold.actors.get(actorSite);
+    const target = actor ?? {
+      siteId: actorSite,
+      state: "queued" as AgentLampState,
+      lastProgressAt: now,
+      outstanding: new Map<string, AgentLampState>(),
+    };
+    if (text(payload.phaseName)) target.phaseName = text(payload.phaseName);
+    target.lastProgressAt = now;
+    if (type === "node-settled") {
+      // Node settlement is not actor settlement: while other nodes of the
+      // same actor are still in flight the lamp stays live, and only the
+      // final node's outcome makes the actor terminal.
+      target.outstanding.delete(instance);
+      if (target.outstanding.size > 0) {
+        target.state = liveStateOf(target.outstanding);
+      } else {
+        const outcome = text(payload.outcome);
+        target.state =
+          outcome === "failed"
+            ? "failed"
+            : outcome === "cancelled"
+              ? "skipped"
+              : "done";
+      }
+      if (payload.cached === true) target.cached = true;
+    } else {
+      const live = NODE_LIVE[type.slice(5)];
+      if (live) {
+        target.outstanding.set(instance, live);
+        target.state = liveStateOf(target.outstanding);
+      }
+    }
+    fold.actors.set(actorSite, target);
+  } else if (type === "usage-updated") {
+    const tokens = payload.spentTokens;
+    if (typeof tokens === "number" && Number.isFinite(tokens))
+      fold.spentTokens = tokens;
+  } else if (type === "run-settled") {
+    fold.settled = {
+      status: text(payload.status, "settled"),
+      ...(text(payload.stopReason)
+        ? { stopReason: text(payload.stopReason) }
+        : {}),
+      ...(text(record(payload.error).message)
+        ? { message: text(record(payload.error).message) }
+        : {}),
+    };
+  }
+}
+/** bb's `backgroundTask.workflow` snapshot grammar (agents + phases). */
+function workflowSnapshot(
+  fold: RunFold,
+  model: string,
+): WorkflowProgressSnapshot {
+  const actors = [...fold.actors.values()].slice(0, 50);
+  return {
+    agents: actors.map((actor, index): WorkflowAgentSnapshot => ({
+      agentType: "zcode-dynamic-workflow",
+      // bb numbers agent attempts from 1; the journal exposes no retries.
+      attempt: 1,
+      cached: actor.cached === true,
+      index: index + 1,
+      label: actor.name ?? actor.siteId,
+      lastProgressAt: actor.lastProgressAt,
+      model,
+      ...(actor.phaseName
+        ? {
+            // bb numbers phases from 1; unknown phases land before the list.
+            phaseIndex:
+              Math.max(0, fold.phaseNames.indexOf(actor.phaseName)) + 1,
+            phaseTitle: actor.phaseName,
+          }
+        : {}),
+      state: actor.state,
+    })),
+    phases: fold.phaseNames.slice(0, 24).map((title, index) => ({
+      index: index + 1,
+      title,
+    })),
+  };
+}
+
+export class BackgroundWork {
+  private jobs = new Map<
+    string,
+    { job: Job; item: DeltaItemShape; open: boolean }
+  >();
+  private timer?: ReturnType<typeof setTimeout>;
+  private reading?: Promise<void>;
+  private stopped = false;
+  /** Live journal folds for dynamic-workflow runs, keyed by run id. */
+  private runs = new Map<string, RunFold>();
+  constructor(
+    private client: ZCodeConnection,
+    private sessionId: string,
+    private emit: (deltas: ThreadDelta[]) => void,
+    /** Model id for workflow agent lamps; the journal carries none per actor. */
+    private workflowModel: () => string = () => "ZCode model",
+  ) {}
+  get active() {
+    return [...this.jobs.values()].some((j) => j.open);
+  }
+  update(projection: unknown) {
+    if (this.stopped) return;
+    const raw = record(projection).backgroundJobs;
+    if (!Array.isArray(raw)) return;
+    for (const rawJob of raw.slice(0, 2048)) {
+      const job = record(rawJob),
+        id = text(job.taskId);
+      if (!id) continue;
+      const state = text(job.status);
+      const pending = ["pending", "running", "paused"].includes(state);
+      const status = pending
+        ? "pending"
+        : state === "completed"
+          ? "completed"
+          : ["cancelled", "stopped"].includes(state)
+            ? "interrupted"
+            : "failed";
+      const summary = [
+        text(job.outputTail),
+        text(job.stdoutTail),
+        text(job.stderrTail),
+      ]
+        .filter(Boolean)
+        .join("\n")
+        .slice(-8192);
+      // Dynamic-workflow runs surface in the projection with taskKind
+      // "workflow" (POC-verified); bb's workflow task grammar then renders
+      // live agent lamps from the journal snapshot. Bash jobs keep the
+      // generic local task row.
+      const isWorkflowRun =
+        text(job.taskKind) === "workflow" ||
+        ["CreateWorkflow", "AmendWorkflow"].includes(text(job.toolName));
+      const runFold = isWorkflowRun
+        ? (this.runs.get(id) ?? newFold())
+        : undefined;
+      if (isWorkflowRun && !this.runs.has(id)) this.runs.set(id, runFold!);
+      const workflowSummary =
+        runFold && (runFold.settled || runFold.spentTokens !== undefined)
+          ? [
+              runFold.settled
+                ? `${runFold.settled.status}${
+                    runFold.settled.stopReason
+                      ? ` (${runFold.settled.stopReason})`
+                      : ""
+                  }`
+                : "",
+              runFold.spentTokens !== undefined
+                ? `${runFold.spentTokens} tokens`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : undefined;
+      const item: DeltaItemShape = isWorkflowRun
+        ? {
+            type: "backgroundTask",
+            familyId: this.sessionId,
+            taskType: LOCAL_WORKFLOW_TASK_TYPE,
+            description: `Dynamic workflow ${id}`,
+            skipTranscript: false,
+            status,
+            taskStatus: pending
+              ? state === "paused"
+                ? "paused"
+                : "running"
+              : status === "completed"
+                ? "completed"
+                : status === "interrupted"
+                  ? "killed"
+                  : "failed",
+            ...(workflowSummary ? { summary: workflowSummary } : {}),
+            ...(runFold && (runFold.actors.size || runFold.phaseNames.length)
+              ? { workflow: workflowSnapshot(runFold, this.workflowModel()) }
+              : {}),
+          }
+        : job.taskKind === "subagent"
+          ? {
+              type: "delegation",
+              childRef: id,
+              label: text(job.description, `ZCode agent ${id}`),
+              background: true,
+              ...(summary ? { summary } : {}),
+            }
+          : {
+              type: "backgroundTask",
+              familyId: this.sessionId,
+              taskType: "zcode/bash",
+              description: text(
+                job.description,
+                text(job.command, `ZCode task ${id}`),
+              ).slice(0, 4000),
+              skipTranscript: false,
+              status,
+              taskStatus: pending
+                ? state === "paused"
+                  ? "paused"
+                  : "running"
+                : status === "completed"
+                  ? "completed"
+                  : status === "interrupted"
+                    ? "killed"
+                    : "failed",
+              ...(summary ? { summary } : {}),
+              ...(job.outputPath ? { outputFile: text(job.outputPath) } : {}),
+            };
+      const previous = this.jobs.get(id),
+        key = { providerItemId: `zcode-work-${id}` };
+      if (previous && !previous.open) continue;
+      // A terminal workflow row closes only once the journal confirms
+      // `run-settled` — or the surface is confirmed persistently
+      // unavailable (JOURNAL_FAILURE_LIMIT consecutive failures), degrading
+      // to a run-level close. A run discovered already-settled, a projection
+      // ahead of the fold, or one transient journal timeout waits one more
+      // refresh — a closed row can never be repaired.
+      const hydrating =
+        isWorkflowRun &&
+        !(
+          runFold &&
+          (runFold.settled || runFold.journalFailures >= JOURNAL_FAILURE_LIMIT)
+        );
+      if (!previous) this.emit([{ kind: "item.open", key, item }]);
+      if (!pending && (!previous || previous.open) && !hydrating) {
+        this.emit([{ kind: "item.close", key, item, status }]);
+        // A closed row is never repaired; drop its fold so polling stops
+        // serving (and serially blocking on) journals nobody reads.
+        if (isWorkflowRun) this.runs.delete(id);
+      } else if (
+        (pending || hydrating) &&
+        previous?.open &&
+        JSON.stringify(previous.item) !== JSON.stringify(item)
+      )
+        this.emit([{ kind: "item.progress", key, snapshot: item }]);
+      this.jobs.set(id, { job, item, open: pending || hydrating });
+    }
+    // Keep completed deduplication bounded without evicting active work.
+    for (const [id, entry] of this.jobs)
+      if (this.jobs.size > 2048 && !entry.open) {
+        this.jobs.delete(id);
+        this.runs.delete(id);
+      }
+    this.schedule();
+  }
+  private schedule() {
+    if (this.timer || this.stopped || !this.active) return;
+    this.timer = setTimeout(() => {
+      this.timer = undefined;
+      void this.refresh()
+        .catch(() => {})
+        .finally(() => this.schedule());
+    }, 1000);
+    this.timer.unref();
+  }
+  refresh() {
+    if (this.stopped) return Promise.resolve();
+    if (!this.reading)
+      this.reading = this.pullWorkflowEvents()
+        .then(() =>
+          // Status polls are read-only: a timeout retries next refresh
+          // instead of killing the shared CLI session.
+          this.client.request(
+            "session/read",
+            { sessionId: this.sessionId },
+            undefined,
+            true,
+          ),
+        )
+        .then((raw) => {
+          this.update(record(raw).projection);
+        })
+        .finally(() => {
+          this.reading = undefined;
+        });
+    return this.reading;
+  }
+  /**
+   * Cursor-paged journal reads per open run. Pages are drained before the
+   * following `session/read` can observe the run as settled - closing on a
+   * half-folded journal would freeze stale lamps. A run whose journal is
+   * done stops pulling; a CLI without the v4 surface degrades to run-level
+   * rows.
+   */
+  private async pullWorkflowEvents() {
+    for (const [runId, fold] of this.runs) {
+      // Closed rows (degraded or settled) are never repaired; skip their
+      // folds so a dead journal cannot block live runs' refreshes.
+      const tracked = this.jobs.get(runId);
+      if (tracked && !tracked.open) continue;
+      if (fold.settled) continue;
+      try {
+        // The cap guards a runaway journal; the cursor resumes next refresh.
+        for (let page = 0; page < 25; page++) {
+          const reply = record(
+            await this.client.request(
+              "v4/conversation/workflowRunEvents",
+              {
+                sessionId: this.sessionId,
+                runId,
+                ...(fold.afterSequence >= 0
+                  ? { afterSequence: fold.afterSequence }
+                  : {}),
+                limit: 200,
+              },
+              5000,
+              // Journal reads are idempotent polls: a timeout feeds the
+              // failure-streak retry instead of failing the CLI session.
+              true,
+            ),
+          );
+          const events = Array.isArray(reply.events)
+            ? reply.events.map(record)
+            : [];
+          for (const event of events) foldRunEvent(fold, event);
+          const last = events.at(-1);
+          if (last && typeof last.sequence === "number")
+            fold.afterSequence = last.sequence;
+          if (reply.hasMore !== true || events.length === 0) break;
+        }
+        // Only a completed pull clears the failure streak.
+        fold.journalFailures = 0;
+      } catch {
+        // Count consecutive failures: one transient timeout keeps the row
+        // open for a retry; reaching the limit marks the surface
+        // unavailable and allows a degraded run-level close.
+        fold.journalFailures += 1;
+      }
+    }
+  }
+  close(status: "failed" | "interrupted") {
+    this.stopped = true;
+    clearTimeout(this.timer);
+    for (const [id, entry] of this.jobs)
+      if (entry.open) {
+        const item =
+          entry.item.type === "backgroundTask"
+            ? {
+                ...entry.item,
+                status,
+                taskStatus:
+                  status === "failed"
+                    ? ("failed" as const)
+                    : ("killed" as const),
+              }
+            : entry.item;
+        this.emit([
+          {
+            kind: "item.close",
+            key: { providerItemId: `zcode-work-${id}` },
+            item,
+            status,
+          },
+        ]);
+        entry.open = false;
+      }
+  }
+  async manage(command: string, id: string) {
+    // A read-only query negotiates the v4 control surface before any mutation.
+    const history = new History(this.client, this.sessionId);
+    await history.rows();
+    await this.refresh();
+    if (command === "zcode-tasks") {
+      if (id) return fail("Usage: /zcode-tasks");
+      return (
+        [...this.jobs]
+          .map(
+            ([id, entry]) =>
+              `${id}: ${text(entry.job.status)}${entry.job.cancellable === false ? " (not cancellable)" : ""} — ${text(entry.job.description, text(entry.job.command))}`,
+          )
+          .join("\n") || "No ZCode background tasks."
+      );
+    }
+    const entry = this.jobs.get(id);
+    if (!entry)
+      return fail("Unknown ZCode task id in this session. Use /zcode-tasks.");
+    if (command === "zcode-task-stop") {
+      if (!entry.open || entry.job.cancellable === false)
+        return fail("This ZCode task is finished or not cancellable.");
+      await history.command("cancelBackgroundWork", { workId: id });
+      await this.refresh();
+      return `Cancellation requested for ${id}.`;
+    }
+    if (entry.job.taskKind === "subagent")
+      return fail(
+        "Native output retrieval supports Bash tasks; agent summaries appear on the task card.",
+      );
+    const result = record(
+      await this.client.request("v4/conversation/backgroundBashOutput", {
+        sessionId: this.sessionId,
+        workId: id,
+      }),
+    );
+    if (
+      result.kind !== "output" ||
+      result.workId !== id ||
+      typeof result.output !== "string"
+    )
+      return fail(`ZCode task output is ${text(result.kind, "unavailable")}.`);
+    return (
+      result.output.slice(-8192) +
+      (result.truncated ? "\n[Native output truncated]" : "")
+    );
+  }
+  async cancelAll() {
+    await this.refresh();
+    for (const [id, entry] of this.jobs)
+      if (entry.open)
+        await new History(this.client, this.sessionId).command(
+          "cancelBackgroundWork",
+          { workId: id },
+        );
+  }
+}

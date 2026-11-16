@@ -1,0 +1,187 @@
+# Wterm Terminal Preview for BB
+
+[![CI](https://github.com/Diffuzmetall/bb-wterm-terminal-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/Diffuzmetall/bb-wterm-terminal-plugin/actions/workflows/ci.yml)
+
+A Ghostty-backed terminal panel for [BB](https://github.com/get-bb/bb). It
+attaches to a terminal session owned by the current BB thread, keeps the stock
+BB terminal untouched, and adds file transfer and terminal-specific font
+controls.
+
+This repository is an early public preview. The plugin ID is
+`wterm-terminal-preview`, so it can coexist with BB's bundled
+`wterm-terminal` while the integration is evaluated.
+
+The current release is `v0.3.18`. It includes a copy-selection fix for both
+normal shells and TUI sessions.
+
+## Features
+
+- Ghostty terminal emulation through `@wterm/ghostty` 0.4.0 and WebAssembly.
+- Dark first paint while WASM and the Nerd Font load; leftover TUI colors are not kept on scrollback rows.
+- Composer shortcut: a terminal button in the chat footer. If a Wterm tab is already open in this thread, it reveals that panel. If none is open, it creates a **new** session. On BB hosts that support `experimental_primarySurface`, chat collapses so the terminal fills the thread; use **Exit Full Screen** to return. Packaged BB 0.40.0 does not include that host API, so the same button opens the side panel or session picker instead.
+- Bundled Symbols Nerd Font Mono fallback for Powerline, Starship, and Nerd
+  Font prompt icons; no local font installation is required.
+- Every **Wterm terminal** tab starts an independent thread-scoped terminal.
+  **+** / a new tab always creates a new PTY. It never silently reopens the previous session from localStorage. Attach to an existing session only from the picker, by clicking that row.
+- The session picker distinguishes loading, a failed list (with Retry), and an empty list. Dead linked sessions show as unavailable/exited, not as running.
+- Select and restart existing thread-scoped BB terminal sessions when needed.
+- Keyboard, resize, wheel, click, and button-drag mouse input for terminal UIs.
+- Persistent font size controls from 10px to 24px.
+- Native, character-level text selection contained inside the terminal and copied on selection. The copy event is scoped to the terminal, so surrounding BB message rows are never included.
+- OSC 52 clipboard writes from TUIs such as Herdr, plus cell-based copy-on-drag while mouse tracking is enabled. Copy uses a synchronous clipboard write during the pointer gesture so it still works when async clipboard permission is missing.
+- File upload by button or drag-and-drop, plus image upload from the clipboard.
+- Files are written on the terminal host and their quoted path is inserted at
+  the prompt using bracketed paste.
+- Compatibility with BB hosts that expose the legacy terminal WebSocket.
+
+## Requirements
+
+- BB `0.35.1` or newer with plugin SDK `^0.4.1` and host file writes.
+- Single-tab presentation requires a BB build that supports
+  `experimental_claimedTerminalId`. Older hosts still work, but also show the
+  same session in a native terminal tab.
+- `git`, `npm`, and `bb` available on `PATH`.
+- Network access to GitHub and the npm registry during installation.
+
+## Install
+
+Install the pinned release:
+
+```sh
+bb plugin install 'git:github.com/Diffuzmetall/bb-wterm-terminal-plugin@v0.3.18' --yes
+bb plugin source wterm-terminal-preview
+```
+
+Open a BB thread and choose **Wterm terminal** from the new-tab menu. Each
+activation, including **+** for another tab, creates a new terminal session.
+The picker in an existing tab can still attach to a running session.
+
+The chat composer also has a terminal button. If a Wterm tab is already open,
+it reveals that panel; otherwise it creates a new session. On BB hosts that
+support `experimental_primarySurface`, it collapses chat so the terminal fills
+the pane (**Exit Full Screen** returns to chat). Packaged BB 0.40.0 ignores that
+flag and opens the side panel or picker instead; reloading the plugin cannot add
+full-screen Chat ↔ CLI to that app.
+
+## Update
+
+Pinned release tags do not advance through `bb plugin update`. Replace an
+installed release explicitly:
+
+```sh
+bb plugin remove wterm-terminal-preview
+bb plugin install 'git:github.com/Diffuzmetall/bb-wterm-terminal-plugin@v0.3.18' --yes
+bb plugin source wterm-terminal-preview
+```
+
+To install from the latest commit on `main` instead of a release tag:
+
+```sh
+bb plugin install 'git:github.com/Diffuzmetall/bb-wterm-terminal-plugin@main' --yes
+bb plugin source wterm-terminal-preview
+```
+
+Once the plugin is installed from `main`, update it with:
+
+```sh
+bb plugin update wterm-terminal-preview --yes
+```
+
+Release tags are recommended because a pinned source is reproducible. Updating
+a pinned tag, or switching between a tag and `main`, requires the
+remove-and-install sequence above.
+
+## Terminal controls
+
+- Use the `-` and `+` toolbar buttons to change the terminal font size. The
+  setting is remembered in the browser.
+- In a normal shell, drag across characters to select text. The completed selection is copied even if the drag ends outside the grid, without copying surrounding BB rows.
+- When a TUI such as Herdr has enabled mouse tracking, click and drag are sent to the TUI. Dragging across cells copies the selected cell text immediately; it does not copy whole rendered rows.
+  Hold `Shift` while dragging to use browser-native selection instead.
+- OSC 52 clipboard writes from the TUI (Herdr copy-on-select, Vim `y`, and similar) are applied to the system clipboard during the next terminal click if the browser blocked the original write. Clipboard queries are ignored.
+
+## Renderer and shell
+
+The plugin uses `libghostty` through `@wterm/ghostty` as its VT and Unicode
+core. `@wterm/dom` paints that state as an HTML terminal grid, so settings from
+the native Ghostty application do not control this embedded terminal. The
+bundled Nerd Font fallback supplies prompt icons consistently across machines.
+
+Seeing `zsh` is normal: it is the shell process running inside the Ghostty-backed
+terminal. A separate neighbouring native `zsh` tab is different; that means the
+BB host does not yet support `experimental_claimedTerminalId`.
+
+## File and image transfer
+
+Use **Upload file**, drop a file over the panel, or paste an image. The plugin
+sends the bytes through an authenticated BB plugin route and `bb.sdk.files` to
+the host that owns the selected terminal. It does not implement a second SCP or
+SSH client.
+
+Uploads are stored under `<terminal cwd>/.bb-wterm-uploads/` with randomized
+names and mode `0600`. The plugin verifies the returned size and SHA-256 before
+inserting the path. Images are limited to 10 MiB and other files to 25 MiB.
+
+## Manage the plugin
+
+```sh
+bb plugin list
+bb plugin reload wterm-terminal-preview
+bb plugin disable wterm-terminal-preview
+bb plugin enable wterm-terminal-preview
+bb plugin remove wterm-terminal-preview
+```
+
+If the BB host daemon restarts and the selected terminal is no longer
+available, reopen the Wterm panel and select or restart a terminal session.
+
+## Security model
+
+- The WASM and upload endpoints require BB's per-plugin HTTP token.
+- An upload is accepted only when the terminal belongs to the requested thread.
+- File writes use the terminal's host and initial working directory as the BB
+  file boundary.
+- Upload names are randomized; existing files are not overwritten.
+- The repository contains no credentials and the plugin does not persist BB
+  tokens.
+
+Before installing code from `main`, review the current commit. Prefer a signed
+or otherwise trusted release policy for production deployments.
+
+## Development
+
+```sh
+git clone https://github.com/Diffuzmetall/bb-wterm-terminal-plugin.git
+cd bb-wterm-terminal-plugin
+npm ci
+npm test
+npm run build
+```
+
+The standalone tests protect thread scoping, upload limits and integrity, safe
+host paths, terminal replay ordering, queued input and resize, and detach
+behavior. They run against this repository's sources without importing the BB
+workspace.
+
+The build produces the frontend and server bundles in `dist/` and copies
+`ghostty-vt.wasm` and the bundled Nerd Font from the repository. Generated
+dependencies and build output are intentionally not committed.
+
+## About Contributions
+
+*About Contributions:* Please don't take this the wrong way, but I do not accept outside contributions for any of my projects. I simply don't have the mental bandwidth to review anything, and it's my name on the thing, so I'm responsible for any problems it causes; thus, the risk-reward is highly asymmetric from my perspective. I'd also have to worry about other "stakeholders," which seems unwise for tools I mostly make for myself for free. Feel free to submit issues, and even PRs if you want to illustrate a proposed fix, but know I won't merge them directly. Instead, I'll have Claude or Codex review submissions via `gh` and independently decide whether and how to address them. Bug reports in particular are welcome. Sorry if this offends, but I want to avoid wasted time and hurt feelings. I understand this isn't in sync with the prevailing open-source ethos that seeks community contributions, but it's the only way I can move at this velocity and keep my sanity.
+
+## License
+
+[MIT](LICENSE)
+
+This standalone plugin is derived from the Wterm integration originally
+developed in [`get-bb/bb`](https://github.com/get-bb/bb), so it preserves that
+repository's MIT copyright notice.
+
+The bundled Ghostty WASM renderer comes from
+[`@wterm/ghostty`](https://github.com/vercel-labs/wterm/tree/main/packages/%40wterm/ghostty),
+which is distributed under the Apache-2.0 license.
+
+`SymbolsNerdFontMono-Regular.woff2` comes from Nerd Fonts v3.5.0 and is
+distributed under the included [MIT license](LICENSE-NERD-FONTS-SYMBOLS).

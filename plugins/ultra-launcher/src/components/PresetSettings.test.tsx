@@ -1,0 +1,211 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useEffect } from "react";
+import type { ExperimentalProviderModelPickerProps } from "@get-bb/plugin-sdk/app";
+import { PresetSettings, PresetSettingsOverlay } from "./PresetSettings";
+import { EDIT_PRESETS_EVENT, type PresetState } from "../lib/presets";
+import { mockViewport } from "../../test/viewport";
+const mocks = vi.hoisted(() => ({
+  state: { revision: 0, presets: [] } as PresetState,
+  save: vi.fn(),
+  restoreDefaults: vi.fn(),
+  canonicalizeOnMount: false,
+}));
+vi.mock("../hooks/usePresets", () => ({
+  usePresets: () => ({
+    state: mocks.state,
+    save: mocks.save,
+    restoreDefaults: mocks.restoreDefaults,
+    loading: false,
+    error: null,
+    reload: vi.fn(),
+  }),
+}));
+vi.mock("@get-bb/plugin-sdk/app", () => ({
+  experimental_Icon: () => null,
+  experimental_useProviders: () => ({ providers: [{ id: "codex" }] }),
+  experimental_ProviderIcon: () => null,
+  experimental_ProviderModelPicker: ({ value, onChange }: Pick<ExperimentalProviderModelPickerProps, "value" | "onChange">) => {
+    useEffect(() => {
+      if (mocks.canonicalizeOnMount) onChange({ ...value, model: "canonical-model" });
+    }, []);
+    return (
+    <button
+      type="button"
+      onClick={() =>
+        onChange({
+          ...value,
+          providerId: "codex",
+          model: "sol",
+          reasoningLevel: "high",
+          serviceTier: "fast",
+        })
+      }
+    >
+      Choose Sol High Fast
+    </button>
+    );
+  },
+}));
+afterEach(cleanup);
+beforeEach(() => {
+  mocks.state = { revision: 0, presets: [] };
+  mocks.save.mockReset().mockResolvedValue({ revision: 1, presets: [] });
+  mocks.restoreDefaults.mockReset().mockResolvedValue({ revision: 1, presets: [] });
+  mocks.canonicalizeOnMount = false;
+});
+describe("preset settings editor", () => {
+  it("saves a named complete model combination through the shared store", async () => {
+    render(<PresetSettings />);
+    fireEvent.click(screen.getByRole("button", { name: "Add preset" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Preset name" }), {
+      target: { value: "Daily coding" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Choose Sol High Fast" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save preset" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledOnce());
+    expect(mocks.save.mock.calls[0]).toEqual([
+      [
+        expect.objectContaining({
+          name: "Daily coding",
+          providerId: "codex",
+          model: "sol",
+          reasoningLevel: "high",
+          serviceTier: "fast",
+        }),
+      ],
+      0,
+    ]);
+    await waitFor(() => expect(screen.queryByRole("textbox")).toBeNull());
+  });
+  it("cancels unsaved edits and preserves the draft on a conflicting remote change", () => {
+    const view = render(<PresetSettings />);
+    fireEvent.click(screen.getByRole("button", { name: "Add preset" }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "My draft" } });
+    mocks.state = { revision: 1, presets: [] };
+    view.rerender(<PresetSettings />);
+    expect(screen.getByRole("alert").textContent).toContain("changed in another window");
+    expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("My draft");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
+  it("restores the recommended defaults only after an explicit confirmation", async () => {
+    mocks.state = {
+      revision: 2,
+      presets: [
+        { id: "a", name: "Mine", providerId: "codex", model: "sol", reasoningLevel: "high", serviceTier: "default" },
+      ],
+    };
+    render(<PresetSettings />);
+    fireEvent.click(screen.getByRole("button", { name: "Restore defaults" }));
+    expect(mocks.restoreDefaults).not.toHaveBeenCalled();
+    expect(screen.getByText("Replace your 1 preset?")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByText("Replace your 1 preset?")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Restore defaults" }));
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
+    await waitFor(() => expect(mocks.restoreDefaults).toHaveBeenCalledOnce());
+    await waitFor(() => expect(screen.queryByText("Replace your 1 preset?")).toBeNull());
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
+  it("opens the saved list without mounting model pickers or saving aliases", () => {
+    mocks.state = { revision: 4, presets: [
+      { id: "a", name: "My preset", providerId: "codex", model: "saved-alias", reasoningLevel: "medium", serviceTier: "default" },
+    ] };
+    mocks.canonicalizeOnMount = true;
+    render(<PresetSettings />);
+    expect(mocks.save).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Choose Sol High Fast" })).toBeNull();
+    expect(screen.getByText(/saved-alias/)).toBeTruthy();
+  });
+  it("saves model changes only after editing and explicitly saving", async () => {
+    mocks.state = { revision: 4, presets: [
+      { id: "a", name: "My preset", providerId: "codex", model: "astra", reasoningLevel: "medium", serviceTier: "default" },
+    ] };
+    render(<PresetSettings />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit My preset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Choose Sol High Fast" }));
+    expect(mocks.save).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Save preset" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "a", name: "My preset", model: "sol", reasoningLevel: "high", serviceTier: "fast" }),
+    ], 4));
+    expect(screen.queryByRole("textbox")).toBeNull();
+    await screen.findByText("Changes saved");
+  });
+  it("cancels model canonicalization in the editor without changing saved presets", () => {
+    mocks.state = { revision: 4, presets: [
+      { id: "a", name: "My preset", providerId: "codex", model: "saved-alias", reasoningLevel: "medium", serviceTier: "default" },
+    ] };
+    render(<PresetSettings />);
+    mocks.canonicalizeOnMount = true;
+    fireEvent.click(screen.getByRole("button", { name: "Edit My preset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mocks.save).not.toHaveBeenCalled();
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByText(/saved-alias/)).toBeTruthy();
+  });
+  it("starts from an existing configuration and generates a name when omitted", async () => {
+    mocks.state = { revision: 2, presets: [
+      { id: "a", name: "Original", providerId: "codex", model: "astra", reasoningLevel: "max", serviceTier: "default" },
+    ] };
+    render(<PresetSettings />);
+    fireEvent.click(screen.getByRole("button", { name: "Add preset" }));
+    fireEvent.click(screen.getByRole("button", { name: /Save preset/ }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledOnce());
+    const [presets, revision] = mocks.save.mock.calls[0];
+    expect(revision).toBe(2);
+    expect(presets).toHaveLength(2);
+    expect(presets[1]).toMatchObject({ name: "astra · Max", model: "astra", reasoningLevel: "max" });
+    expect(presets[1].id).not.toBe("a");
+  });
+  it("keeps a failed save visible and retains the draft for retry", async () => {
+    mocks.save.mockRejectedValueOnce(new Error("Connection lost"));
+    render(<PresetSettings />);
+    fireEvent.click(screen.getByRole("button", { name: "Add preset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Choose Sol High Fast" }));
+    fireEvent.click(screen.getByRole("button", { name: /Save preset/ }));
+    await screen.findByText("Connection lost");
+    expect(screen.getByRole("textbox")).toBeTruthy();
+    expect(screen.queryByText("Changes saved")).toBeNull();
+  });
+
+});
+
+describe("saved preset list", () => {
+  it("labels each preset with the service tier it uses", () => {
+    mocks.state = { revision: 1, presets: [
+      { id: "a", name: "Plain", providerId: "codex", model: "sol", reasoningLevel: "high", serviceTier: "default" },
+      { id: "b", name: "Quick", providerId: "codex", model: "sol", reasoningLevel: "high", serviceTier: "fast" },
+      { id: "c", name: "Quickest", providerId: "codex", model: "sol", reasoningLevel: "high", serviceTier: "ultrafast" },
+    ] };
+    render(<PresetSettings />);
+    expect(screen.getByLabelText("Model for Plain").textContent).toBe("sol · High");
+    expect(screen.getByLabelText("Model for Quick").textContent).toBe("sol · High · Fast");
+    expect(screen.getByLabelText("Model for Quickest").textContent).toBe("sol · High · Ultrafast");
+  });
+});
+
+describe.each([
+  { viewport: "desktop", phone: false },
+  { viewport: "phone", phone: true },
+])("preset settings overlay on $viewport", ({ phone }) => {
+  afterEach(() => mockViewport({ phone: false }));
+
+  it("opens from Edit presets as a labelled dialog and closes on Escape", async () => {
+    mockViewport({ phone });
+    render(<PresetSettingsOverlay />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    act(() => {
+      window.dispatchEvent(new Event(EDIT_PRESETS_EVENT));
+    });
+    const dialog = await screen.findByRole("dialog", {
+      name: "Model presets",
+      description: "Choose your model once. Reuse it in every thread.",
+    });
+    expect(dialog.querySelector("[data-persistent-drawer-handle]") !== null).toBe(phone);
+    expect(await screen.findByRole("button", { name: "Add preset" })).toBeTruthy();
+    fireEvent.keyDown(document.activeElement ?? document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+});

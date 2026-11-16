@@ -1,0 +1,113 @@
+{
+  "name": "bb-plugin-host-monitor",
+  "version": "0.1.7",
+  "private": true,
+  "description": "Grafana-inspired CPU, memory, disk, network, load, and history dashboards for every machine enrolled in BB.",
+  "license": "MIT",
+  "author": "Mateo Cerquetella",
+  "homepage": "https://github.com/MateoCerquetella/bb-plugins/tree/main/plugins/host-monitor#readme",
+  "bugs": {
+    "url": "https://github.com/MateoCerquetella/bb-plugins/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MateoCerquetella/bb-plugins.git",
+    "directory": "plugins/host-monitor"
+  },
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "host-monitor",
+    "system-monitor",
+    "cpu",
+    "memory",
+    "disk",
+    "network-monitor"
+  ],
+  "type": "module",
+  "engines": {
+    "bb": ">=0.40",
+    "bbPluginSdk": ">=0.4.21"
+  },
+  "bb": {
+    "name": "Host Monitor",
+    "description": "Monitor current and historical resource health across every machine enrolled in BB.",
+    "branding": {
+      "icon": "./assets/icon.svg",
+      "logo": {
+        "light": "./assets/logo.svg",
+        "dark": "./assets/logo-dark.svg"
+      }
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "host": "./host.ts",
+    "skills": []
+  },
+  "files": [
+    "dist/server.js",
+    "dist/server.meta.json",
+    "dist/app.js",
+    "dist/app.meta.json",
+    "dist/app.css",
+    "dist/host.js",
+    "dist/host.meta.json",
+    "assets/",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "server.ts",
+    "app.tsx",
+    "app.css",
+    "chart-data.ts",
+    "dashboard-config.ts",
+    "sidebar-modal.ts",
+    "threshold-settings.tsx",
+    "host.ts",
+    "contract.ts",
+    "store.ts",
+    "components/",
+    "lib/"
+  ],
+  "dependencies": {
+    "better-sqlite3": "^12.0.0",
+    "echarts": "6.1.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.21",
+    "@pierre/diffs": "^1.2.9",
+    "@radix-ui/react-alert-dialog": "^1.1.19",
+    "@radix-ui/react-context-menu": "^2.3.3",
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@radix-ui/react-dropdown-menu": "^2.1.20",
+    "@radix-ui/react-hover-card": "^1.1.19",
+    "@radix-ui/react-menubar": "^1.1.20",
+    "@radix-ui/react-navigation-menu": "^1.2.18",
+    "@radix-ui/react-popover": "^1.1.19",
+    "@radix-ui/react-select": "^2.3.3",
+    "@radix-ui/react-tooltip": "^1.2.12",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "bb-app": "^0.40.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^3.4.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.0",
+    "vaul": "^1.1.2"
+  },
+  "scripts": {
+    "build": "env -u BB_CLI bb plugin build .",
+    "dev": "bb plugin dev .",
+    "typecheck": "tsc --noEmit",
+    "types:check": "env -u BB_CLI bb plugin types --check .",
+    "types:refresh": "env -u BB_CLI bb plugin types .",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "verify": "npm run typecheck && npm test && npm run build",
+    "check": "npm run types:check && npm run typecheck && npm test && npm run build"
+  }
+}

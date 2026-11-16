@@ -1,0 +1,229 @@
+# FirstMate
+
+A [bb](https://getbb.app) plugin: talk to one agent, ship with a crew.
+
+You talk to a single agent, the **first mate**, and it runs the crew for you. Every task goes to a
+**worker**: its own bb thread, in its own git worktree, so parallel work on one repository never
+collides. The first mate writes each worker's instructions, supervises it to the end, and brings you
+finished branches and pull requests, investigation findings, and only the decisions that are really
+yours. You are the captain.
+
+The first mate is an ordinary pinned thread, in bb's own chat, so you talk to it there and open its
+tool calls like any other thread's. Its workers are its child threads in bb's sidebar. A **FirstMate**
+tab on the first mate's thread puts a board of the crew beside it: Queued, Working, Blocked, Parked,
+Done, Failed and Idle, each worker's last word on what it is doing, and a link to its pull request.
+
+This is a bb port of the Paseo `firstmate` plugin in
+[`gpambrozio/paseo-plugins`](https://github.com/gpambrozio/paseo-plugins), itself a take on
+[firstmate](https://github.com/kunchenguid/firstmate) by Kun Chen. bb already supervises child threads
+(it tells the first mate when a worker finishes, fails, is interrupted or needs attention, and why when
+its machine dropped or its setup failed) and already has a chat, so the plugin is the charter, the
+board, the dispatch command and the watch runner, and nothing else.
+
+## What you need
+
+- bb 0.47 or newer. On bb 0.46, install with `@^0.6.0` instead of `@^0.7.0`; on bb 0.45, with `@^0.4.0`.
+- A capable model for the first mate. It spends its day reading records and deciding who does what, and a
+  small model gets the commands wrong. Claude Sonnet or better, or a comparable Codex model, works.
+- `git` for the projects it works on, and, for the pull request watch, the `gh` command, logged in.
+
+## Install
+
+From the BB Community marketplace, once it is listed there: find **FirstMate Crew** under Plugins in bb,
+or run
+
+```bash
+bb plugin install firstmate-crew@bb-community
+```
+
+Straight from this repository, tracking compatible releases:
+
+```bash
+bb plugin install 'git:github.com/gpambrozio/bb-plugins@^0.7.0' --plugin firstmate-crew --tag-prefix firstmate-crew/
+```
+
+Add `--yes` to skip the confirmation prompt, which a script needs. To hack on it, clone the repository,
+run `npm install --include=dev` in `firstmate-crew/`, then `bb plugin install path:$PWD --yes` from
+there, and `bb plugin dev` to rebuild on save. See [`AGENTS.md`](AGENTS.md).
+
+## Getting started
+
+1. Open bb's settings, find **FirstMate**, pick the first mate's provider and model, and press **Launch**.
+   If you already started a thread in the first mate's home (the **Home directory** setting), open its
+   **FirstMate** tab and press **Adopt this thread** instead. Only a thread working in the home can be
+   adopted, because the charter the first mate follows is the home's `AGENTS.md`.
+2. The first mate is now pinned in the sidebar, in a project called **FirstMate** (its home). Open it and
+   tell it about a project: "the web app is in bb as `web` and ships through pull requests". It keeps a
+   registry, so you say this once.
+3. Ask for work: "fix the flaky login test and add dark mode". Two workers appear under it in the sidebar
+   and on the board, each in its own worktree. Minutes later:
+
+   > PR ready for review, captain: https://github.com/you/web/pull/42 (fix the flaky login test - risk: low - CI green)
+
+4. "Merge it." The first mate never merges without your word, unless you have told it a project may.
+
+## Talking to the first mate
+
+- Type in the first mate's chat, or send from anywhere: `bb firstmate-crew tell "…"` reaches it from a shell
+  or another thread. A message sent that way opens with a line saying it was relayed, and from which
+  thread, so the first mate treats it as a request rather than as your word in its own chat: it may start
+  or steer work for it, but merges, anything destructive or irreversible, publishing, credentials and
+  settings still wait for you to say so in the first mate's chat.
+- **`/fm` in any thread** hands a request to the first mate about that thread's work. In a thread where you
+  have been fixing a bug, type `/fm run a review loop on this and fix what it finds`. The thread's agent
+  sends your words, unchanged, through `tell`, and replies in one line that the first mate has them; it
+  does not do the work itself. The first mate receives them under the relayed line, which names the
+  thread with its project and branch, so it knows which work you mean. `/fm` on its own asks what to
+  send, and requests up to 12,000 bytes fit. Only you can start it: agents do not use it on their own.
+- **Bearings** is where everything stands in four sections: what needs your call, what landed, what is
+  under way, what is next. It is a button on the board and an entry in the command palette
+  (FirstMate: bearings), next to FirstMate: open.
+- **Suggestions.** When the first mate has an idea of what you will want next ("Land web#42"), it shows
+  as a button above the columns. Pressing one sends that request to the first mate as if you had typed
+  it; it joins a turn under way, or starts one, and never interrupts. Once the first mate has it, the
+  card leaves the list; a send that fails keeps it. On a phone the board stays open over the chat after
+  a send, as bb gives plugins no way to close it. A card too long to show whole
+  gets a chevron that opens the full request below it, to read or copy, without sending it. The trash
+  takes a suggestion off the list without sending it, and remembers it: the first mate is told not to
+  suggest it again, and the board hides it if the first mate does, word for word. A suggestion whose
+  words change shows as usual.
+- **Compact** and **Restart** sit beside Bearings at the top of the board, with a gear that
+  opens FirstMate's settings. Compact has bb summarise the first mate's conversation to free room, as
+  bb's own `/compact` does. Restart starts the first mate afresh on the same thread, after asking you:
+  the old conversation stays readable above bb's "context cleared" line, its records carry over, and the
+  workers keep going and stay its crew. Both wait until the first mate is between turns.
+
+## The board
+
+Press **FirstMate** on the first mate's thread. Each card is a worker, a backlog item, or both:
+
+- **Steer** sends a word straight to the worker. The first mate hears about it when the worker's turn
+  ends, as with any turn.
+- **Interrupt** stops the worker's current turn. bb does not tell the first mate about a stop, and the
+  first mate asks you before resuming a worker it finds stopped this way.
+- **Relaunch** asks the first mate for a fresh worker in the same worktree, with your note. The work on
+  disk carries over; the conversation does not.
+- **End** archives the worker. If its task is not in Done, it asks first: bb removes the worktree after
+  its grace period, and only committed work can be restored.
+- **Open thread** goes to the worker's own thread.
+- **The captain's call.** A card waiting on you shows what the first mate needs, and under it a button for
+  each answer it expects ("Merge", "Hold"). Pressing one sends that answer to the first mate as if you had
+  typed it, as a suggestion does, and brings its chat into view. For anything else, type in the card's
+  **Answer** box and press Send: the first mate gets your words with the task's id and title in front, so
+  it knows what they answer. Buttons the first mate adds to a card that is not waiting on you work the
+  same way.
+- **Notify parent.** FirstMate starts every worker with bb's Notify parent on Auto, so the first mate
+  hears about each turn it finishes. bb lets you change that from any thread's menu; a card whose worker
+  is set to When stuck or Off says so, because the first mate then isn't told when that worker finishes
+  (or anything at all). FirstMate leaves your choice alone: the first mate checks on such a worker itself
+  whenever it is awake, and tells you when it is waiting on one. A relaunched worker starts on Auto again.
+
+The sections are stacked and foldable, empty ones are hidden, and the arrows on each section's header
+move it up or down; this browser remembers the folds and the order. On a worker's own thread the
+FirstMate tab shows just its card, with a note box that tells the first mate something about that worker
+without touching the worker; on any other thread it offers to adopt it (when it works in the home), or a
+way to the first mate.
+
+Above the sections, the board shows a notice when FirstMate's own charter has moved on since you edited
+yours, and below them the watches.
+
+## The first mate's home
+
+The first mate keeps its charter and records in a directory of its own, by default `~/FirstMate`, set in
+the plugin's settings, and registered in bb as the **FirstMate** project. It writes there and nowhere
+else: your projects are read-only to it, and every change is a worker's job. Open the home in bb's file
+panel to read or edit any of it.
+
+| File | What it is |
+| --- | --- |
+| `AGENTS.md` | The charter as the first mate reads it, filled in and rewritten by the plugin. Do not edit it. |
+| `data/charter.md` | What that is written from. The plugin's charter until you edit it; then yours, and a changed plugin charter is put beside it as `data/charter.new.md` for you to compare. |
+| `data/captain.md` | Your standing orders. They outrank the charter, except its hard rules. |
+| `data/opening.md` | The first message a new first mate gets. Yours to change. |
+| `data/projects.md` | How each project ships: direct pull request, local only, reviewed pull request, and whether it may merge green work itself. |
+| `data/backlog.md` | Every work item; the board draws from it. |
+| `data/suggestions.md` | The suggestion buttons. |
+| `data/suggestions-dismissed.md` | The suggestions you trashed, the newest 50; the board writes it. Delete a line to let that suggestion back. |
+| `data/learnings.md` | Facts worth keeping across sessions. |
+| `data/<task>/` | Each task's brief, and a scout's report. |
+| `watches/` | The scripts the plugin runs on a schedule. |
+
+The plugin never overwrites `captain.md`, `opening.md`, or the records once written.
+
+## Watches
+
+A watch is an executable in the home's `watches/` folder with a `# schedule: <crontab>` line near the top.
+The plugin runs each on its schedule, in the server's local time, and whatever it prints reaches the first
+mate as one note once the first mate is between turns. In chat the note is one line naming the watches;
+its **full note** chip expands the whole message in place, each run under its watch's name and time, with
+the plugin's tags left out. The home keeps the last 50 in `.firstmate/watch-notes/`. Printing nothing costs nothing. `pr-watch` comes
+built in: every five minutes it checks the pull requests on the backlog and tells the first mate when one
+is merged or closed, gets a review or comment, or has its checks go red or green. Watches find their
+commands, `gh` included, on the same PATH bb gives its own tools: your login shell's, plus Homebrew,
+`~/.local/bin`, mise, asdf and Volta. The Watches card lists
+each watch with its last run, and switches any of them off or on. `watches/README.md` in the home explains
+how to write one; the first mate adds none without your approval.
+
+## Settings
+
+- **Home directory**: where the first mate's records live. Default `~/FirstMate`. With a first mate aboard,
+  the board and the watches stay with its own home; a new setting applies to the next launch or adoption.
+- **Crew provider**, **crew model** and **crew reasoning**: what workers are started with. Left empty, or
+  reasoning on **Leave it to the first mate**, the first mate chooses; a model is used only with a
+  provider. For one worker the first mate can also pick a model's own agent options (such as a faster
+  mode), as `bb thread spawn --option` does.
+- **Board refresh**: how often an open board reloads, in seconds. Default 10. Anything bb reports (a
+  worker starting, finishing, failing, waiting on you, moving to or from the first mate) shows at once;
+  the refresh catches the rest, such as edits to the backlog. It runs once for every open board, in any
+  window, and stops when the last one closes. On bb 0.48 a board whose tab is hidden, or whose panel is
+  closed, does not reload until it is shown again.
+- **Autocompact**, once for the first mate and once for the crew: whether to compact the conversation on
+  its own (default off), above how many thousand tokens of context (default 200, meaning 200,000
+  tokens), and after how many idle minutes (default 60). See below.
+
+The board's gear opens this page. The settings also hold the first mate's status, **Launch**, **Restart**
+and **Release**. Release lets go
+of the thread, leaving it and its crew as they are.
+
+## Autocompact
+
+A provider keeps a conversation's start in a prompt cache for a while, and a turn after the cache has
+expired pays to send all of it again. Autocompact compacts a thread that has sat idle long enough with a
+large context, so the next turn starts from a summary instead, as bb's own `/compact` does. Switch it on
+separately for the first mate and for the crew, each with its own token threshold and idle time.
+
+- A thread is compacted when its context holds more than the token threshold and it has been idle long
+  enough. When bb knows when the provider's cache for that conversation expires, that is long enough: bb
+  works it out for Claude Code and Pi once a context passes 100,000 tokens, with its "compact expired
+  cache" experiment on. Otherwise it is the idle time you set, counted from the end of the last turn. It must be truly at rest: no turn running, no message queued, nothing waiting
+  on you (a permission, a question or a plan), no background agent still running, and its machine
+  connected. Ended (archived) workers are left alone.
+- Once compacted, a thread is not compacted again until it has run another turn and sat idle again, so a
+  usage figure bb has not measured since cannot set off a second compaction. If bb refuses a compaction,
+  it is not retried until after the thread's next turn.
+- FirstMate checks once a minute and compacts at most one thread per check, so after bb has been off for
+  a while the idle threads are compacted one a minute rather than all at once. Idle time comes from bb's
+  own record of when each turn ended, so a restart neither resets nor shortens it.
+- Each compaction is written to the plugin's log (`bb plugin logs firstmate-crew`), with the thread, its
+  tokens beforehand and how long it had been idle. A problem that lasts, such as bb not answering, is
+  logged once, not every minute.
+- A message that reaches a thread when it is due — a watch note, your words from the board or `tell`, a
+  steer to a worker — has bb compact the thread first and deliver the message once it is done, in one
+  request, so the message does not pay for the whole expired context. If bb says it will not compact it
+  then, the message goes as it would have; if the request fails in a way that leaves it unclear whether bb
+  took it, FirstMate reports the failure rather than sending the message twice.
+- A compaction is a turn of its own. For a worker, bb reports it to the first mate like any of the
+  worker's turns, so the first mate wakes briefly to a turn with nothing new in it.
+
+## Limitations
+
+- **Watches run only while bb does, on the machine running the bb server**, and so does the home. The
+  first mate's workers can be on any machine bb reaches, but a home on another machine is not supported.
+- **End removes a worker's worktree after bb's grace period**; only committed work can be restored.
+- Changing the crew settings changes what the charter says only on the next launch, restart or plugin
+  reload.
+- The Files view and the chat of the Paseo plugin are bb's own here.
+
+## License
+
+[MIT](../LICENSE)

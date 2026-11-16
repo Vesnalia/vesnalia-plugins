@@ -1,0 +1,81 @@
+/*
+ * Fat Fingers: 50% larger icons on a phone.
+ *
+ * "On a phone" is bb's own definition — the media query below is the one bb
+ * uses for its coarse-pointer sizing, so a narrow desktop window with a mouse
+ * is left alone and a phone held sideways still counts.
+ *
+ * `zoom` rather than `transform: scale()` because zoom changes the layout box:
+ * the icon really is bigger, its container grows to fit, and the tap target a
+ * wrapping button offers grows with it. A transform would only paint it larger
+ * while leaving a 16px box for a finger to find. `zoom` is standard in every
+ * current browser (Firefox since 126).
+ *
+ * The selectors name bb's icon-rendering paths rather than every <svg>, so a
+ * diagram or image rendered inside a message is not blown up too:
+ *   svg[data-icon]              every glyph drawn through bb's Icon component,
+ *                               including vendored copies inside other plugins
+ *   svg.lucide                  the few shadcn primitives that ship lucide glyphs
+ *   [data-plugin-icon-asset]    a plugin's own SVG mark, drawn as a CSS mask
+ *   [data-provider-logo]        a provider's logo, drawn the same way
+ *
+ * Only active while the plugin's content script has set data-fat-fingers on
+ * <html>, so disabling the plugin removes the effect at once.
+ */
+html[data-fat-fingers] {
+  --fat-fingers-scale: 1.5;
+}
+
+@media (max-width: 767px) and (pointer: coarse) {
+  html[data-fat-fingers] svg[data-icon],
+  html[data-fat-fingers] svg.lucide,
+  html[data-fat-fingers] [data-plugin-icon-asset],
+  html[data-fat-fingers] [data-provider-logo] {
+    zoom: var(--fat-fingers-scale);
+  }
+
+  /*
+   * bb's icon buttons bump their glyph to at least 16px on a phone with a
+   * descendant rule that names <svg>, so a plugin mark or provider logo (a
+   * <span> drawn as a mask) in the same button keeps its desktop 12px and
+   * ends up two thirds the size of its neighbours, before and after scaling.
+   * Give those spans the same floor so one action row scales as one set.
+   */
+  html[data-fat-fingers] button [data-plugin-icon-asset],
+  html[data-fat-fingers] button [data-provider-logo] {
+    min-width: 1rem;
+    min-height: 1rem;
+  }
+
+  /*
+   * Bigger glyphs alone left the buttons around them touching. bb packs its
+   * action-row buttons at 28px edge to edge, so a 24px glyph leaves a finger
+   * 4px of margin before it lands on the neighbour. Widen any button that is
+   * nothing but an icon (an icon, optionally with screen-reader-only text) to
+   * the 44px target phones are designed around. Row spacing comes from the
+   * button box, so the glyph centres move apart with it. Height is left to
+   * bb's own row sizing: a mis-tap above or below lands on text, not on
+   * another button.
+   */
+  html[data-fat-fingers]
+    :is(button, [role="button"]):has(
+      > :is(
+          svg[data-icon],
+          svg.lucide,
+          [data-plugin-icon-asset],
+          [data-provider-logo]
+        )
+    ):not(
+      :has(
+        > :not(
+            svg[data-icon],
+            svg.lucide,
+            [data-plugin-icon-asset],
+            [data-provider-logo],
+            .sr-only
+          )
+      )
+    ) {
+    min-width: 2.75rem;
+  }
+}

@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  plugin:
+    name: Plugin boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run sdk:check
+      - run: npm run build
+      - run: npm pack --dry-run
+
+  variaq-integration:
+    name: VariaQ ${{ matrix.variaq_version }} integration
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variaq_version: "0.6.0"
+            # Commit behind the verified legacy v0.6.0 tag.
+            variaq_ref: aeac83b67a9874957458d626c81ba231030f90ab
+          - variaq_version: "0.8.0rc1"
+            # Reviewed release/0.8.0rc1 candidate; never use a moving branch.
+            variaq_ref: 551151a2c2ccfe0301dca1b22fcc8abf5d540f56
+          - variaq_version: "0.8.0"
+            # VariaQ 0.8.0 stable merge commit on main; never use a moving branch.
+            variaq_ref: 2c7ca9c488a5aea91575ec0a95e2111adeb2a0a2
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: aaronphifer/variaq
+          ref: ${{ matrix.variaq_ref }}
+          path: .variaq-source
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: .variaq-source/pyproject.toml
+      - name: Install VariaQ quantum environment
+        run: |
+          python -m venv "$RUNNER_TEMP/variaq-venv"
+          "$RUNNER_TEMP/variaq-venv/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/variaq-venv/bin/python" -m pip install -e './.variaq-source[quantum]'
+      - run: npm ci
+      - name: Run real local integration suite with bounded campaign smoke
+        env:
+          VARIAQ_TEST_PROJECT: ${{ github.workspace }}/.variaq-source
+          VARIAQ_TEST_PYTHON: ${{ runner.temp }}/variaq-venv/bin/python
+          VARIAQ_TEST_VERSION: ${{ matrix.variaq_version }}
+        run: npm run test:integration

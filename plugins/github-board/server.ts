@@ -1,0 +1,217 @@
+// GitHub Board — the server entry.
+//
+// Runs `gh` on the bb server's machine, with the user's own `gh` login, and
+// matches cards to bb projects. What each handler does lives in
+// server/service.ts; this file wires it to bb: settings, storage, realtime,
+// projects and thread creation. See AGENTS.md.
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+import type { BbPluginApi, ExperimentalPluginRpcHandlerContext } from "@get-bb/plugin-sdk";
+
+import type { PromptSettings } from "./shared/board";
+import { rpcContract } from "./shared/contract";
+import {
+  DISPLAY_PREFS_CHANGED,
+  ITEM_PATCHED,
+  PROMPTS_CHANGED,
+  type DisplayPrefs,
+  type ItemPatch,
+  launchSeedsFor,
+  type LaunchDefaults,
+} from "./shared/schemas";
+import { workspaceTitle } from "./shared/launch";
+import { remoteIdsOf } from "./shared/remotes";
+import { DEFAULT_PROMPTS, normalizePrompts } from "./shared/settings";
+import { describeGhFailure, ghGraphql, ghRunner, ghToken, isGhMissing } from "./server/gh";
+import type { GitHubApi } from "./server/github";
+import { buildProjectIndex, type ProjectIndex, type ProjectRecord } from "./server/projects";
+import { CACHE_TTL_MS, createBoardService } from "./server/service";
+
+export type { RpcContract } from "./shared/contract";
+
+const execFileAsync = promisify(execFile);
+
+const GH_HINT =
+  "Install the GitHub CLI (`brew install gh`) and run `gh auth login` on the machine running bb. The board finds it on its next refresh; `bb plugin reload github-board` clears this notice.";
+
+const DISPLAY_KEY = "display";
+const PROMPTS_KEY = "prompts";
+const LAUNCH_KEY = "launch";
+
+const DEFAULT_DISPLAY: DisplayPrefs = { hiddenRepositories: [], detailWidthFraction: null };
+
+type SpawnArgs = Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0];
+
+/**
+ * The RPC caller's signal. Typed as always there, but bb before 0.48.1 passes
+ * a context without it.
+ */
+function callerSignal(ctx: ExperimentalPluginRpcHandlerContext | undefined): AbortSignal | undefined {
+  return ctx?.experimental_signal;
+}
+
+/** Every remote of the checkout at `path`; nothing for a directory that is not one, or is gone. */
+async function localRemotes(path: string): Promise<string[]> {
+  try {
+    const { stdout } = await execFileAsync("git", ["-C", path, "remote", "-v"], { timeout: 10_000 });
+    return remoteIdsOf(stdout);
+  } catch {
+    return [];
+  }
+}
+
+export default async function plugin(bb: BbPluginApi) {
+  const settings = bb.settings.define({
+    login: {
+      type: "string",
+      label: "GitHub login",
+      description:
+        "Whose work the board shows. Leave blank for the account the GitHub CLI is signed in as.",
+      default: "",
+    },
+  });
+
+  // `gh` is found through bb's host toolchain on every call, so one installed
+  // after the plugin loaded works without a reload. A check at load marks the
+  // plugin as needing configuration when `gh` is missing or signed out, rather
+  // than failing the load; that mark lasts until the next load, and every call
+  // meanwhile reports its own failure. Nothing is latched: a check run before
+  // the network was up must not keep the board failing until a reload.
+  const gh = ghRunner();
+  try {
+    await gh(["auth", "status", "--hostname", "github.com"]);
+  } catch (error) {
+    const message = describeGhFailure(error);
+    if (isGhMissing(error)) {
+      bb.status.needsConfiguration(`GitHub CLI (gh) was not found. ${GH_HINT}`);
+    } else if (/not authenticated|not logged in|gh auth login/i.test(message)) {
+      bb.status.needsConfiguration(`GitHub CLI is not signed in. ${GH_HINT}`);
+    } else {
+      // Probably transient (the network); every call reports its own failure.
+      bb.log.warn(`gh auth status failed: ${message}`);
+    }
+  }
+
+  const api: GitHubApi = {
+    graphql: (query, variables, signal) => ghGraphql(gh, query, variables, signal),
+    warn: (message) => bb.log.warn(message),
+  };
+
+  let cachedIndex: { index: ProjectIndex; storedAt: number } | null = null;
+  async function projectIndex(force: boolean): Promise<ProjectIndex> {
+    if (!force && cachedIndex !== null && Date.now() - cachedIndex.storedAt < CACHE_TTL_MS) {
+      return cachedIndex.index;
+    }
+    const projects: readonly ProjectRecord[] = await bb.sdk.projects.list();
+    const index = await buildProjectIndex(projects, await localHostId(), localRemotes);
+    cachedIndex = { index, storedAt: Date.now() };
+    return index;
+  }
+
+  async function localHostId(): Promise<string | null> {
+    return (await bb.sdk.system.config()).primaryHostId;
+  }
+
+  const service = createBoardService({
+    api,
+    token: (signal) => ghToken(gh, signal),
+    configuredLogin: async () => (await settings.get()).login,
+    projectIndex,
+    localHostId,
+    now: () => Date.now(),
+  });
+
+  function publishPatch(patch: ItemPatch): void {
+    bb.realtime.publish(ITEM_PATCHED, patch);
+  }
+
+  let displayWrites: Promise<unknown> = Promise.resolve();
+
+  async function displayPrefs(): Promise<DisplayPrefs> {
+    return { ...DEFAULT_DISPLAY, ...((await bb.storage.kv.get<DisplayPrefs>(DISPLAY_KEY)) ?? {}) };
+  }
+
+  async function prompts(): Promise<PromptSettings> {
+    const stored = await bb.storage.kv.get<PromptSettings>(PROMPTS_KEY);
+    return stored === undefined
+      ? { byType: { ...DEFAULT_PROMPTS }, byProject: {} }
+      : normalizePrompts({ byType: { ...DEFAULT_PROMPTS, ...stored.byType }, byProject: stored.byProject ?? {} });
+  }
+
+  bb.rpc.register(rpcContract, {
+    // bb 0.48.1 aborts `experimental_signal` when the caller stops waiting or
+    // this copy of the plugin goes; older bb passes none, and the load runs on.
+    loadBoard: (input, ctx) => service.loadBoard(input, callerSignal(ctx)),
+    loadItem: (input, ctx) => service.loadItem(input, callerSignal(ctx)),
+    loadComments: (input, ctx) => service.loadComments(input, callerSignal(ctx)),
+    loadImage: (input, ctx) => service.loadImage(input, callerSignal(ctx)),
+    listLabels: (input) => service.listLabels(input),
+    toggleLabel: async (input) => {
+      const result = await service.toggleLabel(input);
+      publishPatch({ itemId: input.itemId, patch: { labels: result.labels } });
+      return result;
+    },
+    updateBranch: async (input) => {
+      const result = await service.updateBranch(input);
+      publishPatch({ itemId: input.id, patch: { branch: result.branch } });
+      return result;
+    },
+    getDisplayPrefs: () => displayPrefs(),
+    setDisplayPrefs: (patch) => {
+      // One write at a time: two read-modify-writes in flight together, a
+      // filter toggle and a width commit say, would drop one of them.
+      const write = displayWrites.then(async () => {
+        const next = { ...(await displayPrefs()), ...patch };
+        await bb.storage.kv.set(DISPLAY_KEY, next);
+        bb.realtime.publish(DISPLAY_PREFS_CHANGED, next);
+        return next;
+      });
+      displayWrites = write.catch(() => undefined);
+      return write;
+    },
+    getPrompts: () => prompts(),
+    savePrompts: async (value) => {
+      const next = normalizePrompts(value);
+      await bb.storage.kv.set(PROMPTS_KEY, next);
+      bb.realtime.publish(PROMPTS_CHANGED, next);
+      return next;
+    },
+    sendOptions: async ({ repository, url }) => {
+      const [{ project, candidates }, launch] = await Promise.all([
+        service.projectsForCard({ repository, url }),
+        bb.storage.kv.get<LaunchDefaults>(LAUNCH_KEY),
+      ]);
+      const choice = (ref: { id: string; name: string }) => ({ id: ref.id, name: ref.name });
+      return {
+        project: project === null ? null : choice(project),
+        candidates: candidates.map(choice),
+        launch: launch === undefined ? null : launchSeedsFor(launch, project?.id ?? null),
+      };
+    },
+    send: async ({ card, request }) => {
+      // The composer's request goes to bb as it built it; bb validates it.
+      // The card rides along as this plugin's metadata on the thread, since
+      // no plugin API can add a row of its own to a thread's timeline.
+      const thread = await bb.sdk.threads.spawn({
+        ...(request as unknown as SpawnArgs),
+        title: workspaceTitle(card.repository, card.number, card.title),
+        pluginMetadata: { card },
+      });
+      // Saved only once the thread exists, so a selection bb refused is not
+      // what the next card opens on.
+      const launch: LaunchDefaults = {
+        projectId: request.projectId,
+        providerId: request.providerId,
+        model: request.model,
+        reasoningLevel: request.reasoningLevel,
+        permissionMode: request.permissionMode,
+        ...(request.serviceTier === undefined ? {} : { serviceTier: request.serviceTier }),
+        environment: request.environment,
+      };
+      await bb.storage.kv.set(LAUNCH_KEY, launch);
+      bb.log.info(`started thread ${thread.id} on ${card.repository}#${card.number}`);
+      return { threadId: thread.id };
+    },
+  });
+}

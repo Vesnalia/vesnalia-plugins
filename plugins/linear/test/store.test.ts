@@ -1,0 +1,854 @@
+import { describe, expect, it } from "vitest";
+import { toMatchQuery } from "../src/store/store.js";
+import { createTestStore, issue, member, NOW, state, team } from "./helpers/store.js";
+
+describe("the migration list", () => {
+  it("is one statement per entry", () => {
+    // `bb.storage.migrate` uses the statement index as the migration id. Two
+    // statements in one entry means the second is invisible to the tracker and
+    // re-runs — or, worse, silently never runs on an existing install.
+    // `createTestStore` prepares each entry individually, and better-sqlite3
+    // throws on a multi-statement string.
+    expect(() => createTestStore()).not.toThrow();
+  });
+});
+
+describe("mirror change counts", () => {
+  it("counts a new issue as changed", () => {
+    const store = createTestStore();
+    expect(store.putIssues([issue({ id: "1", updatedAt: NOW })], NOW)).toBe(1);
+  });
+
+  it("does not count an issue with the same updatedAt as changed", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1", updatedAt: NOW })], NOW);
+    expect(store.putIssues([issue({ id: "1", updatedAt: NOW })], NOW + 1)).toBe(0);
+  });
+
+  it("counts an issue with a different updatedAt as changed", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1", updatedAt: NOW })], NOW);
+    expect(store.putIssues([issue({ id: "1", updatedAt: NOW + 1 })], NOW + 1)).toBe(1);
+  });
+
+  it("reports genuine comment changes by updatedAt", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1" })], NOW);
+    const comment = {
+      id: "c1",
+      issueId: "1",
+      userId: null,
+      parentId: null,
+      body: "hello",
+      url: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      editedAt: null,
+      resolvedAt: null,
+    };
+    expect(store.putComments([comment])).toBe(1);
+    expect(store.putComments([comment])).toBe(0);
+    expect(store.putComments([{ ...comment, updatedAt: NOW + 1 }])).toBe(1);
+  });
+});
+
+describe("issue pane mirror rows", () => {
+  it("round-trips every new resource and replaces stale rows", () => {
+    const store = createTestStore();
+    store.putIssues(
+      [issue({ id: "i1" }), issue({ id: "i2", identifier: "ENG-2", title: "Blocker" })],
+      NOW,
+    );
+    store.replaceWorkflowStates("team_eng", [state("open", "team_eng", "started")]);
+    store.putIssues([issue({ id: "i2", identifier: "ENG-2", title: "Blocker", stateId: "open" })], NOW);
+
+    store.replaceAttachments("i1", [
+      {
+        id: "a1",
+        issueId: "i1",
+        title: "Spec",
+        subtitle: null,
+        url: "https://example.invalid/spec",
+        sourceType: "link",
+        groupBySource: true,
+        createdAt: NOW,
+        updatedAt: NOW,
+        creatorId: null,
+      },
+      {
+        id: "stale",
+        issueId: "i1",
+        title: "Old",
+        subtitle: null,
+        url: "https://example.invalid/old",
+        sourceType: null,
+        groupBySource: false,
+        createdAt: NOW - 1,
+        updatedAt: NOW - 1,
+        creatorId: null,
+      },
+    ]);
+    store.replaceAttachments("i1", [
+      {
+        id: "a1",
+        issueId: "i1",
+        title: "Spec",
+        subtitle: "Updated",
+        url: "https://example.invalid/spec",
+        sourceType: "link",
+        groupBySource: true,
+        createdAt: NOW,
+        updatedAt: NOW + 1,
+        creatorId: "u1",
+      },
+    ]);
+    expect(store.attachmentsFor("i1")).toEqual([
+      expect.objectContaining({ id: "a1", subtitle: "Updated", groupBySource: true }),
+    ]);
+
+    store.putHistory([
+      {
+        id: "h1:state",
+        issueId: "i1",
+        createdAt: NOW,
+        actorId: "u1",
+        botName: null,
+        kind: "state",
+        payload: { from: "todo", to: "open" },
+      },
+    ]);
+    store.putHistory([
+      {
+        id: "h1:state",
+        issueId: "i1",
+        createdAt: NOW,
+        actorId: "u1",
+        botName: null,
+        kind: "state",
+        payload: { from: "todo", to: "done" },
+      },
+    ]);
+    expect(store.historyFor("i1")).toEqual([
+      expect.objectContaining({ id: "h1:state", payload: { from: "todo", to: "done" } }),
+    ]);
+
+    store.replaceReactions("i1", [
+      {
+        id: "r1",
+        issueId: "i1",
+        commentId: null,
+        emoji: "thumbsup",
+        userId: "u1",
+        createdAt: NOW,
+      },
+      {
+        id: "stale-reaction",
+        issueId: "i1",
+        commentId: null,
+        emoji: "eyes",
+        userId: null,
+        createdAt: NOW - 1,
+      },
+    ]);
+    store.replaceReactions("i1", [
+      {
+        id: "r1",
+        issueId: "i1",
+        commentId: null,
+        emoji: "thumbsup",
+        userId: "u1",
+        createdAt: NOW,
+      },
+    ]);
+    expect(store.reactionsFor("i1").map((row) => row.id)).toEqual(["r1"]);
+
+    store.replaceSubscribers("i1", ["u2", "u1"]);
+    store.replaceSubscribers("i1", ["u2"]);
+    expect(store.subscribersFor("i1")).toEqual(["u2"]);
+
+    store.replaceDocuments("i1", [
+      {
+        id: "d1",
+        issueId: "i1",
+        title: "Decision",
+        url: "https://example.invalid/doc",
+        updatedAt: NOW,
+        icon: null,
+        color: null,
+      },
+      {
+        id: "stale-document",
+        issueId: "i1",
+        title: "Old decision",
+        url: "https://example.invalid/old-doc",
+        updatedAt: NOW - 1,
+        icon: null,
+        color: null,
+      },
+    ]);
+    store.replaceDocuments("i1", [
+      {
+        id: "d1",
+        issueId: "i1",
+        title: "Decision",
+        url: "https://example.invalid/doc",
+        updatedAt: NOW,
+        icon: null,
+        color: null,
+      },
+    ]);
+    expect(store.documentsFor("i1").map((row) => row.id)).toEqual(["d1"]);
+    store.replaceDocuments("i2", [
+      {
+        id: "d1",
+        issueId: "i2",
+        title: "Moved decision",
+        url: "https://example.invalid/doc",
+        updatedAt: NOW + 1,
+        icon: "document",
+        color: "#123456",
+      },
+    ]);
+    expect(store.documentsFor("i1")).toEqual([]);
+    expect(store.documentsFor("i2")).toEqual([
+      expect.objectContaining({ id: "d1", issueId: "i2", title: "Moved decision" }),
+    ]);
+
+    store.replaceCustomerNeeds("i1", [
+      {
+        id: "n1",
+        issueId: "i1",
+        customerName: "Customer",
+        priority: 2,
+        body: "Please ship it",
+        url: "https://example.invalid/need",
+        createdAt: NOW,
+      },
+      {
+        id: "stale-need",
+        issueId: "i1",
+        customerName: "Former customer",
+        priority: 1,
+        body: "Old request",
+        url: "https://example.invalid/old-need",
+        createdAt: NOW - 1,
+      },
+    ]);
+    store.replaceCustomerNeeds("i1", [
+      {
+        id: "n1",
+        issueId: "i1",
+        customerName: "Customer",
+        priority: 2,
+        body: "Please ship it",
+        url: "https://example.invalid/need",
+        createdAt: NOW,
+      },
+    ]);
+    expect(store.customerNeedsFor("i1").map((row) => row.id)).toEqual(["n1"]);
+    store.replaceCustomerNeeds("i2", [
+      {
+        id: "n1",
+        issueId: "i2",
+        customerName: "Customer",
+        priority: 3,
+        body: "Moved request",
+        url: "https://example.invalid/need",
+        createdAt: NOW,
+      },
+    ]);
+    expect(store.customerNeedsFor("i1")).toEqual([]);
+    expect(store.customerNeedsFor("i2")).toEqual([
+      expect.objectContaining({ id: "n1", issueId: "i2", priority: 3 }),
+    ]);
+
+    store.putComments([
+      {
+        id: "comment-for-reaction",
+        issueId: "i2",
+        userId: null,
+        parentId: null,
+        body: "React here",
+        url: null,
+        createdAt: NOW,
+        updatedAt: NOW,
+        editedAt: null,
+        resolvedAt: null,
+        resolvingUserId: null,
+      },
+    ]);
+    expect(store.commentIssueId("comment-for-reaction")).toBe("i2");
+    expect(store.commentIssueId("missing-comment")).toBeNull();
+
+    store.replaceRelations("i1", [
+      { id: "outgoing", issueId: "i1", relatedIssueId: "i2", type: "related" },
+      { id: "rel", issueId: "i2", relatedIssueId: "i1", type: "blocks" },
+    ]);
+    expect(store.relationsFor("i1")).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "rel",
+          inverse: true,
+          counterpartId: "i2",
+          counterpartTeamId: "team_eng",
+          identifier: "ENG-2",
+          title: "Blocker",
+          stateType: "started",
+        }),
+        expect.objectContaining({ id: "outgoing", inverse: false }),
+      ]),
+    );
+    expect(store.blockersFor(["i1"]).get("i1")).toEqual(["ENG-2"]);
+    // A relation removed in Linear disappears from the blocked side too.
+    store.replaceRelations("i1", []);
+    expect(store.relationsFor("i1")).toEqual([]);
+    expect(store.blockersFor(["i1"]).get("i1") ?? []).toEqual([]);
+
+    store.putActivityCursor({
+      issueId: "i1",
+      commentsCursor: "cc",
+      commentsMore: true,
+      historyCursor: "hc",
+      historyMore: false,
+      direction: "before",
+    });
+    expect(store.activityCursor("i1")).toEqual({
+      issueId: "i1",
+      commentsCursor: "cc",
+      commentsMore: true,
+      historyCursor: "hc",
+      historyMore: false,
+      direction: "before",
+    });
+  });
+
+  it("merges tick resources without dropping rows outside the small tick window", () => {
+    const store = createTestStore();
+    store.replaceAttachments("i1", [
+      {
+        id: "older",
+        issueId: "i1",
+        title: "Older",
+        subtitle: null,
+        url: "https://example.invalid/older",
+        sourceType: null,
+        groupBySource: false,
+        createdAt: NOW - 1,
+        updatedAt: NOW - 1,
+        creatorId: null,
+      },
+    ]);
+    store.mergeAttachments([
+      {
+        id: "newer",
+        issueId: "i1",
+        title: "Newer",
+        subtitle: null,
+        url: "https://example.invalid/newer",
+        sourceType: null,
+        groupBySource: false,
+        createdAt: NOW,
+        updatedAt: NOW,
+        creatorId: null,
+      },
+    ]);
+    store.mergeRelations([{ id: "r1", issueId: "i1", relatedIssueId: "i2", type: "related" }]);
+    store.mergeRelations([{ id: "r2", issueId: "i1", relatedIssueId: "i3", type: "related" }]);
+    expect(store.attachmentsFor("i1").map((row) => row.id).sort()).toEqual(["newer", "older"]);
+    expect(store.relationsFor("i1").map((row) => row.id).sort()).toEqual(["r1", "r2"]);
+  });
+
+  it("reconciles only the fetched comment window and can extend it to the old side", () => {
+    const store = createTestStore();
+    const comment = (id: string, createdAt: number) => ({
+      id,
+      issueId: "i1",
+      userId: null,
+      parentId: null,
+      body: id,
+      url: null,
+      createdAt,
+      updatedAt: createdAt,
+      editedAt: null,
+      resolvedAt: null,
+      resolvingUserId: null,
+    });
+    store.putComments([
+      comment("outside-old", NOW - 100),
+      comment("kept", NOW),
+      comment("deleted-inside", NOW + 50),
+      comment("outside-new", NOW + 200),
+    ]);
+    store.replaceReactions("i1", [
+      {
+        id: "deleted-comment-reaction",
+        issueId: "i1",
+        commentId: "deleted-inside",
+        emoji: "eyes",
+        userId: null,
+        createdAt: NOW + 50,
+      },
+      {
+        id: "outside-comment-reaction",
+        issueId: "i1",
+        commentId: "outside-old",
+        emoji: "heart",
+        userId: null,
+        createdAt: NOW - 100,
+      },
+    ]);
+
+    expect(store.reconcileCommentsWindow("i1", ["kept"], NOW, NOW + 100)).toBe(1);
+    expect(store.comments("i1").map((row) => row.id)).toEqual([
+      "outside-old",
+      "kept",
+      "outside-new",
+    ]);
+    expect(store.reactionsFor("i1").map((row) => row.id)).toEqual([
+      "outside-comment-reaction",
+    ]);
+
+    expect(store.reconcileCommentsWindow("i1", ["kept"], null, NOW)).toBe(1);
+    expect(store.comments("i1").map((row) => row.id)).toEqual(["kept", "outside-new"]);
+  });
+});
+
+describe("full-text search", () => {
+  it("finds an issue written through the store", () => {
+    // `issue_fts` is external-content: the index holds no copy of the text and
+    // SQLite does not maintain the link for you. Without the three triggers,
+    // every search returns zero rows — no error, no empty state, just nothing
+    // found, forever.
+    const store = createTestStore();
+    store.putIssues(
+      [issue({ id: "1", identifier: "ENG-1", title: "Fix the flaky login test" })],
+      NOW,
+    );
+    const found = store.queryIssues({
+      teamIds: ["team_eng"],
+      text: "flaky",
+      sort: "updated",
+      limit: 10,
+    });
+    expect(found.map((row) => row.id)).toEqual(["1"]);
+  });
+
+  it("keeps the index in step when a row is updated", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1", title: "Original title" })], NOW);
+    store.putIssues([issue({ id: "1", title: "Replaced heading" })], NOW + 1);
+
+    const stale = store.queryIssues({
+      teamIds: ["team_eng"],
+      text: "Original",
+      sort: "updated",
+      limit: 10,
+    });
+    const fresh = store.queryIssues({
+      teamIds: ["team_eng"],
+      text: "Replaced",
+      sort: "updated",
+      limit: 10,
+    });
+    expect(stale).toEqual([]);
+    expect(fresh).toHaveLength(1);
+  });
+
+  it("drops the row from the index when the row is deleted", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1", title: "Ephemeral" })], NOW);
+    store.deleteIssues(["1"]);
+    expect(
+      store.queryIssues({ teamIds: ["team_eng"], text: "Ephemeral", sort: "updated", limit: 10 }),
+    ).toEqual([]);
+  });
+
+  it("finds an issue by its identifier, because the tokeniser splits on punctuation", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1", identifier: "ENG-123", title: "Something" })], NOW);
+    expect(
+      store.queryIssues({ teamIds: ["team_eng"], text: "ENG-123", sort: "updated", limit: 10 }),
+    ).toHaveLength(1);
+  });
+});
+
+describe("toMatchQuery", () => {
+  it("neutralises FTS5 syntax rather than letting it throw mid-keystroke", () => {
+    // FTS5's query language is a real grammar: a stray quote, a bare `*`, an
+    // unbalanced paren or a bare `OR` throws rather than matching nothing —
+    // and the throw lands while somebody is still typing.
+    expect(toMatchQuery('login" OR 1=1')).toBe('"login"* "OR"* "1"* "1"*');
+    expect(toMatchQuery("*")).toBe('""');
+    expect(toMatchQuery("   ")).toBe('""');
+  });
+
+  it("survives every punctuation shape a search box receives", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1", title: "Retry backoff" })], NOW);
+    for (const text of ['"', "((", "NEAR", "a AND", "*", "^", "-", "ENG-1:"]) {
+      expect(() =>
+        store.queryIssues({ teamIds: ["team_eng"], text, sort: "updated", limit: 10 }),
+      ).not.toThrow();
+    }
+  });
+});
+
+describe("issue scoping", () => {
+  it("returns nothing for an empty team list", () => {
+    // An unbound project must get nothing, never everything. This is layer 2
+    // of the scoping defence and it is what makes the rule hold even if a
+    // caller forgets to check.
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1" })], NOW);
+    expect(store.queryIssues({ teamIds: [], sort: "updated", limit: 10 })).toEqual([]);
+    expect(store.countIssues({ teamIds: [] })).toBe(0);
+  });
+
+  it("never returns another team's issues", () => {
+    const store = createTestStore();
+    store.putIssues(
+      [issue({ id: "1", teamId: "team_eng" }), issue({ id: "2", teamId: "team_des" })],
+      NOW,
+    );
+    const rows = store.queryIssues({ teamIds: ["team_eng"], sort: "updated", limit: 10 });
+    expect(rows.map((row) => row.id)).toEqual(["1"]);
+  });
+
+  it("excludes completed and archived work by default", () => {
+    const store = createTestStore();
+    store.replaceWorkflowStates("team_eng", [
+      state("s_open", "team_eng", "started"),
+      state("s_done", "team_eng", "completed"),
+    ]);
+    store.putIssues(
+      [
+        issue({ id: "1", stateId: "s_open" }),
+        issue({ id: "2", stateId: "s_done" }),
+        issue({ id: "3", stateId: "s_open", archivedAt: NOW }),
+      ],
+      NOW,
+    );
+    expect(
+      store.queryIssues({ teamIds: ["team_eng"], sort: "updated", limit: 10 }).map((r) => r.id),
+    ).toEqual(["1"]);
+    expect(
+      store
+        .queryIssues({
+          teamIds: ["team_eng"],
+          includeCompleted: true,
+          includeArchived: true,
+          sort: "updated",
+          limit: 10,
+        })
+        .map((r) => r.id)
+        .sort(),
+    ).toEqual(["1", "2", "3"]);
+  });
+
+  it("filters on labels through the JSON array", () => {
+    const store = createTestStore();
+    store.putIssues(
+      [
+        issue({ id: "1", labelIds: ["l_bug", "l_ui"] }),
+        issue({ id: "2", labelIds: ["l_ui"] }),
+        issue({ id: "3", labelIds: [] }),
+      ],
+      NOW,
+    );
+    expect(
+      store
+        .queryIssues({ teamIds: ["team_eng"], labelIds: ["l_bug"], sort: "updated", limit: 10 })
+        .map((r) => r.id),
+    ).toEqual(["1"]);
+  });
+
+  it("round-trips a label array that is not valid JSON without crashing a render", () => {
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1" })], NOW);
+    store.db.prepare(`UPDATE issue SET label_ids = 'not json' WHERE id = '1'`).run();
+    expect(store.issue("1")?.labelIds).toEqual([]);
+  });
+});
+
+describe("sorting", () => {
+  it("puts None last when sorting by priority, which is what people mean", () => {
+    const store = createTestStore();
+    store.putIssues(
+      [
+        issue({ id: "none", priority: 0, updatedAt: NOW }),
+        issue({ id: "urgent", priority: 1, updatedAt: NOW }),
+        issue({ id: "low", priority: 4, updatedAt: NOW }),
+      ],
+      NOW,
+    );
+    expect(
+      store.queryIssues({ teamIds: ["team_eng"], sort: "priority", limit: 10 }).map((r) => r.id),
+    ).toEqual(["urgent", "low", "none"]);
+  });
+
+  it("puts issues with no due date last", () => {
+    const store = createTestStore();
+    store.putIssues(
+      [
+        issue({ id: "none", dueDate: null }),
+        issue({ id: "later", dueDate: "2026-12-01" }),
+        issue({ id: "soon", dueDate: "2026-08-13" }),
+      ],
+      NOW,
+    );
+    expect(
+      store.queryIssues({ teamIds: ["team_eng"], sort: "due", limit: 10 }).map((r) => r.id),
+    ).toEqual(["soon", "later", "none"]);
+  });
+});
+
+describe("identifiers", () => {
+  it("resolves an issue by an identifier it used to have", () => {
+    // An issue moved between teams changes identifier. A link written last
+    // month must still resolve rather than reporting that the issue does not
+    // exist.
+    const store = createTestStore();
+    store.putIssues([issue({ id: "1", identifier: "DES-45" })], NOW);
+    store.putPreviousIdentifiers("1", ["ENG-123"]);
+    expect(store.issueByIdentifier("ENG-123")?.id).toBe("1");
+    expect(store.issueByIdentifier("eng-123")?.id).toBe("1");
+    expect(store.issueByIdentifier("NOPE-1")).toBeNull();
+  });
+});
+
+describe("bindings", () => {
+  it("allows exactly one primary per project, enforced by the database", () => {
+    const store = createTestStore();
+    store.setBinding("proj_1", "team_eng", "primary", NOW);
+    store.setBinding("proj_1", "team_des", "primary", NOW);
+
+    const rows = store.bindingsForProject("proj_1");
+    expect(rows.filter((row) => row.role === "primary").map((row) => row.teamId)).toEqual([
+      "team_des",
+    ]);
+    // The incumbent is demoted rather than deleted: the project keeps its
+    // ability to write to that team, which is almost always what was meant.
+    expect(rows.find((row) => row.teamId === "team_eng")?.role).toBe("write");
+  });
+
+  it("keeps one project's binding out of another's", () => {
+    const store = createTestStore();
+    store.putTeams([team("team_eng", "ENG"), team("team_des", "DES")], NOW);
+    store.setBinding("proj_1", "team_eng", "primary", NOW);
+    store.setBinding("proj_2", "team_des", "primary", NOW);
+    expect(store.bindingsForProject("proj_1")).toHaveLength(1);
+    expect(store.boundTeamIds().sort()).toEqual(["team_des", "team_eng"]);
+  });
+
+  it("stops treating a binding as a sync instruction once its team is gone", () => {
+    // A binding whose team was removed with its workspace must not keep the
+    // sync loop polling that id over whichever key is left — it would send a
+    // departed workspace's team ids to the wrong API and get silently empty
+    // answers forever. The binding row itself survives (it is the user's
+    // intent, restored when the key comes back); it just stops driving sync.
+    const store = createTestStore();
+    store.putTeams([team("team_eng", "ENG")], NOW);
+    store.setBinding("proj_1", "team_eng", "primary", NOW);
+    expect(store.boundTeamIds()).toEqual(["team_eng"]);
+
+    store.putWorkspace(
+      { id: "ws", slot: "apiKey2", name: "Gone", urlKey: "gone", viewerId: "u", viewerName: "U", gitBranchFormat: null },
+      NOW,
+    );
+    store.putTeams([team("team_eng", "ENG", { workspaceId: "ws" })], NOW);
+    store.forgetWorkspace("ws");
+
+    expect(store.boundTeamIds()).toEqual([]);
+    expect(store.bindingsForProject("proj_1")).toHaveLength(1);
+  });
+
+  it("re-binding the same team changes its role in place", () => {
+    const store = createTestStore();
+    store.setBinding("proj_1", "team_des", "read", NOW);
+    store.setBinding("proj_1", "team_des", "write", NOW);
+    expect(store.bindingsForProject("proj_1")).toEqual([
+      {
+        projectId: "proj_1",
+        teamId: "team_des",
+        role: "write",
+        boundAt: NOW,
+        origin: "manual",
+      },
+    ]);
+  });
+
+  it("round-trips automatic binding provenance", () => {
+    const store = createTestStore();
+    store.setBinding("proj_1", "team_eng", "primary", NOW, "auto");
+    expect(store.bindingsForProject("proj_1")[0]?.origin).toBe("auto");
+  });
+});
+
+describe("teams", () => {
+  it("reads booleans back as booleans", () => {
+    const store = createTestStore();
+    store.putTeams([team("team_eng", "ENG", { triageEnabled: true, cyclesEnabled: false })], NOW);
+    const row = store.team("team_eng");
+    expect(row?.triageEnabled).toBe(true);
+    expect(row?.cyclesEnabled).toBe(false);
+  });
+
+  it("walks the parent graph without hanging on a cycle", () => {
+    const store = createTestStore();
+    store.putTeams(
+      [
+        team("a", "A"),
+        team("b", "B", { parentId: "a" }),
+        team("c", "C", { parentId: "b" }),
+        team("d", "D", { parentId: "d" }),
+      ],
+      NOW,
+    );
+    expect(store.descendantTeamIds(["a"]).sort()).toEqual(["a", "b", "c"]);
+    expect(store.descendantTeamIds(["d"])).toEqual(["d"]);
+  });
+});
+
+describe("sub-issue progress", () => {
+  it("counts children in one query", () => {
+    const store = createTestStore();
+    store.replaceWorkflowStates("team_eng", [
+      state("s_open", "team_eng", "started"),
+      state("s_done", "team_eng", "completed"),
+    ]);
+    store.putIssues(
+      [
+        issue({ id: "parent" }),
+        issue({ id: "c1", parentId: "parent", stateId: "s_done" }),
+        issue({ id: "c2", parentId: "parent", stateId: "s_done" }),
+        issue({ id: "c3", parentId: "parent", stateId: "s_open" }),
+      ],
+      NOW,
+    );
+    expect(store.subIssueProgress(["parent"]).get("parent")).toEqual({ done: 2, total: 3 });
+    expect(store.subIssueProgress([]).size).toBe(0);
+  });
+});
+
+describe("bounded hot-path reads", () => {
+  it("reads requested issues and members without hydrating whole workspaces", () => {
+    const store = createTestStore();
+    store.putWorkspace(
+      {
+        id: "ws",
+        slot: "apiKey",
+        name: "Workspace",
+        urlKey: "workspace",
+        viewerId: "u1",
+        viewerName: "Ada",
+        gitBranchFormat: null,
+      },
+      NOW,
+    );
+    store.putTeams([team("team_eng", "ENG", { workspaceId: "ws" })], NOW);
+    store.putMembers([
+      { ...member("u1", "Ada", true), workspaceId: "ws" },
+      { ...member("u2", "Grace"), workspaceId: "ws" },
+      { ...member("u3", "Linus"), workspaceId: "ws" },
+    ]);
+    store.replaceTeamMembers("team_eng", ["u1", "u2"]);
+    store.putIssues(
+      [
+        issue({ id: "parent", teamId: "team_eng" }),
+        issue({ id: "c2", teamId: "team_eng", parentId: "parent", subIssueSortOrder: 2 }),
+        issue({ id: "c1", teamId: "team_eng", parentId: "parent", subIssueSortOrder: 1 }),
+        issue({ id: "other", teamId: "team_eng" }),
+      ],
+      NOW,
+    );
+    store.linkThread({
+      threadId: "thread-1",
+      issueId: "c1",
+      teamId: "team_eng",
+      projectId: "project-1",
+      createdAt: NOW,
+      origin: "manual",
+    });
+    store.linkThread({
+      threadId: "thread-2",
+      issueId: "other",
+      teamId: "team_eng",
+      projectId: "project-1",
+      createdAt: NOW,
+      origin: "manual",
+    });
+
+    expect(store.issuesByIds(["c2", "other"]).map((row) => row.id).sort()).toEqual([
+      "c2",
+      "other",
+    ]);
+    expect(store.membersByIds(["u2"]).map((row) => row.id)).toEqual(["u2"]);
+    expect(store.assignableMembers(["team_eng"]).map((row) => row.id)).toEqual(["u1", "u2"]);
+    expect(store.childIssues("parent", 10).map((row) => row.id)).toEqual(["c1", "c2"]);
+    expect(store.threadLinksByThreadIds(["thread-2"]).map((row) => row.threadId)).toEqual([
+      "thread-2",
+    ]);
+  });
+
+  it("prunes dismissed inbox history in bounded batches", () => {
+    const store = createTestStore();
+    const row = (key: string, dismissedAt: number | null) => ({
+      key,
+      workspaceId: "ws",
+      kind: "other",
+      issueId: null,
+      teamId: null,
+      actorId: null,
+      title: key,
+      body: null,
+      url: null,
+      createdAt: NOW,
+      seenAt: null,
+      dismissedAt,
+      linearReadAt: null,
+    });
+    store.putInbox([
+      row("old-1", NOW - 20),
+      row("old-2", NOW - 10),
+      row("recent", NOW),
+      row("open", null),
+    ]);
+
+    expect(store.pruneInbox(NOW - 5, 1)).toBe(1);
+    expect(store.inbox({ includeDismissed: true, limit: 10 }).map((entry) => entry.key).sort()).toEqual([
+      "old-2",
+      "open",
+      "recent",
+    ]);
+    expect(store.pruneInbox(NOW - 5, 10)).toBe(1);
+    expect(store.inbox({ includeDismissed: true, limit: 10 }).map((entry) => entry.key).sort()).toEqual([
+      "open",
+      "recent",
+    ]);
+  });
+});
+
+describe("forgetEverything", () => {
+  it("leaves an empty schema and no data", () => {
+    // Disconnect means it. `bb plugin remove` does not do this — the host
+    // deletes settings rows and the secrets directory and leaves data.db in
+    // place — so this is the only thing that removes a workspace's issue data
+    // from the machine.
+    const store = createTestStore();
+    store.putTeams([team("team_eng", "ENG")], NOW);
+    store.putMembers([member("u1", "Ada", true)]);
+    store.putIssues([issue({ id: "1", title: "Findable" })], NOW);
+    store.setBinding("proj_1", "team_eng", "primary", NOW);
+
+    store.forgetEverything();
+
+    expect(store.teams()).toEqual([]);
+    expect(store.members()).toEqual([]);
+    expect(store.bindings()).toEqual([]);
+    expect(
+      store.queryIssues({ teamIds: ["team_eng"], text: "Findable", sort: "updated", limit: 10 }),
+    ).toEqual([]);
+    // And the schema still stands, so the plugin keeps working afterwards.
+    expect(() => store.putIssues([issue({ id: "2" })], NOW)).not.toThrow();
+  });
+});

@@ -1,0 +1,779 @@
+// A terminal in a box, in a thread panel tab of its own: xterm over the
+// plugin's WebSocket, /terminal, to a shell whose PTY is on BB's server
+// (src/plugin/terminal.ts). The plugin keeps the shell while the tab is
+// away, so this tab keeps a session ID for the browser tab, as the desktop
+// keeps its viewer ID: switching panel tabs attaches to the same shell. When
+// the shell ends, the tab says why and offers a new one; it never starts one
+// on its own.
+
+import { FitAddon } from "@xterm/addon-fit";
+import { WebglAddon } from "@xterm/addon-webgl";
+import { Terminal } from "@xterm/xterm";
+import {
+  experimental_Icon as Icon,
+  experimental_usePluginId,
+  useBbNavigate,
+  useRpc,
+} from "@get-bb/plugin-sdk/app";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
+import { cn } from "@/lib/utils";
+import type { Contract, DesktopState, PanelState } from "../plugin/contract.ts";
+import { terminalPath } from "../plugin/terminal-route.ts";
+import type { BoxView } from "../plugin/views.ts";
+import {
+  rememberedLive,
+  BOXES_ACTION,
+  EmptyPanel,
+  forThread,
+  IconButton,
+  message,
+  Notice,
+  ReleasedNotice,
+  StatusDot,
+  useLive,
+  useNow,
+  type Tone,
+  BackControl,
+  type BackTo,
+} from "./common.tsx";
+import {
+  claimKept,
+  dropKept,
+  keptFree,
+  releaseKept,
+  type Kept,
+} from "./kept.ts";
+import { BoxLine } from "./desktop.tsx";
+import { BoxName, type PageLink } from "./box-nav.tsx";
+import { silentWhy } from "./box-words.ts";
+import { XTERM_CSS } from "./xterm-css.ts";
+import { TerminalGlyph } from "./glyphs.tsx";
+
+export const TERMINAL_ACTION = "terminal";
+
+/** A resize goes to the shell once the size has settled for this long. */
+const RESIZE_MS = 100;
+
+/** The params of a box's terminal tab. */
+export function terminalParams(boxId: string): { box: string } {
+  return { box: boxId };
+}
+
+export function terminalTitle(box: Pick<BoxView, "name">, compactViewport = false): string {
+  return compactViewport ? box.name : `Terminal: ${box.name}`;
+}
+
+/** Opens a box's terminal tab in the thread's panel. */
+export function useOpenTerminal(): (box: BoxView) => void {
+  const navigate = useBbNavigate();
+  const compactViewport = useIsCompactViewport();
+  return (box) => {
+    navigate.openThreadPanel({
+      actionId: TERMINAL_ACTION,
+      title: terminalTitle(box, compactViewport),
+      params: terminalParams(box.id),
+    });
+  };
+}
+
+/** A box has a terminal while it runs, when its transport opens a shell. */
+export function canOpenTerminal(box: BoxView): boolean {
+  return box.state === "ready" && box.terminal;
+}
+
+function parseParams(params: unknown): string | null {
+  const box = (params as { box?: unknown } | null)?.box;
+  return typeof box === "string" && box.length > 0 ? box : null;
+}
+
+function socketUrl(
+  path: string,
+  boxId: string,
+  session: string,
+  size: { cols: number; rows: number },
+): string {
+  const url = new URL(path, window.location.href);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.search = new URLSearchParams({
+    box: boxId,
+    session,
+    cols: String(size.cols),
+    rows: String(size.rows),
+  }).toString();
+  return url.toString();
+}
+
+const encoder = new TextEncoder();
+
+/** xterm's stylesheet, in the page once. */
+function ensureStyles(): void {
+  const id = "bb-box-xterm-css";
+  if (document.getElementById(id)) return;
+  const style = document.createElement("style");
+  style.id = id;
+  style.textContent = XTERM_CSS;
+  document.head.appendChild(style);
+}
+
+/** A BB theme token as a colour xterm takes: the browser resolves the token, a canvas reads it back. */
+function tokenColor(token: string, fallback: string): string {
+  try {
+    const probe = document.createElement("span");
+    probe.style.color = `var(${token})`;
+    document.body.appendChild(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext("2d");
+    if (!context || !resolved) return fallback;
+    context.fillStyle = resolved;
+    context.fillRect(0, 0, 1, 1);
+    const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+    return `#${[r, g, b].map((part) => part!.toString(16).padStart(2, "0")).join("")}`;
+  } catch {
+    return fallback;
+  }
+}
+
+export const LEAVE_TERMINAL_KEYS = "Ctrl+Shift+Up";
+
+export const TERMINAL_KEYS_WORDS = `Tab goes to the shell. ${LEAVE_TERMINAL_KEYS} moves focus to the bar above.`;
+
+export function leavesTheTerminal(event: Pick<KeyboardEvent, "key" | "ctrlKey" | "shiftKey" | "altKey" | "metaKey">): boolean {
+  return event.key === "ArrowUp" && event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey;
+}
+
+const mounted = new Set<string>();
+
+function randomId(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(12)), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+function storedSession(boxId: string): string | null {
+  try {
+    return window.sessionStorage.getItem(`bb-box:terminal:${boxId}`);
+  } catch {
+    return null;
+  }
+}
+
+function storeSession(boxId: string, id: string): void {
+  try {
+    window.sessionStorage.setItem(`bb-box:terminal:${boxId}`, id);
+  } catch {
+    // Storage may be off. Then a remount gets a new shell.
+  }
+}
+
+/**
+ * This tab's session ID for a box. It lasts for the browser tab, so a panel
+ * tab that remounts attaches to the same shell. Two tabs on one box mounted
+ * at once never share one.
+ */
+function useSessionId(boxId: string): [string, () => void] {
+  const [session, setSession] = useState(() => {
+    const stored = storedSession(boxId);
+    const id = stored && !mounted.has(stored) ? stored : randomId();
+    storeSession(boxId, id);
+    return id;
+  });
+  useEffect(() => {
+    mounted.add(session);
+    return () => {
+      mounted.delete(session);
+    };
+  }, [session]);
+  const renew = () => {
+    const id = randomId();
+    storeSession(boxId, id);
+    setSession(id);
+  };
+  return [session, renew];
+}
+
+type Connection =
+  | { readonly state: "connecting" }
+  | { readonly state: "connected" }
+  | { readonly state: "ended"; readonly reason: string };
+
+const TERMINAL_CLOSED = "The connection to the terminal closed.";
+const SHELL_CLOSED: Connection = { state: "ended", reason: TERMINAL_CLOSED };
+
+/**
+ * One shell's terminal: xterm and the socket to the plugin, in an element of
+ * its own that a tab puts inside its screen area. It is kept across tab
+ * switches (037): the element leaves the page and comes back with the shell
+ * still in it, so switching back is instant.
+ */
+export class TerminalClient implements Kept {
+  readonly element = document.createElement("div");
+  hidden = false;
+  onEnded?: () => void;
+  onLeave?: () => void;
+  connection: Connection = { state: "connecting" };
+  readonly #view: Terminal;
+  readonly #fit = new FitAddon();
+  readonly #url: (size: { cols: number; rows: number }) => string;
+  readonly #listeners = new Set<() => void>();
+  readonly #observer: ResizeObserver | null;
+  #socket: WebSocket | null = null;
+  #started = false;
+  #disposed = false;
+  #webgl = false;
+  #resizeTimer: ReturnType<typeof setTimeout> | undefined;
+  readonly #whenShown = () => {
+    if (document.visibilityState === "visible") this.fit();
+  };
+
+  constructor(url: (size: { cols: number; rows: number }) => string) {
+    this.#url = url;
+    this.element.className = "h-full w-full";
+    ensureStyles();
+    this.#view = new Terminal({
+      cursorBlink: true,
+      fontFamily:
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--font-mono")
+          .trim() || "monospace",
+      fontSize: 13,
+      scrollback: 5000,
+      allowProposedApi: true,
+      theme: {
+        background: tokenColor("--canvas", "#1a1a1a"),
+        foreground: tokenColor("--foreground", "#d0d0d0"),
+        cursor: tokenColor("--foreground", "#d0d0d0"),
+        selectionBackground: tokenColor("--surface-selected", "#44546a"),
+      },
+    });
+    this.#view.loadAddon(this.#fit);
+    this.#view.open(this.element);
+    this.#describeItsKeys();
+    this.#view.attachCustomKeyEventHandler((event) => {
+      if (!leavesTheTerminal(event)) return true;
+      if (event.type === "keydown") {
+        event.preventDefault();
+        this.onLeave?.();
+      }
+      return false;
+    });
+    this.#view.onData((data) => {
+      if (this.#socket?.readyState === WebSocket.OPEN)
+        this.#socket.send(encoder.encode(data));
+    });
+    let last = { cols: this.#view.cols, rows: this.#view.rows };
+    this.#view.onResize(({ cols, rows }) => {
+      if (cols === last.cols && rows === last.rows) return;
+      last = { cols, rows };
+      clearTimeout(this.#resizeTimer);
+      this.#resizeTimer = setTimeout(() => {
+        if (this.#socket?.readyState === WebSocket.OPEN)
+          this.#socket.send(JSON.stringify({ type: "resize", cols, rows }));
+      }, RESIZE_MS);
+    });
+    this.#observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver((entries) => {
+            const size = entries[0]?.contentRect;
+            if (size && (size.width < 2 || size.height < 2)) return;
+            this.fit();
+          });
+    this.#observer?.observe(this.element);
+    document.addEventListener("visibilitychange", this.#whenShown);
+  }
+
+  /**
+   * Draws with WebGL, which measures each glyph once on a canvas. The DOM renderer measures each new character in the page,
+   * and BB's page can make each measurement slow: a first prompt waited 2 s for it. Where WebGL is missing or its context is
+   * lost, xterm draws with the DOM renderer again. Loaded once the element is in the page: loaded before, it sizes its canvas
+   * for a pixel ratio of 1 and draws a Retina screen's glyphs twice as large.
+   */
+  #drawWithWebgl(): void {
+    try {
+      const webgl = new WebglAddon();
+      webgl.onContextLoss(() => webgl.dispose());
+      this.#view.loadAddon(webgl);
+    } catch {
+      // No WebGL 2 here: the DOM renderer stays.
+    }
+  }
+
+  #describeItsKeys(): void {
+    const words = document.createElement("span");
+    words.id = `bb-box-terminal-keys-${randomId()}`;
+    words.className = "sr-only";
+    words.textContent = TERMINAL_KEYS_WORDS;
+    this.element.appendChild(words);
+    this.#view.textarea?.setAttribute("aria-describedby", words.id);
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.#listeners.add(listener);
+    return () => this.#listeners.delete(listener);
+  }
+
+  #set(connection: Connection): void {
+    this.connection = connection;
+    for (const listener of this.#listeners) listener();
+  }
+
+  fit(): boolean {
+    if (this.#disposed || this.element.clientWidth < 2 || this.element.clientHeight < 2) return false;
+    try {
+      this.#fit.fit();
+    } catch {
+      return false;
+    }
+    if (!this.#webgl) {
+      this.#webgl = true;
+      this.#drawWithWebgl();
+    }
+    return true;
+  }
+
+  focus(): void {
+    this.#view.focus();
+  }
+
+  /** Opens the socket, once the element is in the page so the size is right. A shell is started once; a new one takes a new client. */
+  start(): void {
+    if (this.#started || this.#disposed) return;
+    this.#started = true;
+    this.fit();
+    const socket = new WebSocket(
+      this.#url({ cols: this.#view.cols || 80, rows: this.#view.rows || 24 }),
+    );
+    socket.binaryType = "arraybuffer";
+    socket.onopen = () => this.#set({ state: "connected" });
+    socket.onmessage = (event: MessageEvent) => {
+      if (typeof event.data === "string") return;
+      this.#view.write(new Uint8Array(event.data as ArrayBuffer));
+    };
+    socket.onclose = (event: CloseEvent) => {
+      this.#socket = null;
+      this.#set({
+        state: "ended",
+        reason: event.reason || TERMINAL_CLOSED,
+      });
+      if (this.hidden) this.onEnded?.();
+    };
+    socket.onerror = () => {
+      // The close that follows says what happened.
+    };
+    this.#socket = socket;
+    this.#set({ state: "connecting" });
+  }
+
+  dispose(): void {
+    this.#disposed = true;
+    clearTimeout(this.#resizeTimer);
+    document.removeEventListener("visibilitychange", this.#whenShown);
+    this.#observer?.disconnect();
+    if (this.#socket) {
+      this.#socket.onclose = null;
+      this.#socket.close();
+      this.#socket = null;
+    }
+    this.#view.dispose();
+    if (this.connection.state !== "ended") this.#set(SHELL_CLOSED);
+    this.#listeners.clear();
+    this.element.remove();
+  }
+}
+
+/** The thread panel tab for one box's terminal. Opened bare from its launcher row, it opens the thread's box, picks among several, or offers the Box panel. */
+export function TerminalPanel({
+  threadId,
+  params,
+}: {
+  threadId: string;
+  params: unknown;
+}) {
+  const boxId = parseParams(params);
+  if (boxId)
+    return <BoxTerminal key={boxId} threadId={threadId} boxId={boxId} />;
+  return <TerminalChooser threadId={threadId} />;
+}
+
+/**
+ * The bare Terminal launcher tab, made a real shortcut (Task A): one box with a
+ * terminal opens straight away, several offer a chooser, and none sends you to the
+ * Box panel. As with the desktop, the SDK 0.5.29 has no way to hide the launcher
+ * row (docs/bb-requests.md #14), so the shortcut lives here, not in the action's run().
+ */
+function TerminalChooser({ threadId }: { threadId: string }) {
+  const rpc = useRpc<Contract>();
+  const navigate = useBbNavigate();
+  const open = useOpenTerminal();
+  const { value: state, error } = useLive<PanelState>(
+    threadId,
+    () => rpc.call("state", { threadId }),
+    forThread(threadId),
+  );
+  // The box this thread runs on counts too (the operator, 4 October 2026): listed first, and alone it opens straight away.
+  const runsOn = state?.runsOn?.box.terminal ? state.runsOn.box : null;
+  const boxes = [
+    ...(runsOn ? [runsOn] : []),
+    ...(state?.boxes.filter((box) => box.terminal) ?? []),
+  ];
+  useNow(
+    boxes.some((box) => box.state === "acquiring" || box.state === "starting"),
+    1000,
+  );
+  if (boxes.length === 1)
+    return (
+      <BoxTerminal
+        key={boxes[0]!.id}
+        threadId={threadId}
+        boxId={boxes[0]!.id}
+      />
+    );
+  return (
+    <div className="p-4">
+      {error ? <EmptyPanel role="alert">{error}</EmptyPanel> : null}
+      {state && !boxes.length ? (
+        <EmptyPanel title="No box with a terminal">
+          <p className="mt-1">This thread has no box with a terminal.</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3 h-7"
+            onClick={() =>
+              navigate.openThreadPanel({ actionId: BOXES_ACTION, title: "Box" })
+            }
+          >
+            Open the Box panel
+          </Button>
+        </EmptyPanel>
+      ) : null}
+      {boxes.length ? (
+        <div className="rounded-lg border border-border bg-card px-4 py-1">
+          <div className="divide-y divide-border">
+            {boxes.map((box) => (
+              <BoxLine
+                key={box.id}
+                box={box}
+                machine={box.id === runsOn?.id}
+                actions={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7"
+                    onClick={() => open(box)}
+                  >
+                    Open
+                  </Button>
+                }
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function focusTheBar(bar: HTMLElement | null): void {
+  const target =
+    bar?.querySelector<HTMLElement>("[data-view-switch]") ??
+    bar?.querySelector<HTMLElement>("a[href], button:not([disabled]):not([data-leave-terminal])") ??
+    bar?.querySelector<HTMLElement>("[data-leave-terminal]");
+  if (target) target.focus();
+  else if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+}
+
+/** One box's terminal; `onBack` adds a back arrow, for the Boxes page. */
+export function BoxTerminal({
+  threadId,
+  boxId,
+  onBack,
+  page,
+  otherViews,
+  numbers,
+}: {
+  threadId: string;
+  boxId: string;
+  onBack?: BackTo;
+  page?: PageLink;
+  otherViews?: (shown: "terminal") => ReactNode;
+  numbers?: ReactNode;
+}) {
+  const rpc = useRpc<Contract>();
+  const pluginId = experimental_usePluginId();
+  const {
+    value: state,
+    error,
+    refresh,
+  } = useLive<DesktopState>(
+    `${threadId}/${boxId}/terminal`,
+    () => rpc.call("desktop", { threadId, box: boxId }),
+    forThread(threadId),
+  );
+  const box = state?.box ?? null;
+  /** The box's name as last seen, so a tab whose box was released still names it, as the desktop's does. */
+  const lastName = useRef<string | null>(null);
+  if (box) lastName.current = box.name;
+  const path = state?.terminalPath ?? terminalPath(pluginId);
+  const openable = box !== null && canOpenTerminal(box);
+  const can = openable && silentWhy(box) === null;
+  const listed = rememberedLive<PanelState>(threadId)?.boxes.find(
+    (each) => each.id === boxId,
+  );
+  const readyAsListed =
+    state === null && !error && listed !== undefined && canOpenTerminal(listed) && silentWhy(listed) === null;
+  const [session, renewSession] = useSessionId(boxId);
+  const key = `terminal:${boxId}:${session}`;
+
+  const holder = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  // A kept terminal shows at once, before the box's state has loaded; the state can only confirm or end it.
+  const [connection, setConnection] = useState<Connection>(
+    () => keptFree<TerminalClient>(key)?.connection ?? { state: "connecting" },
+  );
+  const [acting, setActing] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const ready = can || readyAsListed;
+  const quiet = box ? silentWhy(box) : listed ? silentWhy(listed) : null;
+  const kept = keptFree<TerminalClient>(key);
+  const connected = connection.state === "connected" || kept?.connection.state === "connected";
+  const pathNow = useRef(path);
+  pathNow.current = path;
+  const wanted = (openable && connected) || (quiet === null && (ready || kept !== undefined));
+
+  // The shell's terminal is claimed on mount and given back on unmount; the registry keeps it meanwhile (037).
+  // A layout effect, so a kept terminal is in the page before it paints.
+  useLayoutEffect(() => {
+    const screen = holder.current;
+    if (!wanted || !screen) return;
+    const latestPath = pathNow.current;
+    if (keptFree(key) === undefined && !latestPath) return;
+    const claimed = claimKept(
+      key,
+      () =>
+        new TerminalClient((size) =>
+          socketUrl(latestPath!, boxId, session, size),
+        ),
+    );
+    const client = claimed.session;
+    client.onLeave = () => focusTheBar(bar.current);
+    screen.appendChild(client.element);
+    const unsubscribe = client.subscribe(() =>
+      setConnection(client.connection),
+    );
+    setProblem(null);
+    setConnection(client.connection);
+    client.start();
+    client.fit();
+    const frame = requestAnimationFrame(() => client.fit());
+    client.focus();
+    return () => {
+      cancelAnimationFrame(frame);
+      unsubscribe();
+      client.onLeave = undefined;
+      client.element.remove();
+      if (claimed.kept) releaseKept(key);
+      else client.dispose();
+    };
+  }, [wanted, boxId, session, key]);
+
+  // A box that stops or goes takes its shell with it.
+  useEffect(() => {
+    if (!state || openable) return;
+    dropKept(key);
+    setConnection(SHELL_CLOSED);
+  }, [state, openable, key]);
+
+  const renew = () => {
+    dropKept(key);
+    renewSession();
+  };
+
+  const start = async () => {
+    setActing(true);
+    try {
+      setProblem((await rpc.call("start", { threadId, box: boxId })).error);
+    } catch (caught) {
+      setProblem(message(caught));
+    } finally {
+      setActing(false);
+    }
+    await refresh();
+  };
+
+  const check = async () => {
+    setActing(true);
+    try {
+      setProblem((await rpc.call("refresh", { threadId, box: boxId })).error);
+    } catch (caught) {
+      setProblem(message(caught));
+    } finally {
+      setActing(false);
+    }
+    await refresh();
+  };
+
+  let tone: Tone = "busy";
+  let words = "Loading…";
+  if (!state && !error && connection.state === "connected") {
+    tone = "ok";
+    words = "Connected";
+  } else if (error) {
+    tone = "bad";
+    words = "Could not load";
+  } else if (state && !box) {
+    // Released: as the desktop's tab says it, not "Connecting…".
+    tone = "off";
+    words = "Released";
+  } else if (box && box.state !== "ready") {
+    tone =
+      box.state === "stopped"
+        ? "off"
+        : box.state === "failed" || box.state === "gone"
+          ? "bad"
+          : "busy";
+    words =
+      box.state === "stopped"
+        ? "Stopped"
+        : box.state === "acquiring" || box.state === "starting"
+          ? "Starting"
+          : box.state;
+  } else if (box && !box.terminal) {
+    tone = "off";
+    words = "No terminal";
+  } else if (box && silentWhy(box)) {
+    tone = "warn";
+    words = box.reach?.is === "not-answering" ? "Not answering" : "Not checked";
+  } else if (connection.state === "connected") {
+    tone = "ok";
+    words = "Connected";
+  } else if (connection.state === "ended") {
+    tone = "off";
+    words = "Ended";
+  } else {
+    words = "Connecting…";
+  }
+  // Before the box's state has loaded, a kept terminal still shows.
+  const showing = connection.state !== "ended" && (state === null || openable);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div ref={bar} className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-surface-recessed px-3 py-2 text-xs">
+        {onBack ? <BackControl back={onBack} /> : null}
+        <TerminalGlyph className="text-muted-foreground" />
+        <BoxName name={box?.name ?? lastName.current ?? "Terminal"} page={page} />
+        <span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground">
+          <StatusDot tone={tone} />
+          <span className="min-w-0">{words}</span>
+        </span>
+        {otherViews?.("terminal")}
+        <span className="ml-auto flex items-center gap-1.5">
+          {numbers}
+          <button type="button" data-leave-terminal tabIndex={-1} className="sr-only">
+            Leave the terminal
+          </button>
+          {can && connection.state === "ended" ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7"
+              onClick={renew}
+            >
+              Start a new shell
+            </Button>
+          ) : null}
+        </span>
+      </div>
+      {problem ? (
+        <p
+          role="alert"
+          className="border-b border-border px-3 py-1.5 text-xs text-destructive-text"
+        >
+          {problem}
+        </p>
+      ) : null}
+      <div className="relative min-h-0 flex-1 bg-background">
+        <div
+          ref={holder}
+          className={cn("absolute inset-0 p-2", !showing && "invisible", quiet !== null && "opacity-30")}
+          inert={quiet !== null}
+          data-testid="terminal-screen"
+        />
+        {error ? (
+          <Notice>{error}</Notice>
+        ) : !state ? null : !box ? (
+          <ReleasedNotice name={lastName.current} back={onBack} />
+        ) : box.state === "stopped" ? (
+          <Notice
+            action={
+              box.canStopStart ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  disabled={acting}
+                  onClick={() => void start()}
+                >
+                  <Icon name="Play" aria-hidden />
+                  Start
+                </Button>
+              ) : undefined
+            }
+          >
+            {box.name} is stopped.
+          </Notice>
+        ) : box.state !== "ready" ? (
+          <Notice>
+            {box.name} is{" "}
+            {box.state === "acquiring" || box.state === "starting"
+              ? "starting…"
+              : box.state === "failed"
+                ? "failed."
+                : box.state === "gone"
+                  ? "gone."
+                  : "being released."}
+          </Notice>
+        ) : !box.terminal ? (
+          <Notice detail="Its backend reaches it without a shell.">
+            {box.name} has no terminal.
+          </Notice>
+        ) : silentWhy(box) ? (
+          <Notice
+            action={
+              <Button type="button" variant="outline" size="sm" className="h-7" disabled={acting} onClick={() => void check()}>
+                Check now
+              </Button>
+            }
+          >
+            {silentWhy(box)}
+          </Notice>
+        ) : connection.state === "ended" ? (
+          <Notice
+            detail={connection.reason}
+            action={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7"
+                onClick={renew}
+              >
+                Start a new shell
+              </Button>
+            }
+          >
+            The terminal has ended.
+          </Notice>
+        ) : null}
+      </div>
+    </div>
+  );
+}

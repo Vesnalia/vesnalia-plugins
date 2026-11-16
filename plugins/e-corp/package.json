@@ -1,0 +1,53 @@
+{
+  "name": "bb-plugin-e-corp",
+  "version": "0.1.1",
+  "type": "module",
+  "description": "A cold corporate workstation theme for bb.",
+  "license": "MIT",
+  "keywords": ["bb-plugin", "bb-theme", "theme", "dark-theme", "light-theme"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xcke/bb-plugin-e-corp.git"
+  },
+  "scripts": {
+    "build:theme": "./source/build.sh",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run build:theme && bb plugin build",
+    "check": "npm run build:theme && bb plugin types --check && npm run typecheck && bb plugin build"
+  },
+  "engines": {
+    "bb": ">=0.42",
+    "bbPluginSdk": ">=0.4.47"
+  },
+  "bb": {
+    "name": "E Corp",
+    "description": "Adds a cold corporate workstation palette with matching code, diff, file-tree, and terminal colors.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "skills": [],
+    "themes": [
+      {
+        "id": "e-corp",
+        "name": "E Corp",
+        "description": "Petroleum blue surfaces, restrained cyan illumination, steel dividers, and matching syntax colors.",
+        "css": "./themes/e-corp.css",
+        "codeTheme": {
+          "dark": "./themes/pierre-dark.json",
+          "light": "./themes/pierre-light.json"
+        }
+      }
+    ]
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.47",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0",
+    "zod": "^4.3.6"
+  }
+}

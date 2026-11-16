@@ -1,0 +1,117 @@
+---
+title: Agent rules
+type: component
+created: 2026-09-27
+updated: 2026-10-19
+status: active
+confidence: medium
+tags: [agents-md, rules, templates]
+sources:
+  - agents-template.ts
+  - agents-apply.tsx
+  - server.ts
+  - app.tsx
+  - README.md
+---
+# Agent rules
+
+TL;DR: Projects & Sections manages project and section rule templates in `AGENTS.md`, synchronizes custom-rule blocks into an existing `CLAUDE.md`, and passes session-targeted custom rules to BB-started chats (`agents-template.ts:1-18`, `server.ts:1731-1746`, `server.ts:3607-3631`).
+
+## Purpose
+
+The rules editor supports shared and per-place templates, an own-file mode, custom rule text and a one-shot instruction for the first message of a new chat (`server.ts:450-467`, `server.ts:548-575`).
+
+## How it works
+
+1. `rules_read` returns the current `AGENTS.md` and `CLAUDE.md` text, inferred or stored mode, project/section templates, custom text, destination, startup instruction and suggested templates (`server.ts:2972-3020`). The shared `RuleFields` UI uses tabs to select `inherit`, `custom` or `manual`; the manual tab shows the supplied file editor, the custom tab shows the editable templates, and the custom-rule destination picker is disabled in manual mode (`agents-apply.tsx:238-253`, `agents-apply.tsx:288-335`, `agents-apply.tsx:325-385`).
+2. The plugin-wide `AgentsRulesEditor` separately loads `agents_config`; it edits automatic file creation, project and section templates, shared custom rules, the custom-rule target and startup text, then saves through `agents_config_save`. Read and save failures are shown in the editor (`agents-apply.tsx:55-106`, `agents-apply.tsx:108-145`, `server.ts:3218-3247`).
+3. Saving file content resolves the selected project/section and host, then calls `files.write` with the editor's expected SHA. If the write reports `outcome: "conflict"`, the handler throws a reopen-before-saving error; otherwise it returns `{ok:true}` (`server.ts:3029-3049`).
+4. Saving settings writes a project or folder rule row; session-only custom rules are excluded from file writes, and manual mode returns before writing template blocks (`server.ts:3044-3086`).
+5. `applyAgentsBlock` replaces only the managed block or appends it; `applyCustomBlock` similarly upserts/removes the custom block (`agents-template.ts:16-41`, `agents-template.ts:52-66`).
+6. New project roots, added project copies and new sections attempt to seed applicable template blocks; failures are logged without undoing creation (`server.ts:1727-1743`, `server.ts:1757-1773`, `server.ts:2629-2638`, `server.ts:2679-2688`). `agents_apply` visits project roots and non-group sections, skips manual-mode records, counts unchanged blocks, writes changed blocks and reports per-folder failures (`server.ts:3297-3346`).
+7. For a BB-created chat, session-targeted custom text is resolved from the nearest section, then project, then plugin settings and returned as BB agent instructions. Startup text resolves from the nearest section/project/global setting and is appended as an agent-only input to that chat’s first request (`server.ts:1113-1158`, `server.ts:3426-3444`, `server.ts:3607-3631`).
+
+### Apply to existing places
+
+`AgentsApply` renders the “Apply to existing sections” action. It sends `agents_apply` with a null input, disables the button while the request runs, clears prior feedback when a new run starts, and shows the returned updated/unchanged/failed counts plus the first per-folder error when present (`agents-apply.tsx:16-44`). A rejected RPC is shown as an alert, and the button is re-enabled in `finally` (`agents-apply.tsx:21-30`, `agents-apply.tsx:45-50`).
+
+The handler considers project roots and non-group sections, skips records in manual mode, computes the effective project/section template and custom rules, and then applies managed blocks. It counts unchanged files separately, counts per-folder exceptions as failures, and returns the counts with the first error (`server.ts:3297-3346`).
+
+| Apply state | Result |
+|---|---|
+| Request pending | Button disabled; old result and error cleared (`agents-apply.tsx:21-24`, `agents-apply.tsx:35-38`). |
+| RPC resolves | Counts and optional first per-folder error are rendered (`agents-apply.tsx:25-26`, `agents-apply.tsx:39-44`). |
+| RPC rejects | Error is rendered as an alert; `finally` clears the busy state (`agents-apply.tsx:27-30`, `agents-apply.tsx:46-50`). |
+| Folder-level apply fails | Handler increments `failed`, records the first error string and continues the loop (`server.ts:3303-3321`). |
+
+### `AgentsRulesEditor`
+
+1. The plugin-wide editor starts with no configuration and requests `agents_config` on mount. A live flag prevents a response from updating an unmounted component; a failed read stores an error and, while no configuration exists, renders that error (`agents-apply.tsx:55-88`).
+2. Once loaded, field edits patch the configuration, set `dirty` and clear the saved marker. The auto-create checkbox controls whether project and section template editors are enabled (`agents-apply.tsx:103-107`, `agents-apply.tsx:108-140`).
+3. Save disables the main controls, clears the previous error, submits the whole configuration to `agents_config_save`, replaces the draft with the returned canonical configuration and clears dirty state. Rejection leaves the draft, shows the error and always clears busy (`agents-apply.tsx:89-101`).
+
+| Editor condition | Result |
+|---|---|
+| Read pending | Render no settings form until configuration arrives (`agents-apply.tsx:83-88`). |
+| Read rejected | Render the error alert (`agents-apply.tsx:75-88`). |
+| `autoCreate` false | Template fields are disabled; other configuration fields remain editable (`agents-apply.tsx:110-140`). |
+| Saving | Save path returns the server response as the new configuration; rejection keeps the edited configuration and reports the error (`agents-apply.tsx:89-107`). |
+
+### `RuleFields`
+
+1. The component receives a `RuleDraft`, patch callback, project-template visibility flag, tab ID prefix and optional file-editor/custom-note slots. Selecting one of its three tabs patches only `mode` (`agents-apply.tsx:238-267`).
+2. `manual` shows the no-write hint and supplied file editor. `inherit` states that templates come from plugin settings. `custom` shows the note, optional project template when `showProject` is true, and the section template field (`agents-apply.tsx:325-382`).
+3. All modes render shared custom-rule text and startup text fields. Their edits patch `custom` and `startup`; the target selector patches `customTarget` but is disabled in manual mode, where its displayed value is forced to `session` (`agents-apply.tsx:268-322`).
+
+| RuleFields mode | Inputs shown | Effect of changing it |
+|---|---|---|
+| `inherit` | Shared rules, target, startup instruction | Uses shared templates; mode patch selects inheritance (`agents-apply.tsx:255-267`, `agents-apply.tsx:347-353`). |
+| `custom` | Shared fields plus section template and, when enabled, project template | Draft template text is editable; each field emits a partial draft patch (`agents-apply.tsx:354-380`). |
+| `manual` | Shared rules, startup instruction and supplied file editor | Shows a no-write hint; target selector is disabled and displays `session` (`agents-apply.tsx:288-297`, `agents-apply.tsx:337-345`). |
+
+`RuleFields` itself has no request or error state: its parent owns persistence and displays save/read failures. A mode switch only changes the draft until the parent saves settings (`agents-apply.tsx:238-267`, `agents-apply.tsx:325-385`).
+
+## Modes
+
+| Rule mode | File behavior | Rule source |
+|---|---|---|
+| `manual` | Plugin does not write the template blocks | Existing user-owned file |
+| `inherit` | Uses applicable project/shared template | Project then section defaults |
+| `custom` | Uses the place’s custom template | Project or section record |
+
+Custom rules target `file`, `session` or `both`; startup text is separate and limited to 4,000 characters (`server.ts:456-467`, `server.ts:559-567`).
+
+## Failures
+
+| Failure | Result |
+|---|---|
+| File changed since editor read | The `rules_save` handler detects `outcome: "conflict"` from `files.write` and throws a reopen-before-saving error (`server.ts:3039-3049`). |
+| Group selected | Rules read, file save and settings save reject group nodes (`server.ts:2967-2970`, `server.ts:3017-3020`, `server.ts:3033-3038`). |
+| A host file read/write fails | Missing files read as `null`; other read errors and file-write errors propagate, so the handler returns no successful result (`server.ts:1693-1705`, `server.ts:1717-1725`, `server.ts:3032-3042`). |
+
+## Business rules
+
+- Managed content is delimited by exact plugin markers; text outside the managed block is retained (`agents-template.ts:1-18`, `agents-template.ts:52-66`).
+- Without a saved mode, an existing file without a managed block resolves to `manual`; new-folder seeding leaves an existing `AGENTS.md` untouched (`server.ts:1512-1531`, `server.ts:1727-1743`).
+- Rules read, file save and settings save reject group nodes (`server.ts:2967-2970`, `server.ts:3017-3020`, `server.ts:3033-3038`).
+- Saving file content sends the editor's expected SHA to `files.write`; a conflict result throws instead of reporting a successful save (`server.ts:3039-3049`).
+- Session-only custom rules remove the plugin's custom file block; `file` and `both` retain it. BB sessions receive custom rules unless the target is `file` only (`server.ts:3053-3056`, `server.ts:3607-3631`).
+
+## Public API
+
+| RPC / command | Purpose | Evidence |
+|---|---|---|
+| `rules_read`, `rules_save`, `rules_settings_save` | Read file and settings, save file or template settings | `server.ts:430-467`, `server.ts:2972-3086` |
+| `agents_config`, `agents_config_save`, `agents_apply` | Read global rule settings, save them and apply templates | `server.ts:551-575`, `server.ts:3218-3247`, `server.ts:3297-3346` |
+| `bb project-folders rules show|set ...` | CLI read/write equivalent of the rules card | `server.ts:3881-3886`, `server.ts:4046-4082` |
+
+## Gotchas
+
+- Editing a managed block manually does not update the plugin’s stored mode/template record; a later apply can replace it (`server.ts:1512-1531`, `server.ts:3297-3346`).
+- The plugin does not create a `CLAUDE.md` bridge when a file is absent; custom rules are synchronized only into an existing `CLAUDE.md` (`server.ts:1731-1746`).
+
+<!-- lane-pilot:backlinks -->
+## Referenced by
+
+- [API and commands](../api.md)
+- [Section archive and restore](archive-and-restore.md)

@@ -1,0 +1,619 @@
+import { createReadStream } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join, sep } from "node:path";
+import { createInterface } from "node:readline";
+import {
+  isCursorStorePath,
+  mergeCursorDaily,
+  scanCursorStores,
+} from "./cursor-scan";
+import {
+  isOpencodeStorePath,
+  mergeOpencodeDaily,
+  scanOpencodeStores,
+} from "./opencode-scan";
+import {
+  addBucket,
+  dayKey,
+  emptyBucket,
+  type TokenBucket,
+} from "./tokens";
+
+export type DailyProviderBuckets = Record<string, Record<string, TokenBucket>>;
+
+export interface FileScanResult {
+  path: string;
+  mtimeMs: number;
+  size: number;
+  /** Which provider's transcript this was, so a since-deleted file still counts. */
+  provider?: string;
+  daily: Record<string, TokenBucket>;
+  keyedEvents?: Record<string, TokenEvent>;
+  blobCount?: number;
+  maxRowid?: number;
+}
+
+export type FileCacheEntry = {
+  mtimeMs: number;
+  size: number;
+  provider?: string;
+  daily: Record<string, TokenBucket>;
+  keyedEvents?: Record<string, TokenEvent>;
+  blobCount?: number;
+  maxRowid?: number;
+};
+
+export interface TokenEvent {
+  atMs: number;
+  bucket: TokenBucket;
+}
+
+const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+/**
+ * Parsing is streamed line by line, so size costs time rather than memory: a
+ * 326 MB rollout reads in well under a second. The cap only exists to stop a
+ * pathological file from stalling a scan, and a file above it keeps whatever
+ * total was last parsed instead of dropping out of history.
+ */
+const MAX_FILE_BYTES = 1024 * 1024 * 1024;
+
+function asNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function usageBucket(parts: {
+  total?: unknown;
+  input?: unknown;
+  output?: unknown;
+  cached?: unknown;
+  reasoning?: unknown;
+  inputIncludesCached?: boolean;
+}): TokenBucket | null {
+  const rawInput = asNumber(parts.input);
+  const cached = asNumber(parts.cached);
+  const output = asNumber(parts.output);
+  const reasoning = asNumber(parts.reasoning);
+  const input = parts.inputIncludesCached
+    ? Math.max(0, rawInput - asNumber(parts.cached))
+    : rawInput;
+  // Prefer the provider's canonical total. In Codex, cached input is already
+  // part of input and reasoning is already part of output. Claude does not
+  // report a total, so its total is the sum of its disjoint usage fields.
+  const reportedTotal = asNumber(parts.total);
+  const tokens =
+    reportedTotal > 0 ? reportedTotal : input + cached + output + reasoning;
+  if (tokens <= 0 && cached <= 0) return null;
+  return { tokens, input, output, cached, reasoning, turns: 1 };
+}
+
+function addDaily(
+  daily: Record<string, TokenBucket>,
+  atMs: number,
+  bucket: TokenBucket,
+): void {
+  if (!Number.isFinite(atMs) || atMs <= 0) return;
+  const key = dayKey(atMs);
+  const current = daily[key] ?? emptyBucket();
+  addBucket(current, bucket);
+  daily[key] = current;
+}
+
+function timestampMs(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value < 1e12 ? value * 1000 : value;
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
+function readUsageObject(
+  value: unknown,
+  inputIncludesCached = false,
+): TokenBucket | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  return usageBucket({
+    total: row.total_tokens ?? row.totalTokens,
+    input: row.input_tokens ?? row.inputTokens,
+    output: row.output_tokens ?? row.outputTokens,
+    cached:
+      asNumber(row.cached_input_tokens ?? row.cachedInputTokens) +
+      asNumber(row.cache_read_input_tokens ?? row.cacheReadInputTokens) +
+      asNumber(row.cache_creation_input_tokens ?? row.cacheCreationInputTokens) +
+      asNumber(row.cache_write_input_tokens),
+    reasoning: row.reasoning_output_tokens ?? row.reasoningOutputTokens,
+    inputIncludesCached,
+  });
+}
+
+export function extractCodexBucket(record: unknown): {
+  atMs: number;
+  bucket: TokenBucket;
+} | null {
+  if (!record || typeof record !== "object") return null;
+  const row = record as Record<string, unknown>;
+  if (row.type !== "event_msg") return null;
+  const payload = row.payload;
+  if (!payload || typeof payload !== "object") return null;
+  const body = payload as Record<string, unknown>;
+  if (body.type !== "token_count") return null;
+  const info = body.info;
+  if (!info || typeof info !== "object") return null;
+  const details = info as Record<string, unknown>;
+  const bucket =
+    readUsageObject(details.last_token_usage, true) ??
+    readUsageObject(details.lastTokenUsage, true);
+  if (!bucket) return null;
+  const atMs = timestampMs(row.timestamp) || timestampMs(details.created_at);
+  return { atMs, bucket };
+}
+
+function extractCodexRunningBucket(record: unknown): {
+  atMs: number;
+  bucket: TokenBucket;
+} | null {
+  if (!record || typeof record !== "object") return null;
+  const row = record as Record<string, unknown>;
+  if (row.type !== "event_msg") return null;
+  const payload = row.payload;
+  if (!payload || typeof payload !== "object") return null;
+  const body = payload as Record<string, unknown>;
+  if (body.type !== "token_count") return null;
+  const info = body.info;
+  if (!info || typeof info !== "object") return null;
+  const details = info as Record<string, unknown>;
+  const bucket =
+    readUsageObject(details.total_token_usage, true) ??
+    readUsageObject(details.totalTokenUsage, true);
+  if (!bucket) return null;
+  const atMs = timestampMs(row.timestamp) || timestampMs(details.created_at);
+  return { atMs, bucket };
+}
+
+/**
+ * Muse writes one `model_completed` record per model call, with the provider's
+ * counters verbatim. Cached tokens sit inside `input_tokens` and reasoning sits
+ * inside `output_tokens`, so the honest total is input plus output.
+ */
+export function extractMuseBucket(record: unknown): {
+  atMs: number;
+  bucket: TokenBucket;
+} | null {
+  if (!record || typeof record !== "object") return null;
+  const row = record as Record<string, unknown>;
+  const payload = row.payload;
+  if (!payload || typeof payload !== "object") return null;
+  const event = (payload as Record<string, unknown>).event;
+  if (!event || typeof event !== "object") return null;
+  const body = event as Record<string, unknown>;
+  if (body.kind !== "model_completed") return null;
+  const usage = body.usage;
+  if (!usage || typeof usage !== "object") return null;
+  const row_ = usage as Record<string, unknown>;
+  const bucket = usageBucket({
+    total: asNumber(row_.input_tokens) + asNumber(row_.output_tokens),
+    input: row_.input_tokens,
+    output: row_.output_tokens,
+    cached:
+      asNumber(row_.cached_tokens) + asNumber(row_.cache_write_tokens),
+    reasoning: row_.reasoning_tokens,
+    inputIncludesCached: true,
+  });
+  if (!bucket) return null;
+  return { atMs: museRecordedAtMs(row.recorded_at), bucket };
+}
+
+/** Muse stamps records in microseconds since the epoch. */
+function museRecordedAtMs(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  if (value > 1e14) return Math.round(value / 1000);
+  if (value > 1e11) return Math.round(value);
+  return Math.round(value * 1000);
+}
+
+export function extractClaudeBucket(record: unknown): {
+  atMs: number;
+  bucket: TokenBucket;
+} | null {
+  if (!record || typeof record !== "object") return null;
+  const row = record as Record<string, unknown>;
+  if (row.type !== "assistant") return null;
+  const message = row.message;
+  if (!message || typeof message !== "object") return null;
+  const bucket = readUsageObject((message as Record<string, unknown>).usage);
+  if (!bucket) return null;
+  return { atMs: timestampMs(row.timestamp), bucket };
+}
+
+async function walkJsonl(root: string): Promise<string[]> {
+  const found: string[] = [];
+  const queue = [root];
+  while (queue.length > 0) {
+    const current = queue.pop()!;
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const path = join(current, entry.name);
+      if (entry.isDirectory()) {
+        queue.push(path);
+      } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+        found.push(path);
+      }
+    }
+  }
+  return found;
+}
+
+/** Muse follows XDG on every platform, with `MUSE_HOME` relocating the lot. */
+function museDataHome(home: string, env: NodeJS.ProcessEnv): string {
+  const museHome = env.MUSE_HOME?.trim();
+  if (museHome) return join(museHome, "data");
+  const xdgData = env.XDG_DATA_HOME?.trim();
+  if (xdgData) return join(xdgData, "muse");
+  return join(home, ".local", "share", "muse");
+}
+
+export function tokenRoots(home = homedir(), env = process.env): {
+  id: string;
+  root: string;
+}[] {
+  const roots: { id: string; root: string }[] = [];
+  const codexHome = env.CODEX_HOME?.trim() || join(home, ".codex");
+  const claudeHome = env.CLAUDE_CONFIG_DIR?.trim() || join(home, ".claude");
+  roots.push({ id: "codex", root: join(codexHome, "sessions") });
+  roots.push({ id: "claude-code", root: join(claudeHome, "projects") });
+  roots.push({ id: "muse", root: join(museDataHome(home, env), "sessions") });
+  return roots;
+}
+
+/**
+ * Which provider a cached path belonged to. Cache rows written before the
+ * provider was recorded, or written under a `CODEX_HOME`/`CLAUDE_CONFIG_DIR`
+ * that has since moved, still resolve from the on-disk layout.
+ */
+export function providerForPath(
+  path: string,
+  home = homedir(),
+  env = process.env,
+): string | null {
+  if (isCursorStorePath(path)) return "cursor";
+  if (isOpencodeStorePath(path)) return "opencode";
+  for (const root of tokenRoots(home, env)) {
+    if (path.startsWith(`${root.root}${sep}`)) return root.id;
+  }
+  if (path.includes(`${sep}.codex${sep}sessions${sep}`)) return "codex";
+  if (path.includes(`${sep}.claude${sep}projects${sep}`)) return "claude-code";
+  if (path.includes(`${sep}muse${sep}sessions${sep}`)) return "muse";
+  return null;
+}
+
+function bucketDelta(current: TokenBucket, previous: TokenBucket): TokenBucket {
+  const delta = (next: number, prior: number) =>
+    next < prior ? Math.max(0, next) : next - prior;
+  return {
+    tokens: delta(current.tokens, previous.tokens),
+    input: delta(current.input, previous.input),
+    output: delta(current.output, previous.output),
+    cached: delta(current.cached, previous.cached),
+    reasoning: delta(current.reasoning, previous.reasoning),
+    turns: 1,
+  };
+}
+
+function claudeMessageId(record: unknown): string | null {
+  if (!record || typeof record !== "object") return null;
+  const message = (record as Record<string, unknown>).message;
+  if (!message || typeof message !== "object") return null;
+  const id = (message as Record<string, unknown>).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+async function parseFile(
+  path: string,
+  providerId: string,
+): Promise<{
+  daily: Record<string, TokenBucket>;
+  keyedEvents?: Record<string, TokenEvent>;
+}> {
+  const daily: Record<string, TokenBucket> = {};
+  const keyedEvents: Record<string, TokenEvent> | undefined =
+    providerId === "claude-code" ? {} : undefined;
+  const stream = createReadStream(path, { encoding: "utf8" });
+  const lines = createInterface({ input: stream, crlfDelay: Infinity });
+  let lastFingerprint = "";
+  let previousCodexTotal = emptyBucket();
+  for await (const line of lines) {
+    if (line.length < 20) continue;
+    const interesting =
+      providerId === "codex"
+        ? line.includes("token_count")
+        : providerId === "muse"
+          ? line.includes("model_completed")
+          : line.includes('"assistant"') && line.includes("usage");
+    if (!interesting) continue;
+    let record: unknown;
+    try {
+      record = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (providerId === "codex") {
+      const running = extractCodexRunningBucket(record);
+      if (running) {
+        const bucket = bucketDelta(running.bucket, previousCodexTotal);
+        previousCodexTotal = running.bucket;
+        if (bucket.tokens > 0 || bucket.cached > 0) {
+          addDaily(daily, running.atMs, bucket);
+        }
+        continue;
+      }
+    }
+
+    const hit =
+      providerId === "codex"
+        ? extractCodexBucket(record)
+        : providerId === "muse"
+          ? extractMuseBucket(record)
+          : extractClaudeBucket(record);
+    if (!hit) continue;
+    const messageId =
+      providerId === "claude-code" ? claudeMessageId(record) : null;
+    if (messageId && keyedEvents) {
+      const prior = keyedEvents[messageId];
+      if (
+        !prior ||
+        hit.bucket.tokens > prior.bucket.tokens ||
+        (hit.bucket.tokens === prior.bucket.tokens && hit.atMs >= prior.atMs)
+      ) {
+        keyedEvents[messageId] = hit;
+      }
+      continue;
+    }
+    /**
+     * Muse records one row per completion and repeats nothing, so two identical
+     * calls in a session are two real calls rather than one re-emitted total.
+     */
+    if (providerId !== "muse") {
+      const fingerprint = `${hit.bucket.input}:${hit.bucket.output}:${hit.bucket.cached}:${hit.bucket.reasoning}`;
+      if (fingerprint === lastFingerprint) continue;
+      lastFingerprint = fingerprint;
+    }
+    addDaily(daily, hit.atMs, hit.bucket);
+  }
+  return keyedEvents ? { daily, keyedEvents } : { daily };
+}
+
+/**
+ * Fold already-parsed cursor/opencode daily totals into a jsonl-only scan so
+ * the first snapshot can paint those series without opening the large stores.
+ */
+export function seedDailyFromCache(
+  daily: DailyProviderBuckets,
+  sources: string[],
+  cached: Iterable<[string, { daily: Record<string, TokenBucket> }]>,
+  kind: "cursor" | "opencode",
+): number {
+  if (sources.includes(kind)) return 0;
+  const files = [];
+  for (const [path, row] of cached) {
+    if (kind === "cursor" ? isCursorStorePath(path) : isOpencodeStorePath(path)) {
+      files.push({ path, mtimeMs: 0, size: 0, daily: row.daily });
+    }
+  }
+  if (files.length === 0) return 0;
+  if (kind === "cursor") mergeCursorDaily(daily, files);
+  else mergeOpencodeDaily(daily, files);
+  sources.push(kind);
+  return files.length;
+}
+
+export async function scanTokenFiles(options?: {
+  nowMs?: number;
+  includeCursor?: boolean;
+  includeOpencode?: boolean;
+  cached?: Map<string, FileCacheEntry>;
+  /**
+   * The persisted ledger, consulted for files that are no longer on disk. Kept
+   * separate from `cached` so a forced reparse still keeps deleted history.
+   */
+  retained?: Map<string, FileCacheEntry>;
+  home?: string;
+  maxFileBytes?: number;
+}): Promise<{
+  files: FileScanResult[];
+  changedFiles: number;
+  retainedFiles: number;
+  sources: string[];
+  daily: DailyProviderBuckets;
+}> {
+  const nowMs = options?.nowMs ?? Date.now();
+  const cutoff = nowMs - NINETY_DAYS_MS;
+  const cutoffDay = dayKey(cutoff);
+  const home = options?.home ?? homedir();
+  const cached = options?.cached ?? new Map();
+  const retained = options?.retained ?? cached;
+  const maxFileBytes = options?.maxFileBytes ?? MAX_FILE_BYTES;
+  const files: FileScanResult[] = [];
+  const sources: string[] = [];
+  const seen = new Set<string>();
+  let changedFiles = 0;
+  const daily: DailyProviderBuckets = {};
+  const claudeEvents = new Map<string, TokenEvent>();
+
+  const addDay = (day: string, provider: string, bucket: TokenBucket) => {
+    const row = daily[day] ?? {};
+    const current = row[provider] ?? emptyBucket();
+    addBucket(current, bucket);
+    row[provider] = current;
+    daily[day] = row;
+  };
+
+  const keepClaudeEvent = (messageId: string, event: TokenEvent) => {
+    const prior = claudeEvents.get(messageId);
+    if (
+      !prior ||
+      event.bucket.tokens > prior.bucket.tokens ||
+      (event.bucket.tokens === prior.bucket.tokens && event.atMs >= prior.atMs)
+    ) {
+      claudeEvents.set(messageId, event);
+    }
+  };
+
+  for (const source of tokenRoots(home)) {
+    let listing: string[];
+    try {
+      listing = await walkJsonl(source.root);
+    } catch {
+      continue;
+    }
+    if (listing.length === 0) continue;
+    sources.push(source.id);
+
+    for (const path of listing) {
+      let info;
+      try {
+        info = await stat(path);
+      } catch {
+        continue;
+      }
+      if (!info.isFile() || info.size === 0) continue;
+      if (info.mtimeMs < cutoff) continue;
+
+      const prior = cached.get(path) ?? retained.get(path);
+      const stale =
+        !prior ||
+        prior.mtimeMs !== Math.round(info.mtimeMs) ||
+        prior.size !== info.size;
+      // An outsized file keeps its last parsed totals rather than falling out
+      // of the chart, which is what made history shrink as sessions grew.
+      const oversized = info.size > maxFileBytes;
+      if (oversized && !prior) continue;
+      const parsed =
+        stale && !oversized
+          ? await parseFile(path, source.id)
+          : { daily: prior!.daily, keyedEvents: prior!.keyedEvents };
+      if (stale && !oversized) changedFiles += 1;
+
+      seen.add(path);
+      files.push({
+        path,
+        mtimeMs: oversized ? (prior!.mtimeMs ?? 0) : Math.round(info.mtimeMs),
+        size: oversized ? prior!.size : info.size,
+        provider: source.id,
+        daily: parsed.daily,
+        ...(parsed.keyedEvents ? { keyedEvents: parsed.keyedEvents } : {}),
+      });
+
+      for (const [day, bucket] of Object.entries(parsed.daily) as Array<
+        [string, TokenBucket]
+      >) {
+        addDay(day, source.id, bucket);
+      }
+
+      for (const [messageId, event] of Object.entries(
+        parsed.keyedEvents ?? {},
+      ) as Array<[string, TokenEvent]>) {
+        keepClaudeEvent(messageId, event);
+      }
+    }
+  }
+
+  const cursorFiles =
+    options?.includeCursor === false ? [] : scanCursorStores({ cached, nowMs });
+  if (cursorFiles.length > 0) {
+    sources.push("cursor");
+    for (const file of cursorFiles) {
+      const prior = cached.get(file.path);
+      if (
+        !prior ||
+        prior.mtimeMs !== file.mtimeMs ||
+        prior.size !== file.size
+      ) {
+        changedFiles += 1;
+      }
+      seen.add(file.path);
+      files.push({ ...file, provider: "cursor" });
+    }
+    mergeCursorDaily(daily, cursorFiles);
+  }
+
+  const opencodeFiles =
+    options?.includeOpencode === false ? [] : scanOpencodeStores({ cached, nowMs });
+  if (opencodeFiles.length > 0) {
+    sources.push("opencode");
+    for (const file of opencodeFiles) {
+      const prior = cached.get(file.path);
+      if (!prior || prior.mtimeMs !== file.mtimeMs || prior.size !== file.size) {
+        changedFiles += 1;
+      }
+      seen.add(file.path);
+      files.push({ ...file, provider: "opencode" });
+    }
+    mergeOpencodeDaily(daily, opencodeFiles);
+  }
+
+  /**
+   * Transcripts are evidence, not the ledger. Codex prunes old rollouts, bb
+   * removes a worktree's thread files, a session gets cleared — and until now
+   * every one of those silently erased days that had already been counted, so
+   * the 30-day total only ever fell. Replay the last parse of anything that has
+   * since left disk, bounded by the same 90-day window as a live file.
+   */
+  const retainedPaths: string[] = [];
+  for (const [path, entry] of retained) {
+    if (seen.has(path)) continue;
+    // A store this pass deliberately skipped is not gone; seedDailyFromCache
+    // paints those, and folding them here as well would double count.
+    if (options?.includeCursor === false && isCursorStorePath(path)) continue;
+    if (options?.includeOpencode === false && isOpencodeStorePath(path)) continue;
+    try {
+      const info = await stat(path);
+      if (info.isFile()) continue;
+    } catch {
+      // Genuinely gone.
+    }
+    const provider = entry.provider ?? providerForPath(path, home);
+    if (!provider) continue;
+    let kept = false;
+    for (const [day, bucket] of Object.entries(entry.daily ?? {}) as Array<
+      [string, TokenBucket]
+    >) {
+      if (day < cutoffDay) continue;
+      addDay(day, provider, bucket);
+      kept = true;
+    }
+    for (const [messageId, event] of Object.entries(
+      entry.keyedEvents ?? {},
+    ) as Array<[string, TokenEvent]>) {
+      if (event.atMs < cutoff) continue;
+      keepClaudeEvent(messageId, event);
+      kept = true;
+    }
+    if (!kept) continue;
+    retainedPaths.push(path);
+    if (!sources.includes(provider)) sources.push(provider);
+  }
+
+  // Claude reports the same response in every fragment that replays it, so the
+  // per-message winner is only known once every file — live and retained — has
+  // been folded in.
+  for (const event of claudeEvents.values()) {
+    addDay(dayKey(event.atMs), "claude-code", event.bucket);
+  }
+
+  return {
+    files,
+    changedFiles,
+    retainedFiles: retainedPaths.length,
+    sources,
+    daily,
+  };
+}

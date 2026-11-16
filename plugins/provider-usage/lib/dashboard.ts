@@ -1,0 +1,714 @@
+export const PROVIDER_KEYS = ["codex", "claudeCode", "cursor", "muse", "antigravity"] as const;
+export type ProviderKey = (typeof PROVIDER_KEYS)[number];
+
+export const PROVIDER_META: Record<
+  ProviderKey,
+  {
+    id: string;
+    displayName: string;
+    fallbackLogoUrl: string;
+    matchIds: readonly string[];
+  }
+> = {
+  codex: {
+    id: "codex",
+    displayName: "Codex",
+    fallbackLogoUrl: "/api/v1/system/providers/codex/logo",
+    matchIds: ["codex"],
+  },
+  claudeCode: {
+    id: "claude-code",
+    displayName: "Claude Code",
+    fallbackLogoUrl: "/api/v1/system/providers/claude-code/logo",
+    matchIds: ["claude-code"],
+  },
+  cursor: {
+    id: "cursor",
+    displayName: "Cursor",
+    fallbackLogoUrl: "/api/v1/system/providers/acp-cursor/logo",
+    matchIds: ["acp-cursor", "cursor"],
+  },
+  muse: {
+    id: "muse",
+    displayName: "Muse Code",
+    fallbackLogoUrl: "/api/v1/system/providers/muse/logo",
+    matchIds: ["muse"],
+  },
+  antigravity: {
+    id: "acp-antigravity",
+    displayName: "Google Antigravity",
+    fallbackLogoUrl: "/api/v1/system/providers/acp-antigravity/logo",
+    matchIds: ["acp-antigravity", "antigravity"],
+  },
+};
+
+/** Map dashboard keys to `system.usageLimits` response keys from the host. */
+export function pickProviderLimitRaw(
+  limits: Record<string, unknown>,
+  key: ProviderKey,
+): unknown {
+  for (const id of PROVIDER_META[key].matchIds) {
+    if (id in limits) return limits[id];
+  }
+  return limits[key];
+}
+
+export type UsageStatus =
+  | "ok"
+  | "not_installed"
+  | "unauthenticated"
+  | "expired"
+  | "error";
+
+export type RemainingTone = "ok" | "warn" | "critical";
+
+export interface UsageWindow {
+  label: string;
+  usedPercent: number;
+  remainingPercent: number;
+  resetsAt: string | null;
+  cost: {
+    usedUsdCents: number;
+    limitUsdCents: number;
+    remainingUsdCents: number;
+  } | null;
+}
+
+export interface ProviderUsage {
+  key: ProviderKey;
+  id: string;
+  displayName: string;
+  logoUrl: string | null;
+  status: UsageStatus;
+  accountEmail: string | null;
+  planLabel: string | null;
+  message: string | null;
+  windows: UsageWindow[];
+  credits: ProviderCreditBalance | null;
+  spendControl: ProviderSpendControl | null;
+  resetCredits: ProviderResetCredits | null;
+  /** True when the Account Pooler is routing this provider across a pool. */
+  pooled: boolean;
+  /**
+   * Enabled pool accounts in failover order. Empty when this provider is not
+   * pooled, so the single-account dashboard is unchanged for everyone else.
+   */
+  accounts: ProviderAccountUsage[];
+  /** Local credentials are a separate source when requests route through a pool. */
+  localUsage?: Pick<ProviderUsage, "status" | "accountEmail" | "planLabel" | "message" | "windows" | "credits" | "spendControl" | "resetCredits"> | null;
+}
+
+export interface ProviderCreditBalance {
+  hasCredits: boolean;
+  unlimited: boolean;
+  balance: string | null;
+}
+
+export interface ProviderSpendControl {
+  used: string;
+  limit: string;
+  remainingPercent: number;
+  resetsAt: string | null;
+  reached: boolean | null;
+}
+
+export interface ProviderResetCredits {
+  availableCount: number;
+  nextExpiresAt: string | null;
+  title: string | null;
+  description: string | null;
+}
+
+/**
+ * One account inside a provider's pool. The Account Pooler routes a provider's
+ * traffic across several logins, so a single meter per provider stops
+ * describing what the next request will actually get: the account at the front
+ * of the failover order can be exhausted while the pool as a whole is fine.
+ */
+export interface ProviderAccountUsage {
+  id: string;
+  label: string;
+  email: string | null;
+  /** Position in the failover order, lowest first; ties keep pool order. */
+  priority: number;
+  /** `ready`, `exhausted`, `error`, or whatever the pool reports next. */
+  status: string;
+  /** True once the pool has skipped this account for new requests. */
+  unavailable: boolean;
+  /** True only when credential identity has been verified, never by email. */
+  local: boolean;
+  windows: UsageWindow[];
+  message: string | null;
+}
+
+export interface UsageHost {
+  id: string;
+  name: string;
+  status: "connected" | "disconnected";
+}
+
+export interface UsageTotals {
+  trackedProviders: number;
+  okProviders: number;
+  windowCount: number;
+  averageUsedPercent: number | null;
+  averageRemainingPercent: number | null;
+  /** Mean remaining of each provider's most restrictive subscription window. */
+  cumulativeRemainingPercent: number | null;
+  tightest: {
+    providerId: string;
+    providerName: string;
+    windowLabel: string;
+    usedPercent: number;
+    remainingPercent: number;
+  } | null;
+  nextResetAt: string | null;
+  spend: {
+    usedUsdCents: number;
+    limitUsdCents: number;
+    remainingUsdCents: number;
+  } | null;
+}
+
+export interface DashboardSnapshot {
+  fetchedAt: string;
+  hostId: string | null;
+  hosts: UsageHost[];
+  providers: ProviderUsage[];
+  totals: UsageTotals;
+}
+
+export interface ProviderLimitSlice {
+  status: UsageStatus;
+  accountEmail?: string | null;
+  planLabel?: string | null;
+  message?: string;
+  windows?: Array<{
+    label: string;
+    usedPercent: number;
+    resetsAt: string | null;
+    cost?: { usedUsdCents: number; limitUsdCents: number };
+  }>;
+}
+
+export interface ProviderSupplement {
+  windows: NonNullable<ProviderLimitSlice["windows"]>;
+  credits: ProviderCreditBalance | null;
+  spendControl: ProviderSpendControl | null;
+  resetCredits: ProviderResetCredits | null;
+}
+
+export interface ProviderCatalogEntry {
+  id: string;
+  displayName: string;
+  logoUrl: string | null;
+}
+
+/**
+ * Name a limit window from its length. Codex reports window duration and the
+ * Account Pooler reports the same idea in minutes, so both render the phrase
+ * the provider's own UI uses rather than "primary"/"secondary".
+ */
+export function formatWindowDurationLabel(
+  minutes: number | null,
+  fallback: string,
+): string {
+  if (minutes === null || minutes <= 0) return fallback;
+  if (minutes === 60) return "Hourly limit";
+  if (minutes < 24 * 60 && minutes % 60 === 0) return `${minutes / 60}-hour limit`;
+  if (minutes === 24 * 60) return "Daily limit";
+  if (minutes === 7 * 24 * 60) return "Weekly limit";
+  if (minutes % (7 * 24 * 60) === 0) {
+    return `${minutes / (7 * 24 * 60)}-week limit`;
+  }
+  if (minutes % (24 * 60) === 0) return `${minutes / (24 * 60)}-day limit`;
+  return fallback;
+}
+
+export function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, value));
+}
+
+export function remainingTone(remainingPercent: number): RemainingTone {
+  if (remainingPercent <= 10) return "critical";
+  if (remainingPercent <= 30) return "warn";
+  return "ok";
+}
+
+export function formatUsdCents(cents: number): string {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "USD",
+  }).format(cents / 100);
+}
+
+export function formatPercent(value: number): string {
+  return `${Math.round(clampPercent(value))}%`;
+}
+
+export function formatCreditAmount(value: string | null): string {
+  if (value === null) return "Unknown";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 2,
+  }).format(numeric);
+}
+
+export function formatResetAbsolute(iso: string | null): string {
+  if (!iso) return "Reset time unknown";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Reset time unknown";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+export function formatResetRelative(iso: string | null, nowMs = Date.now()): string {
+  if (!iso) return "unknown";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "unknown";
+  const delta = date.getTime() - nowMs;
+  if (delta <= 0) return "now";
+  const minutes = Math.round(delta / 60_000);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) {
+    const rem = minutes % 60;
+    return rem === 0 ? `${hours}h` : `${hours}h ${rem}m`;
+  }
+  const days = Math.floor(hours / 24);
+  const remHours = hours % 24;
+  return remHours === 0 ? `${days}d` : `${days}d ${remHours}h`;
+}
+
+export function formatFetchedAt(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "just now";
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(date);
+}
+
+export function statusLabel(status: UsageStatus): string {
+  switch (status) {
+    case "ok":
+      return "Signed in";
+    case "unauthenticated":
+      return "Not signed in";
+    case "expired":
+      return "Session expired";
+    case "not_installed":
+      return "Not installed";
+    case "error":
+      return "Unavailable";
+  }
+}
+
+function normalizeWindows(
+  windows: ProviderLimitSlice["windows"] | undefined,
+): UsageWindow[] {
+  return (windows ?? []).map((window) => {
+    const usedPercent = clampPercent(window.usedPercent);
+    const cost = window.cost
+      ? {
+          usedUsdCents: window.cost.usedUsdCents,
+          limitUsdCents: window.cost.limitUsdCents,
+          remainingUsdCents: Math.max(
+            0,
+            window.cost.limitUsdCents - window.cost.usedUsdCents,
+          ),
+        }
+      : null;
+    return {
+      label: window.label,
+      usedPercent,
+      remainingPercent: clampPercent(100 - usedPercent),
+      resetsAt: window.resetsAt,
+      cost,
+    };
+  });
+}
+
+/**
+ * The host and the provider's own CLI read the same window moments apart, so
+ * the two reports of one limit routinely disagree on its reset by a second or
+ * two and on its percentage by a rounding step. Matching those exactly listed
+ * the same limit twice; a window is the same window when it has the same name
+ * and turns over at about the same time.
+ */
+const SAME_WINDOW_MS = 2 * 60 * 1000;
+
+function isSameWindow(current: UsageWindow, next: UsageWindow): boolean {
+  if (current.label.toLocaleLowerCase() !== next.label.toLocaleLowerCase()) {
+    return false;
+  }
+  if (current.resetsAt === null || next.resetsAt === null) {
+    return current.resetsAt === next.resetsAt;
+  }
+  const drift = Math.abs(
+    Date.parse(current.resetsAt) - Date.parse(next.resetsAt),
+  );
+  return Number.isFinite(drift) && drift <= SAME_WINDOW_MS;
+}
+
+function mergeWindows(
+  reported: ProviderLimitSlice["windows"] | undefined,
+  supplemental: ProviderLimitSlice["windows"] | undefined,
+): UsageWindow[] {
+  const merged = normalizeWindows(reported);
+  for (const next of normalizeWindows(supplemental)) {
+    // The richer source wins the tie: a supplemental read carries cost detail
+    // the host's summary does not, and is the reason to consult it at all.
+    const existing = merged.findIndex((current) => isSameWindow(current, next));
+    if (existing < 0) {
+      merged.push(next);
+    } else if (next.cost && !merged[existing]!.cost) {
+      merged[existing] = next;
+    }
+  }
+  return merged;
+}
+
+function resolveCatalog(
+  key: ProviderKey,
+  catalog: readonly ProviderCatalogEntry[],
+): Pick<ProviderUsage, "displayName" | "logoUrl"> {
+  const meta = PROVIDER_META[key];
+  const match = catalog.find((provider) => meta.matchIds.includes(provider.id));
+  return {
+    displayName: match?.displayName ?? meta.displayName,
+    logoUrl: match?.logoUrl ?? meta.fallbackLogoUrl,
+  };
+}
+
+function isRegistered(
+  key: ProviderKey,
+  catalog: readonly ProviderCatalogEntry[],
+): boolean {
+  return catalog.some((provider) =>
+    PROVIDER_META[key].matchIds.includes(provider.id),
+  );
+}
+
+export function availableAccount(provider: ProviderUsage): ProviderAccountUsage | undefined {
+  return provider.accounts.find((account) => !account.unavailable);
+}
+
+export function tightestWindow(windows: UsageWindow[] | undefined): UsageWindow | undefined {
+  return windows?.reduce<UsageWindow | undefined>((best, window) =>
+    !best || window.remainingPercent < best.remainingPercent ? window : best,
+  undefined);
+}
+
+export function heroWindow(provider: ProviderUsage): UsageWindow | undefined {
+  if (provider.pooled) return tightestWindow(availableAccount(provider)?.windows);
+  const subscription = provider.windows.filter((window) => !window.cost);
+  return tightestWindow(subscription.length ? subscription : provider.windows);
+}
+
+export function isActive(provider: ProviderUsage): boolean {
+  return provider.pooled ? Boolean(availableAccount(provider)) : provider.status === "ok";
+}
+
+export function providerAvailabilityLabel(provider: ProviderUsage): string {
+  if (provider.pooled) return isActive(provider) ? "Pool available" : "No accounts available";
+  return statusLabel(provider.status);
+}
+
+function buildTotals(providers: ProviderUsage[]): UsageTotals {
+  const ok = providers.filter(isActive);
+  const windows = providers.filter((provider) => provider.pooled || isActive(provider)).flatMap((provider) =>
+    provider.windows.map((window) => ({ provider, window })),
+  );
+  const heroRemaining = providers
+    .map((provider) => provider.pooled && !isActive(provider) ? 0 : heroWindow(provider)?.remainingPercent)
+    .filter((value): value is number => value !== undefined);
+  const cumulativeRemainingPercent =
+    heroRemaining.length === 0
+      ? null
+      : clampPercent(
+          heroRemaining.reduce((sum, value) => sum + value, 0) /
+            heroRemaining.length,
+        );
+
+  const averageUsedPercent =
+    windows.length === 0
+      ? null
+      : windows.reduce((sum, row) => sum + row.window.usedPercent, 0) /
+        windows.length;
+
+  const tightest = windows.reduce<UsageTotals["tightest"]>((best, row) => {
+    if (!best || row.window.usedPercent > best.usedPercent) {
+      return {
+        providerId: row.provider.id,
+        providerName: row.provider.displayName,
+        windowLabel: row.window.label,
+        usedPercent: row.window.usedPercent,
+        remainingPercent: row.window.remainingPercent,
+      };
+    }
+    return best;
+  }, null);
+
+  const nextResetAt = windows
+    .map((row) => row.window.resetsAt)
+    .filter((value): value is string => Boolean(value))
+    .sort()[0] ?? null;
+
+  const spendWindows = windows.filter((row) => row.window.cost);
+  const spend =
+    spendWindows.length === 0
+      ? null
+      : spendWindows.reduce(
+          (acc, row) => {
+            const cost = row.window.cost!;
+            return {
+              usedUsdCents: acc.usedUsdCents + cost.usedUsdCents,
+              limitUsdCents: acc.limitUsdCents + cost.limitUsdCents,
+              remainingUsdCents: acc.remainingUsdCents + cost.remainingUsdCents,
+            };
+          },
+          { usedUsdCents: 0, limitUsdCents: 0, remainingUsdCents: 0 },
+        );
+
+  return {
+    trackedProviders: providers.length,
+    okProviders: ok.length,
+    windowCount: windows.length,
+    averageUsedPercent,
+    averageRemainingPercent:
+      averageUsedPercent === null ? null : clampPercent(100 - averageUsedPercent),
+    cumulativeRemainingPercent,
+    tightest,
+    nextResetAt,
+    spend,
+  };
+}
+
+export function assembleDashboard(input: {
+  limits: Record<ProviderKey, ProviderLimitSlice>;
+  supplements?: Partial<Record<ProviderKey, ProviderSupplement>>;
+  pool?: Partial<Record<ProviderKey, ProviderAccountUsage[]>>;
+  hosts: UsageHost[];
+  catalog: readonly ProviderCatalogEntry[];
+  hostId: string | null;
+  fetchedAt?: string;
+}): DashboardSnapshot {
+  /**
+   * A provider that is neither installed nor registered on this host is not a
+   * meter the user is missing — it is an agent they never added. Plugin-supplied
+   * providers only reach the catalog once their plugin is installed, so this is
+   * what keeps the dashboard to the agents that actually exist here. A provider
+   * bb ships stays listed even when uninstalled, because "not installed" is real
+   * news for those.
+   */
+  const trackedKeys = PROVIDER_KEYS.filter((key) => {
+    const slice = input.limits[key];
+    if (slice === undefined) return false;
+    // A pooled provider is one the user is actively routing, so it stays on the
+    // dashboard even if the host reports nothing for the local login.
+    if ((input.pool?.[key]?.length ?? 0) > 0) return true;
+    return slice.status !== "not_installed" || isRegistered(key, input.catalog);
+  });
+
+  const providers = trackedKeys.map((key) => {
+    const slice = input.limits[key]!;
+    const supplement = input.supplements?.[key];
+    const accounts = input.pool?.[key] ?? [];
+    const identity = resolveCatalog(key, input.catalog);
+    const windows =
+      slice.status === "ok"
+        ? mergeWindows(slice.windows, supplement?.windows)
+        : [];
+    // Email (and even a shared user UUID) does not identify the credentials or
+    // quota tier. Pool observations must never be replaced by local-login data.
+    const resolvedAccounts = accounts.map((account) => ({ ...account, local: false }));
+    const pooled = resolvedAccounts.length > 0;
+    const eligible = resolvedAccounts.find((account) => !account.unavailable);
+    const representative = eligible ?? resolvedAccounts.find((account) => account.status === "exhausted")
+      ?? resolvedAccounts.find((account) => account.status === "ready");
+    return {
+      key,
+      id: PROVIDER_META[key].id,
+      displayName: identity.displayName,
+      logoUrl: identity.logoUrl,
+      status: pooled ? (eligible ? "ok" : "error") : slice.status,
+      accountEmail: pooled ? (eligible?.email ?? null) : slice.accountEmail ?? null,
+      planLabel: pooled ? null : slice.planLabel ?? null,
+      message: pooled ? (eligible ? null : "No pooled accounts are currently available.") : slice.message ?? null,
+      windows: pooled ? (representative?.windows ?? []) : windows,
+      credits: !pooled && slice.status === "ok" ? (supplement?.credits ?? null) : null,
+      spendControl:
+        !pooled && slice.status === "ok" ? (supplement?.spendControl ?? null) : null,
+      resetCredits:
+        !pooled && slice.status === "ok" ? (supplement?.resetCredits ?? null) : null,
+      pooled,
+      accounts: resolvedAccounts,
+      localUsage: pooled ? {
+        status: slice.status,
+        accountEmail: slice.accountEmail ?? null,
+        planLabel: slice.planLabel ?? null,
+        message: slice.message ?? null,
+        windows,
+        credits: slice.status === "ok" ? supplement?.credits ?? null : null,
+        spendControl: slice.status === "ok" ? supplement?.spendControl ?? null : null,
+        resetCredits: slice.status === "ok" ? supplement?.resetCredits ?? null : null,
+      } : null,
+    } satisfies ProviderUsage;
+  });
+
+  return {
+    fetchedAt: input.fetchedAt ?? new Date().toISOString(),
+    hostId: input.hostId,
+    hosts: input.hosts,
+    providers,
+    totals: buildTotals(providers),
+  };
+}
+
+export function formatDashboardText(snapshot: DashboardSnapshot): string {
+  const host =
+    snapshot.hosts.find((row) => row.id === snapshot.hostId)?.name ??
+    snapshot.hosts[0]?.name ??
+    "Primary machine";
+
+  const lines = [
+    `Usage · ${host}`,
+    `Fetched ${snapshot.fetchedAt}`,
+    "",
+    "Totals",
+    `  Providers        ${snapshot.totals.okProviders} available / ${snapshot.totals.trackedProviders} tracked`,
+    // Everything below counts down, matching the panel's meters and the way
+    // each provider states its own limits.
+    `  Remaining        ${
+      snapshot.totals.cumulativeRemainingPercent === null
+        ? "—"
+        : `${formatPercent(snapshot.totals.cumulativeRemainingPercent)} left`
+    }`,
+    `  Window average   ${
+      snapshot.totals.averageRemainingPercent === null
+        ? "—"
+        : `${formatPercent(snapshot.totals.averageRemainingPercent)} left`
+    }`,
+    `  Tightest         ${
+      snapshot.totals.tightest
+        ? `${snapshot.totals.tightest.providerName} ${snapshot.totals.tightest.windowLabel} · ${formatPercent(snapshot.totals.tightest.remainingPercent)} left`
+        : "—"
+    }`,
+    `  Next reset       ${
+      snapshot.totals.nextResetAt
+        ? `${formatResetAbsolute(snapshot.totals.nextResetAt)} (in ${formatResetRelative(snapshot.totals.nextResetAt)})`
+        : "—"
+    }`,
+  ];
+
+  for (const provider of snapshot.providers) {
+    lines.push("");
+    const bits = [provider.displayName];
+    if (provider.planLabel) bits.push(provider.planLabel);
+    if (provider.accountEmail) bits.push(provider.accountEmail);
+    if (provider.pooled) {
+      bits.push(`pooled · ${provider.accounts.length} accounts`);
+    }
+    lines.push(bits.join(" · "));
+    // Pooled accounts print before the status check: with routing on, the
+    // host's view of the local login can be unauthenticated while the pool is
+    // serving requests perfectly well from another account.
+    for (const account of provider.accounts) {
+      const state = [
+        account.unavailable ? account.status : null,
+        account.local ? "signed in here" : null,
+      ].filter(Boolean);
+      lines.push(
+        `  ${account.label}${state.length > 0 ? ` · ${state.join(" · ")}` : ""}`,
+      );
+      if (account.message) lines.push(`    ${account.message}`);
+      for (const window of account.windows) {
+        const cost = window.cost
+          ? ` · ${formatUsdCents(window.cost.usedUsdCents)} / ${formatUsdCents(window.cost.limitUsdCents)}`
+          : "";
+        const reset = window.resetsAt
+          ? ` · resets ${formatResetAbsolute(window.resetsAt)} (in ${formatResetRelative(window.resetsAt)})`
+          : "";
+        lines.push(
+          `    ${window.label.padEnd(16)} ${formatPercent(window.remainingPercent)} left · ${formatPercent(window.usedPercent)} used${cost}${reset}`,
+        );
+      }
+      if (account.windows.length === 0) {
+        lines.push("    No limit windows reported");
+      }
+    }
+    if (provider.pooled && provider.localUsage) {
+      const local = provider.localUsage;
+      lines.push(`  Local login (separate from pool) · ${local.planLabel ?? statusLabel(local.status)}${local.accountEmail ? ` · ${local.accountEmail}` : ""}`);
+      for (const window of local.windows) {
+        lines.push(`    ${window.label.padEnd(16)} ${formatPercent(window.remainingPercent)} left · ${formatPercent(window.usedPercent)} used`);
+      }
+      if (local.message) lines.push(`    ${local.message}`);
+    }
+    if (provider.status !== "ok") {
+      lines.push(`  ${statusLabel(provider.status)}${provider.message ? ` — ${provider.message}` : ""}`);
+      continue;
+    }
+    // A pooled provider has already listed these windows under the account they
+    // describe, so repeating them at provider level would double the report.
+    if (!provider.pooled && provider.windows.length === 0) {
+      lines.push("  No subscription windows reported");
+      continue;
+    }
+    for (const window of provider.pooled ? [] : provider.windows) {
+      const cost = window.cost
+        ? ` · ${formatUsdCents(window.cost.usedUsdCents)} / ${formatUsdCents(window.cost.limitUsdCents)}`
+        : "";
+      const reset = window.resetsAt
+        ? ` · resets ${formatResetAbsolute(window.resetsAt)} (in ${formatResetRelative(window.resetsAt)})`
+        : "";
+      lines.push(
+        `  ${window.label.padEnd(18)} ${formatPercent(window.remainingPercent)} left · ${formatPercent(window.usedPercent)} used${cost}${reset}`,
+      );
+    }
+    if (provider.credits) {
+      const value = provider.credits.unlimited
+        ? "Unlimited"
+        : provider.credits.hasCredits
+          ? `${formatCreditAmount(provider.credits.balance)} credits`
+          : "No credits";
+      lines.push(`  ${"Credit balance".padEnd(18)} ${value}`);
+    }
+    if (provider.resetCredits) {
+      const count = provider.resetCredits.availableCount;
+      const expiry = provider.resetCredits.nextExpiresAt
+        ? ` · next expires ${formatResetAbsolute(provider.resetCredits.nextExpiresAt)} (in ${formatResetRelative(provider.resetCredits.nextExpiresAt)})`
+        : provider.resetCredits.description
+          ? ` · ${provider.resetCredits.description}`
+          : "";
+      lines.push(
+        `  ${"Banked resets".padEnd(18)} ${count} available${expiry}`,
+      );
+    }
+    if (provider.spendControl) {
+      const reset = provider.spendControl.resetsAt
+        ? ` · resets ${formatResetAbsolute(provider.spendControl.resetsAt)} (in ${formatResetRelative(provider.spendControl.resetsAt)})`
+        : "";
+      lines.push(
+        `  ${"On-demand period".padEnd(18)} ${provider.spendControl.used} of ${provider.spendControl.limit} used${reset}`,
+      );
+    }
+  }
+
+  if (snapshot.totals.spend) {
+    lines.push("");
+    lines.push(
+      `On-demand ${formatUsdCents(snapshot.totals.spend.usedUsdCents)} of ${formatUsdCents(snapshot.totals.spend.limitUsdCents)}`,
+    );
+  }
+
+  return `${lines.join("\n")}\n`;
+}

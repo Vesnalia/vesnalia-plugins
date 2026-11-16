@@ -1,0 +1,903 @@
+// Voice Mode frontend, modeled on Codex: when the thread composer is empty the
+// send button becomes a waveform button ("Start new voice chat"). Typing brings
+// the send arrow back; once the message is sent and the box is empty again, the
+// waveform returns. While live, a pill (level waveform, status, mute, end)
+// stands in for bb's mic, and the send button reappears only if you type.
+// Leave the thread (Settings, another thread) and the session keeps going in a
+// floating pill until you come back or end it.
+//
+// bb has no SDK hook on its send button, so we portal our UI over it and flag
+// the composer form so app.css can hide bb's controls. On wide screens a
+// composer action places the portal; bb doesn't mount plugin actions in its
+// compact (phone / collapsed) composer, so there the app overlay hosts the same
+// UI and pairs each host with a form by position.
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+import {
+  definePluginApp,
+  ThreadTitle,
+  useBbNavigate,
+  useComposer,
+  useComposers,
+  useSettings,
+} from "@get-bb/plugin-sdk/app";
+import { isLive, sessionFor, stopAllSessions, subscribeAll, undockedSession, type Phase, type VoiceSession } from "./session";
+import { compactThreadComposers, planCompactHosts, type CompactComposer } from "./compact-hosts";
+import { ConnectionPluginsSection } from "./connection-plugins";
+import "./app.css";
+
+const LABELS: Record<Phase, string> = {
+  off: "Voice mode",
+  connecting: "Connecting…",
+  listening: "Listening",
+  speaking: "Speaking",
+  error: "Voice mode error",
+};
+const ERROR_DISMISS_MS = 6000;
+
+const cn = (...classes: (string | false | null | undefined)[]) => classes.filter(Boolean).join(" ");
+
+const SEND_SELECTOR = "[data-promptbox-send-menu]";
+/** The row our control portals into; present in both the wide and compact composer. */
+const SUBMIT_GROUP_SELECTOR = "[data-promptbox-submit-group]";
+/** How long to wait for bb's send group before falling back to the action slot. */
+const FALLBACK_AFTER_MS = 1500;
+/** Set on the composer form while the waveform button replaces bb's send button. */
+const VOICE_SEND_ATTR = "data-voice-mode-send";
+/** Set on the composer form while the voice pill replaces bb's mic. */
+const LIVE_ATTR = "data-voice-mode-live";
+
+function useVoiceState(session: VoiceSession) {
+  return useSyncExternalStore(session.subscribe, session.getState);
+}
+
+// Codex-style waveform: seven rounded bars, tallest in the middle, driven by
+// the live audio level (mic while listening, the model's voice while speaking).
+const PROFILE = [0.35, 0.6, 0.85, 1, 0.85, 0.6, 0.35];
+const BAR_W = 2.5;
+const GAP = 1.5;
+const H = 16;
+const MIN_H = 2.5;
+
+function LevelWave({ session, phase, muted }: { session: VoiceSession; phase: Phase; muted: boolean }) {
+  const bars = useRef<(SVGRectElement | null)[]>([]);
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const current = PROFILE.map(() => MIN_H);
+    let frame = 0;
+    const tick = (now: number) => {
+      const level = session.level();
+      const gain = phase === "speaking" ? 5 : 7;
+      PROFILE.forEach((weight, i) => {
+        let amount: number;
+        if (muted) amount = 0;
+        else if (phase === "connecting") amount = reduce ? 0.4 : 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(now / 220 - i * 0.7));
+        else if (reduce) amount = 0.5;
+        else {
+          const wobble = 0.12 + 0.06 * Math.sin(now / 160 + i * 1.3);
+          amount = Math.min(1, wobble + level * gain * (0.75 + 0.25 * Math.sin(now / 90 + i * 2.1)));
+        }
+        const target = MIN_H + (H - MIN_H) * weight * amount;
+        current[i] += (target - current[i]) * 0.35;
+        const rect = bars.current[i];
+        if (rect) {
+          rect.setAttribute("height", current[i].toFixed(2));
+          rect.setAttribute("y", ((H - current[i]) / 2).toFixed(2));
+        }
+      });
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [session, phase, muted]);
+
+  const width = PROFILE.length * BAR_W + (PROFILE.length - 1) * GAP;
+  return (
+    <svg viewBox={`0 0 ${width} ${H}`} width={width} height={H} fill="currentColor" aria-hidden className="shrink-0">
+      {PROFILE.map((_, i) => (
+        <rect
+          key={i}
+          ref={(el) => {
+            bars.current[i] = el;
+          }}
+          x={i * (BAR_W + GAP)}
+          y={(H - MIN_H) / 2}
+          width={BAR_W}
+          height={MIN_H}
+          rx={BAR_W / 2}
+        />
+      ))}
+    </svg>
+  );
+}
+
+// Lucide mic / mic-off / x / undo-2 glyphs, inlined because bb's icon set lacks MicOff.
+function Glyph({ name, className = "size-4" }: { name: "mic" | "mic-off" | "x" | "return" | "alert"; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      {name === "mic-off" ? (
+        <>
+          <line x1="2" x2="22" y1="2" y2="22" />
+          <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2" />
+          <path d="M5 10v2a7 7 0 0 0 12 5" />
+          <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33" />
+          <path d="M9 9v3a3 3 0 0 0 5.12 2.12" />
+          <line x1="12" x2="12" y1="19" y2="22" />
+        </>
+      ) : name === "mic" ? (
+        <>
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+          <line x1="12" x2="12" y1="19" y2="22" />
+        </>
+      ) : name === "x" ? (
+        <>
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </>
+      ) : name === "return" ? (
+        <>
+          <path d="M9 14 4 9l5-5" />
+          <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />
+        </>
+      ) : (
+        <>
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+          <path d="M12 9v4" />
+          <path d="M12 17h.01" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+const BUTTON_BASE =
+  "inline-flex items-center justify-center rounded-full transition-colors hover:bg-state-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+const IDLE = "text-muted-foreground hover:text-foreground";
+const PILL_BUTTON = `${BUTTON_BASE} size-6`;
+const PILL_BUTTON_IDLE = `${PILL_BUTTON} ${IDLE}`;
+// The sidebar pill has more room: bigger hit targets.
+const DOCK_BUTTON = `${BUTTON_BASE} size-8`;
+const DOCK_BUTTON_IDLE = `${DOCK_BUTTON} ${IDLE}`;
+
+/** How long the pill takes to slide open from the waveform button. */
+const EXPAND_MS = 220;
+
+/**
+ * Where the pill slides open from: the box the mic and waveform took up when
+ * you clicked start, keyed by session. Read once, by the pill that replaces them.
+ */
+const expandFrom = new WeakMap<VoiceSession, { width: number; background: string }>();
+
+/**
+ * Where the pill slides closed to: the same start box (mic plus waveform) and
+ * the mic alone, for when you typed during the session and send is back. Kept
+ * for the session's lifetime; the fallbacks are bb's default sizes.
+ */
+const restBox = new WeakMap<VoiceSession, { both: number; mic: number; background: string }>();
+const REST_FALLBACK = { both: 96, mic: 32, background: "transparent" };
+
+function rememberExpandFrom(session: VoiceSession, button: HTMLElement, docked: boolean) {
+  const right = button.getBoundingClientRect().right;
+  // Docked, the mic sits left of the waveform and goes away with it, so start
+  // from its left edge too; then nothing else in the composer row moves.
+  // Undocked (fallback), the mic stays put, so the pill grows from the button.
+  const mic = docked ? button.closest("form")?.querySelector<HTMLElement>('button[aria-label="Start voice input"]') : null;
+  const left = mic?.getBoundingClientRect().width ? mic.getBoundingClientRect().left : button.getBoundingClientRect().left;
+  const background = getComputedStyle(button).backgroundColor;
+  expandFrom.set(session, { width: right - left, background });
+  restBox.set(session, {
+    both: right - left,
+    mic: mic?.getBoundingClientRect().width || REST_FALLBACK.mic,
+    background,
+  });
+}
+
+/**
+ * The reverse of opening: shrink the pill rightward (right edge fixed) into the
+ * box the mic and waveform (or just the mic, if send is showing) will take,
+ * then hand over to them.
+ */
+function useSlideClosed(
+  ref: React.RefObject<HTMLElement | null>,
+  session: VoiceSession,
+  closing: boolean,
+  toStart: boolean,
+  onClosed: () => void,
+) {
+  const done = useRef(onClosed);
+  done.current = onClosed;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!closing) return;
+    if (!el) return void done.current();
+    const from = el.getBoundingClientRect().width;
+    for (const animation of el.getAnimations()) animation.cancel();
+    const rest = restBox.get(session) ?? REST_FALLBACK;
+    const to = toStart ? rest.both : rest.mic;
+    const clip = { overflow: "hidden", justifyContent: "flex-end" };
+    const animation = el.animate(
+      [
+        { ...clip, width: `${from}px` },
+        {
+          ...clip,
+          width: `${to}px`,
+          borderColor: "transparent",
+          backgroundColor: toStart ? rest.background : "transparent",
+        },
+      ],
+      {
+        duration: EXPAND_MS,
+        easing: "cubic-bezier(0.3, 0, 0.8, 0.15)",
+        fill: "forwards",
+      },
+    );
+    animation.onfinish = () => done.current();
+    return () => animation.cancel();
+  }, [ref, session, closing, toStart]);
+}
+
+/**
+ * Slide the pill open leftward (its right edge stays put) from the start box,
+ * then keep sliding as it changes width (status text, the mute button appearing)
+ * instead of popping to the new size.
+ */
+function useSlidingWidth(ref: React.RefObject<HTMLElement | null>, session: VoiceSession, shown: boolean) {
+  const last = useRef<number | null>(null);
+  const running = useRef<Animation | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!shown || !el) {
+      last.current = null;
+      return;
+    }
+    const opening = last.current === null ? expandFrom.get(session) : undefined;
+    expandFrom.delete(session);
+    // Mid-slide, start from where it is now, not where the last slide began.
+    const current = running.current?.playState === "running" ? el.getBoundingClientRect().width : last.current;
+    running.current?.cancel();
+    running.current = null;
+    const to = el.getBoundingClientRect().width;
+    const from = opening?.width ?? current;
+    last.current = to;
+    if (from === null || Math.abs(to - from) < 1 || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const clip = { overflow: "hidden", justifyContent: "flex-end" };
+    running.current = el.animate(
+      [
+        {
+          ...clip,
+          width: `${from}px`,
+          ...(opening
+            ? {
+                backgroundColor: opening.background,
+                borderColor: "transparent",
+              }
+            : {}),
+        },
+        { ...clip, width: `${to}px` },
+      ],
+      { duration: EXPAND_MS, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+    );
+  });
+}
+
+function VoicePill({
+  session,
+  closing = false,
+  toStart = false,
+  onClosed = () => {},
+}: {
+  session: VoiceSession;
+  closing?: boolean;
+  toStart?: boolean;
+  onClosed?: () => void;
+}) {
+  const state = useVoiceState(session);
+  // While sliding closed, keep showing what the pill showed last.
+  const lastShown = useRef(state);
+  if (state.phase !== "off") lastShown.current = state;
+  const { phase, muted, caption, agentStatus } = closing && state.phase === "off" ? lastShown.current : state;
+  const pill = useRef<HTMLDivElement>(null);
+  useSlidingWidth(pill, session, state.phase !== "off");
+  useSlideClosed(pill, session, closing && state.phase === "off", toStart, onClosed);
+
+  useEffect(() => {
+    if (phase !== "error") return;
+    const timer = setTimeout(() => session.dismissError(), ERROR_DISMISS_MS);
+    return () => clearTimeout(timer);
+  }, [phase, session]);
+
+  if (phase === "off") return null;
+  const micActive = phase === "listening" || phase === "speaking";
+  // Errors are usually setup problems (no key, no connection plugin), so say
+  // what went wrong in the pill rather than only in a tooltip.
+  const status = phase === "error" ? caption || "Voice error" : muted && micActive ? "Muted" : LABELS[phase];
+  const detail = [agentStatus ? `Agent: ${agentStatus}` : "", caption].filter(Boolean).join("\n");
+
+  return (
+    <div
+      ref={pill}
+      data-voice-mode-pill=""
+      data-phase={phase}
+      data-muted={muted}
+      className={cn(
+        "voice-mode-pill inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-border/60 bg-state-hover pl-2.5 pr-1",
+        phase === "error"
+          ? "text-destructive"
+          : muted && micActive
+            ? "text-muted-foreground"
+            : phase === "speaking"
+              ? "text-sky-500"
+              : "text-foreground",
+      )}
+    >
+      <span role="status" aria-live="polite" title={detail || undefined} className="inline-flex items-center gap-2 pr-1">
+        {phase === "error" ? <Glyph name="alert" /> : <LevelWave session={session} phase={phase} muted={muted && micActive} />}
+        <span className={cn("text-xs font-medium text-foreground/80", phase === "error" && "max-w-72 truncate")}>{status}</span>
+      </span>
+      {micActive ? (
+        <button
+          type="button"
+          aria-label={muted ? "Unmute microphone" : "Mute microphone"}
+          aria-pressed={muted}
+          title={muted ? "Unmute microphone" : "Mute microphone (voice mode stays on)"}
+          onClick={() => session.setMuted(!muted)}
+          className={muted ? `${PILL_BUTTON} bg-background text-red-500` : PILL_BUTTON_IDLE}
+        >
+          <Glyph name={muted ? "mic-off" : "mic"} />
+        </button>
+      ) : null}
+      <button
+        type="button"
+        aria-label={phase === "error" ? "Dismiss voice mode error" : "End voice mode"}
+        title={phase === "error" ? caption || "Dismiss" : "End voice mode"}
+        onClick={() => void (phase === "error" ? session.dismissError() : session.stop())}
+        className={PILL_BUTTON_IDLE}
+      >
+        <Glyph name="x" />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Mounted once per thread composer. Tags the composer so the mic's hold
+ * gesture knows its thread, keeps a portal host beside the mic, and renders
+ * the pill there (inline here when the mic isn't rendered).
+ */
+function ComposerVoice() {
+  const composer = useComposer();
+  const threadId = composer.scope.kind === "thread" ? composer.scope.threadId : null;
+  // bb renders no plugin composer actions in its compact composer, so nothing
+  // here mounts there; CompactVoiceButtons hosts it from the app overlay.
+  if (!threadId || composer.layout === "compact") return null;
+  return <ThreadComposerVoice threadId={threadId} canStart={composer.isEmpty && !composer.isRunning} />;
+}
+
+/**
+ * bb's composer is a plugin (`builtin:composer`), swappable under Settings →
+ * Appearance → Composer, so these markers belong to that plugin rather than to
+ * a stable bb API. A different composer can therefore leave a composer compact
+ * with no marker to find; the count check in planCompactHosts already refuses
+ * to guess there, and warnUnhostedComposers says so out loud instead of the
+ * button quietly not appearing.
+ */
+const COMPACT_FORM_SELECTOR = "form[data-promptbox][data-promptbox-compact]";
+
+/**
+ * The composers on screen that bb is drawing compact: collapsed or phone
+ * width, the case where its action row leaves our composer action out.
+ */
+function compactComposerForms(): HTMLFormElement[] {
+  return Array.from(document.querySelectorAll<HTMLFormElement>(COMPACT_FORM_SELECTOR));
+}
+
+/** One warning per distinct lament, so a re-render cannot flood the console. */
+const warned = new Set<string>();
+function warnOnce(message: string, detail?: unknown) {
+  if (warned.has(message)) return;
+  warned.add(message);
+  console.warn(`[voice-mode] ${message}`, detail ?? "");
+}
+
+/**
+ * Say so when a composer is compact and we can't find its form, which is what a
+ * swapped composer looks like from here. Without this the button just doesn't
+ * appear, and a silent feature loss is hard to tell from a bug.
+ */
+function warnUnhostedComposers(composers: readonly CompactComposer[], formCount: number) {
+  const compact = compactThreadComposers(composers).length;
+  if (!compact) return;
+  if (!formCount) {
+    warnOnce(
+      `voice mode can't place its button: ${compact} compact thread composer(s) but no ${COMPACT_FORM_SELECTOR}. ` +
+        "bb's compact composer has no plugin action slot, so voice mode hosts its own. If you switched composer " +
+        "under Settings → Appearance → Composer, this marker may not be there.",
+    );
+    return;
+  }
+  if (formCount !== compact) {
+    warnOnce(
+      `voice mode is standing down: ${compact} compact thread composer(s) vs ${formCount} compact form(s).`,
+      { composers: compact, forms: formCount },
+    );
+  }
+}
+
+/**
+ * The app overlay's stand-in for the composer action, for the thread composers
+ * bb is drawing compact. Their plugin action slots exist but never render, so
+ * this is the only way in. Each host pairs with a form by position; when the
+ * counts disagree (a composer in the way that we don't host) it renders
+ * nothing, leaving bb's own controls untouched rather than guessing.
+ */
+function CompactVoiceButtons() {
+  const composers = useComposers();
+  const formCount = compactComposerForms().length;
+  const hosts = planCompactHosts(composers, formCount);
+  if (!hosts) {
+    warnUnhostedComposers(composers, formCount);
+    return null;
+  }
+  return (
+    <>
+      {hosts.map((host) => (
+        <ThreadComposerVoice
+          key={host.key}
+          threadId={host.threadId}
+          canStart={host.canStart}
+          compactIndex={host.compactIndex}
+          compactCount={host.compactCount}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Copy the size and look of bb's (hidden) send control so the waveform matches
+ * it under any theme, e.g. a theme that makes send a circle.
+ */
+function useSendButtonLook(ref: React.RefObject<HTMLElement | null>) {
+  const [look, setLook] = useState<React.CSSProperties>({});
+  useEffect(() => {
+    const form = ref.current?.closest("form");
+    if (!form) return;
+    const read = () => {
+      // The compact composer has no send menu: bb sends from a plain button in
+      // the submit group, so copy that one's size and colors instead.
+      const menu = form.querySelector<HTMLElement>(SEND_SELECTOR);
+      const target =
+        menu ??
+        form.querySelector<HTMLElement>(`${SUBMIT_GROUP_SELECTOR} [data-promptbox-submit-action]`) ??
+        form.querySelector<HTMLElement>(SUBMIT_GROUP_SELECTOR);
+      if (!target) return;
+      // The control is display:none while we stand in for it, and bb collapses
+      // its model chevron (w-0) while the composer is empty, growing it (w-6) as
+      // you type. Un-hide and expand it for one synchronous layout read (no
+      // paint in between) so the waveform takes the size send has once you type.
+      const hider = target.closest<HTMLElement>(`[${VOICE_SEND_ATTR}]`);
+      hider?.removeAttribute(VOICE_SEND_ATTR);
+      const chevron = menu
+        ? Array.from(menu.children).find((el): el is HTMLElement => el instanceof HTMLElement && el.classList.contains("w-0"))
+        : undefined;
+      const transition = chevron?.style.transition ?? "";
+      if (chevron) {
+        chevron.style.transition = "none";
+        chevron.classList.replace("w-0", "w-6");
+      }
+      const rect = target.getBoundingClientRect();
+      const m = getComputedStyle(target);
+      const next: React.CSSProperties = {
+        // The whole send control (arrow plus model chevron), so swapping
+        // between it and the waveform doesn't change the button's size.
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        padding: 0,
+        borderRadius: m.borderTopLeftRadius,
+        backgroundColor: m.backgroundColor,
+        color: m.color,
+      };
+      if (chevron) {
+        chevron.classList.replace("w-6", "w-0");
+        void chevron.offsetWidth;
+        chevron.style.transition = transition;
+      }
+      hider?.setAttribute(VOICE_SEND_ATTR, "");
+      if (!rect.width || !rect.height) return;
+      setLook((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
+    read();
+    // Theme switches restyle the document; re-read when they do.
+    const observer = new MutationObserver(read);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style", "data-theme"],
+    });
+    observer.observe(document.head, { childList: true, subtree: true });
+    // Touch layouts size send differently (h-10); follow viewport changes too.
+    window.addEventListener("resize", read);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", read);
+    };
+  }, [ref]);
+  return look;
+}
+
+function StartVoiceButton({ session, docked }: { session: VoiceSession; docked: boolean }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const look = useSendButtonLook(ref);
+  return (
+    <span className="voice-mode-start ml-1 inline-flex" data-tip="Start new voice chat">
+      <button
+        ref={ref}
+        type="button"
+        aria-label="Start new voice chat"
+        onClick={(event) => {
+          rememberExpandFrom(session, event.currentTarget, docked);
+          void session.start();
+        }}
+        style={look}
+        className="inline-flex h-8 cursor-pointer items-center justify-center rounded-md bg-foreground px-2 text-background transition-[filter] duration-150 hover:brightness-90 hover:duration-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring max-md:pointer-coarse:h-10 max-md:pointer-coarse:px-3"
+      >
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden className="size-4">
+          {[4, 8, 12, 8, 4].map((h, i) => (
+            <rect key={i} x={1.5 + i * 2.75} y={(16 - h) / 2} width={1.75} height={h} rx={0.875} />
+          ))}
+        </svg>
+      </button>
+    </span>
+  );
+}
+
+function ThreadComposerVoice({
+  threadId,
+  canStart,
+  compactIndex,
+  compactCount,
+}: {
+  threadId: string;
+  canStart: boolean;
+  /** Set when the app overlay (not the composer action row) hosts this. */
+  compactIndex?: number;
+  compactCount?: number;
+}) {
+  const inOverlay = compactIndex !== undefined && compactCount !== undefined;
+  const session = sessionFor(threadId);
+  const { phase } = useVoiceState(session);
+  const anchor = useRef<HTMLSpanElement>(null);
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  // bb's send group usually renders within a frame or two of this action. If
+  // it hasn't after a beat, bb's markup has changed: fall back to rendering in
+  // the composer action slot the SDK gave us, beside bb's own controls, and
+  // leave send and the mic alone. An overlay host has no slot to fall back to.
+  const [undocked, setUndocked] = useState(false);
+  useEffect(() => {
+    if (host || inOverlay) {
+      setUndocked(false);
+      return;
+    }
+    const timer = setTimeout(() => setUndocked(true), FALLBACK_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [host, inOverlay]);
+
+  // When a live session ends (end button, idle end, the socket closing), keep
+  // the pill up while it slides closed. Derived during render so the mic and
+  // waveform never flash in before the slide starts.
+  const [prevPhase, setPrevPhase] = useState(phase);
+  const [closing, setClosing] = useState(false);
+  if (phase !== prevPhase) {
+    setPrevPhase(phase);
+    setClosing(phase === "off" && isLive(prevPhase) && !matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+  const showing = phase !== "off" || closing;
+
+  useEffect(() => session.retain(), [session]);
+
+  useEffect(() => {
+    const start = anchor.current;
+    if (!start) return;
+    const portal = document.createElement("span");
+    portal.className = "voice-mode-host";
+    let frame = 0;
+    let composerRoot: HTMLElement | null = null;
+    let observer: MutationObserver | null = null;
+    const place = () => {
+      frame = 0;
+      // bb's buttons can render after this action does, so key off the composer
+      // form and look them up on every change.
+      const group =
+        composerRoot?.querySelector(SEND_SELECTOR)?.closest(SUBMIT_GROUP_SELECTOR) ??
+        composerRoot?.querySelector(SUBMIT_GROUP_SELECTOR) ??
+        null;
+      if (group && portal.nextSibling !== group) group.before(portal);
+      setHost(portal.isConnected ? portal : null);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(place);
+    };
+    // Inside the composer action slot the form is our ancestor. In the app
+    // overlay there is none, so take the paired compact form and keep looking
+    // until it exists: the thread and its composer can arrive after we mount.
+    const watch = () => {
+      const forms = compactCount === undefined ? null : compactComposerForms();
+      const paired =
+        compactIndex === undefined || !forms || forms.length !== compactCount ? null : (forms[compactIndex] ?? null);
+      composerRoot = start.closest("form") ?? paired;
+      if (!composerRoot) return false;
+      observer?.disconnect();
+      observer = new MutationObserver(schedule);
+      observer.observe(composerRoot, { childList: true, subtree: true });
+      place();
+      return true;
+    };
+    const bodyObserver = watch()
+      ? null
+      : new MutationObserver(() => {
+          if (!watch()) return;
+          bodyObserver?.disconnect();
+        });
+    bodyObserver?.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      bodyObserver?.disconnect();
+      observer?.disconnect();
+      cancelAnimationFrame(frame);
+      portal.remove();
+      composerRoot?.removeAttribute(VOICE_SEND_ATTR);
+      composerRoot?.removeAttribute(LIVE_ATTR);
+      setHost(null);
+    };
+  }, [threadId, compactIndex, compactCount]);
+
+  // Empty and idle: our waveform stands in for bb's send button. Live: the
+  // pill stands in for bb's mic (and for send, until you type).
+  const showStart = canStart && phase === "off" && !closing;
+  const hideSend = canStart && phase !== "error";
+  useEffect(() => {
+    const root = host?.closest("form");
+    if (!root) return;
+    root.toggleAttribute(VOICE_SEND_ATTR, hideSend);
+    root.toggleAttribute(LIVE_ATTR, showing);
+  }, [host, hideSend, showing]);
+
+  const content = showStart ? (
+    <StartVoiceButton session={session} docked={!!host} />
+  ) : (
+    <VoicePill session={session} closing={closing} toStart={canStart && !!host} onClosed={() => setClosing(false)} />
+  );
+  // Without a composer slot to sit in, only a live session is worth showing
+  // (mute, end, back to the thread).
+  const inline = undocked || isLive(phase) || phase === "error" || closing;
+  return (
+    <>
+      <span ref={anchor} hidden />
+      {host ? createPortal(content, host) : inline ? content : null}
+    </>
+  );
+}
+
+/**
+ * A slot of our own at the bottom of the sidebar's panel body, just above the
+ * footer (the Settings / more menu), so the pill stays inside the panel's
+ * border, takes space from the thread list, and the footer doesn't move. Found
+ * by bb's `data-testid="app-sidebar-body"` marker (the flex column inside the
+ * nav-rail panel, so the icon rail beside it is left alone); null when the
+ * sidebar is collapsed or the marker is gone. bb has no plugin slot here.
+ */
+function useSidebarSlot(enabled: boolean): HTMLElement | null {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let frame = 0;
+    let current: HTMLElement | null = null;
+    const place = () => {
+      frame = 0;
+      const body =
+        Array.from(document.querySelectorAll<HTMLElement>('[data-testid="app-sidebar-body"]')).find(
+          (el) => !el.hidden && el.getBoundingClientRect().width > 80,
+        ) ?? null;
+      // React may append its own children after ours; keep ours last.
+      if (current && body && current.parentElement === body && body.lastElementChild === current) return;
+      if (current && body && current.parentElement === body) {
+        body.appendChild(current);
+        return;
+      }
+      current?.remove();
+      current = null;
+      if (body) {
+        current = document.createElement("div");
+        current.setAttribute("data-voice-mode-sidebar-slot", "");
+        body.appendChild(current);
+      }
+      setSlot(current);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(place);
+    };
+    place();
+    // Sidebar collapse, mobile drawer, remounts: re-place on DOM and size changes.
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-state", "data-collapsible", "style", "hidden"],
+    });
+    window.addEventListener("resize", schedule);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", schedule);
+      cancelAnimationFrame(frame);
+      current?.remove();
+      setSlot(null);
+    };
+  }, [enabled]);
+  return slot;
+}
+
+/**
+ * App-wide: while a session is live and its thread's composer isn't on screen
+ * (you opened Settings or another thread), show a pill at the bottom of the
+ * sidebar, above its footer, so you can still see, mute, end, or jump back to
+ * the conversation. With the sidebar hidden it floats at the bottom-left.
+ */
+function FloatingVoice() {
+  const session = useSyncExternalStore(subscribeAll, undockedSession);
+  const slot = useSidebarSlot(session !== null);
+  if (!session) return null;
+  if (!slot) return <FloatingPill session={session} placement="floating" />;
+  return createPortal(<FloatingPill session={session} placement="sidebar" />, slot);
+}
+
+function FloatingPill({ session, placement }: { session: VoiceSession; placement: "sidebar" | "floating" }) {
+  const { phase, muted, caption, agentStatus } = useVoiceState(session);
+  const navigate = useBbNavigate();
+  // Detailed unless the user picked compact (also while settings are loading, so it doesn't flip).
+  const detailed = useSettings().values?.widgetStyle !== "compact";
+  const micActive = phase === "listening" || phase === "speaking";
+  const status = muted && micActive ? "Muted" : LABELS[phase];
+  const detail = [agentStatus ? `Agent: ${agentStatus}` : "", caption].filter(Boolean).join("\n");
+  const statusRow = (
+    <span role="status" aria-live="polite" className="inline-flex min-w-0 items-center gap-2">
+      <LevelWave session={session} phase={phase} muted={muted && micActive} />
+      <span className="truncate text-xs font-medium text-foreground/80">{status}</span>
+    </span>
+  );
+  const backButton = (
+    <button
+      type="button"
+      aria-label="Back to the voice chat's thread"
+      title="Back to the voice chat's thread"
+      onClick={() => navigate.toThread(session.threadId)}
+      className={cn(DOCK_BUTTON_IDLE, "shrink-0")}
+    >
+      <Glyph name="return" className="size-5" />
+    </button>
+  );
+  const controls = (
+    <>
+      <div title={detail || undefined} className={cn("inline-flex min-w-0 flex-1 items-center pr-2", detailed && "pl-2")}>
+        {statusRow}
+      </div>
+      {micActive ? (
+        <button
+          type="button"
+          aria-label={muted ? "Unmute microphone" : "Mute microphone"}
+          aria-pressed={muted}
+          title={muted ? "Unmute microphone" : "Mute microphone (voice mode stays on)"}
+          onClick={() => session.setMuted(!muted)}
+          className={muted ? `${DOCK_BUTTON} bg-state-hover text-red-500` : DOCK_BUTTON_IDLE}
+        >
+          <Glyph name={muted ? "mic-off" : "mic"} className="size-5" />
+        </button>
+      ) : null}
+      <button
+        type="button"
+        aria-label="End voice mode"
+        title="End voice mode"
+        onClick={() => void session.stop()}
+        className={DOCK_BUTTON_IDLE}
+      >
+        {/* Lucide's x fills only the middle half of its box; 24px matches the 20px mic optically. */}
+        <Glyph name="x" className="size-6" />
+      </button>
+    </>
+  );
+  return (
+    <div
+      data-voice-mode-floating=""
+      data-phase={phase}
+      data-style={detailed ? "detailed" : "compact"}
+      className={cn(
+        "voice-mode-floating border border-border/60 bg-background",
+        detailed ? "flex flex-col rounded-xl p-1" : "inline-flex h-10 items-center gap-1 rounded-full px-1",
+        placement === "sidebar" ? "w-full" : "fixed bottom-4 left-4 z-50 max-w-72 shadow-lg",
+        muted && micActive ? "text-muted-foreground" : phase === "speaking" ? "text-sky-500" : "text-foreground",
+      )}
+    >
+      {detailed ? (
+        <>
+          {/* Back + the thread's name as one button: hover or click anywhere on the row. */}
+          <button
+            type="button"
+            aria-label="Back to the voice chat's thread"
+            title="Back to the voice chat's thread"
+            onClick={() => navigate.toThread(session.threadId)}
+            className="voice-mode-back-row flex w-full min-w-0 items-center gap-1 rounded-lg pr-2 text-left transition-colors hover:bg-state-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <span className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground">
+              <Glyph name="return" className="size-5" />
+            </span>
+            <span className="line-clamp-2 min-w-0 flex-1 break-words text-xs font-medium leading-snug text-foreground">
+              <ThreadTitle threadId={session.threadId} />
+            </span>
+          </button>
+          <div className="flex w-full min-w-0 items-center gap-1">{controls}</div>
+        </>
+      ) : (
+        <>
+          {backButton}
+          {controls}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default definePluginApp((app) => {
+  app.composer.customize({
+    id: "voice-mode",
+    scopes: ["thread"],
+    actions: [{ id: "voice-mode", component: ComposerVoice }],
+  });
+
+  app.composer.experimental_registerCommand({
+    id: "toggle-voice-mode",
+    title: "Start or end voice chat",
+    // Codex's binding. Rebind or clear it in Settings → Keyboard.
+    defaultShortcut: { key: "v", control: true, shift: true },
+    run({ composer }) {
+      if (composer.scope.kind !== "thread") return;
+      const session = sessionFor(composer.scope.threadId);
+      void (isLive(session.state.phase) ? session.stop() : session.start());
+    },
+  });
+
+  app.slots.experimental_appOverlay({
+    id: "voice-mode-floating",
+    component: FloatingVoice,
+  });
+
+  // bb's compact composer renders no plugin action slot, so the start control
+  // needs a host that is always mounted (see CompactVoiceButtons).
+  app.slots.experimental_appOverlay({
+    id: "voice-mode-compact",
+    component: CompactVoiceButtons,
+  });
+
+  // The Connection setting's description can only be plain text, so the two
+  // known connection plugins get links and install commands here.
+  app.slots.settingsSection({
+    id: "connection-plugins",
+    title: "Connection plugins",
+    description: "Voice Mode installs with none of these. Install one and leave Connection on auto.",
+    component: ConnectionPluginsSection,
+  });
+
+  app.contentScripts.register({
+    id: "voice-mode-cleanup",
+    mount() {
+      return () => void stopAllSessions();
+    },
+  });
+});

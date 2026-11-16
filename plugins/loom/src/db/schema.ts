@@ -1,0 +1,219 @@
+// SQLite schema: append-only migrations, never edit a shipped statement.
+// Every time column is epoch milliseconds.
+// The CHECK lists are literal on purpose: a shipped statement must never change when a constant in states.ts does.
+
+export const MIGRATIONS: string[] = [
+  `CREATE TABLE projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    key TEXT NOT NULL UNIQUE,
+    bb_project_id TEXT NOT NULL,
+    host_id TEXT,
+    state TEXT NOT NULL CHECK (state IN ('draft', 'ready', 'running', 'paused', 'done', 'archived')),
+    approved_version INTEGER,
+    pending_version INTEGER,
+    section_id TEXT,
+    planner_thread_id TEXT,
+    system_reason TEXT,
+    hold_until INTEGER,
+    triage_pending INTEGER NOT NULL DEFAULT 0 CHECK (triage_pending IN (0, 1)),
+    triage_round INTEGER NOT NULL DEFAULT 0,
+    triage_sent_at INTEGER,
+    pr_url TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE spec_versions (
+    project_id INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    toml TEXT NOT NULL,
+    spec_json TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    proposed_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (project_id, version)
+  )`,
+  `CREATE TABLE tickets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    seq INTEGER NOT NULL,
+    key TEXT NOT NULL UNIQUE,
+    ref TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    acceptance_json TEXT NOT NULL DEFAULT '[]',
+    verify_json TEXT NOT NULL DEFAULT '[]',
+    scope_json TEXT NOT NULL DEFAULT '[]',
+    deps_json TEXT NOT NULL DEFAULT '[]',
+    priority INTEGER NOT NULL DEFAULT 2 CHECK (priority BETWEEN 0 AND 3),
+    state TEXT NOT NULL CHECK (state IN ('queued', 'working', 'checking', 'review', 'approved', 'merging', 'pr_open', 'done', 'blocked', 'cancelled')),
+    attempt INTEGER NOT NULL DEFAULT 0,
+    failures INTEGER NOT NULL DEFAULT 0,
+    check_failures INTEGER NOT NULL DEFAULT 0,
+    review_round INTEGER NOT NULL DEFAULT 0,
+    branch TEXT,
+    environment_id TEXT,
+    worker_thread_id TEXT,
+    head_sha TEXT,
+    pr_url TEXT,
+    pr_checked_at INTEGER,
+    blocked_reason TEXT,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    state_at INTEGER NOT NULL,
+    UNIQUE (project_id, seq),
+    UNIQUE (project_id, ref)
+  )`,
+  `CREATE INDEX tickets_project_state ON tickets (project_id, state)`,
+  `CREATE TABLE posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    ticket_id INTEGER NOT NULL,
+    parent_id INTEGER,
+    author_kind TEXT NOT NULL CHECK (author_kind IN ('human', 'planner', 'worker', 'reviewer', 'loom')),
+    author_thread_id TEXT,
+    kind TEXT NOT NULL CHECK (kind IN ('brief', 'note', 'claim', 'submit', 'check', 'review', 'block', 'reply', 'merge', 'system')),
+    body TEXT NOT NULL,
+    data_json TEXT NOT NULL DEFAULT '{}',
+    at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX posts_ticket ON posts (ticket_id, id)`,
+  `CREATE TABLE threads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id TEXT UNIQUE,
+    spawn_token TEXT UNIQUE,
+    project_id INTEGER NOT NULL,
+    ticket_id INTEGER,
+    role TEXT NOT NULL CHECK (role IN ('planner', 'worker', 'reviewer')),
+    state TEXT NOT NULL CHECK (state IN ('spawning', 'active', 'ending', 'ended')),
+    environment_id TEXT,
+    idle_count INTEGER NOT NULL DEFAULT 0,
+    rate_limit_retries INTEGER NOT NULL DEFAULT 0,
+    tokens INTEGER,
+    tokens_at INTEGER,
+    review_round INTEGER NOT NULL DEFAULT 0,
+    started_at INTEGER NOT NULL,
+    clock_at INTEGER,
+    ended_at INTEGER,
+    end_reason TEXT
+  )`,
+  `CREATE TABLE reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id INTEGER NOT NULL,
+    round INTEGER NOT NULL,
+    thread_row_id INTEGER,
+    verdict TEXT NOT NULL CHECK (verdict IN ('pending', 'approved', 'changes_requested')),
+    summary TEXT,
+    findings_json TEXT NOT NULL DEFAULT '[]',
+    at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    ticket_id INTEGER,
+    at INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    data_json TEXT NOT NULL DEFAULT '{}'
+  )`,
+  `CREATE INDEX events_project ON events (project_id, id)`,
+  `CREATE TRIGGER events_append_only_update BEFORE UPDATE ON events BEGIN SELECT RAISE(ABORT, 'events is append-only'); END`,
+  `CREATE TRIGGER events_append_only_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT, 'events is append-only'); END`,
+  `ALTER TABLE tickets ADD COLUMN merge_before TEXT`,
+  `CREATE TABLE planning (id INTEGER PRIMARY KEY AUTOINCREMENT, thread_id TEXT NOT NULL UNIQUE, bb_project_id TEXT NOT NULL,
+    title TEXT NOT NULL, started_at INTEGER NOT NULL, ended_at INTEGER, end_reason TEXT)`,
+  `CREATE TABLE runs (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, ticket_id INTEGER NOT NULL,
+    stage TEXT NOT NULL CHECK (stage IN ('check', 'merge')), kind TEXT NOT NULL CHECK (kind IN ('command', 'git')), label TEXT NOT NULL,
+    started_at INTEGER NOT NULL, ended_at INTEGER, duration_ms INTEGER, ok INTEGER CHECK (ok IN (0, 1)), exit_code INTEGER,
+    timed_out INTEGER NOT NULL DEFAULT 0, output TEXT NOT NULL DEFAULT '')`,
+  `CREATE INDEX runs_ticket ON runs (ticket_id, id)`,
+  `ALTER TABLE threads ADD COLUMN attempt INTEGER`,
+  `CREATE TABLE records (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL UNIQUE,
+    state TEXT NOT NULL CHECK (state IN ('pending', 'summarizing', 'sending', 'sent', 'failed', 'skipped')),
+    thread_id TEXT, started_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
+  `ALTER TABLE tickets ADD COLUMN repo TEXT`,
+  `CREATE TABLE project_repos (project_id INTEGER NOT NULL, name TEXT NOT NULL, pr_url TEXT, landed_sha TEXT, landed_at INTEGER, PRIMARY KEY (project_id, name))`,
+  `CREATE TABLE spec_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, version INTEGER NOT NULL, round INTEGER NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('reviewing', 'approved', 'changes_requested', 'failed', 'superseded')),
+    spawn_token TEXT NOT NULL UNIQUE, thread_id TEXT UNIQUE, idle_count INTEGER NOT NULL DEFAULT 0, summary TEXT,
+    findings_json TEXT NOT NULL DEFAULT '[]', reason TEXT, started_at INTEGER NOT NULL, ended_at INTEGER)`,
+  `ALTER TABLE tickets ADD COLUMN pr_branch TEXT`,
+  `ALTER TABLE tickets ADD COLUMN pushed_sha TEXT`,
+  `ALTER TABLE tickets ADD COLUMN pushed_at INTEGER`,
+  `ALTER TABLE tickets ADD COLUMN pr_ask_json TEXT`,
+  `ALTER TABLE tickets ADD COLUMN pr_text_json TEXT`,
+  `ALTER TABLE tickets ADD COLUMN pr_seen_json TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE tickets ADD COLUMN pr_rounds INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE tickets ADD COLUMN pr_status_json TEXT`,
+  `ALTER TABLE tickets ADD COLUMN pr_deliver_json TEXT`,
+  // A pull request opened before these columns existed was pushed from the ticket's branch at its head.
+  `UPDATE tickets SET pr_branch = branch, pushed_sha = head_sha WHERE pr_url IS NOT NULL`,
+  `CREATE TABLE planner_log (id INTEGER PRIMARY KEY AUTOINCREMENT, thread_id TEXT NOT NULL, at INTEGER NOT NULL,
+    author TEXT NOT NULL CHECK (author IN ('planner', 'human')), text TEXT NOT NULL)`,
+  `CREATE INDEX planner_log_thread ON planner_log (thread_id, id)`,
+  `ALTER TABLE tickets ADD COLUMN stack_json TEXT`,
+  `ALTER TABLE tickets ADD COLUMN pr_base TEXT`,
+  // How long each passed check took, by the forge repository its pull request is on, so Loom can tell how far a running one is.
+  `CREATE TABLE check_durations (repo_key TEXT NOT NULL, name TEXT NOT NULL, check_key TEXT NOT NULL, duration_ms INTEGER NOT NULL, at INTEGER NOT NULL,
+    PRIMARY KEY (repo_key, check_key))`,
+  `CREATE INDEX check_durations_name ON check_durations (repo_key, name, at)`,
+  // StartWait: the ticket waits to start its worker or a reviewer again after a failed start.
+  `ALTER TABLE tickets ADD COLUMN start_wait_json TEXT`,
+  // When Loom archived an idle worker of an open pull request to free its environment; kept while the thread comes back.
+  `ALTER TABLE threads ADD COLUMN released_at INTEGER`,
+  `ALTER TABLE spec_reviews ADD COLUMN wait_json TEXT`,
+  `ALTER TABLE records ADD COLUMN retry_at INTEGER`,
+  // The ticket's merge patch over its repo's environment inputs; null for none.
+  `ALTER TABLE tickets ADD COLUMN environment_json TEXT`,
+  // PollWait: the ticket's pull request reads failed with GitHub server errors in a row; null once a read succeeds.
+  `ALTER TABLE tickets ADD COLUMN pr_poll_json TEXT`,
+  // The keys of the tickets whose pull requests merge before this one's, without holding its start or stacking it.
+  `ALTER TABLE tickets ADD COLUMN merge_after_json TEXT NOT NULL DEFAULT '[]'`,
+  // PrMeta: the pull request's draft flag, review decision and base branch when Loom last read them.
+  `ALTER TABLE tickets ADD COLUMN pr_meta_json TEXT`,
+  // HandBack: work going back to the ticket's worker, not sent yet; a review's changes and a merge that did not land use it as a fix round does.
+  `ALTER TABLE tickets RENAME COLUMN pr_deliver_json TO handback_json`,
+  // The tree of head_sha, which stays the same when a commit is carried between machines and its id does not.
+  `ALTER TABLE tickets ADD COLUMN head_tree TEXT`,
+  // Resume: the work a worker on a new machine must carry in with loom_resume before it submits; null for none.
+  `ALTER TABLE threads ADD COLUMN resume_json TEXT`,
+  // The seq of the newest machine_maintenance event whose idle Loom did not count.
+  `ALTER TABLE threads ADD COLUMN maintenance_seq INTEGER NOT NULL DEFAULT 0`,
+  // A version that changes only operational settings skips its spec review: a 'skipped' row, with what it was compared
+  // with and the paths it changed in skip_json. SQLite cannot change a CHECK, so the table is built again.
+  `CREATE TABLE spec_reviews_next (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, version INTEGER NOT NULL, round INTEGER NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('reviewing', 'approved', 'changes_requested', 'failed', 'superseded', 'skipped')),
+    spawn_token TEXT NOT NULL UNIQUE, thread_id TEXT UNIQUE, idle_count INTEGER NOT NULL DEFAULT 0, summary TEXT,
+    findings_json TEXT NOT NULL DEFAULT '[]', reason TEXT, started_at INTEGER NOT NULL, ended_at INTEGER, wait_json TEXT, skip_json TEXT);
+  INSERT INTO spec_reviews_next (id, project_id, version, round, state, spawn_token, thread_id, idle_count, summary, findings_json, reason, started_at, ended_at, wait_json)
+    SELECT id, project_id, version, round, state, spawn_token, thread_id, idle_count, summary, findings_json, reason, started_at, ended_at, wait_json FROM spec_reviews;
+  DROP TABLE spec_reviews;
+  ALTER TABLE spec_reviews_next RENAME TO spec_reviews`,
+  // The ticket's place in the deploy order, its requires_live refs turned into ticket keys; null for none.
+  `ALTER TABLE tickets ADD COLUMN rollout_json TEXT`,
+  // Whether each ticket key or milestone ref of a project's rollout is live, by what, its verify or check command's last run,
+  // and the claim of the run going now, which keeps one run per target across a reload.
+  `CREATE TABLE rollout_marks (project_id INTEGER NOT NULL, target TEXT NOT NULL, live_at INTEGER,
+    live_by TEXT CHECK (live_by IN ('merge', 'verify', 'check', 'human')), evidence TEXT, undone_at INTEGER,
+    checked_at INTEGER, check_exit INTEGER, check_output TEXT, run_token TEXT, run_at INTEGER, PRIMARY KEY (project_id, target))`,
+  // MergeWait: the ticket's merge failed in a way worth waiting out, so it stays in merging until the wait ends.
+  `ALTER TABLE tickets ADD COLUMN merge_wait_json TEXT`,
+  // MergeStep: a merge Loom put in the worker's worktree whose checks have not passed yet, which a rerun finishes.
+  `ALTER TABLE tickets ADD COLUMN merge_step_json TEXT`,
+  // PrProposal: the pull request's title and description as the worker proposed them with loom_submit, for review.
+  `ALTER TABLE tickets ADD COLUMN pr_proposal_json TEXT`,
+  // PrApplied: the text Loom last set on the ticket's pull request, and an edit of it still to make.
+  `ALTER TABLE tickets ADD COLUMN pr_applied_json TEXT`,
+  // The spec's [[hook]] tables: each event a hook follows queues one row per tell and per run, once, from the project's
+  // events after hook_event_id. A project from before hooks existed starts after its newest event, so none fires late.
+  `CREATE TABLE hook_firings (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, event_id INTEGER NOT NULL, hook INTEGER NOT NULL,
+    hook_on TEXT NOT NULL, kind TEXT NOT NULL CHECK (kind IN ('tell', 'run')), ticket_id INTEGER, text TEXT NOT NULL, facts_json TEXT NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('pending', 'running', 'done', 'failed', 'skipped')), reason TEXT, tries INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+    UNIQUE (event_id, hook, kind));
+  CREATE INDEX hook_firings_open ON hook_firings (state, project_id);
+  ALTER TABLE projects ADD COLUMN hook_event_id INTEGER NOT NULL DEFAULT 0;
+  UPDATE projects SET hook_event_id = (SELECT COALESCE(MAX(id), 0) FROM events)`,
+];

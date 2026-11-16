@@ -1,0 +1,502 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { planOf } from "./accounts.js";
+import {
+  healthReport,
+  healthText,
+  isoInZone,
+  type HealthAccount,
+} from "./health.js";
+import { parseUsage } from "./usage.js";
+
+const NOW = Date.parse("2026-10-30T20:55:58.000Z");
+
+function usage(name: string) {
+  return {
+    name,
+    ...parseUsage(
+      JSON.parse(
+        readFileSync(
+          new URL(`./fixtures/ultra/${name}.json`, import.meta.url),
+          "utf8",
+        ),
+      ),
+    ),
+  };
+}
+
+function account(
+  overrides: Partial<HealthAccount> & Pick<HealthAccount, "name" | "usage">,
+): HealthAccount {
+  return {
+    plan: planOf(
+      { kind: "max", tier: "default_claude_max_20x" },
+      overrides.usage,
+    ),
+    problem: null,
+    pace: null,
+    seats: { capacity: 4, running: 1, reserved: 0 },
+    usable: true,
+    ...overrides,
+  };
+}
+
+describe("isoInZone", () => {
+  it("writes ISO 8601 with Madrid's offset, winter and summer", () => {
+    expect(isoInZone(Date.parse("2026-11-01T17:00:00.146Z"))).toBe(
+      "2026-11-01T18:00:00+01:00",
+    );
+    expect(isoInZone(Date.parse("2026-07-01T07:00:00Z"))).toBe(
+      "2026-07-01T09:00:00+02:00",
+    );
+  });
+});
+
+describe("healthReport (bb claude-switcher health --json, version 1)", () => {
+  it("gives an Ultra account without the 5-hour window as the SPEC's example (canary 1)", () => {
+    const report = healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+      accounts: [
+        account({
+          name: "aitor",
+          usage: usage("ultra-sin-5h"),
+          pace: {
+            budget: 1.23,
+            spent: 0.4,
+            dayPercent: 32.5,
+            background: true,
+          },
+        }),
+      ],
+    });
+    expect(report).toEqual({
+      version: 1,
+      medido: "2026-10-30T21:55:58+01:00",
+      inicioDia: 9,
+      freno: true,
+      atascos: [], esperandoTeam: [], sinSesion: [], limites: [], rechazos: [], red: [],
+      cuentas: [
+        {
+          nombre: "aitor",
+          plan: "ultra",
+          planTexto: "Ultra · sin tope de 5 h",
+          cincoHoras: false,
+          sesion: null,
+          semana: { pct: 98, pctExacto: 98, vuelve: "2026-11-01T18:00:00+01:00" },
+          modelos: { Fable: { pct: 100, pctExacto: 100, vuelve: "2026-11-01T18:00:00+01:00" } },
+          ritmo: { presupuesto: 1.2, gastado: 0.4, pctDia: 33, fondo: true },
+          plazas: { usadas: 1, total: 4, externas: [] },
+          usable: true,
+          problema: null,
+        },
+      ],
+    });
+  });
+
+  it("gives a Team seat no weekly nor pace, and only the models the API reports (canary 2)", () => {
+    const [team] = healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+      accounts: [
+        account({
+          name: "team1",
+          usage: usage("team"),
+          plan: planOf({ kind: "unknown" }, usage("team")),
+          seats: { capacity: 2, running: 0, reserved: 1 },
+        }),
+      ],
+    }).cuentas;
+    expect(team).toMatchObject({
+      plan: "team",
+      planTexto: "Team",
+      cincoHoras: true,
+      sesion: { pct: 0, vuelve: null },
+      semana: null,
+      ritmo: null,
+      plazas: { usadas: 1, total: 2 },
+    });
+    expect(Object.keys(team!.modelos)).toEqual(["Fable"]);
+  });
+
+  it("says an Ultra account still on the 5-hour window and its session (canary 3)", () => {
+    const [ultra] = healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+      accounts: [account({ name: "work", usage: usage("ultra-con-5h-b") })],
+    }).cuentas;
+    expect(ultra).toMatchObject({
+      plan: "ultra",
+      planTexto: "Ultra · 5 h hasta que Anthropic la verifique",
+      cincoHoras: true,
+      sesion: { pct: 2, vuelve: "2026-10-30T22:10:00+01:00" },
+    });
+  });
+
+  it("says why an account is not usable, and gives no plan a Spanish «desconocido»", () => {
+    const report = healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+      accounts: [
+        account({
+          name: "nologin",
+          usage: null,
+          plan: planOf({ kind: "unknown" }, null),
+          problem: { kind: "unauthenticated" },
+          usable: false,
+          seats: undefined,
+        }),
+        account({
+          name: "failing",
+          usage: null,
+          problem: { kind: "error", message: "HTTP 429" },
+          usable: false,
+        }),
+        account({ name: "never", usage: null, usable: false }),
+      ],
+    });
+    expect(
+      report.cuentas.map((c) => [c.nombre, c.plan, c.problema, c.plazas]),
+    ).toEqual([
+      ["nologin", "desconocido", "sin login", null],
+      [
+        "failing",
+        "ultra",
+        "consulta fallida: HTTP 429",
+        { usadas: 1, total: 4, externas: [] },
+      ],
+      ["never", "ultra", "sin medir", { usadas: 1, total: 4, externas: [] }],
+    ]);
+    const { five_hour: _, ...incomplete } = JSON.parse(
+      readFileSync(
+        new URL("./fixtures/ultra/ultra-sin-5h.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const partial = { name: "x", ...parseUsage(incomplete) };
+    const [x] = healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+      accounts: [
+        account({
+          name: "x",
+          usage: partial,
+          plan: planOf({ kind: "unknown" }, partial),
+          usable: false,
+        }),
+      ],
+    }).cuentas;
+    // Canary 5: incomplete, not Ultra.
+    expect(x).toMatchObject({
+      plan: "desconocido",
+      cincoHoras: null,
+      problema: "datos incompletos de la API de uso",
+    });
+  });
+
+  it("says why a read the policy no longer trusts is not usable (Codex ULTRA-R06)", () => {
+    const [x] = healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+      accounts: [
+        account({
+          name: "x",
+          usage: usage("ultra-sin-5h"),
+          problem: { kind: "error", message: "HTTP 503" },
+          unconfirmedSince: Date.parse("2026-10-30T18:00:00Z"),
+          usable: false,
+        }),
+      ],
+    }).cuentas;
+    expect(x!.problema).toBe(
+      "reset sin confirmar: la última lectura buena (2026-10-30T19:00:00+01:00) la daba agotada y las consultas fallan desde entonces (HTTP 503)",
+    );
+  });
+
+  it("says no limit of seats as a null total", () => {
+    const [a] = healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+      accounts: [
+        account({
+          name: "a",
+          usage: usage("ultra-sin-5h"),
+          seats: { capacity: 0, running: 2, reserved: 0 },
+        }),
+      ],
+    }).cuentas;
+    expect(a!.plazas).toEqual({ usadas: 2, total: null, externas: [] });
+  });
+});
+
+describe("the brake on background work (paceHoldsBackground; off by default, Aitor 2026-10-31)", () => {
+  // aitor at 200 % of its day: the pace says no more background work.
+  const spentDay = {
+    budget: 32,
+    spent: 64,
+    dayPercent: 200,
+    background: false,
+  };
+  const report = (holdsBackground: boolean) =>
+    healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground,
+      atascos: [], esperandoTeam: [],
+      accounts: [
+        account({ name: "aitor", usage: usage("ultra-sin-5h"), pace: spentDay }),
+      ],
+    });
+
+  it("off: freno false, and fondo true whatever the pace (nothing holds background work back)", () => {
+    const r = report(false);
+    expect(r.freno).toBe(false);
+    expect(r.cuentas[0]!.ritmo).toEqual({
+      presupuesto: 32,
+      gastado: 64,
+      pctDia: 200,
+      fondo: true,
+    });
+    expect(healthText(r)).toContain("· freno de fondo apagado\n");
+    expect(healthText(r)).toContain("ritmo 200% (fondo sí)");
+  });
+
+  it("on: freno true, and fondo false past 90 % of the day", () => {
+    const r = report(true);
+    expect(r.freno).toBe(true);
+    expect(r.cuentas[0]!.ritmo).toMatchObject({ pctDia: 200, fondo: false });
+    expect(healthText(r)).toContain("ritmo 200% (fondo no)");
+  });
+});
+
+describe("healthText", () => {
+  it("gives one line per account with its plan, windows, pace and seats", () => {
+    const text = healthText(
+      healthReport({
+        measured: NOW,
+        dayStartHour: 9,
+        holdsBackground: true,
+      atascos: [], esperandoTeam: [],
+        accounts: [
+          account({
+            name: "aitor",
+            usage: usage("ultra-sin-5h"),
+            pace: {
+              budget: 1.23,
+              spent: 0.4,
+              dayPercent: 32.5,
+              background: true,
+            },
+          }),
+          account({
+            name: "team1",
+            usage: usage("team"),
+            plan: planOf({ kind: "team" }, usage("team")),
+            seats: { capacity: 2, running: 0, reserved: 0 },
+          }),
+        ],
+      }),
+    );
+    expect(text).toBe(
+      [
+        "medido 2026-10-30T21:55:58+01:00 · el día empieza a las 9:00 · freno de fondo encendido",
+        "aitor  Ultra · sin tope de 5 h · sem 98% · Fable 100% · ritmo 33% (fondo sí) · plazas 1/4 · usable",
+        "team1  Team · ses 0% · Fable 76% · plazas 0/2 · usable",
+        "",
+      ].join("\n"),
+    );
+  });
+});
+
+// Aitor 2026-11-07: «la cuenta de viaulab, se sigue disparando el tema la
+// cuenta semanal y fable se queda sin gastar». Per Max or Ultra account: its
+// room for Opus and the Fable it would leave unspent (reparto-fable §B6).
+describe("health: huecoOpus and fablePerdida (0.2.48)", () => {
+  const ultra = (name: string, weekly: number, fable: number): HealthAccount =>
+    account({
+      name,
+      usage: {
+        name,
+        blocked: false,
+        session: { usedPercent: 0, resetsAt: null, absent: true },
+        weekly: { usedPercent: weekly, resetsAt: NOW + 48 * 3_600_000 },
+        models: { Fable: { usedPercent: fable, resetsAt: NOW + 48 * 3_600_000 } },
+      },
+    });
+  const report = (accounts: HealthAccount[], reserve?: { model: string; share: number }) =>
+    healthReport({
+      measured: NOW,
+      dayStartHour: 9,
+      holdsBackground: false,
+      atascos: [],
+      esperandoTeam: [],
+      accounts,
+      ...(reserve === undefined ? {} : { reserve }),
+    });
+  const FABLE = { model: "Fable", share: 0.5 };
+
+  it("the plan's accounts: viaulab -9.5 (19 of Fable lost), aitor -17.5 (35), siloeads 46 (0)", () => {
+    const [viaulab, aitor, siloeads] = report([ultra("viaulab", 86, 53), ultra("aitor", 100, 65), ultra("siloeads", 10, 12)], FABLE).cuentas;
+    expect(viaulab).toMatchObject({ huecoOpus: -9.5, fablePerdida: 19 });
+    expect(aitor).toMatchObject({ huecoOpus: -17.5, fablePerdida: 35 });
+    expect(siloeads).toMatchObject({ huecoOpus: 46, fablePerdida: 0 });
+  });
+
+  it("rounded to one decimal; a share of 0 loses nothing", () => {
+    const [x] = report([ultra("x", 86.04, 53)], FABLE).cuentas;
+    expect(x).toMatchObject({ huecoOpus: -9.5, fablePerdida: 19.1 });
+    expect(report([ultra("x", 86, 53)], { model: "Fable", share: 0 }).cuentas[0]).toMatchObject({ huecoOpus: 14, fablePerdida: 0 });
+  });
+
+  it("null for a Team seat, an account not read whole or not read", () => {
+    const team = account({
+      name: "team1",
+      usage: usage("team"),
+      plan: planOf({ kind: "unknown" }, usage("team")),
+    });
+    const unread = account({ name: "unread", usage: null });
+    const partial = { ...ultra("partial", 10, 12), usage: { ...ultra("partial", 10, 12).usage!, unknown: true as const, blocked: true } };
+    for (const c of report([team, unread, partial], FABLE).cuentas)
+      expect(c).toMatchObject({ huecoOpus: null, fablePerdida: null });
+  });
+
+  it("without a reserve given, no field is added (the schema of version 1 as it was)", () => {
+    const [x] = report([ultra("x", 86, 53)]).cuentas;
+    expect(x).not.toHaveProperty("huecoOpus");
+    expect(x).not.toHaveProperty("fablePerdida");
+  });
+
+  it("the text says it per Max or Ultra account", () => {
+    expect(healthText(report([ultra("viaulab", 86, 53)], FABLE))).toContain("hueco Opus -9.5 (Fable perdida 19)");
+  });
+});
+describe("health: why an account is not usable, every cause named (0.2.53)", () => {
+  // 2026-11-13: five accounts set aside by a refusal showed «no usable: sin
+  // motivo», with problema null.
+  const base = {
+    measured: NOW,
+    dayStartHour: 9,
+    holdsBackground: true,
+    atascos: [],
+    esperandoTeam: [],
+  };
+  const until = Date.parse("2026-10-31T02:55:58Z");
+
+  it("an account set aside by a refusal: its HTTP status and until when, in rechazos too", () => {
+    const report = healthReport({
+      ...base,
+      rechazos: [{ account: "vetada", http: 403, until }],
+      accounts: [
+        account({
+          name: "vetada",
+          usage: usage("ultra-sin-5h"),
+          usable: false,
+        }),
+      ],
+    });
+    expect(report.cuentas[0]!.problema).toBe(
+      "vetada por rechazo (HTTP 403) hasta 2026-10-31T03:55:58+01:00",
+    );
+    expect(report.rechazos).toEqual([
+      { cuenta: "vetada", http: 403, hasta: "2026-10-31T03:55:58+01:00" },
+    ]);
+    expect(healthText(report)).toContain(
+      "no usable: vetada por rechazo (HTTP 403) hasta 2026-10-31T03:55:58+01:00",
+    );
+    const unknownStatus = healthReport({
+      ...base,
+      rechazos: [{ account: "vetada", http: null, until }],
+      accounts: [
+        account({
+          name: "vetada",
+          usage: usage("ultra-sin-5h"),
+          usable: false,
+        }),
+      ],
+    });
+    expect(unknownStatus.cuentas[0]!.problema).toBe(
+      "vetada por rechazo (HTTP ?) hasta 2026-10-31T03:55:58+01:00",
+    );
+  });
+
+  it("an account marked by a usage limit, the whole account's or one model's", () => {
+    const report = healthReport({
+      ...base,
+      limites: [
+        { account: "toda", scope: "", until },
+        { account: "opus", scope: "opus", until },
+      ],
+      accounts: [
+        account({ name: "toda", usage: usage("ultra-sin-5h") }),
+        account({ name: "opus", usage: usage("ultra-sin-5h") }),
+      ],
+    });
+    expect(report.cuentas.map((c) => c.problema)).toEqual([
+      "marcada por límite (toda la cuenta) hasta 2026-10-31T03:55:58+01:00",
+      "marcada por límite (Opus) hasta 2026-10-31T03:55:58+01:00",
+    ]);
+  });
+
+  it("an account without a session on a machine says it", () => {
+    const report = healthReport({
+      ...base,
+      sinSesion: [{ account: "a", host: "h1", hostName: "the server", until }],
+      accounts: [account({ name: "a", usage: usage("ultra-sin-5h") })],
+    });
+    expect(report.cuentas[0]!.problema).toBe(
+      "sin sesión en the server hasta 2026-10-31T03:55:58+01:00",
+    );
+  });
+
+  it("the machines whose network refuses the turns, in red", () => {
+    const report = healthReport({
+      ...base,
+      red: [
+        {
+          host: "h1",
+          hostName: "the server",
+          since: until - 60_000,
+          until,
+          why: "bloqueo de red",
+        },
+      ],
+      accounts: [],
+    });
+    expect(report.red).toEqual([
+      {
+        maquina: "h1",
+        nombre: "the server",
+        desde: "2026-10-31T03:54:58+01:00",
+        hasta: "2026-10-31T03:55:58+01:00",
+        motivo: "bloqueo de red",
+      },
+    ]);
+  });
+
+  it("never says «sin motivo»: an account not usable for no cause it knows says which datum is missing", () => {
+    const report = healthReport({
+      ...base,
+      accounts: [
+        account({ name: "rara", usage: usage("ultra-sin-5h"), usable: false }),
+      ],
+    });
+    expect(report.cuentas[0]!.problema).toMatch(
+      /^no usable sin causa en el informe/,
+    );
+    expect(healthText(report)).not.toContain("sin motivo");
+  });
+});

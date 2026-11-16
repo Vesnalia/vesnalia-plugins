@@ -1,0 +1,55 @@
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
+
+# SQLite WAL, shared-memory and rollback journal files
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and caches
+*.log
+.cache/
+.DS_Store
+
+# Local editor state and temporary files (keep shared editor configuration)
+*.swp
+*.swo
+*~
+.idea/workspace.xml
+.idea/shelf/
+.vscode/*.log
+
+# Noema runtime storage; keep cortex metadata and traces versioned
+/bb-elephant-goldfish/db/
+/bb-elephant-goldfish/.noema-storage.lock
+
+# EGM apply staging and retained pre-images; review reports remain versionable
+.*.egm-pre-*
+.*.egm-new-*
+/.egm-smoke/

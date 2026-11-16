@@ -1,0 +1,303 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  computeSkillRows,
+  classifyCanonHostStates,
+  effectiveCanonHash,
+  locationPolicy,
+  planPromoteToCanon,
+  resolveRowAction,
+  bbInjectBytes,
+  bbInjectTooHeavy,
+  BB_INJECT_MAX_BYTES,
+  type SkillLocationScan,
+} from "../skills.ts";
+
+const CANON = "/home/u/.agents/skills";
+
+function scan(id: string, path: string, entries: SkillLocationScan["entries"]): SkillLocationScan {
+  return { id, path, exists: true, entries };
+}
+
+function dir(name: string, hash: string, mtime = 100): SkillLocationScan["entries"][number] {
+  return { name, kind: "dir", target: null, hash, mtime, hasSkillMd: true };
+}
+
+function link(name: string, target: string): SkillLocationScan["entries"][number] {
+  return { name, kind: "symlink", target, hash: null, mtime: null, hasSkillMd: true };
+}
+
+test("копия в .claude заменяется симлинком, а в .codex просто удаляется", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1")]),
+    scan("claude", "/home/u/.claude/skills", [dir("a", "h1")]),
+    scan("codex", "/home/u/.codex/skills", [dir("a", "h1")]),
+  ]);
+  const claude = rows.find((row) => row.locationId === "claude")!;
+  const codex = rows.find((row) => row.locationId === "codex")!;
+  assert.equal(claude.state, "copy");
+  assert.equal(resolveRowAction(claude)?.mode, "link");
+  assert.equal(codex.state, "copy");
+  assert.equal(resolveRowAction(codex)?.mode, "delete");
+});
+
+test("в папке Gemini любая ссылка — лишняя, её убираем", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1")]),
+    scan("gemini-config", "/home/u/.gemini/config/skills", [
+      link("a", `${CANON}/a`),
+      link("b", "/home/u/.bb/skills/b"),
+    ]),
+  ]);
+  assert.equal(rows.length, 2);
+  for (const row of rows) {
+    assert.equal(row.state, "stray-link");
+    assert.equal(resolveRowAction(row)?.mode, "unlink");
+  }
+});
+
+test("реальный скилл в папке Gemini переносится в канон без симлинка", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, []),
+    scan("gemini-config", "/home/u/.gemini/config/skills", [dir("only", "h9")]),
+  ]);
+  assert.equal(rows[0]?.state, "only-here");
+  assert.deepEqual(resolveRowAction(rows[0]!), { mode: "adopt", label: "Перенести в канон" });
+  assert.equal(locationPolicy("gemini-config"), "drop");
+});
+
+test("ссылка в канон из .claude остаётся здоровым алиасом", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1")]),
+    scan("claude", "/home/u/.claude/skills", [link("a", `${CANON}/a`)]),
+  ]);
+  assert.equal(rows[0]?.state, "linked");
+  assert.equal(resolveRowAction(rows[0]!), null);
+});
+
+test("расходящаяся копия: побеждает более новая дата, в .codex копия просто удаляется", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1", 500)]),
+    scan("claude", "/home/u/.claude/skills", [dir("a", "h2", 900)]),
+    scan("codex", "/home/u/.codex/skills", [dir("a", "h3", 100)]),
+  ]);
+  const claude = rows.find((row) => row.locationId === "claude")!;
+  const codex = rows.find((row) => row.locationId === "codex")!;
+  assert.equal(claude.state, "diverged");
+  assert.equal(resolveRowAction(claude)?.mode, "take");
+  assert.equal(resolveRowAction(codex)?.mode, "link");
+  assert.equal(resolveRowAction(codex)?.label, "Удалить копию (канон новее)");
+});
+
+test("равные даты при разном содержании остаются ручным решением", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1", 700)]),
+    scan("claude", "/home/u/.claude/skills", [dir("a", "h2", 700)]),
+  ]);
+  assert.equal(resolveRowAction(rows[0]!), null);
+});
+
+test("ссылка в ~/.bb/skills — дубль реестра BB, действие ручное", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1")]),
+    scan("bb", "/home/u/.bb/skills", [dir("a", "h1")]),
+    scan("claude", "/home/u/.claude/skills", [link("a", "/home/u/.bb/skills/a")]),
+  ]);
+  const claude = rows.find((row) => row.locationId === "claude")!;
+  assert.equal(claude.state, "bb-registry");
+  const action = resolveRowAction(claude)!;
+  assert.equal(action.mode, "unlink");
+  assert.equal(action.manual, true);
+});
+
+test("ссылка в проект без канона — кандидат в канон, ссылку не трогаем", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, []),
+    scan("claude", "/home/u/.claude/skills", [link("selfystudio", "/home/u/apps/selfystudio/.agents/skills/selfystudio")]),
+  ]);
+  assert.equal(rows[0]?.state, "only-here");
+  assert.deepEqual(resolveRowAction(rows[0]!), { mode: "adopt", label: "За канон" });
+});
+
+test("ссылка наружу мимо канона и BB остаётся информационной", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1")]),
+    scan("bb", "/home/u/.bb/skills", []),
+    scan("claude", "/home/u/.claude/skills", [link("a", "/home/u/elsewhere/a")]),
+  ]);
+  assert.equal(rows.find((row) => row.locationId === "claude")?.state, "linked-external");
+  assert.equal(resolveRowAction(rows.find((row) => row.locationId === "claude")!), null);
+});
+
+test("ссылка в проект с тем же содержимым, что канон, не показывается", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1")]),
+    scan("claude", "/home/u/.claude/skills", [{ name: "a", kind: "symlink", target: "/home/u/elsewhere/a", hash: "h1", mtime: 50, hasSkillMd: true }]),
+  ]);
+  assert.equal(rows.find((row) => row.locationId === "claude"), undefined);
+});
+
+test("папку BB правила не трогают: BB заносит в реестр только реальные папки", () => {
+  const rows = computeSkillRows(CANON, [
+    scan("agents", CANON, [dir("a", "h1", 100)]),
+    scan("bb", "/home/u/.bb/skills", [dir("a", "h1", 100), dir("only", "h7", 100), dir("b", "h8", 900)]),
+  ]);
+  assert.equal(locationPolicy("bb"), "own");
+  for (const row of rows) assert.equal(resolveRowAction(row), null);
+});
+
+test("хеш для матрицы канона берёт дерево из дома CLI, если оно не как канон", () => {
+  const locations = [
+    scan("agents", CANON, [dir("selfystudio", "canon")]),
+    scan("claude", "/home/u/.claude/skills", [
+      {
+        name: "selfystudio",
+        kind: "symlink",
+        target: "/home/u/apps/selfystudio/.agents/skills/selfystudio",
+        hash: "project",
+        mtime: 200,
+        hasSkillMd: true,
+      },
+    ]),
+  ];
+  assert.equal(effectiveCanonHash("selfystudio", "canon", locations), "project");
+  assert.equal(effectiveCanonHash("selfystudio", "canon", [locations[0]!]), "canon");
+});
+
+test("в матрице канона свежий хеш — новее, остальные — устарел", () => {
+  assert.deepEqual(
+    classifyCanonHostStates([
+      { hash: "old", mtime: 100 },
+      { hash: "old", mtime: 100 },
+      { hash: "new", mtime: 200 },
+    ]),
+    ["stale", "stale", "newer"],
+  );
+  assert.deepEqual(
+    classifyCanonHostStates([
+      { hash: "a", mtime: 50 },
+      { hash: "a", mtime: 50 },
+    ]),
+    ["same", "same"],
+  );
+  assert.deepEqual(
+    classifyCanonHostStates([
+      { hash: "a", mtime: 100 },
+      { hash: "b", mtime: 100 },
+    ]),
+    ["differs", "differs"],
+  );
+});
+
+test("более новый скилл в доме CLI забирается в канон этой машины", () => {
+  const ops = planPromoteToCanon([
+    {
+      hostId: "mini",
+      locations: [
+        scan("agents", CANON, [dir("selfystudio", "old", 100)]),
+        scan("claude", "/home/u/.claude/skills", [
+          {
+            name: "selfystudio",
+            kind: "symlink",
+            target: "/proj/selfystudio",
+            hash: "old",
+            mtime: 100,
+            hasSkillMd: true,
+          },
+        ]),
+      ],
+    },
+    {
+      hostId: "ovh",
+      locations: [
+        scan("agents", CANON, [dir("selfystudio", "old", 100)]),
+        scan("claude", "/home/u/.claude/skills", [
+          {
+            name: "selfystudio",
+            kind: "symlink",
+            target: "/proj/selfystudio",
+            hash: "new",
+            mtime: 200,
+            hasSkillMd: true,
+          },
+        ]),
+      ],
+    },
+  ]);
+  assert.deepEqual(ops, [{ hostId: "ovh", locationId: "claude", name: "selfystudio", mode: "take" }]);
+});
+
+test("нового скилла нет в каноне — adopt на машине, где он лежит", () => {
+  const ops = planPromoteToCanon([
+    {
+      hostId: "ovh",
+      locations: [
+        scan("agents", CANON, []),
+        scan("claude", "/home/u/.claude/skills", [
+          {
+            name: "fresh",
+            kind: "symlink",
+            target: "/proj/fresh",
+            hash: "h",
+            mtime: 50,
+            hasSkillMd: true,
+          },
+        ]),
+      ],
+    },
+  ]);
+  assert.deepEqual(ops, [{ hostId: "ovh", locationId: "claude", name: "fresh", mode: "adopt" }]);
+});
+
+test("равные даты и разный хеш не трогаем сами", () => {
+  const ops = planPromoteToCanon([
+    {
+      hostId: "a",
+      locations: [scan("agents", CANON, [dir("x", "h1", 100)])],
+    },
+    {
+      hostId: "b",
+      locations: [
+        scan("agents", CANON, [dir("x", "h2", 100)]),
+        scan("claude", "/home/u/.claude/skills", [
+          { name: "x", kind: "dir", target: null, hash: "h2", mtime: 100, hasSkillMd: true },
+        ]),
+      ],
+    },
+  ]);
+  assert.deepEqual(ops, []);
+});
+
+test("имя из плагина в канон из дома не забираем", () => {
+  const ops = planPromoteToCanon([
+    {
+      hostId: "ovh",
+      pluginNames: ["fresh"],
+      locations: [
+        scan("agents", CANON, []),
+        scan("claude", "/home/u/.claude/skills", [
+          {
+            name: "fresh",
+            kind: "symlink",
+            target: "/proj/fresh",
+            hash: "h",
+            mtime: 50,
+            hasSkillMd: true,
+          },
+        ]),
+      ],
+    },
+  ]);
+  assert.deepEqual(ops, []);
+});
+
+test("BB не примет дерево больше 10 МБ", () => {
+  assert.equal(bbInjectTooHeavy(BB_INJECT_MAX_BYTES), false);
+  assert.equal(bbInjectTooHeavy(BB_INJECT_MAX_BYTES + 1), true);
+});
+
+test("в $ идёт размер копии BB, если она есть", () => {
+  assert.equal(bbInjectBytes(1_000, 20_000_000), 20_000_000);
+  assert.equal(bbInjectBytes(1_000, 0), 1_000);
+  assert.equal(bbInjectBytes(1_000, null), 1_000);
+});

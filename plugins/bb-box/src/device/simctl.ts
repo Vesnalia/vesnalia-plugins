@@ -1,0 +1,284 @@
+import { execFile, spawn } from "node:child_process";
+import { createInterface } from "node:readline";
+import { DriverError } from "./driver.ts";
+import type { PasteboardWay } from "./user-session.ts";
+
+export const XCRUN = "/usr/bin/xcrun";
+const COMMAND_MS = 120_000;
+const SPAWN_TRIES = 5;
+const SPAWN_RETRY_MS = 1_000;
+export const LOG_LISTEN_MS = 2_000;
+const SPAWNED_STOP_GRACE_MS = 2_000;
+const UTF8 = { LANG: "en_US.UTF-8", LC_ALL: "en_US.UTF-8" };
+export const PASTEBOARD_NOT_ANSWERING_EXIT = 60;
+export const PASTEBOARD_ANSWER_WAIT = { mostMs: 30_000, everyMs: 1_000 } as const;
+
+export interface SimDevice {
+  readonly udid: string;
+  readonly name: string;
+  readonly type: string;
+  readonly runtime: string;
+  readonly state: string;
+  readonly available: boolean;
+}
+
+export interface Ran {
+  readonly code: number;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+export interface InstalledApp {
+  readonly id: string;
+  readonly name: string;
+  readonly system: boolean;
+  readonly path: string | null;
+}
+
+export function installedApps(listed: unknown): readonly InstalledApp[] {
+  if (typeof listed !== "object" || listed === null) return [];
+  return Object.entries(listed as Record<string, Record<string, unknown>>).map(([id, info]) => {
+    const name = [info?.CFBundleDisplayName, info?.CFBundleName].find((each): each is string => typeof each === "string" && each.trim() !== "");
+    return { id, name: name?.trim() ?? id, system: info?.ApplicationType === "System", path: typeof info?.Path === "string" && info.Path ? info.Path.replace(/\/+$/, "") : null };
+  });
+}
+
+export function appOfProgram(program: string, apps: readonly InstalledApp[]): InstalledApp | null {
+  return apps.find((app) => app.path !== null && program.startsWith(`${app.path}/`)) ?? null;
+}
+
+export type Runner = (program: string, args: readonly string[], options: { readonly timeoutMs: number; readonly input?: string; readonly env?: Readonly<Record<string, string>>; readonly signal?: AbortSignal }) => Promise<Ran>;
+
+export const runProgram: Runner = (program, args, options) =>
+  new Promise((resolve) => {
+    const child = execFile(
+      program,
+      [...args],
+      { timeout: options.timeoutMs, maxBuffer: 64 * 1024 * 1024, signal: options.signal, env: { ...process.env, ...options.env } },
+      (error, stdout, stderr) => {
+        const code = error ? (typeof (error as { code?: unknown }).code === "number" ? (error as { code: number }).code : 1) : 0;
+        resolve({ code, stdout: String(stdout), stderr: String(stderr) || (error && code === 1 && !stderr ? error.message : "") });
+      },
+    );
+    if (options.input !== undefined) child.stdin?.end(options.input);
+  });
+
+export type LineSpawner = (program: string, args: readonly string[], signal: AbortSignal) => AsyncIterable<string>;
+
+export async function* spawnedLines(program: string, args: readonly string[], signal: AbortSignal): AsyncIterable<string> {
+  if (signal.aborted) return;
+  const child = spawn(program, [...args], { stdio: ["ignore", "pipe", "pipe"] });
+  let stopping = false;
+  const stop = () => {
+    if (stopping || child.exitCode !== null || child.signalCode !== null) return;
+    stopping = true;
+    child.kill("SIGINT");
+    const hard = setTimeout(() => child.kill("SIGKILL"), SPAWNED_STOP_GRACE_MS);
+    hard.unref();
+    child.once("exit", () => clearTimeout(hard));
+  };
+  signal.addEventListener("abort", stop, { once: true });
+  const lines = createInterface({ input: child.stdout });
+  createInterface({ input: child.stderr }).on("line", (line) => lines.emit("line", line));
+  child.once("exit", () => lines.close());
+  try {
+    for await (const line of lines) yield line;
+  } finally {
+    signal.removeEventListener("abort", stop);
+    stop();
+  }
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export function runningServicePid(listed: string, label: string): number | null {
+  const line = listed.split("\n").find((each) => each.trim().split(/\s+/).at(-1) === label);
+  const pid = Number(line?.trim().split(/\s+/)[0]);
+  return Number.isInteger(pid) && pid > 0 ? pid : null;
+}
+
+export function disabledLabels(printed: string): ReadonlySet<string> {
+  return new Set([...printed.matchAll(/"([^"]+)" => (?:disabled|true)/g)].map((match) => match[1]!));
+}
+
+type SimctlOptions = { readonly timeoutMs?: number; readonly input?: string; readonly env?: Readonly<Record<string, string>>; readonly signal?: AbortSignal };
+
+export class Simctl {
+  readonly #xcrun: string;
+  readonly #run: Runner;
+  readonly #lines: LineSpawner;
+  readonly #pasteboard: PasteboardWay;
+  readonly #pasteboardAnswerWait: { readonly mostMs: number; readonly everyMs: number };
+
+  constructor(options: { readonly xcrun?: string; readonly run?: Runner; readonly lines?: LineSpawner; readonly pasteboard?: PasteboardWay; readonly pasteboardAnswerWait?: { readonly mostMs: number; readonly everyMs: number } } = {}) {
+    this.#xcrun = options.xcrun ?? XCRUN;
+    this.#run = options.run ?? runProgram;
+    this.#lines = options.lines ?? spawnedLines;
+    this.#pasteboard = options.pasteboard ?? { run: this.#run, ready: async () => null };
+    this.#pasteboardAnswerWait = options.pasteboardAnswerWait ?? PASTEBOARD_ANSWER_WAIT;
+  }
+
+  async #simctl(args: readonly string[], options: SimctlOptions = {}, run: Runner = this.#run): Promise<Ran> {
+    return run(this.#xcrun, ["simctl", ...args], { timeoutMs: options.timeoutMs ?? COMMAND_MS, ...options });
+  }
+
+  async #must(what: string, args: readonly string[], options: SimctlOptions = {}, run: Runner = this.#run): Promise<string> {
+    const ran = await this.#simctl(args, options, run);
+    if (ran.code !== 0) throw new DriverError("failed", `simctl could not ${what}: ${(ran.stderr || ran.stdout).trim().split("\n").slice(-2).join(" ") || `exit code ${ran.code}`}`);
+    return ran.stdout;
+  }
+
+  async devices(signal?: AbortSignal): Promise<SimDevice[]> {
+    const text = await this.#must("list its devices", ["list", "devices", "--json"], { signal, timeoutMs: 30_000 });
+    const listed = JSON.parse(text) as { devices?: Record<string, { udid: string; name: string; deviceTypeIdentifier?: string; state: string; isAvailable?: boolean }[]> };
+    return Object.entries(listed.devices ?? {}).flatMap(([runtime, devices]) =>
+      devices.map((device) => ({ udid: device.udid, name: device.name, type: device.deviceTypeIdentifier ?? "", runtime, state: device.state, available: device.isAvailable !== false })),
+    );
+  }
+
+  async device(udid: string, signal?: AbortSignal): Promise<SimDevice | null> {
+    return (await this.devices(signal)).find((device) => device.udid === udid) ?? null;
+  }
+
+  async boot(udid: string, signal?: AbortSignal): Promise<void> {
+    const ran = await this.#simctl(["boot", udid], { signal });
+    if (ran.code !== 0 && !/current state: Booted/i.test(ran.stderr)) throw new DriverError("failed", `simctl could not boot the device: ${ran.stderr.trim().split("\n").slice(-2).join(" ")}`);
+    await this.#must("wait for the device to boot", ["bootstatus", udid, "-b"], { signal });
+  }
+
+  async shutdown(udid: string, signal?: AbortSignal): Promise<void> {
+    const ran = await this.#simctl(["shutdown", udid], { signal });
+    if (ran.code !== 0 && !/current state: Shutdown/i.test(ran.stderr)) throw new DriverError("failed", `simctl could not shut the device down: ${ran.stderr.trim().split("\n").slice(-2).join(" ")}`);
+  }
+
+  async reboot(udid: string, signal?: AbortSignal): Promise<void> {
+    await this.shutdown(udid, signal);
+    await this.boot(udid, signal);
+  }
+
+  async #spawn(udid: string, args: readonly string[], signal?: AbortSignal): Promise<string> {
+    let last = "";
+    for (let attempt = 1; attempt <= SPAWN_TRIES; attempt++) {
+      const ran = await this.#simctl(["spawn", udid, ...args], { signal, timeoutMs: 30_000 });
+      if (ran.code === 0) return ran.stdout;
+      last = (ran.stderr || ran.stdout).trim();
+      if (signal?.aborted) break;
+      await wait(SPAWN_RETRY_MS);
+    }
+    throw new DriverError("failed", `simctl spawn ${args.join(" ")} failed ${SPAWN_TRIES} times: ${last}`);
+  }
+
+  async servicePid(udid: string, label: string, signal?: AbortSignal): Promise<number | null> {
+    return runningServicePid(await this.#spawn(udid, ["launchctl", "list"], signal), label);
+  }
+
+  async logged(udid: string, phrase: string, listening: () => void, signal: AbortSignal): Promise<boolean> {
+    const args = ["simctl", "spawn", udid, "log", "stream", "--style", "compact", "--predicate", `eventMessage CONTAINS "${phrase}"`];
+    let heard = false;
+    const hear = () => {
+      if (heard) return;
+      heard = true;
+      listening();
+    };
+    if (signal.aborted) return false;
+    const unheard = setTimeout(hear, LOG_LISTEN_MS);
+    const ended = new Promise<false>((resolve) => signal.addEventListener("abort", () => resolve(false), { once: true }));
+    const seen = (async () => {
+      for await (const line of this.#lines(this.#xcrun, args, signal)) {
+        if (line.startsWith("Filtering the log data")) hear();
+        else if (line.includes(phrase) && !line.includes("eventMessage CONTAINS")) return true;
+      }
+      return false;
+    })().catch(() => false);
+    try {
+      return await Promise.race([seen, ended]);
+    } finally {
+      clearTimeout(unheard);
+    }
+  }
+
+  pasteLog(udid: string, predicate: string, signal: AbortSignal): AsyncIterable<string> {
+    return this.#lines(this.#xcrun, ["simctl", "spawn", udid, "log", "stream", "--style", "compact", "--predicate", predicate], signal);
+  }
+
+  async disabled(udid: string, signal?: AbortSignal): Promise<ReadonlySet<string>> {
+    return disabledLabels(await this.#spawn(udid, ["launchctl", "print-disabled", "system"], signal));
+  }
+
+  async setService(udid: string, label: string, on: boolean, signal?: AbortSignal): Promise<void> {
+    await this.#spawn(udid, ["launchctl", on ? "enable" : "disable", `system/${label}`], signal);
+  }
+
+  async ui(udid: string, option: "appearance" | "content_size", value?: string, signal?: AbortSignal): Promise<string> {
+    const args = ["ui", udid, option, ...(value === undefined ? [] : [value])];
+    return (await this.#must(value === undefined ? `read the device's ${option.replace("_", " ")}` : `set the device's ${option.replace("_", " ")} to ${value}`, args, { signal, timeoutMs: 30_000 })).trim();
+  }
+
+  async statusBar(udid: string, args: readonly string[], signal?: AbortSignal): Promise<string> {
+    return this.#must(args[0] === "list" ? "read the status bar's overrides" : args[0] === "clear" ? "clear the status bar's overrides" : "override the status bar", ["status_bar", udid, ...args], { signal, timeoutMs: 30_000 });
+  }
+
+  async location(udid: string, to: { readonly latitude: number; readonly longitude: number } | null, signal?: AbortSignal): Promise<void> {
+    await this.#must(to ? "set the device's location" : "clear the device's location", ["location", udid, ...(to ? ["set", `${to.latitude},${to.longitude}`] : ["clear"])], { signal, timeoutMs: 30_000 });
+  }
+
+  async openUrl(udid: string, url: string, signal?: AbortSignal): Promise<void> {
+    await this.#must(`open ${url}`, ["openurl", udid, url], { signal, timeoutMs: 30_000 });
+  }
+
+  async launch(udid: string, bundleId: string, signal?: AbortSignal): Promise<Ran> {
+    return this.#simctl(["launch", udid, bundleId], { signal, timeoutMs: 60_000 });
+  }
+
+  async apps(udid: string, signal?: AbortSignal): Promise<readonly InstalledApp[]> {
+    const listed = await this.#must("list the device's apps", ["listapps", udid], { signal, timeoutMs: 30_000 });
+    const json = await this.#run("/usr/bin/plutil", ["-convert", "json", "-o", "-", "--", "-"], { timeoutMs: 30_000, input: listed, signal });
+    if (json.code !== 0) throw new DriverError("failed", `plutil could not read the device's list of apps: ${json.stderr.trim() || `exit code ${json.code}`}`);
+    return installedApps(JSON.parse(json.stdout));
+  }
+
+  async install(udid: string, app: string, signal?: AbortSignal): Promise<void> {
+    await this.#must(`install ${app}`, ["install", udid, app], { signal, timeoutMs: 300_000 });
+  }
+
+  async installed(udid: string, bundleId: string, signal?: AbortSignal): Promise<boolean> {
+    return (await this.#simctl(["get_app_container", udid, bundleId], { signal, timeoutMs: 30_000 })).code === 0;
+  }
+
+  async notifyState(udid: string, name: string, signal?: AbortSignal): Promise<number | null> {
+    const printed = await this.#spawn(udid, ["notifyutil", "-g", name], signal);
+    const value = Number(printed.trim().split(/\s+/).at(-1));
+    return Number.isFinite(value) ? value : null;
+  }
+
+  async #onceThePasteboardAnswers(what: string, args: readonly string[], input?: string): Promise<string> {
+    const began = performance.now();
+    for (let tries = 1; ; tries++) {
+      const ran = await this.#simctl(args, { ...(input === undefined ? {} : { input }), env: UTF8, timeoutMs: 30_000 }, this.#pasteboard.run);
+      if (ran.code === 0) return ran.stdout;
+      const said = (ran.stderr || ran.stdout).trim().split("\n").slice(-2).join(" ") || `exit code ${ran.code}`;
+      if (ran.code !== PASTEBOARD_NOT_ANSWERING_EXIT) throw new DriverError("failed", `simctl could not ${what}: ${said}`);
+      const waited = performance.now() - began;
+      if (waited + this.#pasteboardAnswerWait.everyMs > this.#pasteboardAnswerWait.mostMs) {
+        throw new DriverError("failed", `simctl could not ${what}: the device's pasteboard did not answer in ${Math.round(waited / 1000)} s and ${tries} tries (${said}). A device's pasteboard answers some seconds after it boots; if it never does, a reboot of the device may help.`);
+      }
+      await wait(this.#pasteboardAnswerWait.everyMs);
+    }
+  }
+
+  async pasteboardAnswers(udid: string): Promise<boolean> {
+    return (await this.#simctl(["pbpaste", udid], { env: UTF8, timeoutMs: 30_000 }, this.#pasteboard.run)).code !== PASTEBOARD_NOT_ANSWERING_EXIT;
+  }
+
+  async setClipboard(udid: string, text: string): Promise<void> {
+    await this.#onceThePasteboardAnswers("set the device's clipboard", ["pbcopy", udid], text);
+  }
+
+  async clipboard(udid: string): Promise<string> {
+    return this.#onceThePasteboardAnswers("read the device's clipboard", ["pbpaste", udid]);
+  }
+
+  pasteboardReady(): Promise<string | null> {
+    return this.#pasteboard.ready();
+  }
+}

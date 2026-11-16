@@ -1,0 +1,263 @@
+/**
+ * The domain model, v2.
+ *
+ * The previous architecture let three sources (process probe, log-store
+ * manifests, result bundles) each CREATE run rows, then tried to correlate
+ * them afterwards. Every field bug traced back to that correlation: duplicate
+ * rows, a "Resolve Packages" log hijacking a build's identity, log spans
+ * clobbering true durations.
+ *
+ * v2 inverts it: **one run, one identity, monotonic enrichment.**
+ *
+ *  - A run is born from a process observation (or, rarely, from a log entry
+ *    when no process was observed — an IDE build while the plugin was down).
+ *  - Other sources never create competing rows; they *enrich* the existing
+ *    run, and every enrichment carries a confidence rank that can only go up.
+ *  - The lifecycle is explicit and one-directional:
+ *
+ *        running ─→ finishing ─→ passed | warnings | failed | cancelled
+ *                        │
+ *                        └─(no verdict arrives)─→ ended
+ *
+ *    "finishing" is the window after the process exits while we wait for a
+ *    verdict. It resolves or times out to "ended" — never a permanent
+ *    "Unknown", which read as the tracker malfunctioning.
+ */
+
+/** Where a fact came from, ordered by trustworthiness. */
+export const RANK = {
+  /** Seen via `ps` — existence, timing, argv. */
+  observed: 0,
+  /** Xcode's own log store wrote a summary. */
+  logged: 1,
+  /** Parsed from a `.xcresult` — the ground truth for outcomes. */
+  verified: 2,
+} as const;
+
+export type Rank = (typeof RANK)[keyof typeof RANK];
+
+export type RunStatus =
+  | "running"
+  | "finishing"
+  | "passed"
+  | "warnings"
+  | "failed"
+  | "cancelled"
+  | "ended";
+
+/** Statuses that end a run's life. Nothing may follow them but a higher rank. */
+export const TERMINAL_STATUSES: ReadonlySet<RunStatus> = new Set([
+  "passed",
+  "warnings",
+  "failed",
+  "cancelled",
+  "ended",
+]);
+
+/**
+ * Activity the tracker is right to record and a surface is right to ignore.
+ *
+ * `xcodebuild -find <tool>` and `-version` are toolchain lookups the SDK fires
+ * constantly — measured on this machine, a third of all attributed runs, in
+ * bursts of ten, several of them 0ms. They are real xcodebuild processes, so
+ * the store keeps them; nobody is waiting on one, so nothing user-facing
+ * should lead with one. They are recognisable by resolving neither a scheme
+ * nor a derived-data root, which a real build always does at least one of.
+ *
+ * This lives in the model rather than in a component because both ends need
+ * the same answer: when the frontend alone knew the rule, a `-find` lookup
+ * took the "last settled run" slot server-side and the banner then filtered it
+ * out client-side — so the real result it was hiding never appeared at all.
+ */
+export function isNoiseRun(run: {
+  kind: RunKind;
+  scheme: string | null;
+  root: string | null;
+}): boolean {
+  return run.kind === "unknown" && run.scheme === null && run.root === null;
+}
+
+/**
+ * Activity worth watching while it runs, and worth forgetting once it stops.
+ *
+ * This used to be folded into `isNoiseRun`, which conflated two different
+ * rules. A `-find` lookup is noise in every sense — nobody waits on one, and it
+ * concludes nothing. Package resolution is the opposite: nobody wants it in
+ * their build history, but somebody is absolutely waiting on it, sometimes for
+ * minutes. Measured here: a thread spent 7m37s resolving packages while the
+ * panel, having classified the whole invocation as noise, showed it doing
+ * nothing at all.
+ *
+ * So the split is by lifetime rather than by importance:
+ *
+ *  - live surfaces (the banner, `bb xcode status`) show ephemeral runs;
+ *  - history surfaces (the log, "last result", trends) drop them.
+ *
+ * Index builds ride along for the same reason: Xcode indexes constantly, and
+ * eight of twenty-five visible rows being index builds is what made the list
+ * useless before — but an index build that is running right now is a true
+ * answer to "why is my machine busy".
+ */
+export function isEphemeralRun(run: { kind: RunKind }): boolean {
+  return run.kind === "package" || run.kind === "index";
+}
+
+/**
+ * A "failure" that is really a snapshot baseline being written.
+ *
+ * swift-snapshot-testing reports every recorded baseline AS A TEST FAILURE by
+ * design — in record mode there is nothing to assert against yet, so the only
+ * way it can tell you it wrote a file is to fail the test. xcodebuild then
+ * exits non-zero and the xcresult says `failedTests: N`, all of it truthful
+ * and all of it misleading: the recording did exactly what was asked.
+ *
+ * Observed in production (a production run): the agent reported "build
+ * succeeded and all verified" while this plugin showed a red failed run, and
+ * both were faithfully reporting the same xcresult.
+ *
+ * Matched on the library's own wording rather than the test name, because the
+ * name is the user's and the wording is the library's. Both the current
+ * "Record mode is on." phrasing and the older bare "Automatically recorded
+ * snapshot" are covered.
+ */
+const SNAPSHOT_RECORDING_RE =
+  /record mode is on|automatically recorded snapshot|re-run .* to (?:assert|test) against the newly-recorded snapshot/i;
+
+export function isSnapshotRecording(failureMessage: string | null): boolean {
+  return failureMessage !== null && SNAPSHOT_RECORDING_RE.test(failureMessage);
+}
+
+/** A verdict is a terminal status that states an actual outcome. */
+export const VERDICT_STATUSES: ReadonlySet<RunStatus> = new Set([
+  "passed",
+  "warnings",
+  "failed",
+  "cancelled",
+]);
+
+export type RunKind =
+  | "build"
+  | "test"
+  | "archive"
+  | "clean"
+  | "analyze"
+  | "install"
+  | "export"
+  | "docbuild"
+  | "package"
+  | "index"
+  | "unknown";
+
+export interface Run {
+  id: string;
+  status: RunStatus;
+  /** Rank of the source that set the current status. */
+  statusRank: Rank;
+  kind: RunKind;
+  scheme: string | null;
+  container: string | null;
+  configuration: string | null;
+  destination: string | null;
+  projectId: string | null;
+  root: string | null;
+  cwd: string | null;
+  pid: number | null;
+  cmdline: string | null;
+  startedAt: number;
+  endedAt: number | null;
+  errorCount: number;
+  warningCount: number;
+  analyzerCount: number;
+  testTotal: number | null;
+  testFailed: number | null;
+  testSkipped: number | null;
+  bundlePath: string | null;
+  /** True once findings/tests were extracted from a bundle. */
+  detailed: boolean;
+  /** Git branch (or short detached SHA) of the source checkout. */
+  branch: string | null;
+  /** Human name of the checkout/worktree directory the build ran from. */
+  worktree: string | null;
+  /** bb thread whose environment this build ran in, when attributable. */
+  threadId: string | null;
+  /**
+   * The enrolled Mac the build ran on, when it is not the machine running bb.
+   * Null for every run this machine observed itself.
+   */
+  hostId: string | null;
+}
+
+export interface Finding {
+  runId: string;
+  severity: "error" | "warning" | "analyzer";
+  message: string;
+  filePath: string | null;
+  line: number | null;
+  target: string | null;
+}
+
+export interface TestCase {
+  runId: string;
+  suite: string | null;
+  name: string;
+  /**
+   * `recorded` is ours, not xcodebuild's: a snapshot test that wrote a new
+   * baseline. The library reports those as failures because record mode has
+   * nothing to assert against, so they are reclassified on the way in to keep
+   * a recording run from presenting as a broken one.
+   */
+  status:
+    | "passed"
+    | "failed"
+    | "skipped"
+    | "expected-failure"
+    | "recorded"
+    | "unknown";
+  durationMs: number | null;
+  failureMessage: string | null;
+  target: string | null;
+}
+
+/**
+ * May `next` replace `current` as the run's status?
+ *
+ * The rules that killed v1's bug classes, stated once:
+ *  - higher rank always wins;
+ *  - at equal rank, life only moves forward (no terminal → running);
+ *  - a verdict is never displaced by a non-verdict of the same rank.
+ */
+export function statusTransitionAllowed(
+  current: { status: RunStatus; rank: Rank },
+  next: { status: RunStatus; rank: Rank },
+): boolean {
+  if (next.rank > current.rank) return true;
+  if (next.rank < current.rank) return false;
+
+  const currentTerminal = TERMINAL_STATUSES.has(current.status);
+
+  if (!currentTerminal) {
+    // running → finishing → any terminal; also running → running (no-op ok).
+    if (current.status === "finishing" && next.status === "running") return false;
+    return true;
+  }
+
+  // Terminal already. Same-rank upgrades allowed only from the verdict-less
+  // "ended" to a real verdict — a source of equal authority may fill a silence,
+  // never contradict a stated outcome.
+  return current.status === "ended" && VERDICT_STATUSES.has(next.status);
+}
+
+/** Duration is always derived, never stored from a source's own log span. */
+export function durationMs(run: Pick<Run, "startedAt" | "endedAt">): number | null {
+  if (run.endedAt === null) return null;
+  return Math.max(0, run.endedAt - run.startedAt);
+}
+
+/**
+ * How long a run may sit in "finishing" before it becomes "ended".
+ *
+ * Long enough for the post-exit sweep and a shim bundle to arrive; short
+ * enough that the panel never shows a stuck spinner for a build that will
+ * clearly never report.
+ */
+export const FINISHING_TIMEOUT_MS = 45_000;

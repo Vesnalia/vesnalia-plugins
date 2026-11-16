@@ -1,0 +1,8 @@
+{
+  "extends": "@ai-ecoverse/slicc-shared-web/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["server.ts", "app.tsx", "src/**/*.ts"]
+}

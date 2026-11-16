@@ -1,0 +1,497 @@
+import { expect, test } from "vitest";
+import { baselineOf, canSnooze, canSnoozeUntil, computeTurn, feedbackProgress, progressText, QUIET_MS, snoozeLabel, snoozeTimes, type TurnInput, type TurnOptions } from "../lib/turn";
+import { threadSignals, turnOptions } from "./turn-signals";
+import { defaultPreferences } from "./preferences";
+import type { FeedbackThread } from "./github/types";
+
+const NOW = Date.parse("2026-10-10T12:00:00Z");
+const hour = 3_600_000;
+const t = (hoursAgo: number) => NOW - hoursAgo * hour;
+
+/** You requested changes on sha1 five hours ago, with three threads. */
+function changesRequested(extra: Partial<TurnInput> = {}, signals: TurnInput["signals"] = {}): TurnInput {
+  return {
+    targetKey: "pr-1", kind: "pr", status: "ready", prState: "OPEN", headSha: "sha1", latestHeadSha: "sha1",
+    submittedVerdict: "REQUEST_CHANGES", submittedHeadSha: "sha1",
+    ...extra,
+    signals: {
+      lastReviewAt: t(5), lastReviewSha: "sha1", ci: "pass",
+      threads: { total: 3, resolved: 0, answered: 0, questions: 0, open: 3, outdated: 0 },
+      ...signals,
+    },
+  };
+}
+const turn = (review: TurnInput, options?: Partial<TurnOptions>) =>
+  computeTurn(review, { wakeOnReplies: "questions", pushChecks: "off", ...options }, NOW);
+
+test("merged, closed, and archived reviews are in Archive", () => {
+  expect(turn(changesRequested({ prState: "MERGED" }))).toMatchObject({ group: "archive", label: "Merged" });
+  expect(turn(changesRequested({ prState: "CLOSED" }))).toMatchObject({ group: "archive", label: "Closed" });
+  expect(turn(changesRequested({ userArchivedAt: t(1) }))).toMatchObject({ group: "archive", label: "Archived" });
+});
+
+test("a re-request after you archived a review brings it back", () => {
+  const review = changesRequested({ userArchivedAt: t(2) }, { requestedAt: t(1), requestedBy: "alice" });
+  expect(turn(review)).toMatchObject({ group: "needs", reason: "re-requested", notify: true });
+  // An older request doesn't.
+  expect(turn(changesRequested({ userArchivedAt: t(0.5) }, { requestedAt: t(1) })).group).toBe("archive");
+});
+
+test("a review you haven't submitted yet is yours", () => {
+  expect(turn({ targetKey: "a", status: "ready" })).toMatchObject({ group: "needs", reason: "new", label: "Ready" });
+  expect(turn({ targetKey: "a", kind: "ref", status: "ready" })).toMatchObject({ group: "needs", label: "Ready" });
+});
+
+test("a request for your review alerts you; a team request is quieter", () => {
+  const requested = turn({ targetKey: "a", kind: "pr", status: "tracked", signals: { requestedAt: t(1), requestedVia: "user", requestPending: true } });
+  expect(requested).toMatchObject({ group: "needs", reason: "requested", notify: true, signal: `requested:${t(1)}` });
+  const team = turn({ targetKey: "a", kind: "pr", status: "tracked", signals: { requestedAt: t(1), requestedVia: "team", requestPending: true } });
+  expect(team).toMatchObject({ group: "needs", reason: "team-requested", notify: false });
+});
+
+test("a PR found on GitHub whose request was withdrawn, or a team's with team requests off, leaves Needs review", () => {
+  const tracked = (signals: TurnInput["signals"], status: TurnInput["status"] = "tracked"): TurnInput => ({ targetKey: "a", kind: "pr", status, signals });
+  expect(turn(tracked({ requestedAt: t(30), requestPending: false }))).toMatchObject({ group: "archive", reason: "unrequested", label: "No longer requested", signal: null });
+  const team = tracked({ requestedAt: t(1), requestedVia: "team", requestPending: true });
+  expect(turn(team, { teamRequests: false })).toMatchObject({ group: "archive", reason: "unrequested" });
+  expect(turn(team, { teamRequests: true })).toMatchObject({ group: "needs", reason: "team-requested" });
+  // Not read from GitHub yet, or with a guide you started, it stays.
+  expect(turn(tracked(null))).toMatchObject({ group: "needs", label: "Tracked" });
+  expect(turn(tracked({ requestPending: false }, "ready"))).toMatchObject({ group: "needs", label: "Ready" });
+});
+
+test("your own PR needs your review until you've reviewed it, then it's Reviewed, never waiting and never alerting", () => {
+  const own = (extra: Partial<TurnInput> = {}, signals: TurnInput["signals"] = {}) => changesRequested({ ownPr: true, ...extra }, signals);
+  expect(turn({ targetKey: "a", kind: "pr", status: "ready", ownPr: true, createdAt: t(2) })).toMatchObject({ group: "needs", reason: "own", label: "Your PR", notify: false, signal: null, at: t(2) });
+  expect(turn(own({ submittedVerdict: "COMMENT" }))).toMatchObject({ group: "reviewed", reason: "own", label: "Your PR" });
+  // Open threads, questions, mentions, and pushes don't move it.
+  expect(turn(own({ submittedVerdict: "COMMENT", latestHeadSha: "sha2" }, { questionAt: t(1), mentionAt: t(1), headSeenAt: t(1) })))
+    .toMatchObject({ group: "reviewed", label: "Your PR · updated", updated: true, signal: null });
+  expect(turn(own({ prState: "MERGED" })).group).toBe("archive");
+});
+
+test("your own PR found on GitHub waits in Reviewed until someone's comment waits for your reply, then it's yours, with an alert per comment", () => {
+  const found: TurnInput = { targetKey: "pr-9", kind: "pr", status: "tracked", prState: "OPEN", ownPr: true, createdAt: t(9), signals: { ci: "pass" } };
+  expect(turn(found)).toMatchObject({ group: "reviewed", reason: "own", label: "Your PR", signal: null, notify: false });
+  const commented = { ...found, signals: { ...found.signals, newComments: { count: 3, at: t(1), by: "bob" } } };
+  expect(turn(commented)).toMatchObject({ group: "needs", reason: "new-comments", label: "Your PR · 3 new comments", signal: `comments:${t(1)}`, notify: true, at: t(1), eventAt: t(1) });
+  expect(turn({ ...found, signals: { newComments: { count: 1, at: t(1), by: "bob" } } }).label).toBe("Your PR · 1 new comment");
+  // As many threads as Comments' Needs you counts, when that's not one a comment.
+  expect(turn({ ...found, signals: { newComments: { count: 3, threads: 2, at: t(1), by: "bob" } } }).label).toBe("Your PR · 3 new comments in 2 threads");
+  expect(turn({ ...found, signals: { newComments: { count: 2, threads: 1, at: t(1), by: "bob" } } }).label).toBe("Your PR · 2 new comments in 1 thread");
+  expect(turn({ ...found, signals: { newComments: { count: 2, threads: 2, at: t(1), by: "bob" } } }).label).toBe("Your PR · 2 new comments");
+  // One you started a review of, or reviewed, comes back the same way.
+  expect(turn({ ...commented, status: "ready", submittedVerdict: "COMMENT", submittedAt: t(5) })).toMatchObject({ group: "needs", reason: "new-comments" });
+  // Your reply, or a resolve, ends it: the sync reads no comment waiting.
+  expect(turn({ ...commented, signals: { ...commented.signals, newComments: null } })).toMatchObject({ group: "reviewed", reason: "own" });
+  // A snooze holds the comments it set aside; a newer one wakes it.
+  const snoozed = { ...commented, snoozedAt: t(0.5), snoozedUntil: NOW + hour };
+  expect(turn(snoozed)).toMatchObject({ group: "waiting", reason: "snoozed" });
+  expect(turn({ ...snoozed, signals: { newComments: { count: 4, at: t(0.2), by: "carol" } } })).toMatchObject({ group: "needs", reason: "new-comments" });
+  // A teammate's PR never reads them.
+  expect(turn({ ...commented, ownPr: false, signals: { ...commented.signals, requestPending: true, requestedAt: t(8) } }).reason).toBe("requested");
+});
+
+test("with Include your own PRs off, your PRs found on GitHub leave the list until you start a review of one", () => {
+  const found: TurnInput = { targetKey: "pr-9", kind: "pr", status: "tracked", prState: "OPEN", ownPr: true, signals: { newComments: { count: 2, at: t(1), by: "bob" } } };
+  expect(turn(found, { ownPrs: false })).toMatchObject({ group: "archive", reason: "own" });
+  expect(turn({ ...found, status: "ready" }, { ownPrs: false })).toMatchObject({ group: "needs", reason: "new-comments" });
+  expect(turnOptions({ ...defaultPreferences, knobs: { ...defaultPreferences.knobs, trackOwnPrs: false } }).ownPrs).toBe(false);
+  expect(turnOptions(defaultPreferences).ownPrs).toBe(true);
+});
+
+test("your own PR's threads aren't progress: an answered one waits for your reply", () => {
+  const threads = { total: 3, resolved: 1, answered: 2, questions: 0, open: 0, outdated: 0 };
+  expect(feedbackProgress({ ownPr: true, signals: { threads } })).toBeNull();
+  expect(feedbackProgress({ ownPr: false, signals: { threads } })).toMatchObject({ done: 3, total: 3 });
+});
+
+test("a PR GitHub can't find for a week goes to Archive", () => {
+  const gone = (days: number, reason: "not-found" | "forbidden" = "not-found") => changesRequested({ unreachable: { since: NOW - days * 24 * hour, reason } });
+  expect(turn(gone(1)).group).toBe("waiting");
+  expect(turn(gone(8))).toMatchObject({ group: "archive", reason: "unreachable", label: "Can’t read on GitHub" });
+  // Access refused, say for SSO, may come back: it stays.
+  expect(turn(gone(8, "forbidden")).group).toBe("waiting");
+});
+
+test("a team request after your review isn't a re-request, and doesn't undo your archive", () => {
+  const team = { requestedAt: t(1), requestedBy: "carol", requestedVia: "team" as const, requestPending: true };
+  expect(turn(changesRequested({}, team))).toMatchObject({ group: "waiting", reason: "waiting" });
+  expect(turn(changesRequested({ userArchivedAt: t(2) }, team)).group).toBe("archive");
+});
+
+test("a push alone doesn't make it your turn", () => {
+  const pushed = turn(changesRequested({ latestHeadSha: "sha2" }, { headSeenAt: t(3) }));
+  expect(pushed).toMatchObject({ group: "waiting", reason: "waiting", label: "Changes requested", updated: true, signal: null });
+});
+
+test("a re-request after your review makes it your turn and alerts you", () => {
+  const review = changesRequested({ latestHeadSha: "sha2" }, { requestedAt: t(1), requestedBy: "alice" });
+  expect(turn(review)).toMatchObject({ group: "needs", reason: "re-requested", label: "Re-requested", notify: true, signal: `re-requested:${t(1)}`, at: t(1) });
+  // The original request, before your review, doesn't count.
+  expect(turn(changesRequested({}, { requestedAt: t(6) })).group).toBe("waiting");
+});
+
+test("snoozing until the author responds hides a review until a newer signal", () => {
+  const snoozed = changesRequested({ latestHeadSha: "sha2", snoozedAt: t(0.5) }, { requestedAt: t(1) });
+  expect(turn(snoozed)).toMatchObject({ group: "waiting", reason: "snoozed", label: "Snoozed until the author responds" });
+  // A push after the snooze doesn't wake it.
+  expect(turn({ ...snoozed, latestHeadSha: "sha3", signals: { ...snoozed.signals, headSeenAt: t(0.1) } }).group).toBe("waiting");
+  // A new re-request does.
+  expect(turn({ ...snoozed, signals: { ...snoozed.signals, requestedAt: t(0.2) } })).toMatchObject({ group: "needs", reason: "re-requested" });
+});
+
+test("Snooze until holds even a new request in Waiting on author, until that time or a newer request", () => {
+  const request: TurnInput = { targetKey: "pr-1", kind: "pr", status: "tracked", prState: "OPEN", signals: { requestPending: true, requestedVia: "user", requestedAt: t(2) } };
+  const snoozed = { ...request, snoozedAt: t(1), snoozedUntil: NOW + hour };
+  expect(turn(snoozed)).toMatchObject({ group: "waiting", reason: "snoozed", label: "Snoozed", at: t(1) });
+  expect(computeTurn(snoozed, undefined, NOW + hour)).toMatchObject({ group: "needs", reason: "requested" });
+  expect(turn({ ...snoozed, signals: { ...snoozed.signals, requestedAt: t(0.5) } })).toMatchObject({ group: "needs", reason: "requested" });
+  // Your own PR too.
+  expect(turn({ ...snoozed, ownPr: true })).toMatchObject({ group: "waiting", reason: "snoozed" });
+});
+
+test("Snooze until holds a review you gave until that time, then it's back as it was; a newer signal wakes it sooner", () => {
+  const snoozed = changesRequested({ latestHeadSha: "sha2", snoozedAt: t(0.5), snoozedUntil: NOW + hour }, { requestedAt: t(1) });
+  expect(turn(snoozed)).toMatchObject({ group: "waiting", reason: "snoozed", label: "Snoozed" });
+  expect(computeTurn(snoozed, undefined, NOW + 2 * hour)).toMatchObject({ group: "needs", reason: "re-requested", signal: `re-requested:${t(1)}` });
+  expect(turn({ ...snoozed, signals: { ...snoozed.signals, questionAt: t(0.2) } })).toMatchObject({ group: "needs", reason: "question" });
+});
+
+test("any review whose turn it is can be snoozed until a time, except a local one or a failed guide", () => {
+  const request: TurnInput = { targetKey: "pr-1", kind: "pr", status: "tracked", signals: { requestPending: true, requestedAt: t(2) } };
+  expect(canSnoozeUntil(request, turn(request))).toBe(true);
+  const local: TurnInput = { targetKey: "ref", kind: "ref", status: "ready" };
+  expect(canSnoozeUntil(local, turn(local))).toBe(false);
+  const failed = { ...request, status: "error" as const };
+  expect(canSnoozeUntil(failed, turn(failed))).toBe(false);
+  const waiting = changesRequested();
+  expect(canSnoozeUntil(waiting, turn(waiting))).toBe(false);
+});
+
+test("snooze times are later today, tomorrow morning, and next Monday morning, in local time", () => {
+  const saturday = new Date(2026, 9, 10, 12, 0);
+  expect(snoozeTimes(saturday.getTime())).toEqual({
+    laterToday: new Date(2026, 9, 10, 15, 0).getTime(), tomorrow: new Date(2026, 9, 11, 9, 0).getTime(), nextMonday: new Date(2026, 9, 12, 9, 0).getTime(),
+  });
+  // Late in the day there's no later today; on a Monday, next Monday is a week away.
+  expect(snoozeTimes(new Date(2026, 9, 10, 22, 0).getTime()).laterToday).toBeNull();
+  expect(snoozeTimes(new Date(2026, 9, 12, 8, 0).getTime()).nextMonday).toBe(new Date(2026, 9, 19, 9, 0).getTime());
+});
+
+test("a snooze's label says when it wakes", () => {
+  const now = new Date(2026, 9, 10, 12, 0).getTime();
+  const time = (d: Date) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  expect(snoozeLabel(new Date(2026, 9, 10, 15, 0).getTime(), now)).toBe(`Snoozed until ${time(new Date(2026, 9, 10, 15, 0))}`);
+  expect(snoozeLabel(new Date(2026, 9, 11, 9, 0).getTime(), now)).toBe(`Snoozed until tomorrow ${time(new Date(2026, 9, 11, 9, 0))}`);
+  expect(snoozeLabel(new Date(2026, 9, 12, 9, 0).getTime(), now)).toBe(`Snoozed until ${new Date(2026, 9, 12).toLocaleDateString([], { weekday: "short" })} ${time(new Date(2026, 9, 12, 9, 0))}`);
+  expect(snoozeLabel(new Date(2026, 9, 30, 9, 0).getTime(), now)).toBe(`Snoozed until ${new Date(2026, 9, 30).toLocaleDateString([], { month: "short", day: "numeric" })}`);
+});
+
+test("a question on your thread wakes the review; other replies only if you choose", () => {
+  expect(turn(changesRequested({}, { questionAt: t(1), replyAt: t(1) }))).toMatchObject({ group: "needs", reason: "question", label: "Question for you", notify: true });
+  expect(turn(changesRequested({}, { replyAt: t(1) })).group).toBe("waiting");
+  expect(turn(changesRequested({}, { replyAt: t(1) }), { wakeOnReplies: "any" })).toMatchObject({ group: "needs", label: "Author replied" });
+  // Your newer review answers it.
+  expect(turn(changesRequested({}, { questionAt: t(6) })).group).toBe("waiting");
+});
+
+test("a mention after your review wakes it", () => {
+  expect(turn(changesRequested({}, { mentionAt: t(1), mentionBy: "alice" }))).toMatchObject({ group: "needs", reason: "mentioned", notify: true });
+});
+
+test("with Come back when you're mentioned off, a mention after your review leaves it waiting", () => {
+  const mentioned = changesRequested({}, { mentionAt: t(1), mentionBy: "alice" });
+  expect(turn(mentioned, { mentions: false })).toMatchObject({ group: "waiting", notify: false });
+  expect(turnOptions({ ...defaultPreferences, knobs: { ...defaultPreferences.knobs, mentionsWake: false } })).toMatchObject({ mentions: false });
+  expect(turn(mentioned, turnOptions(defaultPreferences))).toMatchObject({ group: "needs", reason: "mentioned" });
+});
+
+test("feedback handled: every thread resolved or answered, new commits, CI settled, author quiet", () => {
+  const handled = { threads: { total: 3, resolved: 2, answered: 1, questions: 0, open: 0, outdated: 1 }, handledAt: t(1), headSeenAt: t(2) };
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, handled))).toMatchObject({ group: "needs", reason: "handled", notify: true, signal: `handled:${t(1)}`, eventAt: t(1) });
+  // Without new commits, CI still running or failing, or within the quiet period, it waits.
+  expect(turn(changesRequested({}, handled)).group).toBe("waiting");
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { ...handled, ci: "pending", headSeenAt: t(0.5) })).group).toBe("waiting");
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { ...handled, ci: "expected", headSeenAt: t(0.5) })).group).toBe("waiting");
+  // Checks still pending, or expected but never reported, an hour after the push count as settled.
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { ...handled, ci: "pending" })).reason).toBe("handled");
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { ...handled, ci: "expected" })).reason).toBe("handled");
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { ...handled, ci: "fail" })).group).toBe("waiting");
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { ...handled, handledAt: NOW - QUIET_MS / 2 })).group).toBe("waiting");
+  // Handled before your last review doesn't count.
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { ...handled, handledAt: t(6), headSeenAt: t(7) })).group).toBe("waiting");
+});
+
+test("the assistant's all-addressed check counts only when you opt in", () => {
+  const review = changesRequested({ latestHeadSha: "sha2", assessment: { headSha: "sha2", total: 4, addressed: 4, partial: 0, notAddressed: 0, disputed: 0, unclear: 0, assessedAt: t(1) } });
+  expect(turn(review).group).toBe("waiting");
+  expect(turn(review, { pushChecks: "progress" }).group).toBe("waiting");
+  expect(turn(review, { pushChecks: "ready" })).toMatchObject({ group: "needs", reason: "looks-ready", label: "Looks ready" });
+  // A check of an older head doesn't.
+  expect(turn({ ...review, latestHeadSha: "sha3" }, { pushChecks: "ready" }).group).toBe("waiting");
+});
+
+test("a deferred item counts as settled: looks ready with the rest addressed, and progress says it apart", () => {
+  const review = changesRequested({ latestHeadSha: "sha2", assessment: { headSha: "sha2", total: 2, addressed: 1, partial: 0, notAddressed: 0, disputed: 0, unclear: 0, deferred: 1, assessedAt: t(1) } });
+  expect(turn(review, { pushChecks: "ready" })).toMatchObject({ group: "needs", reason: "looks-ready", label: "Looks ready" });
+  expect(feedbackProgress(review)).toEqual({ done: 1, total: 2, source: "assistant", deferred: 1 });
+  expect(progressText(feedbackProgress(review)!)).toBe("1/2 addressed +1 deferred");
+  // One still open isn't.
+  const open = changesRequested({ latestHeadSha: "sha2", assessment: { headSha: "sha2", total: 3, addressed: 1, partial: 1, notAddressed: 0, disputed: 0, unclear: 0, deferred: 1, assessedAt: t(1) } });
+  expect(turn(open, { pushChecks: "ready" }).group).toBe("waiting");
+});
+
+test("an approval stays reviewed when new commits arrive", () => {
+  expect(turn(changesRequested({ submittedVerdict: "APPROVE", latestHeadSha: "sha2" }))).toMatchObject({ group: "reviewed", label: "Approved · updated", updated: true });
+});
+
+test("a dismissed review is yours again, without an alert", () => {
+  expect(turn(changesRequested({ submittedVerdict: null }))).toMatchObject({ group: "needs", reason: "dismissed", notify: false });
+});
+
+test("a comment review waits on the author only while it has threads", () => {
+  expect(turn(changesRequested({ submittedVerdict: "COMMENT" }, { threads: null }))).toMatchObject({ group: "reviewed", label: "Commented" });
+  expect(turn(changesRequested({ submittedVerdict: "COMMENT" }))).toMatchObject({ group: "waiting", label: "Commented" });
+  // With every thread resolved or answered, nothing is open; new commits on top bring it back as handled.
+  const handled = { threads: { total: 2, resolved: 1, answered: 1, questions: 0, open: 0, outdated: 0 }, handledAt: t(1), headSeenAt: t(2) };
+  expect(turn(changesRequested({ submittedVerdict: "COMMENT" }, handled))).toMatchObject({ group: "reviewed", reason: "commented", label: "Commented" });
+  expect(turn(changesRequested({ submittedVerdict: "COMMENT", latestHeadSha: "sha2" }, handled))).toMatchObject({ group: "needs", reason: "handled" });
+});
+
+test("a draft PR waits on the author", () => {
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { isDraft: true }))).toMatchObject({ group: "waiting", reason: "draft" });
+});
+
+test("generation relabels a review without moving it", () => {
+  expect(turn(changesRequested({ status: "generating" }))).toMatchObject({ group: "waiting", label: "Generating" });
+  expect(turn({ targetKey: "a", status: "generating" })).toMatchObject({ group: "needs", label: "Generating" });
+  // A failed guide keeps why it's your turn, so its alert isn't lost.
+  expect(turn(changesRequested({ status: "error" }, { requestedAt: t(1) }))).toMatchObject({ group: "needs", reason: "re-requested", label: "Failed", failed: true, signal: `re-requested:${t(1)}` });
+  expect(turn(changesRequested({ status: "error" }))).toMatchObject({ group: "needs", reason: "waiting", label: "Failed", failed: true });
+});
+
+test("a local receipt counts until GitHub reports the review", () => {
+  // You submitted locally an hour ago; GitHub still reports the earlier review and a request between the two.
+  const review = changesRequested({ submittedAt: t(1) }, { requestedAt: t(2) });
+  expect(turn(review).group).toBe("waiting");
+});
+
+test("blocking marks a changes-requested review that holds up the merge", () => {
+  expect(turn(changesRequested({}, { blocking: true })).blocking).toBe(true);
+  expect(turn(changesRequested({ latestHeadSha: "sha2" }, { blocking: true, requestedAt: t(1) }))).toMatchObject({ group: "needs", blocking: true });
+});
+
+test("progress prefers the assistant's check of the current head, then your threads", () => {
+  const review = changesRequested({ latestHeadSha: "sha2" }, { threads: { total: 4, resolved: 1, answered: 1, questions: 0, open: 2, outdated: 0 } });
+  expect(feedbackProgress(review)).toEqual({ done: 2, total: 4, source: "threads" });
+  const checked = { ...review, assessment: { headSha: "sha2", total: 5, addressed: 3, partial: 1, notAddressed: 1, disputed: 0, unclear: 0, assessedAt: t(1) } };
+  expect(feedbackProgress(checked)).toEqual({ done: 3, total: 5, source: "assistant" });
+  expect(feedbackProgress({ targetKey: "a" })).toBeNull();
+});
+
+test("a handled turn holds until you act, even when the author pushes again", () => {
+  const held = { reason: "handled" as const, label: "Feedback handled", signal: `handled:${t(1)}`, at: t(0.5) };
+  // A new push restarted the quiet period, but the turn already came to you.
+  const review = changesRequested({ latestHeadSha: "sha3", heldTurn: held }, { headSeenAt: NOW - 60_000, handledAt: t(1) });
+  expect(turn(review)).toMatchObject({ group: "needs", reason: "handled", signal: `handled:${t(1)}`, notify: false });
+  // Your next review, or a snooze until the author responds, ends it.
+  expect(turn({ ...review, submittedAt: NOW - 1000 }).group).toBe("waiting");
+  expect(turn({ ...review, snoozedAt: NOW - 1000 }).group).toBe("waiting");
+});
+
+test("questions and mentions count whatever your verdict", () => {
+  expect(turn(changesRequested({ submittedVerdict: "APPROVE" }, { questionAt: t(1) }))).toMatchObject({ group: "needs", reason: "question" });
+  expect(turn(changesRequested({ submittedVerdict: "APPROVE" }, { mentionAt: t(1) }))).toMatchObject({ group: "needs", reason: "mentioned" });
+  expect(turn(changesRequested({}, { questionAt: t(1), isDraft: true }))).toMatchObject({ group: "needs", reason: "question" });
+});
+
+test("the baseline is your latest review, here or on GitHub, and snoozing until the author responds needs one", () => {
+  expect(baselineOf(changesRequested())).toEqual({ sha: "sha1", at: t(5), verdict: "REQUEST_CHANGES" });
+  expect(baselineOf(changesRequested({ submittedAt: t(1), submittedHeadSha: "sha2" }))).toEqual({ sha: "sha2", at: t(1), verdict: "REQUEST_CHANGES" });
+  const needs = changesRequested({}, { requestedAt: t(1) });
+  expect(canSnooze(needs, turn(needs))).toBe(true);
+  expect(canSnooze({ targetKey: "a", status: "ready" }, turn({ targetKey: "a", status: "ready" }))).toBe(false);
+  const failed = changesRequested({ status: "error" }, { requestedAt: t(1) });
+  expect(canSnooze(failed, turn(failed))).toBe(false);
+});
+
+const mine = (status: FeedbackThread["status"], body: string, replyAt: number | null = null): FeedbackThread => ({
+  id: body, commentId: 1, reviewId: null, path: "a.ts", line: 1, originalLine: 1, startLine: null, side: "RIGHT", subjectType: "LINE",
+  body, createdAt: t(5), isResolved: status === "resolved", resolvedBy: null, isOutdated: false, replies: [], status, replyAt,
+});
+
+test("a non-blocking thread doesn't hold Feedback handled or count in progress, and is counted apart", () => {
+  const threads = [mine("resolved", "Drops writes."), mine("answered", "**Should fix:** rename", t(1)), mine("open", "**Nit:** spacing"), mine("open", "FYI: a helper exists")];
+  const signals = threadSignals(threads);
+  expect(signals.threads).toEqual({ total: 2, resolved: 1, answered: 1, questions: 0, open: 0, outdated: 0, nonBlocking: 2 });
+  expect(signals.handledAt).toBe(t(1));
+  const review = changesRequested({ latestHeadSha: "sha2" }, { ...signals, headSeenAt: t(2) });
+  expect(turn(review)).toMatchObject({ group: "needs", reason: "handled", label: "Feedback handled" });
+  expect(feedbackProgress(review)).toEqual({ done: 2, total: 2, source: "threads", nits: 2 });
+  expect(progressText(feedbackProgress(review)!)).toBe("2/2 handled +2 nits");
+  expect(progressText({ done: 1, total: 3, source: "assistant", nits: 1 })).toBe("1/3 addressed +1 nit");
+  expect(progressText({ done: 1, total: 3, source: "assistant" })).toBe("1/3 addressed");
+  // A question on one is still a question for you.
+  const asked = threadSignals([...threads, mine("question", "nit: why not a map?", t(0.5))]);
+  expect(asked).toMatchObject({ questionAt: t(0.5), threads: { total: 2, nonBlocking: 3 } });
+  // Only non-blocking threads open on a comment review: nobody's waiting.
+  const comment = { ...changesRequested({ submittedVerdict: "COMMENT" }, threadSignals([mine("open", "nit: spacing")])) };
+  expect(turn(comment)).toMatchObject({ group: "reviewed", label: "Commented" });
+  expect(feedbackProgress(comment)).toBeNull();
+});
+
+test("a relayed approval waiting for your click is in Needs review, whatever the review waited on, and alerts nothing of its own; a merged PR's is done", () => {
+  const ready = { readyToApprove: { at: t(1) } };
+  for (const review of [changesRequested(ready), changesRequested({ ...ready, userArchivedAt: t(2) }), changesRequested({ ...ready, snoozedAt: t(2) })]) {
+    expect(computeTurn(review, undefined, NOW)).toMatchObject({ group: "needs", reason: "ready-to-approve", label: "Ready to approve", at: t(1), notify: false, signal: null });
+  }
+  expect(computeTurn(changesRequested({ ...ready, prState: "MERGED" }), undefined, NOW)).toMatchObject({ group: "archive", reason: "merged" });
+});
+
+test("a row waiting to be approved carries the alert of the turn beneath it: a new comment on your own PR, or a re-request", () => {
+  const ready = { readyToApprove: { at: t(1) } };
+  const own: TurnInput = { targetKey: "pr-1", kind: "pr", status: "tracked", prState: "OPEN", ownPr: true, ...ready, signals: { newComments: { count: 2, at: t(0.5), by: "bob" } } };
+  expect(computeTurn(own, undefined, NOW)).toEqual({ ...computeTurn({ ...own, readyToApprove: null }, undefined, NOW), reason: "ready-to-approve", label: "Ready to approve", at: t(1),
+    under: { reason: "new-comments", label: "Your PR · 2 new comments" } });
+  expect(computeTurn(own, undefined, NOW)).toMatchObject({ signal: `comments:${t(0.5)}`, notify: true, eventAt: t(0.5) });
+  const asked = changesRequested(ready, { requestedAt: t(0.5), requestedVia: "user" });
+  expect(computeTurn(asked, undefined, NOW)).toMatchObject({ reason: "ready-to-approve", signal: `re-requested:${t(0.5)}`, notify: true, under: { reason: "re-requested" } });
+});
+
+test("comments sent to fix: a local review waits on the main thread's reports, and comes back Ready to re-review, alerting once per Send", () => {
+  const local = (sends: TurnInput["sends"], fixes: TurnInput["fixes"], extra: Partial<TurnInput> = {}): TurnInput => ({ targetKey: "br-1", kind: "ref", status: "ready", createdAt: t(9), sends, fixes, ...extra });
+  const sent = [{ n: 1, at: t(3), threadId: "coder", ids: ["c1", "c2", "c3"] }];
+  expect(turn(local(sent, { sent: 3, reported: 1, inferred: 1, checked: 0, fixed: 0 }))).toMatchObject({ group: "waiting", reason: "fixes-sent", label: "1 of 3 reported", signal: null, notify: false });
+  // Idle alone isn't done.
+  expect(turn(local([{ ...sent[0]!, stopped: { at: t(2), why: "idle" } }], { sent: 3, reported: 1, inferred: 0, checked: 0, fixed: 0 }))).toMatchObject({ group: "waiting", reason: "fixes-sent" });
+  // Archived or deleted, it won't report the rest: they're back with you, with no alert.
+  expect(turn(local([{ ...sent[0]!, stopped: { at: t(2), why: "archived" } }], { sent: 3, reported: 2, inferred: 0, checked: 0, fixed: 0 })))
+    .toMatchObject({ group: "needs", reason: "fixes-stopped", label: "Main thread archived · 2 of 3 reported", signal: null, notify: false, at: t(2) });
+  expect(turn(local([{ ...sent[0]!, stopped: { at: t(2), why: "deleted" } }], { sent: 3, reported: 2, inferred: 0, checked: 0, fixed: 0 })).label).toBe("Main thread deleted · 2 of 3 reported");
+  const ready = turn(local([{ ...sent[0]!, readyAt: t(1) }], { sent: 3, reported: 3, inferred: 0, checked: 0, fixed: 0 }));
+  expect(ready).toMatchObject({ group: "needs", reason: "fixes-ready", label: "Ready to re-review", signal: "fixes-ready:1", notify: true, at: t(1), eventAt: t(1) });
+  // A Send after it waits again; its own readiness alerts again.
+  const again = [{ ...sent[0]!, readyAt: t(1) }, { n: 2, at: t(0.5), threadId: "coder", ids: ["c4"] }];
+  expect(turn(local(again, { sent: 1, reported: 0, inferred: 0, checked: 0, fixed: 0 }))).toMatchObject({ group: "waiting", reason: "fixes-sent" });
+  expect(turn(local([again[0]!, { ...again[1]!, readyAt: t(0.2) }], { sent: 1, reported: 1, inferred: 0, checked: 0, fixed: 0 })).signal).toBe("fixes-ready:2");
+  // Nothing out: resolved, dismissed or open again, there's nothing to wait for or re-review.
+  expect(turn(local([{ ...sent[0]!, readyAt: t(1) }], { sent: 0, reported: 0, inferred: 0, checked: 0, fixed: 0 }))).toMatchObject({ group: "needs", reason: "new" });
+  expect(turn(local(sent, { sent: 0, reported: 0, inferred: 0, checked: 0, fixed: 0 }))).toMatchObject({ group: "needs", reason: "new" });
+  // The last one not reported is yours again, edited: the rest are reported, so it doesn't wait.
+  expect(turn(local(sent, { sent: 2, reported: 2, inferred: 0, checked: 0, fixed: 0 }))).toMatchObject({ group: "needs", reason: "new" });
+  // A paused folder still waits for its branch.
+  expect(turn(local([{ ...sent[0]!, readyAt: t(1) }], { sent: 3, reported: 3, inferred: 0, checked: 0, fixed: 0 }, { feature: { pausedOn: "main" } }))).toMatchObject({ group: "waiting", reason: "paused" });
+});
+
+test("comments sent to fix on a PR wait on the thread fixing them, from a Send after your last review there, and come back Ready to re-review", () => {
+  const pr = (readyAt?: number, lastReviewAt = t(5)) => changesRequested({ sends: [{ n: 1, at: t(4), threadId: "coder", ids: ["c1"], ...readyAt ? { readyAt } : {} }], fixes: { sent: 1, reported: readyAt ? 1 : 0, inferred: 0, checked: 0, fixed: 0 } }, { lastReviewAt });
+  expect(turn(pr())).toMatchObject({ group: "waiting", reason: "fixes-sent", label: "0 of 1 reported", at: t(4), signal: null, notify: false });
+  expect(turn(pr(t(2)))).toMatchObject({ group: "needs", reason: "fixes-ready", signal: "fixes-ready:1", notify: true });
+  // Your review on GitHub since the Send is the turn: GitHub says whose it is.
+  expect(turn(pr(undefined, t(1)))).toMatchObject({ group: "waiting", reason: "waiting" });
+  expect(turn(pr(t(2), t(1)))).toMatchObject({ group: "waiting", reason: "waiting" });
+  // Blocks merge still says so.
+  expect(turn(changesRequested({ ...pr(), }, { lastReviewAt: t(5), blocking: true }))).toMatchObject({ reason: "fixes-sent", blocking: true });
+  // Its fixer archived before reporting: back with you, until your next review there.
+  const archived = (lastReviewAt: number) => changesRequested({ sends: [{ n: 1, at: t(4), threadId: "coder", ids: ["c1"], stopped: { at: t(2), why: "archived" } }], fixes: { sent: 1, reported: 0, inferred: 0, checked: 0, fixed: 0 } }, { lastReviewAt });
+  expect(turn(archived(t(5)))).toMatchObject({ group: "needs", reason: "fixes-stopped", notify: false });
+  expect(turn(archived(t(1)))).toMatchObject({ group: "waiting", reason: "waiting" });
+  // Idle alone isn't done.
+  expect(turn(changesRequested({ sends: [{ n: 1, at: t(4), threadId: "coder", ids: ["c1"], stopped: { at: t(2), why: "idle" } }], fixes: { sent: 1, reported: 0, inferred: 0, checked: 0, fixed: 0 } }))).toMatchObject({ reason: "fixes-sent" });
+});
+
+test("comments out on your own PR, a folder's review that became its PR's among them, wait on the thread fixing them until someone's comment since is yours", () => {
+  const sent = { sends: [{ n: 1, at: t(3), threadId: "coder", ids: ["c1", "c2"] }], fixes: { sent: 2, reported: 1, inferred: 0, checked: 0, fixed: 0 } };
+  const own = (extra: Partial<TurnInput> = {}, signals: TurnInput["signals"] = {}): TurnInput => ({ targetKey: "br-1", kind: "pr", status: "ready", prState: "OPEN", ownPr: true, createdAt: t(9), ...sent, ...extra, signals: { ci: "pass", ...signals } });
+  expect(turn(own())).toMatchObject({ group: "waiting", reason: "fixes-sent", label: "1 of 2 reported", at: t(3) });
+  // Reviewed by a comment of yours, as Your PR is.
+  expect(turn(own({ submittedVerdict: "COMMENT", submittedAt: t(5) }))).toMatchObject({ group: "waiting", reason: "fixes-sent" });
+  // A teammate's comment since the Send is yours, whatever is still out; one before it went with it, or after it.
+  expect(turn(own({}, { newComments: { count: 1, at: t(1), by: "dana" } }))).toMatchObject({ group: "needs", reason: "new-comments", at: t(1) });
+  expect(turn(own({}, { newComments: { count: 1, at: t(4), by: "dana" } }))).toMatchObject({ group: "waiting", reason: "fixes-sent" });
+  // Back once it reports them all, or stops short.
+  expect(turn(own({ sends: [{ ...sent.sends[0]!, readyAt: t(1) }], fixes: { ...sent.fixes, reported: 2 } }))).toMatchObject({ group: "needs", reason: "fixes-ready" });
+  expect(turn(own({ sends: [{ ...sent.sends[0]!, stopped: { at: t(1), why: "deleted" } }] }))).toMatchObject({ group: "needs", reason: "fixes-stopped" });
+  // A snooze since the Send holds it; nothing out, it's Your PR again.
+  expect(turn(own({ snoozedAt: t(2), snoozedUntil: NOW + hour }))).toMatchObject({ group: "waiting", reason: "snoozed" });
+  expect(turn(own({ fixes: { ...sent.fixes, sent: 0, reported: 0 } }))).toMatchObject({ group: "needs", reason: "own" });
+  // Someone else's PR you haven't reviewed: the Send outranks the request it came before, not one after it.
+  const requested = (requestedAt: number): TurnInput => ({ targetKey: "pr-2", kind: "pr", status: "ready", prState: "OPEN", ownPr: false, ...sent, signals: { requestedAt, requestedVia: "user", requestPending: true } });
+  expect(turn(requested(t(6)))).toMatchObject({ group: "waiting", reason: "fixes-sent" });
+  expect(turn(requested(t(1)))).toMatchObject({ group: "needs", reason: "requested" });
+});
+
+test("your approval sent to the main thread of a local review or your own PR is its verdict, Approved, while it covers the code", () => {
+  const approval = { approvalSent: { at: t(2) } };
+  const local = (extra: Partial<TurnInput> = {}): TurnInput => ({ targetKey: "br-1", kind: "ref", status: "ready", createdAt: t(9), ...approval, ...extra });
+  expect(turn(local())).toMatchObject({ group: "reviewed", reason: "approval-sent", label: "Approved", at: t(2), signal: null, notify: false });
+  // The folder changed since, as last checked: not what you approved. Update gives it another diff, which ends it (src/store.ts).
+  expect(turn(local({ feature: { changedFiles: 3 } }))).toMatchObject({ group: "needs", reason: "new" });
+  // Paused or removed, the folder's state says it.
+  expect(turn(local({ feature: { pausedOn: "main" } }))).toMatchObject({ group: "waiting", reason: "paused" });
+  expect(turn(local({ feature: { folderGone: true } }))).toMatchObject({ group: "waiting", reason: "folder-gone" });
+  // Fixes that come back after it are yours; comments still out from before it don't hold it.
+  const sends = [{ n: 1, at: t(4), threadId: "coder", ids: ["c1"] }];
+  expect(turn(local({ sends: [{ ...sends[0]!, readyAt: t(1) }], fixes: { sent: 1, reported: 1, inferred: 0, checked: 0, fixed: 0 } }))).toMatchObject({ group: "needs", reason: "fixes-ready" });
+  expect(turn(local({ sends, fixes: { sent: 1, reported: 0, inferred: 0, checked: 0, fixed: 0 } }))).toMatchObject({ group: "reviewed", reason: "approval-sent" });
+  // A generating guide relabels it; a failed one needs you.
+  expect(turn(local({ status: "generating" }))).toMatchObject({ group: "reviewed", reason: "approval-sent", label: "Generating" });
+
+  // Your own PR: until its head moves on, or someone's comment since needs your reply.
+  const own = (extra: Partial<TurnInput> = {}, signals: TurnInput["signals"] = {}): TurnInput => ({ targetKey: "br-1", kind: "pr", status: "ready", prState: "OPEN", ownPr: true, createdAt: t(9), headSha: "sha1", latestHeadSha: "sha1", ...approval, ...extra, signals: { ci: "pass", ...signals } });
+  expect(turn(own())).toMatchObject({ group: "reviewed", reason: "approval-sent", label: "Approved", at: t(2) });
+  expect(turn(own({ latestHeadSha: "sha2" }))).toMatchObject({ group: "needs", reason: "own" });
+  expect(turn(own({}, { newComments: { count: 2, at: t(1), by: "dana" } }))).toMatchObject({ group: "needs", reason: "new-comments" });
+  expect(turn(own({}, { newComments: { count: 2, at: t(3), by: "dana" } }))).toMatchObject({ group: "reviewed", reason: "approval-sent" });
+  // On someone else's PR, your verdict is your review on GitHub.
+  expect(turn(own({ ownPr: false }, { requestedAt: t(6), requestedVia: "user", requestPending: true }))).toMatchObject({ group: "needs", reason: "requested" });
+  expect(turn(changesRequested(approval))).toMatchObject({ group: "waiting", reason: "waiting" });
+  // Archive outranks it.
+  expect(turn(own({ prState: "MERGED", prMergedAt: t(1) }))).toMatchObject({ group: "archive", reason: "merged", at: t(1) });
+});
+
+test("a Push under way waits on the thread committing and pushing it, until something newer is yours", () => {
+  const push = (state: "committing" | "pushing" | "mismatch" | "pushed", at = t(1)) => ({ push: { state, at } });
+  const local = (extra: Partial<TurnInput> = {}): TurnInput => ({ targetKey: "br-1", kind: "ref", status: "ready", createdAt: t(9), ...extra });
+  expect(turn(local(push("committing")))).toMatchObject({ group: "waiting", reason: "pushing", label: "Committing for Push", at: t(1) });
+  expect(turn(local(push("pushing")))).toMatchObject({ group: "waiting", reason: "pushing", label: "Pushing", at: t(1) });
+  // A Push that asks you first, or has landed, is the review's own turn again.
+  expect(turn(local(push("mismatch")))).toMatchObject({ group: "needs", reason: "new" });
+  expect(turn(local({ ...push("pushed"), approvalSent: { at: t(2) } }))).toMatchObject({ group: "reviewed", reason: "approval-sent" });
+  // It outranks your approval, and comments out; a teammate's comment since the Push is yours.
+  expect(turn(local({ ...push("committing"), approvalSent: { at: t(2) } }))).toMatchObject({ reason: "pushing" });
+  const own: TurnInput = { targetKey: "br-1", kind: "pr", status: "ready", prState: "OPEN", ownPr: true, createdAt: t(9), ...push("pushing", t(2)) };
+  expect(turn(own)).toMatchObject({ group: "waiting", reason: "pushing" });
+  expect(turn({ ...own, signals: { newComments: { count: 1, at: t(1), by: "dana" } } })).toMatchObject({ group: "needs", reason: "new-comments" });
+});
+
+test("a local review whose folder bb removed waits on no one, but for comments that came back to you or whose thread stopped short", () => {
+  const gone = (extra: Partial<TurnInput> = {}): TurnInput => ({ targetKey: "br-1", kind: "ref", status: "ready", createdAt: t(9), feature: { folderGone: true }, ...extra });
+  expect(turn(gone())).toMatchObject({ group: "waiting", reason: "folder-gone", label: "Folder removed" });
+  const sends = [{ n: 1, at: t(4), threadId: "coder", ids: ["c1", "c2"] }];
+  const fixes = { sent: 2, reported: 1, inferred: 0, checked: 0, fixed: 0 };
+  expect(turn(gone({ sends, fixes }))).toMatchObject({ group: "waiting", reason: "folder-gone" });
+  expect(turn(gone({ sends: [{ ...sends[0]!, stopped: { at: t(2), why: "archived" } }], fixes }))).toMatchObject({ group: "needs", reason: "fixes-stopped", at: t(2) });
+  expect(turn(gone({ sends: [{ ...sends[0]!, readyAt: t(2) }], fixes }))).toMatchObject({ group: "needs", reason: "fixes-ready", at: t(2) });
+  // Archived with nothing left open or sent, it's in Archive since then.
+  expect(turn(gone({ archivedAt: t(1) }))).toMatchObject({ group: "archive", reason: "folder-gone", at: t(1) });
+});
+
+test("each turn says when its state began", () => {
+  expect(turn(changesRequested({ prState: "MERGED", prMergedAt: t(2), archivedAt: t(1) })).at).toBe(t(2));
+  expect(turn(changesRequested({ prState: "MERGED", archivedAt: t(1) })).at).toBe(t(1));
+  expect(turn(changesRequested({ prState: "CLOSED", prClosedAt: t(3), archivedAt: t(1) })).at).toBe(t(3));
+  expect(turn(changesRequested({ userArchivedAt: t(2) })).at).toBe(t(2));
+  expect(turn(changesRequested({ mergedInto: "pr-2", mergedAt: t(4), archivedAt: t(4) }))).toMatchObject({ reason: "merged-into", at: t(4) });
+  expect(turn(changesRequested({ unreachable: { since: NOW - 8 * 86_400_000, reason: "not-found" } })).at).toBe(NOW - 86_400_000);
+  // Your review's time, for what it says.
+  expect(turn(changesRequested({ submittedVerdict: "APPROVE" }))).toMatchObject({ reason: "approved", at: t(5) });
+  expect(turn(changesRequested({ submittedVerdict: "COMMENT" }, { threads: null }))).toMatchObject({ reason: "commented", at: t(5) });
+  expect(turn(changesRequested({}, { isDraft: true }))).toMatchObject({ reason: "draft", at: t(5) });
+  expect(turn({ targetKey: "pr-9", kind: "pr", status: "ready", prState: "OPEN", ownPr: true, createdAt: t(9), submittedVerdict: "COMMENT", submittedAt: t(4) })).toMatchObject({ group: "reviewed", reason: "own", at: t(4) });
+  // Found on GitHub, when it was found.
+  expect(turn({ targetKey: "pr-9", kind: "pr", status: "tracked", prState: "OPEN", ownPr: true, createdAt: t(9), signals: { ci: "pass" } })).toMatchObject({ reason: "own", at: t(9) });
+  expect(turn({ targetKey: "pr-9", kind: "pr", status: "tracked", createdAt: t(9), signals: { isDraft: true } })).toMatchObject({ reason: "draft", at: t(9) });
+  expect(turn({ targetKey: "pr-9", kind: "pr", status: "tracked", createdAt: t(9), signals: { requestPending: false } })).toMatchObject({ reason: "unrequested", at: t(9) });
+});

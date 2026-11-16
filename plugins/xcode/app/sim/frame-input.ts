@@ -1,0 +1,218 @@
+/**
+ * Turning pointer and keyboard events into steps.
+ *
+ * Pure, so the mapping is testable without a DOM and without a device.
+ *
+ * There is deliberately no pointer-gesture classifier here anymore. The panel
+ * streams raw touches (`liveTouch`) and iOS does the recognising — tap,
+ * long-press, drag — exactly as if a finger were on the glass. What remains is
+ * the coordinate maths and the keyboard map, which the device cannot do for us.
+ */
+import type { Step } from "../../src/sim/steps.js";
+
+export interface Rect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * A client point inside a rectangle, as normalized device coordinates.
+ *
+ * The rectangle is the rendered frame, which is letterboxed inside its
+ * container by `object-fit: contain` — so callers pass the *image's* rect
+ * rather than the container's, or every tap lands in the wrong place on a
+ * wide panel.
+ */
+export function toNormalized(rect: Rect, clientX: number, clientY: number): { x: number; y: number } {
+  if (rect.width <= 0 || rect.height <= 0) return { x: 0, y: 0 };
+  return {
+    x: clamp01((clientX - rect.left) / rect.width),
+    y: clamp01((clientY - rect.top) / rect.height),
+  };
+}
+
+/**
+ * The rectangle the picture actually occupies inside its element.
+ *
+ * Both the `<img>` and the `<canvas>` are `object-fit: contain` inside a box
+ * that is whatever shape the panel is. When the panel is wider than the device
+ * — a nav panel on a wide window, every time — the frame is letterboxed, and
+ * `getBoundingClientRect` describes the element, not the picture. Normalising
+ * against the element then maps a tap to the wrong point on the device: on a
+ * 1080x871 box showing a 1320x2868 screen, a tap at 45% of the element lands at
+ * 36% of the device, and every horizontal coordinate is wrong by more the wider
+ * the panel gets.
+ *
+ * Returns the element rect unchanged when the screen size is unknown, which is
+ * the honest fallback: the first frames arrive before the dimension push does.
+ */
+export function contentRect(rect: Rect, screen: { width: number; height: number } | null): Rect {
+  if (screen === null || screen.width <= 0 || screen.height <= 0) return rect;
+  if (rect.width <= 0 || rect.height <= 0) return rect;
+
+  const scale = Math.min(rect.width / screen.width, rect.height / screen.height);
+  const width = screen.width * scale;
+  const height = screen.height * scale;
+  return {
+    left: rect.left + (rect.width - width) / 2,
+    top: rect.top + (rect.height - height) / 2,
+    width,
+    height,
+  };
+}
+
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(0, value));
+}
+
+/** How far one arrow press moves the crosshair; Shift makes it a coarse jump. */
+export const CROSSHAIR_STEP = 0.02;
+export const CROSSHAIR_STEP_COARSE = 0.1;
+
+export type KeyOutcome =
+  | { kind: "step"; step: Step }
+  | { kind: "move"; dx: number; dy: number }
+  | { kind: "tap-crosshair" }
+  | { kind: "release" }
+  | { kind: "ignore" };
+
+/**
+ * What a key press means while the frame holds focus.
+ *
+ * Arrow keys move a crosshair rather than being forwarded, because keyboard
+ * users need a way to reach a point on the device at all — and `Return` then
+ * taps it. Everything printable is typed. `Escape` hands focus back to the
+ * control bar rather than trapping it.
+ */
+export function keyStep(event: {
+  key: string;
+  shiftKey: boolean;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey: boolean;
+}, hasCrosshair: boolean): KeyOutcome {
+  // Never swallow a host shortcut. Command-K belongs to bb, not to the device.
+  if (event.metaKey || event.ctrlKey || event.altKey) return { kind: "ignore" };
+
+  const jump = event.shiftKey ? CROSSHAIR_STEP_COARSE : CROSSHAIR_STEP;
+  switch (event.key) {
+    case "ArrowLeft":
+      return { kind: "move", dx: -jump, dy: 0 };
+    case "ArrowRight":
+      return { kind: "move", dx: jump, dy: 0 };
+    case "ArrowUp":
+      return { kind: "move", dx: 0, dy: -jump };
+    case "ArrowDown":
+      return { kind: "move", dx: 0, dy: jump };
+    case "Escape":
+      return { kind: "release" };
+    case "Enter":
+      return hasCrosshair ? { kind: "tap-crosshair" } : { kind: "step", step: { kind: "key", name: "enter" } };
+    case "Backspace":
+      return { kind: "step", step: { kind: "key", name: "backspace" } };
+    case "Tab":
+      // Tab moves focus out of the frame. Trapping it would strand a keyboard
+      // user inside a video.
+      return { kind: "ignore" };
+    default:
+      break;
+  }
+
+  // A single printable character is text. Everything else — F-keys, Home, dead
+  // keys — is not something the device has an obvious meaning for.
+  if ([...event.key].length === 1) {
+    return { kind: "step", step: { kind: "type", text: event.key } };
+  }
+  return { kind: "ignore" };
+}
+
+/** Pixels per line for line-mode wheel deltas — the de-facto browser standard. */
+export const LINE_HEIGHT_PX = 16;
+
+/**
+ * A wheel event as a scroll step.
+ *
+ * The deltas are pixels of *content*, so they are divided by the rendered size
+ * to get the normalized fraction the device session expects, and the sign is
+ * preserved: scrolling content down is a swipe up, and the injector already
+ * inverts it.
+ *
+ * `at` anchors the scroll to the pointer's position, so the list under the
+ * cursor scrolls — rather than whatever happens to sit at the centre.
+ *
+ * `deltaMode` matters remotely: bb's own shell always sends pixels, but a
+ * viewer on another browser may not — Firefox sends *lines*, and a line read
+ * as a pixel is scrolling at a sixteenth of the intended speed, which feels
+ * exactly like "slow or delayed".
+ */
+export function wheelStep(
+  rect: Rect,
+  deltaX: number,
+  deltaY: number,
+  at?: { x: number; y: number },
+  deltaMode = 0,
+): Step | null {
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  // DOM_DELTA_LINE and DOM_DELTA_PAGE, normalized to pixels of content.
+  const unit = deltaMode === 1 ? LINE_HEIGHT_PX : 1;
+  const scaleX = deltaMode === 2 ? rect.width : unit;
+  const scaleY = deltaMode === 2 ? rect.height : unit;
+  const dx = clampSigned((deltaX * scaleX) / rect.width);
+  const dy = clampSigned((deltaY * scaleY) / rect.height);
+  if (dx === 0 && dy === 0) return null;
+  return at === undefined ? { kind: "scroll", dx, dy } : { kind: "scroll", dx, dy, at: { x: at.x, y: at.y } };
+}
+
+function clampSigned(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(1, Math.max(-1, value));
+}
+
+// ---------------------------------------------------------------------------
+// Pinch: a macOS trackpad pinch arrives as a wheel event with ctrlKey set
+// ---------------------------------------------------------------------------
+
+/** Where the two synthetic fingers start, as a fraction of the frame. */
+export const PINCH_INITIAL_SPREAD = 0.25;
+export const PINCH_MIN_SPREAD = 0.04;
+export const PINCH_MAX_SPREAD = 0.7;
+/**
+ * Wheel pixels → spread factor exponent. Chosen so a comfortable two-finger
+ * spread on a Magic Trackpad roughly doubles the on-device spread — the same
+ * feel as pinching Safari.
+ */
+export const PINCH_SENSITIVITY = 0.006;
+
+/**
+ * A pinch with no event for this long has ended. The trackpad streams a
+ * pinch continuously — tens of events a second — so a beat and a half of
+ * silence is the fingers lifting, not a slow pinch.
+ */
+export const PINCH_IDLE_END_MS = 160;
+
+/** The next spread after one ctrl-wheel event. Spreading fingers zooms in. */
+export function pinchSpread(current: number, deltaY: number): number {
+  const next = current * Math.exp(-deltaY * PINCH_SENSITIVITY);
+  return Math.min(PINCH_MAX_SPREAD, Math.max(PINCH_MIN_SPREAD, next));
+}
+
+/**
+ * Two fingers on a diagonal around the cursor — the same placement the
+ * scripted pinch uses, clamped so both stay on the glass when the cursor is
+ * near a corner.
+ */
+export function pinchFingers(
+  center: { x: number; y: number },
+  spread: number,
+): { x1: number; y1: number; x2: number; y2: number } {
+  const half = spread / 2;
+  return {
+    x1: clamp01(center.x - half),
+    y1: clamp01(center.y - half),
+    x2: clamp01(center.x + half),
+    y2: clamp01(center.y + half),
+  };
+}

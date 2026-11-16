@@ -1,0 +1,115 @@
+/*
+ * The plugin's own classes, prefixed so nothing of BB's matches them. `bb plugin
+ * build` scopes Tailwind utilities as `:where([data-bb-plugin=…]) .<utility>`, and BB's
+ * elements carry the same class names, so every utility a plugin uses is matched
+ * against the whole page on every style recalc. CSS imported here is passed through
+ * as written. Values are the ones the Tailwind classes had.
+ */
+
+.pinned-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.pinned-half {
+  position: relative;
+  transition-property: opacity, translate;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+.pinned-half[data-empty] {
+  pointer-events: none;
+  translate: 0 -100%;
+  opacity: 0;
+}
+.pinned-half--reply {
+  min-width: 0;
+  flex: 1;
+}
+.pinned-half--message {
+  margin-left: auto;
+  max-width: 70%;
+  flex: none;
+}
+
+.pinned-button {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border-seam);
+  border-radius: calc(var(--radius) + 4px);
+  padding-inline: 1rem;
+  padding-bottom: 0.625rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  line-height: 1.625;
+  color: var(--foreground);
+  box-shadow: 0 8px 20px -8px #00000059;
+  transition-property: translate, box-shadow;
+  transition-duration: 0.1s;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+@media (hover: hover) {
+  .pinned-button:hover {
+    translate: 0 -0.125rem;
+    box-shadow: 0 10px 22px -8px #00000080;
+  }
+}
+.pinned-button:focus-visible {
+  translate: 0 -0.125rem;
+  box-shadow: 0 10px 22px -8px #00000080;
+}
+.pinned-button:active {
+  translate: 0 1px;
+  box-shadow: none;
+}
+
+.pinned-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+}
+
+/* The ellipsis needs a block of its own: a button's content box does not clip with one. */
+.pinned-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pinned-text[data-busy] {
+  animation: pinned-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pinned-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pinned-position {
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  line-height: 1.625;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+.pinned-position b {
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pinned-half {
+    transition-property: none;
+  }
+  .pinned-text[data-busy] {
+    animation: none;
+  }
+}

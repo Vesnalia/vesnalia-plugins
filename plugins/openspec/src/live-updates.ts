@@ -1,0 +1,256 @@
+import { specificationPath } from "./specification-model";
+import { pluginError } from "./plugin-error";
+import { randomUUID } from "node:crypto";
+import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { hostContract, hostSignals } from "./host-contract";
+import { changeForPath } from "./change-paths";
+import { liveTags } from "./live-tags";
+import { workspace } from "./reader";
+import { errorMessage } from "./reader-error";
+import { sourceSelectionSchema } from "./planning-source";
+
+export function createHostClient(bb: BbPluginApi) {
+  return bb.hosts.experimental_client({
+    contract: hostContract,
+    experimental_signals: hostSignals,
+  });
+}
+type Host = ReturnType<typeof createHostClient>;
+
+export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
+  const active = new Map<
+    string,
+    {
+      subscriptionId: string;
+      environmentId: string;
+      workspacePath: string;
+      hostId: string;
+      storeId?: string | null;
+    }
+  >();
+  const failureKey = (environmentId: string, storeId?: string | null) =>
+    JSON.stringify([
+      environmentId,
+      storeId === undefined ? { auto: true } : storeId,
+    ]);
+  const knownHosts = new Set<string>();
+  const failures = new Map<string, string>();
+  const disposers: (() => void)[] = [];
+  let activate!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    activate = resolve;
+  });
+  bb.background.service("openspec-live", {
+    async start(signal) {
+      activate();
+      if (!signal.aborted)
+        await new Promise<void>((resolve) =>
+          signal.addEventListener("abort", () => resolve(), { once: true }),
+        );
+    },
+  });
+  bb.onDispose(activate);
+
+  async function start(
+    entry: typeof active extends Map<string, infer T> ? T : never,
+  ) {
+    try {
+      await host.call(
+        "watch",
+        {
+          subscriptionId: entry.subscriptionId,
+          environmentId: entry.environmentId,
+          workspacePath: entry.workspacePath,
+          ...(entry.storeId !== undefined ? { storeId: entry.storeId } : {}),
+        },
+        { hostId: entry.hostId },
+      );
+      failures.delete(failureKey(entry.environmentId, entry.storeId));
+    } catch (cause) {
+      failures.set(
+        failureKey(entry.environmentId, entry.storeId),
+        errorMessage(cause),
+      );
+    }
+    bb.rpc.experimental_invalidate([liveTags.changes(entry.environmentId), liveTags.specifications(entry.environmentId)]);
+  }
+
+  const observe = async (read: { input: unknown } | { key: string }, signal: AbortSignal) => {
+    if (!("input" in read)) return;
+    // Reload can restore reads before activation; services start after activation.
+    await ready;
+    if (signal.aborted) return;
+    const { environmentId, storeId } = rpcInput(read.input);
+    const source = await workspace(bb.sdk, environmentId);
+    if (signal.aborted) return;
+    const entry = {
+      subscriptionId: randomUUID(),
+      environmentId,
+      workspacePath: source.path,
+      hostId: source.hostId,
+      ...(storeId !== undefined ? { storeId } : {}),
+    };
+    knownHosts.add(source.hostId);
+    active.set(entry.subscriptionId, entry);
+    try {
+      await start(entry);
+      if (!signal.aborted)
+        await new Promise<void>((resolve) =>
+          signal.addEventListener("abort", () => resolve(), { once: true }),
+        );
+    } finally {
+      active.delete(entry.subscriptionId);
+      if (
+        ![...active.values()].some(
+          (item) =>
+            item.environmentId === environmentId && item.storeId === storeId,
+        )
+      )
+        failures.delete(failureKey(environmentId, storeId));
+      try {
+        await host.call(
+          "unwatch",
+          { subscriptionId: entry.subscriptionId },
+          { hostId: source.hostId },
+        );
+      } catch (cause) {
+        bb.log.warn(`OpenSpec watcher cleanup: ${errorMessage(cause)}`);
+      }
+    }
+  };
+  bb.rpc.experimental_whileWatched("changes", observe);
+  bb.rpc.experimental_whileWatched("specifications", observe);
+
+  disposers.push(
+    host.experimental_onSignal("changed", ({ hostId, payload }) => {
+      if (
+        ![...active.values()].some(
+          (entry) =>
+            entry.hostId === hostId &&
+            entry.environmentId === payload.environmentId,
+        )
+      )
+        return;
+      const tags = new Set<string>();
+      if (payload.rescan || payload.structural || payload.error) {
+        tags.add(liveTags.changes(payload.environmentId));
+        tags.add(liveTags.specifications(payload.environmentId));
+      }
+      if (payload.rescan || payload.structural) {
+        // Structural changes can add/remove the selected artifact as well as its task file.
+        bb.rpc.experimental_invalidate([
+          liveTags.environment(payload.environmentId),
+        ]);
+        return;
+      }
+      for (const file of payload.paths) {
+        const spec = specificationPath(file);
+        if (spec) { tags.add(liveTags.specifications(payload.environmentId)); tags.add(liveTags.specification(payload.environmentId, spec.id)); }
+        tags.add(liveTags.document(payload.environmentId, file));
+        const changeId = changeForPath(file);
+        if (changeId) tags.add(liveTags.changes(payload.environmentId));
+        if (changeId && file === `changes/${changeId}/tasks.md`) {
+          tags.add(liveTags.detail(payload.environmentId, changeId));
+        }
+      }
+      if (tags.size) bb.rpc.experimental_invalidate([...tags]);
+    }),
+  );
+
+  async function restoreHost(hostId: string) {
+    if (!knownHosts.has(hostId)) return;
+    const entries = [...active.values()].filter(
+      (entry) => entry.hostId === hostId,
+    );
+    try {
+      await host.call(
+        "reconcile",
+        {
+          subscriptions: entries.map(
+            ({ subscriptionId, environmentId, workspacePath, storeId }) => ({
+              subscriptionId,
+              environmentId,
+              workspacePath,
+              ...(storeId !== undefined ? { storeId } : {}),
+            }),
+          ),
+        },
+        { hostId },
+      );
+      for (const entry of entries)
+        failures.delete(failureKey(entry.environmentId, entry.storeId));
+    } catch (cause) {
+      for (const entry of entries)
+        failures.set(
+          failureKey(entry.environmentId, entry.storeId),
+          errorMessage(cause),
+        );
+    }
+    if (!entries.length) knownHosts.delete(hostId);
+    for (const entry of entries)
+      bb.rpc.experimental_invalidate([
+        liveTags.environment(entry.environmentId),
+      ]);
+  }
+  disposers.push(
+    host.experimental_onWorkerExit(({ hostId }) => restoreHost(hostId)),
+  );
+  disposers.push(
+    bb.sdk.subscribe({
+      event: "host:changed",
+      callback: (event) => {
+        if (event.id) void restoreHost(event.id);
+      },
+    }),
+  );
+
+  const threadEvents = [
+    "thread.created",
+    "thread.active",
+    "thread.idle",
+    "thread.failed",
+    "thread.archived",
+    "thread.unarchived",
+    "thread.deleted",
+  ] as const;
+  for (const event of threadEvents) {
+    bb.events.on(event, ({ thread }) => {
+      if (thread.environmentId)
+        bb.rpc.experimental_invalidate([
+          liveTags.threads(thread.environmentId),
+          liveTags.changes(thread.environmentId),
+        ]);
+    });
+  }
+  bb.onDispose(() => {
+    for (const dispose of disposers) dispose();
+  });
+  return {
+    error: (environmentId: string, storeId?: string | null) =>
+      failures.get(failureKey(environmentId, storeId)) ?? null,
+    refresh: async (environmentId: string) => {
+      await Promise.all(
+        [...active.values()]
+          .filter((entry) => entry.environmentId === environmentId)
+          .map(start),
+      );
+    },
+  };
+}
+
+function rpcInput(input: unknown): {
+  environmentId: string;
+  storeId?: string | null;
+} {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    !("environmentId" in input) ||
+    typeof input.environmentId !== "string"
+  )
+    throw pluginError("error.environmentRequired");
+  return {
+    environmentId: input.environmentId,
+    ...sourceSelectionSchema.parse(input),
+  };
+}

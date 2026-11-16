@@ -1,0 +1,111 @@
+.compact-nav-region {
+  padding: 6px 8px 2px 12px;
+}
+
+.compact-nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.compact-nav-row-single {
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.compact-nav-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--bb-sidebar-control-size);
+  height: var(--bb-sidebar-control-size);
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sidebar-foreground);
+  cursor: pointer;
+}
+
+.compact-nav-button:hover {
+  background: var(--sidebar-accent);
+}
+
+.compact-nav-button:focus-visible {
+  outline: 2px solid var(--sidebar-ring);
+  outline-offset: -2px;
+}
+
+.compact-nav-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.compact-nav-button[aria-current="page"] {
+  color: var(--primary);
+  background: var(--sidebar-accent);
+}
+
+.compact-nav-icon {
+  width: var(--bb-sidebar-control-icon-size);
+  height: var(--bb-sidebar-control-icon-size);
+  flex-shrink: 0;
+}
+
+.compact-nav-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  max-width: 2rem;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.compact-nav-menu {
+  z-index: 60;
+  min-width: 11rem;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+
+.compact-nav-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  cursor: default;
+  user-select: none;
+}
+
+.compact-nav-menu-item[data-highlighted] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.compact-nav-menu-item[data-disabled] {
+  opacity: 0.5;
+}
+
+.compact-nav-menu-label {
+  padding: 6px 8px 2px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.compact-nav-menu-separator {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
+}

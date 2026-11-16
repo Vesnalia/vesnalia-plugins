@@ -1,0 +1,490 @@
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  createFakePluginHost,
+  makeThreadResponse,
+} from "@get-bb/plugin-sdk/testing";
+import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import server from "../server";
+import { SNOOZE_METADATA_KEY } from "../lib/snooze";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+// The server CLI sweeps with the real clock (the pure eligibility core takes
+// an injected `now`; the CLI entry feeds it Date.now() and offers no seam).
+// Fixtures must therefore be relative to the real clock: a pinned NOW made
+// "done 2 days ago" cross the 7-day threshold five days after this file was
+// written, time-bombing the below-threshold test (observed 2026-10-01).
+// The 2-day defaults keep day-scale margins around every below-threshold
+// fixture, so load-time drift (milliseconds) never flips a verdict.
+const NOW = Date.now();
+function iso(msAgo: number): string {
+  return new Date(NOW - msAgo).toISOString();
+}
+
+// A thread whose updatedAt sits `days` ago, never done, never archived.
+function idleThread(id: string, daysAgo: number) {
+  return makeThreadResponse({ id, updatedAt: NOW - daysAgo * DAY_MS });
+}
+
+describe("bb focus-board sweep", () => {
+  let harness: FakePluginHarness;
+  let bb: BbPluginApi;
+  let metadata: Map<string, Record<string, unknown>>;
+  let listedThreads: ReturnType<typeof makeThreadResponse>[];
+  let archived: string[];
+
+  beforeEach(() => {
+    metadata = new Map();
+    listedThreads = [];
+    archived = [];
+  });
+
+  async function load(): Promise<void> {
+    const host = createFakePluginHost({
+      pluginId: "focus-board",
+      sdk: {
+        threads: {
+          list: async () => listedThreads,
+          getPluginMetadata: async ({ threadId }: { threadId: string }) =>
+            metadata.get(threadId) ?? {},
+          updatePluginMetadata: async ({
+            threadId,
+            set,
+            remove,
+          }: {
+            threadId: string;
+            set?: Record<string, unknown>;
+            remove?: string[];
+          }) => {
+            const current = { ...(metadata.get(threadId) ?? {}) };
+            if (set) Object.assign(current, set);
+            for (const key of remove ?? []) delete current[key];
+            metadata.set(threadId, current);
+            return current;
+          },
+          archive: async ({ threadId }: { threadId: string }) => {
+            archived.push(threadId);
+            return { archivedAt: Date.now() };
+          },
+        },
+      },
+    });
+    harness = host.harness;
+    bb = host.bb;
+    await server(bb);
+  }
+
+  /** Seed the legacy KV row (imported on demand inside the sweep). */
+  async function storeLegacy(ids: string[]): Promise<void> {
+    await bb.storage.kv.set("done-thread-ids", ids);
+  }
+
+  afterEach(async () => {
+    await harness.lifecycle.dispose();
+  });
+
+  function archiveArgs(): string[] {
+    return harness.inspection.sdk
+      .callsTo("threads.archive")
+      .map((args) => (args[0] as { threadId: string }).threadId);
+  }
+
+  describe("dry-run (no --confirm)", () => {
+    it("prints the eligible set with reasons and exits 1", async () => {
+      await load();
+      listedThreads = [
+        idleThread("thr_old", 40),
+        idleThread("thr_fresh", 1),
+      ];
+      metadata.set("thr_done", { done: { doneAt: iso(10 * DAY_MS) } });
+      listedThreads.push(makeThreadResponse({ id: "thr_done" }));
+
+      const result = await harness.behavior.runCli(["sweep"]);
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toContain("thr_old");
+      expect(result.stdout).toContain("idle longer than 2 days");
+      expect(result.stdout).toContain("thr_done");
+      expect(result.stdout).toContain("done longer than 2 days");
+      expect(result.stdout).toContain("--confirm");
+      expect(archived).toEqual([]);
+      expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
+    });
+
+    it("reports no eligible threads without archiving", async () => {
+      await load();
+      listedThreads = [idleThread("thr_fresh", 1)];
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      expect(result.exitCode).toBe(1);
+      expect(JSON.parse(result.stdout)).toEqual({ eligible: [], count: 0 });
+      expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
+    });
+
+    it("counts a thread at exactly the threshold as eligible", async () => {
+      await load();
+      // Exactly the 2-day default idle threshold; boundary counts.
+      listedThreads = [idleThread("thr_edge", 2)];
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      const body = JSON.parse(result.stdout) as {
+        eligible: Array<{ id: string; reason: string }>;
+        count: number;
+      };
+      expect(body.count).toBe(1);
+      expect(body.eligible[0]).toMatchObject({ id: "thr_edge", reason: "idle" });
+    });
+
+    it("excludes keep, pinned, and already-archived threads", async () => {
+      await load();
+      listedThreads = [
+        makeThreadResponse({ id: "thr_keep", pinnedAt: null }),
+        makeThreadResponse({
+          id: "thr_pinned",
+          pinnedAt: NOW - 90 * DAY_MS,
+        }),
+        makeThreadResponse({
+          id: "thr_arch",
+          updatedAt: NOW - 90 * DAY_MS,
+          archivedAt: NOW - 5 * DAY_MS,
+        }),
+        idleThread("thr_other", 90),
+      ];
+      metadata.set("thr_keep", {
+        done: { doneAt: iso(100 * DAY_MS), keep: true },
+      });
+
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      const body = JSON.parse(result.stdout) as {
+        eligible: Array<{ id: string }>;
+      };
+      expect(body.eligible.map((entry) => entry.id)).toEqual(["thr_other"]);
+    });
+
+    it("honors a keep flag from the KV keep store on a never-done thread", async () => {
+      await load();
+      listedThreads = [idleThread("thr_kvkeep", 90)];
+      await harness.behavior.callRpc("sweep_keep_set", {
+        threadId: "thr_kvkeep",
+        keep: true,
+      });
+
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      expect(JSON.parse(result.stdout)).toEqual({ eligible: [], count: 0 });
+    });
+
+    it("a done thread below the done threshold is not claimed as idle", async () => {
+      await load();
+      listedThreads = [
+        makeThreadResponse({ id: "thr_recent", updatedAt: 0 }),
+      ];
+      // Done one day ago: below the 2-day done threshold, so not
+      // done-eligible — and the idle arm never claims a done thread.
+      metadata.set("thr_recent", { done: { doneAt: iso(DAY_MS) } });
+
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      expect(JSON.parse(result.stdout)).toEqual({ eligible: [], count: 0 });
+    });
+
+    it("--ids narrows the dry-run print to the named ids", async () => {
+      await load();
+      listedThreads = [
+        idleThread("thr_a", 40),
+        idleThread("thr_b", 40),
+        idleThread("thr_c", 40),
+      ];
+      const result = await harness.behavior.runCli([
+        "sweep",
+        "--ids",
+        "thr_b,thr_c",
+        "--json",
+      ]);
+      const body = JSON.parse(result.stdout) as {
+        eligible: Array<{ id: string }>;
+      };
+      expect(body.eligible.map((entry) => entry.id).sort()).toEqual([
+        "thr_b",
+        "thr_c",
+      ]);
+      expect(archived).toEqual([]);
+    });
+
+    it("rejects --ids without a value", async () => {
+      await load();
+      const result = await harness.behavior.runCli(["sweep", "--ids"]);
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain("--ids requires a value");
+    });
+  });
+
+  describe("sweep-family contract and status guard (server side)", () => {
+    it("a parent with a live child is never eligible; the child is eligible independently", async () => {
+      await load();
+      listedThreads = [
+        makeThreadResponse({
+          id: "thr_parent",
+          updatedAt: NOW - 90 * DAY_MS,
+        }),
+        makeThreadResponse({
+          id: "thr_child",
+          parentThreadId: "thr_parent",
+          updatedAt: NOW - 90 * DAY_MS,
+        }),
+      ];
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      expect(
+        (JSON.parse(result.stdout) as { eligible: Array<{ id: string }> })
+          .eligible.map((entry) => entry.id),
+      ).toEqual(["thr_child"]);
+    });
+
+    it("a done parent with a live child is excluded from the done arm", async () => {
+      await load();
+      listedThreads = [
+        makeThreadResponse({
+          id: "thr_parent",
+          updatedAt: NOW - 90 * DAY_MS,
+        }),
+        makeThreadResponse({
+          id: "thr_child",
+          parentThreadId: "thr_parent",
+          updatedAt: NOW - 90 * DAY_MS,
+        }),
+      ];
+      metadata.set("thr_parent", { done: { doneAt: iso(100 * DAY_MS) } });
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      // The parent is excluded by the family contract; the child stays
+      // eligible through the idle arm, independently of its parent.
+      expect(
+        (JSON.parse(result.stdout) as { eligible: Array<{ id: string }> })
+          .eligible.map((entry) => entry.id),
+      ).toEqual(["thr_child"]);
+    });
+
+    it("running and unread threads are never idle-eligible", async () => {
+      await load();
+      listedThreads = [
+        makeThreadResponse({
+          id: "thr_active",
+          status: "active",
+          updatedAt: NOW - 90 * DAY_MS,
+        }),
+        makeThreadResponse({
+          id: "thr_unread",
+          lastReadAt: NOW - 100 * DAY_MS,
+          latestAttentionAt: NOW,
+          updatedAt: NOW - 90 * DAY_MS,
+        }),
+        idleThread("thr_quiet", 90),
+      ];
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      expect(
+        (JSON.parse(result.stdout) as { eligible: Array<{ id: string }> })
+          .eligible.map((entry) => entry.id),
+      ).toEqual(["thr_quiet"]);
+    });
+
+    it("an idle thread with background work in flight is never idle-eligible", async () => {
+      await load();
+      const busy = (id: string, activity: Record<string, number>) => {
+        const row = idleThread(id, 90);
+        return { ...row, activity: { ...row.activity, ...activity } };
+      };
+      listedThreads = [
+        busy("thr_bg_agent", { activeBackgroundAgentCount: 1 }),
+        busy("thr_bg_command", { activeBackgroundCommandCount: 2 }),
+        busy("thr_workflow", { activeWorkflowCount: 1 }),
+        idleThread("thr_quiet", 90),
+      ];
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      expect(
+        (JSON.parse(result.stdout) as { eligible: Array<{ id: string }> })
+          .eligible.map((entry) => entry.id),
+      ).toEqual(["thr_quiet"]);
+    });
+
+    it("a snoozed thread sleeps through the sweep; the snooze beats the sweep", async () => {
+      await load();
+      listedThreads = [
+        idleThread("thr_snoozed", 90),
+        idleThread("thr_awake", 90),
+      ];
+      metadata.set("thr_snoozed", {
+        [SNOOZE_METADATA_KEY]: {
+          wakeAt: new Date(NOW + DAY_MS).toISOString(),
+          setAt: iso(DAY_MS),
+        },
+      });
+      const result = await harness.behavior.runCli(["sweep", "--json"]);
+      expect(
+        (JSON.parse(result.stdout) as { eligible: Array<{ id: string }> })
+          .eligible.map((entry) => entry.id),
+      ).toEqual(["thr_awake"]);
+    });
+  });
+
+  describe("--confirm", () => {
+    it("archives Done-age threads and marks long-idle threads Done", async () => {
+      await load();
+      listedThreads = [
+        makeThreadResponse({ id: "thr_d1" }),
+        idleThread("thr_i1", 40),
+        // One day idle: under the 2-day default, so not eligible.
+        idleThread("thr_fresh", 1),
+      ];
+      metadata.set("thr_d1", { done: { doneAt: iso(10 * DAY_MS) } });
+      const result = await harness.behavior.runCli(["sweep", "--confirm", "--json"]);
+      expect(result.exitCode).toBe(0);
+      expect(archiveArgs()).toEqual(["thr_d1"]);
+      // The long-idle thread gains a fresh done stamp and is NOT archived.
+      const record = metadata.get("thr_i1")?.done as { doneAt: string };
+      expect(typeof record?.doneAt).toBe("string");
+      expect(Number.isNaN(Date.parse(record.doneAt))).toBe(false);
+      const body = JSON.parse(result.stdout) as {
+        archived: Array<{ id: string }>;
+        markedDone: Array<{ id: string }>;
+        count: number;
+      };
+      expect(body.archived.map((entry) => entry.id)).toEqual(["thr_d1"]);
+      expect(body.markedDone.map((entry) => entry.id)).toEqual(["thr_i1"]);
+      expect(body.count).toBe(2);
+    });
+
+    it("names each action in the human output", async () => {
+      await load();
+      listedThreads = [
+        makeThreadResponse({ id: "thr_d1" }),
+        idleThread("thr_i1", 40),
+      ];
+      metadata.set("thr_d1", { done: { doneAt: iso(10 * DAY_MS) } });
+      const result = await harness.behavior.runCli(["sweep", "--confirm"]);
+      expect(result.stdout).toContain("archived thr_d1");
+      expect(result.stdout).toContain("marked Done thr_i1");
+    });
+
+    it("does nothing when nothing is eligible", async () => {
+      await load();
+      listedThreads = [idleThread("thr_fresh", 1)];
+      const result = await harness.behavior.runCli(["sweep", "--confirm", "--json"]);
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({
+        archived: [],
+        markedDone: [],
+        count: 0,
+      });
+      expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
+    });
+
+    it("with --ids, sweeps exactly those ids even if others also qualify", async () => {
+      await load();
+      listedThreads = [
+        idleThread("thr_a", 40),
+        idleThread("thr_b", 40),
+        idleThread("thr_c", 40),
+      ];
+      const result = await harness.behavior.runCli([
+        "sweep",
+        "--confirm",
+        "--ids",
+        "thr_b",
+        "--json",
+      ]);
+      expect(result.exitCode).toBe(0);
+      expect(archiveArgs()).toEqual([]);
+      const body = JSON.parse(result.stdout) as {
+        markedDone: Array<{ id: string }>;
+      };
+      expect(body.markedDone.map((entry) => entry.id)).toEqual(["thr_b"]);
+    });
+
+    it("with --ids, skips named ids that are already archived", async () => {
+      await load();
+      listedThreads = [
+        idleThread("thr_a", 40),
+        makeThreadResponse({
+          id: "thr_gone",
+          updatedAt: NOW - 40 * DAY_MS,
+          archivedAt: NOW - DAY_MS,
+        }),
+      ];
+      const result = await harness.behavior.runCli([
+        "sweep",
+        "--confirm",
+        "--ids",
+        "thr_a,thr_gone",
+        "--json",
+      ]);
+      expect(result.exitCode).toBe(0);
+      expect(archiveArgs()).toEqual([]);
+      const body = JSON.parse(result.stdout) as {
+        markedDone: Array<{ id: string }>;
+      };
+      expect(body.markedDone.map((entry) => entry.id)).toEqual(["thr_a"]);
+    });
+
+    it("never sweeps keep threads (metadata keep)", async () => {
+      await load();
+      listedThreads = [makeThreadResponse({ id: "thr_keep" })];
+      metadata.set("thr_keep", {
+        done: { doneAt: iso(100 * DAY_MS), keep: true },
+      });
+      const result = await harness.behavior.runCli(["sweep", "--confirm", "--json"]);
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({
+        archived: [],
+        markedDone: [],
+        count: 0,
+      });
+      expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
+    });
+
+    it("never sweeps keep threads (KV keep store)", async () => {
+      await load();
+      listedThreads = [idleThread("thr_kvkeep", 90)];
+      await harness.behavior.callRpc("sweep_keep_set", {
+        threadId: "thr_kvkeep",
+        keep: true,
+      });
+      const result = await harness.behavior.runCli(["sweep", "--confirm", "--json"]);
+      expect(result.exitCode).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({
+        archived: [],
+        markedDone: [],
+        count: 0,
+      });
+      expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
+    });
+
+    it("a legacy-imported done thread stamped at import is not immediately eligible", async () => {
+      await load();
+      listedThreads = [makeThreadResponse({ id: "thr_mig", updatedAt: NOW })];
+      // The import stamps doneAt = import time, so the thread is Done
+      // with a fresh stamp: not eligible on either arm.
+      await storeLegacy(["thr_mig"]);
+      await harness.behavior.runCli(["sweep", "--confirm", "--json"]);
+      expect(harness.inspection.sdk.callsTo("threads.archive")).toHaveLength(0);
+    });
+  });
+
+  describe("settings integration", () => {
+    it("respects a declared-settings threshold change, including the unit", async () => {
+      await load();
+      // One day idle: under the 2-day default threshold, so not eligible.
+      listedThreads = [idleThread("thr_mid", 1)];
+      expect(
+        JSON.parse(
+          (await harness.behavior.runCli(["sweep", "--json"])).stdout,
+        ),
+      ).toEqual({ eligible: [], count: 0 });
+
+      // The declared settings write the way the host's settings save does
+      // (the plugin CLI no longer carries config commands; the door is
+      // `bb plugin config focus-board` or the modal's Behavior tab):
+      // switching the unit and count moves the threshold to 12 hours, and
+      // the one-day-old thread is now eligible.
+      await harness.behavior.setSettings({ idleArchiveUnit: "hours", idleArchiveValue: 12 });
+      const after = await harness.behavior.runCli(["sweep", "--json"]);
+      const body = JSON.parse(after.stdout) as {
+        eligible: Array<{ id: string }>;
+      };
+      expect(body.eligible.map((entry) => entry.id)).toEqual(["thr_mid"]);
+    });
+  });
+});

@@ -1,0 +1,316 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createFakePluginHost, makeThreadResponse, makeMessageDispatchHookContext, experimental_scanPublicSdkOnly } from '@get-bb/plugin-sdk/testing';
+import plugin from './server';
+import { PING, nextPingAt, type Watch } from './core';
+
+const threadId = 'thr_test123';
+const baseTime = new Date('2026-10-30T12:00:00Z').getTime();
+const hosts: ReturnType<typeof createFakePluginHost>[] = [];
+async function setup() {
+  let thread = makeThreadResponse({ id: threadId, status: 'idle', runtime: { displayStatus: 'idle' }, queuedMessageCount: 0, activeBackgroundAgentCount: 0, archivedAt: null, deletedAt: null });
+  const host = createFakePluginHost({ pluginId: 'cache-watch', sdk: { threads: {
+    get: async () => thread,
+    events: { list: async () => [] },
+    context: async () => ({ usage: null }),
+    send: async () => ({ ok: true, delivery: 'sent' }),
+    queuedMessages: { list: async () => [] },
+  } } });
+  hosts.push(host);
+  await plugin(host.bb);
+  return { ...host, setThread: (next: typeof thread) => { thread = next; }, thread: () => thread };
+}
+async function start(host: Awaited<ReturnType<typeof setup>>, extra = {}) {
+  host.harness.sdk.stub('threads.context', async () => ({ usage: { compactionOfferAt: new Date(baseTime + 540_000).toISOString() } }));
+  return host.harness.behavior.callRpc('start', { threadId, durationHours: 6, ...extra });
+}
+beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(baseTime); });
+afterEach(async () => { for (const host of hosts.splice(0)) await host.harness.lifecycle.dispose(); vi.useRealTimers(); });
+
+describe('Cache Watch lifecycle', () => {
+  it('is opt-in and sends one bounded idle turn, without changing model or tools', async () => {
+    const h = await setup();
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+    await start(h);
+    vi.setSystemTime(baseTime + 240_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(1);
+    expect(h.harness.inspection.sdk.callsTo('threads.send')[0]).toEqual([{ threadId, mode: 'start', originPluginId: 'cache-watch', input: [{ type: 'text', text: PING, mentions: [] }] }]);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(1);
+    vi.setSystemTime(baseTime + 6 * 3_600_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(1);
+  });
+  it('skips busy threads, queued messages, and background agents', async () => {
+    const h = await setup(); await start(h); vi.setSystemTime(baseTime + 240_000);
+    const idle = h.thread();
+    for (const patch of [{ status: 'active' as const }, { queuedMessageCount: 1 }, { activeBackgroundAgentCount: 1 }, { runtime: { displayStatus: 'waiting-for-host' as const } }]) {
+      h.setThread({ ...idle, ...patch });
+      await h.harness.behavior.runSchedule('keepalive');
+    }
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+  });
+  it('preserves the lease and last send across reload, then stops', async () => {
+    const h = await setup(); await start(h); vi.setSystemTime(baseTime + 240_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    const reloaded = await h.harness.lifecycle.reload(plugin);
+    hosts.push(reloaded);
+    await reloaded.harness.behavior.runSchedule('keepalive');
+    expect(reloaded.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+    await reloaded.harness.behavior.callRpc('stop', { threadId });
+    vi.setSystemTime(baseTime + 500_000); await reloaded.harness.behavior.runSchedule('keepalive');
+    expect(reloaded.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+  });
+  it('pauses on ambiguous failure and never retries automatically', async () => {
+    const h = await setup(); await start(h);
+    h.harness.sdk.stub('threads.send', async () => { throw new Error('private network details'); });
+    vi.setSystemTime(baseTime + 240_000); await h.harness.behavior.runSchedule('keepalive');
+    vi.setSystemTime(baseTime + 500_000); await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(1);
+    expect(await h.harness.behavior.callRpc('list')).toEqual([expect.objectContaining({ disabled: true, error: expect.not.stringContaining('private') })]);
+  });
+  it('rejects stale or racing pings at the dispatch checkpoint', async () => {
+    const h = await setup(); await start(h);
+    const hook = h.harness.registrations.hooks['message.dispatch']!;
+    const ctx = makeMessageDispatchHookContext({ thread: h.thread(), originPluginId: 'cache-watch', input: { text: PING }, attempt: 'start-turn' });
+    expect(await hook(ctx)).toEqual({ action: 'proceed' });
+    expect(await hook({ ...ctx, attempt: 'join-turn' })).toEqual(expect.objectContaining({ action: 'reject' }));
+    await h.harness.behavior.callRpc('stop', { threadId });
+    expect(await hook(ctx)).toEqual(expect.objectContaining({ action: 'reject' }));
+  });
+  it('never intercepts user or other-plugin messages, regardless of lease or thread state', async () => {
+    const h = await setup();
+    const hook = h.harness.registrations.hooks['message.dispatch']!;
+    for (const lease of ['absent', 'enabled', 'expired', 'stopped']) {
+      if (lease === 'enabled') await start(h);
+      if (lease === 'expired') vi.setSystemTime(baseTime + 7 * 3_600_000);
+      if (lease === 'stopped') await h.harness.behavior.callRpc('stop', { threadId });
+      for (const originPluginId of [null, 'mixed', 'another-plugin']) {
+        for (const attempt of ['start-turn', 'join-turn'] as const) {
+          for (const text of ['Ordinary user prompt', PING]) {
+            const ctx = makeMessageDispatchHookContext({
+              thread: { ...h.thread(), status: 'active', runtime: { displayStatus: 'active' } },
+              originPluginId, attempt, input: { text },
+            });
+            expect(await hook(ctx)).toEqual({ action: 'proceed' });
+          }
+        }
+      }
+    }
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+  });
+  it('validates intervals and durations at RPC and CLI boundaries', async () => {
+    const h = await setup();
+    await expect(start(h, { intervalMinutes: 0 })).rejects.toThrow();
+    await expect(start(h, { durationHours: 100 })).rejects.toThrow();
+    expect((await h.harness.behavior.runCli(['start', threadId, '--minutes', 'NaN'])).exitCode).toBe(1);
+    expect(await h.harness.behavior.callRpc('list')).toEqual([]);
+  });
+  it('keeps missing telemetry unknown and does not warm on status reads', async () => {
+    const h = await setup();
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({ sample: null, estimatedExpiresAt: null }));
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+  });
+  it('postpones the next ping after reported normal activity', () => {
+    const watch: Watch = { threadId, armedAt: baseTime, until: baseTime + 3_600_000, lastAttemptAt: null, sent: 0, disabled: false, error: null };
+    expect(nextPingAt(watch, baseTime + 720_000)).toBe(baseTime + 420_000);
+  });
+  it('does not send when disposed while provider telemetry is being fetched', async () => {
+    const h = await setup(); await start(h); vi.setSystemTime(baseTime + 240_000);
+    let release!: (value: never[]) => void;
+    const pending = new Promise<never[]>(resolve => { release = resolve; });
+    h.harness.sdk.stub('threads.events.list', () => pending);
+    const tick = h.harness.behavior.runSchedule('keepalive');
+    // Let the serialized sweep enter its provider read before disposing.
+    await Promise.resolve(); await Promise.resolve();
+    await h.harness.lifecycle.dispose();
+    release([]); await tick;
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+  });
+  it('reports partial hits and TTL telemetry without claiming a live cache', async () => {
+    const h = await setup();
+    h.harness.sdk.stub('threads.events.list', async () => [{ type: 'thread/tokenUsage/updated', createdAt: baseTime,
+      data: { tokenUsage: { last: { inputTokens: 1500, cachedInputTokens: 1000, cacheWriteInputTokens: 500 }, promptCacheTtlMs: 300_000 } } }]);
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({
+      sample: { at: baseTime, inputTokens: 1500, readTokens: 1000, writeTokens: 500, ttlMs: 300_000 },
+      estimatedExpiresAt: baseTime + 300_000,
+      expirySource: 'provider',
+    }));
+  });
+  it('uses the marked 30-minute fallback for native and Central Codex cache activity', async () => {
+    const h = await setup();
+    h.harness.sdk.stub('threads.events.list', async () => [{ type: 'thread/tokenUsage/updated', createdAt: baseTime,
+      data: { tokenUsage: { last: { inputTokens: 1500, cachedInputTokens: 1000, cacheWriteInputTokens: 0 } } } }]);
+    for (const providerId of ['codex', 'central-codex']) {
+      h.setThread({ ...h.thread(), providerId });
+      expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({
+        estimatedExpiresAt: baseTime + 1_800_000, expirySource: 'codex-assumption',
+        sample: expect.objectContaining({ ttlMs: null }),
+      }));
+    }
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+  });
+  it('does not infer expiry from uncached usage or apply the Codex fallback to other providers', async () => {
+    const h = await setup();
+    h.setThread({ ...h.thread(), providerId: 'codex' });
+    h.harness.sdk.stub('threads.events.list', async () => [{ type: 'thread/tokenUsage/updated', createdAt: baseTime,
+      data: { tokenUsage: { last: { inputTokens: 1500, cachedInputTokens: 0, cacheWriteInputTokens: 0 } } } }]);
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({
+      estimatedExpiresAt: null, expirySource: null,
+    }));
+    h.setThread({ ...h.thread(), providerId: 'claude-code' });
+    h.harness.sdk.stub('threads.events.list', async () => [{ type: 'thread/tokenUsage/updated', createdAt: baseTime,
+      data: { tokenUsage: { last: { inputTokens: 1500, cachedInputTokens: 1000, cacheWriteInputTokens: 0 } } } }]);
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({
+      estimatedExpiresAt: null, expirySource: null,
+    }));
+  });
+  it('cancels a ping deferred by another plugin', async () => {
+    const h = await setup(); await start(h);
+    h.harness.sdk.stub('threads.send', async () => ({ ok: true, delivery: 'queued', queuedMessage: { id: 'q1' } }));
+    h.harness.sdk.stub('threads.queuedMessages.delete', async () => ({ ok: true }));
+    vi.setSystemTime(baseTime + 240_000); await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.queuedMessages.delete')).toEqual([[{ threadId, queuedMessageId: 'q1' }]]);
+    expect(await h.harness.behavior.callRpc('list')).toEqual([expect.objectContaining({ sent: 0 })]);
+  });
+  it('defaults to expiry minus five minutes, reschedules on activity, and waits after an attempt', async () => {
+    const h = await setup();
+    h.setThread({ ...h.thread(), providerId: 'central-codex' });
+    let reportAt = baseTime;
+    h.harness.sdk.stub('threads.events.list', async () => [{ type: 'thread/tokenUsage/updated', createdAt: reportAt,
+      data: { tokenUsage: { last: { inputTokens: 1500, cachedInputTokens: 1000 } } } }]);
+    await h.harness.behavior.callRpc('start', { threadId });
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({ nextPingAt: baseTime + 25 * 60_000 }));
+    vi.setSystemTime(baseTime + 4 * 60_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+    reportAt = baseTime + 10 * 60_000;
+    vi.setSystemTime(baseTime + 25 * 60_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+    vi.setSystemTime(baseTime + 35 * 60_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(1);
+    vi.setSystemTime(baseTime + 36 * 60_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(1);
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({ nextPingAt: null }));
+    reportAt = baseTime + 35 * 60_000;
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({ nextPingAt: baseTime + 60 * 60_000 }));
+  });
+  it('uses provider deadline before TTL and the Codex assumption', async () => {
+    const h = await setup();
+    h.setThread({ ...h.thread(), providerId: 'codex' });
+    h.harness.sdk.stub('threads.events.list', async () => [{ type: 'thread/tokenUsage/updated', createdAt: baseTime,
+      data: { tokenUsage: { last: { inputTokens: 1500, cachedInputTokens: 1000 }, promptCacheTtlMs: 3_600_000 } } }]);
+    await h.harness.behavior.callRpc('start', { threadId });
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({ nextPingAt: baseTime + 55 * 60_000 }));
+    h.harness.sdk.stub('threads.context', async () => ({ usage: { compactionOfferAt: new Date(baseTime + 20 * 60_000).toISOString() } }));
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({ nextPingAt: baseTime + 15 * 60_000 }));
+  });
+  it('waits for unknown or elapsed expiry instead of sending periodically', async () => {
+    const h = await setup();
+    await h.harness.behavior.callRpc('start', { threadId });
+    vi.setSystemTime(baseTime + 25 * 60_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    h.harness.sdk.stub('threads.context', async () => ({ usage: { compactionOfferAt: new Date(baseTime + 20 * 60_000).toISOString() } }));
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+    expect(await h.harness.behavior.callRpc('status', { threadId })).toEqual(expect.objectContaining({ nextPingAt: null }));
+  });
+  it('sends once when enabled inside the five-minute window', async () => {
+    const h = await setup();
+    h.harness.sdk.stub('threads.context', async () => ({ usage: { compactionOfferAt: new Date(baseTime + 120_000).toISOString() } }));
+    await h.harness.behavior.callRpc('start', { threadId });
+    await h.harness.behavior.runSchedule('keepalive');
+    vi.setSystemTime(baseTime + 60_000);
+    await h.harness.behavior.runSchedule('keepalive');
+    expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(1);
+  });
+  it('migrates persisted four-minute watches to expiry scheduling on reload', async () => {
+    const h = await setup();
+    await h.bb.storage.kv.set('watches-v1', [{ threadId, intervalMinutes: 4, armedAt: baseTime, until: baseTime + 3_600_000,
+      lastAttemptAt: null, sent: 0, error: null, disabled: false }]);
+    const reloaded = await h.harness.lifecycle.reload(plugin);
+    hosts.push(reloaded);
+    vi.setSystemTime(baseTime + 240_000);
+    await reloaded.harness.behavior.runSchedule('keepalive');
+    expect(reloaded.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+    expect(await reloaded.harness.behavior.callRpc('list')).toEqual([expect.not.objectContaining({ intervalMinutes: 4 })]);
+  });
+  it('CLI start defaults to expiry scheduling and rejects obsolete intervals', async () => {
+    const h = await setup();
+    expect((await h.harness.behavior.runCli(['start', threadId, '--hours', '2', '--json'])).exitCode).toBe(0);
+    expect(await h.harness.behavior.callRpc('list')).toEqual([expect.objectContaining({ until: baseTime + 7_200_000 })]);
+    expect((await h.harness.behavior.runCli(['start', threadId, '--minutes', '4'])).exitCode).toBe(1);
+  });
+  it('uses public SDK imports only', async () => {
+    const result = await experimental_scanPublicSdkOnly(process.cwd(), { allow: [/^vitest(?:\/config)?$/, /^react(?:-dom)?$/, /^sonner$/, /^@testing-library\/react$/, /^@\/components\/ui\//, /^@radix-ui\/react-(?:slot|checkbox|dialog)$/, /^(?:class-variance-authority|clsx|tailwind-merge)$/] });
+    expect(result.violations).toEqual([]); expect(result.privateDependencies).toEqual([]);
+  });
+});
+
+it('exposes a full-turn estimate through status RPC and CLI without sending a turn', async () => {
+  const h = await setup();
+  h.setThread({ ...h.thread(), providerId: 'codex' });
+  const total = { inputTokens: 10000, cachedInputTokens: 8000, outputTokens: 1000, reasoningOutputTokens: 500, totalTokens: 11000, cacheWriteInputTokens: 0 };
+  const rows = [
+    { seq: 1, type: 'client/turn/requested', data: { execution: { model: 'gpt-6.1-sol' }, requestId: 'r1' } },
+    { seq: 2, type: 'turn/started', scope: { kind: 'turn', turnId: 't1' } },
+    { seq: 3, createdAt: baseTime, type: 'thread/tokenUsage/updated', scope: { kind: 'turn', turnId: 't1' },
+      data: { providerThreadId: 'session1', tokenUsage: { last: total, total } } },
+  ];
+  // More than one host page, including repeated usage notifications.
+  for (let seq = 4; seq <= 123; seq++) rows.push({ ...rows[2], seq });
+  h.harness.sdk.stub('threads.events.list', async (input: { types?: readonly string[]; limit?: string; beforeSeq?: string }) => {
+    if (Number(input.limit) > 100) throw new Error('Host page limit exceeded');
+    return rows.filter(row => input.types?.includes(row.type) && (input.beforeSeq === undefined || row.seq < Number(input.beforeSeq)))
+      .reverse().slice(0, Number(input.limit));
+  });
+  const result = await h.harness.behavior.callRpc('status', { threadId });
+  expect(result).toMatchObject({ turn: { readTokens: 8000, writeTokens: 0, firstReadTokens: 8000, steps: [{ readTokens: 8000, writeTokens: 0 }] }, cost: { minUsd: 0.0148, maxUsd: 0.0148, readSavingsUsd: 0.0152, hitRate: 0.8 } });
+  const cli = await h.harness.behavior.runCli(['status', threadId, '--json']);
+  expect(cli.exitCode).toBe(0);
+  expect(JSON.parse(cli.stdout!)).toEqual(result);
+  expect(h.harness.inspection.sdk.callsTo('threads.send')).toHaveLength(0);
+});
+
+it('persists the status template across reloads and rejects invalid template syntax', async () => {
+  const host = await setup();
+  const initial = await host.harness.behavior.callRpc('getStatusTemplate', null);
+  expect(initial).toEqual({ template: expect.stringContaining('{{ttl}}') });
+  const template = '{{#if firstRequest == "hit"}}✓{{else}}?{{/if}} {{cost | usd:2}}';
+  await host.harness.behavior.callRpc('setStatusTemplate', { template });
+  expect(await host.harness.behavior.callRpc('getStatusTemplate', null)).toEqual({ template });
+  const reloaded = await host.harness.lifecycle.reload(plugin);
+  hosts.push(reloaded);
+  expect(await reloaded.harness.behavior.callRpc('getStatusTemplate', null)).toEqual({ template });
+  await expect(reloaded.harness.behavior.callRpc('setStatusTemplate', { template: '{{missing}}' })).rejects.toThrow();
+  expect(await reloaded.harness.behavior.callRpc('getStatusTemplate', null)).toEqual({ template });
+});
+
+it('stores header and context templates independently without changing an existing header template', async () => {
+  const host = await setup();
+  const header = 'Header {{ttl}}';
+  const context = 'Context {{firstRequest}} {{cost | usd:2}}';
+  await host.harness.behavior.callRpc('setStatusTemplate', { template: header });
+  const original = await host.harness.behavior.callRpc('getStatusTemplate', { surface: 'context' });
+  expect(original).toEqual({ template: expect.stringContaining('{{readTokens | compact}}') });
+  await host.harness.behavior.callRpc('setStatusTemplate', { surface: 'context', template: context });
+  expect(await host.harness.behavior.callRpc('getStatusTemplate', null)).toEqual({ template: header });
+  const reloaded = await host.harness.lifecycle.reload(plugin);
+  hosts.push(reloaded);
+  expect(await reloaded.harness.behavior.callRpc('getStatusTemplate', { surface: 'header' })).toEqual({ template: header });
+  expect(await reloaded.harness.behavior.callRpc('getStatusTemplate', { surface: 'context' })).toEqual({ template: context });
+});
+
+it('upgrades only the previous context default to selective monospace markers', async () => {
+  const { LEGACY_CONTEXT_TEMPLATE, DEFAULT_CONTEXT_TEMPLATE } = await import('./status-template');
+  const host = await setup();
+  await host.harness.behavior.callRpc('setStatusTemplate', { surface: 'context', template: LEGACY_CONTEXT_TEMPLATE });
+  expect(await host.harness.behavior.callRpc('getStatusTemplate', { surface: 'context' })).toEqual({ template: DEFAULT_CONTEXT_TEMPLATE });
+  const custom = 'Custom {{ttl}}';
+  await host.harness.behavior.callRpc('setStatusTemplate', { surface: 'context', template: custom });
+  expect(await host.harness.behavior.callRpc('getStatusTemplate', { surface: 'context' })).toEqual({ template: custom });
+});

@@ -1,0 +1,138 @@
+import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import type { ConfigDocument } from "../core/document.ts";
+import type { ConfigState, Contract } from "../plugin/contract.ts";
+import { message, useLive } from "./common.tsx";
+import { LoadFailed, SettingsSkeleton, WhileLoading } from "./loading-states.tsx";
+import { SettingsContext, settingsWrites, type Saved, type SettingsContextValue } from "./settings-context.tsx";
+import { drafts, type SaveTransport } from "./settings-drafts.ts";
+import { newestState, useInstant, useRegistry } from "./settings-saving.tsx";
+import { scrollParent, useSettingsNav, type Arrival } from "./settings-nav.ts";
+import { revealWhenSettled } from "./settings-reveal.ts";
+import { forgetKindsKeptInPlace } from "./settings-kinds.tsx";
+import { Overview } from "./settings-overview.tsx";
+import { TopRow, viewPage } from "./settings-pages.tsx";
+import { hashOf } from "./settings-route.ts";
+
+export type { Saved } from "./settings-context.tsx";
+
+const STALE = "Someone saved the configuration first. It has been reloaded; make your change again.";
+const RESTORE_TRIES = 40;
+
+function useArrival(arrival: Arrival | null, root: RefObject<HTMLDivElement | null>, page: RefObject<HTMLDivElement | null>, ready: boolean): void {
+  const handled = useRef(0);
+  const tries = useRef(0);
+  const revealing = useRef<(() => void) | null>(null);
+  useEffect(() => () => revealing.current?.(), []);
+  useLayoutEffect(() => {
+    if (!arrival || !ready || handled.current === arrival.serial) return;
+    const scroller = scrollParent(root.current);
+    revealing.current?.();
+    revealing.current = null;
+    const toHeading = () => {
+      scroller?.scrollTo({ top: 0 });
+      page.current?.querySelector<HTMLElement>("[data-page-heading]")?.focus({ preventScroll: true });
+    };
+    if (arrival.kind === "found") {
+      if (!arrival.inPlace) scroller?.scrollTo({ top: 0 });
+      if (arrival.focus) revealing.current = revealWhenSettled(() => page.current, arrival.focus, toHeading);
+      else toHeading();
+    } else if (arrival.kind === "return") {
+      const row = arrival.row ? root.current?.querySelector<HTMLElement>(`[data-row-key="${CSS.escape(arrival.row)}"]`) : null;
+      if (arrival.row && !row && tries.current++ < RESTORE_TRIES) return;
+      scroller?.scrollTo({ top: arrival.scroll });
+      row?.focus({ preventScroll: true });
+    } else if (arrival.focus) {
+      const target = page.current?.querySelector<HTMLElement>(`[data-draft-path="${CSS.escape(arrival.focus)}"]`);
+      if (!target && tries.current++ < RESTORE_TRIES) return;
+      scroller?.scrollTo({ top: 0 });
+      if (target) {
+        target.scrollIntoView?.({ block: "center" });
+        target.focus({ preventScroll: true });
+      } else page.current?.querySelector<HTMLElement>("[data-page-heading]")?.focus({ preventScroll: true });
+    } else {
+      scroller?.scrollTo({ top: 0 });
+      page.current?.querySelector<HTMLElement>("[data-page-heading]")?.focus({ preventScroll: true });
+    }
+    handled.current = arrival.serial;
+    tries.current = 0;
+  });
+}
+
+export function SettingsSection() {
+  const rpc = useRpc<Contract>();
+  const { value: state, error, refresh } = useLive<ConfigState>("config", () => rpc.call("config.get"), () => true);
+  const root = useRef<HTMLDivElement>(null);
+  const page = useRef<HTMLDivElement>(null);
+  const scroller = useCallback(() => scrollParent(root.current), []);
+  const nav = useSettingsNav(scroller);
+  const registry = useRegistry();
+  const instant = useInstant();
+  const writes = useMemo(() => settingsWrites(rpc), [rpc]);
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    const transport: SaveTransport = { apply: (request) => rpc.call("config.apply", request), read: () => rpc.call("config.get") };
+    drafts().connect(transport);
+  }, [rpc]);
+  useLayoutEffect(() => {
+    if (state) drafts().observe(state);
+  }, [state]);
+  useEffect(() => () => forgetKindsKeptInPlace(), []);
+  useEffect(() => setNotice(null), [nav.view]);
+  useArrival(nav.arrival, root, page, state !== null);
+
+  const latest = useRef(state);
+  latest.current = state;
+  const apply = useCallback(
+    async (draft: ConfigDocument): Promise<Saved> => {
+      const seen = latest.current;
+      if (!seen) return { saved: false, problems: [] };
+      try {
+        const result = await rpc.call("config.apply", { draft, revision: seen.revision });
+        if (result.ok) {
+          setNotice(null);
+          await refresh();
+          return { saved: true, problems: result.problems };
+        }
+        if (result.reason === "revision") {
+          setNotice(STALE);
+          await refresh();
+          return { saved: false, problems: [{ path: "", message: STALE }] };
+        }
+        return { saved: false, problems: result.problems };
+      } catch (caught) {
+        return { saved: false, problems: [{ path: "", message: message(caught) }] };
+      }
+    },
+    [rpc, refresh],
+  );
+  if (error && !state) return <LoadFailed what="BB Box's settings" error={error} onRetry={refresh} />;
+  if (!state) {
+    return (
+      <WhileLoading words="Reading BB Box's settings…">
+        <SettingsSkeleton />
+      </WhileLoading>
+    );
+  }
+  const context: SettingsContextValue = { state: newestState(state, registry), nav, instant, writes, notice, refresh, apply };
+  return (
+    <SettingsContext.Provider value={context}>
+      <div ref={root} className="space-y-5" data-settings-view={hashOf(nav.view) || "#"}>
+        <TopRow />
+        {error ? (
+          <p role="alert" className="rounded-md border border-warning/40 bg-surface-recessed px-3 py-2 text-xs leading-snug text-warning-text">
+            The configuration could not be read again: {error.replace(/\.?$/, ".")} This page shows it as last read.
+          </p>
+        ) : null}
+        {notice ? (
+          <p role="alert" className="rounded-md border border-warning/40 bg-surface-recessed px-3 py-2 text-xs leading-snug text-warning-text">
+            {notice}
+          </p>
+        ) : null}
+        <div ref={page} key={hashOf(nav.view) || "#"}>
+          {nav.view.page === "overview" ? <Overview /> : viewPage(nav.view)}
+        </div>
+      </div>
+    </SettingsContext.Provider>
+  );
+}

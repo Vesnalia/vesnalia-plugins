@@ -1,0 +1,3954 @@
+.wm-settle fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.wm-settle.wm-settle-compact {
+  margin: 8px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.wm-settle-compact .wm-settle-buttons {
+  margin-top: 0;
+}
+.wm-archive-control {
+  position: relative;
+  display: inline-flex;
+}
+.wm-archive-tooltip {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  bottom: 100%;
+  width: 280px;
+  max-width: 65vw;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--popover, var(--card));
+  color: var(--popover-foreground, var(--wm-ink));
+  box-shadow: 0 4px 16px #0003;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.wm-task-detail > .wm-settle {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.wm-handoff-form {
+  max-width: 640px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--wm-blue) 4%, var(--card));
+}
+.wm-handoff-submit {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.wm-settle label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--wm-dim);
+}
+.wm-settle input:not([type="checkbox"]),
+.wm-settle select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--background);
+  color: var(--wm-ink);
+  font: inherit;
+  font-size: 12px;
+}
+.wm-settle input:focus-visible,
+.wm-settle select:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 2px;
+}
+.wm-review-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+}
+.wm-review-options label {
+  flex: 1 1 115px;
+}
+.wm-settle .wm-archive-choice {
+  flex-direction: row;
+  align-items: center;
+  margin-top: 12px;
+  color: var(--wm-ink);
+  overflow-wrap: anywhere;
+}
+.wm-archive-choice input {
+  accent-color: var(--wm-blue);
+}
+.wm-settle p {
+  margin: 8px 0;
+  color: var(--wm-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.wm-settle-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.wm-settle-buttons > span {
+  font-size: 11px;
+}
+.wm-settle-error,
+.wm-settle .wm-settle-error {
+  color: var(--wm-orange);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.wm-settled {
+  position: sticky;
+  bottom: 8px;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "heading list more close";
+  align-items: center;
+  gap: 8px 12px;
+  width: min(100%, 780px);
+  padding: 8px 10px;
+  margin: 12px auto 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 6px 28px #0002;
+}
+.wm-settled-heading {
+  grid-area: heading;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: baseline;
+}
+.wm-settled h2 {
+  font-size: 11px;
+  font-weight: 650;
+  margin: 0;
+}
+.wm-settled h2 span {
+  color: var(--wm-green);
+  margin-left: 6px;
+}
+.wm-settled-list {
+  grid-area: list;
+  min-width: 0;
+  max-height: 32vh;
+  overflow: auto;
+}
+.wm-settled-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 2px 0;
+}
+.wm-settled-row + .wm-settled-row {
+  border-top: 1px solid var(--border);
+}
+.wm-settled-mark {
+  color: var(--wm-green);
+}
+.wm-settled-review {
+  color: var(--wm-orange);
+}
+.wm-settled-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  overflow-wrap: anywhere;
+}
+.wm-settled-copy strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.wm-settled:not(.wm-settled-expanded) .wm-settled-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wm-settled > .wm-settle-error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.wm-settled-expanded {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "heading more close" "list list list";
+}
+.wm-settled-expanded .wm-settled-row {
+  padding: 8px 0;
+}
+.wm-settled-close {
+  grid-area: close;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--wm-dim);
+  font-size: 22px;
+  line-height: 1;
+}
+.wm-settled-close:hover {
+  background: var(--accent);
+  color: var(--wm-ink);
+}
+.wm-settled-closed {
+  width: fit-content;
+  margin: 8px 0 0 auto;
+  color: var(--wm-dim);
+}
+.wm-settled-closed > button {
+  font-size: 11px;
+}
+@container (max-width: 620px) {
+  .wm-settled {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "heading more close" "list list list";
+    gap: 4px 8px;
+  }
+}
+.wm-settled-copy > span {
+  font-size: 11px;
+  color: var(--wm-dim);
+}
+.wm-settled-copy > .wm-settle-error {
+  color: var(--wm-orange);
+}
+.wm-settled-link,
+.wm-settled-more {
+  font-size: 11px;
+  color: var(--wm-blue);
+  white-space: nowrap;
+}
+.wm-settled-more {
+  grid-area: more;
+  padding: 6px 0;
+}
+.wm-root {
+  --wm-focus: #e49385;
+  --wm-green: #65e0aa;
+  --wm-orange: #ffb85c;
+  /* Heat's two warm hues: hot orange for an explicit request, gold for a review. */
+  --wm-hot: #ff9a3c;
+  --wm-gold: #e6b04a;
+  --wm-blue: #91b9df;
+  --wm-ink: var(--foreground);
+  --wm-dim: var(--muted-foreground);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--wm-ink);
+  background: var(--background);
+  font-family: var(--font-sans);
+  container-type: inline-size;
+}
+.wm-root * {
+  box-sizing: border-box;
+}
+.wm-root button {
+  cursor: pointer;
+}
+.wm-root button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.wm-root button:focus-visible,
+.wm-preview:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 4px;
+}
+.wm-toolbar {
+  padding: 8px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "filters actions utilities";
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.wm-tools {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+}
+.wm-tools > button {
+  height: 30px;
+  padding: 0 9px;
+  font-size: 11px;
+}
+.wm-tools input {
+  width: clamp(120px, 12cqw, 180px);
+  min-width: 0;
+  height: 30px;
+  font-size: 12px;
+}
+.wm-filterbar {
+  grid-area: filters;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 4px;
+}
+.wm-filter-counts {
+  display: none;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+.wm-filter-counts .wm-filter {
+  padding: 4px 6px;
+  color: var(--wm-ink);
+}
+.wm-filters {
+  display: flex;
+  gap: 2px;
+}
+.wm-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  color: var(--wm-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.wm-filter[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--border);
+  color: var(--wm-ink);
+}
+.wm-filter b {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+.wm-filter i,
+.wm-status i {
+  height: 5px;
+  width: 5px;
+  background: currentColor;
+  border-radius: 50%;
+  flex: none;
+}
+.wm-filter.wm-focus i {
+  background: var(--wm-focus);
+}
+.wm-filter.wm-waiting i {
+  background: var(--wm-orange);
+}
+.wm-filter.wm-unread i {
+  background: var(--wm-blue);
+}
+.wm-filter.wm-working i {
+  background: var(--wm-green);
+}
+.wm-filter.wm-all i {
+  display: none;
+}
+.wm-view-tools {
+  grid-area: utilities;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.wm-view-tools > button {
+  width: 30px;
+  height: 30px;
+}
+.wm-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--wm-dim);
+}
+.wm-tool-icon:not(:disabled):hover {
+  background: var(--accent);
+  color: var(--wm-ink);
+}
+.wm-tool-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.wm-refresh {
+  position: relative;
+}
+.wm-refresh-status {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  top: calc(100% + 5px);
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--popover, var(--card));
+  color: var(--popover-foreground, var(--wm-ink));
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.wm-refresh:hover .wm-refresh-status,
+.wm-refresh:focus-visible .wm-refresh-status {
+  display: block;
+}
+.wm-live-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--wm-green);
+}
+.wm-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.wm-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px 24px 16px;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--foreground) 9%, transparent) 0.7px,
+    transparent 0.7px
+  );
+  background-size: 20px 20px;
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+}
+.wm-map-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--wm-dim);
+  margin: 0 0 8px;
+}
+.wm-tile,
+.wm-island {
+  --wm-ring: 0 0 0 0 transparent;
+  --wm-bar: inset 0 0 0 0 transparent;
+  box-shadow:
+    var(--wm-ring),
+    var(--wm-bar),
+    0 4px 18px #0000000a;
+}
+.wm-tile {
+  min-width: 0;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 21px;
+  padding: 20px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  transition:
+    border-color 0.18s,
+    background-color 0.18s,
+    box-shadow 0.18s;
+  overflow: hidden;
+  width: 100%;
+}
+.wm-tile:hover,
+.wm-island:hover {
+  border-color: color-mix(in srgb, var(--foreground) 35%, var(--border));
+}
+.wm-tile.wm-selected {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 3px;
+}
+.wm-tile-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--wm-dim);
+  letter-spacing: 0.045em;
+  line-height: 1.4;
+  width: 100%;
+}
+.wm-tile-meta > span:first-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.wm-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--wm-focus);
+  white-space: nowrap;
+}
+.wm-pin svg {
+  width: 11px;
+  height: 11px;
+}
+.wm-changed {
+  color: var(--wm-blue);
+  letter-spacing: 0;
+  margin-left: auto;
+}
+.wm-tile strong,
+.wm-island-heading > strong {
+  display: block;
+  font-size: 17px;
+  line-height: 1.28;
+  font-weight: 550;
+  letter-spacing: -0.4px;
+  overflow-wrap: anywhere;
+}
+.wm-tile > strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wm-tile .wm-excerpt,
+.wm-island-heading .wm-excerpt {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--wm-dim);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wm-tile-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 4px;
+}
+.wm-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--wm-dim);
+}
+.wm-statuses {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wm-status.wm-waiting {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--wm-orange) 8%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--wm-orange) 38%, var(--border));
+}
+.wm-status.wm-waiting[data-attention="input"] {
+  color: #332009;
+  background: var(--wm-orange);
+}
+.wm-status.wm-waiting[data-attention="error"] {
+  color: var(--foreground);
+  border-color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 14%, var(--card));
+}
+.wm-status.wm-unread {
+  color: #102536;
+  background: var(--wm-blue);
+  border: 1px solid transparent;
+}
+.wm-result-icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+}
+.wm-status.wm-working {
+  color: #092a1e;
+  background: var(--wm-green);
+  border: 1px solid transparent;
+}
+.wm-status.wm-waiting,
+.wm-status.wm-unread,
+.wm-status.wm-working {
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-weight: 650;
+}
+.wm-project-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.wm-status.wm-working i {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wm-green) 12%, transparent);
+  animation: wm-pulse 3s ease-in-out infinite;
+}
+.wm-due {
+  font-size: 10px;
+  color: var(--wm-dim);
+}
+.wm-tile.wm-waiting {
+  background: color-mix(in srgb, var(--wm-orange) 4%, var(--card));
+  border-color: color-mix(in srgb, var(--wm-orange) 35%, var(--border));
+}
+.wm-tile[data-attention="input"] {
+  background: color-mix(in srgb, var(--wm-orange) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--wm-orange) 65%, var(--border));
+}
+.wm-tile[data-attention="error"] {
+  background: color-mix(in srgb, var(--destructive) 6%, var(--card));
+  border-color: color-mix(in srgb, var(--destructive) 55%, var(--border));
+}
+.wm-tile.wm-unread:not([data-kind="project"]) {
+  background: color-mix(in srgb, var(--wm-blue) 9%, var(--card));
+  border-color: color-mix(in srgb, var(--wm-blue) 65%, var(--border));
+  border-left: 4px solid var(--wm-blue);
+}
+/* Running work is carried by the green bar; the tint stays quieter than waiting. */
+.wm-tile.wm-working,
+.wm-tile.wm-has-working:not(.wm-waiting):not(.wm-unread) {
+  background: color-mix(in srgb, var(--wm-green) 12%, var(--card));
+  border-color: color-mix(in srgb, var(--wm-green) 55%, var(--border));
+}
+.wm-tile.wm-working,
+.wm-tile.wm-has-working,
+.wm-island.wm-has-working {
+  --wm-bar: inset 0 5px 0 var(--wm-green);
+}
+.wm-tile.wm-focused,
+.wm-island.wm-focused {
+  --wm-ring: 0 0 0 3px var(--wm-focus);
+}
+.wm-tile.wm-focused {
+  min-height: 210px;
+  padding: 25px;
+}
+.wm-tile.wm-focused strong {
+  font-size: 23px;
+  letter-spacing: -0.7px;
+}
+.wm-tile.wm-focused .wm-excerpt {
+  -webkit-line-clamp: 3;
+}
+.wm-island {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 27px;
+  padding: 20px;
+  background: color-mix(in srgb, var(--muted) 30%, var(--background));
+  transition: border-color 0.18s;
+}
+.wm-island.wm-waiting {
+  border-color: var(--border);
+}
+.wm-island.wm-has-working:not(.wm-waiting) {
+  border-color: color-mix(in srgb, var(--wm-green) 25%, var(--border));
+}
+/* Area summaries orient; the individual task carries the action emphasis. */
+.wm-statuses.wm-project-summary .wm-status {
+  color: var(--wm-dim);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-weight: 500;
+}
+.wm-tile[data-kind="project"] {
+  background: var(--card);
+  border-color: var(--border);
+}
+.wm-island[data-has-results="true"],
+.wm-tile[data-kind="project"][data-has-results="true"] {
+  border-color: color-mix(in srgb, var(--wm-blue) 45%, var(--border));
+}
+.wm-project-summary .wm-status.wm-unread {
+  color: var(--wm-blue);
+}
+.wm-island.wm-focused {
+  padding: 25px;
+}
+.wm-island-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  width: 100%;
+  padding: 0 2px 16px;
+}
+.wm-island.wm-focused .wm-island-heading > strong {
+  font-size: 23px;
+}
+.wm-island-tasks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.wm-tile.wm-small {
+  padding: 13px;
+  border-radius: 14px;
+  min-height: 113px;
+  gap: 9px;
+  box-shadow: var(--wm-ring), var(--wm-bar);
+}
+.wm-tile.wm-small strong {
+  font-size: 12px;
+  letter-spacing: -0.1px;
+  line-height: 1.45;
+}
+.wm-small .wm-tile-meta {
+  font-size: 9px;
+}
+.wm-small .wm-status,
+.wm-small .wm-due {
+  font-size: 9px;
+}
+.wm-project-more {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 2px 0;
+  font-size: 10px;
+  color: var(--wm-dim);
+}
+.wm-project-more:hover {
+  color: var(--wm-ink);
+}
+.wm-more {
+  display: block;
+  margin: 22px auto 0;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 1px;
+  font-size: 11px;
+  color: var(--wm-dim);
+}
+.wm-more:hover {
+  color: var(--wm-ink);
+}
+.wm-footer {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--wm-dim);
+  margin: 28px auto 0;
+  max-width: 1100px;
+}
+.wm-footer button {
+  white-space: nowrap;
+}
+.wm-legend-focus {
+  color: var(--wm-focus);
+}
+.wm-legend-working {
+  color: var(--wm-green);
+}
+.wm-legend-waiting {
+  color: var(--wm-orange);
+}
+.wm-legend-unread,
+.wm-center-label.wm-unread {
+  color: var(--wm-blue);
+}
+.wm-preview {
+  width: 350px;
+  flex-shrink: 0;
+  padding: 23px 24px;
+  overflow: auto;
+  border-left: 1px solid var(--border);
+  background: var(--background);
+  outline: none;
+}
+.wm-preview-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 27px;
+  font-size: 10px;
+  color: var(--wm-dim);
+}
+.wm-preview-top button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.wm-preview-top svg {
+  height: 13px;
+  width: 13px;
+}
+.wm-preview > h2 {
+  font-size: 23px;
+  line-height: 1.28;
+  letter-spacing: -0.6px;
+  margin: 13px 0 20px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.wm-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-wrap: wrap;
+}
+.wm-task-detail .wm-preview-top {
+  margin-bottom: 8px;
+}
+.wm-task-detail .wm-preview-actions {
+  gap: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.wm-task-detail .wm-preview-actions > .wm-task-link {
+  margin-left: auto;
+}
+.wm-task-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: 11px;
+  color: var(--wm-blue);
+}
+/* The detail header's own controls meet the same minimum as the card acts. */
+.wm-preview-top > button {
+  min-height: 24px;
+}
+.wm-detail-section,
+.wm-session-view {
+  margin-top: 27px;
+}
+.wm-detail-section > h3 {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wm-dim);
+  font-weight: 550;
+  margin: 0 0 10px;
+}
+.wm-detail-section > p {
+  font-size: 12px;
+  line-height: 1.75;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.wm-response {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  outline-offset: 4px;
+}
+.wm-response table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.wm-response :is(th, td) {
+  min-width: 8rem;
+  max-width: 26rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.wm-response th {
+  background: color-mix(in srgb, var(--wm-blue) 7%, var(--card));
+  font-weight: 600;
+}
+.wm-task-summary {
+  max-width: 74ch;
+}
+.wm-next {
+  margin-top: 14px;
+  padding-left: 12px;
+  border-left: 2px solid var(--wm-blue);
+}
+.wm-next:first-child {
+  margin-top: 0;
+}
+.wm-next h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wm-blue);
+  margin: 0 0 4px;
+}
+.wm-next p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.wm-facts {
+  margin: 14px 0;
+  font-size: 11px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.wm-facts > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wm-facts dt {
+  color: var(--wm-dim);
+}
+.wm-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: none;
+}
+.wm-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.wm-section-heading h3 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+.wm-section-heading h3 span {
+  margin-left: 5px;
+  color: var(--wm-dim);
+  font-weight: 400;
+}
+.wm-session-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 6px;
+}
+.wm-task-sessions .wm-session-options > button {
+  margin: 0;
+  padding: 10px 12px;
+  border-color: transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wm-ink) 3%, transparent);
+}
+.wm-task-sessions .wm-session-options > button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--wm-blue) 55%, var(--border));
+  background: color-mix(in srgb, var(--wm-blue) 7%, var(--card));
+}
+.wm-task-sessions .wm-session-options > button:hover {
+  background: var(--accent);
+}
+.wm-task-sessions .wm-session-options > button strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.wm-task-sessions .wm-session-options > button span {
+  margin-top: 3px;
+  font-size: 11px;
+}
+.wm-task-sessions > .wm-session-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--wm-dim);
+}
+.wm-detail-section .wm-excerpt-note {
+  font-size: 10px;
+  color: var(--wm-dim);
+  margin: 12px 0 17px;
+}
+.wm-split {
+  display: block;
+  font-size: 11px;
+  margin: 12px auto;
+  color: var(--wm-dim);
+}
+.wm-preview-description {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--wm-dim);
+  margin: 20px 0;
+}
+.wm-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wm-project-list .wm-tile {
+  padding: 15px;
+  border-radius: 15px;
+  min-height: 0;
+}
+.wm-project-list .wm-tile strong {
+  font-size: 13px;
+}
+.wm-project-list .wm-tile .wm-excerpt {
+  font-size: 11px;
+}
+.wm-dropzones {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 12px;
+  padding-bottom: 20px;
+  pointer-events: none;
+}
+.wm-dropzones > div {
+  pointer-events: auto;
+  flex: 1;
+  padding: 25px;
+  border: 2px dashed var(--wm-focus);
+  border-radius: 20px;
+  background: var(--card);
+  font-size: 12px;
+  text-align: center;
+}
+.wm-dropzones > div + div {
+  border-color: var(--wm-dim);
+}
+.wm-error,
+.wm-notice {
+  font-size: 12px;
+  padding: 12px 30px;
+  color: var(--wm-orange);
+  background: color-mix(in srgb, var(--wm-orange) 6%, var(--background));
+}
+.wm-notice {
+  color: var(--wm-blue);
+  background: color-mix(in srgb, var(--wm-blue) 6%, var(--background));
+}
+.wm-error button,
+.wm-notice button {
+  margin-left: 12px;
+  text-decoration: underline;
+}
+.wm-empty {
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  gap: 15px;
+  color: var(--wm-dim);
+  font-size: 13px;
+}
+.wm-empty h2 {
+  font-size: 19px;
+  color: var(--wm-ink);
+}
+.wm-empty p {
+  max-width: 330px;
+  line-height: 1.6;
+}
+.wm-empty svg {
+  width: 25px;
+  height: 25px;
+}
+@keyframes wm-pulse {
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--wm-green) 5%, transparent);
+  }
+}
+@container (max-width:850px) {
+  .wm-canvas {
+    padding: 10px 20px;
+  }
+  .wm-preview {
+    width: 320px;
+  }
+  .wm-with-preview .wm-canvas {
+    display: none;
+  }
+  .wm-with-preview .wm-preview {
+    width: 100%;
+    border: 0;
+    padding: 25px;
+    max-width: 650px;
+    margin: auto;
+  }
+}
+@container (max-width:560px) {
+  .wm-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .wm-footer button {
+    text-align: left;
+  }
+  .wm-island.wm-focused {
+    padding: 20px;
+  }
+  .wm-tile.wm-focused strong {
+    font-size: 21px;
+  }
+  .wm-canvas {
+    padding: 20px 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wm-root * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* The overview has a real center. Browse/search retain the regular grid. */
+.wm-spatial {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-areas: "north north north" "west core east" "south south south";
+  gap: 22px;
+  align-items: center;
+  max-width: 1680px;
+  min-height: 520px;
+  margin: 0 auto;
+  padding: 2px 8px;
+  position: relative;
+  isolation: isolate;
+}
+.wm-orbit-rings {
+  position: absolute;
+  inset: 6% 7%;
+  border: 1px solid color-mix(in srgb, var(--wm-focus) 13%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+}
+.wm-orbit-rings::before,
+.wm-orbit-rings::after {
+  content: "";
+  position: absolute;
+  inset: 13%;
+  border: 1px solid color-mix(in srgb, var(--wm-focus) 13%, transparent);
+  border-radius: inherit;
+}
+.wm-orbit-rings::after {
+  inset: -7%;
+  border-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+.wm-orbit-core {
+  grid-area: core;
+}
+.wm-orbit-west {
+  grid-area: west;
+}
+.wm-orbit-east {
+  grid-area: east;
+}
+.wm-orbit-north {
+  grid-area: north;
+}
+.wm-orbit-south {
+  grid-area: south;
+}
+.wm-orbit-core,
+.wm-orbit-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+  min-width: 0;
+}
+.wm-orbit-core {
+  align-self: start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 18px;
+}
+.wm-orbit-near {
+  width: 88%;
+  justify-self: center;
+  align-self: start;
+  min-width: 0;
+}
+.wm-near-first {
+  grid-row: 2;
+  align-self: end;
+}
+.wm-near-second {
+  grid-row: 3;
+}
+.wm-orbit-anchor {
+  grid-row: 1;
+  position: relative;
+  padding: 16px 0;
+  min-width: 0;
+}
+.wm-center-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--wm-dim);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  font-weight: 650;
+}
+.wm-center-label.wm-focused {
+  color: var(--wm-focus);
+}
+.wm-center-label.wm-working {
+  color: var(--wm-green);
+}
+.wm-center-label.wm-waiting {
+  color: var(--wm-orange);
+}
+.wm-orbit-far {
+  display: flex;
+  gap: 22px;
+  justify-content: space-evenly;
+  align-items: center;
+  min-width: 0;
+}
+.wm-orbit-far > * {
+  width: 31%;
+  min-width: 0;
+}
+.wm-spatial .wm-tile {
+  padding: 14px;
+  gap: 7px;
+  border-radius: 18px;
+}
+.wm-spatial .wm-tile strong {
+  font-size: 15px;
+  -webkit-line-clamp: 2;
+}
+.wm-spatial .wm-tile .wm-excerpt {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.wm-spatial .wm-tile.wm-focused {
+  min-height: 155px;
+  padding: 19px;
+}
+.wm-spatial .wm-tile.wm-focused strong {
+  font-size: 21px;
+}
+.wm-spatial .wm-island {
+  padding: 14px;
+  border-radius: 22px;
+}
+.wm-spatial .wm-island-heading {
+  gap: 6px;
+  padding-bottom: 10px;
+}
+.wm-spatial .wm-island-heading > strong {
+  font-size: 17px;
+}
+.wm-spatial .wm-island-heading .wm-excerpt {
+  font-size: 11px;
+  -webkit-line-clamp: 1;
+}
+.wm-spatial .wm-island-tasks {
+  gap: 6px;
+}
+.wm-spatial .wm-small {
+  min-height: 82px;
+  padding: 9px;
+  gap: 5px;
+  border-radius: 11px;
+}
+.wm-spatial .wm-small strong {
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 550;
+}
+.wm-spatial .wm-small .wm-tile-bottom {
+  gap: 3px;
+  padding-top: 0;
+}
+.wm-spatial .wm-small .wm-status {
+  font-size: 10px;
+  padding: 2px 4px;
+  gap: 3px;
+}
+.wm-spatial .wm-small .wm-due {
+  font-size: 10px;
+}
+.wm-spatial .wm-project-more {
+  padding-top: 8px;
+}
+.wm-orbit-anchor > .wm-map-area > .wm-island {
+  padding: 19px;
+}
+.wm-orbit-anchor > .wm-map-area > .wm-island .wm-island-heading > strong {
+  font-size: 23px;
+}
+.wm-orbit-far .wm-tile:not(.wm-small) {
+  padding: 12px 14px;
+}
+.wm-orbit-far .wm-tile:not(.wm-focused) strong {
+  font-size: 12px;
+}
+.wm-orbit-far .wm-tile .wm-excerpt {
+  font-size: 10px;
+  -webkit-line-clamp: 1;
+}
+.wm-orbit-far .wm-tile.wm-inactive {
+  background: color-mix(in srgb, var(--card) 80%, var(--background));
+}
+.wm-spatial .wm-pin {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--wm-focus) 18%, transparent);
+}
+.wm-spatial .wm-tile.wm-working .wm-excerpt,
+.wm-spatial .wm-island.wm-has-working > .wm-island-heading .wm-excerpt {
+  color: color-mix(in srgb, var(--foreground) 82%, var(--wm-dim));
+}
+@container (min-width: 1450px) {
+  .wm-spatial {
+    gap: 25px 30px;
+  }
+  .wm-spatial .wm-island-tasks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .wm-orbit-anchor > .wm-map-area > .wm-island .wm-island-tasks {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container (max-width: 1050px) {
+  .wm-spatial {
+    gap: 15px;
+    padding: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+  .wm-spatial .wm-island {
+    padding: 10px;
+  }
+  .wm-spatial .wm-island-tasks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .wm-spatial .wm-small {
+    min-height: 0;
+  }
+  .wm-spatial .wm-small strong {
+    -webkit-line-clamp: 2;
+  }
+  .wm-spatial .wm-small .wm-tile-meta {
+    display: none;
+  }
+  .wm-spatial .wm-small .wm-tile-bottom {
+    padding-top: 1px;
+  }
+  .wm-spatial .wm-island-heading > strong {
+    font-size: 15px;
+  }
+  .wm-spatial .wm-tile.wm-focused strong {
+    font-size: 18px;
+  }
+  .wm-orbit-near {
+    width: 96%;
+  }
+  .wm-orbit-far > * {
+    width: 42%;
+  }
+}
+@container (max-width: 520px) {
+  .wm-spatial {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "core core" "west east" "north north" "south south";
+    min-height: 0;
+  }
+  .wm-orbit-core {
+    max-width: 430px;
+    width: 100%;
+    justify-self: center;
+  }
+  .wm-orbit-rings {
+    display: none;
+  }
+  .wm-orbit-side {
+    align-self: start;
+  }
+  .wm-orbit-far {
+    gap: 12px;
+  }
+  .wm-orbit-far > * {
+    width: calc(50% - 6px);
+  }
+  .wm-spatial .wm-orbit-anchor .wm-island-tasks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.wm-completed {
+  margin-top: 25px;
+  font-size: 11px;
+  color: var(--wm-dim);
+}
+.wm-completed summary {
+  cursor: pointer;
+  padding: 10px 0;
+}
+.wm-completed a {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  color: var(--wm-ink);
+  line-height: 1.5;
+}
+.wm-completed a span {
+  font-size: 10px;
+  color: var(--wm-dim);
+}
+.wm-item {
+  min-width: 0;
+  width: 100%;
+}
+.wm-connections > button,
+.wm-connections > a,
+.wm-session-options > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 12px;
+  background: var(--background);
+}
+.wm-connections > button[aria-pressed="true"] {
+  border-color: var(--wm-blue);
+}
+.wm-connections strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.wm-connections span {
+  font-size: 10px;
+  color: var(--wm-dim);
+}
+.wm-related-tasks {
+  margin-top: 22px;
+}
+.wm-map-area {
+  min-width: 0;
+  position: relative;
+}
+.wm-inspecting .wm-orbit-core,
+.wm-inspecting .wm-orbit-side {
+  align-self: start;
+}
+.wm-spatial.wm-expand-west {
+  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+.wm-spatial.wm-expand-east {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2.4fr);
+}
+.wm-spatial.wm-expand-core {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.4fr) minmax(0, 1fr);
+}
+.wm-inspecting .wm-orbit-near:has(.wm-map-area-expanded) {
+  width: 100%;
+}
+.wm-inspecting .wm-orbit-far > .wm-map-area-expanded {
+  flex: 3 1 0;
+  width: auto;
+}
+.wm-inspecting .wm-orbit-far > .wm-map-area-compact {
+  flex: 1 1 0;
+  width: auto;
+}
+.wm-map-area-expanded {
+  z-index: 2;
+}
+.wm-spatial .wm-map-area-compact .wm-island {
+  padding: 10px;
+}
+.wm-spatial .wm-map-area-compact .wm-tile {
+  min-height: 0;
+  padding: 10px;
+  gap: 5px;
+}
+.wm-spatial .wm-map-area-compact .wm-tile strong,
+.wm-spatial .wm-map-area-compact .wm-island-heading > strong {
+  font-size: 13px;
+  letter-spacing: -0.2px;
+}
+.wm-spatial .wm-map-area-compact .wm-excerpt {
+  display: none;
+}
+.wm-spatial .wm-map-area-compact .wm-island-tasks {
+  grid-template-columns: 1fr;
+}
+.wm-expanded-project,
+.wm-inline-detail {
+  animation: wm-reveal 240ms ease-out both;
+}
+@keyframes wm-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.wm-area-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 16px;
+  outline: none;
+}
+.wm-expanded-tasks > .wm-item-expanded {
+  grid-column: 1 / -1;
+}
+.wm-spatial .wm-expanded-tasks {
+  gap: 12px;
+}
+.wm-spatial .wm-expanded-tasks .wm-tile {
+  min-height: 0;
+  padding: 12px;
+}
+.wm-spatial .wm-expanded-tasks .wm-tile strong {
+  font-size: 13px;
+}
+.wm-spatial .wm-area-expanded .wm-island-heading .wm-excerpt {
+  -webkit-line-clamp: 3;
+}
+.wm-inline-detail {
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--wm-blue) 40%, var(--border));
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
+  background: var(--card);
+  outline: none;
+  text-align: left;
+}
+.wm-item-expanded > .wm-tile {
+  border-radius: 18px 18px 0 0;
+  border-bottom: 0;
+}
+.wm-item-expanded > .wm-tile.wm-selected {
+  outline: none;
+}
+.wm-item-expanded.wm-focused {
+  border-radius: 18px;
+  box-shadow: 0 0 0 3px var(--wm-focus);
+}
+.wm-item-expanded.wm-focused > .wm-tile {
+  --wm-ring: 0 0 0 0 transparent;
+}
+.wm-inline-detail .wm-preview-top {
+  margin-bottom: 16px;
+}
+.wm-inline-detail .wm-detail-section,
+.wm-inline-detail .wm-session-view {
+  margin-top: 18px;
+}
+.wm-inline-detail .wm-facts {
+  margin: 18px 0;
+}
+.wm-inline-detail .wm-preview-actions {
+  gap: 8px;
+}
+.wm-inline-detail .wm-split {
+  margin: 12px 0;
+}
+.wm-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--wm-dim);
+  font-size: 11px;
+}
+.wm-zoom-controls button {
+  min-width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  font-size: 17px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.wm-zoom-controls button:hover {
+  color: var(--wm-ink);
+  background: var(--accent);
+}
+.wm-zoom-controls output {
+  min-width: 38px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.wm-zoom-controls .wm-zoom-reset {
+  font-size: 10px;
+  padding: 0 7px;
+  color: var(--wm-blue);
+}
+.wm-zoom-slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.wm-zoom-slider input {
+  width: 60px;
+  height: 28px;
+  accent-color: var(--wm-blue);
+  cursor: pointer;
+}
+.wm-zoom-slider i {
+  position: absolute;
+  left: 40%;
+  bottom: 1px;
+  width: 2px;
+  height: 3px;
+  background: var(--wm-dim);
+  pointer-events: none;
+}
+@container (max-width: 1360px) {
+  .wm-toolbar .wm-filters {
+    display: none;
+  }
+  .wm-toolbar .wm-filter-select {
+    display: block;
+    width: 100%;
+  }
+  .wm-toolbar .wm-filter-counts {
+    display: flex;
+  }
+}
+@container (max-width: 850px) {
+  .wm-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "filters utilities" "actions actions";
+    gap: 6px 10px;
+    padding: 6px 12px;
+  }
+  .wm-tools input {
+    flex: 1;
+    width: 0;
+  }
+}
+@container (max-width: 440px) {
+  .wm-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    padding-inline: 8px;
+    gap: 6px;
+  }
+  .wm-toolbar .wm-filterbar {
+    flex: 1;
+    min-width: max-content;
+  }
+  .wm-toolbar .wm-filter-select {
+    min-width: 90px;
+    width: 90px;
+    flex: 1;
+    padding-inline: 4px;
+  }
+  .wm-toolbar .wm-tools {
+    order: 3;
+    flex: 1 0 100%;
+  }
+  .wm-toolbar .wm-zoom-slider {
+    display: none;
+  }
+  .wm-toolbar .wm-view-tools {
+    gap: 2px;
+    margin-left: auto;
+  }
+  .wm-toolbar .wm-layout {
+    padding: 0 6px;
+  }
+  .wm-toolbar .wm-layout span {
+    display: none;
+  }
+  .wm-toolbar .wm-view-tools > button {
+    width: 26px;
+  }
+  .wm-toolbar .wm-zoom-controls output {
+    display: none;
+  }
+  .wm-toolbar .wm-zoom-reset {
+    padding: 0;
+    width: 28px;
+    font-size: 0;
+  }
+  .wm-toolbar .wm-zoom-reset::after {
+    content: "↺";
+    font-size: 17px;
+  }
+}
+.wm-map-world {
+  overflow-anchor: none;
+}
+/* Semantic zoom changes card density; the world and native controls never scale. */
+.wm-zoom-details {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--wm-zoom-lines);
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--wm-dim);
+}
+.wm-detail-label {
+  font-weight: 650;
+  color: var(--wm-ink);
+}
+.wm-zoomed-in .wm-spatial {
+  gap: calc(22px + var(--wm-zoom-detail) * 8px);
+}
+.wm-zoomed-in :is(.wm-spatial, .wm-results) .wm-tile:not(.wm-selected) {
+  min-height: 0;
+  padding: calc(14px + var(--wm-zoom-detail) * 8px);
+  gap: calc(7px + var(--wm-zoom-detail) * 4px);
+}
+.wm-map-world.wm-zoomed-in :is(.wm-spatial, .wm-results) .wm-tile strong,
+.wm-map-world.wm-zoomed-in .wm-spatial .wm-island-heading > strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: calc(15px + var(--wm-zoom-detail) * 5px);
+  -webkit-line-clamp: 4;
+}
+.wm-map-world.wm-zoomed-in .wm-spatial .wm-island-heading > strong {
+  font-size: calc(17px + var(--wm-zoom-detail) * 5px);
+}
+.wm-map-world.wm-zoomed-in :is(.wm-spatial, .wm-results) .wm-small strong {
+  font-size: calc(11px + var(--wm-zoom-detail) * 5px);
+}
+.wm-map-world.wm-zoomed-in
+  .wm-spatial
+  .wm-tile.wm-focused:not(.wm-small)
+  strong {
+  font-size: calc(21px + var(--wm-zoom-detail) * 2px);
+}
+.wm-map-world.wm-zoomed-in .wm-orbit-anchor .wm-island-heading > strong {
+  font-size: calc(23px + var(--wm-zoom-detail) * 3px);
+}
+.wm-zoomed-in :is(.wm-spatial, .wm-results) .wm-tile > .wm-excerpt,
+.wm-zoomed-in .wm-spatial .wm-island-heading > .wm-excerpt {
+  font-size: calc(11px + var(--wm-zoom-detail) * 2px);
+  -webkit-line-clamp: var(--wm-zoom-lines);
+  line-height: 1.5;
+}
+.wm-zoomed-in .wm-island:not(.wm-area-expanded) .wm-island-tasks {
+  grid-template-columns: 1fr;
+}
+.wm-zoomed-in .wm-spatial .wm-small .wm-tile-meta {
+  display: flex;
+  font-size: 11px;
+}
+.wm-zoomed-in .wm-spatial .wm-small :is(.wm-status, .wm-due) {
+  font-size: 11px;
+}
+.wm-zoomed-out .wm-spatial {
+  max-width: none;
+  gap: calc(22px - var(--wm-zoom-compact) * 10px);
+  min-height: 0;
+}
+.wm-zoomed-out .wm-orbit-core,
+.wm-zoomed-out .wm-orbit-side {
+  gap: calc(16px - var(--wm-zoom-compact) * 8px);
+}
+.wm-zoomed-out
+  .wm-spatial
+  .wm-tile:not(:where(.wm-selected, .wm-expanded-tasks .wm-tile)),
+.wm-map-world.wm-zoomed-out
+  .wm-results
+  > .wm-result
+  > .wm-item
+  > .wm-tile:not(.wm-selected) {
+  min-height: 0;
+  padding: calc(14px - var(--wm-zoom-compact) * 6px);
+  gap: calc(7px - var(--wm-zoom-compact) * 3px);
+  border-radius: calc(18px - var(--wm-zoom-compact) * 8px);
+}
+.wm-zoomed-out .wm-spatial .wm-island:not(.wm-area-expanded) {
+  padding: calc(14px - var(--wm-zoom-compact) * 6px);
+  border-radius: calc(22px - var(--wm-zoom-compact) * 8px);
+}
+.wm-map-world.wm-zoomed-out :is(.wm-spatial, .wm-results) .wm-tile strong,
+.wm-map-world.wm-zoomed-out .wm-spatial .wm-island-heading > strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: calc(15px - var(--wm-zoom-compact) * 2px);
+  -webkit-line-clamp: 2;
+}
+.wm-map-world.wm-zoomed-out :is(.wm-spatial, .wm-results) .wm-small strong {
+  font-size: 11px;
+}
+.wm-map-world.wm-zoomed-out .wm-spatial .wm-small {
+  padding: calc(9px - var(--wm-zoom-compact) * 3px);
+  gap: calc(5px - var(--wm-zoom-compact) * 2px);
+}
+.wm-map-world.wm-zoomed-out
+  .wm-orbit-far
+  .wm-tile:not(.wm-focused):not(.wm-small)
+  strong {
+  font-size: calc(12px - var(--wm-zoom-compact) * 1px);
+}
+.wm-zoomed-out .wm-island-heading {
+  gap: 4px;
+}
+.wm-zoomed-out .wm-tile > .wm-excerpt,
+.wm-zoomed-out .wm-island-heading > .wm-excerpt {
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+.wm-zoomed-out .wm-spatial .wm-island:not(.wm-area-expanded) .wm-island-tasks {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+.wm-zoomed-out
+  :is(.wm-spatial, .wm-results)
+  :is(.wm-status, .wm-due, .wm-tile-meta, .wm-project-more) {
+  font-size: 11px;
+}
+.wm-zoomed-out .wm-status {
+  white-space: normal;
+}
+.wm-map-world.wm-zoomed-out:not([data-detail="compact"])
+  .wm-small
+  :is(.wm-status, .wm-due) {
+  font-size: 10px;
+}
+.wm-map-world.wm-zoomed-out:not([data-detail="compact"])
+  .wm-small
+  .wm-tile-meta {
+  font-size: 9px;
+}
+/* At the widest view each task becomes a compact title and state row. */
+.wm-map-world[data-detail="compact"] .wm-tile > .wm-excerpt,
+.wm-map-world[data-detail="compact"] .wm-island-heading > .wm-excerpt,
+.wm-map-world[data-detail="compact"]
+  .wm-small
+  .wm-tile-meta:not(:has(.wm-pin, .wm-changed)),
+.wm-map-world[data-detail="compact"] .wm-small .wm-due {
+  display: none;
+}
+.wm-map-world[data-detail="compact"]
+  .wm-small
+  .wm-tile-meta:has(.wm-pin, .wm-changed) {
+  display: flex;
+}
+.wm-map-world[data-detail="compact"] .wm-small .wm-status {
+  padding: 1px 3px;
+}
+.wm-map-world[data-detail="compact"]
+  .wm-island:not(.wm-area-expanded)
+  .wm-island-tasks
+  .wm-tile {
+  padding: 6px;
+  gap: 3px;
+}
+.wm-map-world[data-detail="compact"] .wm-orbit-far {
+  gap: 10px;
+}
+.wm-map-world[data-detail="compact"]
+  .wm-spatial:not(.wm-inspecting)
+  .wm-orbit-core {
+  align-self: start;
+  position: sticky;
+  top: 20px;
+  margin-top: 0;
+}
+@container (min-width: 760px) {
+  .wm-map-world[data-detail="compact"] .wm-spatial:not(.wm-inspecting) {
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 2fr) minmax(0, 1.8fr);
+  }
+  .wm-map-world[data-detail="compact"]
+    .wm-spatial:not(.wm-inspecting)
+    .wm-orbit-side {
+    display: grid;
+    grid-auto-flow: dense;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .wm-map-world[data-detail="compact"]
+    .wm-orbit-side
+    > .wm-map-area:has(> .wm-island) {
+    grid-column: 1 / -1;
+  }
+}
+/* Focus keeps its visual weight even when its neighbors compact. */
+.wm-map-world.wm-zoomed-out
+  .wm-spatial
+  .wm-tile.wm-focused:not(.wm-small):not(.wm-selected) {
+  min-height: calc(155px - var(--wm-zoom-compact) * 25px);
+  padding: calc(19px - var(--wm-zoom-compact) * 5px);
+  gap: 7px;
+}
+.wm-map-world.wm-zoomed-out
+  .wm-spatial
+  .wm-tile.wm-focused:not(.wm-small)
+  strong,
+.wm-map-world.wm-zoomed-out
+  .wm-spatial
+  .wm-island.wm-focused
+  > .wm-island-heading
+  > strong {
+  font-size: calc(21px - var(--wm-zoom-compact) * 3px);
+}
+.wm-map-world.wm-zoomed-out
+  .wm-spatial
+  .wm-island.wm-focused:not(.wm-area-expanded) {
+  padding: calc(19px - var(--wm-zoom-compact) * 5px);
+}
+.wm-activity-age {
+  font-weight: 400;
+}
+.wm-results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.wm-result {
+  min-width: 0;
+}
+.wm-results > .wm-result > .wm-item > .wm-tile {
+  min-height: 0;
+  padding: 14px 18px;
+  gap: 6px;
+}
+.wm-results > .wm-result > .wm-item > .wm-tile strong {
+  font-size: 16px;
+  letter-spacing: -0.3px;
+}
+.wm-results > .wm-result > .wm-item > .wm-tile .wm-excerpt {
+  -webkit-line-clamp: 1;
+}
+.wm-zoomed-in .wm-results > .wm-result > .wm-item > .wm-tile .wm-excerpt {
+  -webkit-line-clamp: var(--wm-zoom-lines);
+}
+.wm-result-retained {
+  margin: 0 0 6px;
+  color: var(--wm-dim);
+  font-size: 11px;
+}
+@container (max-width: 520px) {
+  .wm-spatial.wm-expand-west {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+  .wm-spatial.wm-expand-east {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+  .wm-spatial.wm-expand-core {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .wm-inspecting .wm-expanded-tasks {
+    grid-template-columns: 1fr;
+  }
+  .wm-map-area-compact .wm-tile-meta {
+    flex-wrap: wrap;
+  }
+}
+@container (max-width: 480px) {
+  .wm-spatial .wm-expanded-tasks {
+    grid-template-columns: 1fr;
+  }
+}
+.wm-session-launcher {
+  min-width: 0;
+  margin: 12px 0;
+  padding: 16px;
+  /* Blue is the interaction accent; coral stays reserved for focus. */
+  border: 1px solid color-mix(in srgb, var(--wm-blue) 45%, var(--border));
+  border-radius: 14px;
+  background: var(--card);
+  animation: wm-reveal 240ms ease-out;
+}
+.wm-canvas > .wm-session-launcher {
+  max-width: 1000px;
+  margin: 0 auto 24px;
+}
+.wm-launcher-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.wm-launcher-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.wm-launcher-heading p {
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.wm-created-chat {
+  margin-top: 12px;
+}
+.wm-session-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.wm-session-view > .wm-session-summary {
+  margin-top: 0;
+}
+.wm-live-session,
+.wm-created-chat {
+  /* Both entry paths give the native timeline/composer a bounded flex parent. */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: clamp(320px, 65vh, 580px);
+  overflow: hidden;
+}
+.wm-live-session {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+.wm-live-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.wm-live-heading strong {
+  overflow-wrap: anywhere;
+}
+.wm-live-heading span {
+  color: var(--muted-foreground);
+}
+.wm-live-chat {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ---- Heat layout ------------------------------------------------------- */
+/* One screen, no scrolling: the canvas stops scrolling and the map fills it. */
+.wm-canvas.wm-heat-canvas {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.wm-heat-canvas > .wm-map-world {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.wm-heat-canvas .wm-map-caption {
+  margin-bottom: 10px;
+}
+.wm-heat-canvas .wm-map-caption[hidden] {
+  display: none;
+}
+.wm-layouts {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-right: 2px;
+}
+.wm-layout {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  gap: 5px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--wm-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.wm-layout:not(:disabled):hover {
+  color: var(--wm-ink);
+}
+.wm-layout svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.wm-layout[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--wm-ink);
+}
+.wm-heat-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-bottom: 10px;
+}
+.wm-heat-counts {
+  display: flex;
+  gap: 22px;
+  flex: none;
+}
+.wm-heat-counts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.wm-heat-counts b {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+}
+.wm-heat-counts span {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wm-dim);
+}
+.wm-heat-counts [data-tone="waiting"] b {
+  color: var(--wm-orange);
+}
+.wm-heat-counts [data-tone="unread"] b {
+  color: var(--wm-blue);
+}
+.wm-heat-counts [data-tone="working"] b {
+  color: var(--wm-green);
+}
+/* One legend row under the counts: hue chips, edge chips, one sentence. */
+.wm-heat-legend {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 10px;
+  color: var(--wm-dim);
+}
+.wm-heat-sense {
+  opacity: 0.7;
+}
+/* The three tiers, each a chip and its word, so the scale is read at a glance. */
+.wm-heat-tiers {
+  gap: 10px !important;
+}
+.wm-heat-tiers em {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-style: normal;
+}
+/* The slipped-dates chip switches tidy mode; pressed, it wears the tidy blue. */
+.wm-heat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--wm-ink);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+.wm-heat-chip b {
+  font-size: 12px;
+  font-weight: 700;
+}
+.wm-heat-chip:not(:disabled):hover {
+  background: var(--accent);
+}
+.wm-heat-chip[aria-pressed="true"] {
+  border-color: var(--wm-blue);
+  background: color-mix(in srgb, var(--wm-blue) 18%, var(--card));
+}
+.wm-heat-chip:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 1px;
+}
+/* Only a phone folds the legend; wider screens always show it. */
+.wm-heat-legend-toggle {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--wm-dim);
+  background: none;
+}
+.wm-heat-legend-toggle::after {
+  content: "▾";
+  font-size: 9px;
+}
+.wm-heat-legend-toggle[aria-expanded="true"]::after {
+  content: "▴";
+}
+.wm-heat-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.wm-heat-hint {
+  font-size: 10px;
+  color: var(--wm-dim);
+  opacity: 0.7;
+}
+i.wm-heat-key {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.wm-heat {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.wm-heat-area {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--muted) 28%, var(--background));
+  overflow: hidden;
+  transition: border-color 0.18s;
+}
+.wm-heat-area-open {
+  border-color: color-mix(in srgb, var(--foreground) 30%, var(--border));
+}
+.wm-heat-head {
+  flex: none;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 55%, var(--background));
+}
+.wm-heat-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 0;
+  background: none;
+  color: var(--wm-ink);
+  text-align: left;
+  min-width: 0;
+}
+.wm-heat-name strong {
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: -0.1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wm-heat-name em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--wm-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: none;
+  max-width: 55%;
+}
+/* A narrow header keeps its counts in short words; the name gives way first. */
+.wm-heat-area-tight .wm-heat-name em {
+  max-width: none;
+}
+.wm-heat-actions {
+  flex: none;
+  gap: 6px;
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--border);
+}
+/* A real box, so its measured height is the room the tiles do not get. */
+.wm-heat-actions-frame {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* Composers and managers opened in the bar scroll rather than eat the tiles. */
+.wm-heat-actions-scroll {
+  flex: 1 0 100%;
+  min-width: 0;
+  max-height: 260px;
+  overflow: auto;
+}
+/* One row on every desktop: the bar's height is the cards' loss. The area's
+   own buttons drop to their icons before anything wraps. */
+.wm-heat-actions {
+  container: wm-bar / inline-size;
+}
+.wm-heat-actions .wm-bulk-row {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.wm-heat-actions .wm-bulk-row > * {
+  flex: none;
+}
+.wm-heat-actions .wm-bulk-count {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@container wm-bar (max-width: 620px) {
+  .wm-bar-lead > span {
+    display: none;
+  }
+  .wm-bar-lead {
+    padding-inline: 6px;
+  }
+}
+/* Narrower still, the primary act keeps its words and gives up its icon, so
+   the task count is never cut. */
+@container wm-bar (max-width: 450px) {
+  .wm-bulk-primary > svg {
+    display: none;
+  }
+  .wm-bulk-primary,
+  .wm-bulk-picker {
+    padding-inline: 8px;
+  }
+}
+/* Anchor the area menu in the action row, not on the absolute area box. */
+.wm-bulk-row > .wm-area-tools,
+.wm-heat-actions > .wm-area-tools {
+  position: relative;
+  top: auto;
+  right: auto;
+  zoom: 1;
+  margin-left: auto;
+}
+.wm-heat-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 3px;
+}
+/* The tiles' own box: the body's full padding box, as before, or a taller
+   grid of readable cards that the body scrolls through. */
+.wm-heat-cards {
+  position: absolute;
+  inset: 0;
+}
+.wm-heat-body-scroll {
+  overflow-y: auto;
+}
+.wm-heat-slot {
+  position: absolute;
+  padding: 2px;
+}
+.wm-heat-slot-open {
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+}
+.wm-heat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  text-align: left;
+  overflow: hidden;
+  color: var(--wm-ink);
+  background: color-mix(in srgb, var(--muted) 45%, var(--card));
+}
+.wm-heat-slot-open .wm-heat-tile {
+  height: auto;
+  flex: none;
+}
+.wm-heat-meta {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  gap: 5px;
+  font-size: 9.5px;
+  line-height: 1.3;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* The key is the identity and never gives way. The ask tag is squeezed out
+   first, then the label ellipses; the view drops a label that cannot fit whole. */
+.wm-heat-meta > span:first-child {
+  flex: 0 1000 auto;
+  display: inline-flex;
+  gap: 5px;
+}
+.wm-heat-key-text {
+  flex: none;
+}
+.wm-heat-meta > span + span {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The verb the title opened with: what kind of act it asks for. */
+.wm-heat-ask {
+  font-style: normal;
+  opacity: 0.78;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wm-heat-ask::before {
+  content: "· ";
+}
+.wm-heat-narrow .wm-heat-ask {
+  display: none;
+}
+/* Squeezed beside an expanded neighbour: a whole key beats a cut key and a number. */
+.wm-heat-keyonly .wm-heat-meta > span + span {
+  display: none;
+}
+
+.wm-heat-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--wm-heat-lines, 3);
+  overflow: hidden;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -0.1px;
+  flex: none;
+}
+.wm-heat-slot-open .wm-heat-title {
+  -webkit-line-clamp: 3;
+  font-size: 13px;
+}
+.wm-heat-reason {
+  flex: none;
+  font-size: 9.5px;
+  line-height: 1.3;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wm-heat-tiny .wm-heat-meta {
+  font-size: 9px;
+}
+.wm-heat-running .wm-heat-meta > span:first-child::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wm-green);
+  align-self: center;
+  flex: none;
+}
+/* Too small for any label: the colour alone says it is still there. */
+.wm-heat-sliver .wm-heat-meta {
+  display: none;
+}
+/* Heat: colour is one of three tiers, and the tile says why. Now (red, white
+   bold text, at most five on the whole map) is your focus; Next (a soft
+   amber, clearly lighter than Now, dark ink, at most eight more) is what
+   follows; Later (a neutral card, no fill, dimmer text) is the rest, and most
+   of the map. Red = now, amber = next, grey = later, with no legend needed.
+   The reason line in the label row names what drove the colour: the date,
+   the priority, a focus, a request for your hands. What the work needs no
+   longer colours the tile: it is the marker before the key and the words on
+   the tile. A request for your hands or a failed run keeps its shape on top
+   of the tier: a ring and a glyph. The amber is a warm orange-amber mixed
+   high on the card so it never reads olive on dark; the light theme runs the
+   same two hues on white. */
+.wm-root {
+  --wm-heat-now: #d9372b;
+  --wm-heat-next: #f0a63a;
+}
+/* Zero specificity, so a data-tier on the element always wins. */
+:where(.wm-heat-tile, i.wm-heat-key) {
+  background: var(--card);
+  border-color: var(--border);
+}
+.wm-heat-tile[data-tier="later"],
+i.wm-heat-key[data-tier="later"],
+.wm-heat-row-dot[data-tier="later"] {
+  background: color-mix(in srgb, var(--wm-ink) 5%, var(--card));
+  border-color: var(--border);
+}
+.wm-heat-tile[data-tier="next"],
+i.wm-heat-key[data-tier="next"],
+.wm-heat-row-dot[data-tier="next"] {
+  background: color-mix(in srgb, var(--wm-heat-next) 80%, var(--card));
+  border-color: color-mix(in srgb, var(--wm-heat-next) 70%, #000);
+}
+.wm-heat-tile[data-tier="now"],
+i.wm-heat-key[data-tier="now"],
+.wm-heat-row-dot[data-tier="now"] {
+  background: var(--wm-heat-now);
+  border-color: color-mix(in srgb, var(--wm-heat-now) 70%, #000);
+}
+/* Text follows the tier: Later dimmed and still readable, Now white and bold. */
+.wm-heat-tile[data-tier="later"] {
+  color: color-mix(in srgb, var(--wm-ink) 62%, var(--wm-dim));
+}
+.wm-heat-tile[data-tier="next"] {
+  color: #2a1a06;
+}
+.wm-heat-tile[data-tier="next"] .wm-heat-title {
+  font-weight: 650;
+}
+.wm-heat-tile[data-tier="now"] {
+  color: #fff;
+}
+.wm-heat-tile[data-tier="now"] .wm-heat-title {
+  font-weight: 700;
+}
+/* The reason line is the point of a coloured tile: full strength, a little bolder. */
+.wm-heat-tile[data-tier="now"] .wm-heat-meta,
+.wm-heat-tile[data-tier="next"] .wm-heat-meta,
+.wm-heat-tile[data-tier="now"] .wm-heat-reason,
+.wm-heat-tile[data-tier="next"] .wm-heat-reason {
+  opacity: 1;
+}
+.wm-heat-tile[data-tier="now"] .wm-heat-meta > span + span,
+.wm-heat-tile[data-tier="next"] .wm-heat-meta > span + span {
+  font-weight: 600;
+}
+/* A slipped date is an aside, not urgency: the label goes quiet and italic. */
+.wm-heat-tile[data-slipped] .wm-heat-meta > span + span {
+  font-style: italic;
+  font-weight: 500;
+  opacity: 0.8;
+}
+/* Tidy mode: the slipped dates are the work. Everything else steps back. */
+.wm-heat[data-tidy] .wm-heat-tile:not([data-slipped]),
+.wm-heat[data-tidy] .wm-heat-group {
+  opacity: 0.28;
+}
+.wm-heat[data-tidy] .wm-heat-head {
+  opacity: 0.6;
+}
+.wm-heat[data-tidy] .wm-heat-tile[data-slipped] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wm-blue) 60%, transparent);
+}
+/* A pile of quiet work reads as Later. */
+.wm-heat-quiet {
+  background: color-mix(in srgb, var(--wm-ink) 2%, var(--background));
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
+  color: var(--wm-dim);
+}
+/* The marker before the key says what the work needs; its hue is the map's
+   own channel. Running work's green dot replaces it, so one dot reads at a time. */
+.wm-heat-review .wm-heat-meta > span:first-child::before,
+.wm-heat-followup .wm-heat-meta > span:first-child::before,
+.wm-heat-unread .wm-heat-meta > span:first-child::before,
+.wm-heat-running .wm-heat-meta > span:first-child::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  align-self: center;
+  flex: none;
+  background: var(--wm-gold);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25);
+}
+.wm-heat-unread .wm-heat-meta > span:first-child::before {
+  background: var(--wm-blue);
+}
+.wm-heat-running .wm-heat-meta > span:first-child::before {
+  background: var(--wm-green);
+}
+/* A request for your hands or a failed run: a ring in its own hue and a
+   glyph ahead of the key, on any heat. */
+.wm-heat-tile.wm-heat-input[data-tier],
+.wm-heat-tile.wm-heat-input,
+i.wm-heat-key.wm-heat-input {
+  border: 2px solid var(--wm-hot);
+}
+.wm-heat-tile.wm-heat-error[data-tier],
+.wm-heat-tile.wm-heat-error,
+i.wm-heat-key.wm-heat-error {
+  border: 2px solid var(--destructive);
+}
+.wm-heat-tile[data-tier="now"].wm-heat-error {
+  border-color: #fff;
+}
+/* The rank numeral (1 2 3 on the map's three hottest) and the flag glyph:
+   small rings ahead of the key, in the tile's own ink. */
+.wm-heat-rank,
+.wm-heat-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.wm-heat-flag {
+  color: var(--wm-hot);
+  background: var(--card);
+}
+.wm-heat-error .wm-heat-flag {
+  color: var(--destructive);
+}
+/* One orchestrator on an area reads in the running green; past its cap, in the warning orange. */
+.wm-heat-head em.wm-heat-orchestrated {
+  color: var(--wm-green);
+}
+.wm-heat-head em.wm-heat-over-cap {
+  color: var(--wm-orange);
+  font-weight: 700;
+}
+/* Running is an outline, so it can sit on any heat at once. */
+.wm-heat-running,
+i.wm-heat-key.wm-heat-working {
+  box-shadow: inset 0 0 0 2px var(--wm-green);
+}
+.wm-heat-running {
+  animation: wm-heat-pulse 1.9s ease-in-out infinite;
+}
+@keyframes wm-heat-pulse {
+  50% {
+    box-shadow: inset 0 0 0 2px
+      color-mix(in srgb, var(--wm-green) 35%, transparent);
+  }
+}
+.wm-heat-focused,
+i.wm-heat-key.wm-heat-focused {
+  outline: 2px solid var(--wm-focus);
+  outline-offset: -2px;
+}
+/* The area wears its hottest tier: a swatch by its name and, for Now and
+   Next, an edge in that hue, so the big picture reads at area level. */
+.wm-heat-swatch {
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  align-self: center;
+  flex: none;
+}
+.wm-heat-area[data-tier="now"] {
+  border-color: color-mix(in srgb, var(--wm-heat-now) 55%, var(--border));
+}
+.wm-heat-area[data-tier="next"] {
+  border-color: color-mix(in srgb, var(--wm-heat-next) 45%, var(--border));
+}
+.wm-heat-area[data-tier="later"] .wm-heat-name strong {
+  color: color-mix(in srgb, var(--wm-ink) 70%, var(--wm-dim));
+}
+.wm-heat-tile:hover {
+  filter: brightness(1.08);
+}
+.wm-heat-tile:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: -2px;
+}
+/* Tiles too small to read, folded: a name and a count, never a blank sliver. */
+.wm-heat-more {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.wm-heat-more .wm-heat-meta {
+  font-size: 10px;
+  font-weight: 600;
+}
+/* A group tile is never an empty box: its head, then a row per member that fits. */
+.wm-heat-group {
+  cursor: default;
+}
+.wm-heat-group-list {
+  justify-content: flex-start;
+  align-items: stretch;
+  text-align: left;
+}
+.wm-heat-group-head,
+.wm-heat-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wm-heat-group-head {
+  flex: none;
+  min-height: 20px;
+}
+.wm-heat-group-head .wm-heat-meta {
+  width: 100%;
+}
+.wm-heat-group-list .wm-heat-group-head .wm-heat-meta {
+  justify-content: flex-start;
+}
+.wm-heat-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.wm-heat-row {
+  gap: 5px;
+  height: 18px;
+  padding: 0 3px;
+  font-size: 10.5px;
+  line-height: 18px;
+}
+.wm-heat-row:hover,
+.wm-heat-group-head:hover {
+  background: color-mix(in srgb, var(--foreground) 9%, transparent);
+}
+.wm-heat-row:focus-visible,
+.wm-heat-group-head:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.wm-heat-row b {
+  flex: none;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.wm-heat-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wm-heat-row-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+.wm-heat-row-rest {
+  font-weight: 600;
+  opacity: 0.75;
+}
+.wm-heat-rows-keys .wm-heat-row b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.wm-heat-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+.wm-heat-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+  flex: none;
+}
+.wm-heat-slot-open .wm-inline-detail {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+/* An open card's cover is only as tall as what it says; the details take the
+   rest. With chat open the details become a column and the live session fills
+   what is left, so the reply editor sits inside the card instead of under a
+   fixed 65vh timeline. Too little room: the details scroll, never the chat away. */
+.wm-heat-slot-open .wm-inline-detail:has(> .wm-session-view .wm-live-session) {
+  display: flex;
+  flex-direction: column;
+}
+.wm-heat-slot-open
+  .wm-inline-detail:has(> .wm-session-view .wm-live-session)
+  > * {
+  flex: none;
+}
+/* Sized from the remainder (basis 0), never from the timeline's own length,
+   with a floor of the session controls plus a readable chat. */
+.wm-heat-slot-open
+  .wm-inline-detail
+  > .wm-session-view:has(> .wm-live-session) {
+  flex: 1 1 0;
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+}
+.wm-heat-slot-open .wm-session-view > .wm-live-session {
+  flex: 1 1 0;
+  min-height: 220px;
+  height: auto;
+}
+/* Inside a card the chat's heading is one line, so the room goes to the
+   timeline and the composer; the full title stays on the card above. */
+.wm-heat-slot-open .wm-live-heading {
+  flex-wrap: nowrap;
+  padding: 7px 12px;
+}
+.wm-heat-slot-open .wm-live-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wm-heat-slot-open .wm-live-heading span {
+  flex: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wm-heat-running {
+    animation: none;
+  }
+}
+/* Narrow screens cannot squarify: areas become readable bands and the map scrolls. */
+@media (max-width: 720px) {
+  .wm-canvas.wm-heat-canvas {
+    overflow: auto;
+  }
+  .wm-heat {
+    min-height: calc(
+      var(--wm-heat-areas, 4) * 132px + var(--wm-heat-open-tiles, 0) * 60px
+    );
+  }
+  .wm-heat-stats {
+    justify-content: flex-start;
+  }
+  .wm-heat-counts {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+  }
+  .wm-heat-counts b {
+    font-size: 17px;
+  }
+  .wm-heat-legend {
+    justify-content: flex-start;
+  }
+  /* The five counts stay; the legend rows open from one toggle. */
+  .wm-heat-legend[data-open="false"] {
+    display: none;
+  }
+  .wm-heat-legend-toggle {
+    display: inline-flex;
+  }
+  .wm-heat-actions .wm-heat-side-pane {
+    display: none;
+  }
+  /* An open area on a phone is a list of cards sized to what they say, never
+     tall boxes of blank fill: at least the act row and two title lines. */
+  .wm-heat-area-open > .wm-heat-body {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .wm-heat-area-open .wm-heat-cards {
+    display: contents;
+  }
+  .wm-heat-area-open .wm-heat-slot {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    height: auto !important;
+    flex: none;
+    /* Slot padding, the 36px act row with its padding and edge, tile chrome,
+       key line and two title lines. */
+    min-height: calc(4px + 43px + 12px + 14.35px + 2 * 14.03px);
+  }
+}
+
+/* ── An expanded area is a place to act ───────────────────────────────── */
+/* Tiles inside an expanded area read like small cards: the facts and the
+   agent's latest line take the room the bigger tile just gained. */
+.wm-heat-facts {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  font-size: 9.5px;
+  line-height: 1.35;
+  opacity: 0.75;
+}
+.wm-heat-facts em {
+  font-style: normal;
+  white-space: nowrap;
+}
+/* "agent running" reads whole, or collapses to the running dot alone. */
+.wm-heat-run-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.wm-heat-run-fact::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wm-green);
+  flex: none;
+}
+.wm-heat-line {
+  flex: none;
+  font-size: 10px;
+  line-height: 1.35;
+  opacity: 0.9;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--wm-heat-line-rows, 1);
+}
+.wm-heat-picked {
+  outline: 2px solid var(--wm-ink);
+  outline-offset: -2px;
+}
+/* The act row is the card's footer: one shape, inside the same slot. A closed
+   card's cover grows over the slot; an open card's does not (see below). */
+.wm-heat-slot:has(.wm-tile-actions, .wm-tile-fixes) {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.wm-heat-slot:not(.wm-heat-slot-open):has(.wm-tile-actions, .wm-tile-fixes) > .wm-heat-tile {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  border-radius: 6px 6px 0 0;
+}
+/* Rows are budgeted in whole lines from the card's real height; none shrinks. */
+.wm-heat-inside .wm-heat-title,
+.wm-heat-inside .wm-heat-facts,
+.wm-heat-inside .wm-heat-line {
+  flex: none;
+}
+/* The footer is a column: what went wrong, or why an act cannot run, sits
+   directly above the acts it belongs to rather than at the top of the map. */
+.wm-tile-acts {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.wm-tile-error,
+.wm-tile-note {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-top: 0;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+.wm-tile-error {
+  color: var(--wm-orange);
+  border-color: color-mix(in srgb, var(--wm-orange) 40%, var(--border));
+  background: color-mix(in srgb, var(--wm-orange) 10%, var(--card));
+}
+.wm-tile-note {
+  color: var(--wm-dim);
+  background: color-mix(in srgb, var(--card) 88%, var(--muted));
+}
+.wm-tile-error span {
+  min-width: 0;
+}
+.wm-tile-error button {
+  flex: none;
+  text-decoration: underline;
+}
+.wm-tile-actions {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  background: color-mix(in srgb, var(--card) 88%, var(--muted));
+  overflow: hidden;
+}
+.wm-tile-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--wm-ink);
+  font-size: 9.5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.wm-tile-action svg {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
+.wm-tile-action:not(:disabled):hover {
+  background: var(--accent);
+}
+.wm-tile-action:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: -1px;
+}
+.wm-tile-action:disabled {
+  opacity: 0.5;
+}
+/* The date-fix row is the tidy-mode footer: the act row's shape, four
+   fixes sharing the width whole; a narrow tile stacks them two by two. */
+.wm-tile-fixes .wm-date-fixes {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  background: color-mix(in srgb, var(--card) 88%, var(--muted));
+  overflow: hidden;
+}
+.wm-tile-fixes .wm-date-fix {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 4px;
+}
+[data-fixes="grid"] .wm-tile-fixes .wm-date-fixes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+/* Green is the map's agent channel: this act hands the work to one. */
+.wm-tile-delegate {
+  border-color: color-mix(in srgb, var(--wm-green) 55%, var(--border));
+}
+.wm-tile-action span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Which labels a tile keeps is decided per tile from its width, so the row is
+   one of three known shapes and never a label cut short. */
+[data-acts="lead"] .wm-tile-done span,
+[data-acts="lead"] .wm-tile-snooze span,
+[data-acts="lead"] .wm-tile-unsnooze span,
+[data-acts="icons"] .wm-tile-action span {
+  display: none;
+}
+[data-acts="lead"] .wm-tile-done,
+[data-acts="lead"] .wm-tile-snooze,
+[data-acts="lead"] .wm-tile-unsnooze,
+[data-acts="icons"] .wm-tile-action {
+  padding: 0 5px;
+}
+/* Tidy mode's date fixes: the same act look, four words that never wrap. */
+.wm-date-fixes {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+}
+.wm-date-fix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--wm-ink);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+.wm-date-fix:not(:disabled):hover {
+  background: var(--accent);
+}
+.wm-date-fix:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: -1px;
+}
+.wm-date-fix:disabled {
+  opacity: 0.5;
+}
+.wm-bulk {
+  flex: 1 0 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.wm-bulk-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+/* Touch minimums: 24px tall on desktop, 36px under 720px (below). */
+.wm-bulk-row > button {
+  min-height: 24px;
+}
+.wm-bulk-hint {
+  font-size: 10px;
+  color: var(--wm-dim);
+}
+.wm-bulk-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--wm-dim);
+  white-space: nowrap;
+}
+/* Whole rows only (three here, fewer on narrow bars), a scrollbar that stays
+   visible, and a fade on the last row while more rows wait below. */
+.wm-bulk-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  max-height: calc(3 * 24px + 2 * 2px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wm-bulk-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  max-width: 260px;
+  font-size: 10.5px;
+}
+.wm-bulk-pick span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wm-bulk-picks::-webkit-scrollbar {
+  width: 6px;
+}
+.wm-bulk-picks::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--foreground) 30%, transparent);
+}
+.wm-bulk-picks-more {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent);
+}
+/* The confirmation lies over the tiles instead of pushing them: positions
+   hold while you read the list, and Cancel leaves the area exactly as it was. */
+.wm-bulk-anchor {
+  position: relative;
+  flex: 1 0 100%;
+  height: 0;
+}
+.wm-bulk-confirm {
+  position: absolute;
+  z-index: 6;
+  top: 4px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(60vh, 460px);
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 30%, var(--border));
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.28);
+  outline: none;
+}
+.wm-bulk-confirm:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 1px;
+}
+.wm-bulk-confirm-done {
+  border-color: color-mix(in srgb, var(--destructive) 55%, var(--border));
+}
+.wm-bulk-confirm h4 {
+  font-size: 12px;
+  font-weight: 600;
+}
+.wm-bulk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 190px;
+  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 10.5px;
+}
+.wm-bulk-list b {
+  font-weight: 600;
+}
+.wm-bulk-skip,
+.wm-bulk-note {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--wm-dim);
+}
+/* A failed bulk run reports in the bar that started it, with its count. */
+.wm-bulk-error {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--wm-orange);
+}
+.wm-bulk-error button {
+  flex: none;
+  text-decoration: underline;
+}
+@container (max-width: 520px) {
+  .wm-bulk-picks {
+    max-height: calc(2 * 24px + 2px);
+  }
+}
+/* A finger needs 36px: card acts, bulk acts and picker rows all grow, and the
+   card budget follows because it measures the act row rather than assuming it. */
+@media (max-width: 720px) {
+  .wm-tile-action,
+  .wm-bulk-row > button,
+  .wm-bulk-pick {
+    min-height: 36px;
+  }
+  .wm-tile-action {
+    min-width: 36px;
+  }
+  .wm-date-fix {
+    min-height: 36px;
+  }
+  .wm-bulk-picks {
+    max-height: calc(3 * 36px + 2 * 2px);
+  }
+}
+
+/* ── 0.1.18: a bigger tile shows more of the work ───────────────────────── */
+/* The ask: what needs to be done, from the task itself (its "Needs you:"
+   comment, its NEXT STEP, else its summary). Budgeted in whole lines from
+   the tile's height, so the text fills the tile and nothing is cut mid-line. */
+.wm-heat-ask-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--wm-heat-ask-lines, 2);
+  overflow: hidden;
+  flex: none;
+  font-size: 10.5px;
+  line-height: 1.3;
+  opacity: 0.92;
+  overflow-wrap: anywhere;
+}
+.wm-heat-tile[data-tier="later"] .wm-heat-ask-text {
+  opacity: 0.85;
+}
+/* One line of context under the ask: sessions, waiting on, the agent's state. */
+.wm-heat-context {
+  flex: none;
+  font-size: 9.5px;
+  line-height: 1.4;
+  opacity: 0.72;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A Now tile carrying several lines of text keeps its red, a shade deeper
+   under the words so the white ask reads; the edge stays the strong red. */
+.wm-heat-tile[data-tier="now"] .wm-heat-ask-text,
+.wm-heat-tile[data-tier="now"] .wm-heat-context,
+.wm-heat-tile[data-tier="now"] .wm-heat-line,
+.wm-heat-tile[data-tier="now"] .wm-heat-facts {
+  color: #fff;
+}
+
+/* ── 0.1.18: an open area is a calm flow of cards ───────────────────────── */
+/* Cards in priority order, each as tall as what it says: the grid places
+   them, columns from the width alone, and the area body scrolls past them. */
+.wm-heat-cards.wm-heat-flow {
+  position: relative;
+  inset: auto;
+  display: grid;
+  gap: 4px;
+  align-items: start;
+  grid-auto-rows: auto;
+  padding-bottom: 2px;
+}
+.wm-heat-flow .wm-heat-slot {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: auto;
+  height: auto;
+  padding: 0;
+}
+.wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open) > .wm-heat-tile {
+  height: auto;
+  padding: 6px 8px 7px;
+}
+/* A quiet foot on every card: the hovered act row floats there and never
+   over the title. */
+@media (hover: hover) {
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open):has(> .wm-tile-acts:not(.wm-tile-fixes)) > .wm-heat-tile {
+    padding-bottom: 18px;
+  }
+}
+.wm-heat-flow .wm-heat-slot .wm-heat-title {
+  font-size: 12px;
+}
+.wm-heat-flow .wm-heat-ask-text {
+  font-size: 11px;
+  opacity: 0.9;
+}
+/* A quiet label over each run of cards sharing a priority. */
+.wm-heat-group-label {
+  grid-column: 1 / -1;
+  padding: 7px 4px 1px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--wm-dim);
+}
+.wm-heat-group-label:first-child {
+  padding-top: 1px;
+}
+/* Acts on hover and on focus, not always: the row floats over the card's
+   foot while the pointer is on the card or a key has reached one of its
+   buttons (Tab still gets there; the buttons are in the tree throughout).
+   Tidy mode's date fixes are the work and stay in view. */
+@media (hover: hover) {
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open) > .wm-tile-acts:not(.wm-tile-fixes) {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s;
+  }
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open):hover > .wm-tile-acts,
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open):focus-within > .wm-tile-acts {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open) > .wm-tile-acts:not(.wm-tile-fixes) .wm-tile-actions,
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open) > .wm-tile-acts:not(.wm-tile-fixes) .wm-tile-error,
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open) > .wm-tile-acts:not(.wm-tile-fixes) .wm-tile-note {
+    border-top: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open):has(> .wm-tile-acts:not(.wm-tile-fixes)) > .wm-heat-tile {
+    border-radius: 6px;
+  }
+}
+/* No pointer to hover with: the acts keep their place under every card. */
+@media (hover: none) {
+  .wm-heat-flow .wm-heat-slot:not(.wm-heat-slot-open) > .wm-tile-acts {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ---- The opened task: one action bar, then two columns ----
+   The main column is the work: the ask, the whole description, the timeline
+   with a box to write back. The side column is the facts and the people. The
+   bar merges every act the card and the details used to offer, each once. */
+.wm-task-detail {
+  container-type: inline-size;
+}
+.wm-task-detail > .wm-settle.wm-settle-bar {
+  margin: 0 0 14px;
+  padding: 0 0 12px;
+  border-top: 0;
+  border-bottom: 1px solid var(--border);
+}
+.wm-settle-bar .wm-settle-buttons {
+  margin-top: 0;
+  gap: 6px;
+}
+.wm-bar-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--wm-ink);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.wm-bar-act svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.wm-bar-lead {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: transparent;
+  font-weight: 600;
+}
+.wm-bar-lead:not(:disabled):hover {
+  opacity: 0.88;
+}
+.wm-bar-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--wm-dim);
+}
+.wm-bar-quiet:not(:disabled):hover {
+  background: var(--accent);
+  color: var(--wm-ink);
+}
+.wm-bar-act:disabled {
+  opacity: 0.5;
+}
+.wm-bar-act:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 2px;
+}
+.wm-settle-bar .wm-bar-done {
+  font-weight: 600;
+}
+/* The weights part the groups: filled lead, outlined Done, quiet ghosts. */
+.wm-settle-bar .wm-settle-buttons > .wm-bar-done + * {
+  margin-left: 6px;
+}
+.wm-more-menu {
+  position: relative;
+}
+.wm-more-trigger {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--wm-dim);
+  font-size: 18px;
+  line-height: 1;
+  opacity: 1;
+}
+.wm-more-trigger:hover,
+.wm-more-trigger[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--wm-ink);
+}
+.wm-more-trigger:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 2px;
+}
+.wm-more-menu .wm-area-menu {
+  top: 38px;
+  z-index: 12;
+}
+.wm-more-menu .wm-area-menu a[role="menuitem"] {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: inherit;
+}
+.wm-more-menu .wm-area-menu a[role="menuitem"]:hover,
+.wm-more-menu .wm-area-menu a[role="menuitem"]:focus-visible {
+  background: var(--accent);
+}
+.wm-bar-error {
+  margin: 8px 0 0;
+}
+.wm-inline-link {
+  color: var(--wm-blue);
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wm-task-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 20px 24px;
+  align-items: start;
+}
+.wm-task-main,
+.wm-task-side {
+  min-width: 0;
+}
+/* The facts and the sessions stay in view while the work column scrolls. */
+.wm-task-side {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.wm-task-main > section + section {
+  margin-top: 22px;
+}
+.wm-task-main > section > h3,
+.wm-task-comments .wm-section-heading h3 {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wm-dim);
+  font-weight: 550;
+  margin: 0 0 8px;
+}
+.wm-task-comments .wm-section-heading {
+  margin-bottom: 6px;
+}
+.wm-task-comments .wm-section-heading h3 span {
+  letter-spacing: 0;
+  font-weight: 400;
+}
+/* The ask first, as the tile says it: a quiet blue block, orange when a
+   comment asked for you by name. */
+.wm-task-ask {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--wm-blue);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--wm-blue) 7%, var(--card));
+}
+.wm-task-ask h3 {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wm-blue);
+  font-weight: 600;
+  margin: 0 0 5px;
+}
+.wm-task-ask[data-ask-from="comment"] {
+  border-color: var(--wm-orange);
+  background: color-mix(in srgb, var(--wm-orange) 8%, var(--card));
+}
+.wm-task-ask[data-ask-from="comment"] h3 {
+  color: var(--wm-orange);
+}
+.wm-task-ask p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+/* With no better ask the description's own lead is the summary: it is drawn
+   once, larger, where the description starts. */
+.wm-task-description-lead .wm-md > p:first-child {
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+.wm-task-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--wm-dim);
+}
+.wm-md {
+  font-size: 12.5px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.wm-md > * + * {
+  margin-top: 10px;
+}
+.wm-md p {
+  margin: 0;
+}
+.wm-md :is(h4, h5, h6) {
+  margin: 14px 0 4px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.wm-md h5 {
+  font-size: 12.5px;
+}
+.wm-md h6 {
+  font-size: 12px;
+  color: var(--wm-dim);
+}
+.wm-md :is(h4, h5, h6):first-child {
+  margin-top: 0;
+}
+.wm-md ul,
+.wm-md ol {
+  margin: 0;
+  padding-left: 22px;
+}
+.wm-md ul {
+  list-style: disc;
+}
+.wm-md ol {
+  list-style: decimal;
+}
+.wm-md li {
+  margin: 3px 0;
+}
+.wm-md li > :is(ul, ol) {
+  margin-top: 3px;
+}
+.wm-md li.wm-md-task {
+  list-style: none;
+  margin-left: -18px;
+}
+.wm-md-box {
+  display: inline-block;
+  width: 18px;
+}
+.wm-md li[data-checked="true"] {
+  color: var(--wm-dim);
+}
+.wm-md code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--wm-ink) 7%, transparent);
+}
+.wm-md pre {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wm-ink) 4%, var(--card));
+  overflow-x: auto;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.wm-md pre code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
+.wm-md blockquote {
+  margin: 0;
+  padding: 2px 12px;
+  border-left: 2px solid var(--border);
+  color: var(--wm-dim);
+}
+.wm-md hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+.wm-md a {
+  color: var(--wm-blue);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--wm-blue) 40%, transparent);
+  text-underline-offset: 2px;
+}
+.wm-md-table {
+  overflow-x: auto;
+}
+.wm-md table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.wm-md :is(th, td) {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+  text-align: left;
+}
+.wm-md th {
+  background: color-mix(in srgb, var(--wm-blue) 7%, var(--card));
+  font-weight: 600;
+}
+/* Long text folds past a sensible height and fades out; Show all opens it. */
+.wm-fold-closed .wm-fold-body {
+  max-height: 320px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 56px), transparent);
+  mask-image: linear-gradient(#000 calc(100% - 56px), transparent);
+}
+.wm-comment .wm-fold-closed .wm-fold-body {
+  max-height: 200px;
+}
+.wm-fold-toggle {
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--wm-blue);
+}
+.wm-fold-toggle:hover {
+  text-decoration: underline;
+}
+.wm-history-toggle {
+  font-size: 11px;
+  color: var(--wm-dim);
+}
+.wm-history-toggle:hover,
+.wm-history-toggle[aria-pressed="true"] {
+  color: var(--wm-ink);
+}
+.wm-comment-box {
+  margin: 2px 0 14px;
+}
+.wm-comment-box textarea {
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--wm-ink);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.wm-comment-box textarea::placeholder {
+  color: var(--wm-dim);
+}
+.wm-comment-box textarea:focus-visible {
+  outline: 2px solid var(--wm-blue);
+  outline-offset: 1px;
+}
+.wm-comment-submit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+.wm-comment-hint {
+  font-size: 10.5px;
+  color: var(--wm-dim);
+}
+.wm-comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wm-comment {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.wm-comment-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 11.5px;
+}
+.wm-comment-head strong {
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wm-comment-head time {
+  margin-left: auto;
+  color: var(--wm-dim);
+  white-space: nowrap;
+}
+.wm-comment-session {
+  font-size: 10.5px;
+  color: var(--wm-blue);
+  white-space: nowrap;
+}
+.wm-comment-agent .wm-comment-head strong::before {
+  content: "◆ ";
+  color: var(--wm-green);
+  font-size: 9px;
+  vertical-align: 1px;
+}
+.wm-comment-user .wm-comment-head strong::before {
+  content: "● ";
+  color: var(--wm-blue);
+  font-size: 8px;
+  vertical-align: 2px;
+}
+.wm-comment-system {
+  padding: 6px 0;
+}
+.wm-comment-system .wm-comment-head {
+  margin-bottom: 1px;
+  font-size: 11px;
+  color: var(--wm-dim);
+}
+.wm-comment-system .wm-comment-head strong {
+  font-weight: 500;
+}
+.wm-comment-system p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--wm-dim);
+}
+.wm-task-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 12px;
+}
+.wm-task-facts > div {
+  display: contents;
+}
+.wm-task-facts dt {
+  color: var(--wm-dim);
+}
+.wm-task-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.wm-task-facts dd em {
+  font-style: normal;
+  color: var(--wm-dim);
+  margin-left: 7px;
+}
+.wm-task-facts dd em.wm-fact-late {
+  color: var(--wm-orange);
+  font-weight: 600;
+}
+.wm-task-facts .wm-fact-fixes {
+  grid-column: 2;
+  margin-top: -2px;
+}
+.wm-fact-fixes .wm-date-fixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.wm-fact-fixes .wm-date-fix {
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+.wm-fact-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.wm-label {
+  --wm-label: var(--wm-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid color-mix(in srgb, var(--wm-label) 45%, var(--border));
+  background: color-mix(in srgb, var(--wm-label) 12%, transparent);
+}
+.wm-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wm-label);
+}
+.wm-fact-files {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wm-fact-files a {
+  color: var(--wm-blue);
+}
+.wm-task-side > .wm-task-sessions {
+  margin-top: 0;
+}
+.wm-task-side .wm-session-options {
+  grid-template-columns: 1fr;
+}
+/* One column where the panel is narrow: the side pane, a squeezed open card. */
+@container (max-width: 470px) {
+  .wm-task-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* A phone: one column, and the bar's acts at a thumb's height. */
+@media (width <= 720px) {
+  .wm-task-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wm-bar-act,
+  .wm-more-trigger,
+  .wm-settle-bar .wm-settle-buttons > button {
+    min-height: 36px;
+  }
+  .wm-more-trigger {
+    width: 36px;
+  }
+}

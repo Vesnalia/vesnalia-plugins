@@ -1,0 +1,18 @@
+# Code Review Workspace
+
+Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+
+- Оригинальный автор: Andrew Bird (https://github.com/AndrewBird81)
+- Исходный репозиторий: https://github.com/AndrewBird81/bb-plugin-code-review-workspace
+- Каталог в репозитории: (корень)
+- Версия: v1.13.0, коммит 5c0fa681687fa36b3c83f5da81eaf0fdefefaa24
+- Ссылка на исходник: https://github.com/AndrewBird81/bb-plugin-code-review-workspace/tree/5c0fa681687fa36b3c83f5da81eaf0fdefefaa24
+- Лицензия: MIT (текст в файле LICENSE рядом)
+- Не перенесены демо-медиа из документации (13 файлов, есть в исходном репозитории)
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

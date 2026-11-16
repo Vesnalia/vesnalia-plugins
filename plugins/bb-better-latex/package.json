@@ -1,0 +1,42 @@
+{
+  "name": "bb-better-latex",
+  "version": "0.2.8",
+  "description": "Better inline and display LaTeX for BB chat. Renders $...$, leftover \\[...\\] / \\(...\\), and currency-safe heuristics.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZhenHuangLab/bb-better-latex.git"
+  },
+  "homepage": "https://github.com/ZhenHuangLab/bb-better-latex",
+  "bugs": {
+    "url": "https://github.com/ZhenHuangLab/bb-better-latex/issues"
+  },
+  "engines": {
+    "bb": ">=0.38",
+    "bbPluginSdk": ">=0.4.6"
+  },
+  "bb": {
+    "name": "Better LaTeX",
+    "description": "Renders $...$ and leftover \\[...\\] / \\(...\\) math in chat. Stock BB only ships $$...$$; this plugin adds currency-safe heuristics and reassembles formulas markdown splits across nodes.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "scripts": {
+    "generate:katex-css": "node scripts/generate-katex-shadow-css.mjs",
+    "prepare": "npm run generate:katex-css"
+  },
+  "dependencies": {
+    "katex": "^0.16.27"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.6",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}

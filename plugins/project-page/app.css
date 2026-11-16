@@ -1,0 +1,19 @@
+/* navPanel provides routing, but this destination belongs to its project row. */
+[data-sidebar-navigation-item="project-page/home"],
+[data-sidebar-navigation-more-item="project-page/home"],
+[data-plugin-nav-customize-item="project-page/home"] { display: none !important; }
+[data-project-page-current] {
+  background: var(--sidebar-accent);
+  color: var(--sidebar-foreground);
+}
+[data-project-page-link][aria-current="page"] { color: var(--sidebar-foreground); font-weight: 500; }
+[data-project-page-link] { cursor: pointer; border-radius: 3px; }
+[data-project-page-link]:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
+[data-project-page-link]:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.project-page { overflow-wrap: anywhere; }
+.project-page img { max-width: 100%; height: auto; }
+.project-page pre, .project-page table { max-width: 100%; overflow-x: auto; }
+.project-page-button { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.project-page-button:hover, .project-page-choice:hover { background: var(--muted); }
+.project-page-button:focus-visible, .project-page-choice:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.project-page-choice { display: flex; align-items: center; justify-content: space-between; gap: 16px; text-align: left; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }

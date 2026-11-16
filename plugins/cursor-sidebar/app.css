@@ -1,0 +1,817 @@
+:root {
+  --cs-accent: var(--timeline-accent, #3b82f6);
+  --cs-green: var(--success, #3fb950);
+  --cs-pink: #e5577f;
+}
+
+:root {
+  --cs-row-inset: 8px;
+  --cs-highlight-inset: 4px;
+  --cs-left-extra: 4px;
+  --cs-row-pad-l: 5px;
+  --cs-row-pad-r: 6px;
+  --cs-heading-pad: 6px;
+  --cs-row-gutter-l: calc(var(--cs-row-pad-l) + var(--cs-row-inset) + var(--cs-left-extra) - var(--cs-highlight-inset));
+  --cs-row-gutter-r: calc(var(--cs-row-pad-r) + var(--cs-row-inset) - var(--cs-highlight-inset));
+  --cs-heading-gutter-l: calc(var(--cs-heading-pad) + var(--cs-row-inset) + var(--cs-left-extra) - var(--cs-highlight-inset));
+  --cs-heading-gutter-r: calc(var(--cs-heading-pad) + var(--cs-row-inset) - var(--cs-highlight-inset));
+  --cs-icon: 14px;
+  --cs-icon-gap: 6px;
+  --cs-text-pad: 2px;
+  --cs-text-x: calc(var(--cs-row-gutter-l) + var(--cs-icon) + var(--cs-icon-gap) + var(--cs-text-pad));
+  --cs-trail-gap: var(--cs-icon-gap);
+  --cs-status-dot: 6px;
+  --cs-time-color: #737373;
+  --cs-chrome-button: 24px;
+  --cs-chrome-gap: 8px;
+  --cs-chrome-inset: var(--cs-row-inset);
+}
+html.dark {
+  --cs-time-color: #929292;
+}
+@media (max-width: 767px) and (pointer: coarse) {
+  :root {
+    --cs-chrome-button: 36px;
+    --cs-chrome-gap: 4px;
+    --cs-chrome-inset: calc(var(--cs-row-pad-l) + var(--cs-row-inset) + var(--cs-icon) / 2 - var(--cs-chrome-button) / 2);
+  }
+}
+.cs-row,
+.cs-heading.cs-project-heading {
+  padding-left: var(--cs-row-gutter-l);
+  padding-right: var(--cs-row-gutter-r);
+  column-gap: var(--cs-icon-gap);
+}
+.cs-heading {
+  padding-left: var(--cs-heading-gutter-l);
+  padding-right: var(--cs-heading-gutter-r);
+}
+.cs-heading.cs-heading--icon {
+  padding-left: var(--cs-row-gutter-l);
+  padding-right: var(--cs-row-gutter-r);
+}
+.cs-heading--icon .cs-heading-button {
+  column-gap: var(--cs-icon-gap);
+}
+.cs-row-text {
+  padding-left: var(--cs-text-pad);
+}
+.cs-row-note {
+  padding-left: var(--cs-text-x);
+  padding-right: var(--cs-row-gutter-r);
+}
+.cs-row-inset {
+  padding-left: var(--cs-highlight-inset);
+  padding-right: var(--cs-highlight-inset);
+}
+.cs-nav-icon {
+  width: var(--cs-icon);
+  height: var(--cs-icon);
+}
+[data-cursor-sidebar-root] .cs-nest-line {
+  left: var(--cs-text-x);
+}
+
+/* The plugin owns scrolling; the host's reserved gutter adds an extra right inset. */
+[data-sidebar="content"]:has([data-cursor-sidebar-root]) {
+  scrollbar-gutter: auto;
+}
+
+@media (max-width: 767px) {
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: none;
+  }
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root])::-webkit-scrollbar { display: none; }
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) > [data-testid="app-sidebar-top-reserve-row"],
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) > [data-sidebar="footer"] {
+    position: sticky;
+    z-index: 20;
+    background-color: var(--sidebar, var(--background));
+  }
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) > [data-testid="app-sidebar-top-reserve-row"] { top: 0; }
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) > [data-sidebar="footer"] { bottom: 0; }
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) > :has(> [data-overflow-fade="above"]) {
+    position: sticky;
+    bottom: var(--cs-sidebar-footer-height, 0px);
+    z-index: 20;
+    background-color: var(--sidebar, var(--background));
+  }
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) > [data-sidebar="content"] { flex: 1 0 auto; overflow: visible; }
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) [data-cursor-sidebar-root],
+  [data-testid="app-sidebar-body"]:has(> nav[data-sidebar-navigation-placement="list"] + [data-sidebar="content"] [data-cursor-sidebar-root]) .cs-scroll { flex: 1 0 auto; overflow-y: visible; }
+}
+
+/* Scoped phone/touch affordances; fine-pointer desktop density is unchanged. */
+@media (max-width: 767px), (pointer: coarse) {
+  [data-cursor-sidebar-root] { min-width: 0; overflow-x: clip; }
+  [data-cursor-sidebar-root] button:not(.cs-row-action):not(.cs-board-row__toggle),
+  [data-cursor-sidebar-root] select,
+  .cs-move-dialog button,
+  .cs-move-dialog select { min-height: 44px; touch-action: manipulation; }
+  [data-cursor-sidebar-root] button:has(> :is(svg, [data-icon-root]):only-child):not(.cs-icon-btn):not(.cs-new-project):not(.cs-row-action):not(.cs-board-row__toggle) { min-width: 44px; }
+  [data-cursor-sidebar-root] button[aria-expanded]:not(.cs-board-row__toggle) { opacity: 1; }
+  [data-cursor-sidebar-root] .cs-project-name {
+    white-space: normal; overflow-wrap: anywhere; font-size: 13px;
+  }
+  [data-cursor-sidebar-root] [data-thread-row] { min-height: 52px; padding-top: 6px; padding-bottom: 6px; }
+  [data-cursor-sidebar-root] .cs-board-row { min-height: 52px; padding-top: 6px; padding-bottom: 6px; }
+  [data-cursor-sidebar-root] .cs-child-toggle,
+  [data-cursor-sidebar-root] .cs-project-new,
+  [data-cursor-sidebar-root] .cs-project-disclosure { display: none; }
+  [data-cursor-sidebar-root] .cs-thread-title {
+    white-space: normal; overflow-wrap: anywhere; display: -webkit-box;
+    -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  }
+  [data-cursor-sidebar-root] .cs-thread-info { font-size: var(--bbs-text-meta, 11px); line-height: 1.4; white-space: normal; opacity: 1; }
+  [data-cursor-sidebar-root] .cs-secondary-desktop { display: none; }
+  [data-cursor-sidebar-root] .cs-secondary-mobile {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
+  [data-cursor-sidebar-root] .cs-thread-time { display: flex; }
+  [data-cursor-sidebar-root] .cs-gesture-row { touch-action: pan-y; -webkit-touch-callout: none; }
+  [data-cursor-sidebar-root] .cs-gesture-row a,
+  [data-cursor-sidebar-root] .cs-gesture-row button,
+  [data-cursor-sidebar-root] .cs-thread-title { user-select: none; -webkit-user-select: none; touch-action: pan-y; }
+  [data-cursor-sidebar-root] .cs-gesture-row input { user-select: text; -webkit-user-select: text; }
+  /* A lifted row: the hold has become a drag, and the finger is told so before
+     anything moves. Applies to the row inside, never to the wrapper, so the
+     swipe offset and the lift cannot fight over one transform. */
+  [data-cursor-sidebar-root] .cs-drag-armed [data-thread-row],
+  [data-cursor-sidebar-root] .cs-drag-armed [data-reorder-kind="project"] {
+    border-radius: var(--bbs-radius-sm, 6px);
+    background-color: var(--sidebar-accent);
+    box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
+    transform: scale(1.02);
+  }
+  /* A lifted project scales its whole section, so the heading inside does not
+     scale again on top of it. */
+  [data-cursor-sidebar-root] [data-dragging] .cs-drag-armed [data-reorder-kind="project"] {
+    transform: none;
+  }
+  .cs-context-actions { max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; }
+  .cs-context-actions button { min-height: 44px; touch-action: manipulation; }
+  .cs-move-dialog { max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; overflow-wrap: anywhere; }
+  .cs-move-dialog select { min-width: 0; max-width: 100%; font-size: 16px; }
+}
+
+/* The row's pin/archive controls are a hover affordance. A touch pointer has no
+   hover to reveal them, and the 44px targets above would stack them over the
+   timestamp, so a swipe or the hold menu acts on the row instead. A narrow
+   window on a mouse still gets them, which is why this is not in the block
+   above. */
+@media (pointer: coarse) {
+  [data-cursor-sidebar-root] .cs-row-actions,
+  [data-cursor-sidebar-root] .cs-row-action { display: none; }
+}
+
+.cs-project-glyph {
+  display: inline-flex;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: var(--cs-icon);
+  height: var(--cs-icon);
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  pointer-events: none;
+}
+.cs-project-glyph svg {
+  display: block;
+}
+
+.cs-status-slot {
+  display: inline-flex;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: var(--cs-icon);
+  height: var(--cs-icon);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.cs-status-slot svg {
+  display: block;
+}
+
+/* Workspace/repo rows: title and subtitle sit as one tight pair. */
+.cs-workspace-row .cs-thread-title {
+  line-height: 1.2;
+}
+.cs-workspace-row .cs-thread-info {
+  line-height: 1.15;
+}
+
+/* Chevrons are a short stroke; 2.75 reads heavier than the 1.5 default. */
+[data-cursor-sidebar-root] [data-icon="ChevronDown"] path,
+[data-cursor-sidebar-root] [data-icon="ChevronRight"] path,
+[data-cursor-sidebar-root] [data-icon="ChevronLeft"] path,
+[data-cursor-sidebar-root] [data-icon="ChevronUp"] path {
+  stroke-width: 2.75;
+}
+
+[data-cursor-sidebar-root] [data-thread-row] .cs-thread-title,
+[data-cursor-sidebar-root] [data-thread-row] .cs-thread-info {
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 28px), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 28px), transparent);
+}
+
+[data-cursor-sidebar-root] .cs-thread-titleline,
+[data-cursor-sidebar-root] .cs-row-trail,
+[data-cursor-sidebar-root] .cs-row-marks {
+  column-gap: var(--cs-trail-gap);
+}
+[data-cursor-sidebar-root] .cs-row-marks:not(:has(> *)) {
+  display: none;
+}
+[data-cursor-sidebar-root] [data-thread-row] .cs-row-actions {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-cursor-sidebar-root] [data-thread-row]:is(:hover, :focus-within) .cs-row-marks {
+    display: none;
+  }
+  [data-cursor-sidebar-root] [data-thread-row]:is(:hover, :focus-within) .cs-row-actions {
+    display: flex;
+  }
+}
+.cs-status-dot {
+  width: var(--cs-status-dot);
+  height: var(--cs-status-dot);
+}
+[data-cursor-sidebar-root] .cs-status-dot[data-seen] {
+  background-color: color-mix(in srgb, var(--cs-icon-quaternary) 55%, transparent);
+}
+
+
+[data-cursor-sidebar-root],
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"],
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"],
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] {
+  --bbs-text-primary: oklch(from var(--sidebar-foreground) min(1, calc(l + 0.14)) c h);
+  --bbs-text-secondary: color-mix(in srgb, var(--bbs-text-primary) 74%, transparent);
+  --bbs-text-tertiary: color-mix(in srgb, var(--bbs-text-primary) 60%, transparent);
+  --cs-icon-quaternary: color-mix(in srgb, var(--bbs-text-primary) 28%, transparent);
+}
+[data-cursor-sidebar-root] .cs-heading-label {
+  color: var(--bbs-text-tertiary);
+}
+[data-cursor-sidebar-root] .cs-project-name,
+[data-cursor-sidebar-root] .cs-board-row,
+[data-cursor-sidebar-root] [data-thread-row] .cs-thread-title {
+  color: var(--bbs-text-secondary);
+}
+[data-cursor-sidebar-root] [data-thread-shelf="settled"] .cs-thread-title,
+[data-cursor-sidebar-root] .cs-thread-info,
+[data-cursor-sidebar-root] .cs-thread-cloud,
+[data-cursor-sidebar-root] .cs-board-row__meta {
+  color: var(--bbs-text-tertiary);
+}
+[data-cursor-sidebar-root] .cs-thread-time,
+[data-cursor-sidebar-root] .cs-age {
+  color: var(--cs-time-color);
+}
+[data-cursor-sidebar-root] .cs-heading:is(:hover, :focus-within) .cs-heading-label,
+[data-cursor-sidebar-root] .cs-board-row:is(:hover, :focus-within, [data-active]),
+[data-cursor-sidebar-root] [data-thread-row]:is(:hover, :focus-within) .cs-thread-title,
+[data-cursor-sidebar-root] [data-thread-row]:has(a[aria-current="true"]) .cs-thread-title {
+  color: var(--bbs-text-primary);
+}
+
+[data-cursor-sidebar-root] .cs-icon-btn,
+[data-cursor-sidebar-root] .cs-nav-control,
+[data-cursor-sidebar-root] .cs-new-project {
+  color: var(--bbs-text-tertiary);
+}
+[data-cursor-sidebar-root] .cs-icon-btn:is(:hover, :focus-visible, [data-state="open"]),
+[data-cursor-sidebar-root] .cs-nav-control:is(:hover, :focus-visible),
+[data-cursor-sidebar-root] .cs-new-project:is(:hover, :focus-visible) {
+  color: var(--bbs-text-primary);
+}
+
+/* The row's pin/archive buttons stay hidden until the row is hovered or
+   focused. Declared unlayered, like the rest of this sheet, so the host's own
+   utility classes cannot win over the reveal. Hovering the button brightens
+   the glyph itself; there is no surface behind it. */
+[data-cursor-sidebar-root] [data-thread-row] .cs-row-actions,
+[data-cursor-sidebar-root] [data-thread-row] .cs-row-action {
+  pointer-events: none;
+}
+[data-cursor-sidebar-root] [data-thread-row] .cs-row-actions {
+  opacity: 0;
+}
+[data-cursor-sidebar-root] [data-thread-row]:hover .cs-row-actions,
+[data-cursor-sidebar-root] [data-thread-row]:focus-within .cs-row-actions,
+[data-cursor-sidebar-root] [data-thread-row]:hover .cs-row-action,
+[data-cursor-sidebar-root] [data-thread-row]:focus-within .cs-row-action {
+  pointer-events: auto;
+}
+[data-cursor-sidebar-root] [data-thread-row]:hover .cs-row-actions,
+[data-cursor-sidebar-root] [data-thread-row]:focus-within .cs-row-actions {
+  opacity: 1;
+}
+[data-cursor-sidebar-root] .cs-row-action:hover,
+[data-cursor-sidebar-root] .cs-row-action:focus-visible,
+[data-cursor-sidebar-root] .cs-row-action:active {
+  color: oklch(from var(--sidebar-foreground) min(1, calc(l + 0.14)) c h);
+}
+
+/* The heading and project create controls brighten the same way, so adding a
+   thread reads with the same strength as pinning or archiving one. */
+[data-cursor-sidebar-root] .cs-new-project:hover,
+[data-cursor-sidebar-root] .cs-new-project:focus-visible,
+[data-cursor-sidebar-root] .cs-new-project:active,
+[data-cursor-sidebar-root] .cs-project-new:hover,
+[data-cursor-sidebar-root] .cs-project-new:focus-visible,
+[data-cursor-sidebar-root] .cs-project-new:active {
+  color: oklch(from var(--sidebar-foreground) min(1, calc(l + 0.14)) c h);
+}
+
+/* A heading's contents open like a drawer: the block grows and shrinks its
+   height in 110ms instead of appearing. `Drawer.tsx` keeps the transition
+   duration in step. */
+.cs-drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 110ms ease-out;
+}
+.cs-drawer[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.cs-drawer > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Grouping is a wholesale swap of the list. It plays in rather than cutting. */
+@keyframes cs-grouping-swap {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cs-grouping-swap {
+  animation: cs-grouping-swap 130ms ease-out;
+}
+
+/* Radix anchored surfaces grow from the point that opened them. */
+.cs-context-actions,
+.cs-new-project-dialog {
+  transform-origin: var(--radix-popover-content-transform-origin, center);
+}
+.cs-view-menu {
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin, center);
+}
+
+/* Live-work "shine" pulse for the icon status glyphs (Workflow, agents,
+   plan mode, goal). The class was referenced without a definition. */
+@keyframes cs-shine-icon {
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+:is([data-cursor-sidebar-root], [data-bb-plugin="cursor-sidebar"]) .animate-shine-icon {
+  animation: cs-shine-icon 1.6s ease-in-out infinite;
+}
+
+/* The lifted label that follows the pointer during a reorder drag. It mounts
+   on document.body outside the plugin scope, so it is styled inline; this is
+   the reduced-motion escape hatch and the transform channel hint. */
+.cs-drag-ghost {
+  will-change: transform;
+}
+
+.cs-drag-ghost {
+  transition: translate 120ms ease-out, opacity 120ms ease-out;
+}
+.cs-drag-ghost[data-nesting] {
+  translate: 22px 28px;
+  opacity: 0.6 !important;
+}
+
+/* BB's own sidebar chrome — the nav rows and the top-bar controls (toggle,
+   back/forward) — is not rendered here, but it shares the column and should
+   shade like our rows. The colours derive from the theme's sidebar foreground,
+   never a literal, so they follow the active theme. Tune the two percentages
+   to change the shade; everything below reads them. */
+:root {
+  --cs-nav-shade: 87%;
+  --cs-nav-shade-emphasis: 100%;
+}
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"] :is(button, a),
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] button,
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] button {
+  color: color-mix(in oklab, var(--sidebar-foreground) var(--cs-nav-shade), transparent);
+}
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"] :is(button, a):hover,
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"] :is(button, a):focus-visible,
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"] :is(button, a)[aria-current="page"],
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] button:hover,
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] button:focus-visible,
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] button:hover,
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] button:focus-visible {
+  color: color-mix(in oklab, var(--sidebar-foreground) var(--cs-nav-shade-emphasis), transparent);
+}
+
+/* Heading icon buttons (view menu, new project, new thread, the date "+"):
+   BB's own chrome shows a state-hover square, sized to the row rather than the
+   glyph. The surface is a pseudo so it can sit larger than the 16px slot
+   without moving the heading; an unlayered reset beats our Tailwind layer, so
+   these colours are declared unlayered. */
+.cs-icon-btn {
+  position: relative;
+}
+.cs-icon-btn::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: var(--bbs-radius-sm, 6px);
+  pointer-events: none;
+}
+.cs-icon-btn > :is(svg, [data-icon-root]) {
+  position: relative;
+  z-index: 1;
+}
+.cs-icon-btn:hover::after,
+.cs-icon-btn:focus-visible::after {
+  background-color: var(--state-hover);
+}
+.cs-icon-btn:active::after,
+.cs-icon-btn[data-state="open"]::after {
+  background-color: var(--state-active);
+}
+
+/* A project heading highlights like a thread row when the pointer is over it. */
+[data-cursor-sidebar-root] .cs-project-heading:hover {
+  background-color: color-mix(in oklab, var(--sidebar-accent) 60%, transparent);
+}
+
+/* While rows remain below the fold, the list's bottom edge dissolves so the
+   cut never meets the next section as a hard line. It clears at the end. */
+[data-cursor-sidebar-root] [data-fade-more="true"] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
+}
+
+/* While BB's keybind guide is up, a row shows the digit that opens it, in the
+   host's own chip shape. */
+.cs-shortcut-key {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  background-color: var(--state-hover);
+  padding: 4px 6px;
+  font-family: var(--font-sans, inherit);
+  font-size: var(--bbs-text-body, 12px);
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--subtle-foreground);
+  opacity: 0.6;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* The lifted row clone is purely visual: nothing inside it may take a hit, or
+   the drop target under the pointer would resolve to the ghost. */
+.cs-drag-ghost,
+.cs-drag-ghost * {
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-project-glyph svg {
+    animation: none !important;
+    transition: none !important;
+  }
+  .cs-status-slot svg {
+    animation: none !important;
+    transition: none !important;
+  }
+  :is([data-cursor-sidebar-root], [data-bb-plugin="cursor-sidebar"]) .animate-shine-icon {
+    animation: none !important;
+  }
+  .cs-drag-ghost {
+    transition: none !important;
+  }
+  .cs-drawer {
+    transition: none !important;
+  }
+  .cs-grouping-swap {
+    animation: none !important;
+  }
+}
+
+/* The composer's project label and New thread project button draw the
+   sidebar's project icon (src/ComposerProjectIcons.tsx); hide BB's folder
+   beside it. */
+[data-cs-has-project-icon] [data-icon="Folder"]:not([data-cs-composer-project-icon] *) {
+  display: none !important;
+}
+
+.cs-board-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--cs-icon-gap);
+  width: 100%;
+  min-height: 1.75rem;
+  padding: 0.25rem var(--cs-row-gutter-r) 0.25rem var(--cs-row-gutter-l);
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: color-mix(in srgb, var(--sidebar-foreground) 95%, transparent);
+  font: inherit;
+  font-size: var(--bbs-text-row, 13px);
+  font-weight: 400;
+  line-height: 1.25rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.cs-board-row:hover {
+  background: color-mix(in srgb, var(--sidebar-accent) 60%, transparent);
+}
+.cs-board-row[data-active] {
+  background: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+}
+.cs-board-row[data-nesting] {
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+.cs-board-row__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: var(--cs-text-pad);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-board-row__meta {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--bbs-gap-icon, 6px);
+  font-size: 0.75rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.cs-board-row__working {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bbs-gap-xs, 4px);
+  height: 1rem;
+  padding: 0 0.375rem;
+  border-radius: var(--bbs-pill-radius, 9999px);
+  background: color-mix(in srgb, var(--cs-accent) 15%, transparent);
+  color: var(--cs-accent);
+}
+.cs-board-row__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--bbs-pill-radius, 9999px);
+  background: var(--cs-accent);
+}
+.cs-board-row__review {
+  color: var(--cs-green);
+}
+
+.cs-board-row__lead {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--cs-icon);
+  height: var(--cs-icon);
+}
+.cs-board-row__icon {
+  display: inline-flex;
+  transition: opacity 120ms ease;
+}
+@media (hover: hover) {
+  .cs-board-row:hover .cs-board-row__icon--swap,
+  .cs-board-row:is(:focus-visible, :has(:focus-visible)) .cs-board-row__icon--swap {
+    opacity: 0;
+  }
+  .cs-board-row:hover .cs-board-row__toggle,
+  .cs-board-row:is(:focus-visible, :has(:focus-visible)) .cs-board-row__toggle {
+    opacity: 1;
+  }
+}
+.cs-board-row__toggle {
+  position: absolute;
+  inset: -2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--bbs-radius-xs, 4px);
+  background: transparent;
+  color: color-mix(in srgb, var(--sidebar-foreground) 73%, transparent);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 120ms ease, background-color 120ms ease;
+}
+.cs-board-row__toggle:hover {
+  background: color-mix(in srgb, var(--sidebar-foreground) 10%, transparent);
+}
+.cs-board-row__toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--sidebar-ring, var(--ring));
+}
+.cs-board-row__hidden {
+  color: color-mix(in srgb, var(--sidebar-foreground) 45%, transparent);
+}
+.cs-board-row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--sidebar-ring, var(--ring));
+}
+@media (hover: none) {
+  .cs-board-row__toggle { inset: -10px; background: transparent !important; }
+}
+
+.cs-board-row__icon {
+  position: relative;
+}
+.cs-board-row__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--bbs-pill-radius, 9999px);
+  box-shadow: 0 0 0 1.5px var(--sidebar, var(--background));
+}
+.cs-board-row__badge[data-tone="working"] {
+  background: var(--cs-accent);
+}
+.cs-board-row__badge[data-tone="attention"] {
+  background: var(--cs-pink);
+}
+@media (hover: hover) {
+  .cs-board-row:hover .cs-board-row__badge,
+  .cs-board-row:is(:focus-visible, :has(:focus-visible)) .cs-board-row__badge {
+    opacity: 0;
+  }
+}
+
+.cs-lead-icon__mark {
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.cs-lead-icon[data-working] .cs-lead-icon__mark {
+  opacity: 0;
+  transform: scale(0.6);
+}
+.cs-lead-icon__badge {
+  right: -1px;
+  bottom: 0;
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 0 1.5px var(--sidebar, var(--background));
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-lead-icon__mark { transition: none; }
+}
+
+.cs-managers {
+  margin-bottom: 28px;
+}
+.cs-board-row__rename {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--sidebar-foreground) 25%, transparent);
+  border-radius: var(--bbs-radius-xs, 4px);
+  background: var(--sidebar, var(--background));
+  color: var(--sidebar-foreground);
+  font: inherit;
+  outline: none;
+}
+.cs-board-row__rename:focus {
+  border-color: var(--cs-accent);
+}
+.cs-board-row:hover .cs-project-badge {
+  background: color-mix(in srgb, var(--sidebar-accent) 60%, var(--sidebar));
+}
+.cs-board-row[data-active] .cs-project-badge {
+  background: var(--sidebar-accent);
+}
+
+.cs-board-row__archive {
+  position: absolute;
+  right: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: var(--bbs-height-compact, 20px);
+  border: 0;
+  border-radius: var(--bbs-radius-xs, 4px);
+  background: transparent;
+  color: var(--bbs-text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+.cs-board-row:has(.cs-board-row__archive):is(:hover, :focus-within) .cs-board-row__name {
+  padding-right: 24px;
+}
+.cs-board-row:is(:hover, :focus-within) .cs-board-row__archive {
+  opacity: 1;
+  pointer-events: auto;
+}
+.cs-board-row__archive:is(:hover, :focus-visible) {
+  color: var(--bbs-text-primary);
+}
+.cs-board-row__archive:focus-visible {
+  outline: 1px solid var(--sidebar-ring);
+}
+@media (pointer: coarse) {
+  .cs-board-row__archive { display: none; }
+  .cs-board-row:has(.cs-board-row__archive):is(:hover, :focus-within) .cs-board-row__name { padding-right: 0; }
+}
+
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] {
+  padding-left: calc(env(safe-area-inset-left) + var(--cs-chrome-inset) + var(--cs-left-extra));
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] button,
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] > :last-child > button {
+  width: var(--cs-chrome-button);
+  height: var(--cs-chrome-button);
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] {
+  padding-left: calc(var(--cs-chrome-inset) + var(--cs-left-extra));
+  padding-right: var(--cs-chrome-inset);
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] > :first-child {
+  padding-left: calc(env(safe-area-inset-left) + var(--cs-chrome-button) + var(--cs-chrome-gap));
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] > :last-child {
+  gap: var(--cs-chrome-gap);
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-body"] > [data-sidebar="footer"] {
+  padding-left: calc(var(--cs-chrome-inset) + var(--cs-left-extra));
+  padding-right: var(--cs-chrome-inset);
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-body"] > [data-sidebar="footer"] [data-sidebar="menu"] {
+  gap: var(--cs-chrome-gap);
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-body"] > [data-sidebar="footer"] [data-sidebar="menu-item"] {
+  min-width: var(--cs-chrome-button);
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-body"] > [data-sidebar="footer"] [data-sidebar="menu-button"] {
+  width: var(--cs-chrome-button);
+  height: var(--cs-chrome-button);
+}
+
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"] :is(button, a):has(> :is(svg, [data-icon-root]):only-child),
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] button,
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] button {
+  color: var(--bbs-text-tertiary);
+}
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"] :is(button, a):has(> :is(svg, [data-icon-root]):only-child):is(:hover, :focus-visible),
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] button:is(:hover, :focus-visible),
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] button:is(:hover, :focus-visible) {
+  color: var(--bbs-text-primary);
+}
+
+:where(:root:has([data-cursor-sidebar-root])) [aria-label="Sidebar navigation"] :is(button, a):has(> :is(svg, [data-icon-root]):only-child) > :is(svg, [data-icon-root]),
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-trigger-overlay"] button :is(svg, [data-icon-root]),
+:where(:root:has([data-cursor-sidebar-root])) [data-testid="app-sidebar-top-reserve-row"] button :is(svg, [data-icon-root]) {
+  width: var(--bbs-icon, 14px);
+  height: var(--bbs-icon, 14px);
+}
+
+:where(:root:has([data-cursor-sidebar-root])) [data-testid^="plugin-sidebar-footer-item-"] > :is(svg, [data-icon-root]),
+:where(:root:has([data-cursor-sidebar-root])) a[aria-label^="Settings"][data-sidebar="menu-button"] :is(svg, [data-icon-root]),
+:where(:root:has([data-cursor-sidebar-root])) button[aria-label="More footer actions"] > :is(svg, [data-icon-root]) {
+  width: var(--bbs-icon, 14px);
+  height: var(--bbs-icon, 14px);
+}
+:where(:root:has([data-cursor-sidebar-root])) [data-testid^="plugin-sidebar-footer-item-"],
+:where(:root:has([data-cursor-sidebar-root])) a[aria-label^="Settings"][data-sidebar="menu-button"],
+:where(:root:has([data-cursor-sidebar-root])) button[aria-label="More footer actions"] {
+  --bbs-text-primary: oklch(from var(--sidebar-foreground) min(1, calc(l + 0.14)) c h);
+  --bbs-text-tertiary: color-mix(in srgb, var(--bbs-text-primary) 60%, transparent);
+  color: var(--bbs-text-tertiary);
+}
+:where(:root:has([data-cursor-sidebar-root])) :is([data-testid^="plugin-sidebar-footer-item-"], a[aria-label^="Settings"][data-sidebar="menu-button"], button[aria-label="More footer actions"]):is(:hover, :focus-visible) {
+  color: var(--bbs-text-primary);
+}
+
+[data-cursor-sidebar-root] :has(> .cs-list-controls):hover > .cs-list-controls .cs-list-new-thread {
+  opacity: 1;
+}

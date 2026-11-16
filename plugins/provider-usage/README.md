@@ -1,0 +1,257 @@
+# Provider Usage
+
+A BB panel for **what you are burning right now**, **how much of your plan is
+left**, and **how many tokens you have spent** — across every provider you are
+signed in to, on every machine BB knows about.
+
+<!-- screenshot: docs/panel.png -->
+
+## What it shows
+
+**Live throughput.** A 15-minute chart of tokens as they are reported, binned
+per 10 seconds and stacked by provider, with the current rate over the trailing
+60 seconds, the best rate seen in the window, and the threads doing the work. It
+updates every couple of seconds while a turn is running and settles when the
+machine goes quiet. Archived and deleted threads drop out immediately — they
+are history, not current burn. BB's token events are authoritative; for
+BB-launched ACP sessions whose bridges do not emit them, the plugin maps the
+provider thread id back to opencode's exact local counters or Cursor's
+text-derived estimate.
+
+**Provider limits.** One section, split in two. The left third lists the
+providers — active ones first, each with its plan, the lead window's remaining
+percentage and a thin meter, then any that are not signed in. The right two
+thirds shows whatever is selected:
+
+- **Overview** (the default): the overall remaining figure the rail badge shows,
+  the tightest window anywhere, the next reset, how many providers are signed
+  in and any on-demand spend — then one compact row per provider with every
+  window side by side. Click a row to open that provider.
+- **A provider**: its plan and account, a ring for its lead window, and every
+  rate-limit window (5-hour, weekly, monthly — whatever
+  the provider reports) as a tile with what is left and when it comes back.
+  Cost-backed windows also show the amount used and the period cap.
+
+Every meter counts **down** — rings, bars and numbers all show what remains,
+the way each provider states its own limits. Each provider’s headline uses its
+most restrictive subscription window: a full five-hour allowance cannot hide an
+exhausted weekly allowance. The navigation rail percentage averages those same
+provider figures, counting each provider once. Providers no longer stack down the
+page: adding one adds a list row, and a pool's accounts live in that provider's
+pane rather than stretching the whole section.
+
+A provider bb ships stays listed even when it is not installed, because that is
+real news; a plugin-supplied provider such as Muse Code appears only once its
+plugin is installed.
+
+On the primary machine, Codex adds purchased-credit balance, banked reset count
+and expiry, model-specific limit buckets, and any on-demand spend control the
+Codex backend reports. Claude adds the same banked-reset row: saved grant
+resets plus the unused weekly session reset (1/week) when Anthropic reports
+them.
+
+Muse Code shows its plan's own 5-hour and weekly limits — Meta's percentages
+and reset times, as Muse Code 1.4 reports them with every model response — once
+the Muse Code provider plugin (0.16 or later) has seen one Muse turn on that
+machine. Before that first turn the row shows the account without a meter. Its
+lead window counts toward the totals and the rail badge like any other
+provider's.
+
+Google Antigravity appears when `acp-antigravity` is registered in BB. On the
+primary machine, the panel reads `agy -p /usage --output-format json`, a
+read-only command that spends no model tokens. It shows Google's five-hour
+and weekly limits separately for Gemini and Claude/GPT models, with reset
+times. The CLI manages its own login and refresh; the plugin never reads or
+stores credentials. Missing quota values remain unknown. Remote machines need
+their own quota collector and never borrow the primary machine's login.
+
+**Pooled accounts.** With routing enabled, each account shows the quota and
+availability reported by `bb pool status --json`. Pool observations remain
+separate from the machine's local login: a matching email or user UUID does
+not prove that two credentials share the same quota tier. Local credit balances
+and banked resets are not assigned to pool accounts without verified credential
+identity. The separate **Local login** section shows those credentials' quota
+and extras without changing the pool meters or the overview totals.
+
+The provider gauge shows an eligible account's tightest window. When every
+account is unavailable, the gauge is hidden and the panel says so. Quota
+observations from an account with an authentication error are hidden because
+its credentials can no longer refresh them. Temporary holds and extra-usage
+fallbacks are explained in the account details. Availability is the pool's
+account-level state; a selected model can have additional limits.
+
+Overview totals use pooled observations for routed providers, including the
+tightest window and next reset. Blocked pools contribute zero to the overall
+remaining figure. Providers with routing disabled keep their local-login
+meters. Account reads do not expose or modify stored credentials.
+
+**Token usage, for every provider.** A 7 / 30 / 90-day multi-series chart of
+real token volume, broken out into total, uncached input, output, and cached,
+per provider. Total follows the provider's canonical count where one is
+available and includes cached input; the cached field is also retained as a
+breakdown. Cursor's ACP stores do not include token counters, so its series is
+estimated from the recorded conversation text. The data reads from two tiers:
+
+- **Transcript scanners** for the agents that keep detailed local records —
+  Codex (`~/.codex`, or `$CODEX_HOME`), Claude Code (`~/.claude`, or
+  `$CLAUDE_CONFIG_DIR`), Cursor's ACP session stores, opencode
+  (`~/.local/share/opencode`, or `$XDG_DATA_HOME/opencode`), and Muse Code
+  (`~/.local/share/muse`, or `$MUSE_HOME`/`$XDG_DATA_HOME`). These give full
+  history and exact per-day attribution, back to before you installed BB.
+- **BB's own usage events** for everything else. As soon as a provider emits
+  `thread/tokenUsage/updated`, an agent this plugin has never heard of — a new
+  ACP agent, one you wrote yourself — lands in the chart automatically, with a
+  name and a colour of its own. No release here required.
+
+Providers with a dedicated scanner are excluded from the second tier, so
+nothing is counted twice.
+
+**Multi-machine.** If you have more than one host paired, a machine picker
+switches the whole view between them.
+
+It also contributes a homepage section, and its icon in the navigation rail
+carries the overall remaining percentage as a small badge (muted, then red at
+30% left, then a filled red pill at 10%), so it follows you around without
+opening the panel.
+
+## Install
+
+From the BB marketplace:
+
+```bash
+bb plugin install provider-usage
+```
+
+Or from a local checkout:
+
+```bash
+git clone https://github.com/braedonsaunders/bb-plugin-provider-usage.git
+cd bb-plugin-provider-usage
+npm install --include=dev
+bb plugin install . --yes
+```
+
+Open **Usage** from the navigation rail.
+
+## CLI
+
+```bash
+bb usage                          # remaining quota, plans, reset windows
+bb usage --json                   # same, machine-readable
+bb usage live                     # what is being burned right now, by thread
+bb usage tokens --days 30         # global token volume across providers
+bb usage --machine <id-or-name>   # read another paired host
+```
+
+Agents get the same data through the bundled `usage` skill, which is how a
+long-running thread can decide whether to keep going or wait for a reset.
+
+## How it works
+
+Subscription windows come from BB's own `system.usageLimits` for each signed-in
+provider. On the primary machine, a read-only `codex app-server` request fills
+in newer Codex fields that BB's provider-neutral schema does not yet carry, and
+a single cached Claude OAuth usage read lifts banked-reset programs BB's
+windows omit. Both use the existing provider sign-in and never read, store, or
+return auth tokens. If the installed CLI or endpoint does not support the
+request, the panel silently falls back to BB's regular windows.
+
+Muse Code's windows need no extra read here: the Muse Code provider plugin keeps
+the newest `usage/changed` reading its `muse serve` hosts receive and hands it
+to `system.usageLimits` like any first-party provider. Muse has no request that
+reads the meters without spending quota, so the reading is as of the last Muse
+turn on that machine; a window whose reset has since passed is shown as
+unspent rather than as its old number.
+
+The on-demand amount shown here is a provider-reported spend-control period. It
+is separate from organization-wide OpenAI Platform API billing. Exact Platform
+API spend comes from OpenAI's Costs API and requires an organization admin key;
+this plugin does not ask for or store one.
+
+Token totals come from a background `token-scan` service that walks local
+transcript files, caches per-file results in the plugin's SQLite database, and
+re-syncs every 15 minutes. Only sources whose size or mtime changed are re-read,
+so a large history stays cheap. Nothing is uploaded anywhere.
+
+That per-file cache is also the ledger. Transcripts are evidence of usage, not
+the record of it: Codex prunes old rollouts, BB removes a worktree's thread
+files, a session gets cleared. A file that leaves disk keeps the days it already
+contributed until those days age out of the 90-day window, so the chart never
+revises history downwards for work that really happened. Claude responses are
+still deduplicated by message id across live and retained files, so a fragment
+that replays a response cannot count it twice.
+
+The same pass asks BB for `thread/tokenUsage/updated` on any thread whose
+provider has no dedicated scanner. Those events carry the thread's *running*
+total rather than the turn's, so consecutive events are differenced; a total
+that goes backwards means the thread was compacted or restarted upstream and is
+read as a fresh total rather than a negative one.
+
+Live throughput is a separate, deliberately different path: a
+`throughput-scan` service follows `thread/tokenUsage/updated` for every provider
+that emits it, polling every two seconds while a thread is working and every ten
+when none is. Some ACP bridges currently omit that event. For BB-launched
+opencode and Cursor sessions, a local fallback resolves BB's persisted
+`thread/identity` to the matching provider session and reads only that session's
+store. Native events always win, so the two paths never count the same thread.
+Work run outside BB, such as an agent CLI in a bare terminal, remains excluded.
+
+Attribution is the subtle part. Those events carry the thread's *running* total,
+so consecutive events are differenced. The first event seen for a thread has
+nothing to difference against, and providers report it very differently: BB's
+Claude Code bridge has been seen emitting a single event whose running total is
+98.7M and whose `last` is 55.9M — usage since the session resumed, hours of it,
+not one step. Charting either figure raw drops tens of millions of tokens onto
+one instant. So a thread's first event is charted only when the thread itself is
+younger than the window, because then its whole history is inside the window by
+definition; otherwise it becomes the baseline and every event after it
+differences correctly. The cost is one uncharted turn per thread when the
+service starts.
+
+The two charts share one palette, seated per provider rather than per rank, so a
+provider is the same colour in both and keeps that colour as other series come
+and go. The slots are checked rather than eyeballed: each sits in its mode's
+lightness band, clears the chroma floor, holds 3:1 against the surface, and keeps
+neighbouring slots apart under simulated protanopia and deuteranopia.
+
+A caveat worth stating plainly: the event fallback only sees what a provider
+actually reports. Providers that neither emit `thread/tokenUsage/updated` nor
+have a supported local store will show subscription windows but no token
+series, and some agents (Factory Droid, Hermes) keep no usable per-turn token
+record on disk at all.
+
+## Develop
+
+```bash
+npm install --include=dev
+bb plugin install .
+bb plugin dev
+```
+
+## Upgrading from `bb-plugin-dashboard`
+
+This plugin was previously called `dashboard` and its CLI was `bb dashboard`.
+The panel, data, and layout are unchanged — the id is now `provider-usage` and
+the command is `bb usage`. If you installed the old one from a path, remove it
+before installing this one:
+
+```bash
+bb plugin remove dashboard
+bb plugin install provider-usage
+```
+
+To keep your token history, copy the old plugin's database across before
+installing:
+
+```bash
+cp ~/.bb/plugins/dashboard/data.db ~/.bb/plugins/provider-usage/data.db
+```
+
+It is not the same plugin as the marketplace's `usage`, `usage-page`, or
+`usage-tracker` entries, which track token spend and estimated API cost. This
+one leads with **remaining plan quota and reset windows**, and reads token
+volume off local transcripts rather than pricing it.
+
+## Licence
+
+MIT © Braedon Saunders

@@ -1,0 +1,169 @@
+/** Общие типы UI SQL-плагина. */
+export type AccessMode = "readonly" | "readwrite";
+
+export type PublicConnection = {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  ssl: boolean;
+  sslCaPath: string | null;
+  sslCertPath: string | null;
+  sslKeyPath: string | null;
+  accessMode: AccessMode;
+  agentWrite: boolean;
+  allowDdl: boolean;
+  /** Показывать все БД сервера в дереве (не только connection.database). */
+  showAllDatabases: boolean;
+  hasPassword: boolean;
+  createdAt: string;
+};
+
+/** Элемент списка connections с флагом живого пула. */
+export type ConnectionListItem = PublicConnection & {
+  connected: boolean;
+};
+
+export type ConnStatus = "idle" | "disconnected" | "checking" | "online" | "offline";
+
+/** Режим сортировки списка подключений. */
+export type ConnectionSortMode = "asc" | "desc" | "free";
+
+/** Через сколько мс красный offline снова становится серым. */
+export const OFFLINE_FADE_MS = 30_000;
+
+export type ConnectionStatusEntry = {
+  status: ConnStatus;
+  error: string | null;
+  /** Когда статус стал offline — для автосброса в серый. */
+  offlineAt?: number;
+};
+
+export function makeStatusEntry(
+  status: ConnStatus,
+  error: string | null = null,
+): ConnectionStatusEntry {
+  return {
+    status,
+    error,
+    offlineAt: status === "offline" ? Date.now() : undefined,
+  };
+}
+
+export function mergeConnectionStatuses(
+  prev: Record<string, ConnectionStatusEntry>,
+  items: ConnectionListItem[],
+): Record<string, ConnectionStatusEntry> {
+  const next = { ...prev };
+  for (const item of items) {
+    if (item.connected) {
+      next[item.id] = makeStatusEntry("online");
+      continue;
+    }
+    const current = next[item.id];
+    if (
+      !current ||
+      current.status === "online" ||
+      current.status === "checking"
+    ) {
+      next[item.id] = makeStatusEntry("disconnected");
+    }
+  }
+  return next;
+}
+
+export function connectionStatusFromMap(
+  statusById: Record<string, ConnectionStatusEntry>,
+  connectionId: string,
+): ConnStatus {
+  return statusById[connectionId]?.status ?? "disconnected";
+}
+
+export function connectionErrorFromMap(
+  statusById: Record<string, ConnectionStatusEntry>,
+  connectionId: string,
+): string | null {
+  return statusById[connectionId]?.error ?? null;
+}
+
+export type QueryResult = {
+  columns: string[];
+  rows: Record<string, unknown>[];
+  rowCount: number;
+  durationMs: number;
+  truncated: boolean;
+};
+
+export type ConnectionForm = {
+  name: string;
+  host: string;
+  port: string;
+  database: string;
+  user: string;
+  password: string;
+  ssl: boolean;
+  sslCaPath: string;
+  sslCertPath: string;
+  sslKeyPath: string;
+  /** Default readwrite (Read-only off). */
+  accessMode: AccessMode;
+  /** Default on — агент может писать. */
+  agentWrite: boolean;
+  /** Default on — CREATE/ALTER/DROP/…. */
+  allowDdl: boolean;
+  /** Default on — дерево всех БД на сервере. */
+  showAllDatabases: boolean;
+  /** Временное поле: paste URI (не сохраняется). */
+  uriPaste: string;
+};
+
+export type ResultTab = {
+  id: string;
+  title: string;
+  sql: string;
+  connectionName: string;
+  result: QueryResult;
+  createdAt: number;
+};
+
+export type HistoryItem = {
+  id: string;
+  connectionId: string;
+  connectionName: string;
+  sql: string;
+  createdAt: string;
+};
+
+export type BookmarkItem = {
+  id: string;
+  title: string;
+  sql: string;
+  connectionId: string | null;
+  createdAt: string;
+};
+
+export function emptyForm(): ConnectionForm {
+  return {
+    name: "",
+    host: "localhost",
+    port: "5432",
+    database: "postgres",
+    user: "postgres",
+    password: "",
+    ssl: false,
+    sslCaPath: "",
+    sslCertPath: "",
+    sslKeyPath: "",
+    accessMode: "readwrite",
+    agentWrite: true,
+    allowDdl: true,
+    showAllDatabases: true,
+    uriPaste: "",
+  };
+}
+
+export function quoteIdent(ident: string): string {
+  return `"${ident.replaceAll('"', '""')}"`;
+}

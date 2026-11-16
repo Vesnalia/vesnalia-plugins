@@ -1,0 +1,154 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { DARWIN_PS, PORTABLE_PS, attributeThreads, groupByThread, readProcesses } from "../lib/procs.ts";
+import { createSampler } from "../lib/sample.ts";
+import { readKillRows } from "../lib/kill.ts";
+
+const LINUX_PS = [
+  "    1     0  0.0  1000 /sbin/init",
+  "  200     1 12.5  1000 /usr/bin/node /home/me/.local/bin/claude --verbose",
+  "  300   200 80.0  1000 node /repo/node_modules/.bin/tsc PWD=/not/env",
+  "  400     1  9.0  1000 node /home/me/.bb/worktrees/thr_bbbbbbbbbb-2/app/server.js",
+  "  500     1 30.0  1000 grep thr_cccccccccc",
+].join("\n");
+
+/** `/proc/<pid>/stat` for pid 200 only: 250 + 50 ticks of CPU, started at tick 4242. */
+const STATS = {
+  200: `200 (claude code) S 1 ${Array.from({ length: 9 }, () => "0").join(" ")} 250 50 ${Array.from({ length: 6 }, () => "0").join(" ")} 4242 0`,
+};
+
+const ENVIRONS = {
+  200: "HOME=/home/me\0PWD=/home/me/.bb/workspaces/thr_dddddddddd\0BB_THREAD_ID=thr_aaaaaaaaaa\0",
+};
+
+/** Memory is read from a fixed /proc/meminfo, so no test depends on the host. */
+const linuxMemory = {
+  platform: "linux",
+  exec: async () => "",
+  readFile: async () => "MemTotal: 1000000 kB\nMemAvailable: 400000 kB",
+};
+
+function linuxSource(overrides = {}) {
+  const commands = [];
+  return {
+    commands,
+    source: {
+      platform: "linux",
+      async exec(command) {
+        commands.push(command);
+        return LINUX_PS;
+      },
+      async readEnviron(pid) {
+        return ENVIRONS[pid] ?? null;
+      },
+      async readStat(pid) {
+        return STATS[pid] ?? null;
+      },
+      ...overrides,
+    },
+  };
+}
+
+test("off macOS, ps runs without -E and the thread comes from /proc environ", async () => {
+  const { source, commands } = linuxSource();
+  const rows = await readProcesses(source);
+  assert.deepEqual(commands, [PORTABLE_PS]);
+  assert.ok(!/\s-\w*E/.test(PORTABLE_PS) && /\s-\w*E/.test(DARWIN_PS));
+
+  const byPid = Object.fromEntries(rows.map((row) => [row.pid, row]));
+  assert.equal(byPid[200].threadId, "thr_aaaaaaaaaa");
+  assert.equal(byPid[200].name, "node");
+  assert.equal(byPid[400].threadId, "thr_bbbbbbbbbb");
+  assert.equal(byPid[500].threadId, null);
+  // CPU time comes from /proc/<pid>/stat; an unreadable stat leaves it unknown, and the row keeps ps pcpu.
+  assert.equal(byPid[200].cpuMs, 3_000);
+  assert.equal(byPid[200].key, "200@4242");
+  assert.equal(byPid[300].cpuMs, null);
+  assert.equal(byPid[300].key, null);
+
+  const threads = groupByThread(rows, attributeThreads(rows));
+  assert.deepEqual(
+    threads.map((entry) => [entry.threadId, entry.cpuPercent]),
+    [["thr_aaaaaaaaaa", 92.5], ["thr_bbbbbbbbbb", 9]],
+  );
+});
+
+test("when ps fails, a sample is still stored with kernel CPU and no threads", async () => {
+  const errors = [];
+  const { source } = linuxSource({
+    async exec() {
+      throw new Error("ps: command not found");
+    },
+  });
+  const takeReading = createSampler({
+    processes: source,
+    thermal: async () => null,
+    memory: linuxMemory,
+    onProcessError: (error) => errors.push(error.message),
+  });
+  const { live: sample } = await takeReading(123, { store: false });
+  assert.equal(sample.at, 123);
+  assert.equal(sample.thermal, null);
+  assert.deepEqual(sample.threads, []);
+  assert.deepEqual(sample.procs, []);
+  assert.ok(sample.cpu >= 0 && sample.cpu <= 100);
+  assert.deepEqual(errors, ["ps: command not found"]);
+});
+
+test("a Linux sample ranks threads found through /proc", async () => {
+  const { source } = linuxSource();
+  const takeReading = createSampler({ processes: source, thermal: async () => null, memory: linuxMemory });
+  const { stored: sample } = await takeReading(1, { store: true });
+  assert.equal(sample.memory?.percent, 60);
+  assert.deepEqual(sample.threads.map((entry) => entry.memBytes), [2 * 1000 * 1024, 1000 * 1024]);
+  assert.deepEqual(sample.threads.map((entry) => entry.threadId), ["thr_aaaaaaaaaa", "thr_bbbbbbbbbb"]);
+  assert.deepEqual(sample.procs.map((entry) => entry.pid), [500]);
+});
+
+test("on Linux the drill-down's process key and the kill table's are the same", async () => {
+  const drill = await readProcesses(linuxSource().source);
+  // The kill `ps` prints uid, tty and lstart too; the key must not come from lstart.
+  const killPs = "  200     1  1000 ?        12.5 Mon Sep 28 14:04:23 2026 /usr/bin/node /home/me/.local/bin/claude --verbose";
+  const kill = await readKillRows({ ...linuxSource().source, exec: async () => killPs });
+  assert.equal(drill.find((row) => row.pid === 200).key, "200@4242");
+  assert.equal(kill[0].key, "200@4242");
+});
+
+test("a Linux source without /proc stat still samples, on ps pcpu alone", async () => {
+  const { source } = linuxSource();
+  delete source.readStat;
+  let now = 0;
+  const takeReading = createSampler({
+    processes: source,
+    thermal: async () => null,
+    memory: linuxMemory,
+    cores: 1,
+    clock: () => (now += 2_000),
+  });
+  await takeReading(1, { store: false });
+  const { live } = await takeReading(2, { store: false });
+  assert.deepEqual(live.threads.map((entry) => [entry.threadId, entry.cpu]), [["thr_aaaaaaaaaa", 92.5], ["thr_bbbbbbbbbb", 9]]);
+});
+
+test("a process whose /proc stat was unreadable at the baseline is not counted from zero later", async () => {
+  let statReadable = false;
+  const { source } = linuxSource({
+    async readStat(pid) {
+      return statReadable ? (STATS[pid] ?? null) : null;
+    },
+  });
+  let now = 0;
+  const takeReading = createSampler({
+    processes: source,
+    thermal: async () => null,
+    memory: linuxMemory,
+    cores: 1,
+    clock: () => (now += 2_000),
+  });
+  await takeReading(1, { store: false });
+  await takeReading(2, { store: false });
+  statReadable = true;
+  // pid 200 now shows 3 s of CPU time, all of it from before; ps's 12.5 (plus its child's 80) stands.
+  const { live } = await takeReading(3, { store: false });
+  assert.deepEqual(live.threads.map((entry) => [entry.threadId, entry.cpu]), [["thr_aaaaaaaaaa", 92.5], ["thr_bbbbbbbbbb", 9]]);
+});

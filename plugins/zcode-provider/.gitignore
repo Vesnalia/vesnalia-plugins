@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+logs/
+.local/
+recordings/raw/
+traces/raw/
+.zcode/
+.zcodex/
+__pycache__/
+node-compile-cache/

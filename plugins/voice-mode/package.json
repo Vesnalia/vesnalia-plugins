@@ -1,0 +1,51 @@
+{
+  "name": "bb-plugin-voice-mode",
+  "version": "0.1.15",
+  "type": "module",
+  "private": true,
+  "description": "Talk to a bb thread hands-free: full-duplex, interruptible realtime voice that hands work to the thread's agent.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/steveafrost/bb-plugin-voice-mode.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "bb": ">=0.46",
+    "bbPluginSdk": ">=0.6.49"
+  },
+  "bb": {
+    "name": "Voice Mode",
+    "description": "Start a hands-free voice chat from an empty composer. The voice model hands work to the thread's agent and tells you when it's done; talk over it any time to interrupt.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "./skills/voice-mode"
+    ]
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.49",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.11.1",
+    "cron-parser": "^5.10.2",
+    "hono": "^4.13.13",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.11"
+  },
+  "keywords": [
+    "bb-plugin"
+  ],
+  "scripts": {
+    "build": "bb plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}

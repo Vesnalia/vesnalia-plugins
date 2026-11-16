@@ -1,0 +1,22 @@
+{
+  "cardId": "thr_ship_release",
+  "hoverReveal": {
+    "opacity": "1",
+    "inHeaderLeft": true,
+    "titleWidthIdle": 220,
+    "titleWidthHover": 220
+  },
+  "armed": {
+    "armed": true,
+    "tag": "Mark Done",
+    "titleWidthArmed": 220
+  },
+  "done": {
+    "cardInDoneLane": true,
+    "doneCardCheckboxGlyph": "CheckboxChecked"
+  },
+  "doneArmed": {
+    "armed": true,
+    "tag": "Mark Not Done"
+  }
+}

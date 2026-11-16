@@ -1,0 +1,20 @@
+node_modules
+.DS_Store
+.bb/chats/
+*.pyc
+__pycache__/
+dist
+AGENTS.md
+
+# Machine-local account/verification material is not part of the source repo.
+docs/verification/
+.env
+.env.*
+!.env.example
+credentials.json
+remote-link.txt
+*.tgz
+.repowise/
+.ci-zcode-acp/
+docs/.vitepress/cache/
+docs/.vitepress/dist/

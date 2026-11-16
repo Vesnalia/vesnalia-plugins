@@ -1,0 +1,825 @@
+/* Git worktree — a review-panel layout (status bar tinted by state with the next action,
+   pill tabs, dense file rows: folder › name, +/− lines, status square) built on the
+   Sidebar Plus / Beautiful Chat system: host theme variables only, 8px controls,
+   row actions revealed on hover or keyboard focus, explicit transitions. */
+
+.gp-panel {
+  --gp-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --gp-line: color-mix(in oklch, var(--ink) 11%, transparent);
+  --gp-fill: color-mix(in oklch, var(--ink) 7%, transparent);
+  --gp-mono: ui-monospace, "SF Mono", monospace;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.gp-panel button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.gp-panel button:disabled {
+  cursor: default;
+}
+
+/* ── Shared controls ─────────────────────────────────────────────────────────── */
+.gp-icon-button,
+.gp-text-button,
+.gp-tool,
+.gp-tab,
+.gp-bar-action,
+.gp-branch-trigger {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease,
+    transform 150ms var(--gp-ease-out);
+}
+.gp-icon-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+}
+.gp-text-button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+}
+.gp-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-icon-button:not(:disabled):hover,
+  .gp-text-button:not(:disabled):hover,
+  .gp-tool:not(:disabled):hover,
+  .gp-branch-trigger:not(:disabled):hover {
+    background-color: var(--state-hover);
+    color: var(--foreground);
+    transition-duration: 0ms;
+  }
+}
+.gp-icon-button:not(:disabled):active,
+.gp-tool:not(:disabled):active,
+.gp-text-button:not(:disabled):active {
+  transform: scale(0.96);
+}
+/* The wide action presses down rather than shrinking. */
+.gp-bar-action:not(:disabled):active {
+  transform: translateY(1px);
+}
+.gp-icon-button:disabled,
+.gp-text-button:disabled,
+.gp-tool:disabled,
+.gp-bar-action:disabled {
+  opacity: 0.45;
+}
+.gp-icon-button:focus-visible,
+.gp-text-button:focus-visible,
+.gp-tool:focus-visible,
+.gp-tab:focus-visible,
+.gp-bar-action:focus-visible,
+.gp-branch-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* ── Status bar: a flat wash of the state colour, one accent for heading + action ──
+   Commit (success) uses #4AA052 on #1F3827 in dark themes and a pale wash with a
+   deeper green in light ones. Push and pull build the same pair from the theme's
+   accent and warning (blended in oklab so the hue stays true). Padding matches the
+   tab row below so the pill and button line up with the tabs and tools. */
+.gp-bar {
+  --gp-tone: var(--muted-foreground);
+  --gp-wash: transparent;
+  --gp-heading: var(--muted-foreground);
+  --gp-on-action: var(--foreground);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 9px 8px;
+  border-bottom: 1px solid color-mix(in oklab, var(--gp-tone) 24%, var(--gp-wash));
+  background-color: var(--gp-wash);
+  transition:
+    background-color 300ms var(--gp-ease-out),
+    border-color 300ms var(--gp-ease-out);
+}
+.gp-bar[data-tone="success"] {
+  --gp-tone: light-dark(#3a8a42, #4aa052);
+  --gp-wash: light-dark(color-mix(in oklab, #4aa052 12%, var(--background)), #1f3827);
+  --gp-heading: var(--gp-tone);
+  --gp-on-action: #fff;
+}
+/* No state colour to speak of, but it keeps the wash and the dots so the bar reads
+   as the same component in every state. */
+.gp-bar[data-tone="muted"] {
+  --gp-tone: var(--muted-foreground);
+  --gp-wash: color-mix(in oklab, var(--foreground) 5%, var(--background));
+}
+.gp-bar[data-tone="accent"] {
+  --gp-tone: var(--timeline-accent, var(--foreground));
+  --gp-wash: color-mix(in oklab, var(--gp-tone) 16%, var(--background));
+  --gp-heading: var(--gp-tone);
+  --gp-on-action: color-mix(in oklab, var(--gp-tone) 22%, black);
+}
+.gp-bar[data-tone="warning"] {
+  --gp-tone: var(--warning);
+  --gp-wash: color-mix(in oklab, var(--gp-tone) 16%, var(--background));
+  --gp-heading: var(--gp-tone);
+  --gp-on-action: color-mix(in oklab, var(--gp-tone) 22%, black);
+}
+/* A faint dot grid in the state colour, fading in from the right behind the action. */
+.gp-bar::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: radial-gradient(circle, color-mix(in oklab, var(--gp-tone) 45%, transparent) 0.75px, transparent 1.1px);
+  background-size: 6px 6px;
+  -webkit-mask-image: linear-gradient(to left, black, transparent 55%);
+  mask-image: linear-gradient(to left, black, transparent 55%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.gp-bar-status {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--gp-heading);
+  font-weight: 400;
+  line-height: 20px;
+  white-space: nowrap;
+}
+/* With no action to offer, the status takes the button's place at the right end. */
+.gp-bar-status[data-end] {
+  justify-content: flex-end;
+}
+.gp-bar-label {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+
+/* Primary action: a solid fill in the state colour. Its four faces (idle, pending,
+   success, error) sit in one grid cell, so the button is as wide as the longest of
+   them and never resizes as it works; only the faces crossfade. */
+.gp-panel .gp-bar-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 9px 0 8px;
+  border-radius: 8px;
+  background-color: var(--gp-tone);
+  color: var(--gp-on-action);
+  font-weight: 400;
+}
+.gp-faces {
+  display: grid;
+  place-items: center;
+}
+.gp-face {
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+  gap: 5px;
+  opacity: 0;
+  filter: blur(3px);
+  transform: translateY(3px);
+  transition:
+    opacity 180ms var(--gp-ease-out),
+    filter 180ms var(--gp-ease-out),
+    transform 180ms var(--gp-ease-out);
+  white-space: nowrap;
+}
+.gp-face[data-show] {
+  opacity: 1;
+  filter: blur(0);
+  transform: none;
+}
+/* No state colour to lend: a plain secondary control. */
+.gp-panel .gp-bar[data-tone="muted"] .gp-bar-action {
+  background-color: var(--gp-fill);
+  box-shadow: inset 0 0 0 1px var(--gp-line);
+  color: var(--foreground);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-panel .gp-bar:not([data-tone="muted"]) .gp-bar-action:not(:disabled):hover {
+    background-color: color-mix(in oklab, var(--gp-tone) 88%, white);
+  }
+  .gp-panel .gp-bar[data-tone="muted"] .gp-bar-action:not(:disabled):hover {
+    background-color: var(--state-hover);
+  }
+}
+
+/* The branch pill on a wash: a tinted hairline, and the name in the state colour so
+   it reads as one line with the status beside it. */
+.gp-panel .gp-bar:not([data-tone="muted"]) .gp-branch-trigger {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--gp-tone) 40%, transparent);
+  color: var(--gp-heading);
+}
+.gp-bar:not([data-tone="muted"]) .gp-branch-icon,
+.gp-bar:not([data-tone="muted"]) .gp-branch-chevron {
+  color: color-mix(in oklab, var(--gp-heading) 75%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-panel .gp-bar:not([data-tone="muted"]) .gp-branch-trigger:not(:disabled):hover {
+    background-color: color-mix(in oklab, var(--gp-tone) 14%, transparent);
+    color: var(--gp-heading);
+  }
+}
+
+/* ── Branch pill and picker (Local | Remote over a compact list) ─────────────── */
+.gp-branch-picker {
+  position: relative;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 55%;
+}
+.gp-panel .gp-branch-trigger {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px 0 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--gp-line);
+  color: var(--foreground);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.gp-branch {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gp-branch-icon,
+.gp-branch-chevron {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+.gp-branch-chevron {
+  transition: transform 150ms var(--gp-ease-out);
+}
+.gp-branch-trigger[aria-expanded="true"] .gp-branch-chevron {
+  transform: rotate(180deg);
+}
+.gp-branch-menu {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(300px, calc(100vw - 32px));
+  overflow: hidden;
+  border-radius: 10px;
+  background-color: var(--popover);
+  color: var(--foreground);
+  box-shadow:
+    0 0 0 1px var(--gp-line),
+    0 12px 28px -8px color-mix(in oklch, black 40%, transparent),
+    0 2px 6px color-mix(in oklch, black 14%, transparent);
+  transform-origin: top left;
+  transition:
+    opacity 150ms var(--gp-ease-out),
+    transform 150ms var(--gp-ease-out);
+}
+@starting-style {
+  .gp-branch-menu {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+.gp-branch-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 32px;
+  padding: 0 6px 0 10px;
+  border-bottom: 1px solid var(--gp-line);
+}
+.gp-branch-tabs {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 13px;
+}
+.gp-branch-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  transition: color 150ms ease;
+}
+.gp-branch-tab + .gp-branch-tab::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: -7px;
+  width: 1px;
+  background-color: var(--gp-line);
+}
+.gp-branch-tab[aria-selected="true"] {
+  color: var(--foreground);
+  font-weight: 500;
+}
+.gp-branch-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1.5px;
+  border-radius: 1px;
+  background-color: var(--foreground);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-branch-tab:hover {
+    color: var(--foreground);
+    transition-duration: 0ms;
+  }
+}
+.gp-branch-tab-count {
+  color: var(--subtle-foreground);
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+/* Search: an icon that opens into a field. The button rides `right` from the edge
+   to the left of the track while the field widens behind it — no JS measurement. */
+.gp-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+}
+.gp-search-trigger {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  transition:
+    right 260ms var(--gp-ease-out),
+    opacity 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+/* Stacked right to left: search at the edge, then new-branch, then rename. */
+.gp-search-trigger[data-mode="create"] {
+  right: 30px;
+}
+.gp-search-trigger[data-mode="rename"] {
+  right: 60px;
+}
+.gp-search-trigger:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.gp-search[data-open] .gp-search-trigger[data-active] {
+  right: calc(100% - 24px);
+  pointer-events: none;
+}
+.gp-search[data-open] .gp-search-trigger:not([data-active]) {
+  opacity: 0;
+  pointer-events: none;
+}
+/* The open field starts right of the icon, whichever one opened it. */
+.gp-search[data-open] .gp-branch-search {
+  padding-left: 30px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-search-trigger:hover {
+    background-color: var(--state-hover);
+    color: var(--foreground);
+    transition-duration: 260ms, 150ms, 0ms, 0ms;
+  }
+}
+.gp-search-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.gp-branch-search {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--foreground);
+  padding: 0 8px 0 26px;
+  font: inherit;
+  font-size: 12px;
+  opacity: 0;
+  outline: none;
+  transition:
+    width 260ms var(--gp-ease-out),
+    background-color 150ms ease,
+    opacity 120ms ease;
+}
+.gp-search[data-open] .gp-branch-search {
+  width: 100%;
+  background-color: var(--gp-fill);
+  opacity: 1;
+}
+.gp-branch-search::placeholder {
+  color: var(--subtle-foreground);
+}
+.gp-branch-options {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+}
+/* Just the name, with the short sha pinned to the right edge so that column stays
+   straight however long the names are. */
+.gp-panel .gp-branch-option {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 6px minmax(0, 1fr) 7ch;
+  align-items: center;
+  column-gap: 8px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--foreground);
+  font-size: 12px;
+  text-align: left;
+  transition: background-color 150ms ease;
+}
+.gp-panel .gp-branch-option[data-current] {
+  background-color: color-mix(in oklab, var(--success, var(--foreground)) 10%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-panel .gp-branch-option:hover {
+    background-color: var(--state-hover);
+    transition-duration: 0ms;
+  }
+}
+.gp-panel .gp-branch-option:focus-visible {
+  background-color: var(--state-hover);
+  box-shadow: inset 0 0 0 1px var(--ring);
+  outline: none;
+}
+/* The checked-out branch is marked with a dot rather than an asterisk. */
+.gp-branch-option[data-current] .gp-branch-marker {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--success, var(--foreground));
+}
+.gp-branch-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gp-branch-option[data-current] .gp-branch-name {
+  font-weight: 500;
+}
+.gp-branch-remote {
+  color: var(--subtle-foreground);
+  font-weight: 400;
+}
+.gp-branch-sha {
+  color: var(--subtle-foreground);
+  font-family: var(--gp-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.gp-branch-empty {
+  padding: 6px 8px;
+  color: var(--subtle-foreground);
+  font-size: 12px;
+}
+
+/* ── Pill tabs and tools ─────────────────────────────────────────────────────── */
+.gp-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 4px;
+}
+.gp-tablist {
+  display: flex;
+  min-width: 0;
+  gap: 2px;
+}
+.gp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+.gp-panel .gp-tab[aria-selected="true"] {
+  background-color: var(--gp-fill);
+  color: var(--foreground);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-tab[aria-selected="false"]:hover {
+    color: var(--foreground);
+    transition-duration: 0ms;
+  }
+}
+.gp-tab-count {
+  color: var(--subtle-foreground);
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.gp-tab[aria-selected="true"] .gp-tab-count {
+  color: var(--muted-foreground);
+}
+.gp-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+/* ── More menu: sync, undo last commit, stash, pop ───────────────────────────── */
+.gp-more {
+  position: relative;
+}
+.gp-menu {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 200px;
+  padding: 4px;
+  border-radius: 10px;
+  background-color: var(--popover);
+  box-shadow:
+    0 0 0 1px var(--gp-line),
+    0 12px 28px -8px color-mix(in oklch, black 40%, transparent),
+    0 2px 6px color-mix(in oklch, black 14%, transparent);
+  transform-origin: top right;
+  transition:
+    opacity 150ms var(--gp-ease-out),
+    transform 150ms var(--gp-ease-out);
+}
+@starting-style {
+  .gp-menu {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+.gp-panel .gp-menu-item {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--foreground);
+  font-size: 12.5px;
+  text-align: left;
+  transition: background-color 150ms ease;
+}
+.gp-menu-item > svg {
+  color: var(--muted-foreground);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-panel .gp-menu-item:not(:disabled):hover {
+    background-color: var(--state-hover);
+    transition-duration: 0ms;
+  }
+}
+.gp-panel .gp-menu-item:focus-visible {
+  background-color: var(--state-hover);
+  box-shadow: inset 0 0 0 1px var(--ring);
+  outline: none;
+}
+.gp-menu-item:disabled {
+  opacity: 0.45;
+}
+.gp-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background-color: var(--gp-line);
+}
+
+/* ── File rows: folder › name, +/− lines, action, status square ─────────────── */
+.gp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 8px 8px;
+}
+.gp-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gp-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 24px 13px;
+  align-items: center;
+  column-gap: 8px;
+  height: 32px;
+  padding: 0 8px 0 10px;
+  border-radius: 8px;
+  transition: background-color 150ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .gp-row:hover {
+    background-color: var(--state-hover);
+    transition-duration: 0ms;
+  }
+}
+.gp-row-path {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+/* The folder gives way first; the file name keeps its room. */
+.gp-dir {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--subtle-foreground);
+  text-overflow: ellipsis;
+}
+.gp-name {
+  flex: 0 0 auto;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gp-lines {
+  display: inline-flex;
+  gap: 6px;
+  font-family: var(--gp-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.gp-lines-added {
+  color: var(--success, var(--muted-foreground));
+}
+.gp-lines-removed {
+  color: var(--destructive, var(--muted-foreground));
+}
+
+/* Status square: dot = modified, plus = added/untracked, minus = deleted. */
+.gp-status-box {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1.25px currentColor;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: var(--muted-foreground);
+}
+.gp-status-box[data-tone="modified"] {
+  color: var(--warning, var(--muted-foreground));
+  background-image: radial-gradient(circle, currentColor 1.5px, transparent 2px);
+}
+.gp-status-box[data-tone="added"] {
+  color: var(--success, var(--muted-foreground));
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-size: 7px 1.25px, 1.25px 7px;
+}
+.gp-status-box[data-tone="deleted"] {
+  color: var(--destructive, var(--muted-foreground));
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 7px 1.25px;
+}
+.gp-status-box[data-tone="renamed"] {
+  color: var(--timeline-accent, var(--muted-foreground));
+  background-image: radial-gradient(circle, currentColor 1.5px, transparent 2px);
+}
+.gp-status-box[data-tone="conflict"] {
+  color: var(--destructive, var(--muted-foreground));
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-position: center 3px, center 8.5px;
+  background-size: 1.25px 4px, 1.25px 1.25px;
+}
+
+/* Row actions appear on hover or keyboard focus; always on touch. */
+.gp-reveal {
+  opacity: 0;
+}
+.gp-row:hover .gp-reveal,
+.gp-row:focus-within .gp-reveal,
+.gp-reveal[data-pending] {
+  opacity: 1;
+}
+@media (hover: none) {
+  .gp-reveal {
+    opacity: 1;
+  }
+}
+
+.gp-empty {
+  padding: 16px 10px;
+  color: var(--subtle-foreground);
+  font-size: 12.5px;
+}
+
+/* ── Loading and error states ────────────────────────────────────────────────── */
+.gp-state {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+.gp-state-icon {
+  color: var(--subtle-foreground);
+}
+.gp-state-text {
+  max-width: 260px;
+  text-wrap: pretty;
+}
+
+.gp-spin {
+  animation: gp-spin 1s linear infinite;
+}
+@keyframes gp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gp-bar {
+    transition: none;
+  }
+  .gp-spin {
+    animation: none;
+  }
+  .gp-icon-button:not(:disabled):active,
+  .gp-tool:not(:disabled):active,
+  .gp-text-button:not(:disabled):active,
+  .gp-bar-action:not(:disabled):active {
+    transform: none;
+  }
+  .gp-branch-menu,
+  .gp-menu,
+  .gp-branch-chevron,
+  .gp-search-trigger,
+  .gp-branch-search,
+  .gp-face {
+    transition: opacity 150ms ease;
+  }
+  .gp-face {
+    filter: none;
+    transform: none;
+  }
+  .gp-branch-trigger[aria-expanded="true"] .gp-branch-chevron {
+    transform: none;
+  }
+}

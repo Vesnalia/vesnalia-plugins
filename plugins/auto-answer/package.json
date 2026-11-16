@@ -1,0 +1,59 @@
+{
+  "name": "bb-plugin-auto-answer",
+  "version": "0.1.0",
+  "description": "Counts down after you pick an option in an agent question, then applies the answer and moves to the next question for you.",
+  "type": "module",
+  "license": "MIT",
+  "author": "VladPolet",
+  "homepage": "https://github.com/VladPolet/bb-plugin-auto-answer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VladPolet/bb-plugin-auto-answer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VladPolet/bb-plugin-auto-answer/issues"
+  },
+  "keywords": [
+    "bb-plugin",
+    "bb",
+    "questions",
+    "countdown",
+    "keyboard"
+  ],
+  "engines": {
+    "bb": ">=0.43",
+    "bbPluginSdk": ">=0.4.87"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "bb": {
+    "name": "Auto Answer",
+    "description": "Counts down after you pick an option in an agent question, then applies the answer and moves to the next question for you.",
+    "branding": {
+      "icon": "Clock"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.87",
+    "@testing-library/react": "^16.3.3",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.11.1",
+    "hono": "^4.13.7",
+    "jsdom": "^29.1.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.11"
+  }
+}

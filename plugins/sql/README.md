@@ -1,0 +1,109 @@
+# bb-plugin-sql
+
+SQLTools-style Postgres panel for [bb](https://get-bb.dev): manage connections,
+browse schemas/tables, and run SQL from a panel or agent tools.
+
+> **0.6 schema completion.** In the Query editor: type after `FROM`/`SELECT` or
+> Ctrl/Cmd+Space — tables/columns/keywords with personal ranking. Tab accepts;
+> Enter keeps a newline; Esc closes. After `FROM`/`JOIN`, accepting a table
+> inserts a short alias (`trade t`, `trade_role_person trp`).
+>
+> **0.6.1 query session.** Editor SQL and result tabs survive switching bb tabs
+> (restored from the plugin server session; SQL also survives plugin restart).
+>
+> **0.6.2 all databases.** Like DBeaver’s “Show all databases”: browse every DB
+> on the server (not only the connection’s default). New connections default to
+> Read-only **off**, Agent write **on**, Allow DDL **on**, Show all databases **on**.
+>
+> **0.5 controlled write.** Confirm before DML/DDL; DROP / DELETE / unsafe UPDATE
+> may require typing the table name. Admin statements (SET/VACUUM/…) stay blocked.
+
+## Install
+
+From a local checkout:
+
+```bash
+bb plugin install ~/code/9-Tools/bb-plugin-sql --yes && bb plugin reload sql
+```
+
+For live reload while developing:
+
+```bash
+cd ~/code/9-Tools/bb-plugin-sql && bb plugin install . --yes && bb plugin dev
+```
+
+Once published to GitHub (semver tags):
+
+```bash
+bb plugin install git:https://github.com/yazydzhi/bb-plugin-sql.git@^0.1.0
+```
+
+## Usage
+
+1. Open **SQL** in the left sidebar (connections + schema tree).
+2. **+ Add** a Postgres connection (name, host, port, database, user, password,
+   SSL; optional `postgresql://…` URI paste and CA/cert/key paths).
+3. Expand a schema; click a table to push `SELECT … LIMIT 100` into the **Query**
+   tab (right panel on the SQL page), or use ⋮ → **Show records** / **Describe**.
+4. In **Query** (sidebar fixed tab) or a thread’s **New tab → Actions → SQL**,
+   edit SQL and press **Run** or ⌘/Ctrl+Enter. With several statements separated
+   by `;`, the active one under the caret is highlighted; **Run** executes the
+   selection if any, otherwise that statement. A multi-statement selection runs
+   each statement sequentially (one result tab each). Placeholders like
+   `:name` open a parameter dialog before run (`::type` casts are left alone).
+   Use **History** to re-run past queries. **Open .sql…** loads a local file into
+   the editor (honors `-- @conn Name` if present).
+5. Open a `.sql` file via the **host** file flow (not the Files panel’s built-in
+   preview) — pick a connection in the SQL file toolbar, or put
+   `-- @conn ConnectionName` in the first lines as a default hint.
+
+Every query currently runs inside `BEGIN READ ONLY` with `statement_timeout`.
+Results are capped at 500 rows (configurable via the agent tool's `limit`).
+Writes fail until **0.5** (see roadmap).
+
+### Opening `.sql` files (File openers vs Files)
+
+**Settings → File openers → `.sql` → SQL** applies to **host** opens:
+
+- Markdown / chat file links → Open with / default opener
+- Files panel → **Open in SQL** or **Open with preferred…** (reopens via the host)
+
+Clicking a file inside **Actions → Files** still uses Files’ own text preview
+(download / copy). That panel does **not** mount this plugin’s `fileOpener`
+until you use one of the actions above (or open the file outside Files).
+
+Setup checklist:
+
+1. Install and enable this plugin (`sql`).
+2. In **Settings → File openers**, set `.sql` to **SQL (sql)**.
+3. From Files: open a `.sql` file → toolbar **Open in SQL** (or context menu).
+4. Or from **SQL → Query**: **Open .sql…** to load a file into the editor.
+
+### Agent tools
+
+- `sql_list_connections` — discover configured connection names/ids.
+- `sql_query` — `{ connection, sql, limit? }` → text table. DML needs **Agent
+  write**; DDL also needs **Allow DDL** (both default off). Admin always blocked.
+
+## Security notes
+
+- Prefer a **SELECT-only** Postgres role for plugin connections (no `INSERT` /
+  `UPDATE` / `DELETE` / DDL grants). The plugin enforces `BEGIN READ ONLY`, but
+  a least-privilege DB role is still the right default.
+- Passwords are stored in a **0600** file at
+  `<dataDir>/plugins/sql/secrets/passwords.json` — **not** in SQLite and **not**
+  returned over RPC. Existing installs migrate passwords out of `data.db` on
+  first load of **0.3**.
+- Optional SSL CA / client cert / key paths are read from the bb host filesystem
+  when connecting.
+- Agent `sql_query` results are framed as untrusted data and truncated (~24k
+  chars) so large cells cannot blow up the model context.
+
+## Roadmap
+
+See [ROADMAP.md](./ROADMAP.md): **0.3** credentials & editor UX → **0.4**
+convenience / run-from-chat → **0.5 controlled write**.
+
+## License
+
+MIT

@@ -1,0 +1,203 @@
+import { afterEach, describe, expect, it } from "vitest";
+import { fireEvent, waitFor, within } from "@testing-library/react";
+import { experimental_THREAD_INFO_SECTION_GROUPS, type ExperimentalThreadContextSegmentProps, type ExperimentalThreadInfoProps } from "@get-bb/plugin-sdk/app";
+import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { rpcContract, type PrView, type ReferenceRecord } from "../../src/contract";
+import { ShuttlePanel } from "../../src/ui/panel";
+import { panelPrs, panelReferences, rememberPanelPr, rememberPanelReference, threadPrsOpen } from "../../src/ui/prefs";
+import { agent, app, callsTo, handlers, link, mount, pr, unmountAll } from "./helpers";
+
+afterEach(unmountAll);
+
+const THREAD = "thr_1";
+const SHUTTLE_TAB_OPEN = { method: "openTab", options: { tab: { id: "shuttle", context: { kind: "thread" }, availability: "action" }, params: { threadId: THREAD } } };
+
+const owned = pr({ number: 4411, mine: true, reasons: [], links: [link({ threadId: THREAD, role: "owner" })], agent: agent({ threadId: THREAD }), watch: "act" });
+const failing = pr({ repo: "get-bb/bb", number: 4412, mine: true, reasons: [], checks: "failed", links: [link({ threadId: THREAD, role: "owner" })] });
+const changes = pr({ repo: "get-bb/bb", number: 4413, mine: true, reasons: [], review: "changes", links: [link({ threadId: THREAD, role: "owner" })] });
+const unsent = pr({ repo: "get-bb/bb", number: 4414, mine: true, reasons: [], pendingItems: 2, links: [link({ threadId: THREAD, role: "owner" })] });
+
+describe("opening a linked PR after a message reference", () => {
+  it.each(["Info", "composer"])("replaces the reference with the PR selected from %s", async (source) => {
+    const referenced = pr({ number: 4415 });
+    const reference: ReferenceRecord = { id: "a".repeat(64), threadId: THREAD, messageId: "msg_1", number: referenced.number, excerpt: "PR #4415", status: "automatic", url: referenced.url, automaticUrl: referenced.url, reason: "Known PR", candidates: [], at: Date.now() };
+    rememberPanelPr(THREAD, failing.key);
+    rememberPanelReference(THREAD, reference.id);
+    rememberPanelReference("thr_other", "b".repeat(64));
+    const loaded = await app();
+    const Info = loaded.threadInfoSections[0]!.component;
+    const Details = loaded.threadContextSegments[0]!.details!;
+    const props = { threadId: THREAD, projectId: "prj_bb", environment: null };
+    const Thread = () => <>
+      <ShuttlePanel threadId={THREAD} environment={null} params={{ threadId: THREAD }} />
+      <div data-entry>{source === "Info" ? <Info {...props} /> : <Details {...props} segments={[]} isExpanded onToggle={() => {}} />}</div>
+    </>;
+    const slot = mount(Thread, {}, handlers({
+      threadPrs: () => ({ prs: [owned, failing], sent: [] }),
+      reference: () => reference,
+      detail: ({ key }) => ({ pr: key === referenced.key ? referenced : failing, events: [], body: "", draft: null, drafts: 0 }),
+    }), { sdk: { threads: { get: async () => ({ environmentId: null }) as never } } });
+    await waitFor(() => expect(slot.container.querySelector("[data-panel-pr]")?.getAttribute("data-panel-pr")).toBe(referenced.key));
+    const entry = within(slot.container.querySelector<HTMLElement>("[data-entry]")!);
+    fireEvent.click(await entry.findByRole("button", { name: /get-bb\/bb#4412/u }));
+    await waitFor(() => expect(slot.container.querySelector("[data-panel-pr]")?.getAttribute("data-panel-pr")).toBe(failing.key));
+    expect(panelReferences.get()).toEqual({ thr_other: "b".repeat(64) });
+    expect(panelPrs.get()).toEqual({ [THREAD]: failing.key });
+    expect(slot.inspection.experimental_panelCalls).toEqual([SHUTTLE_TAB_OPEN]);
+  });
+});
+
+describe("the thread Info tab's Pull requests", () => {
+  async function info(prs: PrView[]) {
+    const loaded = await app();
+    const registration = loaded.threadInfoSections[0]!;
+    expect(registration).toMatchObject({ id: "pull-requests", group: experimental_THREAD_INFO_SECTION_GROUPS.related });
+    return mount<ExperimentalThreadInfoProps>(registration.component, { threadId: THREAD, projectId: "prj_bb", environment: null }, handlers({ threadPrs: () => ({ prs, sent: [] }) }));
+  }
+
+  it("lists every PR linked to the thread, with state and checks, and opens the Shuttle tab on the one clicked", async () => {
+    const slot = await info([owned, failing]);
+    const section = await slot.findByRole("region", { name: "Pull requests" });
+    expect(within(section).getByRole("heading").textContent).toBe("Pull requests2");
+    const rows = within(section).getAllByRole("listitem");
+    expect(rows.map((row) => row.querySelector("button")!.textContent)).toEqual(["get-bb/bb#4411", "get-bb/bb#4412"]);
+    expect(rows[0]!.textContent).toContain("open");
+    expect(rows[0]!.querySelector("[data-icon='Check']")).not.toBeNull();
+    expect(rows[0]!.querySelector("[data-icon='Bot']")!.getAttribute("aria-label")).toBe("This thread is the agent");
+    expect(rows[1]!.querySelector("[data-icon='Bot']")).toBeNull();
+    expect(rows[1]!.textContent).toContain("open · checks failing");
+    expect(rows[1]!.querySelector("[data-icon='X']")).not.toBeNull();
+    fireEvent.click(within(rows[1]!).getByRole("button", { name: "get-bb/bb#4412" }));
+    expect(slot.inspection.experimental_panelCalls).toEqual([SHUTTLE_TAB_OPEN]);
+    expect(panelPrs.get()).toEqual({ [THREAD]: failing.key });
+  });
+
+  it("shows nothing when no PR is linked", async () => {
+    const slot = await info([]);
+    await waitFor(() => expect(callsTo(slot, "threadPrs")).toEqual([{ threadId: THREAD }]));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(slot.container.innerHTML).toBe("");
+  });
+});
+
+describe("the context segment beside the composer", () => {
+  const props: ExperimentalThreadContextSegmentProps = {
+    threadId: THREAD, projectId: "prj_bb", environment: null, segments: [{ key: "shuttle/pull-requests", pluginId: "shuttle" }], isExpanded: false, onToggle: () => {},
+  };
+
+  async function segment() {
+    const loaded = await app();
+    const registration = loaded.threadContextSegments[0]!;
+    expect(registration).toMatchObject({ id: "pull-requests", group: "2_pullRequest" });
+    expect(loaded.threadHeaderActions).toEqual([]);
+    return registration;
+  }
+  async function summary(prs: PrView[], overrides: Partial<ExperimentalThreadContextSegmentProps> = {}) {
+    const registration = await segment();
+    const slot = mount<ExperimentalThreadContextSegmentProps>(registration.summary, { ...props, ...overrides }, handlers({ threadPrs: () => ({ prs, sent: [] }) }));
+    await waitFor(() => expect(callsTo(slot, "threadPrs")).toHaveLength(1));
+    return slot;
+  }
+
+  it("shows one PR's key and state", async () => {
+    const slot = await summary([owned]);
+    const button = await slot.findByRole("button", { name: "Shuttle: get-bb/bb#4411, open" });
+    expect(button.querySelector("[data-shuttle-state]")?.textContent).toBe("·open");
+    expect(button.querySelector("[data-icon='shuttle/shuttle']")).not.toBeNull();
+    expect(button.querySelector("[data-icon='ChevronRight']")).not.toBeNull();
+    expect(button.getAttribute("title")).toContain("get-bb/bb#4411, open");
+    const full = button.querySelector("[data-shuttle-full]")!;
+    expect(full.textContent).toBe("get-bb/bb#4411");
+    expect(full.className).toContain("@max-[48rem]/promptbox-shell:hidden");
+    const compact = button.querySelector("[data-shuttle-compact]")!;
+    expect(compact.textContent).toBe("#4411");
+    expect(compact.className).toContain("@max-[48rem]/promptbox-shell:inline");
+    expect(button.className).toContain("min-w-0");
+    expect(button.className).toContain("max-w-max");
+  });
+
+  it("starts folded and remembers on this device whether the list was left open", async () => {
+    const registration = await segment();
+    let toggles = 0;
+    const onToggle = () => { toggles += 1; };
+    const folded = await summary([owned, failing], { onToggle });
+    fireEvent.click(await folded.findByRole("button", { name: /^Shuttle: 2 linked PRs/u }));
+    expect(toggles).toBe(1);
+    expect(threadPrsOpen.get()).toBe(true);
+    expect(window.localStorage.getItem("bb-plugin-shuttle:thread-prs-open")).toBe("true");
+    folded.lifecycle.unmount();
+
+    toggles = 0;
+    const reopened = await summary([owned, failing], { onToggle });
+    await waitFor(() => expect(toggles).toBe(1));
+    reopened.lifecycle.rerender(<registration.summary {...props} onToggle={onToggle} isExpanded />);
+    const open = await reopened.findByRole("button", { name: /^Shuttle: 2 linked PRs/u });
+    expect(open.querySelector("[data-icon='ChevronDown']")).not.toBeNull();
+    fireEvent.click(open);
+    expect(toggles).toBe(2);
+    expect(threadPrsOpen.get()).toBe(false);
+    reopened.lifecycle.unmount();
+
+    toggles = 0;
+    await summary([owned, failing], { onToggle });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(toggles).toBe(0);
+  });
+
+  it("shows how many PRs and the worst state among them", async () => {
+    const several = await summary([owned, unsent, failing, changes]);
+    const severalButton = await several.findByRole("button", { name: /^Shuttle: 4 linked PRs/u });
+    expect(severalButton.querySelector("[data-shuttle-full]")?.textContent).toBe("4 PRs");
+    expect(severalButton.querySelector("[data-shuttle-compact]")?.textContent).toBe("4");
+    expect(severalButton.querySelector("[data-shuttle-state]")?.textContent).toBe("·changes requested");
+    expect(severalButton.querySelector("[data-icon='shuttle/shuttle']")?.getAttribute("class")).toContain("text-destructive-text");
+    several.lifecycle.unmount();
+    const fine = await summary([owned, unsent, failing]);
+    expect((await fine.findByRole("button", { name: /^Shuttle: 3 linked PRs/u })).querySelector("[data-shuttle-state]")?.textContent).toBe("·checks failing");
+    fine.lifecycle.unmount();
+    const quiet = await summary([owned, pr({ number: 9, links: [link({ threadId: THREAD })] })]);
+    expect((await quiet.findByRole("button", { name: /^Shuttle: 2 linked PRs/u })).querySelector("[data-shuttle-state]")).toBeNull();
+  });
+
+  it("is visible only while the thread has a linked PR", async () => {
+    const registration = await segment();
+    const Probe = ({ threadId }: { threadId: string }) => <span>{registration.useVisible!({ threadId, projectId: "prj_bb", environment: null }) ? "visible" : "hidden"}</span>;
+    let prs: PrView[] = [];
+    const slot = renderSlot({ component: Probe }, { threadId: THREAD }, {
+      pluginId: "shuttle", experimental_rpcContract: rpcContract, rpc: handlers({ threadPrs: () => ({ prs, sent: [] }) }),
+    });
+    await waitFor(() => expect(slot.inspection.rpcCalls).toHaveLength(1));
+    expect(slot.container.textContent).toBe("hidden");
+    prs = [owned];
+    await slot.behavior.experimental_invalidateRpc(["prs"], "shuttle");
+    await slot.findByText("visible");
+    slot.lifecycle.unmount();
+  });
+
+  it("shows no details while folded", async () => {
+    const registration = await segment();
+    const details = mount<ExperimentalThreadContextSegmentProps>(registration.details!, props, handlers({ threadPrs: () => ({ prs: [owned, changes], sent: [] }) }));
+    await waitFor(() => expect(callsTo(details, "threadPrs")).toHaveLength(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(details.container.innerHTML).toBe("");
+  });
+
+  it("lists each PR in its details, opens the Shuttle tab on the one clicked, and opens it as it was from its action", async () => {
+    const registration = await segment();
+    const details = mount<ExperimentalThreadContextSegmentProps>(registration.details!, { ...props, isExpanded: true }, handlers({ threadPrs: () => ({ prs: [owned, changes], sent: [] }) }));
+    const rows = await waitFor(() => {
+      const found = [...details.container.querySelectorAll<HTMLElement>("[data-pr]")];
+      if (found.length !== 2) throw new Error("no rows yet");
+      return found;
+    });
+    expect(rows[1]!.textContent).toContain("changes requested");
+    fireEvent.click(within(rows[1]!).getByRole("button"));
+    expect(details.inspection.experimental_panelCalls).toEqual([SHUTTLE_TAB_OPEN]);
+    expect(panelPrs.get()).toEqual({ [THREAD]: changes.key });
+
+    const action = mount<ExperimentalThreadContextSegmentProps>(registration.action!, props, handlers());
+    fireEvent.click(action.getByRole("button", { name: "Open the Shuttle tab" }));
+    expect(action.inspection.experimental_panelCalls).toEqual([SHUTTLE_TAB_OPEN]);
+    expect(panelPrs.get()).toEqual({ [THREAD]: changes.key });
+  });
+});

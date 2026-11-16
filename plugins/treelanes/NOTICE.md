@@ -1,0 +1,18 @@
+# Treelanes
+
+Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+
+- Оригинальный автор: Ahmed Hesham Abdelkader (https://github.com/ahmedhesham6)
+- Исходный репозиторий: https://github.com/ahmedhesham6/bb-plugin-treelanes
+- Каталог в репозитории: (корень)
+- Версия: v0.2.2, коммит 9ff46867b78dc4a63261fa64e804b2fa35b776cc
+- Ссылка на исходник: https://github.com/ahmedhesham6/bb-plugin-treelanes/tree/9ff46867b78dc4a63261fa64e804b2fa35b776cc
+- Лицензия: MIT (текст в файле LICENSE рядом)
+- Не перенесены демо-медиа из документации (7 файлов, есть в исходном репозитории)
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

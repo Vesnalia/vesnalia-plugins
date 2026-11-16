@@ -1,0 +1,91 @@
+{
+  "name": "bb-plugin-code-review-workspace",
+  "version": "1.13.0",
+  "type": "module",
+  "engines": {
+    "bb": ">=0.48.0",
+    "bbPluginSdk": ">=0.6.79",
+    "node": ">=24"
+  },
+  "bb": {
+    "name": "Code Review Workspace",
+    "description": "Read a pull request or local diff as a chaptered guide, edit the comments and verdict the review agent drafts, see whose turn each review is, re-review against your earlier feedback, and submit pull request reviews to GitHub.",
+    "branding": {
+      "icon": "./assets/icon.svg",
+      "experimental_icons": {
+        "review": "./assets/icon.svg",
+        "agent": "./assets/agent.svg"
+      }
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.3.0",
+    "diff": "^9.0.0",
+    "mdast-util-from-markdown": "^2.1.0",
+    "mdast-util-gfm": "^3.1.0",
+    "micromark-extension-gfm": "^3.0.0",
+    "pg": "^8.23.1",
+    "pg-cloudflare": "^1.4.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.104",
+    "@pierre/diffs": "^1.2.9",
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@radix-ui/react-popover": "^1.1.19",
+    "@radix-ui/react-tooltip": "^1.2.12",
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cron-parser": "^5.5.0",
+    "eslint": "^10.13.0",
+    "hono": "^4.11.9",
+    "jsdom": "^25.0.0",
+    "playwright": "^1.62.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^3.4.0",
+    "ts-morph": "^27.0.2",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "build": "bb plugin build",
+    "check": "npm test && npm run typecheck && npm run lint && bb plugin types --check && npm run build"
+  },
+  "description": "A code review workspace for BB: chaptered guides to pull requests and local diffs, a review agent that drafts comments and a verdict you edit, and pull request reviews submitted to GitHub.",
+  "keywords": [
+    "bb-plugin",
+    "code-review",
+    "pull-request",
+    "github",
+    "diff",
+    "review-agent",
+    "re-review",
+    "local-diff"
+  ],
+  "author": "Andrew Bird",
+  "contributors": [
+    "Pritam Sharma (https://github.com/notpritam)"
+  ],
+  "homepage": "https://github.com/AndrewBird81/bb-plugin-code-review-workspace#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndrewBird81/bb-plugin-code-review-workspace.git"
+  },
+  "license": "MIT"
+}

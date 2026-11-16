@@ -1,0 +1,488 @@
+/**
+ * An image's record (049): /usr/share/bb-box/image.json in every image bb-box
+ * starts boxes from, and a copy outside it that can be read without starting
+ * it, such as an LXC template's description. The doctor judges each image by
+ * it: how old it is, what is in it, and what it was built with.
+ */
+import { createHash } from "node:crypto";
+import { lstat, readdir, readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
+import { companionWorksWith, IOS_PAIRINGS_WORDS, type OfferedDeviceOf, type OfferedDevices } from "../core/device.ts";
+import { parseOfferedDevices } from "../core/device-parse.ts";
+import { TEMPLATE_FILES as BOAT_TEMPLATE_FILES } from "./boat/templates.ts";
+
+/**
+ * The entry a Windows image's record lists among its tools where its VirtIO
+ * GPU driver draws the pointer as a hardware cursor (060): Desktop
+ * Duplication then leaves the pointer out of the image, so bb-box-stream can
+ * leave it out of the video while a person holds control.
+ */
+import { PRODUCT } from "../brand.ts";
+export const WINDOWS_HARDWARE_CURSOR = "hardware-cursor";
+export const WINDOWS_PASSWORD_NEVER_EXPIRES = "password-never-expires";
+
+/** The contract an image must keep (049); a record with an older one fails the doctor. */
+export const IMAGE_CONTRACT = 1;
+
+export interface ImageRecord {
+  readonly contract: number;
+  /** "standard", or a project's image's name. */
+  readonly image: string;
+  /** What the image is for, such as "linux-desktop-cpu". */
+  readonly kind: string;
+  readonly arch: string;
+  /** The build's ID, such as "build.20261003-021500-3f9c". */
+  readonly build: string;
+  /** When it was built, as an ISO 8601 time. */
+  readonly built: string;
+  /** The standard image's build, for a project's image. */
+  readonly base: string | null;
+  readonly os: string;
+  readonly aptSnapshot: string | null;
+  /** The SHA-256 of the pins it was built with. */
+  readonly pins: string;
+  /** The SHA-256 of BB's host app in it, or null for none. */
+  readonly bbApp: string | null;
+  /** Each tool's version, such as {"node": "24.21.0"}. */
+  readonly tools: Readonly<Record<string, string>>;
+  /** The NVIDIA userspace's version, where the image has one. */
+  readonly nvidia: string | null;
+  /** A project's image's script, and how long it ran. */
+  readonly layer: { readonly sha256: string; readonly seconds: number } | null;
+  readonly sizeGiB: number | null;
+  readonly devices: OfferedDevices | null;
+  readonly encoders?: { readonly hardware: boolean | null; readonly software: string | null } | null;
+  /**
+   * SHA-256 of the guest scripts, the identity reset this kind's build writes,
+   * and the prepare script. Absent on an image built before bb-box recorded it.
+   */
+  readonly program?: string | null;
+}
+
+const text = (value: unknown): string | null => (typeof value === "string" && value !== "" ? value : null);
+
+function encodersOf(value: unknown): { readonly hardware: boolean | null; readonly software: string | null } | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const encoders = value as Record<string, unknown>;
+  return { hardware: typeof encoders.hardware === "boolean" ? encoders.hardware : null, software: text(encoders.software) };
+}
+
+/** A record from its JSON, or null when it is not one. */
+export function parseImageRecord(value: unknown): ImageRecord | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const kind = text(record.kind);
+  const build = text(record.build);
+  const built = text(record.built);
+  if (typeof record.contract !== "number" || !Number.isInteger(record.contract) || !kind || !build || !built || Number.isNaN(Date.parse(built))) return null;
+  const tools = typeof record.tools === "object" && record.tools !== null && !Array.isArray(record.tools) ? record.tools : {};
+  const layer = record.layer as { sha256?: unknown; seconds?: unknown } | null;
+  const devices = record.devices === undefined || record.devices === null ? null : parseOfferedDevices(record.devices);
+  if (devices && !devices.ok) return null;
+  return {
+    contract: record.contract,
+    image: text(record.image) ?? "standard",
+    kind,
+    arch: text(record.arch) ?? "",
+    build,
+    built,
+    base: text(record.base),
+    os: text(record.os) ?? "",
+    aptSnapshot: text(record.aptSnapshot),
+    pins: text(record.pins) ?? "",
+    bbApp: text(record.bbApp),
+    tools: Object.fromEntries(Object.entries(tools).filter((entry): entry is [string, string] => typeof entry[1] === "string")),
+    nvidia: text(record.nvidia),
+    layer:
+      layer && typeof layer === "object" && typeof layer.sha256 === "string" && typeof layer.seconds === "number"
+        ? { sha256: layer.sha256, seconds: layer.seconds }
+        : null,
+    sizeGiB: typeof record.sizeGiB === "number" ? record.sizeGiB : null,
+    devices: devices && devices.value,
+    ...(encodersOf(record.encoders) ? { encoders: encodersOf(record.encoders) } : {}),
+    ...(text(record.program) ? { program: text(record.program) } : {}),
+  };
+}
+
+/** A record from its JSON text, as a Docker label holds it, or null when it is not one. */
+export function recordFromJson(text: unknown): ImageRecord | null {
+  if (typeof text !== "string" || !text.trim().startsWith("{")) return null;
+  try {
+    return parseImageRecord(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+/** The record a description carries as its last line that is a JSON object, as build.sh writes it, or null. */
+export function recordInDescription(description: string): ImageRecord | null {
+  const line = description
+    .split("\n")
+    .map((candidate) => candidate.trim())
+    .filter((candidate) => candidate.startsWith("{"))
+    .at(-1);
+  return recordFromJson(line);
+}
+
+/**
+ * The pins an image is built with: a Linux image's, or a desktop's, which
+ * adds the desktop's; a macOS image's on a Mac; a Windows template's on
+ * Proxmox, or a Windows image's on a Mac.
+ */
+export type PinSet = "linux" | "linux-desktop" | "android" | "macos" | "ios" | "windows" | "windows-arm64";
+
+const LINUX_PIN_FILES = ["proxmox-lxc/template/pins.json", "proxmox-lxc/template/apt-snapshot"] as const;
+const LINUX_DESKTOP_PIN_FILES = [...LINUX_PIN_FILES, "proxmox-lxc/template/desktop-pins.tsv"] as const;
+
+/**
+ * What each set's digest covers, under setup/: Linux's are files in
+ * proxmox-lxc/template/, in order, as image-record.sh reads them. The others
+ * are a build script's pin lines, NAME_VERSION=, NAME_SHA256= and NAME_URL=,
+ * in the order the script has them, as the script itself hashes them.
+ */
+const PINS: Readonly<Record<PinSet, { readonly files: readonly string[] } | { readonly lines: string }>> = {
+  linux: { files: LINUX_PIN_FILES },
+  "linux-desktop": { files: LINUX_DESKTOP_PIN_FILES },
+  android: { files: [...LINUX_PIN_FILES, "android/pins.json"] },
+  macos: { lines: "tart/prepare-image.sh" },
+  ios: { files: ["tart/ios/pins", "tart/ios/devices.tsv"] },
+  windows: { lines: "proxmox-qemu/build.sh" },
+  "windows-arm64": { lines: "tart/prepare-windows-image.sh" },
+};
+
+/** A build script's pin lines, as `grep -E '^[A-Z0-9_]+_(VERSION|SHA256|URL)='` prints them. */
+export function pinLines(script: string): string {
+  return script
+    .split("\n")
+    .filter((line) => /^[A-Z0-9_]+_(VERSION|SHA256|URL)=/.test(line))
+    .map((line) => `${line}\n`)
+    .join("");
+}
+
+/** The SHA-256 of a set of pins in `setup`, the plugin's setup/ directory, as an image built with them records it, or null when a file is missing. */
+export async function pinsDigest(setup: string, set: PinSet): Promise<string | null> {
+  try {
+    const hash = createHash("sha256");
+    const pins = PINS[set];
+    if ("files" in pins) for (const file of pins.files) hash.update(await readFile(join(setup, file)));
+    else hash.update(pinLines(await readFile(join(setup, pins.lines), "utf8")));
+    return hash.digest("hex");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * What a backend's Linux image is built with, under setup/: its prepare
+ * script, or a list of the files its build reads. A refresh records their
+ * SHA-256, so a change to any of them makes the image due.
+ */
+type PrepareSources = { readonly script: string } | { readonly listedIn: string };
+
+const DOCKER_IMAGE_SOURCES: PrepareSources = { listedIn: "docker/image-sources" };
+
+const PREPARE_SOURCES: Readonly<Record<string, PrepareSources>> = {
+  tart: { script: "tart/prepare-linux-image.sh" },
+  docker: DOCKER_IMAGE_SOURCES,
+  microsandbox: DOCKER_IMAGE_SOURCES,
+  "proxmox-lxc": { script: "proxmox-lxc/template/build.sh" },
+  "proxmox-qemu": { script: "proxmox-qemu/build-linux.sh" },
+};
+
+const GUEST_DIR = "proxmox-lxc/template/guest";
+
+const BOAT_STAGED_GUEST_FILES = BOAT_TEMPLATE_FILES.filter((file) => file.startsWith(`${GUEST_DIR}/`)).map((file) => file.slice(GUEST_DIR.length + 1));
+
+const BOAT_BUILDS_RECORD_NO_PREPARE = "";
+
+const PINS_DIGEST_COVERS: ReadonlySet<string> = new Set(LINUX_DESKTOP_PIN_FILES);
+
+export function identityResetFor(kind: string): "on" | "off" {
+  return kind === "linux" || kind.startsWith("linux-") ? "on" : "off";
+}
+
+function providerOf(backendId: string): string {
+  return backendId.split(":")[0] ?? "";
+}
+
+function prepareSourcesOf(backendId: string): PrepareSources | null {
+  return PREPARE_SOURCES[providerOf(backendId)] ?? null;
+}
+
+const isMacMetadata = (name: string): boolean => name === ".DS_Store" || name.startsWith("._");
+
+async function buildFilesUnder(root: string, path: string): Promise<string[]> {
+  const stats = await lstat(join(root, path));
+  if (stats.isFile()) return isMacMetadata(basename(path)) ? [] : [path];
+  if (!stats.isDirectory()) return [];
+  const names = await readdir(join(root, path));
+  const nested = await Promise.all(names.map((name) => buildFilesUnder(root, path === "" ? name : `${path}/${name}`)));
+  return nested.flat();
+}
+
+function inByteOrder(paths: Iterable<string>): string[] {
+  return [...new Set(paths)].sort();
+}
+
+async function hashFiles(hash: ReturnType<typeof createHash>, root: string, paths: readonly string[]): Promise<void> {
+  for (const path of paths) {
+    hash.update(`file ${path}\n`);
+    hash.update(await readFile(join(root, path)));
+  }
+}
+
+function listedPaths(list: string): string[] {
+  return list
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+async function listedSourcesDigest(setup: string, listFile: string): Promise<string> {
+  const listed = listedPaths(await readFile(join(setup, listFile), "utf8"));
+  const files = (await Promise.all(listed.map((path) => buildFilesUnder(setup, path)))).flat();
+  const hash = createHash("sha256");
+  await hashFiles(hash, setup, inByteOrder(files.filter((path) => !PINS_DIGEST_COVERS.has(path))));
+  return hash.digest("hex");
+}
+
+/** The SHA-256 of what a backend's Linux image is built with, or null when this bb-box has no such files. */
+export async function prepareDigest(setup: string, backendId: string): Promise<string | null> {
+  const sources = prepareSourcesOf(backendId);
+  if (!sources) return null;
+  try {
+    if ("listedIn" in sources) return await listedSourcesDigest(setup, sources.listedIn);
+    return createHash("sha256").update(await readFile(join(setup, sources.script))).digest("hex");
+  } catch {
+    return null;
+  }
+}
+
+async function programOf(guestDir: string, files: readonly string[], identityReset: string, prepare: string): Promise<string | null> {
+  const hash = createHash("sha256");
+  hash.update(`BOX_IDENTITY_RESET=${identityReset}\n`);
+  try {
+    await hashFiles(hash, guestDir, inByteOrder(files));
+  } catch {
+    return null;
+  }
+  hash.update(`PREPARE=${prepare}\n`);
+  return hash.digest("hex");
+}
+
+/**
+ * The SHA-256 image-record.sh writes as `program`: the identity reset, each
+ * file in the guest directory but .DS_Store and AppleDouble (._) files, by
+ * path in byte order, then the prepare digest. Null when the guest directory
+ * is not there.
+ */
+export async function programDigest(guestDir: string, identityReset: string, prepare: string): Promise<string | null> {
+  let files: string[];
+  try {
+    files = await buildFilesUnder(guestDir, "");
+  } catch {
+    return null;
+  }
+  return programOf(guestDir, files, identityReset, prepare);
+}
+
+/** The program digest a rebuild of `kind` on `backendId` would record, or null when the files are not there. */
+export async function imageProgram(setup: string, kind: string, backendId: string): Promise<string | null> {
+  const guestDir = join(setup, GUEST_DIR);
+  if (providerOf(backendId) === "boat") return programOf(guestDir, BOAT_STAGED_GUEST_FILES, identityResetFor(kind), BOAT_BUILDS_RECORD_NO_PREPARE);
+  const prepare = await prepareDigest(setup, backendId);
+  if (!prepare) return null;
+  return programDigest(guestDir, identityResetFor(kind), prepare);
+}
+
+/** Chrome's version in the desktop pins for an architecture, such as 156.0.8078.79, or null. */
+export async function chromePin(setup: string, arch: string): Promise<string | null> {
+  try {
+    const text = await readFile(join(setup, "proxmox-lxc/template/desktop-pins.tsv"), "utf8");
+    for (const line of text.split("\n")) {
+      const [name, file = "", , , lineArch = ""] = line.split("\t");
+      if (name !== "chrome" || lineArch !== arch) continue;
+      return /^google-chrome-stable_([^_]+)_/.exec(file)?.[1]?.replace(/-\d+$/, "") ?? null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** What bb-box knows now to judge an image by. Each is null when it cannot tell. */
+export interface ImageFacts {
+  /** The SHA-256 of the pins this bb-box builds a set of images with. */
+  pins(set: PinSet): Promise<string | null>;
+  /** The SHA-256 of BB's host app that BB's server gives now. */
+  bbApp(signal?: AbortSignal): Promise<string | null>;
+  /** The program digest a rebuild of this kind on this backend would record. */
+  program?(kind: string, backendId: string): Promise<string | null>;
+  /** The Chrome pin for an architecture, such as 156.0.8078.79. */
+  chrome?(arch: string): Promise<string | null>;
+}
+
+/** Days after which an image warns: twice the interval it is rebuilt at, a week for Linux and a month for Android, Windows and macOS. */
+export const STALE_DAYS: Readonly<Record<"linux" | "android" | "windows" | "macos" | "ios", number>> = { linux: 14, android: 60, windows: 60, macos: 60, ios: 60 };
+
+/** The Node.js BB's Windows installer needs (#539). */
+const WINDOWS_NODE = "22.19.0";
+/** The agent CLIs a Windows image carries for BB's threads, as its record names them, with their names (#561). */
+const AGENT_CLIS: readonly (readonly [string, string])[] = [
+  ["claude-code", "Claude Code"],
+  ["codex", "Codex"],
+  ["pi", "Pi"],
+];
+
+/** Whether version `have`, such as 24.21.0 or v24.21.0, is at least `want`. */
+function atLeast(have: string, want: string): boolean {
+  const parts = (version: string) => version.replace(/^v/, "").split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const [a, b] = [parts(have), parts(want)];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  }
+  return true;
+}
+
+export interface ImageJudgement {
+  readonly status: "ok" | "warn" | "fail";
+  /** What the image is, then what is wrong with it. */
+  readonly detail: string;
+  readonly fix: string | null;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function day(time: number, now: number): string {
+  const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", timeZone: "UTC" };
+  if (new Date(time).getUTCFullYear() !== new Date(now).getUTCFullYear()) options.year = "numeric";
+  return new Date(time).toLocaleDateString("en-GB", options);
+}
+
+function ago(days: number): string {
+  return days < 1 ? "today" : days < 2 ? "1 day ago" : `${Math.floor(days)} days ago`;
+}
+
+/** What an image is, in a sentence: its name and build, when it was built, its OS, tools and size. */
+export function describeImage(record: ImageRecord, now = Date.now()): string {
+  const built = Date.parse(record.built);
+  const tools = Object.entries(record.tools).map(([name, version]) => `${name} ${version}`);
+  const parts = [record.os, ...tools, ...(record.nvidia ? [`NVIDIA ${record.nvidia}`] : []), ...(record.sizeGiB !== null ? [`${record.sizeGiB} GiB`] : [])];
+  return `${record.image === "standard" ? "Standard image" : `Image ${record.image}`} ${record.build}, built ${day(built, now)} (${ago((now - built) / DAY_MS)})${
+    parts.filter(Boolean).length ? `: ${parts.filter(Boolean).join(", ")}` : ""
+  }.`;
+}
+
+/**
+ * Judges an image by its record (049): its contract and NVIDIA userspace
+ * fail, and no record, its age, another build of BB's app and other pins
+ * warn. `rebuild` says how to rebuild it, as the fix.
+ */
+export function judgeImage(
+  record: ImageRecord | null,
+  facts: {
+    readonly os: keyof typeof STALE_DAYS;
+    /** The pins this bb-box would build it with. */
+    readonly pins: string | null;
+    /** BB's app on BB's server now. */
+    readonly bbApp: string | null;
+    /** The host's NVIDIA driver as a box last saw it, for an image with NVIDIA's userspace. */
+    readonly hostNvidia?: { readonly version: string; readonly seen: string } | null;
+    /** Whether its boxes join BB, for a Windows image, which must then carry Node.js and an agent CLI (#539). */
+    readonly joins?: boolean;
+    readonly macosBuild?: string | null;
+    readonly now?: number;
+    /** Chrome's pin for this image's architecture. A newer Chrome in the image warns: a rebuild from the pin would go backwards. */
+    readonly pinChrome?: string | null;
+  },
+  rebuild: string,
+): ImageJudgement {
+  const now = facts.now ?? Date.now();
+  if (!record) {
+    return {
+      status: "warn",
+      detail: `It has no image record, as images built before ${PRODUCT} recorded them do not, so ${PRODUCT} cannot tell how old it is or what is in it.`,
+      fix: rebuild,
+    };
+  }
+  const failures: string[] = [];
+  const warnings: string[] = [];
+  if (record.contract < IMAGE_CONTRACT) {
+    failures.push(`It keeps image contract ${record.contract}, and this ${PRODUCT} needs ${IMAGE_CONTRACT}, so its boxes may not work.`);
+  }
+  const host = facts.hostNvidia;
+  if (record.nvidia && host && host.version !== record.nvidia) {
+    failures.push(
+      `It has NVIDIA userspace ${record.nvidia}, but the host has driver ${host.version}, as a box saw on ${day(Date.parse(host.seen), now)}, so its desktops start without the GPU.`,
+    );
+  }
+  const days = (now - Date.parse(record.built)) / DAY_MS;
+  if (days > STALE_DAYS[facts.os]) {
+    warnings.push(`It is ${Math.floor(days)} days old, more than ${STALE_DAYS[facts.os]}, so its tools and packages are behind.`);
+  }
+  if (facts.bbApp && record.bbApp !== facts.bbApp) {
+    warnings.push(
+      `It has ${record.bbApp ? "another build of BB's app than BB's server gives" : "no build of BB's app"}, so each box downloads the app as it enrols, 2 to 5 s more.`,
+    );
+  }
+  if (facts.pins && record.pins !== facts.pins) {
+    warnings.push(`It was built with other pins than this ${PRODUCT}'s, so it lacks what a ${PRODUCT} update brought.`);
+  }
+  const chrome = record.tools.chrome;
+  let chromeNewerThanPin = false;
+  if (chrome && facts.pinChrome && !atLeast(facts.pinChrome, chrome)) {
+    chromeNewerThanPin = true;
+    warnings.push(`Its Chrome is ${chrome}, newer than this ${PRODUCT}'s pin ${facts.pinChrome}, so a rebuild from the pins would go backwards. The pin is what a failed version check kept.`);
+  }
+  if (facts.os === "android" && (!record.devices || record.devices[0].runtime.platform !== "android")) {
+    failures.push("It offers no Android devices in its record, so no android box can boot one from it.");
+  }
+  if (facts.os === "android" && record.devices?.some((device) => device.runtime.platform === "android" && device.runtime.snapshot === null)) {
+    warnings.push("A device in it has no snapshot, so its boxes boot that device cold, in about 17 s rather than 2 to 4.");
+  }
+  if (facts.os === "ios") judgeIosImage(record, facts.macosBuild ?? null, failures, warnings);
+  if (facts.os === "macos" && !record.tools.xcode) {
+    warnings.push("It has no Xcode, so its boxes have no XCTest, Metal compiler or iOS Simulator (#475).");
+  }
+  if (facts.os === "windows" && !record.tools[WINDOWS_PASSWORD_NEVER_EXPIRES]) {
+    warnings.push(
+      `Its record does not say its box user's password never expires, so the password may expire 42 days after it was set, as Windows' default is, and Windows then no longer logs its boxes in to the desktop. ${PRODUCT} repairs each such box as it starts, with one more restart, about a minute, where nobody is logged in to it.`,
+    );
+  }
+  if (facts.os === "windows" && facts.joins) {
+    const node = record.tools.node;
+    if (!node || !atLeast(node, WINDOWS_NODE)) {
+      warnings.push(`It has ${node ? `Node.js ${node}` : "no Node.js"}, and BB's installer needs ${WINDOWS_NODE} or later, so each box installs it as it joins BB, about 11 s more.`);
+    }
+    if (!AGENT_CLIS.some(([tool]) => record.tools[tool])) {
+      warnings.push(`It has none of the agent CLIs BB runs threads with, ${AGENT_CLIS.map(([, name]) => name).join(", ")}, so box_thread refuses its boxes (#561).`);
+    }
+  }
+  const problems = [...failures, ...warnings];
+  const pinFirst = "Update the pins first, or leave this image until the pins catch up.";
+  const fix = !problems.length ? null : failures.length ? rebuild : chromeNewerThanPin && warnings.length === 1 ? pinFirst : chromeNewerThanPin ? `${pinFirst} ${rebuild}` : rebuild;
+  return {
+    status: failures.length ? "fail" : warnings.length ? "warn" : "ok",
+    detail: [describeImage(record, now), ...problems].join(" "),
+    fix,
+  };
+}
+
+function judgeIosImage(record: ImageRecord, macosBuild: string | null, failures: string[], warnings: string[]): void {
+  const devices = record.devices && record.devices[0].runtime.platform === "ios" ? (record.devices as readonly OfferedDeviceOf<"ios">[]) : null;
+  if (!devices) {
+    failures.push("It offers no iOS devices in its record, so no ios box can boot one from it.");
+    return;
+  }
+  for (const pairing of new Set(devices.map((device) => `${device.runtime.xcode}\t${device.runtime.companion}`))) {
+    const [xcode = "", companion = ""] = pairing.split("\t");
+    if (!companionWorksWith(xcode, companion)) {
+      failures.push(`It has idb_companion ${companion} with Xcode ${xcode}, a pairing no image check has passed, so its devices may not stream or take input. ${IOS_PAIRINGS_WORDS}`);
+    }
+  }
+  const stock = devices.filter((device) => !device.slim).map((device) => device.model);
+  if (stock.length) warnings.push(`${stock.join(", ")} ${stock.length === 1 ? "is" : "are"} not slimmed, so ${stock.length === 1 ? "it takes" : "each takes"} about 1 GiB more memory and a third of a core idle.`);
+  if (macosBuild && record.base !== macosBuild) {
+    warnings.push(`It is built on ${record.base ? `build ${record.base}` : "an unrecorded build"} of the macOS image, which is now ${macosBuild}, so its boxes lack what the macOS image's refresh brought.`);
+  }
+}

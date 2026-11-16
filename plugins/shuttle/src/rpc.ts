@@ -1,0 +1,155 @@
+import { experimental_PluginRpcRefusal, type BbPluginApi, type PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import { sleep } from "./adapters/exec";
+import { ConfigError } from "./config";
+import { mutationTags, rpcContract } from "./contract";
+import { NotFoundError, ShuttleError } from "./ctx";
+import { LookupError } from "./keys";
+import type { Shuttle } from "./shuttle";
+
+/** Expected failures reach the UI as typed refusals (not_found, invalid) rather than handler errors. */
+async function refusing<T>(fn: () => T | Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (error instanceof NotFoundError) throw new experimental_PluginRpcRefusal({ code: "not_found", message: error.message });
+    if (error instanceof ShuttleError || error instanceof LookupError || error instanceof ConfigError) throw new experimental_PluginRpcRefusal({ code: "invalid", message: error.message });
+    throw error;
+  }
+}
+
+function withInvalidations(bb: BbPluginApi, handlers: PluginRpcHandlers<typeof rpcContract>): PluginRpcHandlers<typeof rpcContract> {
+  const tags = mutationTags as Record<string, (input: { apply?: boolean }) => readonly string[]>;
+  const mapped = Object.fromEntries(Object.entries(handlers).map(([method, handler]) => [
+    method, async (input: unknown, context: unknown) => {
+      const result = await (handler as (input: unknown, context: unknown) => unknown)(input, context);
+      const invalidate = tags[method];
+      if (invalidate) bb.rpc.experimental_invalidate(invalidate(input as { apply?: boolean }));
+      return result;
+    },
+  ]));
+  return mapped as PluginRpcHandlers<typeof rpcContract>;
+}
+
+const WATCHED_FRESH_MS = 60_000;
+
+export function registerRpc(bb: BbPluginApi, shuttle: Shuttle): void {
+  bb.rpc.register(rpcContract, withInvalidations(bb, {
+    overview: () => refusing(() => shuttle.overview()),
+    inbox: () => refusing(() => shuttle.inbox()),
+    list: ({ area }) => refusing(() => ({ prs: shuttle.list(area) })),
+    detail: ({ key }) => refusing(() => shuttle.detailOrLookup(key)),
+    conversation: ({ key }) => refusing(() => shuttle.conversation(key)),
+    resolveReferences: (input) => refusing(async () => ({ rows: await shuttle.references.resolve(input) })),
+    reference: ({ id }) => refusing(() => shuttle.references.read(id)),
+    referenceLog: ({ limit, ...options }) => refusing(() => shuttle.references.log(limit, options)),
+    referenceFeedback: ({ id, action, query }) => refusing(() => shuttle.references.feedback(id, action, query)),
+    linkCard: ({ url }) => refusing(() => shuttle.linkCard(url)),
+    linkStates: ({ urls }) => refusing(() => ({ links: shuttle.linkStates(urls) })),
+    search: ({ query }) => refusing(() => shuttle.search(query)),
+    descriptionMatches: ({ query }) => refusing(() => ({ keys: shuttle.descriptionMatches(query) })),
+    boards: ({ query, archived, key }) => refusing(() => shuttle.boards({ query, archived, key })),
+    board: ({ id }) => refusing(() => shuttle.board(id)),
+    lookup: ({ query }) => refusing(async () => ({ pr: await shuttle.lookup(query) })),
+    activity: ({ limit }) => refusing(() => ({ events: shuttle.activity(limit) })),
+    insights: ({ range }) => refusing(() => shuttle.insights(range)),
+    usage: ({ range, end }) => refusing(() => shuttle.usage(range, end ?? null)),
+    autoPostInsights: ({ range }) => refusing(() => shuttle.autoPostInsights(range)),
+    reviewHistory: ({ key }) => refusing(() => shuttle.reviewHistory(key)),
+    // A sync can take a minute on a slow server; the page follows it through overview.syncing.
+    sync: ({ server }) => refusing(() => {
+      if (server !== undefined && !shuttle.server(server)) throw new ShuttleError(`no server called ${server}`);
+      shuttle.sync(undefined, server === undefined ? undefined : [server]).catch((error: unknown) => bb.log.warn(`sync: ${error instanceof Error ? error.message : String(error)}`));
+      return { ok: true as const };
+    }),
+    syncHistory: () => refusing(() => shuttle.syncHistory()),
+    link: ({ key, threadId, role }) => refusing(async () => ({ pr: await shuttle.link(key, threadId, role ?? "owner") })),
+    unlink: ({ key, threadId }) => refusing(async () => ({ pr: await shuttle.unlink(key, threadId) })),
+    watch: ({ key, mode }) => refusing(async () => ({ pr: await shuttle.watch(key, mode) })),
+    setAgent: ({ key, target, mode }) => refusing(() => shuttle.setAgent(key, target, mode)),
+    setAgentMode: ({ key, mode, backlog }) => refusing(async () => ({ pr: await shuttle.setAgentMode(key, mode, backlog) })),
+    askAgent: ({ key, text }) => refusing(async () => {
+      await shuttle.askAgent(key, text);
+      return { ok: true as const };
+    }),
+    setSettings: (patch) => refusing(async () => {
+      await shuttle.setSettings(patch);
+      return { ok: true as const };
+    }),
+    setAutomationPause: (input) => refusing(() => shuttle.setAutomationPause(input)),
+    track: ({ key, on }) => refusing(() => ({ pr: shuttle.track(key, on) })),
+    snooze: ({ keys, until }) => refusing(() => ({ prs: shuttle.snooze(keys, until) })),
+    stopReviews: ({ keys, archive }) => refusing(() => shuttle.stopReviews(keys, archive ?? false)),
+    skipAutoReview: ({ keys, on }) => refusing(() => shuttle.skipAutoReview(keys, on)),
+    dismiss: ({ keys, on }) => refusing(() => ({ prs: shuttle.dismiss(keys, on) })),
+    markSeen: ({ keys }) => refusing(() => {
+      shuttle.markSeen(keys);
+      return { ok: true as const };
+    }),
+    inboxRuleAdd: (input) => refusing(() => shuttle.inboxRuleAdd(input)),
+    inboxRuleRemove: ({ id }) => refusing(() => {
+      shuttle.inboxRuleRemove(id);
+      return { ok: true as const };
+    }),
+    handle: ({ key, on }) => refusing(() => ({ pr: shuttle.handle(key, on) })),
+    review: (input) => refusing(() => shuttle.review(input)),
+    newThread: ({ key, start, projectId }) => refusing(async () => ({ threadId: await shuttle.newThread(key, start, projectId) })),
+    threadPrs: ({ threadId }) => refusing(() => shuttle.threadPrs(threadId)),
+    sendUnread: ({ threadId }) => refusing(async () => ({ sent: await shuttle.sendUnread(threadId) })),
+    threads: ({ query }) => refusing(async () => ({ threads: await shuttle.threads(query) })),
+    projects: ({ key }) => refusing(() => shuttle.projectOptions(key)),
+    refreshProjects: () => refusing(() => shuttle.refreshProjects()),
+    getConfig: () => refusing(() => ({ config: shuttle.config() })),
+    saveConfig: ({ config }) => refusing(() => ({ config: shuttle.saveConfig(config) })),
+    boardCreate: (input) => refusing(() => shuttle.boardCreate(input)),
+    boardUpdate: (input) => refusing(() => shuttle.boardUpdate(input)),
+    boardAdd: (input) => refusing(() => shuttle.boardAdd(input)),
+    boardRemove: (input) => refusing(() => shuttle.boardRemove(input)),
+    testServer: (input) => refusing(async () => ({ results: await shuttle.testServer(input) })),
+    exportToml: () => refusing(() => ({ toml: shuttle.exportToml() })),
+    importToml: ({ toml, apply }) => refusing(() => shuttle.importToml(toml, apply)),
+    editPr: ({ key, change }) => refusing(async () => ({ pr: await shuttle.editPr(key, change) })),
+    editOptions: ({ key }) => refusing(() => shuttle.editOptions(key)),
+    mergeOptions: ({ key }) => refusing(() => shuttle.mergeOptions(key)),
+    queueMerge: ({ key, ...input }) => refusing(() => shuttle.queueMerge(key, input)),
+    merges: () => refusing(() => ({ merges: shuttle.merges() })),
+    cancelMerge: ({ id }) => refusing(() => ({ pr: shuttle.cancelMerge(id) })),
+    retryMerge: ({ id }) => refusing(() => shuttle.retryMerge(id)),
+    clearMerge: ({ id }) => refusing(() => ({ pr: shuttle.clearMerge(id) })),
+    cancelAutoMerge: ({ key }) => refusing(async () => ({ pr: await shuttle.cancelAutoMerge(key) })),
+    comment: ({ key, body }) => refusing(async () => ({ pr: await shuttle.comment(key, body) })),
+    queueReview: ({ key, ...input }) => refusing(() => shuttle.queueReview(key, input)),
+    posts: () => refusing(() => ({ posts: shuttle.posts() })),
+    cancelPost: ({ id }) => refusing(() => ({ pr: shuttle.cancelPost(id) })),
+    retryPost: ({ id }) => refusing(() => shuttle.retryPost(id)),
+    clearPost: ({ id }) => refusing(() => ({ pr: shuttle.clearPost(id) })),
+    discardDraft: ({ key, draftId }) => refusing(async () => ({ pr: await shuttle.discardDraft(key, draftId) })),
+    checkDraft: ({ key, draftId }) => refusing(async () => ({ pr: await shuttle.checkDraft(key, draftId) })),
+    stopAutoPost: ({ key, draftId }) => refusing(async () => ({ pr: shuttle.stopAutoPost(key, draftId) })),
+    autoPostNow: ({ key, draftId }) => refusing(async () => ({ pr: shuttle.autoPostNow(key, draftId) })),
+    markAutoPost: ({ key, draftId, findingId, undo }) => refusing(async () => ({ pr: shuttle.markAutoPost(key, draftId, findingId, undo) })),
+    resumeAutoPost: ({ repo, kind }) => refusing(async () => shuttle.resumeAutoPost(repo, kind)),
+    restoreDraft: ({ key, draftId }) => refusing(async () => ({ pr: await shuttle.restoreDraft(key, draftId) })),
+    reply: ({ key, thread, body }) => refusing(async () => {
+      await shuttle.reply(key, thread, body);
+      return { ok: true as const };
+    }),
+    resolve: ({ key, thread, resolved }) => refusing(async () => {
+      await shuttle.resolve(key, thread, resolved);
+      return { ok: true as const };
+    }),
+    skills: ({ projectId }) => refusing(async () => ({ skills: await shuttle.skills(projectId) })),
+    workspaceProviders: () => refusing(() => shuttle.workspaceProviders()),
+  }));
+
+  // While a PR's drawer or a thread's PRs are on screen, keep those PRs fresh from their server.
+  const keepFresh = (keys: (input: unknown) => string[]) => async (read: { input: unknown } | { key: string }, signal: AbortSignal) => {
+    if (!("input" in read)) return;
+    while (!signal.aborted) {
+      await shuttle.refreshStale(keys(read.input), WATCHED_FRESH_MS, signal);
+      await sleep(WATCHED_FRESH_MS, signal);
+    }
+  };
+  bb.rpc.experimental_whileWatched("detail", keepFresh((input) => [(input as { key: string }).key]));
+  bb.rpc.experimental_whileWatched("threadPrs", keepFresh((input) => shuttle.threadPrs((input as { threadId: string }).threadId).prs.map((pr) => pr.key)));
+  bb.rpc.experimental_whileWatched("board", keepFresh((input) => shuttle.board((input as { id: string }).id).prs.map((pr) => pr.key)));
+}

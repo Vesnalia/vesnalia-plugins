@@ -1,0 +1,1286 @@
+// The folder tree beside BB's Diff tab.
+//
+// `TreeOverlay` is an app overlay: it finds each Diff tab on the page
+// (src/diff-tab.ts) and, for each, portals a toggle into the tab's toolbar and,
+// while the tree is on, a column into the box around its file list. A click on a
+// folder types `folder/**` into BB's own search box; a click on a file types its
+// path and opens its card. The list, its diffs and its filtering stay BB's.
+//
+// The files come from the Git plugin's `files` read (through server.ts) for the scope the tab shows,
+// fetched only while a tree is on, and again when the environment's git state
+// changes. Nothing here reads the composer, so typing never re-renders the tree.
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { experimental_Icon as Icon, useBbContext, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import type { rpcContract } from "../server";
+import {
+  expandFile,
+  filterValue,
+  findDiffTabs,
+  filtersKey,
+  isFilterInput,
+  listScroller,
+  inPanePanel,
+  paneThread,
+  readFilters,
+  readListPlace,
+  restoreListPlace,
+  scopeLabel,
+  scrollListToTop,
+  setFilter,
+  VIEWED_BOX,
+  watchDiffTabs,
+  watchVisibleCards,
+  type DiffTab,
+  type ListPlace,
+} from "./diff-tab";
+import {
+  allDirs,
+  ancestors,
+  applyFilters,
+  buildTree,
+  dirName,
+  fileName,
+  filePattern,
+  folderPattern,
+  listFiles,
+  openAt,
+  scopeOf,
+  selectedBy,
+  statusOf,
+  type DiffFilters,
+  type Scope,
+  type TreeDir,
+  type TreeFile,
+} from "./folders";
+import { fileIcon, folderIcon } from "./file-icons";
+import { filterMatches } from "./match";
+import { setOption, useOptions } from "./options";
+import { baseMoved, baseRestored, PickerCommits } from "./Picker";
+import { refresher, refreshes } from "./refresh";
+import { useRecentCommits } from "./recent";
+import { TreeMenu, ViewMenu } from "./TreeMenu";
+
+/** Quiet time after a change before the files are fetched again; agents write in bursts. */
+const REFRESH_WAIT_MS = 1000;
+/** The longest the list waits for quiet while changes keep coming. */
+const REFRESH_MAX_WAIT_MS = 5000;
+/** A failed fetch is tried again after this long. */
+const RETRY_MS = 3000;
+/** Under this width the tree goes above the file list instead of beside it. */
+const STACK_BELOW = 600;
+
+// ---------------------------------------------------------------------------
+// Where the reader was, per thread and scope, for the rest of the page's life.
+// BB unmounts the Diff tab when another tab is shown (opening a file from a
+// card's title does that), which drops its query and scroll; when the tab comes
+// back, the tree puts back the folders it had open, the row picked (through
+// BB's search box), its own scroll and the file list's place.
+
+interface Place {
+  paths: Set<string> | null;
+  query: string;
+  treeScroll: number;
+  list: ListPlace | null;
+}
+
+/** A folder path and every folder above it: "a/b/c" → "a", "a/b", "a/b/c". */
+const withParents = (path: string) => path.split("/").map((_, i, parts) => parts.slice(0, i + 1).join("/"));
+
+const places = new Map<string, Place>();
+const placeOf = (key: string): Place => {
+  let place = places.get(key);
+  if (!place) places.set(key, (place = { paths: null, query: "", treeScroll: 0, list: null }));
+  return place;
+};
+
+// The tree's width, once the reader has dragged its edge; until then the
+// stylesheet's default. Room is always left for the file list beside it. It is
+// a custom property so the stacked layout can ignore it.
+const WIDTH_KEY = "bb-plugin-diff-plus:tree-width";
+const WIDTH_VAR = "--diff-plus-tree-width";
+const MIN_WIDTH = 140;
+const LIST_ROOM = 240;
+const RESIZE_STEP = 16;
+const clampWidth = (width: number, list: HTMLElement) => Math.round(Math.max(MIN_WIDTH, Math.min(width, list.clientWidth - LIST_ROOM)));
+const storedWidth = () => Number(localStorage.getItem(WIDTH_KEY)) || null;
+
+// ---------------------------------------------------------------------------
+// The Diff tabs on the page.
+
+interface TabState {
+  tab: DiffTab;
+  label: string;
+  query: string;
+  /** The tab's "Filter files" choices, which the tree follows. */
+  filters: DiffFilters | null;
+  thread: string | null;
+}
+
+const ids = new WeakMap<Element, number>();
+let nextId = 1;
+const idOf = (element: Element) => {
+  let id = ids.get(element);
+  if (!id) ids.set(element, (id = nextId++));
+  return id;
+};
+
+const sameTab = (a: TabState, b: TabState) =>
+  a.tab.list === b.tab.list &&
+  a.tab.actions === b.tab.actions &&
+  a.tab.toolbar === b.tab.toolbar &&
+  a.label === b.label &&
+  a.query === b.query &&
+  a.thread === b.thread &&
+  filtersKey(a.filters) === filtersKey(b.filters);
+
+function useDiffTabs(fallbackThread: string | null): TabState[] {
+  const [tabs, setTabs] = useState<TabState[]>([]);
+  useEffect(() => {
+    let frame = 0;
+    let current: TabState[] = [];
+    const check = () => {
+      frame = 0;
+      const next = findDiffTabs().map((tab) => ({
+        tab,
+        label: scopeLabel(tab),
+        query: filterValue(tab),
+        filters: readFilters(tab),
+        // In a split pane the focused thread is another pane's: wait for this pane's timeline.
+        thread: paneThread(tab) ?? (inPanePanel(tab) ? null : fallbackThread),
+      }));
+      if (next.length === current.length && next.every((state, i) => sameTab(state, current[i]!))) return;
+      current = next;
+      setTabs(next);
+      listen();
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    const stop = watchDiffTabs(schedule, () => current.map((state) => state.tab.list));
+    // Typing in BB's search box changes its value without touching the DOM. The box is in
+    // the tab's toolbar, so that is where this listens: a listener on the document would run
+    // for every key typed in the composer, and a long frame there is blamed on it.
+    const typed = (event: Event) => isFilterInput(event.target) && schedule();
+    const toolbars = new Set<HTMLElement>();
+    const listen = () => {
+      const now = new Set(current.map((state) => state.tab.toolbar));
+      for (const toolbar of toolbars)
+        if (!now.has(toolbar)) {
+          toolbar.removeEventListener("input", typed, true);
+          toolbars.delete(toolbar);
+        }
+      for (const toolbar of now)
+        if (!toolbars.has(toolbar)) {
+          toolbar.addEventListener("input", typed, true);
+          toolbars.add(toolbar);
+        }
+    };
+    check();
+    return () => {
+      stop();
+      for (const toolbar of toolbars) toolbar.removeEventListener("input", typed, true);
+      cancelAnimationFrame(frame);
+    };
+  }, [fallbackThread]);
+  return tabs;
+}
+
+export function TreeOverlay() {
+  const { threadId } = useBbContext();
+  const tabs = useDiffTabs(threadId);
+  return (
+    <>
+      {tabs.map((state) => (
+        <TabTree key={idOf(state.tab.list)} {...state} />
+      ))}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// One tab: the toggle in its toolbar and, while on, the column.
+
+/** An element of ours put first in `parent` for as long as the component is mounted. */
+function useHost(parent: HTMLElement | null, className: string) {
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    if (!parent) return;
+    const element = document.createElement("div");
+    element.className = className;
+    parent.prepend(element);
+    setHost(element);
+    return () => {
+      element.remove();
+      setHost(null);
+    };
+  }, [parent, className]);
+  return host;
+}
+
+type Layout = "side" | "stacked";
+
+/** Whether the tree fits beside the list, read from the list's width while `list` is given. */
+function useLayout(list: HTMLElement | null): Layout {
+  const [layout, setLayout] = useState<Layout>("side");
+  useLayoutEffect(() => {
+    if (!list) return;
+    const read = () => setLayout(list.clientWidth < STACK_BELOW ? "stacked" : "side");
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [list]);
+  return layout;
+}
+
+/** The thread's environment, read once per thread. */
+function useEnvironmentId(threadId: string | null): string | null {
+  const sdk = useSdk();
+  const [environmentId, setEnvironmentId] = useState<string | null>(null);
+  useEffect(() => {
+    setEnvironmentId(null);
+    if (!threadId) return;
+    const controller = new AbortController();
+    sdk.threads
+      .get({ threadId, signal: controller.signal })
+      .then((thread) => setEnvironmentId(thread.environmentId ?? null))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [sdk, threadId]);
+  return environmentId;
+}
+
+/** The environments (with the Recent commits setting) whose merge base this page has asked to restore. */
+const baseChecked = new Set<string>();
+
+function TabTree({ tab, label, query, filters, thread }: TabState) {
+  const options = useOptions();
+  const environmentId = useEnvironmentId(thread);
+  const rpc = useRpc<typeof rpcContract>();
+  const commits = useRecentCommits(environmentId, options.recentCount, options.recent);
+  const toggleHost = useHost(tab.actions, "diff-plus-toggle-host");
+  const columnHost = useHost(options.open ? tab.list : null, "diff-plus-tree");
+  const layout = useLayout(columnHost ? tab.list : null);
+  // The stylesheet lays the list's box out as a row ("side") or a column ("stacked").
+  useLayoutEffect(() => {
+    if (!columnHost) return;
+    tab.list.setAttribute("data-diff-plus-tree", layout);
+    return () => tab.list.removeAttribute("data-diff-plus-tree");
+  }, [columnHost, layout, tab.list]);
+
+  const scope = useMemo(() => scopeOf(label), [label]);
+  // A recent commit moved the merge base back so BB would show it (Picker.tsx);
+  // any other scope puts it back, so All and Committed changes mean what they did.
+  const showsCommit = scope?.target === "commit";
+  useEffect(() => {
+    if (!environmentId || !scope || (showsCommit && options.recent)) return;
+    // Once per environment and setting for this page (an earlier page may have been closed
+    // mid-pick), then only while this page's own pick has the base moved.
+    const checked = `${environmentId}|${options.recent}`;
+    if (baseChecked.has(checked) && !baseMoved(environmentId)) return;
+    baseChecked.add(checked);
+    rpc
+      .call("restore_base", { environmentId, reason: options.recent ? "scope" : "recent-off" })
+      .then((result) => result.ok && baseRestored(environmentId))
+      .catch(() => {});
+  }, [rpc, environmentId, scope !== null, showsCommit, options.recent]); // scope !== null stands for scope
+  const files = useChangedFiles(options.open ? environmentId : null, scope);
+  const viewed = useViewed(environmentId, files.status === "ready" ? files.target : null, tab.list, filters?.showViewed === false);
+  const filterKey = filtersKey(filters);
+  const shown = useMemo(
+    () => (files.status === "ready" ? applyFilters(files.files, filters, viewed) : null),
+    [files, filterKey, viewed], // filterKey stands for filters
+  );
+  const tree = useMemo(() => (shown ? buildTree(shown, options.compact, options.synced) : null), [shown, options.compact, options.synced]);
+  const key = thread && label ? `${thread}|${label}` : null;
+
+  // Open folders, per scope: what the reader had (see Place), else the chosen
+  // depth when the scope's tree first loads; later loads keep the reader's.
+  const [open, setOpen] = useState<{ key: string; paths: Set<string> } | null>(null);
+  useEffect(() => {
+    if (tree && key && open?.key !== key) setOpen({ key, paths: placeOf(key).paths ?? openAt(tree, options.depth) });
+  }, [tree, key, open?.key, options.depth]);
+  const paths = open && open.key === key ? open.paths : null;
+  // A folded row carries its deepest path, so an open "src/foo/bar" opens
+  // "src" and "src/foo" too when folding is switched off, or when a query
+  // change unfolds it.
+  useEffect(() => {
+    setOpen((was) => was && { key: was.key, paths: new Set([...was.paths].flatMap(withParents)) });
+  }, [options.compact, filterKey]);
+  useEffect(() => {
+    if (open) placeOf(open.key).paths = open.paths;
+  }, [open]);
+
+  const restoring = useRestorePlace(tab, key, query);
+
+  return (
+    <>
+      {toggleHost && createPortal(<TreeMenu />, toggleHost)}
+      <PickerCommits tab={tab} environmentId={environmentId} commits={commits} count={options.recentCount} />
+      {columnHost &&
+        createPortal(
+          <>
+            <TreeScroll placeKey={key} ready={paths !== null} restoring={restoring}>
+              <TreeColumn tab={tab} query={query} scope={scope} files={files} tree={tree} shown={shown} paths={paths} setOpen={setOpen} />
+            </TreeScroll>
+            <ResizeHandle column={columnHost} list={tab.list} />
+          </>,
+          columnHost,
+        )}
+    </>
+  );
+}
+
+/**
+ * Puts the reader's place back when a Diff tab mounts (see Place), then keeps it
+ * up to date: the query as it changes, the list's place as it scrolls. Returns
+ * whether the restore is still in progress, during which nothing is saved.
+ */
+function useRestorePlace(tab: DiffTab, key: string | null, query: string): boolean {
+  const [restoring, setRestoring] = useState(true);
+  const started = useRef(false);
+  useEffect(() => {
+    if (!key || started.current) return;
+    started.current = true;
+    const place = placeOf(key);
+    let cancelled = false;
+    const cancel = () => (cancelled = true);
+    const input = ["wheel", "pointerdown", "keydown", "touchstart"] as const;
+    for (const type of input) tab.list.addEventListener(type, cancel, { capture: true, passive: true });
+    void (async () => {
+      try {
+        if (place.query && !filterValue(tab)) await setFilter(tab, place.query);
+        if (place.list && !cancelled) await restoreListPlace(tab, place.list, () => cancelled);
+      } finally {
+        for (const type of input) tab.list.removeEventListener(type, cancel, { capture: true });
+        setRestoring(false);
+      }
+    })();
+  }, [key, tab]);
+
+  useEffect(() => {
+    if (key && !restoring) placeOf(key).query = query;
+  }, [key, query, restoring]);
+
+  useEffect(() => {
+    if (!key || restoring) return;
+    let frame = 0;
+    const save = () => {
+      frame = 0;
+      const scroller = listScroller(tab);
+      if (scroller) placeOf(key).list = readListPlace(scroller);
+    };
+    // Scroll events do not bubble, but they pass the list's box on the way down.
+    const onScroll = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest(".diff-plus-tree")) return;
+      if (!frame) frame = requestAnimationFrame(save);
+    };
+    tab.list.addEventListener("scroll", onScroll, true);
+    return () => {
+      tab.list.removeEventListener("scroll", onScroll, true);
+      cancelAnimationFrame(frame);
+    };
+  }, [key, tab, restoring]);
+  return restoring;
+}
+
+/** The tree's own scroller: put back where it was once the rows are there, and remembered as it moves. */
+function TreeScroll({
+  placeKey,
+  ready,
+  restoring,
+  children,
+}: {
+  placeKey: string | null;
+  ready: boolean;
+  restoring: boolean;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const restored = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    if (!ready || !placeKey || !ref.current || restored.current === placeKey) return;
+    restored.current = placeKey;
+    ref.current.scrollTop = placeOf(placeKey).treeScroll;
+  }, [ready, placeKey]);
+  return (
+    <div
+      ref={ref}
+      className="diff-plus-tree-scroll"
+      onScroll={(event) => {
+        if (placeKey && !restoring && restored.current === placeKey) placeOf(placeKey).treeScroll = event.currentTarget.scrollTop;
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The column's right edge, beside the list only: drag it, or focus it and use the arrow keys. */
+function ResizeHandle({ column, list }: { column: HTMLElement; list: HTMLElement }) {
+  useLayoutEffect(() => {
+    const width = storedWidth();
+    if (width) column.style.setProperty(WIDTH_VAR, `${clampWidth(width, list)}px`);
+    else column.style.removeProperty(WIDTH_VAR);
+  }, [column, list]);
+  const set = (width: number) => {
+    const next = clampWidth(width, list);
+    column.style.setProperty(WIDTH_VAR, `${next}px`);
+    return next;
+  };
+  return (
+    <div
+      className="diff-plus-tree-resize"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize folder tree"
+      tabIndex={0}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        const handle = event.currentTarget;
+        handle.setPointerCapture(event.pointerId);
+        const start = event.clientX - column.getBoundingClientRect().width;
+        let last = column.getBoundingClientRect().width;
+        const move = (e: PointerEvent) => (last = set(e.clientX - start));
+        const end = () => {
+          handle.removeEventListener("pointermove", move);
+          handle.removeEventListener("pointerup", end);
+          handle.removeEventListener("pointercancel", end);
+          localStorage.setItem(WIDTH_KEY, String(last));
+        };
+        handle.addEventListener("pointermove", move);
+        handle.addEventListener("pointerup", end);
+        handle.addEventListener("pointercancel", end);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        const width = column.getBoundingClientRect().width;
+        localStorage.setItem(WIDTH_KEY, String(set(width + (event.key === "ArrowLeft" ? -RESIZE_STEP : RESIZE_STEP))));
+      }}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The files.
+
+/** What a Diff tab scope compares, in `bb--git`'s terms. */
+type DiffTarget = { type: "uncommitted" } | { type: "all" | "branch_committed"; mergeBaseBranch: string } | { type: "commit"; sha: string };
+
+type Files =
+  | { status: "loading" }
+  | { status: "ready"; files: TreeFile[]; truncated: boolean; target: DiffTarget; for: string }
+  | { status: "error"; message: string };
+
+const LOADING: Files = { status: "loading" };
+
+function useChangedFiles(environmentId: string | null, scope: Scope | null): Files {
+  const sdk = useSdk();
+  const rpc = useRpc<typeof rpcContract>();
+  const [files, setFiles] = useState<Files>(LOADING);
+  const scopeKey = scope ? JSON.stringify(scope) : null;
+  const forKey = `${environmentId}|${scopeKey}`;
+  useEffect(() => {
+    setFiles(LOADING);
+    if (!environmentId || !scope) return;
+    let disposed = false;
+    let controller: AbortController | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let unsubscribe: (() => void) | null = null;
+    const refresh = refresher(() => void load(), REFRESH_WAIT_MS, REFRESH_MAX_WAIT_MS);
+
+    const load = async () => {
+      controller?.abort();
+      const { signal } = (controller = new AbortController());
+      try {
+        if (!unsubscribe && !disposed) {
+          unsubscribe = sdk.subscribe({
+            event: "environment:changed",
+            environmentId,
+            callback: ({ changes }) => {
+              if (refreshes(changes)) refresh.signal();
+            },
+          });
+        }
+        const environment = await sdk.environments.get({ environmentId, signal });
+        const base = environment.mergeBaseBranch ?? environment.defaultBranch;
+        const target: DiffTarget | null =
+          scope.target === "all" || scope.target === "branch_committed"
+            ? base
+              ? { type: scope.target, mergeBaseBranch: base }
+              : null
+            : scope.target === "commit"
+              ? { type: scope.target, sha: scope.sha }
+              : { type: scope.target };
+        if (!target) throw new Error("This environment has no base branch to compare with.");
+        const result = await rpc.call("files", { environmentId, target });
+        if (disposed || signal.aborted) return;
+        if (result.outcome !== "available") {
+          setFiles({ status: "error", message: result.outcome === "unavailable" ? result.failure.message : result.message });
+          return;
+        }
+        setFiles({
+          status: "ready",
+          for: forKey,
+          truncated: result.truncated,
+          target,
+          files: result.files.map((file) => ({
+            path: file.path,
+            previousPath: file.previousPath,
+            additions: file.additions,
+            deletions: file.deletions,
+            changeKind: file.changeKind,
+            untracked: file.origin === "untracked",
+            revision: file.revision,
+          })),
+        });
+      } catch (cause) {
+        if (disposed || signal.aborted) return;
+        setFiles((previous) =>
+          previous.status === "ready" ? previous : { status: "error", message: cause instanceof Error ? cause.message : String(cause) },
+        );
+        clearTimeout(timer);
+        timer = setTimeout(load, RETRY_MS);
+      }
+    };
+    void load();
+    return () => {
+      disposed = true;
+      controller?.abort();
+      clearTimeout(timer);
+      refresh.cancel();
+      unsubscribe?.();
+    };
+  }, [sdk, rpc, environmentId, scopeKey]); // scopeKey stands for scope
+  // On the render where the scope changes, the state still holds the previous
+  // scope's files (the effect clears it after); they must not open its folders.
+  return files.status === "ready" && files.for !== forKey ? LOADING : files;
+}
+
+/** How long after a Viewed box is ticked to read the marks again, so BB has saved it. */
+const VIEWED_WAIT_MS = 800;
+
+/**
+ * The files marked Viewed (path to the revision marked), read only while the
+ * query hides viewed files; null until known.
+ */
+function useViewed(environmentId: string | null, target: DiffTarget | null, list: HTMLElement, enabled: boolean) {
+  const rpc = useRpc<typeof rpcContract>();
+  const [viewed, setViewed] = useState<ReadonlyMap<string, string> | null>(null);
+  const targetKey = target ? JSON.stringify(target) : null;
+  useEffect(() => {
+    setViewed(null);
+    if (!enabled || !environmentId || !target) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = () =>
+      rpc
+        .call("viewed", { environmentId, target })
+        .then((result) => !disposed && setViewed(new Map(result.files.map((file) => [file.path, file.revision]))))
+        .catch(() => {});
+    const ticked = new MutationObserver((records) => {
+      if (!records.some((record) => record.target instanceof Element && record.target.matches(VIEWED_BOX))) return;
+      clearTimeout(timer);
+      timer = setTimeout(load, VIEWED_WAIT_MS);
+    });
+    ticked.observe(list, { attributes: true, attributeFilter: ["aria-checked"], subtree: true });
+    void load();
+    return () => {
+      disposed = true;
+      clearTimeout(timer);
+      ticked.disconnect();
+    };
+  }, [rpc, environmentId, targetKey, list, enabled]); // targetKey stands for target
+  return viewed;
+}
+
+// ---------------------------------------------------------------------------
+// The column.
+
+const numbers = new Intl.NumberFormat();
+
+function Stats({ additions, deletions }: { additions: number; deletions: number }) {
+  return (
+    <span className="diff-plus-stats">
+      {additions > 0 && <span className="diff-plus-added">+{numbers.format(additions)}</span>}
+      {deletions > 0 && <span className="diff-plus-removed">−{numbers.format(deletions)}</span>}
+    </span>
+  );
+}
+
+/** A vscode-icons glyph, drawn by its class in src/icons.css. */
+const FileIcon = ({ icon }: { icon: string }) => <span className={`diff-plus-file-icon diff-plus-i-${icon}`} aria-hidden />;
+
+interface RowsProps {
+  dir: TreeDir;
+  depth: number;
+  open: ReadonlySet<string>;
+  /** How many levels of open folders stick under "Changes" (see useStuckRows). */
+  room: number;
+  /** "dir:<path>" or "file:<path>" for the row the query stands for. */
+  active: string | null;
+  toggle: (path: string) => void;
+  pick: (kind: "dir" | "file", path: string) => void;
+  /** What the path search shows, when it shows less than everything: tinted. */
+  lit: Lit | null;
+}
+
+/** The files the path search lets through, and every folder above one of them. */
+interface Lit {
+  files: ReadonlySet<string>;
+  dirs: ReadonlySet<string>;
+  /** The folders every file of which the query lets through: tinted open too, so a band runs through them. */
+  whole: ReadonlySet<string>;
+}
+
+// 0.5rem at the root: room between the synced-view line on the left edge and the icons.
+const indent = (depth: number) => ({ paddingLeft: `${0.5 + depth * 0.75}rem` });
+
+/** A file's row: in the tree under its folder, or in the flat view with its folder beside its name. */
+const FileRow = ({ file, depth, active, pick, lit, flat }: Pick<RowsProps, "active" | "pick" | "lit"> & { file: TreeFile; depth: number; flat?: boolean }) => {
+  const status = statusOf(file);
+  return (
+    <div
+      className="diff-plus-row"
+      data-active={active === `file:${file.path}` || undefined}
+      data-match={lit?.files.has(file.path) || undefined}
+      data-path={file.path}
+      style={indent(depth)}
+    >
+      <button
+        type="button"
+        className="diff-plus-pick"
+        role="treeitem"
+        aria-selected={active === `file:${file.path}`}
+        title={file.previousPath ? `${file.previousPath} → ${file.path}` : file.path}
+        onClick={() => pick("file", file.path)}
+      >
+        <FileIcon icon={fileIcon(file.path)} />
+        <span className={flat ? "diff-plus-name diff-plus-name--flat" : "diff-plus-name"} data-deleted={file.changeKind === "deleted" || undefined}>
+          {fileName(file.path)}
+        </span>
+        {flat && <span className="diff-plus-dir">{dirName(file.path)}</span>}
+        <Stats additions={file.additions} deletions={file.deletions} />
+        <span className="diff-plus-mark" data-tone={status.tone} title={status.title}>
+          {status.mark}
+        </span>
+      </button>
+    </div>
+  );
+};
+
+const Rows = memo(function Rows({ dir, depth, open, room, active, toggle, pick, lit }: RowsProps) {
+  return (
+    <>
+      {dir.entries.map((entry) => {
+        if (!("dirs" in entry)) return <FileRow key={entry.path} file={entry} depth={depth} active={active} pick={pick} lit={lit} />;
+        const child = entry;
+        const expanded = open.has(child.path);
+        // An open folder's row sticks under "Changes" while its rows are above (and
+        // under the rows of the open folders holding it), pushed up by the end of
+        // its wrapper, which is its containing block.
+        const pinned = expanded && depth < room;
+        return (
+          <div key={child.path} role="none">
+            <div
+              className={pinned ? "diff-plus-row diff-plus-sticky" : "diff-plus-row"}
+              data-active={active === `dir:${child.path}` || undefined}
+              data-match={(expanded ? lit?.whole.has(child.path) : lit?.dirs.has(child.path)) || undefined}
+              data-path={child.path}
+              data-open={expanded || undefined}
+              style={pinned ? { ...indent(depth), top: PINNED_TOP + depth * ROW_HEIGHT, zIndex: MAX_PINNED - depth } : indent(depth)}
+            >
+              {/* The folder's icon opens and closes it (no chevrons: the open and closed icons show the state). */}
+              <button
+                type="button"
+                className="diff-plus-twisty"
+                // Not "Expand <path>": BB labels its file cards that way, and
+                // expandFile looks them up by label.
+                aria-label={`${child.path}/`}
+                aria-expanded={expanded}
+                title={expanded ? "Close folder" : "Open folder"}
+                onClick={() => toggle(child.path)}
+              >
+                <FileIcon icon={folderIcon(child.path, expanded)} />
+              </button>
+              <button
+                type="button"
+                className="diff-plus-pick"
+                role="treeitem"
+                aria-expanded={expanded}
+                aria-selected={active === `dir:${child.path}`}
+                title={`${child.path}/ · ${child.count} ${child.count === 1 ? "file" : "files"}`}
+                onClick={() => pick("dir", child.path)}
+              >
+                <span className="diff-plus-name">{child.name}</span>
+                <span className="diff-plus-count">{child.count}</span>
+                <Stats additions={child.additions} deletions={child.deletions} />
+                <span className="diff-plus-mark" data-tone={child.tone ?? undefined} aria-hidden>
+                  <span className="diff-plus-dot" />
+                </span>
+              </button>
+            </div>
+            {expanded && (
+              <div role="group">
+                <Rows dir={child} depth={depth + 1} open={open} room={room} active={active} toggle={toggle} pick={pick} lit={lit} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+});
+
+/** The flat view: every file on its own row, its folder beside its name. */
+const FlatRows = memo(function FlatRows({
+  files,
+  active,
+  pick,
+  lit,
+}: Omit<RowsProps, "dir" | "depth" | "open" | "room" | "toggle"> & { files: readonly TreeFile[] }) {
+  return (
+    <>
+      {files.map((file) => (
+        <FileRow key={file.path} file={file} depth={0} active={active} pick={pick} lit={lit} flat />
+      ))}
+    </>
+  );
+});
+
+const SLIDE_MS = 160;
+/** Room kept above or below the marked rows when the tree follows the list. */
+const FOLLOW_MARGIN = 8;
+/** How long the list has to be still before the tree follows it. */
+const FOLLOW_QUIET_MS = 150;
+/** A long steady scroll of the list still has the tree follow this often. */
+const FOLLOW_MAX_WAIT_MS = 500;
+/** How long after the reader moves the tree it stops following the list. */
+const FOLLOW_PAUSE_MS = 1500;
+
+/**
+ * Slides the in-view bars when the line moves: a row that gains one slides it in
+ * from the old line, a row that loses one slides it into the new line, in the
+ * direction the line moved. The bars are opaque, so ones passing over each
+ * other read as one line. With no bar on the other side (the first marks, or
+ * all gone) the CSS fade does it.
+ */
+function slide(entering: Element[], leaving: Element[], before: Element[], after: Element[]) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const tops = new Map<Element, number>();
+  const top = (row: Element) => {
+    let value = tops.get(row);
+    if (value === undefined) tops.set(row, (value = row.getBoundingClientRect().top));
+    return value;
+  };
+  /**
+   * The offset to the nearest row of `among` on the `toward` side of `row`
+   * (-1 above, 1 below), or the nearest on either side when there is none.
+   */
+  const nearest = (row: Element, among: Element[], toward: number) => {
+    let best: number | null = null;
+    let any: number | null = null;
+    for (const other of among) {
+      const distance = top(other) - top(row);
+      if (any === null || Math.abs(distance) < Math.abs(any)) any = distance;
+      if (distance * toward > 0 && (best === null || Math.abs(distance) < Math.abs(best))) best = distance;
+    }
+    return best ?? any;
+  };
+  const mean = (rows: Element[]) => rows.reduce((sum, row) => sum + top(row), 0) / rows.length;
+  const run = (row: Element, from: number, to: number, fade = false) => {
+    row.setAttribute("data-sliding", "");
+    const animation = row.animate(
+      [
+        { translate: `0 ${from}px`, opacity: 1 },
+        { translate: `0 ${to}px`, opacity: fade ? 0 : 1 },
+      ],
+      { duration: SLIDE_MS, easing: "cubic-bezier(0, 0, 0.58, 1)", pseudoElement: "::before" },
+    );
+    const done = () => {
+      if (!row.getAnimations({ subtree: true }).some((other) => other !== animation && other.playState !== "finished" && other.playState !== "idle"))
+        row.removeAttribute("data-sliding");
+    };
+    animation.onfinish = done;
+    animation.oncancel = done;
+  };
+  // Which way the line moved (-1 up, 1 down). Every bar travels that way: a
+  // new one comes from the old line behind it, and one that goes slides on into
+  // the new line ahead of it, fading as it goes.
+  if (!before.length || !after.length) return;
+  const way = Math.sign(mean(after) - mean(before)) || 1;
+  for (const row of entering) {
+    const from = nearest(row, before, -way);
+    if (from !== null) run(row, from, 0);
+  }
+  for (const row of leaving) {
+    const to = nearest(row, after, way);
+    if (to !== null) run(row, 0, to, true);
+  }
+}
+
+/**
+ * Synced view: marks the rows of the files whose cards are on screen
+ * in the list (or the closed folder holding one) with `data-in-view`, straight
+ * on the DOM so a scroll never re-renders the tree. Nothing listens while off.
+ * Returns a ref to the function that marks the rows again after a render.
+ */
+function useInView(tab: DiffTab, treeRef: React.RefObject<HTMLDivElement | null>, on: boolean, follows: boolean) {
+  const remark = useRef<(() => void) | null>(null);
+  // Read when a follow is asked for, so switching it needs no new listeners.
+  const followsRef = useRef(follows);
+  followsRef.current = follows;
+  // When the reader last moved the tree; outside the effect, which runs again when a click changes the query.
+  const touched = useRef(0);
+  useEffect(() => {
+    if (!on) return;
+    let paths: readonly string[] = [];
+    let marked: Element[] = [];
+    const mark = () => {
+      const root = treeRef.current;
+      const all = root ? [...root.querySelectorAll(".diff-plus-row[data-path]")] : [];
+      const byPath = new Map(all.map((row) => [row.getAttribute("data-path"), row]));
+      const rows = new Set<Element>();
+      for (const path of paths) {
+        // The file's row, else the closest closed folder above it.
+        const row = withParents(path).reverse().map((candidate) => byPath.get(candidate)).find(Boolean);
+        if (row) rows.add(row);
+      }
+      // An open folder's row inside the line carries it too (its files are
+      // marked, not it), so the line runs on unbroken: one whose row above is
+      // marked and whose next file (past more open folders) is.
+      if (root && rows.size) {
+        const open = (row: Element) => row.hasAttribute("data-open");
+        all.forEach((row, index) => {
+          if (!open(row) || rows.has(row) || !rows.has(all[index - 1]!)) return;
+          let after = index + 1;
+          while (all[after] && open(all[after]!)) after++;
+          if (all[after] && rows.has(all[after]!)) for (let at = index; at < after; at++) rows.add(all[at]!);
+        });
+      }
+      const next = [...rows].sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+      slide(
+        next.filter((row) => !marked.includes(row)),
+        marked.filter((row) => !rows.has(row) && row.isConnected),
+        marked.filter((row) => rows.has(row) || row.isConnected),
+        next,
+      );
+      for (const row of marked) if (!rows.has(row)) row.removeAttribute("data-in-view");
+      for (const row of rows) row.setAttribute("data-in-view", "");
+      marked = next;
+    };
+    remark.current = mark;
+    // The tree follows the list: when the marked rows leave the tree's own
+    // view, it scrolls just far enough to show them (their top, if they are
+    // taller than it), to a whole row so none is left half under the stuck rows. Not while the reader is moving the tree itself. It waits
+    // for the list to be still (`askFollow`), since each follow starts a smooth
+    // scroll and a list scrolled fast back and forth would restart it all the time.
+    const touch = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest(".diff-plus-tree-scroll")) touched.current = performance.now();
+    };
+    const inputs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    for (const type of inputs) tab.list.addEventListener(type, touch, { capture: true, passive: true });
+    const follow = () => {
+      const root = treeRef.current;
+      const scroller = root?.closest<HTMLElement>(".diff-plus-tree-scroll");
+      if (!root || !scroller || !marked.length || performance.now() - touched.current < FOLLOW_PAUSE_MS) return;
+      const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const box = scroller.getBoundingClientRect();
+      // Content coordinates: where a row sits in the scroller with scrollTop 0. A stuck
+      // folder row is placed by its wrapper, which is where it would be unstuck.
+      const natural = (row: Element) => {
+        const at = (row.classList.contains("diff-plus-sticky") ? row.parentElement! : row).getBoundingClientRect();
+        return at.top - box.top + scroller.scrollTop;
+      };
+      const rows = root.querySelectorAll(".diff-plus-row[data-path]");
+      const lastRow = rows[rows.length - 1];
+      const end = lastRow ? natural(lastRow) + ROW_HEIGHT : 0;
+      if (end <= scroller.clientHeight) return;
+      const stack = [...root.querySelectorAll<HTMLElement>(".diff-plus-sticky")].map((row) => {
+        const wrapper = row.parentElement!;
+        return { at: parseFloat(row.style.top), top: natural(row), bottom: wrapper.getBoundingClientRect().bottom - box.top + scroller.scrollTop };
+      });
+      // What the stuck rows cover at scrollTop `at`: "Changes", and the folder rows stuck under it.
+      const coveredAt = (at: number) => {
+        let covered = PINNED_TOP;
+        for (const row of stack) if (row.top - at < row.at && row.bottom - at > row.at + ROW_HEIGHT) covered = Math.max(covered, row.at + ROW_HEIGHT);
+        return covered;
+      };
+      let top = Infinity;
+      let bottom = -Infinity;
+      for (const row of marked) {
+        top = Math.min(top, natural(row));
+        bottom = Math.max(bottom, natural(row) + ROW_HEIGHT);
+      }
+      const tall = (at: number) => bottom - top > scroller.clientHeight - coveredAt(at) - FOLLOW_MARGIN;
+      // Whether the marked rows are in view at scrollTop `at` (their top, if they are taller than the view).
+      const shows = (at: number, strict = true) =>
+        top - at >= coveredAt(at) && (bottom - at <= scroller.clientHeight || (!strict && tall(at)));
+      const maxTop = scroller.scrollHeight - scroller.clientHeight;
+      const go = (to: number) => {
+        const clamped = Math.max(0, Math.min(maxTop, to));
+        if (Math.abs(clamped - scroller.scrollTop) > 0.5) scroller.scrollTo({ top: clamped, behavior: smooth ? "smooth" : "auto" });
+      };
+      // Rows and the stuck stack are on one ROW_HEIGHT lattice, so a row is never left half under
+      // the stack at a multiple of it: of the two nearest, take one that keeps the marked rows in view.
+      const snap = (to: number) => {
+        const near = [Math.floor(to / ROW_HEIGHT) * ROW_HEIGHT, Math.ceil(to / ROW_HEIGHT) * ROW_HEIGHT].filter((at) => at >= 0 && at <= maxTop);
+        const good = near.filter((at) => shows(at, false));
+        const pool = good.length ? good : near;
+        return pool.length ? pool.reduce((best, at) => (Math.abs(at - to) < Math.abs(best - to) ? at : best)) : to;
+      };
+      // The list at an end puts the tree at the same end (a list that fits is at both),
+      // but only if the marked rows stay in view there: they come first.
+      const list = listScroller(tab);
+      if (list && list.scrollHeight - list.clientHeight > 1) {
+        if (list.scrollTop <= 1 && shows(0)) return go(0);
+        const last = snap(Math.max(0, end - scroller.clientHeight));
+        if (list.scrollTop + list.clientHeight >= list.scrollHeight - 1 && shows(last)) return go(last);
+      }
+      const now = scroller.scrollTop;
+      if (shows(now)) return;
+      go(snap(tall(now) || top - now < coveredAt(now) ? top - coveredAt(now) : bottom - scroller.clientHeight + FOLLOW_MARGIN));
+    };
+    let followTimer = 0;
+    let firstAsk = 0;
+    const askFollow = () => {
+      if (!followsRef.current) return;
+      const now = performance.now();
+      if (!followTimer) firstAsk = now;
+      window.clearTimeout(followTimer);
+      const wait = Math.max(0, Math.min(FOLLOW_QUIET_MS, firstAsk + FOLLOW_MAX_WAIT_MS - now));
+      followTimer = window.setTimeout(() => {
+        followTimer = 0;
+        follow();
+      }, wait);
+    };
+    const stop = watchVisibleCards(tab, (next) => {
+      paths = next;
+      mark();
+      askFollow();
+    });
+    // Reaching an end of the list may change no card on screen (the first or
+    // last is already showing), so the ends are watched on the list's scroll.
+    let edge = 0;
+    const onListScroll = (event: Event) => {
+      const list = event.target;
+      if (!(list instanceof HTMLElement) || list.closest(".diff-plus-tree")) return;
+      if (list.scrollHeight - list.clientHeight <= 1) return;
+      const at = list.scrollTop <= 1 ? -1 : list.scrollTop + list.clientHeight >= list.scrollHeight - 1 ? 1 : 0;
+      if (at !== edge && (edge = at)) askFollow();
+    };
+    tab.list.addEventListener("scroll", onListScroll, { capture: true, passive: true });
+    return () => {
+      stop();
+      window.clearTimeout(followTimer);
+      for (const type of inputs) tab.list.removeEventListener(type, touch, { capture: true });
+      tab.list.removeEventListener("scroll", onListScroll, { capture: true });
+      remark.current = null;
+      for (const row of marked) row.removeAttribute("data-in-view");
+    };
+  }, [tab, treeRef, on]);
+  return remark;
+}
+
+const ROW_HEIGHT = 24;
+/** "Changes" is one row tall, with 2px below it (`margin-bottom` in the CSS): where the rows start. */
+const PINNED_TOP = ROW_HEIGHT + 2;
+/** Most folder rows stuck at once ("Changes" is above them all: z-index MAX_PINNED + 1 in the CSS). */
+const MAX_PINNED = 7;
+/** Share of the tree's view the stuck rows may take. */
+const PINNED_SHARE = 0.4;
+
+/**
+ * Pinned folder rows are the browser's: an open folder's row (`diff-plus-sticky`,
+ * see `Rows`) is pinned by the browser at `PINNED_TOP + depth * ROW_HEIGHT` in its
+ * own wrapper. This hook feeds the shade (`.diff-plus-shade`): the bottom of the
+ * pinned rows as `--diff-plus-covered` on the tree root, and `data-stuck` on it
+ * once the tree has scrolled. It returns how many folder levels may stick: what
+ * 40% of the tree's view holds, up to MAX_PINNED.
+ */
+function useStuckRows(treeRef: React.RefObject<HTMLDivElement | null>, on: boolean, hasRows: boolean): number {
+  const [room, setRoom] = useState(MAX_PINNED);
+  const pins = useRef<NodeListOf<HTMLElement> | null>(null);
+  const read = useRef<() => void>(() => {});
+  read.current = () => {
+    const root = treeRef.current;
+    const scroller = root?.closest<HTMLElement>(".diff-plus-tree-scroll");
+    if (!root || !scroller) return;
+    const stuck = scroller.scrollTop > 0;
+    let covered = root.querySelector(".diff-plus-root")?.getBoundingClientRect().bottom ?? 0;
+    if (on && stuck) {
+      pins.current ??= root.querySelectorAll<HTMLElement>(".diff-plus-sticky");
+      for (const row of pins.current) {
+        const at = row.getBoundingClientRect();
+        // Stuck: below where its wrapper (its containing block) starts, which is where it would be unstuck.
+        if (at.top - row.parentElement!.getBoundingClientRect().top > 0.5) covered = Math.max(covered, at.bottom);
+      }
+    }
+    const top = scroller.getBoundingClientRect().top;
+    root.toggleAttribute("data-stuck", stuck);
+    root.style.setProperty("--diff-plus-covered", `${covered - top}px`);
+  };
+  // Layout effect: a render that moved the rows never paints stale edge paint first.
+  useLayoutEffect(() => {
+    pins.current = null;
+    read.current();
+  });
+  useLayoutEffect(() => {
+    const scroller = treeRef.current?.closest<HTMLElement>(".diff-plus-tree-scroll");
+    if (!scroller) return;
+    const measure = () => {
+      setRoom(Math.min(MAX_PINNED, Math.floor((PINNED_SHARE * scroller.clientHeight) / ROW_HEIGHT)));
+      read.current();
+    };
+    const onScroll = () => read.current();
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      scroller.removeEventListener("scroll", onScroll);
+    };
+  }, [hasRows, treeRef]);
+  return room;
+}
+
+const ITEMS = '[role="treeitem"]';
+
+/**
+ * Arrow-key navigation, as in VS Code's Explorer: Up/Down walk the rows on screen, Home/End
+ * go to the ends, Right opens a closed folder or steps into an open one, Left closes an open
+ * folder or goes to the one holding the row. Enter and Space are the buttons' own click.
+ * Only one row is a tab stop (the one last focused, else the picked one, else the first),
+ * so Tab passes through the tree in one step.
+ */
+function useTreeKeys(treeRef: React.RefObject<HTMLDivElement | null>) {
+  const current = useRef<string | null>(null);
+  const keyOf = (item: Element) => item.closest("[data-path]")?.getAttribute("data-path") ?? "";
+  // Layout effect on every render: rows come and go as folders open and the scope changes.
+  useLayoutEffect(() => {
+    const root = treeRef.current;
+    if (!root) return;
+    const items = [...root.querySelectorAll<HTMLElement>(ITEMS)];
+    const stop = items.find((item) => keyOf(item) === current.current) ?? items.find((item) => item.closest("[data-active]")) ?? items[0];
+    for (const item of items) item.tabIndex = item === stop ? 0 : -1;
+  });
+  const onFocus = (event: React.FocusEvent<HTMLElement>) => {
+    const item = (event.target as Element).closest(ITEMS);
+    if (!item) return;
+    current.current = keyOf(item);
+    for (const other of treeRef.current?.querySelectorAll<HTMLElement>(ITEMS) ?? []) other.tabIndex = other === item ? 0 : -1;
+  };
+  const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    const item = (event.target as Element).closest<HTMLElement>(ITEMS);
+    const root = treeRef.current;
+    if (!item || !root || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const items = [...root.querySelectorAll<HTMLElement>(ITEMS)];
+    const at = items.indexOf(item);
+    const row = item.closest<HTMLElement>(".diff-plus-row");
+    const folder = row?.hasAttribute("data-open") !== undefined && item.hasAttribute("aria-expanded");
+    const opened = item.getAttribute("aria-expanded") === "true";
+    let to: HTMLElement | undefined;
+    switch (event.key) {
+      case "ArrowDown":
+        to = items[at + 1];
+        break;
+      case "ArrowUp":
+        to = items[at - 1];
+        break;
+      case "Home":
+        to = items[0];
+        break;
+      case "End":
+        to = items[items.length - 1];
+        break;
+      case "ArrowRight":
+        if (!folder) return;
+        if (!opened) row?.querySelector<HTMLElement>(".diff-plus-twisty")?.click();
+        else to = items[at + 1];
+        break;
+      case "ArrowLeft": {
+        if (folder && opened) row?.querySelector<HTMLElement>(".diff-plus-twisty")?.click();
+        else to = item.closest('[role="group"]')?.parentElement?.querySelector<HTMLElement>(`:scope > .diff-plus-row ${ITEMS}`) ?? undefined;
+        break;
+      }
+      default:
+        return;
+    }
+    event.preventDefault();
+    if (to) {
+      to.focus();
+      to.scrollIntoView({ ["bloc" + "k"]: "nearest" });
+    }
+  };
+  return { onFocus, onKeyDown };
+}
+
+interface TreeColumnProps {
+  tab: DiffTab;
+  query: string;
+  scope: Scope | null;
+  files: Files;
+  tree: TreeDir | null;
+  /** The files the tree holds, in BB's list order. */
+  shown: readonly TreeFile[] | null;
+  paths: Set<string> | null;
+  setOpen: React.Dispatch<React.SetStateAction<{ key: string; paths: Set<string> } | null>>;
+}
+
+function TreeColumn({ tab, query, scope, files, tree, shown, paths, setOpen }: TreeColumnProps) {
+  const editOpen = useCallback(
+    (edit: (paths: Set<string>) => Set<string>) => setOpen((previous) => previous && { ...previous, paths: edit(previous.paths) }),
+    [setOpen],
+  );
+  const toggle = useCallback(
+    (path: string) =>
+      editOpen((paths) => {
+        const next = new Set(paths);
+        if (!next.delete(path)) next.add(path);
+        return next;
+      }),
+    [editOpen],
+  );
+  const known = useMemo(() => new Set(files.status === "ready" ? files.files.map((file) => file.path) : []), [files]);
+  const { view, synced, syncScroll, syncBars } = useOptions();
+  const treeRef = useRef<HTMLDivElement | null>(null);
+  const remark = useInView(tab, treeRef, synced && (syncScroll || syncBars), syncScroll);
+  // Rows opened, closed or swapped by this render are marked again.
+  useLayoutEffect(() => remark.current?.());
+  const flat = useMemo(() => (view !== "list" || !tree ? null : synced ? shown : listFiles(tree)), [view, tree, synced, shown]);
+  const lit = useMemo((): Lit | null => {
+    if (files.status !== "ready") return null;
+    const matched = filterMatches(files.files, query);
+    if (!matched) return null;
+    const dirs = new Set<string>();
+    for (const path of matched) for (const dir of withParents(path).slice(0, -1)) dirs.add(dir);
+    const count = (paths: Iterable<string>) => {
+      const counts = new Map<string, number>();
+      for (const path of paths) for (const dir of withParents(path).slice(0, -1)) counts.set(dir, (counts.get(dir) ?? 0) + 1);
+      return counts;
+    };
+    const total = count(files.files.map((file) => file.path));
+    const hits = count(matched);
+    const whole = new Set<string>();
+    for (const [dir, n] of hits) if (n === total.get(dir)) whole.add(dir);
+    return { files: matched, dirs, whole };
+  }, [files, query]);
+  const selected = selectedBy(query, (path) => known.has(path));
+  const active = selected ? `${selected.kind}:${selected.path}` : null;
+  const pick = useCallback(
+    (kind: "dir" | "file", path: string) => {
+      if (active === `${kind}:${path}`) {
+        void setFilter(tab, "");
+        return;
+      }
+      if (tree)
+        editOpen((paths) => {
+          const next = new Set(paths);
+          for (const dir of ancestors(tree, path)) next.add(dir);
+          if (kind === "dir") next.add(path);
+          return next;
+        });
+      const pattern = kind === "dir" ? folderPattern(path) : filePattern(path, files.status === "ready" ? files.files : []);
+      void setFilter(tab, pattern).then((done) => {
+        if (!done) return;
+        scrollListToTop(tab);
+        if (kind === "file") void expandFile(tab, path);
+      });
+    },
+    [active, tab, tree, files, editOpen],
+  );
+
+  const setAllOpen = useCallback(
+    (all: boolean) => tree && editOpen(() => (all ? allDirs(tree) : new Set())),
+    [tree, editOpen],
+  );
+  const anyOpen = useMemo(() => (tree && paths ? [...allDirs(tree)].some((dir) => paths.has(dir)) : false), [tree, paths]);
+  const room = useStuckRows(treeRef, !flat, !!tree?.count && !!paths);
+  const keys = useTreeKeys(treeRef);
+
+  // "Changes" is there from the first render, whatever the files are doing, so the
+  // column does not change shape as they load; only what is under it does. Between
+  // the files arriving and the open folders being chosen there is one render with
+  // no rows to show: the spinner stays through it.
+  const rows = tree && paths && tree.count ? tree : null;
+  let body: React.ReactNode;
+  if (!scope) body = <p className="diff-plus-tree-note">No folder tree for this view.</p>;
+  else if (files.status === "error")
+    body = (
+      <p className="diff-plus-tree-note" role="alert">
+        {files.message}
+      </p>
+    );
+  else if (!tree || !paths) body = <div className="diff-plus-spinner" role="status" aria-label="Loading files" />;
+  else if (!tree.count) {
+    const filteredOut = files.status === "ready" && files.files.length > 0;
+    body = <p className="diff-plus-tree-note">{filteredOut ? "No files match the query." : "No changes."}</p>;
+  } else
+    body = (
+      <>
+        {flat ? (
+          <FlatRows files={flat} active={active} pick={pick} lit={lit} />
+        ) : (
+          <Rows dir={tree} depth={0} open={paths} room={room} active={active} toggle={toggle} pick={pick} lit={lit} />
+        )}
+        {files.status === "ready" && files.truncated && <p className="diff-plus-tree-note">BB cut this list short; query by path to find the rest.</p>}
+      </>
+    );
+  return (
+    <div
+      role="tree"
+      aria-label="Changed files by folder"
+      aria-busy={(scope && files.status === "loading") || undefined}
+      ref={treeRef}
+      onFocus={keys.onFocus}
+      onKeyDown={keys.onKeyDown}
+      data-show-in-view={(synced && syncBars) || undefined}
+      data-follows={(synced && syncScroll) || undefined}
+    >
+      <div className="diff-plus-shade" aria-hidden />
+      {/* "Changes" shows every file and carries the selection itself, so the fold
+          button beside it and the totals stay on the plain background. */}
+      <div className="diff-plus-row diff-plus-root">
+        <button
+          type="button"
+          className="diff-plus-pick diff-plus-root-label"
+          role="treeitem"
+          aria-selected={!query.trim()}
+          data-active={!query.trim() || undefined}
+          title="Show every file"
+          onClick={() => query.trim() && void setFilter(tab, "")}
+        >
+          <span className="diff-plus-name">Changes</span>
+        </button>
+        <span className="diff-plus-root-buttons">
+          <ViewMenu />
+          {rows && !flat && (
+            <button
+              type="button"
+              className="diff-plus-fold-all"
+              aria-label={anyOpen ? "Collapse all folders" : "Expand all folders"}
+              title={anyOpen ? "Collapse all folders" : "Expand all folders"}
+              onClick={() => setAllOpen(!anyOpen)}
+            >
+              <Icon name={anyOpen ? "ChevronsUp" : "ChevronsDown"} className="diff-plus-icon" aria-hidden />
+            </button>
+          )}
+        </span>
+        <span className="diff-plus-fill" />
+        {rows && (
+          <>
+            <span className="diff-plus-count">{rows.count}</span>
+            <Stats additions={rows.additions} deletions={rows.deletions} />
+            {/* The letters' room, so the root's +/- line up with the rows'. */}
+            <span className="diff-plus-mark" />
+          </>
+        )}
+      </div>
+      {body}
+    </div>
+  );
+}

@@ -1,0 +1,497 @@
+// The sidebar thread list, as a messenger: search, folders, and chats.
+//
+// bb keeps the New-thread button, the navigation rail, and the footer; this
+// component owns the scrolling list only. Opening a chat routes through bb's
+// own `toThread`, so splits, pane focus, and the mobile drawer behave as in
+// bb's list.
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type RefObject,
+} from "react";
+import {
+  experimental_useProviders,
+  experimental_useSidebarThreads,
+  useBbNavigate,
+  type PluginThreadListProps,
+} from "@get-bb/plugin-sdk/app";
+
+import { DndContext } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+
+import { useMessageSearch, type MessageMatch } from "@/hooks/use-message-search";
+import { MutedRefreshProvider, useMutedThreads } from "@/hooks/use-muted";
+import { usePaging } from "@/hooks/use-paging";
+import { usePinnedOrder } from "@/hooks/use-pinned-order";
+import { useScrollArea } from "@/hooks/use-scroll-area";
+import { useReorderDnd } from "@/hooks/use-sortable";
+import {
+  buildChats,
+  buildFolders,
+  groupByProject,
+  isQuiet,
+  projectsByUse,
+  type Chat,
+  type FolderId,
+} from "@/lib/model";
+import { parseStringArray, readStored, writeStored } from "@/lib/storage";
+import { cn } from "@/lib/utils";
+import { chatSearchScore, titleSearchScore } from "@/lib/search";
+import { ArchivedHits } from "./archived-hits";
+import { BackToTop } from "./back-to-top";
+import { ChatProvider, useChat } from "./chat-context";
+import { ChatIconsProvider } from "./chat-icons";
+import { ChatRow, SortableChatRow, type ProviderSummary } from "./chat-row";
+import { FolderEditor } from "./folder-editor";
+import { FolderRail } from "./folder-rail";
+import { FolderTabs } from "./folder-tabs";
+import { useFolderLabel } from "./folder-menu";
+import { FoldersProvider, useFolders } from "./folders-context";
+import { GroupHeader } from "./group-header";
+import { NewChatButton } from "./new-chat-button";
+import { FolderImagesProvider } from "./folder-images";
+import { ProjectColorsProvider } from "./project-colors";
+import { RowActionsProvider } from "./row-actions";
+import { SearchBar } from "./search-bar";
+import { SubThreadRows } from "./sub-threads";
+import { publishFolderBridge } from "./thread-actions";
+
+const PAGE_SIZE = 60;
+const DAY = 86_400_000;
+const FOLDER_KEY = "chat-sidebar/folder";
+const COLLAPSED_KEY = "chat-sidebar/collapsed-groups";
+const EXPANDED_KEY = "chat-sidebar/expanded-chats";
+const ACTIVE_ONLY = { experimental_lifecycles: ["active"] } as const;
+const WITH_ARCHIVE = {
+  experimental_lifecycles: ["active", "archived"],
+} as const;
+
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(timer);
+  }, [intervalMs]);
+  return now;
+}
+
+/** The height of an element, kept current. */
+function useHeight(ref: RefObject<HTMLElement | null>): number {
+  const [height, setHeight] = useState(0);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (element === null) return;
+    const measure = () => setHeight(element.getBoundingClientRect().height);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
+  return height;
+}
+
+/** Arrow keys move between rows; from the search field, ArrowDown enters the list. */
+function focusRow(container: HTMLElement | null, from: Element | null, step: 1 | -1 | "first") {
+  const anchors = [...(container?.querySelectorAll<HTMLElement>("[data-chat-anchor]") ?? [])];
+  if (step === "first") {
+    anchors[0]?.focus();
+    return;
+  }
+  const index = anchors.findIndex((anchor) => anchor === from);
+  anchors[Math.min(anchors.length - 1, Math.max(0, index + step))]?.focus();
+}
+
+export function ChatList(props: PluginThreadListProps) {
+  return (
+    <ChatProvider>
+      <FoldersProvider>
+        <RowActionsProvider>
+          <ChatIconsProvider>
+            <ChatListView {...props} />
+          </ChatIconsProvider>
+        </RowActionsProvider>
+      </FoldersProvider>
+    </ChatProvider>
+  );
+}
+
+function ChatListView({ activeThreadId, isCompactViewport, onNavigate }: PluginThreadListProps) {
+  const { settings, i18n } = useChat();
+  const { t } = i18n;
+  const { layout, setLayout, updateEntry, openEditor } = useFolders();
+  const folderLabel = useFolderLabel();
+  const [folder, setFolderState] = useState<FolderId>(() =>
+    readStored<FolderId>(FOLDER_KEY, (raw) => raw as FolderId, "all"),
+  );
+  // bb sends the archive in pages and only on request: load it while open.
+  const archiveMode = folder === "archive" && layout.entries.some((entry) => entry.kind === "archive" && !entry.hidden);
+  const {
+    status,
+    threads,
+    projects,
+    sections,
+    experimental_hosts: hosts,
+    experimental_archived: archivePages,
+  } = experimental_useSidebarThreads(archiveMode ? WITH_ARCHIVE : ACTIVE_ONLY);
+  const navigate = useBbNavigate();
+  const { providers } = experimental_useProviders();
+  const now = useNow(30_000);
+  const [query, setQuery] = useState("");
+  const [showQuiet, setShowQuiet] = useState(false);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(
+    () => new Set(readStored(COLLAPSED_KEY, parseStringArray, [])),
+  );
+  // Chats whose sub-agents are open ("Expandable sub-agents").
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(
+    () => new Set(readStored(EXPANDED_KEY, parseStringArray, [])),
+  );
+  // On phones bb's rail already takes the left edge; tabs unless told otherwise.
+  const rail = settings.folderLayout === "rail" && !(isCompactViewport && settings.phoneFolderLayout === "tabs");
+  const listRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+  // Sticky project headings sit right under the search bar and tabs.
+  const topHeight = useHeight(topRef);
+  const scrollArea = useScrollArea(topRef, { trackHeight: rail });
+
+  const setFolder = (next: FolderId) => {
+    setFolderState(next);
+    writeStored(FOLDER_KEY, next);
+  };
+  const toggleGroup = (key: string) =>
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      writeStored(COLLAPSED_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  const setChatExpanded = (threadId: string, open: boolean) =>
+    setExpanded((current) => {
+      if (current.has(threadId) === open) return current;
+      const next = new Set(current);
+      if (open) next.add(threadId);
+      else next.delete(threadId);
+      writeStored(EXPANDED_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  const open = (threadId: string, split: boolean) => {
+    navigate.toThread(threadId, { split });
+    onNavigate();
+  };
+
+  const chats = useMemo(
+    () => buildChats(threads, projects, { foldChildren: settings.foldChildren }),
+    [threads, projects, settings.foldChildren],
+  );
+  const archivedChats = useMemo(
+    () =>
+      archiveMode
+        ? buildChats(threads, projects, {
+            lifecycle: "archived",
+            foldChildren: settings.foldChildren,
+          })
+        : [],
+    [archiveMode, threads, projects, settings.foldChildren],
+  );
+  // "Add to folder" in bb's thread menus reads the folders through this
+  // bridge, so it works in the thread header's menu too while the list is up.
+  useEffect(() => {
+    const rows = new Map<string, Chat>();
+    for (const chat of chats) {
+      rows.set(chat.thread.id, chat);
+      for (const child of chat.children) rows.set(child.id, chat);
+    }
+    publishFolderBridge({
+      t,
+      layout,
+      rowOf: (threadId) => rows.get(threadId),
+      label: folderLabel,
+      updateEntry,
+      setLayout,
+      openEditor,
+    });
+  }, [chats, layout, t, folderLabel, updateEntry, setLayout, openEditor]);
+  useEffect(() => () => publishFolderBridge(null), []);
+
+  // Automatic colours go to projects that have chats, so a few busy projects
+  // are not pushed into the in-between hues by empty ones.
+  const projectsInUse = useMemo(() => projectsByUse(chats, projects), [chats, projects]);
+  const { muted, refresh: refreshMuted } = useMutedThreads(threads);
+  const folders = useMemo(
+    () => buildFolders(chats, projects, sections, layout, now, (row) => muted.has(row.thread.id)),
+    [chats, projects, sections, layout, now, muted],
+  );
+  // A remembered folder that no longer exists falls back to All.
+  const currentFolder = folders.find((item) => item.id === folder) ?? folders[0] ?? null;
+  const activeFolder: FolderId = currentFolder?.id ?? "all";
+
+  const { ordered, movePin } = usePinnedOrder(chats, t("toast.reorderFailed"));
+  const pinDnd = useReorderDnd({ axis: "vertical", onMove: movePin });
+  const [draggingPin, setDraggingPin] = useState(false);
+
+  const needle = query.trim().toLocaleLowerCase();
+  const messageSearch = useMessageSearch(query);
+  // A chat its title does not find may still be found by its messages, its
+  // folded sub-agents' included; that match is shown under its title.
+  const snippetOf = (chat: Chat): MessageMatch | undefined => {
+    if (needle === "") return undefined;
+    const ownTitleScore = titleSearchScore(chat.thread.displayTitle, needle);
+    const child = chat.children
+      .filter((thread) => titleSearchScore(thread.displayTitle, needle) > 0)
+      .sort((a, b) => titleSearchScore(b.displayTitle, needle) - titleSearchScore(a.displayTitle, needle))[0];
+    if (ownTitleScore > 0 && (child === undefined || ownTitleScore >= titleSearchScore(child.displayTitle, needle))) return undefined;
+    if (child !== undefined) return { threadId: child.id, text: child.displayTitle, highlightRanges: [], from: "system" };
+    if (chatSearchScore(chat, needle) > 0) return undefined;
+    return (
+      messageSearch.matches.get(chat.thread.id) ??
+      chat.children.map((child) => messageSearch.matches.get(child.id)).find((match) => match !== undefined)
+    );
+  };
+  const matched = (archiveMode && needle === "" ? archivedChats : ordered).filter(
+    (chat) =>
+      (needle !== "" || archiveMode || currentFolder === null || currentFolder.matches(chat)) &&
+      (needle === "" || chatSearchScore(chat, needle) > 0 || snippetOf(chat) !== undefined),
+  );
+  if (needle !== "") matched.sort((a, b) =>
+    chatSearchScore(b, needle) - chatSearchScore(a, needle) ||
+    Number(currentFolder?.matches(b) ?? false) - Number(currentFolder?.matches(a) ?? false),
+  );
+  // Quiet old chats hide behind one button; search and Attention see all.
+  const cutoff = settings.hideQuietAfterDays > 0 ? now - settings.hideQuietAfterDays * DAY : null;
+  const hidesQuiet =
+    cutoff !== null && !showQuiet && needle === "" && !archiveMode && currentFolder?.kind !== "attention";
+  const shown = hidesQuiet ? matched.filter((chat) => !isQuiet(chat, cutoff)) : matched;
+  const hiddenQuiet = matched.length - shown.length;
+
+  // Archive hits go under the results; in the archive folder, only those its loaded pages do not show.
+  const shownIds = new Set(shown.map((chat) => chat.thread.id));
+  const archivedHits = needle === "" ? [] : messageSearch.archived.filter((hit) => !shownIds.has(hit.id));
+
+  const paging = usePaging(shown.length, PAGE_SIZE, `${activeFolder}\n${needle}`);
+  const visible = shown.slice(0, paging.limit);
+
+  const providerById = useMemo(
+    () => new Map<string, ProviderSummary>(providers.map((provider) => [provider.id, provider])),
+    [providers],
+  );
+  const grouped = settings.projects === "headers" && !archiveMode && needle === "";
+  const showProject = needle !== "" || !activeFolder.startsWith("project:") && !grouped;
+  const showHost = (hosts?.length ?? 0) > 1;
+  const pinDragAllowed = !archiveMode && needle === "";
+
+  const pinnedIds = useMemo(
+    () => (pinDragAllowed ? visible.filter((chat) => chat.thread.isPinned).map((chat) => chat.thread.id) : []),
+    [pinDragAllowed, visible],
+  );
+
+  const expandable = settings.foldChildren && settings.expandChildren;
+  const renderRow = (chat: Chat) => {
+    const { id } = chat.thread;
+    const hasChildren = expandable && chat.children.length > 0;
+    const childActive = activeThreadId !== null && chat.children.some((child) => child.id === activeThreadId);
+    // An open chat shows where you are among its children, so it lets go of the highlight.
+    const isOpen = hasChildren && expanded.has(id);
+    const props = {
+      row: chat,
+      active: activeThreadId !== null && (id === activeThreadId || (childActive && !isOpen)),
+      subThreads: hasChildren ? { expanded: isOpen, onToggle: () => setChatExpanded(id, !isOpen) } : null,
+      now,
+      provider: providerById.get(chat.thread.providerId) ?? null,
+      showProject,
+      showHost,
+      snippet: needle === "" ? undefined : snippetOf(chat),
+      onOpen: open,
+    };
+    const chatRow =
+      pinDragAllowed && chat.thread.isPinned ? (
+        <SortableChatRow {...props} />
+      ) : (
+        <ChatRow {...props} sortable={null} />
+      );
+    return (
+      <Fragment key={id}>
+        {chatRow}
+        {isOpen ? (
+          <SubThreadRows
+            row={chat}
+            activeThreadId={activeThreadId}
+            now={now}
+            compact={settings.density === "compact"}
+            onOpen={open}
+          />
+        ) : null}
+      </Fragment>
+    );
+  };
+
+  const onListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!(event.target instanceof HTMLElement) || !event.target.matches("[data-chat-anchor]")) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      focusRow(listRef.current, event.target, event.key === "ArrowDown" ? 1 : -1);
+      return;
+    }
+    // → opens a chat's sub-agents and ← closes them, as in a tree.
+    const threadId = event.target.dataset.sidebarThreadId;
+    if (expandable && threadId !== undefined && (event.key === "ArrowRight" || event.key === "ArrowLeft")) {
+      const chat = chats.find((item) => item.thread.id === threadId);
+      if (chat === undefined || chat.children.length === 0) return;
+      event.preventDefault();
+      setChatExpanded(threadId, event.key === "ArrowRight");
+    }
+  };
+
+  const emptyText =
+    needle !== ""
+      ? messageSearch.loading
+        ? t("search.searching")
+        : archivedHits.length > 0
+          ? t("search.onlyArchived")
+          : messageSearch.error ? t("search.error") : t("search.nothing", { query: query.trim() })
+      : archiveMode
+        ? archivePages?.status === "loading"
+          ? t("list.archiveLoading")
+          : t("list.archiveEmpty")
+        : currentFolder?.kind === "attention"
+          ? t("list.emptyAttention")
+          : t("list.empty");
+  const note = (text: string) => <p className="px-3 py-6 text-center text-xs text-muted-foreground">{text}</p>;
+  const newChat = (
+    <NewChatButton
+      folder={currentFolder}
+      projects={projectsInUse}
+      onNavigate={onNavigate}
+      // On the icons-only rail it matches the folders' squares.
+      className={rail && !settings.folderNames ? "size-10 rounded-[13px] bg-sidebar-accent text-foreground [&_svg]:size-5" : undefined}
+    />
+  );
+
+  return (
+    <MutedRefreshProvider value={refreshMuted}>
+      <ProjectColorsProvider projects={projectsInUse}>
+        <FolderImagesProvider>
+        <div
+          className={cn(
+            // bb's scroll area is a flex column: without shrink-0 the list is
+            // squeezed to one screen and the sticky search scrolls away with it.
+            "chat-sidebar flex min-h-full shrink-0",
+            draggingPin && "select-none",
+          )}
+          style={{ "--chat-top": `${topHeight}px` } as CSSProperties}
+        >
+          {rail ? (
+            <FolderRail
+              folders={folders}
+              rows={chats}
+              active={activeFolder}
+              height={scrollArea.viewportHeight}
+              onSelect={setFolder}
+              top={newChat}
+            />
+          ) : null}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div ref={paging.topRef} className="-mb-px h-px" aria-hidden="true" />
+            <div ref={topRef} className="sticky top-0 z-10 bg-sidebar pt-1.5">
+              <div className={cn("flex items-center gap-1.5 px-2", rail && "pb-2")}>
+                <SearchBar
+                  query={query}
+                  onChange={setQuery}
+                  onSubmit={() => {
+                    const first = shown[0];
+                    if (first !== undefined) open(snippetOf(first)?.threadId ?? first.thread.id, false);
+                    else if (archivedHits[0] !== undefined) open(archivedHits[0].id, false);
+                  }}
+                  onArrowDown={() => focusRow(listRef.current, null, "first")}
+                />
+                {rail ? null : newChat}
+              </div>
+              {rail ? null : <FolderTabs folders={folders} rows={chats} active={activeFolder} onSelect={setFolder} />}
+            </div>
+
+            <div
+              ref={listRef}
+              role="region"
+              aria-label={t("list.label")}
+              onKeyDown={onListKeyDown}
+              className="px-1.5 pb-2"
+            >
+              <DndContext
+                {...pinDnd.dndContextProps}
+                onDragStart={(event) => {
+                  setDraggingPin(true);
+                  pinDnd.dndContextProps.onDragStart?.(event);
+                }}
+                onDragCancel={(event) => {
+                  setDraggingPin(false);
+                  pinDnd.dndContextProps.onDragCancel?.(event);
+                }}
+                onDragEnd={(event) => {
+                  setDraggingPin(false);
+                  pinDnd.dndContextProps.onDragEnd?.(event);
+                }}
+              >
+                <SortableContext items={pinnedIds} strategy={verticalListSortingStrategy}>
+                  {status === "loading" ? (
+                    note(t("list.loading"))
+                  ) : status === "error" && chats.length === 0 ? (
+                    note(t("list.error"))
+                  ) : shown.length === 0 ? (
+                    note(emptyText)
+                  ) : grouped ? (
+                    groupByProject(visible, projects).map((group) => (
+                      <section key={group.key} className="mb-1">
+                        <GroupHeader
+                          group={group}
+                          collapsed={collapsed.has(group.key)}
+                          sticky={settings.stickyHeadings}
+                          onToggle={() => toggleGroup(group.key)}
+                        />
+                        {collapsed.has(group.key) ? null : <ul className="space-y-px">{group.chats.map(renderRow)}</ul>}
+                      </section>
+                    ))
+                  ) : (
+                    <ul className="space-y-px">{visible.map(renderRow)}</ul>
+                  )}
+                </SortableContext>
+              </DndContext>
+              {paging.hasMore ? <div ref={paging.endRef} className="h-8" aria-hidden="true" /> : null}
+              {hiddenQuiet > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowQuiet(true)}
+                  className="mx-auto mt-1 block cursor-pointer rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
+                >
+                  {t("list.hiddenQuiet", { count: hiddenQuiet })}
+                </button>
+              ) : null}
+              <ArchivedHits hits={archivedHits} projects={projects} now={now} onOpen={open} />
+              {needle !== "" && (shown.length > 0 || archivedHits.length > 0) && messageSearch.error ? note(t("search.error")) : null}
+              {needle !== "" && messageSearch.truncated ? note(t("search.truncated")) : null}
+            {needle === "" && archiveMode && archivePages?.hasNextPage ? (
+                <button
+                  type="button"
+                  disabled={archivePages.isFetchingNextPage}
+                  onClick={() => void archivePages.fetchNextPage()}
+                  className="mx-auto mt-1 block cursor-pointer rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground disabled:opacity-50"
+                >
+                  {archivePages.isFetchingNextPage ? t("list.loadingMore") : t("list.loadMore")}
+                </button>
+              ) : null}
+            </div>
+
+            <BackToTop visible={scrollArea.farFromTop && !draggingPin} onClick={scrollArea.scrollToTop} />
+          </div>
+        </div>
+        <FolderEditor rows={chats} projects={projectsInUse} sections={sections} now={now} />
+        </FolderImagesProvider>
+      </ProjectColorsProvider>
+    </MutedRefreshProvider>
+  );
+}

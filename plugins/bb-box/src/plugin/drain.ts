@@ -1,0 +1,130 @@
+// box_run's commands across a deploy (#405). When BB updates or reloads a
+// plugin, it aborts the plugin's tool calls with the reason
+// "plugin-disposed", then waits for the plugin's dispose hooks, and a call
+// that ends after the abort still gives the agent its result. So a command
+// does not stop on that abort: bb-box's first dispose hook takes no new
+// commands, waits a while for those running, then stops the rest, which go
+// on in their boxes as jobs. BB unloads the old version before it loads the
+// new one, so the wait is time in which agents have no box tools: a 60 s wait
+// kept them away for a minute at each deploy while commands ran (#916), so it
+// is 5 s, and a longer command's caller gets its job for box_job. BB stops bb-box's worker on BB machines, and
+// with it the relay to Docker there, before it aborts the calls, so a
+// command in a Docker box on a BB machine fails at once.
+
+import { BoxError } from "../core/boxes.ts";
+
+/** BB's abort reason for a plugin's tool calls when it disposes the plugin. */
+import { PRODUCT } from "../brand.ts";
+export const PLUGIN_DISPOSED = "plugin-disposed";
+/** How long a deploy waits for commands still running. */
+export const DRAIN_MS = 5_000;
+/** How long stopped commands get to end once the wait is over. */
+const STOP_MS = 5_000;
+
+/** A command that close() stopped, as bb-box was restarting. */
+export class Restarted extends Error {
+  constructor() {
+    super(`${PRODUCT} restarted while the command ran.`);
+    this.name = "Restarted";
+  }
+}
+
+/** A command box_run stopped waiting for, as BB ends a tool call at about five minutes (#486). */
+export class Detached extends Error {
+  constructor() {
+    super("box_run stopped waiting for the command.");
+    this.name = "Detached";
+  }
+}
+
+export class Drain {
+  readonly #running = new Map<Promise<unknown>, AbortController>();
+  #closed = false;
+
+  /** True once bb-box is stopping. */
+  get closed(): boolean {
+    return this.#closed;
+  }
+
+  /**
+   * Runs `task` with a signal that follows `signal`, the tool call's, except
+   * for BB's abort for a deploy. Throws at once while bb-box is stopping,
+   * and Restarted when close() stopped the task. With `detachMs`, it stops
+   * the task after that long as close() does, and throws Detached.
+   */
+  async run<T>(signal: AbortSignal, task: (signal: AbortSignal) => Promise<T>, options: { detachMs?: number } = {}): Promise<T> {
+    if (this.#closed) {
+      throw new BoxError("restarting", `${PRODUCT} is restarting, as for an update, and takes no new commands until it is back, usually within seconds.`);
+    }
+    const controller = new AbortController();
+    const follow = () => {
+      if (signal.reason !== PLUGIN_DISPOSED) controller.abort(signal.reason);
+    };
+    if (signal.aborted) follow();
+    else signal.addEventListener("abort", follow, { once: true });
+    const timer = options.detachMs === undefined ? undefined : setTimeout(() => controller.abort(new Detached()), options.detachMs);
+    const done = task(controller.signal);
+    this.#running.set(done, controller);
+    try {
+      return await done;
+    } catch (error) {
+      if (controller.signal.reason instanceof Restarted || controller.signal.reason instanceof Detached) throw controller.signal.reason;
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      this.#running.delete(done);
+      signal.removeEventListener("abort", follow);
+    }
+  }
+
+  /**
+   * Whether bb-box starts stopping within `ms`: BB aborts `signal`, a tool
+   * call's, for a deploy, or the drain closes. BB stops bb-box's worker on a
+   * BB machine, and with it the relay to Docker there, before either, so a
+   * command in a Docker box there loses its box first (#415).
+   */
+  stoppingWithin(signal: AbortSignal, ms: number): Promise<boolean> {
+    const now = () => this.#closed || (signal.aborted && signal.reason === PLUGIN_DISPOSED);
+    if (now()) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const done = (stopping: boolean) => {
+        clearInterval(poll);
+        clearTimeout(timer);
+        signal.removeEventListener("abort", check);
+        resolve(stopping);
+      };
+      const check = () => {
+        if (now()) done(true);
+      };
+      const poll = setInterval(check, 100);
+      const timer = setTimeout(() => done(now()), ms);
+      signal.addEventListener("abort", check);
+    });
+  }
+
+  /** Takes no new tasks, waits up to `ms` for those running, then stops the rest; says how many ran and were stopped. */
+  async close(ms: number): Promise<{ running: number; stopped: number }> {
+    this.#closed = true;
+    const running = this.#running.size;
+    if (!running) return { running, stopped: 0 };
+    const settled = Promise.allSettled([...this.#running.keys()]);
+    if (await within(settled, ms)) return { running, stopped: 0 };
+    const stopped = this.#running.size;
+    for (const controller of this.#running.values()) controller.abort(new Restarted());
+    await within(settled, STOP_MS);
+    return { running, stopped };
+  }
+}
+
+/** True when `task` settles within `ms`. */
+async function within(task: Promise<unknown>, ms: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), ms);
+  });
+  try {
+    return await Promise.race([task.then(() => true as const), late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}

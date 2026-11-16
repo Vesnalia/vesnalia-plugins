@@ -1,0 +1,134 @@
+# Changelog
+
+Notable changes to `herald`. The other plugins in this repository version separately.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version numbers
+follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## 0.5.1
+
+### Changed
+
+- On bb 0.48, the megaphone is back in the thread header as a button of its own. 0.5.0 made it a
+  *Herald* button that bb merged with other plugins' header buttons (such as Diff Review's *Review*)
+  into one button with a menu. A second click still closes the Herald tab.
+
+## 0.5.0
+
+### Added
+
+- **Set what Herald announces for several threads at once.** On bb 0.48, select threads in the sidebar
+  and pick *Herald* in the selection's menu: Default, Announce, Questions only or Silent applies to every
+  selected thread. A choice is checked there only when all of them have it; archived threads are left
+  out. (bb's sidebar selection is an early-adopter feature.)
+
+### Changed
+
+- On bb 0.48, the thread header shows a **Herald** button instead of the megaphone icon. A second click
+  closes the Herald tab again, and on a narrow window the button moves into the header's menu with bb's
+  own. bb 0.47 keeps the megaphone.
+- On bb 0.48, the Herald tab stops updating while it is not showing, and catches up when you open it.
+- When a model writes the sentences, Herald now finds the tool wherever bb finds its own — including
+  tools installed with mise, asdf or Volta — and finds one you install after a failed attempt on the
+  next announcement.
+
+## 0.4.0
+
+### Added
+
+- **Choose per thread what Herald announces**, from bb's own thread menu (the sidebar row's menu,
+  right-click, or the thread's header): *Announce*, *Questions only* (questions, plans and permissions,
+  but not finished or failed turns), or *Silent*. *Default* follows the thread that started it, if that
+  one has a choice, and otherwise Herald's settings, as before. A thread set to Silent or Questions only
+  is still listed on the Herald page; it is only not spoken.
+- The Herald page's waiting threads show **bb's own status icon** for each thread, the same one the
+  sidebar draws.
+
+### Changed
+
+- The *Voice source* and *Speech rate* settings say what each choice means — "Voices of the Mac running
+  bb" or "This device's browser voice"; "0.8×", "Normal", "1.2×", "1.5×" — instead of `say`, `web` and
+  bare numbers.
+
+## 0.3.0
+
+### Added
+
+- Herald's entry in the sidebar shows **how many threads are waiting for you** again, with that number
+  in its tooltip. bb 0.46 had stopped drawing it.
+
+### Changed
+
+- **Needs bb 0.47 or newer.** On an older bb this version is not offered as an update, and Herald
+  0.2.2 keeps working there.
+
+## 0.2.2
+
+### Added
+
+- The Herald page lists **Recent sentences** below the threads waiting on you: what Herald last said
+  about any thread, in every project, newest first, with the thread, its project and how long ago. Tap
+  one to open its thread, or Read again to hear it. It keeps itself up to date.
+- A **Herald page** setting chooses how many it lists: 20 by default, from 1 to 50.
+
+## 0.2.1
+
+### Changed
+
+- Built and tested against bb 0.45. Nothing you can see changes, and it still runs on bb 0.44.
+
+## 0.2.0
+
+### Added
+
+- **Write each sentence with a model**, off by default. Switched on, a command-line tool on the Mac
+  running bb — Claude Code, OpenAI Codex, Gemini CLI, or a command of your own — writes each sentence
+  from the event, your request and the agent's reply, so you hear what was done rather than the start of
+  the reply. The tool runs with no tools or read-only, in an empty folder, and the plain sentence is spoken
+  instead whenever it fails or takes longer than 45 seconds.
+- **A Model-written sentences section** on Herald's settings page with the tool, the prompt it is
+  given (with placeholders you can move around, and a button to get the default back) and, only while
+  the tool is *custom*, the custom command, filled in from the tool you had selected.
+- The Herald page and the banner above the composer say **Writing the sentence…** while the tool runs.
+- **A Herald tab in each thread's side panel** listing what Herald said about the thread's past turns,
+  newest first, with when and a Read again button: a way to find a turn by its sentence. The last 50
+  are kept per thread. A megaphone in the thread's header opens it.
+
+### Changed
+
+- **The sentence stays.** A turn that ends on the thread you are looking at is spoken, and its sentence
+  stays above the composer — through your next prompt — until the next event replaces it. Before, bb
+  marking the thread read at once made it vanish unspoken. The one exception: a sentence still being
+  written when the agent starts working again is withdrawn and never spoken.
+
+## 0.1.0
+
+The first release: Herald for bb, ported from the Paseo plugin of the same name (0.5.1).
+
+### Added
+
+- **A spoken sentence when an agent needs you** — a question, a plan or a permission to approve, a
+  finished turn, or an error — spoken by the bb app, in the voice of the Mac running bb or in the
+  browser's own voice.
+- **A Herald page** listing every thread waiting on you, with the reason, the sentence and how long ago
+  it happened, and a count beside its sidebar entry. It keeps itself up to date. Tap a row to open the
+  thread.
+- **The sentence above a waiting thread's composer**, with a Read again button, until you answer.
+- **Mute here**, **Test voice** and a **settings** button on the page, and **Read again** on every card.
+  Read again and Test voice speak even when this device is muted.
+- **Speaks from any page**, whether or not the Herald page is open, and in one window at a time.
+- **Settings** for where to speak, the voice, the speech rate, which events are announced, and threads
+  started by another thread; and a section for the voices.
+
+### Changed from the Paseo plugin
+
+- The sentence is always the plain one built from the event. Having a model write it, as the Paseo
+  plugin could, is not part of this release (it arrived in 0.2.0, as a command-line tool rather than a
+  helper agent).
+- The sentence sits above the composer instead of in the conversation; bb has no way for a plugin to add
+  a row there.
+- The mobile app can speak, while it is open on screen and once *Test voice* has been pressed. It is off
+  by default. Phones no longer vibrate.
+- Only one window of the app speaks, so two open windows no longer say everything twice.
+- A question you answer before it is announced is not announced.
+- Interrupted turns are no longer announced as their own kind of event.

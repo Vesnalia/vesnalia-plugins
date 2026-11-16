@@ -1,0 +1,244 @@
+# Security model
+
+This plugin runs inside the long-lived bb server and can start Xcode and
+simulator processes on the server host. Treat agent tool arguments, the
+agent-facing `bb` CLI, Xcode projects, generated preview output, and every
+same-user local caller as untrusted input.
+
+The focused security regression suites are:
+
+- `test/build-security.test.ts`
+- `test/agent-scope-security.test.ts`
+- `test/host-builds.test.ts`
+- `test/remote-builds.test.ts`
+- `test/bounded-file.test.ts`
+- `test/stream.test.ts`
+- `test/sim/sim-host-security.test.ts`
+- `test/sim/sim-host-client-security.test.ts`
+- `test/sim/connection-limit.test.ts`
+- `test/sim/private-stream-routes.test.ts`
+- `test/sim/private-transport-source.test.ts`
+- `test/sim/stills.test.ts`
+
+## Tracked build boundary
+
+`bb xcode run` and the `xcode_build` tool execute only
+`/usr/bin/xcodebuild`. Their working directory and caller-selected input/output
+paths are confined, through real paths and existing symlink ancestors, to the
+invoking thread's checkout. Caller-provided result-stream and result-bundle
+paths are replaced with plugin-owned temporary paths. Host-mutating Xcode
+download, import, and provisioning modes are refused.
+
+Children receive a small environment allowlist rather than the bb server's
+provider, plugin, and tunnel credentials. Stream reads, individual streamed
+lines, output buffers, and temporary files are bounded. Apple and system
+helpers are resolved to fixed system paths rather than through `PATH`, and only
+four tracked builds may run concurrently.
+
+This is not an Xcode sandbox. A project build phase, compiler plugin, package
+plugin, or test can execute with the bb server user's filesystem, keychain, and
+network access. The current plugin SDK has no host execution primitive that
+attaches a thread's filesystem or network permission sandbox. Do not use the
+tracked runner for an untrusted checkout on a privileged host.
+
+### Builds on another Mac
+
+When a thread's checkout lives on an enrolled Mac, the build runs there, in the
+plugin's `bb.host` worker, as that Mac's bb user. Everything above applies
+unchanged, and is enforced **on that Mac**: the working directory and every
+path argument are resolved with real paths on the disk the build will use,
+never lexically on the server, where the checkout does not exist. The worker
+checks the request before the person is asked to confirm, and again when it
+starts the build.
+
+The worker runs `/usr/bin/xcodebuild` under a fixed `/bin/sh` wrapper that
+records the exit status. The validated arguments reach xcodebuild as positional
+parameters and the wrapper's file paths through the environment, so nothing
+from the request is interpolated into the script. Each Mac allows four tracked
+builds at once, counting builds still starting.
+
+Builds are addressed by an id the server mints and records before it asks for
+the start, so a start whose reply is lost is still accounted for; the id's
+format admits no path characters, and starting an id the worker already
+recorded returns that build rather than starting another. xcodebuild does not
+run until the worker's record of it is on disk: the wrapper waits at a gate the
+worker opens only after writing it, so no build runs that the plugin cannot
+find, stop or clean up. The worker acts only
+on builds it recorded in its own data dir. A server request cannot name a
+bundle to parse, a directory to delete, or a process to signal. Before
+`stop` signals anything, the worker proves that the recorded pid is still the
+same build: the process's command line must carry the build's marker, and its
+start time must match the record within two seconds. A recycled pid is never
+signalled. Signals reach the build's own process group, never the daemon's.
+Run rows are updated only by the Mac that ran them; a host signal carries
+bb's authenticated host id.
+
+### Watching builds on another Mac
+
+The worker also reports builds on its Mac that the plugin did not start. This
+covers Xcode.app, a terminal and Xcode's own agent tools. This half is read-only:
+it runs `ps`, `lsof` and `xcresulttool`, reads files, and starts, signals,
+writes or deletes nothing except a small list of bundle paths in its own data
+dir. What it reads is fenced on that Mac, with symlinks resolved there:
+
+- log-store manifests only at their fixed place inside a directory that is a
+  DerivedData root (it has `Logs/Build`), and never through a link that leads
+  out of it;
+- result bundles only in a root's `Logs/Test`, in the plugin's own shim
+  directory, or at a `-resultBundlePath` that a build on that Mac was seen
+  using. A path the server names that is none of these is refused, so the
+  server can no longer name an arbitrary bundle to parse. A bundle or
+  `build.db-journal` found on disk as evidence of an Xcode.app action counts
+  only as a real directory or file inside its root, never through a link, and
+  never joins the list of paths builds named;
+- checkouts to scan for DerivedData only as existing directories, walked
+  without following links.
+
+Replies are capped well under bb's 8 MiB host-RPC limit. A Mac is probed only
+while a thread whose checkout is on it is active or was recently, while the
+person has opted it in, or while a build seen there is still open. Each Mac's
+probe is held to the same duty cycle as the local one. `bb xcode stop` refuses
+a watched build on another Mac: the plugin signals only builds it started.
+
+Thread scoping compares machines as well as paths. Two Macs can hold the same
+checkout path on the same branch, so a path or checkout-name match only counts
+for a run on the scope's own machine; a thread can never read, wait on or stop
+a build on another Mac through such a match.
+
+## Simulator capture host
+
+`serve-sim` runs in a disposable child process on an ephemeral `127.0.0.1`
+port. Its raw middleware includes shell-execution and token-disclosure routes,
+so it is never mounted directly and its port is never declared as a shared bb
+port.
+
+The child wrapper:
+
+- 404s everything except the exact device routes the plugin uses and always
+  denies `/exec`, `/exec-ws`, and DevTools routes;
+- accepts the master capability only in a private request header;
+- derives a device-bound HMAC query capability for image URLs that opens only
+  that UDID's MJPEG/AVCC streams;
+- keeps AVCC sharing and its random loopback key inside the raw child, with the
+  private header accepted only by the exact allowlisted AVCC route;
+- caps all external pixel responses, across direct/proxied callers and both
+  codecs, at four;
+- exposes encoder counters only through a master-header-only status route;
+- bounds control bodies, JSON responses, headers, connections, frame sizes,
+  and client-side reads;
+- scrubs any `execToken` from forwarded JSON as a second line of defence;
+- contains synchronous and asynchronous middleware failures inside the child;
+- uses private temporary storage and a curated environment;
+- exits on parent stdin EOF, SIGTERM, or SIGINT, with a supervisor SIGKILL
+  fallback.
+
+`serve-sim` is pinned exactly to `0.1.46`. Updating it requires re-running the
+route-policy and response-scrubbing tests against the new middleware.
+
+## Private simulator transport
+
+The plugin has no standalone public simulator viewer, public capability URL,
+public WebSocket listener, `bb connect` port declaration, exposure RPC,
+exposure CLI verb, or exposure setting. Remote viewing is available only inside
+the main bb UI through same-origin plugin HTTP and typed RPC routes. Official
+remote bb access remains owner-session-gated by bb; the plugin routes themselves
+reuse bb's server and do not open another listener or publish the capture host's
+loopback port.
+
+On the server host, a local HTTP bb panel may use the capture host directly via
+a per-boot, per-device stream capability. An HTTPS or remote bb panel cannot
+reach that machine's loopback and automatically uses the same-origin `/stream`
+proxy. The proxy validates the active UDID and remains a byte-forwarder. The
+child admits at most four external pixel responses across direct and proxied
+callers and both codecs; the proxy also retains its independent four-stream
+gate. Excess requests receive `503`. Disconnect, cancellation, upstream error,
+device change, and failed-open paths all release their slot.
+
+AVCC viewers of one simulator share one same-process upstream encoder. A new or
+recovered viewer restarts that encoder because published `serve-sim` exposes no
+force-keyframe operation; the raw child emits an explicit discontinuity and
+does not resume deltas until it has verified the fresh description and IDR.
+Slow responses are skipped independently and cannot apply producer
+backpressure. Fanout counters are read only when a capture or stream-status
+tool is called, never by a background health timer.
+
+No plugin code calls `declareSharedPorts` or `ensureSharedPortTunnel`. Operators
+must not manually tunnel the capture port: loopback limits network reachability
+but is not a defence against another process running as the same OS user.
+
+## Human and agent surfaces
+
+Simulator model tools and every CLI surface that can reveal or control live or
+stored simulator content are disabled by default and require the
+`allowAgentCapture` setting. Tools re-check it on every invocation, so turning
+it off revokes an already-registered tool immediately. Erase, shutdown, purge,
+and Stills test-target execution are enforced server-side through host-owned
+confirmations; a raw RPC caller cannot bypass the frontend dialog.
+
+Agent-facing simulator CLI actions that cross a checkout or host-state boundary
+also require host confirmation: writing a capture, running a Stills test target,
+applying onboarding files, and changing a baseline. The confirmation names the
+resolved checkout or destination before the action proceeds.
+
+Agent status and failure tools are always confined to the invoking thread's
+checkout and expose no machine-wide override. Agent-facing CLI history, detail,
+wait, stop, and DerivedData-root commands apply the same scope and fail closed
+when it cannot be resolved. The caller's thread and project hints must agree
+with the invoking working directory; missing or inconsistent CLI context does
+not widen access. Explicit simulator look, baseline, history, diff, and card ids
+are checked against that same resolved scope. Machine-wide history and rescans
+are panel-only. Shim mutation, CLI-started host builds, and stopping host builds
+require a host-owned confirmation rendered in the invoking thread.
+
+Plugin RPC and HTTP routes use bb's `auth: "local"` Origin/CSRF boundary. It
+accepts originless requests and is not a caller-credential check. The SDK does
+not expose caller identity or a trusted browser Origin to plugin handlers, so a
+same-user process with loopback access is part of the core trusted boundary and
+can call non-destructive simulator RPC and stream routes. Distinguishing that
+process from the signed-in panel requires a core bb
+capability, not a plugin-side header the same caller could invent. Stills
+execution and destructive erase or purge still cross a host-owned confirmation
+boundary.
+
+## Files and generated output
+
+`bb xcode sim shot --out` requires a thread checkout, rejects absolute and escaping
+paths before capture, supplies the checkout as the daemon-enforced write root,
+and uses atomic create-only writes with mode `0600`.
+
+Stills imports only non-symlink regular files, with limits on manifest bytes and
+entries, image count, individual PNG and sidecar size, declared dimensions,
+pixel count, and total bytes. Files are opened with `O_NOFOLLOW` and read to
+their checked size. The actual cumulative bytes are rechecked after opening to
+close grow-after-stat races. Disk pruning and budget enforcement run before
+imported bytes are persisted.
+
+Automatic Xcode log-manifest reads, Git pointers, project manifests, stored
+frames, and model-bound images use bounded regular-file reads. A file that is
+too large, changes while open, or is a disallowed symlink is refused before it
+can become an unbounded server-heap allocation. The model image budget is a
+hard base64-size ceiling, including for the first image. Stills result bundles
+and exports live only in the private per-run scratch directory and are removed
+in `finally`; maintenance removes the unbounded legacy result caches.
+
+Published packages exclude local simulator screenshots, browser probe scripts,
+test fixtures, CI metadata, and local design-audit caches. Runtime source,
+plugin metadata, and the vendored SDK declarations remain in the package.
+
+## Audit record
+
+The 2026-08-20 audit remediated arbitrary host executable invocation, arbitrary
+host-file overwrite, cross-thread Xcode history and control, caller-selected
+scope confusion, stale agent-capture permission, unbounded result-stream and
+JSON buffers, malformed MJPEG allocation, unbounded Stills import, unbounded
+manifest and image reads, child orphaning, server-environment inheritance,
+predictable temporary paths, shell quoting, `PATH` executable substitution,
+middleware exception escape, and unintended package contents.
+
+The original public simulator exposure design additionally had capability
+delivery, device-retargeting, restart-race, HID-smuggling, socket-flood,
+backpressure, and lifecycle hazards. Rather than maintaining a second remote
+authentication and transport surface, the feature and all of its public
+listeners, URLs, RPCs, CLI verbs, and UI controls were removed. Remote simulator
+viewing now stays inside bb's main UI, with bounded proxy and
+presence concurrency.

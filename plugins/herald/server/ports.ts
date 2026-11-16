@@ -1,0 +1,73 @@
+/**
+ * The seams between Herald's decisions and bb. Everything in `server/` that
+ * decides something talks to these, so the tests can hand it fakes; the
+ * implementations over `bb.sdk` are in `bb-ports.ts`.
+ */
+import type { PluginBbSdk, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+
+import type { ThreadChoice } from "../shared/thread-choice";
+
+/** The thread as every event carries it — the same DTO `GET /threads/:id` serves. */
+export type ThreadDto = PluginThreadEventPayloads["thread.idle"]["thread"];
+export type Interaction = PluginThreadEventPayloads["interaction.pending"]["interaction"];
+export type PromptRecord = Awaited<ReturnType<PluginBbSdk["threads"]["promptHistory"]>>[number];
+
+/** What names the work, and what was asked of it; looked up per event, since a thread's DTO has neither. */
+export interface ThreadContext {
+  projectName: string | null;
+  folder: string | null;
+  /** The user's last message, when the caller asked for it. */
+  lastRequest: string | null;
+}
+
+export interface EventsPort {
+  context(thread: ThreadDto, options: { withRequest: boolean }): Promise<ThreadContext>;
+  /**
+   * Whether one of the thread's interactions was interrupted within `withinMs`
+   * — the user stopped the turn while it waited on them — which is why a
+   * failure that follows is not news.
+   */
+  interruptedRecently(threadId: string, withinMs: number): Promise<boolean>;
+  /**
+   * Whether an interaction still waits on the user. Answering one fires no
+   * event a plugin hears, so a sentence that took time to write asks before
+   * it lands.
+   */
+  interactionPending(threadId: string, interactionId: string): Promise<boolean>;
+}
+
+export type ThreadFacts =
+  | { kind: "gone" }
+  | {
+      kind: "open";
+      status: ThreadDto["status"];
+      lastReadAt: number | null;
+      latestAttentionAt: number;
+    };
+
+export interface LivenessPort {
+  facts(threadId: string): Promise<ThreadFacts>;
+}
+
+/** What bb calls a thread now, for the Herald page's history. */
+export interface NamesPort {
+  /** The thread's title and project, or null when bb answers that it does not exist; rejects when bb cannot say. */
+  thread(threadId: string): Promise<{ title: string | null; projectId: string } | null>;
+  projectName(projectId: string): Promise<string>;
+}
+
+export interface Log {
+  info(message: string): void;
+  warn(message: string): void;
+  error(message: string): void;
+}
+
+/** Herald's per-thread choice, as bb stores it: plugin metadata on each thread, and each thread's ancestors. */
+export interface ThreadChoicesPort {
+  /** Each known thread with its ancestors, parent first; unknown ids are left out. At most `CHOICES_BATCH_MAX` ids. */
+  ancestors(threadIds: readonly string[]): Promise<Array<{ threadId: string; ancestorIds: string[] }>>;
+  /** The threads among these with a choice of their own. At most `CHOICES_BATCH_MAX` ids. */
+  ownChoices(threadIds: readonly string[]): Promise<Map<string, ThreadChoice>>;
+  /** Sets the thread's own choice, or clears it with null. */
+  setOwn(threadId: string, choice: ThreadChoice | null): Promise<void>;
+}

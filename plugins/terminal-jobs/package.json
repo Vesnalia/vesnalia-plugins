@@ -1,0 +1,76 @@
+{
+  "name": "bb-plugin-terminal-jobs",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Run durable BB terminal jobs and send completion notices.",
+  "license": "MIT",
+  "author": "Ryan Brown",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanbbrown/bb-plugin-terminal-jobs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ryanbbrown/bb-plugin-terminal-jobs/issues"
+  },
+  "homepage": "https://github.com/ryanbbrown/bb-plugin-terminal-jobs#readme",
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "terminal",
+    "jobs",
+    "automation"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=22",
+    "bb": ">=0.41.0",
+    "bbPluginSdk": ">=0.4.34"
+  },
+  "bb": {
+    "name": "Terminal jobs",
+    "description": "Runs durable terminal jobs and sends completion notices.",
+    "branding": {
+      "icon": "Terminal"
+    },
+    "server": "./server.ts",
+    "host": "./host.ts",
+    "skills": [
+      "skills"
+    ]
+  },
+  "scripts": {
+    "build": "env -u BB_CLI node_modules/bb-app-host/dist/bb.js plugin build",
+    "check": "npm run sdk:check && npm run typecheck && npm test && npm run lint:shell && npm run check:dist && npm run pack:check && npm run smoke:install",
+    "check:dist": "npm run build && ./scripts/check-dist.sh",
+    "lint:shell": "bash -n test/install-smoke.sh scripts/check-dist.sh && if command -v shellcheck >/dev/null 2>&1; then shellcheck test/install-smoke.sh scripts/check-dist.sh; else echo 'shellcheck not installed; syntax check passed'; fi",
+    "pack:check": "npm pack --dry-run",
+    "sdk:check": "node scripts/check-sdk-compat.mjs",
+    "smoke:install": "bash test/install-smoke.sh",
+    "test": "npm run build && vitest run",
+    "test:unit": "npm run test",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "server.ts",
+    "host.ts",
+    "src",
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.34",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.30",
+    "bb-app-host": "npm:bb-app@0.41.0",
+    "better-sqlite3": "^12.2.0",
+    "cron-parser": "^5.10.0",
+    "hono": "^4.13.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  }
+}

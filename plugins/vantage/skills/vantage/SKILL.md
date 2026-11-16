@@ -1,0 +1,89 @@
+---
+name: vantage
+description: Check on the child threads of a parent, or on every recent thread. `bb vantage worktrees` lists every child's worktree with its status, branch, commits ahead and behind, uncommitted files and the files two worktrees both changed; `bb vantage worktree <thread>` shows one worktree's files and commits; `bb vantage changes` groups everything the thread tree changed by repository, including archived children and files edited by absolute path in other repositories. Add `--all` to read every thread active in the last 24 hours, grouped by project; archived threads are left out unless `--archived` is added.
+---
+
+# Vantage
+
+Vantage shows the worktrees of a thread and all of its descendant threads, and groups what they changed by repository. With `--all` it does the same for every thread active in a time window, not one tree. It reads only; it never stages, commits or edits anything.
+
+## Check on every recent thread
+
+    bb vantage worktrees --all               # every thread active in the window, grouped by project
+    bb vantage worktrees --all --hours 6     # the last 6 hours instead of the setting
+    bb vantage changes --all --json
+    bb vantage worktrees --all --archived    # include archived threads
+
+`--all` covers the threads active in the last 24 hours (the user's setting, 1 to 720 hours), plus any thread that is running and any thread archived in that window, newest first, up to the thread limit (200 by default). `--hours <n>` overrides the window for one call and needs `--all`. `--all` cannot be combined with `--thread`: that fails with `target_conflict`, and `--hours` without `--all` fails with `hours_requires_all`. The text output has a heading for each project, such as `Shop · 2 worktrees`, and says when it stopped at the thread limit. In the JSON, `target` is `{ "kind": "all" }`, `windowHours` is the window, `threadId` is empty, `truncatedThreads` says the limit cut the list, each `threads[]` entry has `rootThreadId` (the top of its tree among the threads read; a thread whose parent was not read is its own root), and each `repos[]` entry has `projectId`. A repository's result can be up to 60 seconds old, and `--all` is much faster on a second call because of that.
+
+`--all` leaves out archived threads, as the full-screen page does, and counts them: when some were left out the text output ends with `N archived threads hidden (use --archived)`, and the JSON has `archivedHidden` (0 when they are included). `--archived` includes them, listed after the active ones, and needs `--all`; without it the command fails with `archived_requires_all`. A thread's own tree (`--thread`, the default thread, `bb vantage worktree`) always includes its archived children. `changes --json` also has `partial`, which is always false on the command line (true only in the page's quick first answer, where worktrees and repositories have `state` `loading` and no numbers).
+
+## Check on parallel children
+
+    bb vantage worktrees                     # the current thread's tree
+    bb vantage worktrees --thread <id>       # another thread's tree
+    bb vantage worktrees --json
+    bb vantage worktree <thread>             # one thread's worktree: files and commits
+    bb vantage worktree <thread> --json
+
+`worktrees` prints one row for each workspace in the tree: the columns STATUS, THREAD, AHEAD/BEHIND, UNCOMMITTED and BRANCH, then the files that more than one worktree changed (a merge-conflict risk). STATUS is `archived` (an archived child's kept branch), `unavailable`, `running`, `failed`, or the thread's own status. A branch that no longer exists is not listed. `worktree <thread>` finds the whole tree the thread belongs to and prints each worktree that thread works in, its own workspace first and then any thread checkout: its uncommitted files, its files committed on the branch and its commits (at most 50 files of each kind and 20 commits, then `… N more`). It fails with `worktree_not_found` for a thread without a worktree.
+
+A worktree on its base branch, such as a thread working on `main` in the project checkout, has nothing ahead, so ↑0 ↓0 and "No changes." do not mean the thread did nothing. Its row reads `on base` under AHEAD/BEHIND and its branch cell counts the commits its threads made there (`main · 3 commits by its threads`); `worktree <thread>` prints `on main, its base branch` and `Commits its threads made on main (N)`, or says none were found. These are commits from the checkout's reflog that `git commit` made while one of the worktree's threads was running a `git commit` command, and that are still on HEAD. A worktree whose commits were merged into its base lists them the same way.
+
+### Worktree JSON fields
+
+`worktrees --json` prints `{ threadId, target, windowHours, threads, archivedHidden, worktrees, sharedFiles }`; `worktree <thread> --json` prints one worktree, the thread's own workspace when it has one. A worktree has:
+
+- `key`, `threadIds` (the threads in it, the one nearest the tree's root first: that thread owns the row and its numbers; the others, such as read-only reviewers, only work beside it), `kind` (`workspace`, `branch` or `checkout`), `label` (the project's name) and `projectId`. A `checkout` worktree is a thread checkout: a checkout outside bb, such as a clone made from a shell, that a thread both edited a file in and ran commands in (`cd`, `pushd` or `git -C` with an absolute or `~/` folder). It is compared with the closest base, like every worktree (see `base` below).
+- `state` (`ready` or `unavailable`; `loading` only in the page's quick first answer) and `message` (why it is unavailable).
+- `branch`, `base`, `aheadCount` and `behindCount` (commits ahead of and behind the base; null when there is no base). `base` is the closest of the likely bases: the one bb records, that branch on origin, origin's default branch, `origin/main`, `origin/master`, or a base branch's own upstream, whichever the branch is fewest commits ahead of.
+- `skippedBase`: `{ name, aheadCount }` when Vantage compared with another base than the one bb records, and how many commits that one would have counted; null otherwise.
+- `leftOut`: `{ aheadCount, kept }` when the branch was more commits ahead than the history threshold (50) and its threads made fewer than the share setting (10%) of them. `committed`, `commits` and `aheadCount` then hold only their commits, `kept` of the `aheadCount` ahead of `base`, and the uncommitted files. `whole: true` means the user asked to see the whole branch against bb's base instead.
+- `uncommitted[]` and `committed[]`: `path`, `status`, `additions`, `deletions`, `previousPath`. An archived branch has no uncommitted files. An entry with `folder` (`files`, `repository`, `sample`) is an untracked folder Vantage folded into one entry, because it holds more files than the folder limit (200) or a git repository of its own; its path ends in `/` and no count includes it.
+- `commits[]`: `sha`, `shortSha`, `subject`, `authorName`, `authoredAt` (milliseconds), newest first.
+- `onBase`: its branch is its base branch, or that branch on a remote (`main` on `origin/main`).
+- `threadCommits[]`: the commits its threads made that are not ahead of the base, in the shape of `commits[]`, newest first. Filled only for a ready workspace or thread checkout with no `commits`.
+- `sharedFiles[]` at the top level: `path`, `projectId` and `worktreeKeys`, for files two or more worktrees of one project changed.
+- `threads[]`: `id`, `title`, `status`, `archived`, `rootThreadId`, to name the threads in `threadIds`.
+
+## Group the changes by repository
+
+    bb vantage changes                       # the current thread, uncommitted changes
+    bb vantage changes --thread <id>         # another thread
+    bb vantage changes --scope branch        # everything since the base branch
+    bb vantage changes --json                # the full overview
+
+Without `--thread` or `--all`, the command uses the thread it runs in. Outside a thread it fails with the code `thread_required`.
+
+## Repository kinds
+
+- `workspace`: a thread's own workspace, read with git at its repository root on its machine; its `ref` has `root` and `hostId`, and its file paths are relative to that root. Its numbers can differ from bb's Changes tab when Vantage compared with a closer base than bb's.
+- `checkout` with `ref.worked: true` (caption "Thread checkout"): a checkout outside bb that a thread works in. Every change in it is in `files`, like a workspace, and it also has a worktree.
+- `checkout` without `worked`: another checkout that an agent edited by path. Files the agents edited are in `files`; the repository's other changes are in `otherFiles` and are not the agents' work.
+- `branch`: an archived child whose worktree bb removed. Vantage compares its branch with its base branch in the project checkout, or, when the project's folder is not a repository, in the folder the thread ran in.
+- `recorded`: no repository could be read, so the files come from the agents' recorded edits only. The same applies to `otherFiles` at the top level, which are files outside any repository such as thread storage or /tmp.
+
+A file with status `clean` was edited by an agent and has no change now, for example because it was committed.
+
+## JSON fields
+
+Read these from `--json` output:
+
+- `repos[].label`, `projectId`, `kind` (inside `ref.kind`), `branch`, `base`, `aheadCount` (commits on an archived branch), `state` (`ready` or `unavailable`) and `message` (why it is unavailable).
+- `partial` and `archivedHidden` (see above).
+- `repos[].threadCommits[]`: the same commits as its worktree's `threadCommits`; the text output prints `N commits by its threads on <branch>` and up to five of them.
+- `repos[].files[]`: `path`, `status`, `additions`, `deletions`, `previousPath` for renames, and `edits.threadIds` for the threads that edited the file.
+- `repos[].otherFiles[]`: changes in a checkout that the agents did not make.
+- `repos[].threadIds` and `threads[]`: which threads touched the repository, with `title`, `archived` and `depth`.
+- `otherFiles[]`, `warnings[]` (for example an unreachable machine) and `truncatedThreads`.
+
+## The user's Vantage choices
+
+In bb, the user can tick files as reviewed in Vantage, and two Vantage settings choose its alerts: "Badge the Vantage icon when a thread needs you" (on by default) and "Show a toast when a thread needs you" (off by default). There are no per-thread choices. None of this changes what the commands here print, and there is no command to change it. Review comments the user writes in Vantage arrive in a thread as an ordinary message that starts "Review notes from Vantage on your changes:".
+
+## Limits
+
+- The commits a thread made on its base branch are matched by time: another commit made in the same checkout while one of the thread's commit commands runs counts as the thread's, and a commit made by any command other than `git commit`, such as a script or a release tool, is not found.
+- At most 500 files per repository or worktree list, 100 commits per worktree, 200 other files and 200 threads. Text output shows 50 files per repository and ends with `… N more`. JSON is cut from the end of each list to stay under bb's output limit.
+- Shell-only work in another repository is found only in a thread checkout: one where the same thread also edited a file and changed into it with an absolute or `~/` folder. Elsewhere it is not found unless an agent also edited a file there.
+- A machine that is offline marks only its own repositories as unavailable.

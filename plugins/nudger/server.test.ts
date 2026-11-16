@@ -1,0 +1,695 @@
+import assert from "node:assert/strict";
+import { test, type TestContext } from "node:test";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { setImmediate as nextTurn } from "node:timers/promises";
+import type { BbPluginApi, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeMessageDispatchHookContext, makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import plugin from "./server.js";
+import { decisionSchema, decisionsSchema, labelSchema, snapshotSchema, type MigrationPage, type NudgerSnapshot } from "./nudger-contract.js";
+import type { ThreadEventRow } from "./recovery-contract.js";
+import { LEGACY_ACTIVATION_KEY, LEGACY_DATA_PREFIX, LEGACY_SETTINGS_KEY } from "./migration-storage.js";
+import { configurationSchema, type NudgerConfiguration } from "./rpc-contract.js";
+import { KEY_STATE_KEY } from "./jev-key.js";
+import { statsSchema } from "./stats.js";
+import type { ContinuationSnapshot } from "./continuation.js";
+
+type PluginInfo = Awaited<ReturnType<BbPluginApi["sdk"]["plugins"]["list"]>>["plugins"][number];
+type InventoryThread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
+type FixtureThread = InventoryThread & PluginThreadEventPayloads["thread.idle"]["thread"];
+function fixture(options: { settings?: Record<string, string | boolean>; headquarters?: boolean; migration?: MigrationPage; beforePlugin?(bb: BbPluginApi): void } = {}) {
+  // Lifecycle-event DTOs omit inventory-only environment/activity projections.
+  // These fixtures have no environment, so their list projection explicitly has no host.
+  const threads: FixtureThread[] = ["worker", "headquarters"].map(id => ({
+    ...makeThreadResponse({ id, projectId: "project", status: id === "worker" ? "active" : "idle" }),
+    activity: { activeBackgroundAgentCount: 0, activeBackgroundCommandCount: 0, activeGoalCount: 0, activePlanModeCount: 0, activeWorkflowCount: 0 },
+    environmentBranchName: null, environmentHostId: null, environmentIsWorktree: null,
+    environmentName: null, environmentPath: null, environmentProviderId: null, environmentWorkspaceDisplayKind: "other",
+    hasPendingInteraction: false, queuedWork: "none", pinSortKey: null,
+  }));
+  const history = new Map<string, ThreadEventRow[]>([["worker", [{ id: "start", threadId: "worker", seq: 1, createdAt: 1, scope: { kind: "turn", turnId: "run" }, type: "turn/started", data: { providerThreadId: "provider" } }]]]);
+  const controls: { present: boolean; enabled: boolean; status: PluginInfo["status"]; ids: string[]; sends: number; readControls?: () => Promise<string[]> } = { present: options.headquarters ?? false, enabled: true, status: "running", ids: ["headquarters"], sends: 0 };
+  const installed: PluginInfo = {
+    id: "orchestrator", name: "Headquarters", description: "Fixture", enabled: true, status: "running", statusDetail: null, version: "0.2.0",
+    app: { hasApp: true, bundle: null }, capabilities: [], cliCommand: null, collections: [], handlerStats: { count: 0, errorCount: 0, maxMs: 0, totalMs: 0 },
+    hasSettings: true, icon: null, iconUrl: null, icons: {}, isOrphanedBuiltin: false, logoDarkUrl: null, logoUrl: null, provenance: "direct",
+    providerIds: [], publisherLabel: null, rootDir: "/fixture/headquarters", schedules: [], screenshots: [], services: [], source: "path:/fixture/headquarters", sourceDisplay: "Fixture", updateState: {},
+  };
+  const { bb, harness } = createFakePluginHost({ pluginId: "nudger", settings: options.settings, sdk: {
+    plugins: {
+      list: async () => ({ plugins: controls.present ? [{ ...installed, enabled: controls.enabled, status: controls.status }] : [] }),
+      callRpc: async args => {
+        if (!controls.present) throw new Error("Headquarters removed");
+        if (args.method === "headquarters_controls_v1") return args.outputSchema.parse({ version: 1, threadIds: controls.readControls ? await controls.readControls() : controls.ids });
+        if (args.method === "nudger_export_v1") return args.outputSchema.parse(options.migration ?? { version: 1, entries: [], settings: {}, nextCursor: null });
+        throw new Error("Unknown fixture public method");
+      },
+    },
+    projects: { list: async () => [{ id: "project", name: "Fixture project" }] },
+    threads: {
+      list: async ({ offset = 0, limit = 100 } = {}) => threads.slice(offset, offset + limit),
+      get: async ({ threadId }) => { const thread = threads.find(row => row.id === threadId); if (!thread) throw new Error("Unknown thread"); return thread; },
+      getPluginMetadata: async () => ({}),
+      events: { list: async args => {
+        const rows = (history.get(args.threadId) ?? []).filter(row => row.seq > Number(args.afterSeq ?? -1) && row.seq < Number(args.beforeSeq ?? Infinity) && (!args.types || args.types.includes(row.type)));
+        return (args.order === "desc" ? [...rows].reverse() : rows).slice(0, Number(args.limit ?? 100));
+      } },
+      send: async () => { controls.sends++; throw new Error("No project message is permitted by this fixture"); },
+      queuedMessages: { delete: async () => ({ ok: true as const }) },
+    },
+  } });
+  options.beforePlugin?.(bb);
+  plugin(bb);
+  const snapshot = async (): Promise<NudgerSnapshot> => snapshotSchema.parse(await harness.callRpc("nudger_snapshot_v1", { version: 1 }));
+  const config = async (): Promise<NudgerConfiguration> => configurationSchema.parse(await harness.callRpc("nudger_settings_v1", { version: 1 }));
+  const dispatch = async (context: ReturnType<typeof makeMessageDispatchHookContext>) => harness.registrations.hooks["message.dispatch"]!(context);
+  async function finish(text = "Still implementing the assigned work.") {
+    const seq = Math.max(0, ...(history.get("worker") ?? []).map(row => row.seq));
+    history.get("worker")!.push(
+      { id: "message", threadId: "worker", seq: seq + 1, createdAt: Date.now(), scope: { kind: "turn", turnId: "run" }, type: "item/completed", data: { providerThreadId: "provider", item: { id: "final", type: "agentMessage", text } } },
+      { id: "complete", threadId: "worker", seq: seq + 2, createdAt: Date.now(), scope: { kind: "turn", turnId: "run" }, type: "turn/completed", data: { providerThreadId: "provider", status: "completed" } },
+    );
+    threads[0]!.status = "idle"; threads[0]!.updatedAt++;
+    await harness.emitThreadEvent("thread.idle", { thread: threads[0]!, lastAssistantText: "Not authoritative evidence" });
+  }
+  async function until(predicate: (value: NudgerSnapshot) => boolean): Promise<NudgerSnapshot> {
+    for (let attempt = 0; attempt < 100; attempt++) { const value = await snapshot(); if (predicate(value)) return value; await nextTurn(); }
+    throw new Error("Expected live producer state did not arrive");
+  }
+  return { bb, harness, threads, history, controls, snapshot, config, dispatch, finish, until };
+}
+/** `ending: null` answers in the shape judgments had before the `ending`/`waits_on`/`consequence` questions existed. */
+function jevResponse(classification: "continue" | "blocker" | "finished", ending: "request" | "operator_chosen" | "report" | null = "report") {
+  const waitsOn = classification === "continue" ? "assistant" : classification === "finished" ? "nothing" : "operator";
+  return new Response(JSON.stringify({ model: "jev-1.13.0", answers: {
+    obstacle: { type: "choice", choice: classification === "blocker" ? "blocker" : "none", confidence: 1, probabilities: { none: classification === "blocker" ? 0 : 1, blocker: classification === "blocker" ? 1 : 0, permission: 0, uncertainty: 0 } },
+    boundary: { type: "choice", choice: classification === "finished" ? "finished" : "continue", confidence: 1, probabilities: { continue: classification === "finished" ? 0 : 1, finished: classification === "finished" ? 1 : 0, uncertainty: 0 } },
+    ...ending && {
+      ending: { type: "choice", choice: ending, confidence: 1, probabilities: { request: 0, operator_chosen: 0, report: 0, [ending]: 1 } },
+      waits_on: { type: "choice", choice: waitsOn, confidence: 1, probabilities: { assistant: 0, running: 0, operator: 0, nothing: 0, [waitsOn]: 1 } },
+      consequence: { type: "choice", choice: "none", confidence: 1, probabilities: { money: 0, data: 0, production: 0, "priority-product": 0, irreversible: 0, none: 1 } },
+    },
+  }, usage: { input_tokens: 42, output_tokens: 3 } }), { status: 200, headers: { "content-type": "application/json" } });
+}
+const MODELS_URL = "https://api.typesafe.ai/v1/models";
+/** TypeSafe's API: the key check (GET /v1/models) answers `keyStatus(key)`; a judgment (POST /v1/systemone) answers `judge()`. */
+function typesafe(t: TestContext, keyStatus: (key: string) => number, judge = async () => jevResponse("continue")) {
+  const fetch = t.mock.method(globalThis, "fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    if (String(input) !== MODELS_URL) return judge();
+    const status = keyStatus(new Headers(init?.headers).get("authorization")?.replace(/^Bearer /, "") ?? "");
+    return new Response(JSON.stringify(status === 200 ? { models: [{ name: "jev-latest", description: "General-purpose system one model.", release_date: "2026-09-15" }] } : { detail: { error_type: "authentication_error" } }), { status });
+  });
+  return {
+    checks: () => fetch.mock.calls.filter(call => String(call.arguments[0]) === MODELS_URL).length,
+    judgments: () => fetch.mock.calls.filter(call => String(call.arguments[0]) !== MODELS_URL).length,
+  };
+}
+
+test("standalone factory watches with zero setup and none never calls a model or dispatches", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("Default must not call a paid detector"); });
+  const h = fixture(); t.after(() => h.harness.dispose());
+  const service = h.harness.runService("nudger-watcher-v1");
+  const initial = await h.snapshot();
+  assert.equal(initial.status.observing, true); assert.equal(initial.status.classifying, false); assert.equal(initial.status.detectorId, null);
+  assert.equal(initial.status.threads.length, 2); assert.equal(initial.status.watchedCount, 1);
+  await h.finish();
+  const ending = await h.until(value => value.records.length === 1);
+  assert.equal(ending.records[0]!.action, "suppressed"); assert.notEqual(ending.historyVersion, initial.historyVersion);
+  assert.equal(fetch.mock.callCount(), 0); assert.equal(h.controls.sends, 0);
+  service.controller.abort(); await service.done;
+  assert.equal(h.controls.sends, 0);
+});
+
+test("factory migration restores pause, per-thread off and lifetime count through reload without exposing or calling the key", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("Paused migration cannot classify"); });
+  const h = fixture({ headquarters: true, migration: { version: 1, entries: [
+    { key: "recovery.paused", value: true }, { key: "continuation.off.worker", value: true }, { key: "continuation.sentCounts", value: { worker: 19 } },
+    { key: "usage.detector.jev.2026-10-01", value: { requests: 7, errors: 0, inputTokens: 400, outputTokens: 30 } }, { key: "usage.detector.backfilled", value: "2026-10-01" },
+    { key: "recovery.records.legacy", value: { id: "legacy", threadId: "worker", projectId: "project", runId: "old-run", messageId: "old-message", messageRevision: 1, observedAt: Date.now(), classification: "finished", action: "finished", reason: "Legacy finished ending", detector: null, judgment: null } },
+    { key: "continuation.nudge.worker", value: { nudgeId: "old", threadId: "worker", runId: "old-run", messageId: "old-message", messageRevision: 1, createdAt: 1, sendAt: 2, state: "pending", cancelReason: null } },
+  ], settings: { detector: "jev", typesafeApiKey: "fixture-key-secret" }, nextCursor: null } });
+  let current = h.harness; t.after(() => current.dispose());
+  const value = await h.snapshot();
+  assert.equal(value.status.paused, true); assert.equal(value.status.classifying, false);
+  assert.equal(value.jevUsage?.days["2026-10-01"]?.requests, 7);
+  assert.equal(value.records[0]?.id, "legacy"); assert.equal(value.records[0]?.action, "finished");
+  const decisions = await current.runCli(["continuation", "worker"]);
+  assert.deepEqual(JSON.parse(decisions.stdout).pending, []);
+  assert.equal(JSON.stringify(value).includes("fixture-key-secret"), false);
+  const banner = await current.callRpc("nudger_continuation_status_v1", { threadId: "worker" });
+  assert.deepEqual(banner && typeof banner === "object" ? { state: Reflect.get(banner, "state"), count: Reflect.get(banner, "nudgeCount") } : null, { state: "off", count: 19 });
+  const replacement = await current.reload(plugin); current = replacement.harness;
+  const restored = snapshotSchema.parse(await current.callRpc("nudger_snapshot_v1", { version: 1 }));
+  assert.equal(restored.status.paused, true); assert.equal(restored.jevUsage?.days["2026-10-01"]?.requests, 7);
+  assert.equal(restored.records[0]?.id, "legacy"); assert.equal(restored.records[0]?.action, "finished");
+  assert.equal(fetch.mock.callCount(), 0); assert.equal(h.controls.sends, 0);
+});
+
+test("Jev classifies without a machine or Headquarters; a user dispatch cancels its pending nudge and unknown owned submissions and queues fail closed", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("continue"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "fake-offline-key" } }); t.after(() => h.harness.dispose());
+  await h.snapshot(); await h.finish();
+  await h.until(value => value.records[0]?.action === "nudged");
+  const pending = await h.harness.runCli(["continuation", "worker"]);
+  assert.match(pending.stdout, /"state": "pending"/);
+  assert.deepEqual(await h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "idle" }, initiator: "user", senderThreadId: null, experimental_submission: null })), { action: "proceed" });
+  const cancelled = await h.harness.runCli(["continuation", "worker"]);
+  assert.match(cancelled.stdout, /fresh activity before admission: user/);
+  const stale = await h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "idle" }, queuedMessages: [makeQueueEntry({ originPluginId: "nudger", threadId: "worker" })] }));
+  assert.equal(stale.action, "reject"); assert.equal(fetch.mock.callCount(), 1); assert.equal(h.controls.sends, 0);
+  const unrecognized = await h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "idle" }, experimental_submission: { pluginId: "nudger", data: {} } }));
+  assert.equal(unrecognized.action, "reject");
+  assert.equal(h.harness.sdk.calls.some(call => call.path.startsWith("hosts.")), false);
+});
+
+test("Headquarters chat inline and queued rows remain admitted; current control IDs exclude Nudger submissions", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("continue"));
+  const h = fixture({ headquarters: true, settings: { detector: "jev", typesafeApiKey: "offline-key" } }); t.after(() => h.harness.dispose());
+  await h.snapshot();
+  const chat = makeMessageDispatchHookContext({ thread: { id: "headquarters", status: "idle" }, experimental_submission: { pluginId: "orchestrator", data: {} }, queuedMessages: [] });
+  assert.deepEqual(await h.dispatch(chat), { action: "proceed" });
+  assert.deepEqual(await h.dispatch(makeMessageDispatchHookContext({ ...chat, queuedMessages: [makeQueueEntry({ threadId: "headquarters", originPluginId: "orchestrator" })] })), { action: "proceed" });
+  await h.finish(); await h.until(value => value.records[0]?.action === "nudged");
+  h.controls.ids.push("worker");
+  const currentControl = await h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "idle" }, experimental_submission: { pluginId: "nudger", data: { continuationNudge: "old" } } }));
+  assert.equal(currentControl.action, "reject"); assert.equal(fetch.mock.callCount(), 1); assert.equal(h.controls.sends, 0);
+  h.controls.present = false;
+  assert.deepEqual(await h.dispatch(makeMessageDispatchHookContext({ thread: { id: "headquarters", status: "idle" }, initiator: "user" })), { action: "proceed" });
+});
+
+test("native Stop suppresses further endings until admitted human work", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("continue"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } }); t.after(() => h.harness.dispose());
+  await h.snapshot();
+  h.history.get("worker")!.push({ id: "stop", threadId: "worker", seq: 2, createdAt: Date.now(), scope: { kind: "thread" }, type: "system/thread/interrupted", data: { reason: "manual-stop" } });
+  await h.harness.emitThreadEvent("experimental_thread.events", { thread: h.threads[0]!, sequence: 2 });
+  assert.match((await h.snapshot()).status.threads.find(thread => thread.id === "worker")!.exclusion!, /manual Stop/);
+  await h.finish("Current work remains unfinished after Stop.");
+  assert.equal((await h.snapshot()).records.length, 0);
+  assert.equal(fetch.mock.callCount(), 0);
+  assert.deepEqual(await h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "idle" }, initiator: "user", senderThreadId: null, experimental_submission: null })), { action: "proceed" });
+  assert.equal((await h.snapshot()).status.threads.find(thread => thread.id === "worker")!.exclusion, null);
+  assert.equal(h.controls.sends, 0);
+});
+
+test("active blocker publication revalidates current public history instead of replaying old reported records", async t => {
+  t.mock.method(globalThis, "fetch", async () => jevResponse("blocker"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } }); t.after(() => h.harness.dispose());
+  await h.snapshot(); await h.finish("Required credential is unavailable.");
+  const live = await h.until(value => value.records[0]?.action === "reported" && value.blockers.length === 1);
+  assert.equal(live.blockers[0]!.kind, "blocker");
+  h.history.get("worker")!.push({ id: "next", threadId: "worker", seq: 4, createdAt: 4, scope: { kind: "turn", turnId: "next-run" }, type: "turn/started", data: { providerThreadId: "provider" } });
+  h.threads[0]!.status = "active"; h.threads[0]!.updatedAt++;
+  // No lifecycle announcement: the producer must re-read public current state before publishing.
+  const advanced = await h.snapshot();
+  assert.equal(advanced.blockers.length, 0); assert.equal(advanced.records[0]!.action, "reported");
+  assert.equal(h.controls.sends, 0);
+});
+
+test("a still-current reported obstacle survives a plugin reload with its own final message", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("blocker"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } });
+  let current = h.harness; t.after(() => current.dispose());
+  await h.snapshot(); await h.finish("Required credential is unavailable.");
+  await h.until(value => value.blockers.length === 1);
+  const replacement = await current.reload(plugin); current = replacement.harness;
+  const restored = snapshotSchema.parse(await current.callRpc("nudger_snapshot_v1", { version: 1 }));
+  assert.deepEqual(restored.blockers.map(blocker => [blocker.threadId, blocker.kind, blocker.finalAssistantMessage]), [["worker", "blocker", "Required credential is unavailable."]]);
+  assert.equal(fetch.mock.callCount(), 1); assert.equal(h.controls.sends, 0);
+});
+
+test("a retained obstacle judged before the ending question is re-judged once after reload, and settles if the operator chose that state", async t => {
+  const answers = [jevResponse("blocker", null), jevResponse("blocker", "operator_chosen")];
+  const fetch = t.mock.method(globalThis, "fetch", async () => answers.shift() ?? jevResponse("blocker"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } });
+  let current = h.harness; t.after(() => current.dispose());
+  await h.snapshot(); await h.finish("Understood: the arcade is frozen. I won't restore or request the credential.");
+  const before = await h.until(value => value.blockers.length === 1);
+  assert.equal(before.blockers[0]!.consequence, undefined);
+  const replacement = await current.reload(plugin); current = replacement.harness;
+  const read = async () => snapshotSchema.parse(await current.callRpc("nudger_snapshot_v1", { version: 1 }));
+  const restored = await read();
+  assert.deepEqual(restored.blockers, []);
+  assert.equal(restored.records.find(record => record.threadId === "worker")!.action, "finished");
+  await read();
+  assert.equal(fetch.mock.callCount(), 2); assert.equal(h.controls.sends, 0);
+});
+
+test("a retained obstacle published before it could be re-judged is still re-judged on a later read", async t => {
+  const answers = [jevResponse("blocker", null), jevResponse("blocker", "operator_chosen")];
+  const fetch = t.mock.method(globalThis, "fetch", async () => answers.shift() ?? jevResponse("blocker"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } });
+  let current = h.harness; t.after(() => current.dispose());
+  await h.snapshot(); await h.finish("Understood: the arcade is frozen. I won't restore or request the credential.");
+  await h.until(value => value.blockers.length === 1);
+  const replacement = await current.reload(plugin); current = replacement.harness;
+  const read = async () => snapshotSchema.parse(await current.callRpc("nudger_snapshot_v1", { version: 1 }));
+  // Paused: the retained obstacle is published with its old judgment, and no model is asked.
+  await current.callRpc("nudger_pause_v1", { version: 1, paused: true });
+  assert.equal((await read()).blockers.length, 1);
+  assert.equal(fetch.mock.callCount(), 1);
+  // Once resumed, the next read re-judges that same published ending, and it settles.
+  await current.callRpc("nudger_pause_v1", { version: 1, paused: false });
+  assert.deepEqual((await read()).blockers, []);
+  assert.equal(fetch.mock.callCount(), 2); assert.equal(h.controls.sends, 0);
+});
+
+test("factory loading rejects owned submissions, and an imported Jev choice without a key never classifies", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("Missing key must never call a model"); });
+  const h = fixture({ headquarters: true, migration: { version: 1, entries: [], settings: { detector: "jev" }, nextCursor: null } }); t.after(() => h.harness.dispose());
+  const loading = await h.dispatch(makeMessageDispatchHookContext({ experimental_submission: { pluginId: "nudger", data: { continuationNudge: "stale" } } }));
+  assert.equal(loading.action, "reject");
+  const value = await h.snapshot(); assert.equal(value.status.classifying, false); assert.equal(value.status.detectorId, null);
+  const config = await h.config();
+  assert.deepEqual([config.key, config.active, config.detector], ["missing", false, "none"]);
+  assert.equal(fetch.mock.callCount(), 0); assert.equal(h.controls.sends, 0);
+});
+
+test("a leftover Luna choice reads as off, never classifies, and Luna-era history stays readable", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("A removed detector must never call a model"); });
+  const lunaRecord = { id: "legacy-luna", threadId: "worker", projectId: "project", runId: "old-run", messageId: "old-message", messageRevision: 1, observedAt: Date.now() - 60_000,
+    classification: "blocker", action: "reported", reason: "Legacy obstacle", detector: "cassidy-codex-gpt-6-luna-medium-fast",
+    judgment: { classification: "blocker", model: "gpt-6-luna", latencyMs: 5, usage: { inputTokens: 100, outputTokens: 5, cost: null }, confidence: null, probabilities: null, questions: null } };
+  const migrations: MigrationPage[] = [
+    { version: 1, entries: [], settings: { detector: "luna", hostId: "legacy-host" }, nextCursor: null },
+    { version: 1, entries: [{ key: "recovery.records.legacy-luna", value: lunaRecord }], settings: {}, nextCursor: null },
+  ];
+  for (const migration of migrations) {
+    const h = fixture({ headquarters: true, migration, settings: { detector: "luna" } }); t.after(() => h.harness.dispose());
+    const value = await h.snapshot();
+    assert.equal(value.status.classifying, false); assert.equal(value.status.detectorId, null);
+    const config = configurationSchema.parse(await h.harness.callRpc("nudger_settings_v1", { version: 1 }));
+    assert.equal(config.detector, "none"); assert.equal(config.active, false); assert.equal(config.error, null);
+    if (migration.settings.detector) assert.deepEqual(await h.bb.storage.kv.get(LEGACY_SETTINGS_KEY), { detector: "luna", keyAvailable: false });
+    if (migration.entries.length) {
+      assert.equal(value.records.find(record => record.id === "legacy-luna")?.detector, lunaRecord.detector);
+      const stats = statsSchema.parse(await h.harness.callRpc("nudger_stats_v1", { version: 1 }));
+      // A retained obstacle whose recorded message is no longer confirmable is history, not current attention.
+      assert.deepEqual(stats.attention, []);
+      assert.equal(stats.jev?.series.month.some(point => point.requests > 0), false);
+    }
+    await h.finish(); assert.equal((await h.snapshot()).status.classifying, false);
+  }
+  assert.equal(fetch.mock.callCount(), 0);
+});
+
+test("stats report Jev usage and a live obstacle from the same records Headquarters reads", async t => {
+  t.mock.method(globalThis, "fetch", async () => jevResponse("blocker"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } }); t.after(() => h.harness.dispose());
+  await h.snapshot(); await h.finish("**Required credential** is unavailable, so the deploy cannot continue.");
+  await h.until(value => value.blockers.length === 1);
+  const stats = statsSchema.parse(await h.harness.callRpc("nudger_stats_v1", { version: 1 }));
+  assert.equal(stats.attention.length, 1);
+  assert.deepEqual({ ...stats.attention[0]!, observedAt: 0 }, { id: stats.attention[0]!.id, threadId: "worker", projectId: "project", title: h.threads[0]!.title ?? h.threads[0]!.titleFallback ?? "worker", project: "Fixture project",
+    kind: "blocker", observedAt: 0, summary: "Required credential is unavailable, so the deploy cannot continue." });
+  const today = stats.jev!.series.day.at(-1)!;
+  assert.equal(today.requests, 1); assert.equal(today.inputTokens, 42); assert.equal(today.costUsd, 42 * 0.042 / 1_000_000);
+  assert.equal(stats.nudges.series.day.at(-1)!.nudges, 0); assert.equal(stats.nudges.recent.length, 0);
+  assert.equal(h.controls.sends, 0);
+});
+
+test("a partial migration cannot activate imported paid settings before the old pause and toggles are restored", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("Partial policy restoration must stay passive"); });
+  const h = fixture({ headquarters: true, migration: { version: 1, entries: [], settings: { detector: "jev", typesafeApiKey: "offline-key" }, nextCursor: "later-page" } }); t.after(() => h.harness.dispose());
+  const value = await h.snapshot();
+  assert.equal(value.status.observing, true); assert.equal(value.status.classifying, false);
+  assert.match(value.status.gates.join(" "), /migration is incomplete/);
+  await h.finish(); assert.equal((await h.snapshot()).records[0]?.action, "suppressed");
+  assert.equal(fetch.mock.callCount(), 0); assert.equal(h.controls.sends, 0);
+});
+
+test("producer historyVersion changes when a judgment completes on the same record ID", async t => {
+  const completion = Promise.withResolvers<void>();
+  t.mock.method(globalThis, "fetch", async () => { await completion.promise; return jevResponse("finished"); });
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } }); t.after(() => h.harness.dispose());
+  await h.snapshot(); await h.finish();
+  const pending = await h.until(value => value.records[0]?.action === "observed");
+  completion.resolve();
+  const finished = await h.until(value => value.records[0]?.action === "finished");
+  assert.equal(finished.records[0]!.id, pending.records[0]!.id);
+  assert.notEqual(finished.historyVersion, pending.historyVersion);
+  assert.equal((await h.snapshot()).historyVersion, finished.historyVersion);
+  assert.equal(h.controls.sends, 0);
+});
+
+test("selecting a generic Headquarters conversation while running excludes its next ending before a discovery tick", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("continue"));
+  const h = fixture({ headquarters: true, settings: { detector: "jev", typesafeApiKey: "offline-key" } }); t.after(() => h.harness.dispose());
+  h.threads[0]!.originPluginId = null;
+  assert.equal((await h.snapshot()).status.classifying, true);
+  h.controls.ids.push("worker");
+  await h.finish();
+  const excluded = await h.until(value => value.records[0]?.action === "suppressed");
+  assert.match(excluded.records[0]!.reason!, /control conversation before classification/);
+  assert.equal(fetch.mock.callCount(), 0);
+  assert.equal(h.controls.sends, 0);
+  assert.doesNotMatch((await h.harness.runCli(["continuation", "worker"])).stdout, /"state": "pending"/);
+});
+
+test("a safety read does not reuse discovery started before a Headquarters selection change", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("continue"));
+  const started = Promise.withResolvers<void>(), release = Promise.withResolvers<void>();
+  const h = fixture({ headquarters: true, settings: { detector: "jev", typesafeApiKey: "offline-key" } });
+  t.after(async () => { release.resolve(); await h.harness.dispose(); });
+  h.threads[0]!.originPluginId = null;
+  await h.snapshot();
+  let first = true;
+  h.controls.readControls = async () => {
+    const ids = [...h.controls.ids];
+    if (first) { first = false; started.resolve(); await release.promise; }
+    return ids;
+  };
+  const admission = h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "idle" }, experimental_submission: { pluginId: "nudger", data: {} } }));
+  await started.promise;
+  h.controls.ids.push("worker");
+  await h.finish();
+  release.resolve();
+  assert.equal((await admission).action, "reject");
+  const excluded = await h.until(value => value.records[0]?.action === "suppressed");
+  assert.match(excluded.records[0]!.reason!, /control conversation before classification/);
+  assert.equal(fetch.mock.callCount(), 0);
+  assert.equal(h.controls.sends, 0);
+});
+
+test("a recognized nudge waits for newer control discovery before dispatch admission", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("continue"));
+  const firstStarted = Promise.withResolvers<void>(), firstRelease = Promise.withResolvers<void>();
+  const currentStarted = Promise.withResolvers<void>(), currentRelease = Promise.withResolvers<void>();
+  const h = fixture({ headquarters: true, settings: { detector: "jev", typesafeApiKey: "offline-key" } });
+  t.after(async () => { firstRelease.resolve(); currentRelease.resolve(); await h.harness.dispose(); });
+  h.threads[0]!.originPluginId = null;
+  await h.snapshot(); await h.finish(); await h.until(value => value.records[0]?.action === "nudged");
+  const { pending } = JSON.parse((await h.harness.runCli(["continuation", "worker"])).stdout) as ContinuationSnapshot;
+  assert.equal(pending.length, 1);
+  const nudgeId = pending[0]!.nudgeId;
+  let reads = 0, settled = false;
+  h.controls.readControls = async () => {
+    const ids = [...h.controls.ids];
+    reads++;
+    if (reads === 1) { firstStarted.resolve(); await firstRelease.promise; }
+    if (reads === 2) { currentStarted.resolve(); await currentRelease.promise; }
+    return ids;
+  };
+  const admission = h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "idle" },
+    experimental_submission: { pluginId: "nudger", data: { continuationNudge: nudgeId } } })).then(decision => { settled = true; return decision; });
+  await firstStarted.promise;
+  h.controls.ids.push("worker");
+  const selectedBanner = h.harness.callRpc("nudger_continuation_status_v1", { threadId: "worker" });
+  // A later non-mutating read confirms the nudge remains valid while control discovery is blocked.
+  const blocked = JSON.parse((await h.harness.runCli(["continuation", "worker"])).stdout) as ContinuationSnapshot;
+  assert.equal(blocked.pending[0]?.nudgeId, nudgeId);
+  firstRelease.resolve();
+  await currentStarted.promise;
+  assert.equal(settled, false);
+  currentRelease.resolve();
+  const decision = await admission;
+  assert.equal(decision.action, "reject");
+  await selectedBanner;
+  assert.equal(fetch.mock.callCount(), 1);
+  assert.equal(h.controls.sends, 0);
+});
+
+test("Headquarters selection during classification discards the result before continuation routing", async t => {
+  const started = Promise.withResolvers<void>(), completion = Promise.withResolvers<void>();
+  const fetch = t.mock.method(globalThis, "fetch", async () => { started.resolve(); await completion.promise; return jevResponse("continue"); });
+  const h = fixture({ headquarters: true, settings: { detector: "jev", typesafeApiKey: "offline-key" } });
+  t.after(async () => { completion.resolve(); await h.harness.dispose(); });
+  h.threads[0]!.originPluginId = null;
+  await h.snapshot(); await h.finish(); await started.promise;
+  h.controls.ids.push("worker");
+  completion.resolve();
+  const excluded = await h.until(value => value.records[0]?.action === "suppressed");
+  assert.match(excluded.records[0]!.reason!, /control conversation before routing/);
+  assert.equal(fetch.mock.callCount(), 1);
+  assert.equal(h.controls.sends, 0);
+  assert.doesNotMatch((await h.harness.runCli(["continuation", "worker"])).stdout, /"state": "pending"/);
+});
+
+test("foreign plugins cannot mutate settings, secrets, enablement, pause, toggles or cancellation before any producer reads", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("Foreign plugins cannot activate paid classification"); });
+  const h = fixture({ settings: { detector: "none", typesafeApiKey: "operator-secret" } });
+  t.after(() => h.harness.dispose());
+  const foreign = { experimental_caller: { kind: "plugin" as const, pluginId: "unrelated" } };
+  for (const input of [
+    { version: 1, enabled: true, detector: "jev" }, { version: 1, typesafeApiKey: "foreign-secret" },
+  ]) await assert.rejects(h.harness.callRpc("nudger_settings_set_v1", input, foreign), /native operator/);
+  await assert.rejects(h.harness.callRpc("nudger_continuation_toggle_v1", { threadId: "worker", enabled: false }, foreign), /native operator/);
+  await assert.rejects(h.harness.callRpc("nudger_continuation_cancel_v1", { threadId: "worker" }, foreign), /native operator/);
+  await assert.rejects(h.harness.callRpc("nudger_pause_v1", { version: 1, paused: false }, foreign), /Only Headquarters/);
+  assert.deepEqual(h.harness.sdk.calls, []);
+  assert.deepEqual(await h.bb.storage.kv.list(), []);
+  const settings = configurationSchema.parse(await h.harness.callRpc("nudger_settings_v1", { version: 1 }, foreign));
+  assert.equal(settings.detector, "none"); assert.equal(settings.key, "saved"); assert.equal(settings.active, false);
+  assert.equal((await h.snapshot()).status.classifying, false);
+  await h.harness.callRpc("nudger_history_v1", { version: 1 }, foreign);
+  await h.harness.callRpc("nudger_continuation_status_v1", { threadId: "worker" }, foreign);
+  await h.harness.callRpc("nudger_stats_v1", { version: 1 }, foreign);
+  await h.harness.callRpc("nudger_pause_v1", { version: 1, paused: true }, { experimental_caller: { kind: "plugin", pluginId: "orchestrator" } });
+  await h.harness.callRpc("nudger_pause_v1", { version: 1, paused: false });
+  await h.finish(); assert.equal(fetch.mock.callCount(), 0); assert.equal(h.controls.sends, 0);
+});
+
+test("foreign toggle and cancel cannot alter an operator-owned pending decision", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => jevResponse("continue"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "operator-key" } });
+  t.after(() => h.harness.dispose());
+  await h.snapshot(); await h.finish(); await h.until(value => value.records[0]?.action === "nudged");
+  const before = await h.harness.runCli(["continuation", "worker"]);
+  const foreign = { experimental_caller: { kind: "plugin" as const, pluginId: "unrelated" } };
+  await assert.rejects(h.harness.callRpc("nudger_continuation_cancel_v1", { threadId: "worker" }, foreign), /native operator/);
+  await assert.rejects(h.harness.callRpc("nudger_continuation_toggle_v1", { threadId: "worker", enabled: false }, foreign), /native operator/);
+  const after = await h.harness.runCli(["continuation", "worker"]);
+  assert.deepEqual(JSON.parse(after.stdout).pending, JSON.parse(before.stdout).pending);
+  assert.equal(JSON.parse(after.stdout).enabled, JSON.parse(before.stdout).enabled);
+  assert.deepEqual(JSON.parse(after.stdout).log, JSON.parse(before.stdout).log);
+  assert.equal(fetch.mock.callCount(), 1); assert.equal(h.controls.sends, 0);
+  await h.harness.callRpc("nudger_continuation_cancel_v1", { threadId: "worker" });
+  assert.doesNotMatch((await h.harness.runCli(["continuation", "worker"])).stdout, /"state": "pending"/);
+});
+
+test("late import shares the mutation lane while standard BB settings remain independently authoritative", async t => {
+  t.mock.timers.enable({ apis: ["setInterval"] });
+  // Jev refuses the new keys below, so nothing turns Nudger back on behind the explicit "off".
+  const api = typesafe(t, () => 401, async () => { throw new Error("Concurrent explicit none must remain passive"); });
+  for (const gate of ["marker", "preferences"] as const) {
+    const entered = Promise.withResolvers<void>(), release = Promise.withResolvers<void>();
+    const migration: MigrationPage = { version: 1, entries: [
+      { key: "recovery.paused", value: false }, { key: "continuation.off.worker", value: false },
+      { key: "continuation.off.headquarters", value: false }, { key: "continuation.sentCounts", value: { worker: 13 } },
+    ], settings: { detector: "jev", typesafeApiKey: "legacy-secret", hostId: "legacy-host" }, nextCursor: null };
+    const h = fixture({ migration });
+    t.after(async () => { release.resolve(); await h.harness.dispose(); });
+    const service = h.harness.runService("nudger-watcher-v1");
+    await h.snapshot(); await nextTurn();
+    await h.finish();
+    const ownRecord = (await h.until(value => value.records.length === 1)).records[0]!;
+    migration.entries.push(
+      { key: `recovery.records.${ownRecord.id}`, value: { ...ownRecord, reason: "Older imported reason" } },
+      { key: "recovery.records.legacy-only", value: { ...ownRecord, id: "legacy-only", reason: "Imported retained history" } },
+    );
+    const set = h.bb.storage.kv.set.bind(h.bb.storage.kv);
+    h.bb.storage.kv.set = async (key, value) => {
+      if (key === (gate === "marker" ? LEGACY_ACTIVATION_KEY : `${LEGACY_DATA_PREFIX}recovery.paused`)) { entered.resolve(); await release.promise; }
+      return set(key, value);
+    };
+    h.controls.present = true;
+    t.mock.timers.tick(30_000);
+    await entered.promise;
+    // Native standard settings writes bypass plugin RPC and its serial lane.
+    await h.harness.setSettings({ detector: "none", enabled: false, typesafeApiKey: "native-new-secret" });
+    const settingsWrite = h.harness.callRpc("nudger_settings_set_v1", { version: 1, detector: "none", enabled: false, typesafeApiKey: "rpc-new-secret" });
+    const pause = h.harness.callRpc("nudger_pause_v1", { version: 1, paused: true });
+    const bridgePause = h.harness.callRpc("nudger_pause_v1", { version: 1, paused: true }, { experimental_caller: { kind: "plugin", pluginId: "orchestrator" } });
+    const toggle = h.harness.callRpc("nudger_continuation_toggle_v1", { threadId: "worker", enabled: false });
+    const cli = h.harness.runCli(["continuation", "headquarters", "off"]);
+    const cancel = h.harness.callRpc("nudger_continuation_cancel_v1", { threadId: "worker" });
+    release.resolve();
+    await Promise.all([settingsWrite, pause, bridgePause, toggle, cli, cancel]);
+    const config = configurationSchema.parse(await h.harness.callRpc("nudger_settings_v1", { version: 1 }));
+    // The new keys are checked; Jev refuses them, and the explicit "off" stands.
+    assert.equal(config.detector, "none"); assert.equal(config.enabled, false); assert.equal(config.paused, true); assert.equal(config.key, "rejected");
+    assert.equal(await h.bb.storage.kv.get("recovery.paused"), true);
+    assert.equal(await h.bb.storage.kv.get("continuation.off.worker"), true);
+    assert.equal(await h.bb.storage.kv.get("continuation.off.headquarters"), true);
+    assert.equal(await h.bb.storage.kv.get(`${LEGACY_DATA_PREFIX}recovery.paused`), false);
+    assert.deepEqual(await h.bb.storage.kv.get(LEGACY_SETTINGS_KEY), { detector: "jev", keyAvailable: true });
+    const banner = await h.harness.callRpc("nudger_continuation_status_v1", { threadId: "worker" });
+    assert.equal(banner && typeof banner === "object" ? Reflect.get(banner, "nudgeCount") : null, 13);
+    assert.match((await h.harness.runCli(["continuation", "worker"])).stdout, /"enabled": false/);
+    await h.finish(); assert.equal((await h.snapshot()).status.classifying, false);
+    const retained = await h.snapshot();
+    assert.equal(retained.records.find(record => record.id === ownRecord.id)?.reason, ownRecord.reason);
+    assert.equal(retained.records.find(record => record.id === "legacy-only")?.reason, "Imported retained history");
+    for (const key of await h.bb.storage.kv.list()) assert.doesNotMatch(JSON.stringify(await h.bb.storage.kv.get(key)), /legacy-secret|native-new-secret|rpc-new-secret/);
+    service.controller.abort(); await service.done;
+  }
+  assert.equal(api.judgments(), 0);
+});
+
+test("a direct BB write fences an old configure read across awaits and immediately revokes paid configuration", async t => {
+  const entered = Promise.withResolvers<void>(), release = Promise.withResolvers<void>();
+  // Jev refuses the newly written key, so only the fence decides what runs.
+  const api = typesafe(t, () => 401, async () => { throw new Error("Stale settings cannot activate a model"); });
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "old-key" }, beforePlugin(bb) {
+    const get = bb.storage.kv.get.bind(bb.storage.kv);
+    let first = true;
+    bb.storage.kv.get = async <T>(key: string): Promise<T | undefined> => {
+      const captured = await get<T>(key);
+      if (first && key === KEY_STATE_KEY) { first = false; entered.resolve(); await release.promise; }
+      return captured;
+    };
+  } });
+  t.after(async () => { release.resolve(); await h.harness.dispose(); });
+  const loading = h.snapshot();
+  await entered.promise;
+  await h.harness.setSettings({ detector: "none", enabled: false, typesafeApiKey: "new-key" });
+  release.resolve(); await loading;
+  const config = configurationSchema.parse(await h.harness.callRpc("nudger_settings_v1", { version: 1 }));
+  assert.equal(config.detector, "none"); assert.equal(config.enabled, false);
+  await h.finish();
+  assert.equal((await h.snapshot()).status.classifying, false);
+  assert.equal(api.judgments(), 0); assert.equal(h.controls.sends, 0);
+});
+
+test("a fresh operator message durably overrides an imported Stop without modifying the legacy baseline", async t => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("No detector was selected"); });
+  const h = fixture({ headquarters: true, migration: { version: 1, entries: [
+    { key: "recovery.stopped.worker", value: true },
+  ], settings: {}, nextCursor: null } });
+  let current = h.harness; t.after(() => current.dispose());
+  assert.match((await h.snapshot()).status.threads.find(thread => thread.id === "worker")!.exclusion!, /manual Stop/);
+  await h.dispatch(makeMessageDispatchHookContext({ thread: { id: "worker", status: "active" }, initiator: "user", senderThreadId: null, experimental_submission: null }));
+  const replacement = await current.reload(plugin); current = replacement.harness;
+  const restored = snapshotSchema.parse(await current.callRpc("nudger_snapshot_v1", { version: 1 }));
+  assert.equal(restored.status.threads.find(thread => thread.id === "worker")!.exclusion, null);
+  assert.equal(await replacement.bb.storage.kv.get("recovery.stopped.worker"), false);
+  assert.equal(await replacement.bb.storage.kv.get(`${LEGACY_DATA_PREFIX}recovery.stopped.worker`), true);
+  assert.equal(fetch.mock.callCount(), 0);
+});
+
+test("the decision log pages over RPC and exports JSONL with labels", async t => {
+  t.mock.method(globalThis, "fetch", async () => jevResponse("finished"));
+  const h = fixture({ settings: { detector: "jev", typesafeApiKey: "offline-key" } }); t.after(() => h.harness.dispose());
+  await h.snapshot(); await h.finish("All done; nothing left to do.");
+  await h.until(value => value.records[0]?.action === "finished");
+  const [decision] = decisionsSchema.parse(await h.harness.callRpc("nudger_decisions_v1", { version: 1 })).decisions;
+  assert.equal(decision!.text, "All done; nothing left to do."); assert.equal(decision!.gate, "finished");
+  assert.equal(decision!.judgment?.questions?.boundary?.choice, "finished");
+  const foreign = { experimental_caller: { kind: "plugin" as const, pluginId: "unrelated" } };
+  await assert.rejects(h.harness.callRpc("nudger_decisions_v1", { version: 1 }, foreign), /native clients and Headquarters/);
+  await assert.rejects(h.harness.callRpc("nudger_label_v1", { version: 1, recordId: decision!.id, label: "wrong", by: "x" }, foreign), /native clients and Headquarters/);
+  const labelled = labelSchema.parse(await h.harness.callRpc("nudger_label_v1", { version: 1, recordId: decision!.id, label: "wrong", note: "it had not finished", by: "fixture-reviewer" }));
+  assert.deepEqual({ by: labelled.decision.label?.by, note: labelled.decision.label?.note }, { by: "fixture-reviewer", note: "it had not finished" });
+
+  const dir = await mkdtemp(join(tmpdir(), "nudger-decisions-")); t.after(() => rm(dir, { recursive: true, force: true }));
+  const exported = await h.harness.runCli(["decisions", "--out", "decisions.jsonl", "--since", "2026-01-01"], { cwd: dir });
+  assert.equal(exported.exitCode, 0);
+  assert.deepEqual(JSON.parse(exported.stdout).decisions, 1); assert.equal(JSON.parse(exported.stdout).labelled, 1);
+  const lines = (await readFile(join(dir, "decisions.jsonl"), "utf8")).trimEnd().split("\n").map(line => decisionSchema.parse(JSON.parse(line)));
+  assert.deepEqual(lines.map(line => [line.id, line.label?.label, line.text]), [[decision!.id, "wrong", "All done; nothing left to do."]]);
+  assert.equal((await h.harness.runCli(["decisions", "--since", "not a date"])).exitCode, 1);
+
+  assert.equal((await h.harness.runCli(["label", decision!.id, "clear"])).exitCode, 0);
+  assert.equal(decisionsSchema.parse(await h.harness.callRpc("nudger_decisions_v1", { version: 1 })).decisions[0]!.label, null);
+  assert.equal(h.controls.sends, 0);
+});
+
+test("a fresh install does nothing until a Jev key is saved, and a key Jev accepts turns Nudger on by itself", async t => {
+  const api = typesafe(t, key => key === "fresh-key" ? 200 : 401);
+  const h = fixture(); t.after(() => h.harness.dispose());
+  const fresh = await h.config();
+  assert.deepEqual([fresh.key, fresh.active, fresh.error], ["missing", false, null]);
+  assert.equal(api.checks() + api.judgments(), 0);
+  await h.harness.setSettings({ typesafeApiKey: "fresh-key" });
+  const on = await h.config();
+  assert.deepEqual([on.key, on.active, on.enabled, on.detector], ["connected", true, true, "jev"]);
+  await h.snapshot(); await h.finish();
+  await h.until(value => value.records[0]?.action === "nudged");
+  assert.deepEqual([api.checks(), api.judgments()], [1, 1]);
+});
+
+test("turning Nudger off survives saving the same key again; a new key or turning it on re-enables it", async t => {
+  const api = typesafe(t, () => 200);
+  const h = fixture(); t.after(() => h.harness.dispose());
+  // Saved before the watcher loaded: the key still turns Nudger on once it does.
+  await h.harness.setSettings({ typesafeApiKey: "first-key" });
+  assert.equal((await h.config()).active, true);
+  await h.harness.setSettings({ enabled: false });
+  // The same key again: as an unchanged value, then cleared and pasted back.
+  await h.harness.setSettings({ typesafeApiKey: "first-key" });
+  await h.harness.setSettings({ typesafeApiKey: null });
+  await h.harness.setSettings({ typesafeApiKey: "first-key" });
+  const stillOff = await h.config();
+  assert.deepEqual([stillOff.enabled, stillOff.active, stillOff.key], [false, false, "connected"]);
+  await h.snapshot(); await h.finish();
+  await h.until(value => value.records[0]?.action === "suppressed");
+  assert.equal(api.judgments(), 0);
+  const turnedOn = configurationSchema.parse(await h.harness.callRpc("nudger_settings_set_v1", { version: 1, enabled: true, detector: "jev" }));
+  assert.deepEqual([turnedOn.enabled, turnedOn.active], [true, true]);
+  await h.harness.setSettings({ detector: "none" });
+  assert.equal((await h.config()).active, false);
+  await h.harness.setSettings({ typesafeApiKey: "second-key" });
+  const renewed = await h.config();
+  assert.deepEqual([renewed.enabled, renewed.detector, renewed.active, renewed.key], [true, "jev", true, "connected"]);
+  assert.equal(api.checks(), 3);
+  for (const key of await h.bb.storage.kv.list()) assert.doesNotMatch(JSON.stringify(await h.bb.storage.kv.get(key)), /first-key|second-key/);
+});
+
+test("a key Jev rejects never turns Nudger on, and a key refused mid-run stops Jev at once with the reason shown", async t => {
+  const accepted = new Set(["good-key"]);
+  const api = typesafe(t, key => accepted.has(key) ? 200 : 401,
+    async () => new Response(JSON.stringify({ detail: { error_type: "authentication_error" } }), { status: 401 }));
+  const h = fixture(); t.after(() => h.harness.dispose());
+  await h.harness.setSettings({ typesafeApiKey: "typo-key" });
+  const rejected = await h.config();
+  assert.deepEqual([rejected.key, rejected.active, rejected.detector], ["rejected", false, "none"]);
+  await h.harness.setSettings({ typesafeApiKey: "good-key" });
+  assert.equal((await h.config()).active, true);
+  accepted.clear();
+  await h.snapshot(); await h.finish();
+  const failed = await h.until(value => value.records[0]?.action === "error");
+  assert.match(failed.records[0]!.reason, /Jev rejected the API key/);
+  const revoked = await h.config();
+  assert.deepEqual([revoked.key, revoked.active], ["rejected", false]);
+  assert.match(revoked.error ?? "", /Jev rejected this API key/);
+  assert.equal((await h.snapshot()).status.classifying, false);
+  // The thread's own reason is on its decision; with Jev stopped, its banner says Nudger is off.
+  const banner = await h.harness.callRpc("nudger_continuation_status_v1", { threadId: "worker" });
+  assert.equal(banner && typeof banner === "object" ? Reflect.get(banner, "text") : null, "Nudger is off");
+  assert.equal(decisionsSchema.parse(await h.harness.callRpc("nudger_decisions_v1", { version: 1 })).decisions.at(-1)!.gate, "key-rejected");
+  assert.deepEqual([api.judgments(), h.controls.sends], [1, 0]);
+});
+
+test("when Jev cannot be reached on save, the key waits and Check again turns Nudger on", async t => {
+  let reachable = false;
+  typesafe(t, () => reachable ? 200 : 503);
+  const h = fixture(); t.after(() => h.harness.dispose());
+  await h.harness.setSettings({ typesafeApiKey: "new-key" });
+  const waiting = await h.config();
+  assert.deepEqual([waiting.key, waiting.keyDetail, waiting.active], ["unreachable", "Jev answered HTTP 503", false]);
+  reachable = true;
+  const checked = configurationSchema.parse(await h.harness.callRpc("nudger_settings_set_v1", { version: 1 }));
+  assert.deepEqual([checked.key, checked.active, checked.detector], ["connected", true, "jev"]);
+});
+
+test("an upgrade keeps explicit settings: a key saved before 0.1.1 is never treated as newly saved", async t => {
+  const api = typesafe(t, () => 200, async () => jevResponse("finished"));
+  const installs: Array<[Record<string, string | boolean>, boolean]> = [
+    [{ detector: "jev", typesafeApiKey: "existing-key" }, true],
+    [{ detector: "none", typesafeApiKey: "existing-key" }, false],
+    [{ enabled: false, detector: "jev", typesafeApiKey: "existing-key" }, false],
+    [{ typesafeApiKey: "existing-key" }, false],
+  ];
+  for (const [settings, active] of installs) {
+    const h = fixture({ settings }); t.after(() => h.harness.dispose());
+    const config = await h.config();
+    assert.deepEqual([config.enabled, config.detector, config.active, config.key], [settings.enabled ?? true, settings.detector ?? "none", active, "saved"], JSON.stringify(settings));
+    assert.equal(await h.bb.storage.kv.get(KEY_STATE_KEY), undefined);
+    await h.snapshot(); await h.finish("All done; nothing left to do.");
+    await h.until(value => value.records[0]?.action === (active ? "finished" : "suppressed"));
+    // A live answer from Jev is proof the key works.
+    assert.equal((await h.config()).key, active ? "connected" : "saved");
+  }
+  assert.deepEqual([api.checks(), api.judgments()], [0, 1]);
+});

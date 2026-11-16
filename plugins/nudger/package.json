@@ -1,0 +1,39 @@
+{
+  "name": "bb-plugin-nudger",
+  "version": "0.1.1",
+  "license": "Apache-2.0",
+  "description": "Agents stop halfway and wait for you to type “go on”. Nudger types it for you: Jev reads each stopped thread and nudges only unfinished work, never past a blocker or a request for permission.",
+  "type": "module",
+  "repository": { "type": "git", "url": "https://github.com/ComicBit/bb-plugin-nudger.git" },
+  "exports": { "./contract": "./nudger-contract.ts" },
+  "engines": { "bb": ">=0.46", "bbPluginSdk": ">=0.6.39" },
+  "bb": {
+    "name": "Nudger",
+    "description": "Agents stop halfway and wait for you to type “go on”. Nudger types it for you: Jev reads each stopped thread and nudges only unfinished work, never past a blocker or a request for permission.",
+    "branding": { "icon": "./hand.svg", "experimental_icons": { "hand": "./hand.svg" } },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": ["skills/nudger"]
+  },
+  "files": ["dist", "!dist/*.map", "*.ts", "*.tsx", "*.css", "!*.test.ts", "skills/", "hand.svg", "tsconfig.json", "README.md", "PLUGIN_OVERVIEW.md", "LICENSE", "lucide-LICENSE.txt"],
+  "scripts": {
+    "build": "bb plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test *.test.ts",
+    "prepack": "npm run build"
+  },
+  "dependencies": { "zod": "^4.6.5" },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.39",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsx": "^4.23.1",
+    "typescript": "^5.7.0"
+  }
+}

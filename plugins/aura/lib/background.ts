@@ -1,0 +1,233 @@
+import { imageUrl, snapshotSchema, type Snapshot } from "./model.ts";
+import { CAPY_CSS, mountCapyEffect, type CapyEffect } from "./capy-effect.ts";
+
+export const LOCAL_CHANGE = "bb:aura:changed";
+export const TARGETS = ':is([id="thread-detail-timeline-panel"], [id="root-compose-main-panel"])';
+export const NEW_THREAD_TARGET = '[id="root-compose-main-panel"]';
+export function targetsFor(snapshot: Snapshot): string { return snapshot.settings.newThreadOnly ? NEW_THREAD_TARGET : TARGETS; }
+export function backgroundRules(selector: string): string { return `${selector}{position:relative;isolation:isolate;}`; }
+// BB's page header sits inside the decorated panel and uses a translucent scrim.
+// Keep the wallpaper below that chrome band unless the user opts in, so the top
+// bar cannot pick up the background by default.
+export function topbarBackgroundRule(selector: string, show: boolean): string {
+  return `${selector} .aura-capy-layer{top:${show ? "0" : "var(--bb-app-chrome-row-height, 48px)"};}`;
+}
+
+// Center only the full New thread compose layout. Auto margins collapse when
+// the draft grows taller than the viewport, keeping it reachable by scrolling.
+// Scope the override to BB's md breakpoint: below it the host already pins the
+// composer to the bottom of the viewport, which is the right reach for phones,
+// so mobile must keep the native compact layout untouched.
+export const COMPOSE_CENTER = `
+@media (min-width:768px) {
+${NEW_THREAD_TARGET} [class~="@container/page"]:has(> .mx-auto) {
+  display:flex; flex-direction:column;
+}
+${NEW_THREAD_TARGET} [class~="@container/page"] > .mx-auto {
+  margin-block:auto; padding-block:28px;
+}
+${NEW_THREAD_TARGET} [data-testid="root-compose-compact-home"] {
+  display:flex; flex-direction:column; overflow-y:auto;
+}
+${NEW_THREAD_TARGET} [data-testid="root-compose-compact-composer"] {
+  position:relative; inset:auto; order:-1; flex:none;
+  display:flex; flex-direction:column; justify-content:center;
+  min-height:min(45dvh,440px); padding-block:28px;
+}
+${NEW_THREAD_TARGET} [data-testid="root-compose-compact-scroll-viewport"] {
+  position:relative; top:auto !important; bottom:auto; flex:none; overflow:visible;
+}
+${NEW_THREAD_TARGET} [data-testid="root-compose-compact-scroll-content"] {
+  min-height:0; justify-content:flex-start;
+}
+${NEW_THREAD_TARGET} :is([data-testid="root-compose-compact-recents-offset"],[data-testid="root-compose-compact-bottom-spacer"],[data-testid="root-compose-compact-fade"]) {
+  display:none;
+}
+}
+`;
+// BB only renders the compact Recent list below its md breakpoint, so the
+// list's surface lives there too. It replaces the host's opaque sticky header
+// band with a quiet heading rule and hairline row dividers inside one card,
+// keeping the wallpaper visible above and around it.
+export const MOBILE_RECENTS = `
+@media (max-width:767px) {
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] {
+  margin:0 10px 8px; padding:10px 8px 8px;
+  border:1px solid color-mix(in oklab,var(--border) 70%,transparent);
+  border-radius:16px;
+  background:color-mix(in oklab,var(--background) 94%,transparent);
+  box-shadow:0 10px 30px color-mix(in oklab,var(--foreground) 8%,transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(.88);
+  backdrop-filter:blur(16px) saturate(.88);
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > :first-child {
+  position:static; display:flex; align-items:center; gap:12px;
+  margin:0 0 6px; padding:2px 4px 8px;
+  background-color:transparent;
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > :first-child::after {
+  content:""; height:1px; flex:1;
+  background:linear-gradient(to right,color-mix(in oklab,var(--foreground) 22%,transparent),transparent);
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > :first-child > div {
+  display:none;
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] h2 {
+  color:color-mix(in oklab,var(--foreground) 76%,transparent);
+  font-size:.75rem; line-height:1; font-weight:600;
+  letter-spacing:.02em; text-transform:none;
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] [data-overflow-fade] {
+  display:none;
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > ul > li,
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > [role="status"] {
+  border:0; background:transparent; box-shadow:none;
+  transition:background-color 140ms ease,border-color 140ms ease,box-shadow 140ms ease;
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > ul > li + li {
+  margin-top:0;
+  border-top:1px solid color-mix(in oklab,var(--border) 55%,transparent);
+}
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > ul > li:hover,
+${NEW_THREAD_TARGET} [data-root-compose-mobile-recents] > ul > li[class~="bg-surface-selected"] {
+  background:color-mix(in oklab,var(--foreground) 5%,transparent);
+  border-radius:8px;
+}
+}
+`;
+
+export const COMPOSE_LAYOUT = `${COMPOSE_CENTER}
+@media (min-width:768px) {
+  ${NEW_THREAD_TARGET} [data-app-composer-role="primary"] > :last-child {
+    position:relative; z-index:0; margin-top:8px; padding:5px 9px;
+    border-radius:11px;
+    -webkit-backdrop-filter:blur(14px) saturate(.86);
+    backdrop-filter:blur(14px) saturate(.86);
+  }
+  :root:not(.dark) ${NEW_THREAD_TARGET} [data-app-composer-role="primary"] > :last-child {
+    border:1px solid color-mix(in oklab,var(--border) 74%,transparent);
+    background:color-mix(in oklab,var(--background) 94%,transparent);
+    box-shadow:0 5px 18px color-mix(in oklab,var(--foreground) 7%,transparent);
+  }
+  .dark ${NEW_THREAD_TARGET} [data-app-composer-role="primary"] > :last-child {
+    border:1px solid color-mix(in oklab,var(--border) 48%,transparent);
+    background:color-mix(in oklab,var(--background) 46%,transparent);
+    box-shadow:0 5px 18px color-mix(in oklab,var(--foreground) 5%,transparent);
+  }
+}
+${MOBILE_RECENTS}
+`;
+export const READING_SURFACE = `
+[id="thread-detail-timeline-panel"] .thread-scrollbar:has(> div > .mx-auto) {
+  background-color:transparent;
+}
+[id="thread-detail-timeline-panel"] .thread-scrollbar > div > .mx-auto {
+  background-color:var(--background); box-shadow:0 0 0 1px var(--border);
+}
+/* Continue the wallpaper beside the sticky composer instead of covering
+   the bottom of the whole pane with the host's full-width footer paint. */
+[id="thread-detail-timeline-panel"] [data-scroll-footer] > .bg-background:has(> .mx-auto) {
+  background-color:transparent;
+}
+[id="thread-detail-timeline-panel"] [data-scroll-footer] > .bg-background > .mx-auto {
+  background-color:var(--background);
+}
+[id="thread-detail-timeline-panel"] [data-scroll-footer] > .bg-background:has(> .mx-auto) > [data-overflow-fade] {
+  left:50%; right:auto; width:min(760px,100%); transform:translateX(-50%);
+}
+/* BB intentionally lets wide Markdown tables extend beyond the text column.
+   Paint the whole scrollable table surface, including its overflow area. */
+[id="thread-detail-timeline-panel"] [data-markdown-preview] table,
+[id="thread-detail-timeline-panel"] [data-markdown-preview] div:has(> table) {
+  background-color:var(--background);
+}
+`;
+
+export function notifyChange(snapshot: Snapshot): void {
+  window.dispatchEvent(new CustomEvent(LOCAL_CHANGE, { detail: snapshot }));
+}
+
+export function mountBackground(signal: AbortSignal): () => void {
+  const style = document.createElement("style");
+  style.dataset.aura = "";
+  document.head.append(style);
+  let disposed = false;
+  let requestId = 0;
+  let lastCss = "";
+  let current: Snapshot | null = null;
+  const effects = new Map<HTMLElement, CapyEffect>();
+  let pending = false;
+  function reconcile(): void {
+    pending = false;
+    if (disposed) return;
+    for (const [element, effect] of effects) {
+      if (!element.isConnected || !current?.settings.enabled || !element.matches(targetsFor(current))) { effect.dispose(); effects.delete(element); }
+    }
+    if (!current?.settings.enabled) return;
+    for (const element of document.querySelectorAll<HTMLElement>(targetsFor(current))) {
+      const existing = effects.get(element);
+      // BB can reuse the same panel element when navigating between a
+      // conversation and New thread. Reapply its surface-specific dimming.
+      if (existing) existing.update(current.settings, imageUrl(current.image));
+      else effects.set(element, mountCapyEffect(element, current.settings, imageUrl(current.image)));
+    }
+  }
+  const observer = new MutationObserver(records => {
+    const relevant = records.some(record => record.type === "attributes"
+      ? record.target instanceof HTMLElement && (effects.has(record.target) || record.target.matches(TARGETS))
+      : [...record.addedNodes, ...record.removedNodes].some(node =>
+      node instanceof Element && (node.matches(TARGETS) || node.querySelector(TARGETS) !== null)));
+    if (relevant && !pending) { pending = true; queueMicrotask(reconcile); }
+  });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["id"] });
+  const controller = new AbortController();
+  function apply(snapshot: Snapshot): void {
+    current = snapshot;
+    const target = targetsFor(snapshot);
+    const css = snapshot.settings.enabled ? `${backgroundRules(target)}\n${CAPY_CSS}\n${topbarBackgroundRule(target, snapshot.settings.topbarBackground)}\n${COMPOSE_LAYOUT}\n${snapshot.settings.newThreadOnly ? "" : READING_SURFACE}` : COMPOSE_CENTER;
+    if (css !== lastCss) { style.textContent = css; lastCss = css; }
+    reconcile();
+  }
+
+  async function refresh(): Promise<void> {
+    if (disposed || document.visibilityState === "hidden") return;
+    const id = ++requestId;
+    try {
+      const response = await fetch("/api/v1/plugins/aura/rpc/get", {
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+        body: "null", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]),
+      });
+      if (!response.ok) return;
+      const body = await response.json();
+      const parsed = snapshotSchema.safeParse(body.result);
+      if (!disposed && id === requestId && body.ok && parsed.success) apply(parsed.data);
+    } catch { /* Keep the last valid background through a transient disconnect. */ }
+  }
+  function onChange(event: Event): void {
+    const parsed = snapshotSchema.safeParse((event as CustomEvent).detail);
+    if (parsed.success && !disposed) { requestId++; apply(parsed.data); }
+  }
+  function dispose(): void {
+    if (disposed) return;
+    disposed = true;
+    controller.abort();
+    observer.disconnect();
+    for (const effect of effects.values()) effect.dispose();
+    effects.clear();
+    clearInterval(timer);
+    window.removeEventListener(LOCAL_CHANGE, onChange);
+    window.removeEventListener("focus", refresh);
+    document.removeEventListener("visibilitychange", refresh);
+    signal.removeEventListener("abort", dispose);
+    style.remove();
+  }
+  // Refresh small metadata only, never image bytes, for changes from other clients.
+  const timer = setInterval(() => { void refresh(); }, 15000);
+  window.addEventListener(LOCAL_CHANGE, onChange);
+  window.addEventListener("focus", refresh);
+  document.addEventListener("visibilitychange", refresh);
+  signal.addEventListener("abort", dispose, { once: true });
+  if (signal.aborted) dispose(); else void refresh();
+  return dispose;
+}

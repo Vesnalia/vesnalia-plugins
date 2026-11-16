@@ -1,0 +1,7 @@
+{
+  "id": "droid",
+  "displayName": "Factory Droid",
+  "command": "droid",
+  "args": ["exec", "--output-format", "acp"],
+  "env": {}
+}

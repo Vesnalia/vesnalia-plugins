@@ -1,0 +1,219 @@
+#!/bin/bash
+# bb-box: a Docker box's main process, run as root under docker-init (bb-box
+# creates each box with --init). It does at each start what systemd and the
+# template's units do in a Proxmox LXC box, then waits until `docker stop`.
+#
+# - Clears what a hard stop leaves behind: BB's daemon lock and PID file, and
+#   X's lock for :99. bb-box runs BB's bootstrap again after each start, which
+#   starts BB's daemon (017).
+# - In a box with Docker (BBBOX_DOCKERD=1), listens on Docker's socket, so
+#   the first docker command starts Docker's daemon, as docker.socket does
+#   in an LXC box (041). A box with containers starts it at once, so their
+#   restart policies work.
+# - In a desktop box, starts the display, the XFCE session, Cua Driver and
+#   Selkies (056) as the box user, and starts each again when it exits, as
+#   their units do. In a Wayland desktop box (048), Sway is the display and
+#   the session, and Cua Driver, wayvnc and Selkies (060) start each time it
+#   is up and stop with it.
+# - Then writes /run/bb-box/ready, which bb-box waits for, once Docker's
+#   socket is the docker group's. /run is a tmpfs, so the file is new at each
+#   start.
+#
+# Installed as /usr/local/sbin/bb-box-start by setup/docker/Dockerfile.
+set -u
+user=box
+home=/home/$user
+uid=$(id -u "$user")
+run=/run/bb-box
+log() { echo "bb-box-start: $*" >&2; }
+cd "$home" || exit 1
+
+# On `docker stop`, stop everything this script started, then exit.
+stop() {
+  trap '' TERM INT
+  kill -TERM 0 2>/dev/null
+  wait
+  exit 0
+}
+trap stop TERM INT
+
+if [ -x /usr/local/sbin/bb-box-identity ] && ! /usr/local/sbin/bb-box-identity boot --value "${BBBOX_IDENTITY:-}"; then
+  log "the identity reset failed, so the box starts nothing and never says it is ready"
+  exit 1
+fi
+
+/usr/local/libexec/bb-box/fork-hold &
+if ! wait $!; then
+  log "the fork's hold failed, so the box starts nothing and never says it is ready"
+  exit 1
+fi
+
+rm -f "$home"/.bb-machines/*/daemon.lock.lock "$home"/.bb-machines/*/install-daemon.pid
+rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
+install -d -m 0755 -o "$user" -g "$user" "$run"
+install -d -m 0700 -o "$user" -g "$user" "/run/user/$uid"
+# finalize.sh leaves the machine ID empty, so each box makes its own.
+[ -s /etc/machine-id ] || systemd-machine-id-setup >/dev/null 2>&1 || dbus-uuidgen --ensure=/etc/machine-id
+
+# What the box user's programs get, as a login over SSH would give them.
+set -a
+# shellcheck disable=SC1091
+[ ! -r /etc/environment ] || . /etc/environment
+set +a
+box_env=(HOME="$home" USER="$user" LOGNAME="$user" SHELL=/bin/bash LANG=C.UTF-8 PATH="$PATH")
+[ -z "${BBBOX_GPU_CARD:-}" ] || box_env+=(CUDA_VISIBLE_DEVICES="$BBBOX_GPU_CARD" NVIDIA_VISIBLE_DEVICES="$BBBOX_GPU_CARD")
+as_box() { setpriv --reuid="$user" --regid="$user" --init-groups env -i "${box_env[@]}" "$@"; }
+# Runs a command again a second after it exits, as Restart=always does.
+keep() { while :; do "$@"; sleep 1; done; }
+
+if [ "${BBBOX_DOCKERD:-0}" = 1 ]; then
+  # On cgroup v2, move this container's processes into a child group, so
+  # dockerd can make groups of its own beside it, as Docker's dind image does.
+  if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+    mkdir -p /sys/fs/cgroup/init
+    for _ in $(seq 1 100); do
+      xargs -rn1 </sys/fs/cgroup/cgroup.procs >/sys/fs/cgroup/init/cgroup.procs 2>/dev/null || :
+      sed -e 's/ / +/g' -e 's/^/+/' </sys/fs/cgroup/cgroup.controllers >/sys/fs/cgroup/cgroup.subtree_control 2>/dev/null && break
+      sleep 0.05
+    done
+  fi
+  rm -f /var/run/docker.pid /run/containerd/containerd.pid
+  # systemd-socket-activate runs dockerd with the socket when the first
+  # client connects. The socket is root's until it is the docker group's,
+  # as docker.socket makes it.
+  docker_socket() {
+    rm -f /run/docker.sock
+    systemd-socket-activate -l /run/docker.sock dockerd -H fd:// &
+    local activate=$!
+    for _ in $(seq 1 500); do
+      [ -S /run/docker.sock ] && break
+      sleep 0.01
+    done
+    chgrp docker /run/docker.sock && chmod 660 /run/docker.sock
+    if [ -n "$(ls -A /var/lib/docker/containers 2>/dev/null)" ]; then
+      docker version >/dev/null 2>&1 &
+    fi
+    wait "$activate"
+  }
+  keep docker_socket >>/var/log/dockerd.log 2>&1 &
+fi
+
+if [ -x /usr/local/libexec/bb-box/display ]; then
+  # The system D-Bus, for the session's services that look for it.
+  install -d -m 0755 /run/dbus
+  keep dbus-daemon --system --nofork --nopidfile &
+  /usr/local/libexec/bb-box/vnc-password "$user"
+  set -a
+  # shellcheck disable=SC1091
+  [ ! -r /etc/bb-box/desktop.env ] || . /etc/bb-box/desktop.env
+  set +a
+  display_env=(DISPLAY_MODE="${DISPLAY_MODE:-cpu}" DISPLAY_GEOMETRY="${DISPLAY_GEOMETRY:-1920x1080}" VNC_AUTH="${VNC_AUTH:-password}")
+  bus_env=(XDG_RUNTIME_DIR="/run/user/$uid" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus")
+  if [ -r /etc/bb-box/sway.conf ]; then
+    # The Wayland desktop (048), on the CPU. Sway's display script writes
+    # display.env once Sway is up: WAYLAND_DISPLAY, SWAYSOCK and the session's
+    # XDG_ variables, which Cua Driver and wayvnc take.
+    keep as_box env "${bus_env[@]}" dbus-daemon --session --address="unix:path=/run/user/$uid/bus" --nofork --nopidfile &
+    in_session() { as_box env "${bus_env[@]}" sh -c 'set -a; . /run/bb-box/display.env; set +a; exec "$@"' sh "$@"; }
+    # wayvnc, again 100 ms after it exits: display resize ends it to take a
+    # new size when no viewer is connected, and waits for the next one, and
+    # display vnc ends it when it loses Sway.
+    stream() {
+      while :; do
+        in_session env "VNC_AUTH=${VNC_AUTH:-password}" sh -c '/usr/local/libexec/bb-box/display vnc-config &&
+          exec /usr/local/libexec/bb-box/display vnc'
+        sleep 0.1
+      done
+    }
+    # Selkies' video of Sway (060), again a second after it exits, as its unit does.
+    video() {
+      while :; do
+        as_box env "${bus_env[@]}" /usr/local/libexec/bb-box/selkies
+        sleep 1
+      done
+    }
+    # Sway, and with it Cua Driver, wayvnc and Selkies, which stop when it
+    # exits, as their units do in an LXC box.
+    wayland() {
+      local sway cua= vnc= selkies=
+      as_box env "${display_env[@]}" "${bus_env[@]}" /usr/local/libexec/bb-box/display &
+      sway=$!
+      if as_box /usr/local/libexec/bb-box/display wait; then
+        in_session env CUA_DRIVER_RS_ENABLE_WAYLAND=1 CUA_DRIVER_RS_TELEMETRY_ENABLED=false \
+          CUA_DRIVER_RS_UPDATE_CHECK=false cua-driver serve --no-overlay &
+        cua=$!
+        stream &
+        vnc=$!
+        video &
+        selkies=$!
+      fi
+      wait "$sway"
+      kill $vnc $selkies $cua 2>/dev/null
+      pkill -u "$user" -x wayvnc
+      pkill -u "$user" -f '^/opt/selkies/bin/python3 /usr/bin/selkies'
+    }
+    keep wayland &
+  else
+    # The NVIDIA Container Toolkit brings the host driver's own userspace, so
+    # it always matches; the display still takes the CPU when the GPU is full.
+    if [ "${BBBOX_GPU:-0}" = 1 ] && [ -r /sys/module/nvidia/version ]; then
+      cat /sys/module/nvidia/version >/usr/share/bb-box/nvidia-version
+      display_env[0]=DISPLAY_MODE=auto
+      # A box with Docker is privileged and sees every GPU on the host, so
+      # BBBOX_GPU_ID names the one placed, for Xorg and the display (#283).
+      # The display takes the CPU when that GPU cannot be found.
+      if [ -n "${BBBOX_GPU_ID:-}" ]; then
+        if bus=$(/usr/local/libexec/bb-box/gpu-bus-id "$BBBOX_GPU_ID"); then
+          display_env+=(GPU_BUS_ID="$bus")
+        else
+          display_env[0]=DISPLAY_MODE=cpu
+          log "the display takes the CPU, as Xorg cannot be pointed at GPU $BBBOX_GPU_ID"
+        fi
+      fi
+    fi
+    keep as_box env "${display_env[@]}" /usr/local/libexec/bb-box/display &
+    session_env=(DISPLAY=:99 XAUTHORITY="$run/Xauthority" XDG_RUNTIME_DIR="/run/user/$uid"
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" XDG_SESSION_TYPE=x11
+      XDG_CURRENT_DESKTOP=XFCE XDG_SESSION_DESKTOP=xfce)
+    # The session's D-Bus, which user@1000.service gives an LXC box.
+    keep as_box env "${session_env[@]}" dbus-daemon --session --address="unix:path=/run/user/$uid/bus" --nofork --nopidfile &
+    # The session, and Cua Driver with it, each time the display is up.
+    session() {
+      as_box /usr/local/libexec/bb-box/display wait || return
+      as_box env "${session_env[@]}" sh -c 'set -a; [ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a
+        CUA_DRIVER_RS_TELEMETRY_ENABLED=false CUA_DRIVER_RS_UPDATE_CHECK=false cua-driver serve --no-overlay &
+        cua=$!
+        xfce4-session
+        kill "$cua" 2>/dev/null'
+    }
+    keep session &
+    # Selkies' stream of :99, each time the display is up.
+    stream() {
+      as_box /usr/local/libexec/bb-box/display wait || return
+      as_box /usr/local/libexec/bb-box/selkies
+    }
+    keep stream &
+  fi
+  as_box /usr/local/libexec/bb-box/display wait || log "the display did not come up"
+  for _ in $(seq 1 100); do
+    [ -S "$home/.cache/cua-driver/cua-driver.sock" ] && break
+    sleep 0.1
+  done
+fi
+
+# Docker's socket is the docker group's about 10 ms after it starts. Until
+# then the box user's docker commands are refused, so ready waits for it.
+if [ "${BBBOX_DOCKERD:-0}" = 1 ]; then
+  socket_ready() { [ "$(stat -c %G:%a /run/docker.sock 2>/dev/null)" = docker:660 ]; }
+  for _ in $(seq 1 500); do
+    socket_ready && break
+    sleep 0.01
+  done
+  socket_ready || log "Docker's socket is not the docker group's yet"
+fi
+
+touch "$run/ready"
+while :; do
+  sleep 3600 &
+  wait $!
+done

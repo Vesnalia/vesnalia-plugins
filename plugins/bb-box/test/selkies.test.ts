@@ -1,0 +1,559 @@
+import "./check-test-machine.mjs";
+// The desktop relay for a Selkies display (src/core/selkies.ts, 056), against
+// a stand-in for the box's Selkies.
+
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { SelkiesBox, SelkiesRelay, Spacing, classify, unsequenced, type Clock } from "../src/core/selkies.ts";
+import type { Message } from "../src/core/websocket.ts";
+import { followWindowsPointer } from "../src/backends/windows.ts";
+import type { BoxPointer } from "../src/transports/types.ts";
+import { FakeSelkies, videoFrame } from "./fake-selkies.ts";
+import { until } from "./fake-rfb.ts";
+import { RecordingInputs, type PersonInput } from "../src/core/record-input.ts";
+
+/** The relay's clock in a test: time moves only when the test moves it, or a wait asks it to. */
+class FakeClock implements Clock {
+  t = 1_000_000;
+  readonly sleeps: number[] = [];
+  now(): number {
+    return this.t;
+  }
+  async sleep(ms: number): Promise<void> {
+    this.sleeps.push(ms);
+    this.t += ms;
+  }
+  advance(ms: number): void {
+    this.t += ms;
+  }
+}
+
+/** A viewer's end: what the relay sent it, and how it closed. */
+function viewer() {
+  const got: Message[] = [];
+  let closed: { code: number; reason: string } | null = null;
+  return {
+    got,
+    get closed() {
+      return closed;
+    },
+    frames: () => got.filter((message): message is Uint8Array => typeof message !== "string").map((frame) => (frame[2]! << 8) | frame[3]!),
+    end: { send: (message: Message) => void got.push(message), close: (code: number, reason: string) => void (closed = { code, reason }) },
+  };
+}
+
+let marks = 0;
+
+function setup(options: { refuse?: number; spacingMs?: number; lagMs?: number; onSize?: (size: { width: number; height: number }) => void; ownCursor?: () => boolean; onInput?: (input: PersonInput) => void } = {}) {
+  const server = new FakeSelkies({ refuse: options.refuse });
+  const open = async () => server.channel();
+  const clock = new FakeClock();
+  const box = new SelkiesBox(open, { spacingMs: options.spacingMs ?? 0, clock });
+  let control: string | null = null;
+  const relay = (name: string) => {
+    const end = viewer();
+    const relay = new SelkiesRelay({ viewer: end.end, box, open, mayInput: () => control === name, lagMs: options.lagMs, onSize: options.onSize, ownCursor: options.ownCursor, onInput: options.onInput });
+    // Not spread: that would copy `closed` as it is now.
+    return Object.assign(end, { relay });
+  };
+  /**
+   * Waits until each viewer has had everything every page was sent so far,
+   * and Selkies everything the relay sent it so far: a mark each way, which
+   * comes after it. So what has not come by then never will.
+   */
+  const settle = async (...ends: ReturnType<typeof relay>[]) => {
+    const mark = `mark-${++marks}`;
+    for (const page of server.pages) if (!page.closed) await page.send(mark);
+    await until("the viewers to have it all", () => ends.every((end) => end.got.includes(mark)));
+    // A video message, which goes to Selkies in turn: not START_VIDEO or REQUEST_KEYFRAME, which start the viewer's pacing again.
+    const settings = `SETTINGS,${JSON.stringify({ mark })}`;
+    for (const end of ends) await end.relay.receive(settings);
+    await until("Selkies to have it all", () => server.pages.filter((page) => page.role === "viewer" && !page.closed).every((page) => page.received.at(-1) === settings));
+  };
+  return { server, box, clock, relay, settle, give: (name: string | null) => void (control = name) };
+}
+
+test("a viewer joins as a Selkies viewer, gets what Selkies sends, and may only ask for video", async () => {
+  const { server, box, relay } = setup();
+  const a = relay("a");
+  await until("the viewer's page", () => server.pages.length === 1);
+  const page = server.pages[0]!;
+  assert.equal(page.role, "viewer");
+  assert.equal(page.path, "/api/websockets?role=viewer");
+  await until("Selkies' first message", () => a.got.includes("MODE websockets"));
+  for (const message of ["SETTINGS,{}", "START_VIDEO", "REQUEST_KEYFRAME", "r,800x600", "_f,60", "_arg_fps,30", "cmd,xterm", "s,1.5", "_gz,1", "CLIENT_FRAME_ACK 1 0"]) {
+    await a.relay.receive(message);
+  }
+  await a.relay.receive(Uint8Array.of(2, 0, 0));
+  // Last, a request that passes: what was dropped before it would have come first.
+  await a.relay.receive("STOP_VIDEO");
+  await until("the video requests", () => page.received.at(-1) === "STOP_VIDEO");
+  assert.deepEqual(page.received, ["SETTINGS,{}", "START_VIDEO", "REQUEST_KEYFRAME", "STOP_VIDEO"], "nothing else reaches Selkies from a viewer");
+  await a.relay.receive("START_VIDEO");
+  await until("the video again", () => !page.stopped);
+  await server.frame(1, true);
+  await server.frame(2, false);
+  await until("two frames", () => a.frames().length === 2);
+  assert.deepEqual(a.frames(), [1, 2]);
+  await a.relay.close();
+  await box.close();
+});
+
+test("Selkies' own cursor message reaches a viewer, unless BB Box sends the box's cursor itself; BB Box's own messages reach it whatever (060)", async () => {
+  let own = false;
+  const { server, box, relay, settle } = setup({ ownCursor: () => own });
+  const a = relay("a");
+  await until("Selkies' first message", () => a.got.includes("MODE websockets"));
+  const page = server.pages[0]!;
+  await page.send('cursor,{"curdata":"AA==","hotx":0,"hoty":0}');
+  await settle(a);
+  assert.ok(a.got.includes('cursor,{"curdata":"AA==","hotx":0,"hoty":0}'), "as X11's Selkies sends the box's cursor");
+  // bb-box-cursor's: Selkies on Sway sends one arrow, whatever the shape.
+  own = true;
+  await page.send('cursor,{"curdata":"Ag==","hotx":0,"hoty":0}');
+  await settle(a);
+  assert.ok(!a.got.some((message) => typeof message === "string" && message.includes("Ag==")), "Selkies' arrow goes no further");
+  a.relay.tell("BB_POINTER,10,20");
+  assert.ok(a.got.includes("BB_POINTER,10,20"));
+  await a.relay.close();
+  a.relay.tell("BB_POINTER,11,20");
+  assert.ok(!a.got.includes("BB_POINTER,11,20"), "nothing once it ended");
+  await box.close();
+});
+
+test("a viewer's video is stopped and started again for a restart of the capture, unless the viewer asked for none, as a hidden tab does", async () => {
+  const { server, relay } = setup();
+  const a = relay("a");
+  const b = relay("b");
+  await until("both pages", () => server.pages.length === 2);
+  await until("Selkies' first messages", () => a.got.includes("MODE websockets") && b.got.includes("MODE websockets"));
+  await b.relay.receive("STOP_VIDEO");
+  assert.equal(a.relay.pause(), true);
+  assert.equal(b.relay.pause(), false, "a viewer that asked for no video is left so");
+  a.relay.resume();
+  b.relay.resume();
+  const [pageA, pageB] = server.pages;
+  await until("a's restart", () => pageA!.received.join(" ").endsWith("STOP_VIDEO START_VIDEO REQUEST_KEYFRAME"));
+  await until("b's own stop", () => pageB!.received.includes("STOP_VIDEO"));
+  assert.deepEqual(pageB!.received.filter((message) => typeof message === "string" && /_VIDEO|KEYFRAME/.test(message)), ["STOP_VIDEO"]);
+  assert.equal(pageA!.stopped, false);
+});
+
+test("input reaches the box over the input connection only from the viewer with control, with no pointer sequence", async () => {
+  const { server, box, relay, give } = setup();
+  const a = relay("a");
+  const b = relay("b");
+  await until("both pages", () => server.pages.length === 2);
+  // A receive that passed input on would have opened the input connection before it returned.
+  await a.relay.receive("kd,120");
+  await b.relay.receive("m,10,10,0,0,5");
+  assert.equal(server.pages.length, 2, "no input connection while no viewer has control");
+  give("a");
+  await a.relay.receive("kd,120");
+  await a.relay.receive("ku,120");
+  await a.relay.receive("m,300,200,1,0,42");
+  await b.relay.receive("kd,65");
+  assert.equal(server.pages.length, 3, "the input connection");
+  const input = server.pages[2]!;
+  assert.equal(input.role, "controller");
+  await until("the input", () => input.received.length === 5);
+  // A SETTINGS that names the display only, so Selkies takes a cursor message on the connection at once.
+  assert.deepEqual(input.received, ['SETTINGS,{"displayId":"primary"}', "STOP_VIDEO", "kd,120", "ku,120", "m,300,200,1,0"]);
+  // A frame to the input connection, as a new capture sends to every page: it asks for no video again.
+  input.stopped = false;
+  await input.send(videoFrame(9, true));
+  await until("its STOP_VIDEO", () => input.received.filter((message) => message === "STOP_VIDEO").length === 2);
+  await a.relay.close();
+  await b.relay.close();
+  await box.close();
+});
+
+test("a viewer with control that goes lets go of what it holds down", async () => {
+  const { server, box, relay, give } = setup();
+  give("a");
+  const a = relay("a");
+  await a.relay.receive("kd,65507");
+  await a.relay.receive("kd,99");
+  await a.relay.receive("m,50,60,1,0");
+  await until("the input connection", () => server.pages.length === 2);
+  const input = server.pages[1]!;
+  await until("the input", () => input.received.length === 5);
+  assert.ok(a.relay.holding);
+  await a.relay.close();
+  await until("the releases", () => input.received.length === 8);
+  assert.deepEqual(input.received.slice(5), ["ku,65507", "ku,99", "m,50,60,0,0"]);
+  await box.close();
+});
+
+test("the box's clipboard reaches only the viewer with control", async () => {
+  const { server, box, relay, give, settle } = setup();
+  const a = relay("a");
+  const b = relay("b");
+  await until("both pages", () => server.pages.length === 2);
+  give("a");
+  await server.clipboard("copied in the box");
+  await settle(a, b);
+  const text = `clipboard,${Buffer.from("copied in the box").toString("base64")}`;
+  assert.ok(a.got.includes(text), "the viewer with control gets it");
+  assert.ok(!b.got.includes(text), "a viewer without control does not");
+  await a.relay.close();
+  await b.relay.close();
+  await box.close();
+});
+
+test("where the video comes from elsewhere, the box's server takes the keys and gives the clipboard and the pointer's shape to the viewers, and is asked for no video, while the pointer goes to the video's source (#865)", async () => {
+  // The video's source, as bb-box-stream on a Mac for a Windows VM, and the box's own server, as bb-box-stream.exe.
+  const video = new FakeSelkies();
+  const server = new FakeSelkies();
+  const clock = new FakeClock();
+  const relays = new Set<SelkiesRelay>();
+  let own = false;
+  const box = new SelkiesBox(async () => server.channel(), { spacingMs: 0, clock, apart: () => true, onText: (message) => relays.forEach((relay) => relay.fromBox(message)) });
+  const join = (mayInput: () => boolean) => {
+    const end = viewer();
+    const relay = new SelkiesRelay({ viewer: end.end, box, open: async () => video.channel(), mayInput, ownCursor: () => own, pointerApart: () => true });
+    relays.add(relay);
+    return Object.assign(end, { relay });
+  };
+  const a = join(() => true);
+  const b = join(() => false);
+  await until("the viewers' pages, on the video's source", () => video.pages.length === 2);
+  // The pointer goes to the viewer's own connection, the video's source, as QEMU's tablet takes it; keys to the box's server.
+  await a.relay.receive("m,10,20,1,0,7");
+  await until("the pointer on the video's source", () => video.pages.some((page) => page.received.includes("m,10,20,1,0")));
+  const source = video.pages.find((page) => page.received.includes("m,10,20,1,0"))!;
+  await a.relay.receive("kd,97");
+  await until("the key on the box's server", () => !!server.pages[0]?.received.includes("kd,97"));
+  assert.ok(!server.pages[0]!.received.some((message) => typeof message === "string" && message.startsWith("m,")), "no pointer to the box's server");
+  // After a key, the pointer as it is goes to the video's source again, for QEMU's refresh: the same place and buttons.
+  await until("the pointer again", () => source.received.filter((message) => message === "m,10,20,1,0").length === 2);
+  // A viewer that goes lets go of its buttons where it pressed them.
+  await a.relay.release();
+  await until("the button let go on the video's source", () => source.received.includes("m,10,20,0,0"));
+  assert.ok(server.pages[0]!.received.includes("ku,97"), "and of its keys on the box's server");
+
+  await server.clipboard("copied in the box");
+  const cursor = 'cursor,{"curdata":"","hotx":1,"hoty":2}';
+  await server.pages[0]!.send(cursor);
+  await until("the clipboard and the cursor", () => a.got.includes(cursor) && b.got.includes(cursor));
+  const text = `clipboard,${Buffer.from("copied in the box").toString("base64")}`;
+  assert.ok(a.got.includes(text), "the viewer with control gets the clipboard");
+  assert.ok(!b.got.includes(text), "a viewer without control does not");
+  const answered = 'BB_DEVICE_ANSWER {"id":"v1","ok":true}';
+  await server.pages[0]!.send(answered);
+  await until("a device server's answer, to every viewer, which keeps only its own", () => a.got.includes(answered) && b.got.includes(answered));
+  own = true;
+  await server.pages[0]!.send('cursor,{"curdata":"x","hotx":0,"hoty":0}');
+  await server.pages[0]!.send("BB_PONG,1");
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.ok(!a.got.some((message) => typeof message === "string" && (message.includes('"curdata":"x"') || message.startsWith("BB_PONG"))), "BB Box's own cursor wins, and the rest stays");
+
+  // The box's server captures nothing: it is asked for no size, colour or key frame, which the viewers ask their source.
+  const before = [...server.pages[0]!.received];
+  await box.follow({ width: 1600, height: 900 });
+  await box.fullColour(true);
+  assert.equal(box.keyframe(), false);
+  assert.deepEqual(server.pages[0]!.received, before);
+  for (const relay of relays) await relay.close();
+  await box.close();
+});
+
+test("a viewer that falls behind gets no frames until it has caught up, then from a key frame, which the relay asks for only then", async () => {
+  const { server, box, clock, relay, settle } = setup({ lagMs: 50 });
+  const a = relay("a");
+  await until("the page", () => server.pages.length === 1);
+  const page = server.pages[0]!;
+  await server.frame(1, true);
+  await server.frame(2, false);
+  await until("two frames", () => a.frames().length === 2);
+  // It shows nothing for longer than it may.
+  clock.advance(80);
+  await server.frame(3, false);
+  await server.frame(4, true);
+  await settle(a);
+  assert.deepEqual(a.frames(), [1, 2], "nothing more while it is behind, not even a key frame");
+  assert.ok(!page.received.includes("REQUEST_KEYFRAME"), "no key frame for every viewer while this one is behind");
+  await a.relay.receive("CLIENT_FRAME_ACK 2 0");
+  await server.frame(5, false);
+  await until("the key frame request", () => page.received.includes("REQUEST_KEYFRAME"));
+  await server.frame(6, true);
+  await server.frame(7, false);
+  await until("the frames from the key frame", () => a.frames().length === 4);
+  assert.deepEqual(a.frames(), [1, 2, 6, 7]);
+  await a.relay.close();
+  await box.close();
+});
+
+test("a capture that starts again numbers its frames from 0, and a frame the viewer had not acknowledged from the one before holds none of them back (the owner's note of 18 October 2026)", async () => {
+  const sizes: string[] = [];
+  const { server, box, clock, relay } = setup({ lagMs: 50, onSize: (size) => sizes.push(`${size.width}x${size.height}`) });
+  const a = relay("a");
+  await until("the page", () => server.pages.length === 1);
+  await server.frame(4999, true, 1920, 1080);
+  await server.frame(5000, false, 1920, 1080);
+  await until("two frames", () => a.frames().length === 2);
+  // The capture stops with frame 5000 not yet acknowledged, and Selkies starts the next, at a new size, after longer than the lag.
+  await a.relay.receive("CLIENT_FRAME_ACK 4999 0");
+  clock.advance(300);
+  await server.frame(0, true, 3840, 2160);
+  await server.frame(1, false, 3840, 2160);
+  await until("the new capture's frames", () => a.frames().length === 4);
+  assert.deepEqual(a.frames(), [4999, 5000, 0, 1]);
+  assert.deepEqual(sizes, ["1920x1080", "3840x2160"]);
+  await a.relay.close();
+  await box.close();
+});
+
+test("a viewer that starts its video again is paced afresh: a frame it never got, or an acknowledgement that never came, holds it back no more (the owner's note of 19 October 2026)", async () => {
+  const { server, box, clock, relay, settle } = setup({ lagMs: 50 });
+  const a = relay("a");
+  await until("the page", () => server.pages.length === 1);
+  const page = server.pages[0]!;
+  await server.frame(1, true);
+  await server.frame(2, false);
+  await until("two frames", () => a.frames().length === 2);
+  // It says it has shown frame 1 only, as if frame 2's acknowledgement were lost, and falls behind for good: no ack will come.
+  await a.relay.receive("CLIENT_FRAME_ACK 1 0");
+  clock.advance(80);
+  await server.frame(3, false);
+  await server.frame(4, true);
+  await settle(a);
+  assert.deepEqual(a.frames(), [1, 2]);
+  // It starts its video again, as a tab coming back, control taken or its watch does.
+  await a.relay.receive("START_VIDEO");
+  await a.relay.receive("REQUEST_KEYFRAME");
+  await until("Selkies to have both", () => page.received.at(-1) === "REQUEST_KEYFRAME");
+  await server.frame(5, true);
+  await server.frame(6, false);
+  await until("the frames after", () => a.frames().length === 4);
+  assert.deepEqual(a.frames(), [1, 2, 5, 6]);
+  await a.relay.close();
+  await box.close();
+});
+
+test("a frame held back from a viewer that is behind does not count as its size: the viewer shows nothing of it", async () => {
+  const sizes: string[] = [];
+  const { server, box, clock, relay, settle } = setup({ lagMs: 50, onSize: (size) => sizes.push(`${size.width}x${size.height}`) });
+  const a = relay("a");
+  await until("the page", () => server.pages.length === 1);
+  await server.frame(1, true, 1920, 1080);
+  await until("a frame", () => a.frames().length === 1);
+  clock.advance(80);
+  await server.frame(2, true, 3840, 2160);
+  await settle(a);
+  assert.deepEqual(a.frames(), [1]);
+  assert.deepEqual(sizes, ["1920x1080"], "not the size of the frame it did not get");
+  await a.relay.close();
+  await box.close();
+});
+
+test("a viewer that caught up asks for its key frame again until one comes, on the input connection when it is open (Selkies takes a viewer's once a second)", async () => {
+  const { server, box, clock, relay, give, settle } = setup({ lagMs: 50 });
+  const a = relay("a");
+  await until("the page", () => server.pages.length === 1);
+  const page = server.pages[0]!;
+  const requests = () => page.received.filter((message) => message === "REQUEST_KEYFRAME").length;
+  await server.frame(1, true);
+  await until("a frame", () => a.frames().length === 1);
+  clock.advance(80);
+  // Frame 2 comes while the viewer is behind, and is dropped; then it catches up.
+  await server.frame(2, false);
+  await settle(a);
+  await a.relay.receive("CLIENT_FRAME_ACK 1 0");
+  await server.frame(3, false);
+  await until("the first request", () => requests() === 1);
+  await server.frame(4, false);
+  await settle(a);
+  assert.equal(requests(), 1, "not again within 250 ms");
+  clock.advance(260);
+  await server.frame(5, false);
+  await until("the second request", () => requests() === 2);
+  assert.deepEqual(a.frames(), [1], "no frame until the key frame");
+
+  // With the box's input connection open, it asks there instead.
+  give("a");
+  await a.relay.receive("kd,65");
+  const input = server.pages[1]!;
+  await until("the key", () => input.received.includes("kd,65"));
+  clock.advance(260);
+  await server.frame(6, false);
+  await until("the request on the input connection", () => input.received.includes("REQUEST_KEYFRAME"));
+  await settle(a);
+  assert.equal(requests(), 2, "not on the viewer's own");
+  await server.frame(7, true);
+  await until("the key frame", () => a.frames().length === 2);
+  assert.deepEqual(a.frames(), [1, 7]);
+  await a.relay.close();
+  await box.close();
+});
+
+test("a box's connections take turns a spacing apart, and one Selkies refused waits a whole spacing from then", async () => {
+  const clock = new FakeClock();
+  const spacing = new Spacing(60, clock);
+  await Promise.all([spacing.turn(), spacing.turn(), spacing.turn()]);
+  assert.deepEqual(clock.sleeps, [60, 60], "the second and third each waited a spacing");
+  // An attempt that took long, then was refused: the next waits a whole spacing from the refusal, not from its turn.
+  clock.advance(500);
+  await spacing.turn();
+  clock.advance(100);
+  spacing.refused();
+  await spacing.turn();
+  assert.deepEqual(clock.sleeps, [60, 60, 60]);
+
+  // Through the relay: two viewers and the input connection each wait their turn, and Selkies refuses none.
+  const { server, box, clock: boxClock, relay, give } = setup({ spacingMs: 60 });
+  const a = relay("a");
+  const b = relay("b");
+  give("a");
+  await a.relay.receive("kd,1");
+  await until("three pages", () => server.pages.length === 3);
+  assert.deepEqual(boxClock.sleeps, [60, 60]);
+  assert.equal(server.refused, 0);
+  await until("both first messages", () => a.got.includes("MODE websockets") && b.got.includes("MODE websockets"));
+  await a.relay.close();
+  await b.relay.close();
+  await box.close();
+});
+
+test("a connection Selkies refuses for coming too soon (4029) opens again, a spacing later", async () => {
+  const { server, box, clock, relay } = setup({ refuse: 1, spacingMs: 30 });
+  const c = relay("c");
+  await until("the page", () => server.pages.length === 1);
+  await until("its first message", () => c.got.includes("MODE websockets"));
+  assert.equal(server.refused, 1);
+  assert.deepEqual(clock.sleeps, [30]);
+  await c.relay.close();
+  await box.close();
+});
+
+test("the box ending the connection ends the viewer's, with why", async () => {
+  const { server, box, relay } = setup();
+  const a = relay("a");
+  await until("the page", () => server.pages.length === 1);
+  await server.pages[0]!.close(1011);
+  await until("the viewer's close", () => a.closed !== null);
+  assert.equal(a.closed!.code, 1011);
+  assert.match(a.closed!.reason, /closed the connection \(1011\)/);
+  await box.close();
+});
+
+test("messages are told apart by their first field, and a pointer loses its sequence number", () => {
+  assert.equal(classify("CLIENT_FRAME_ACK 12 3"), "ack");
+  assert.equal(classify("SETTINGS,{\"a\":1}"), "video");
+  assert.equal(classify("kd,65"), "input");
+  assert.equal(classify("cws,1,2"), "input");
+  assert.equal(classify("REQUEST_CLIPBOARD"), "input");
+  assert.equal(classify("r,1x1"), "drop");
+  assert.equal(classify("kdx,1"), "drop");
+  assert.equal(classify('BB_DEVICE {"id":"a","type":"text","text":"日本"}'), "device");
+  assert.equal(classify("BB_DEVICE_STATE {}"), "drop");
+  assert.equal(unsequenced("m,1,2,0,0,99"), "m,1,2,0,0");
+  assert.equal(unsequenced("m2,1,2,0,0"), "m2,1,2,0,0");
+  assert.equal(unsequenced("kd,65"), "kd,65");
+});
+
+test("a viewer's word on the largest frame it decodes goes to bb-box, not to Selkies (#864)", async () => {
+  const { server, box } = setup();
+  const open = async () => server.channel();
+  const end = viewer();
+  const said: number[] = [];
+  const relay = new SelkiesRelay({ viewer: end.end, box, open, mayInput: () => false, onDecodes: (most) => void said.push(most) });
+  await until("the viewer's page", () => server.pages.length === 1);
+  const page = server.pages[0]!;
+  await relay.receive("BB_DECODES,139264");
+  await relay.receive("BB_DECODES,many");
+  await relay.receive("STOP_VIDEO");
+  await until("the video request", () => page.received.at(-1) === "STOP_VIDEO");
+  assert.deepEqual(said, [139264]);
+  assert.ok(!page.received.some((message) => typeof message === "string" && message.startsWith("BB_DECODES")), "Selkies never sees BB Box's own message");
+  await relay.close();
+  await box.close();
+});
+
+test("a viewer's word on 4:4:4 goes to bb-box, not to Selkies; BB Box asks the display for it over its controller connection", async () => {
+  const { server, box } = setup();
+  const open = async () => server.channel();
+  const end = viewer();
+  const said: boolean[] = [];
+  const relay = new SelkiesRelay({ viewer: end.end, box, open, mayInput: () => false, onFullColour: (yes) => void said.push(yes) });
+  await until("the viewer's page", () => server.pages.length === 1);
+  const page = server.pages[0]!;
+  await relay.receive("BB_FULLCOLOR,1");
+  await relay.receive("BB_FULLCOLOR,0");
+  await relay.receive("BB_FULLCOLOR,2");
+  await relay.receive("STOP_VIDEO");
+  await until("the video request", () => page.received.at(-1) === "STOP_VIDEO");
+  assert.deepEqual(said, [true, false]);
+  assert.deepEqual(page.received, ["STOP_VIDEO"], "Selkies never sees BB Box's own message");
+  await box.fullColour(true);
+  await until("the setting", () => !!server.pages.find((one) => one.role === "controller")?.received.includes('SETTINGS,{"displayId":"primary","video_fullcolor":true}'));
+  await relay.close();
+  await box.close();
+});
+
+test("BB Box follows a Windows box's pointer through bb-box-stream.exe, which says where it is once asked, and what it looks like (#865)", async () => {
+  const server = new FakeSelkies();
+  const events: BoxPointer[] = [];
+  const stop = new AbortController();
+  const following = followWindowsPointer(async () => server.channel(), (event) => void events.push(event), stop.signal);
+  await until("the request", () => !!server.pages[0]?.received.includes("BB_POINTER_FOLLOW"));
+  const page = server.pages[0]!;
+  const shape = 'cursor,{"curdata":"AAAA","hotx":1,"hoty":2}';
+  for (const message of ["BB_POINTER,10,20", shape, "BB_POINTER,", "BB_POINTER,x,y", "clipboard,aGk="]) await page.send(message);
+  await until("the events", () => events.length === 3);
+  assert.deepEqual(events, [{ type: "position", x: 10, y: 20 }, { type: "shape", message: shape }, { type: "leave" }], "nothing else");
+  stop.abort();
+  await following;
+  await until("the connection closed", () => page.closed);
+});
+
+test("a recording forgets the keys a viewer held when the relay lets them go, on a key reset, and when the viewer or the box ends its connection, so a later key is not a shortcut (073)", async () => {
+  const inputs = new RecordingInputs(() => 5_000);
+  inputs.begin("box", 0, "linux");
+  const { server, box, relay, give } = setup({ onInput: (input) => inputs.person("box", input) });
+  give("a");
+  const a = relay("a");
+  await until("the page", () => server.pages.length >= 1);
+  for (const message of ["kd,65507", "kd,97", "ku,97"]) await a.relay.receive(message);
+  await a.relay.release();
+  for (const message of ["kd,97", "ku,97", "kd,65507", "kr", "kd,97", "ku,97", "kd,65507"]) await a.relay.receive(message);
+  await a.relay.close();
+  const b = relay("a");
+  const viewerPages = () => server.pages.filter((page) => page.role === "viewer");
+  await until("its page", () => viewerPages().length === 2);
+  for (const message of ["kd,97", "ku,97", "kd,65507"]) await b.relay.receive(message);
+  await viewerPages()[1]!.close(1011);
+  await until("the box to end it", () => b.closed !== null);
+  const c = relay("a");
+  await c.relay.receive("kd,97");
+  const events = inputs.end("box")!;
+  assert.deepEqual(
+    events.map((event) => (event.type === "keys" ? `${event.chord.modifiers.join("+")}+${event.chord.key}` : event.type)),
+    ["ctrl+A", "typing", "typing", "typing", "typing"],
+  );
+  await c.relay.close();
+  await box.close();
+});
+
+test("a cursor switch refreshes the whole video after Selkies confirms its capture configuration", async () => {
+  const server = new FakeSelkies();
+  let resumed = 0;
+  const box = new SelkiesBox(async () => server.channel(), { spacingMs: 0, onCaptureConfigured: () => { resumed += 1; } });
+  try {
+    let refreshed = 0;
+    for (const on of [false, true]) {
+      await box.cursorInVideo(on, "selkies");
+      const page = server.pages.find((page) => page.role === "controller")!;
+      await until("the cursor switch", () => page.received.includes(`SET_NATIVE_CURSOR_RENDERING,${on ? 1 : 0}`));
+      assert.equal(page.received.filter((message) => message === "REQUEST_KEYFRAME").length, refreshed);
+      await page.send('DISPLAY_CONFIG_UPDATE,{"displays":["primary"]}');
+      refreshed += 1;
+      await until("the full refresh after configuration", () => page.received.filter((message) => message === "REQUEST_KEYFRAME").length === refreshed);
+      assert.equal(resumed, refreshed);
+      assert.ok(page.received.lastIndexOf("REQUEST_KEYFRAME") > page.received.lastIndexOf(`SET_NATIVE_CURSOR_RENDERING,${on ? 1 : 0}`));
+    }
+  } finally {
+    await box.close();
+    await server.close();
+  }
+});

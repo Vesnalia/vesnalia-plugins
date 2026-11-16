@@ -1,0 +1,135 @@
+# Правила работы над плагином «Инструменты агентов» (AGENTS.md)
+
+Дополнение к корневому `AGENTS.md` рабочего пространства — читай сначала его. Здесь только то, что специфично для этого плагина.
+
+Перед правкой интерфейса читай два документа: `../../docs/DESIGN.md` (состав родных компонентов BB и правила их применения) и `DESIGN.md` рядом с этим файлом (композиция и правила экрана плагина). Свои аналоги готовых компонентов не писать.
+
+## 1. Что это и где живёт
+
+- Плагин `agent-tools` (пакет `bb-plugin-agent-tools`, команда `bb tools`): MCP-серверы и навыки всех машин BB — единый каталог, канон навыков, обнаружение расхождений и синхронизация.
+- Ставится как path-плагин (`bb plugin install .`): каталог одновременно и исходники, и рабочая установка — правки видны живому BB после `bb plugin build .` и `bb plugin reload agent-tools`.
+- Работает со всеми подключёнными к BB машинами сразу: идентификаторы машин приходят из `bb.sdk.hosts.list()`, ничего не зашито в код.
+
+## 2. Карта модулей
+
+| Файл | Ответственность |
+| --- | --- |
+| `agents.ts` | Таблица CLI-агентов: бинари, пути конфигов, диалект, BB-провайдеры, `confirmedPath`. Новый CLI добавляется только сюда. |
+| `normalize.ts` | Перевод диалект ⇄ `McpServer`, сравнение (`sameServer`) и правило «машинно-зависимый» (`classifyLocal`). |
+| `toml-mcp.ts` | Чтение и текстовая правка `[mcp_servers.*]` в Codex `config.toml`. |
+| `contract.ts` | Zod-схемы и host-RPC контракт; общий для сервера, host-энтри и фронтенда. |
+| `skills.ts` | Состояния скиллов, политика папок (`LOCATION_POLICY`) и детерминированные правила (`resolveRowAction`, `planFanOut`, `planServerBbMirror`). Общий для host, сервера и интерфейса — новая папка скиллов добавляется только здесь и в `SKILL_LOCATIONS` (host.ts). |
+| `skills-sync.ts` | Git-сведение канона; его вызывают host и процесс сервера BB. |
+| `skills-server.ts` | Скан и копия в `experimental_dataDir/skills` на процессе BB-сервера. |
+| `host.ts` | Полнодоверенный код на каждой машине: сканирование и запись конфигов. Default-export через `experimental_defineHostEntry` из `@get-bb/plugin-sdk/host`. |
+| `server.ts` | Каталог, drift, план, синхронизация, расписание `sweep`, RPC, CLI `bb tools`. |
+| `app.tsx` | Страница «Инструменты»: устройства, матрица, приём новых, вкладка навыков, бейдж в боковой панели. |
+
+## 3. Цепочка проверки — обязательна
+
+`npm run typecheck` → `npm test` → `bb plugin build .` → `bb plugin reload agent-tools` → проверка в живом рантайме.
+
+Живой рантайм — это `bb tools status` / `plan` / `scan --json` и страница `http://127.0.0.1:38886/plugins/agent-tools/catalog` (QA-Chrome: `~/.agents/bin/chrome-qa start`, порт 9333, MCP `chrome-devtools`). Статус `running` у плагина ничего не доказывает: задача закрыта только после проверки сценария, который правился.
+
+## 4. Правила записи в чужие конфиги
+
+Плагин правит личные файлы пользователя на трёх машинах. Нарушать нельзя:
+
+- Перед каждой записью — резервная копия `*.bak-bb-mcp-<время>` рядом с файлом, хранятся последние 5.
+- Запись атомарная: временный файл и `rename`, права исходного файла сохраняются.
+- Файл с комментариями (`opencode.jsonc`) читается, но не переписывается — `writable: false`.
+- `config.toml` Codex правится **по тексту**, а не пересериализацией: комментарии, порядок секций и посторонние настройки обязаны уцелеть. Любая правка `toml-mcp.ts` сопровождается тестом на round-trip.
+- Конфиг с неподтверждённым путём (`confirmedPath !== true`) создавать нельзя — писать только в уже существующий файл. Подтверждать путь можно лишь фактом с машины, не догадкой.
+- Машинно-зависимые серверы (абсолютный путь, loopback, `${SECRET}`) не раскатываются.
+- Запись НИКОГДА не перезаписывает запись сервера целиком: новые значения
+  накладываются через `mergeEntry`, чтобы поля, которых нет в модели плагина
+  (`tool_timeout_sec`, `bearer_token_env_var`, `cwd`, флаги конкретного CLI),
+  пережили правку. Один раз это уже стоило пользователю потерянных настроек.
+- Автосинхронизация только добавляет. Удаление — отдельная явная операция `purge` / `bb tools remove`.
+- Скиллы: источник правды — канон `~/.agents/skills`, он же git-репозиторий и
+  единственное, что ездит между машинами. Дома CLI — производные от него:
+  политика `link` (`.claude`, `.qwen`) получает симлинки; Codex/Cursor/OpenCode
+  читают канон сами (`native`); `~/.gemini/config/skills` не используется вовсе
+  (`drop`). Папка `~/.bb/skills` — политика `own`: у BB свой реестр, и он
+  заносит туда только реальные папки, поэтому плагин её не переписывает, а
+  раскатка кладёт рядом зеркало-копию. После домов машин то же зеркало
+  пишется в `bb.server.experimental_dataDir/skills` на процессе сервера BB
+  (не `~/.bb` другой машины). Если hostname сервера совпадает с подключённой
+  машиной, отдельный шаг не нужен. Имена, которые уже отдают плагины-
+  маркетплейсы, в дома не дублируются.
+- Ничего массового плагин не делает сам по себе: автосинк MCP, обновление скиллов
+  (канон + git + дома) по расписанию включаются человеком (галочки, git-remote).
+  Кнопка «Обновить скиллы везде» и `bb tools skills-fanout` работают всегда.
+- Раскатка (`skills_fanout`, `bb tools skills-fanout`) сначала забирает в канон
+  более новые и новые скиллы (по mtime; равные даты с разным хешем — руками),
+  затем синк git, затем дома CLI. Живую ссылку в проект не переставляем.
+  Заменяемая папка уходит снимком в `~/.agents/skills-backups/<имя>/<время>/`,
+  а замена вовсе отменяется, если в проигравшей версии есть файлы, которых нет в
+  победившей, — это не свежая правка, а другая ветка работы, её решает человек.
+- Отказ машины (`ok: false`) обязан долетать до интерфейса и CLI, а не теряться
+  молча.
+- Два языка: любая строка, которую видит человек, идёт через `t()` / `tp()` /
+  `plural()` из `i18n.ts`, а её английский перевод — в `i18n.en.ts`. Ключ словаря
+  — сам русский текст, поэтому исходник читается без словаря, а пропуск перевода
+  показывает русский оригинал. Тест `tests/i18n.test.ts` не даст забыть перевод.
+  Сообщения машин (`host.ts`) остаются русскими в коде и переводятся в точке
+  показа — словарь один на всех.
+
+Проверять правки записи сначала на `--dry-run` и на одной машине, а не сразу на всех.
+
+## 5. Язык
+
+Интерфейс, CLI-вывод, README, навык и сообщения об ошибках — по-русски, с правильными склонениями (`plural`). Комментарии в коде и имена — по-английски.
+
+## 6. Делегирование младшим моделям
+
+Владелец разрешил отдавать написание кода субагентам на Sonnet. При этом:
+
+- Субагенту даётся точная задача, список файлов и правила этого документа; архитектурные решения и приёмка остаются за ведущим тредом.
+- Субагент не запускает синхронизацию без `--dry-run` и не трогает конфиги на машинах владельца; разведка — read-only.
+- Результат субагента не принимается на слово: ведущий тред сам прогоняет цепочку из раздела 3 и смотрит вывод.
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **bb-plugin-agent-tools** (1723 symbols, 3788 relationships, 152 execution flows).
+
+> Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
+
+## Always Do
+
+- **MUST run impact before editing.** Use `impact({target: "symbolName", direction: "upstream"})` or `node .gitnexus/run.cjs impact "symbolName" --direction upstream --repo .`; report callers, processes, and risk. Never substitute grep for graph analysis.
+- **MUST analyze graph changes before committing.** Use `detect_changes({scope: "all"})` (MCP) or `node .gitnexus/run.cjs detect-changes --scope all --repo .` (CLI fallback). `partial: true` or `truncated: true` is not a clean check — a zero means unseen, not unaffected; re-run it. For regression review: `detect_changes({scope: "compare", base_ref: "main"})` or `node .gitnexus/run.cjs detect-changes --scope compare --base-ref "main" --repo .`.
+- MUST warn on HIGH/CRITICAL `risk` pre-edit; never use `riskSharedAxes` to waive a HIGH/CRITICAL `risk` warning. Compare File/symbol: MCP File omits axes; Graph-RAG expands File.
+- **MUST treat `risk: UNKNOWN` as unresolved, not as low.** An empty caller set is not evidence the symbol is unused — it can also mean the callers are not resolvable by the index (plain-object property access, dynamic dispatch, cross-language calls). `impact` pairs `UNKNOWN` with a `riskNote` saying so. Confirm with a text search before treating the symbol as safe to change or delete; do not proceed on the strength of a zero.
+- **MUST use `query({search_query: "concept"})` for concepts/flows, `context({name: "symbolName"})` for a named symbol, or `impact` for blast radius, on read-only callers, dependencies, imports, or execution flow.** Graph first; text search only for empty/`UNKNOWN`/literals.
+- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
+
+## Never Do
+
+- NEVER edit a function, class, or method before MCP/CLI impact analysis.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis, and never read `UNKNOWN` as an all-clear — it means the walk could not answer, which is the one verdict that requires confirming by other means.
+- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
+- NEVER commit before MCP/CLI graph change analysis.
+
+## Resources
+
+| Resource | Use for |
+| --- | --- |
+| `gitnexus://repo/bb-plugin-agent-tools/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/bb-plugin-agent-tools/clusters` | All functional areas |
+| `gitnexus://repo/bb-plugin-agent-tools/processes` | All execution flows |
+| `gitnexus://repo/bb-plugin-agent-tools/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+| --- | --- |
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus-cli/SKILL.md` |
+
+<!-- gitnexus:end -->

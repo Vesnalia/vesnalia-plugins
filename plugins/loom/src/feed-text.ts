@@ -1,0 +1,172 @@
+// One plain sentence per event kind. The CLI's `feed` command and the page both use it.
+import type { EventRow } from "./db/store";
+
+const WHO: Record<string, string> = { human: "The human", planner: "The planner", worker: "A worker", reviewer: "A reviewer", loom: "Loom" };
+const text = (value: unknown) => (typeof value === "string" ? value : null);
+const num = (value: unknown) => (typeof value === "number" ? value : null);
+const notesLabel = (notes: unknown) => {
+  const count = Array.isArray(notes) ? notes.length : 0;
+  return count === 1 ? "1 note" : `${count} notes`;
+};
+
+function moveReason(from: string, to: string, data: Record<string, unknown>): string | null {
+  const reason = text(data.reason);
+  if (reason !== null) return /[.!?]$/u.test(reason) ? reason : `${reason}.`;
+  if (from === "review" && to === "working" && num(data.round) !== null) return `changes requested in round ${data.round}.`;
+  if (to === "working" && num(data.checkFailures) !== null) return `the checks failed (${data.checkFailures} so far).`;
+  if (to === "working" && num(data.attempt) !== null) return `attempt ${data.attempt}.`;
+  if (to === "review" && num(data.round) !== null) return `the checks passed, round ${data.round}.`;
+  if (to === "approved" && num(data.round) !== null) return `approved in round ${data.round}.`;
+  if (to === "pr_open" && text(data.url) !== null) return `${data.url}.`;
+  if (data.requeued === true) return "requeued.";
+  return null;
+}
+
+/** `keys` maps a ticket id to its key. With `you`, the human's actions read "You ran …", as the timeline shows them to the human. */
+export function feedText(event: EventRow, keys: Map<number, string>, { you = false }: { you?: boolean } = {}): string {
+  const human = you ? "You" : "The human";
+  const data = JSON.parse(event.data_json) as Record<string, unknown>;
+  const key = event.ticket_id === null ? "A ticket" : (keys.get(event.ticket_id) ?? `Ticket ${event.ticket_id}`);
+  switch (event.kind) {
+    case "project.created":
+      return "The project was created.";
+    case "project.state": {
+      const reason = text(data.reason);
+      return `The project moved from ${data.from} to ${data.to}${reason === null ? "." : `: ${reason}`}`;
+    }
+    case "project.landed":
+      return data.direct === true ? `The integration branch was pushed to ${data.pushed} at ${String(data.sha).slice(0, 12)}.` : `The integration branch was landed: ${data.url}.`;
+    case "spec.proposed":
+      return `Spec version ${data.version} was proposed.`;
+    case "spec.revised":
+      return `Spec version ${data.version} was revised.`;
+    case "spec.approved":
+      return `Spec version ${data.version} was approved.`;
+    case "ticket.created":
+      return `${key} was created.`;
+    case "ticket.edited":
+      return `${key} was edited: ${Array.isArray(data.fields) ? data.fields.join(", ") : "its fields"}.`;
+    case "ticket.state": {
+      const why = moveReason(String(data.from), String(data.to), data);
+      return `${key} moved from ${data.from} to ${data.to}${why === null ? "." : `: ${why}`}`;
+    }
+    case "post.added":
+      return `${WHO[String(data.author)] ?? "Someone"} added a ${data.kind} to ${key}.`;
+    case "review.verdict":
+      return data.verdict === "approved" ? `A reviewer approved ${key} in round ${data.round}.` : `A reviewer asked for changes on ${key} in round ${data.round}.`;
+    case "ticket.pr_reply":
+      return `${key}'s worker replied on its pull request in fix round ${data.round}.`;
+    case "ticket.after_push":
+    case "project.after_push": {
+      const push = `the push of ${String(data.sha).slice(0, 12)} to ${data.url}`;
+      if (data.moved !== true) return `Loom ran the after_push commands for ${push}.`;
+      return data.pushed === false ? `Loom ran the after_push commands for the move of ${data.url} to ${data.base}.` : `Loom ran the after_push commands for ${push} and its move to ${data.base}.`;
+    }
+    case "ticket.merge_attempt":
+      return `Loom asked the forge to merge ${key}'s pull request (attempt ${data.n}, ${data.method}).`;
+    case "ticket.merge_outcome": {
+      const outcomes: Record<string, string> = { rejected: "was turned away", refused: "was refused", failed: "failed with a temporary error", stopped: "stopped: a person took it out of the merge queue", unconfirmed: "did not show up, so Loom asks again", superseded: "was replaced by a newer push", cleared: "was cleared by the human" };
+      return `The merge of ${key}'s pull request (attempt ${data.n}) ${outcomes[String(data.outcome)] ?? String(data.outcome)}.`;
+    }
+    case "ticket.merge_answered":
+      return data.restart === true ? `Loom cannot tell whether its merge of ${key}'s pull request went out before a restart, and does not send it again.` : data.unknown === true ? `Loom cannot tell whether its merge of ${key}'s pull request went out, and does not send it again.` : `The forge took Loom's merge of ${key}'s pull request.`;
+    case "ticket.final_review_started":
+      return `Loom started its final review of ${key}'s pull request at ${String(data.sha).slice(0, 12)}.`;
+    case "ticket.final_review_verdict":
+      return data.pass === true ? `Loom's final review passed ${key}'s pull request.` : `Loom's final review failed ${key}'s pull request: ${String(data.reason)}`;
+    case "ticket.final_review_ended":
+      if (data.why === "interrupted") return `Loom stopped ${key}'s final review: ${String(data.message ?? "its pull request is not ready")}.`;
+      return data.why === "superseded" ? `A newer push replaced the head of ${key}'s final review.` : `Loom's final review of ${key}'s pull request ended without a verdict: ${String(data.message ?? data.why)}.`;
+    case "ticket.final_review_held":
+      return data.reason === "checkout" ? `Loom holds ${key}'s merge: the repo's checkout changed during its final review.` : data.reason === "partial" ? `Loom holds ${key}'s merge: its final review passed on an incomplete brief.` : data.reason === "scratch" ? `Loom holds ${key}'s merge: bb would not start its final reviewer in Loom's scratch directory.` : `Loom holds ${key}'s merge: its final review did not finish.`;
+    case "ticket.final_review_reset":
+      return `${human} let ${key}'s final review try again.`;
+    case "ticket.final_review_verified":
+      return `Loom counted the final review's pass of ${key}'s pull request: its reviewer stopped and the repo's checkout is unchanged.`;
+    case "ticket.final_review_cleanup_failed":
+      return `Loom could not remove the scratch directory of ${key}'s final review yet, and tries again later.`;
+    case "ticket.final_review_accepted":
+      return `${human} let ${key} merge on a final review of an incomplete brief.`;
+    case "ticket.final_review_bound":
+    case "ticket.final_review_nudged":
+    case "ticket.final_review_acted":
+    case "ticket.final_review_closed":
+      return `Loom followed ${key}'s final review (${event.kind.slice("ticket.final_review_".length)}).`;
+    case "ticket.merge_held":
+      return `${key}'s pull request is ready, and Loom waits to merge it: ${Array.isArray(data.holds) ? data.holds.join("; ") : "a hold"}.`;
+    case "ticket.auto_merge":
+    case "project.auto_merge": {
+      const what = event.kind === "project.auto_merge" ? "the project's pull requests" : `${key}'s pull request`;
+      const who = event.actor === "human" ? human : "Loom";
+      return data.on === true ? `${who} turned Loom's merging back on for ${what}.` : `${who} turned Loom's merging off for ${what}.`;
+    }
+    case "ticket.reviewers_requested": {
+      const asked = Array.isArray(data.requested) ? (data.requested as unknown[]).map(String) : [];
+      const unknown = Array.isArray(data.unknown) ? (data.unknown as unknown[]).map(String) : [];
+      if (unknown.length > 0) return `Loom cannot tell whether ${unknown.join(", ")} were asked to review ${key}'s pull request, and does not ask again.`;
+      return asked.length === 0 ? `Loom asked no one new to review ${key}'s pull request.` : `Loom asked ${asked.join(", ")} to review ${key}'s pull request.`;
+    }
+    case "ticket.reviewers_asking":
+      return `Loom is asking ${Array.isArray(data.reviewers) ? (data.reviewers as unknown[]).map(String).join(", ") : "people"} to review ${key}'s pull request.`;
+    case "ticket.reviewers_failed":
+      return `Asking for reviews of ${key}'s pull request failed: ${String(data.message)}.`;
+    case "turn.retry":
+      return `${key}'s worker hit a rate limit; retry ${data.attempt} is scheduled.`;
+    case "human.action": {
+      if (data.action === "notes") return `${human} sent ${notesLabel(data.notes)} on the spec to the planner.`;
+      if (data.action === "approve" && data.skipReview === true) return `${human} approved the spec without a passed spec review.`;
+      if (data.action === "dismissAsk") return `${human} set the planner's asks aside.`;
+      if (data.action === "askStepDone") return `${human} marked step ${Number(data.step) + 1} of the planner's asks done.`;
+      if (data.action === "ackBadge") return `${human} acknowledged the ${data.tab === "merge" ? "Merge order" : "Rollout"} tab's badge.`;
+      const target = text(data.key);
+      return `${human} ran ${data.action}${target === null ? "" : ` on ${target}`}.`;
+    }
+    case "record.sent": {
+      const why = text(data.fallback);
+      return `The project's ${data.kind === "summary" ? "summary" : "full record"} was sent to the done hook${why === null ? "." : `, because ${why}.`}`;
+    }
+    case "record.failed":
+      return `The done hook failed: ${data.reason}.`;
+    case "hook.told": {
+      const hooks = Array.isArray(data.hooks) ? (data.hooks as Array<{ on?: unknown; key?: unknown }>) : [];
+      const on = [...new Set(hooks.map((hook) => String(hook.on)))].join(", ");
+      return `Loom told the planner to carry out ${hooks.length === 1 ? "a hook" : `${hooks.length} hooks`} on ${on}.`;
+    }
+    case "hook.ran":
+      return `The command of hook[${data.hook}] on ${data.on} ran${text(data.key) === null ? "" : ` for ${data.key}`}.`;
+    case "hook.failed": {
+      const target = text(data.key) === null ? "" : ` for ${data.key}`;
+      if (data.kind === "run") return `The command of hook[${data.hook}] on ${data.on}${target} failed: ${data.reason}.`;
+      return `hook[${data.hook}] on ${data.on}${target} did not reach the planner: ${data.reason}.`;
+    }
+    case "triage.sent": {
+      const n = Array.isArray(data.blocked) ? data.blocked.length : 0;
+      return `Loom sent the planner triage round ${data.round}: ${n === 1 ? "1 ticket is" : `${n} tickets are`} blocked.`;
+    }
+    case "planner.asked": {
+      const steps = Array.isArray(data.steps) ? (data.steps as Array<{ text?: unknown }>) : [];
+      return steps.length === 0 ? "The planner cleared its asks." : `The planner asked the human to: ${steps.map((step) => String(step.text ?? "")).join(" ")}`;
+    }
+    case "rollout.live": {
+      const by = data.by === "merge" ? "its pull request merged" : data.by === "verify" ? "its verify passed" : data.by === "check" ? "its check passed" : "the human marked it";
+      return data.by === "human" ? `${human} marked ${data.target} live.` : `${data.target} is live: ${by}.`;
+    }
+    case "rollout.unlive":
+      return `${human} undid ${data.target}'s live mark.`;
+    case "spec.review.started":
+      return `A spec reviewer started on spec version ${data.version} (round ${data.round}).`;
+    case "spec.review.skipped": {
+      const paths = Array.isArray(data.paths) ? (data.paths as unknown[]).map(String) : [];
+      return `Loom skipped the spec review of version ${data.version}: against version ${data.against}, it changes only operational settings (${paths.join(", ")}).`;
+    }
+    case "spec.review.ended": {
+      const n = num(data.findings) ?? 0;
+      if (data.state === "approved") return `The spec review passed version ${data.version} in round ${data.round}.`;
+      if (data.state === "changes_requested") return `The spec review found ${n} ${n === 1 ? "problem" : "problems"} in version ${data.version} in round ${data.round}.`;
+      if (data.state === "superseded") return `The spec review of version ${data.version} stopped: a newer version or an approval replaced it.`;
+      return `The spec review of version ${data.version} did not finish: ${text(data.reason) ?? "no reason recorded"}.`;
+    }
+    default:
+      return `${event.kind} by ${event.actor}.`;
+  }
+}

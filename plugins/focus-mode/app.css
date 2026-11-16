@@ -1,0 +1,226 @@
+.bb-focus-mode-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.bb-focus-mode-button:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.bb-focus-mode-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.bb-focus-mode-trigger {
+  width: 28px;
+  height: 28px;
+}
+
+/* Full-window reader ------------------------------------------------------ */
+
+.bb-focus-mode-backdrop,
+.bb-focus-mode-reader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--background);
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+.bb-focus-mode-reader {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--foreground);
+  outline: none;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+/* A thin strip in the sidebar colour, like a window title bar. The exit
+   control stays out of sight until the pointer or keyboard reaches it. */
+.bb-focus-mode-toolbar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  height: calc(2.25rem + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 1rem 0;
+  background: var(--sidebar, var(--background));
+  app-region: drag;
+  -webkit-app-region: drag;
+}
+
+.bb-focus-mode-toolbar > * {
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+.bb-focus-mode-exit {
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.bb-focus-mode-toolbar:hover .bb-focus-mode-exit,
+.bb-focus-mode-exit:focus-visible {
+  opacity: 1;
+}
+
+.bb-focus-mode-exit kbd {
+  font: inherit;
+  font-size: 0.6875rem;
+  opacity: 0.7;
+}
+
+.bb-focus-mode-status {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.bb-focus-mode-status[data-working="true"] {
+  background: #f59e0b;
+  animation: bb-focus-mode-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes bb-focus-mode-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-focus-mode-status[data-working="true"] {
+    animation: none;
+  }
+  .bb-focus-mode-exit {
+    transition: none;
+  }
+}
+
+/* Reading column ---------------------------------------------------------- */
+
+.bb-focus-mode-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  outline: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.bb-focus-mode-column {
+  --bb-focus-mode-text: color-mix(in oklab, var(--foreground) 80%, var(--background));
+  box-sizing: content-box;
+  max-width: 42rem;
+  margin-inline: auto;
+  padding: 5.5rem 1.5rem 8rem;
+  color: var(--bb-focus-mode-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.95;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bb-focus-mode-message + .bb-focus-mode-message {
+  margin-top: 2.375rem;
+}
+
+.bb-focus-mode-user {
+  margin: 0;
+  padding: 0.25rem 0 0.25rem 1.375rem;
+  border-left: 2px solid var(--border);
+  color: color-mix(in oklab, var(--foreground) 72%, var(--background));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* BB's chat Markdown ships compact chat sizes; the reader scales them up and
+   lets the column's colour and rhythm win. */
+.bb-focus-mode-reader .bb-focus-mode-markdown,
+.bb-focus-mode-reader .bb-focus-mode-markdown :is(p, li, ul, ol, blockquote, td, th) {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.bb-focus-mode-reader .bb-focus-mode-markdown,
+.bb-focus-mode-reader .bb-focus-mode-markdown :is(p, li, ul, ol, em, span, td, th, blockquote) {
+  color: inherit;
+}
+
+.bb-focus-mode-reader .bb-focus-mode-markdown :is(p, ul, ol) {
+  margin-block: 0.25rem;
+}
+
+.bb-focus-mode-reader .bb-focus-mode-markdown > :first-child {
+  margin-top: 0;
+}
+
+.bb-focus-mode-reader .bb-focus-mode-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.bb-focus-mode-reader .bb-focus-mode-markdown li + li {
+  margin-top: 0.125rem;
+}
+
+.bb-focus-mode-reader .bb-focus-mode-markdown :is(strong, b, h1, h2, h3, h4) {
+  color: var(--foreground);
+}
+
+.bb-focus-mode-reader .bb-focus-mode-markdown :is(pre, code) {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.bb-focus-mode-earlier,
+.bb-focus-mode-empty {
+  display: block;
+  margin: 0 auto 3rem;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.bb-focus-mode-earlier {
+  padding: 0.25rem 0.75rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.bb-focus-mode-earlier:hover:not(:disabled) {
+  color: var(--foreground);
+}
+
+.bb-focus-mode-earlier:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.bb-focus-mode-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,343 @@
+// Два языка интерфейса. Ключ словаря — сам русский текст: так строка на месте
+// читается без словаря, а пропущенный перевод не ломает экран, а показывает
+// русский оригинал. Сам словарь подключает потребитель (`setDictionary`), чтобы
+// этот модуль оставался без зависимостей и проверялся тестами напрямую.
+
+export type Lang = "ru" | "en";
+
+export const LANGS: Lang[] = ["ru", "en"];
+
+export function isLang(value: unknown): value is Lang {
+  return value === "ru" || value === "en";
+}
+
+let current: Lang = "en";
+let dictionary: Record<string, string> = {};
+
+/** Подключить словарь переводов. Вызывается один раз при загрузке. */
+export function setDictionary(next: Record<string, string>): void {
+  dictionary = next;
+}
+
+export function setLang(next: Lang): void {
+  current = next;
+}
+
+export function getLang(): Lang {
+  return current;
+}
+
+/** Перевод по русскому оригиналу. Нет перевода — возвращаем оригинал. */
+export function t(ru: string): string {
+  if (current === "ru") return ru;
+  return dictionary[ru] ?? ru;
+}
+
+/**
+ * Перевод для языка, заданного явно: сервер отвечает CLI и на языке настройки,
+ * не трогая язык текущего процесса.
+ */
+export function tl(lang: Lang, ru: string): string {
+  if (lang === "ru") return ru;
+  return dictionary[ru] ?? ru;
+}
+
+/** Строки, у которых в переводе меняется порядок слов: `{0}`, `{1}` по позиции. */
+export function tp(ru: string, ...values: (string | number)[]): string {
+  return t(ru).replace(/\{(\d+)\}/g, (match, index: string) => {
+    const value = values[Number(index)];
+    return value === undefined ? match : String(value);
+  });
+}
+
+/** BB's document locale controls the page; CLI language remains a stored choice. */
+export function languageFromLocale(locale: string): Lang {
+  return locale.toLowerCase().startsWith("ru") ? "ru" : "en";
+}
+
+// ---------------------------------------------------------- UI language
+/** Stored page-language choice: follow BB, or pin Russian / English. */
+export type UiLangChoice = "auto" | "ru" | "en";
+
+export function isUiLangChoice(value: unknown): value is UiLangChoice {
+  return value === "auto" || value === "ru" || value === "en";
+}
+
+/** What the resolver looks at: BB's lang, Pokecut's resolved lang, Russifier state, chrome labels. */
+export type UiLangEnv = {
+  htmlLang: string;
+  pkLang: string | null;
+  russifierOff: boolean;
+  chromeLabels: string[];
+};
+
+const CYRILLIC = /[А-Яа-яЁё]/u;
+
+/**
+ * Pick the page language. An explicit choice always wins; `auto` trusts
+ * `<html lang>`, then Pokecut's `data-pk-lang` (it honours the user's own
+ * override), then Cyrillic chrome labels — the Russifier translates BB's UI
+ * but leaves `<html lang>` as `en`.
+ */
+export function resolveUiLang(choice: UiLangChoice, env: UiLangEnv): Lang {
+  if (choice === "ru" || choice === "en") return choice;
+  if (env.htmlLang.toLowerCase().startsWith("ru")) return "ru";
+  if (env.pkLang === "ru" || env.pkLang === "en") return env.pkLang;
+  if (!env.russifierOff && env.chromeLabels.slice(0, 12).some((label) => CYRILLIC.test(label))) return "ru";
+  return "en";
+}
+
+/** Read the live page environment; every probe is guarded — never throws. */
+export function readUiLangEnv(): UiLangEnv {
+  const env: UiLangEnv = { htmlLang: "", pkLang: null, russifierOff: false, chromeLabels: [] };
+  if (typeof document === "undefined") return env;
+  try {
+    env.htmlLang = document.documentElement?.lang ?? "";
+    env.pkLang = document.documentElement?.getAttribute("data-pk-lang") ?? null;
+  } catch {
+    // attributes unreachable — keep empty values
+  }
+  try {
+    env.russifierOff = globalThis.localStorage?.getItem("bb-plugin-ru:enabled") === "off";
+  } catch {
+    env.russifierOff = false;
+  }
+  try {
+    const nodes = document.querySelectorAll(
+      '[data-sidebar="sidebar"] button[aria-label], header button[aria-label]',
+    );
+    env.chromeLabels = Array.from(nodes).map((node) => node.getAttribute("aria-label") ?? "");
+  } catch {
+    env.chromeLabels = [];
+  }
+  return env;
+}
+
+let uiChoice: UiLangChoice = "auto";
+
+/** The stored choice from the last overview/settings payload; `auto` until known. */
+export function setUiLangChoice(choice: UiLangChoice): void {
+  uiChoice = choice;
+}
+
+export function getUiLangChoice(): UiLangChoice {
+  return uiChoice;
+}
+
+/** Re-resolve the page language from the stored choice and the live page. */
+export function applyUiLang(): void {
+  setLang(resolveUiLang(uiChoice, readUiLangEnv()));
+}
+
+/** Translate host diagnostics at display time, retaining opaque parser/path details. */
+export function translateDiagnostic(message: string): string {
+  const prefixes = [
+    "не удалось разобрать: ",
+    "внутри приложения: ",
+    "относительный путь: ",
+    "абсолютный путь: ",
+    "аргумент с локальным путём: ",
+    "адрес на loopback: ",
+  ];
+  const prefix = prefixes.find((candidate) => message.startsWith(candidate));
+  return prefix === undefined ? t(message) : tp(`${prefix}{0}`, message.slice(prefix.length));
+}
+
+/**
+ * «1 сервер / 2 сервера / 5 серверов» по-русски и «1 server / 2 servers»
+ * по-английски: формы задаются русскими, перевод берётся из словаря.
+ */
+export function plural(count: number, forms: [string, string, string]): string {
+  if (current === "en") {
+    return `${count} ${count === 1 ? t(forms[0]) : t(forms[2])}`;
+  }
+  const tens = count % 100;
+  const ones = count % 10;
+  if (tens > 10 && tens < 20) return `${count} ${forms[2]}`;
+  if (ones === 1) return `${count} ${forms[0]}`;
+  if (ones >= 2 && ones <= 4) return `${count} ${forms[1]}`;
+  return `${count} ${forms[2]}`;
+}
+
+/** Числа и флаги одного шага раскатки домов — для CLI и экрана. */
+export type RolloutDescription = {
+  dryRun: boolean;
+  canonEmpty: boolean;
+  /** Сколько скиллов канона нет хотя бы на одной машине. */
+  notOnAllMachines: number;
+  applied: number;
+  failed: number;
+  skippedByPlugin: string[];
+  errors: string[];
+  promoted?: number;
+  promoteFailed?: number;
+};
+
+/**
+ * Текст результата раскатки: один и тот же в CLI и в notice/alert экрана.
+ * Живёт рядом с t/tp/plural: node-тесты импортируют i18n.ts, а skills.ts
+ * остаётся без runtime-импортов — иначе падают fanout/skills тесты.
+ */
+export function describeRollout(input: RolloutDescription): string {
+  const ops = input.applied + input.failed;
+  const lines: string[] = [];
+  const promoted = input.promoted ?? 0;
+  const promoteFailed = input.promoteFailed ?? 0;
+  if (promoted > 0 || promoteFailed > 0) {
+    lines.push(tp("В канон: {0}, ошибок {1}", promoted, promoteFailed));
+  }
+
+  if (ops === 0 && input.canonEmpty && input.errors.length === 0) {
+    lines.push(t("Канон пуст"));
+  } else if (ops === 0 && input.notOnAllMachines > 0) {
+    lines.push(
+      tp(
+        "{0} есть не на всех машинах; кнопка раскладывает канон только внутри машины",
+        plural(input.notOnAllMachines, ["скилл", "скилла", "скиллов"]),
+      ),
+    );
+  } else if (ops === 0) {
+    lines.push(t("Дома уже совпадают с каноном."));
+  } else {
+    lines.push(tp("Разложено: {0}, ошибок: {1}", input.applied, input.failed));
+  }
+
+  if (input.skippedByPlugin.length > 0) {
+    lines.push(tp("Отдаёт плагин, не дублируем: {0}", input.skippedByPlugin.join(", ")));
+  }
+  if (input.errors.length > 0) lines.push(input.errors.join("\n"));
+  const body = lines.join("\n");
+  return input.dryRun ? t("Пробный запуск. ") + body : body;
+}
+
+/** Сколько имён канона отсутствуют хотя бы на одной машине сводки. */
+export function countSkillsNotOnAllMachines(
+  skillCanon: { hosts: { state: string }[] }[],
+): number {
+  return skillCanon.filter((row) => row.hosts.some((item) => item.state === "missing")).length;
+}
+
+/** Лимит текста ошибки host RPC — server+host контракт. */
+export const SKILLS_SYNC_ERROR_LIMIT = 2000;
+
+/** Таймаут host.call для синка и раскатки канона. */
+export const SKILLS_HOST_CALL_TIMEOUT_MS = 25_000;
+
+export type SkillHostRef = {
+  id: string;
+  name: string;
+  status: string;
+};
+
+/** Разделить цели раскладки: только connected; остальные — в errors. */
+export function partitionSkillHosts<T extends SkillHostRef>(
+  hosts: readonly T[],
+  hostId: string | null,
+): { targets: T[]; disconnected: T[] } {
+  const scoped = hosts.filter((item) => hostId === null || item.id === hostId);
+  return {
+    targets: scoped.filter((item) => item.status === "connected"),
+    disconnected: scoped.filter((item) => item.status !== "connected"),
+  };
+}
+
+/** Текст таймаута без имени машины — имя добавит fan-out. */
+export function formatHostCallTimeout(timeoutMs = SKILLS_HOST_CALL_TIMEOUT_MS): string {
+  return tp("машина не ответила за {0} с", Math.max(1, Math.ceil(timeoutMs / 1000)));
+}
+
+export function isHostCallTimeout(cause: unknown): boolean {
+  const text = cause instanceof Error ? cause.message : String(cause);
+  return /timed out waiting for command result/i.test(text);
+}
+
+/** Привести отказ host.call к причине без имени машины. */
+export function hostCallFailureReason(
+  cause: unknown,
+  timeoutMs = SKILLS_HOST_CALL_TIMEOUT_MS,
+): string {
+  if (isHostCallTimeout(cause)) return formatHostCallTimeout(timeoutMs);
+  return cause instanceof Error ? cause.message : String(cause);
+}
+
+export function disconnectedHostError(hostName?: string): string {
+  const reason = t("машина не на связи");
+  return hostName ? `${hostName}: ${reason}` : reason;
+}
+
+/**
+ * host.call с собственным deadline. Параметр timeoutMs у SDK остаётся первым
+ * рубежом, но Promise.race гарантирует ответ даже если транспорт его игнорирует.
+ */
+export async function callHostTimed<T>(
+  call: (timeoutMs: number) => Promise<T>,
+  timeoutMs = SKILLS_HOST_CALL_TIMEOUT_MS,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const deadline = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => reject(new Error(formatHostCallTimeout(timeoutMs))), timeoutMs);
+    });
+    return await Promise.race([call(timeoutMs), deadline]);
+  } catch (cause) {
+    throw new Error(hostCallFailureReason(cause, timeoutMs));
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+/** Обрезать stderr git до лимита контракта, не оставляя оборванного хвоста в середине. */
+export function clipErrorText(text: string, limit = SKILLS_SYNC_ERROR_LIMIT): string {
+  const trimmed = text.replace(/\s+$/u, "").trim();
+  if (trimmed.length <= limit) return trimmed;
+  return `${trimmed.slice(0, Math.max(0, limit - 1))}…`;
+}
+
+/**
+ * Раскатка только на выбранных машинах.
+ * Политика: провал на машине → на этой машине дома не трогать.
+ */
+export function selectFanOutHostIds(
+  targetIds: readonly string[],
+  failedSyncIds: readonly string[],
+): string[] {
+  const failed = new Set(failedSyncIds);
+  return targetIds.filter((id) => !failed.has(id));
+}
+
+/** Каталоги, где host-процесс ищет git, если PATH launchd пуст. */
+export function gitBinSearchDirs(envPath: string, homeDir: string, delimiter = ":"): string[] {
+  const fromPath = envPath.split(delimiter).filter(Boolean);
+  const extra = [
+    `${homeDir}/.local/bin`,
+    `${homeDir}/.bun/bin`,
+    `${homeDir}/.npm-global/bin`,
+    `${homeDir}/bin`,
+    "/opt/homebrew/bin",
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/snap/bin",
+    "/Library/Developer/CommandLineTools/usr/bin",
+    "/Applications/Xcode.app/Contents/Developer/usr/bin",
+  ];
+  if (delimiter === ";") return [...new Set([...fromPath, ...windowsBinDirs(homeDir)])];
+  return [...new Set([...fromPath, ...extra])];
+}
+
+/** Typical Windows dirs for git, node and user-level CLIs; env-dependent ones are skipped when unset. */
+function windowsBinDirs(homeDir: string): string[] {
+  const env = typeof process === "undefined" ? {} : process.env;
+  const dirs: string[] = [];
+  if (env.APPDATA) dirs.push(`${env.APPDATA}\\npm`);
+  if (env.LOCALAPPDATA) dirs.push(`${env.LOCALAPPDATA}\\Programs\\Git\\cmd`);
+  dirs.push(
+    "C:\\Program Files\\Git\\cmd",
+    "C:\\Program Files\\Git\\bin",
+    "C:\\Program Files\\nodejs",
+    `${homeDir}\\.local\\bin`,
+    `${homeDir}\\.bun\\bin`,
+    `${homeDir}\\scoop\\shims`,
+  );
+  return dirs;
+}

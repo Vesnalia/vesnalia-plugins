@@ -1,0 +1,27 @@
+{
+  "name": "bb-plugin-prime-agent-acp",
+  "version": "0.1.10",
+  "type": "module",
+  "engines": {
+    "bb": ">=0.42",
+    "bbPluginSdk": ">=0.4.84"
+  },
+  "bb": {
+    "name": "Prime Agent (ACP)",
+    "description": "Run bb threads with Prime Agent through its native ACP protocol.",
+    "branding": {
+      "icon": "./icons/prime-agent.svg"
+    },
+    "server": "./server.ts",
+    "host": "./host.ts"
+  },
+  "dependencies": {
+    "@get-bb/plugin-sdk": "^0.4.84",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "license": "MIT"
+}

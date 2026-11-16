@@ -1,0 +1,259 @@
+// @vitest-environment node
+import { describe, expect, it } from "vitest";
+import { DECISION_ASK, DEFAULT_STATUS_PROMPT, handBackInstructions, statusPrompt } from "./status-prompt";
+import { parseDecisionOptions } from "./decisions";
+import { releaseWaitStated } from "./release-wait";
+import {
+  createFakePluginHost,
+  makeThreadResponse,
+} from "@get-bb/plugin-sdk/testing";
+import {
+  createThreadStatus,
+  parseStatusReport,
+  recordThreadStatus,
+} from "./thread-status";
+
+const report = `**Goal:** Ship the UI.
+**Done:** Built the monitor.
+**Next:** Review it.
+**Blocked:** Waiting for review.
+### Progress
+\`\`\`
+[██████████] Build   done
+[██████░░░░] Review   60% ← here
+[░░░░░░░░░░] Ship
+\`\`\`
+### Next steps
+- Check design.
+`;
+it("reads a status report template and reported milestone values without inventing overall progress", () => {
+  expect(parseStatusReport(report, 10)).toEqual({
+    goal: "Ship the UI.",
+    done: "Built the monitor.",
+    next: "Review it.",
+    blocked: "Waiting for review.",
+    // A bulleted "Next steps" can't be picked by number.
+    steps: null,
+    capturedAt: 10,
+    milestones: [
+      { label: "Build", percent: 100 },
+      { label: "Review", percent: 60 },
+      { label: "Ship", percent: 0 },
+    ],
+  });
+  expect(
+    parseStatusReport("Ordinary reply with **Next:** incidental text", 10),
+  ).toBeNull();
+  expect(
+    parseStatusReport(
+      "**Done:** Ready.\n**Next:** Nothing pending.\n**Blocked:** N/A",
+      10,
+    )?.blocked,
+  ).toBe("");
+  expect(
+    parseStatusReport(report.replace("60%", "125%"), 10)?.milestones,
+  ).toHaveLength(2);
+});
+it("keeps the last report through ordinary replies, maintains its age, and clears resolved blockers on a fresh report", () => {
+  const first = recordThreadStatus("t1", report, null, 10)!;
+  expect(recordThreadStatus("t1", report, first, 20)).toBe(first);
+  const next = recordThreadStatus("t1", "New reply", first, 30)!;
+  expect(next.report).toEqual(first.report);
+  expect(next.latestAt).toBe(30);
+  expect(next.latest).toBe("New reply");
+  expect(recordThreadStatus("t1", "", next, 40)).toBe(next);
+  expect(
+    recordThreadStatus(
+      "t1",
+      report.replace("**Blocked:** Waiting for review.\n", ""),
+      next,
+      50,
+    )?.report?.blocked,
+  ).toBe("");
+});
+it("captures idle reports durably, isolates threads, survives reload and fetch failures, and forgets deleted threads", async () => {
+  const { bb, harness } = createFakePluginHost({
+    sdk: {
+      threads: {
+        output: async () => {
+          throw new Error("offline");
+        },
+      },
+    },
+  });
+  let monitor = createThreadStatus(bb, () => {});
+  await harness.behavior.emitThreadEvent("thread.idle", {
+    thread: makeThreadResponse({ id: "t1" }),
+    lastAssistantText: report,
+  });
+  const saved = await monitor.get("t1");
+  expect(saved?.report?.goal).toBe("Ship the UI.");
+  expect(await monitor.get("t2")).toBeNull();
+  const reloaded = await harness.lifecycle.reload(async (nextBb) => {
+    monitor = createThreadStatus(nextBb, () => {});
+  });
+  expect(await monitor.get("t1")).toEqual(saved);
+  await reloaded.harness.behavior.emitThreadEvent("thread.deleted", {
+    thread: makeThreadResponse({ id: "t1" }),
+  });
+  expect(await monitor.get("t1")).toBeNull();
+  await reloaded.harness.lifecycle.dispose();
+});
+it("serializes reads with idle updates so an old in-flight reply cannot overwrite the new report", async () => {
+  let resolve!: (result: { output: string }) => void;
+  const { bb, harness } = createFakePluginHost({
+    sdk: {
+      threads: {
+        output: () =>
+          new Promise((done) => {
+            resolve = done;
+          }),
+      },
+    },
+  });
+  const monitor = createThreadStatus(bb, () => {});
+  const reading = monitor.get("t1");
+  await new Promise((done) => setTimeout(done, 0));
+  const idle = harness.behavior.emitThreadEvent("thread.idle", {
+    thread: makeThreadResponse({ id: "t1" }),
+    lastAssistantText: report,
+  });
+  resolve({ output: "Older ordinary reply" });
+  await reading;
+  await idle;
+  const stored = await bb.storage.kv.get<{ report: { goal: string } }>(
+    "thread-status:t1",
+  );
+  expect(stored?.report.goal).toBe("Ship the UI.");
+  await harness.lifecycle.dispose();
+});
+
+it("reads next steps to run with go, a numbered decision, and Doing now", () => {
+  const head = "**Goal:** Ship it\n**Done:** Merged the fix\n**Next:** Release\n\n";
+  const go = parseStatusReport(
+    head + "### Next steps\n> [!TIP]\n> **Recommended:** 1\n> 1. Check the nightly run · first unattended run\n> 2. Try the staging app\n>\n> Reply **go** for all, or **go 1,3**.\n\n_2026-10-13 00:29 CEST_",
+    1,
+  );
+  expect(go?.steps).toEqual({
+    mode: "go",
+    question: "",
+    items: ["Check the nightly run · first unattended run", "Try the staging app"],
+    recommended: [1],
+  });
+  const choice = parseStatusReport(
+    head + "### Next steps\n> [!TIP]\n> **Decision needed:** which rollout?\n> 1. 10% today (recommended)\n> 2. Everyone on Monday\n>\n> Reply with the number.",
+    1,
+  );
+  expect(choice?.steps).toMatchObject({ mode: "choice", question: "which rollout?", items: ["10% today", "Everyone on Monday"], recommended: [1] });
+  const doing = parseStatusReport(head + "### Next steps\n**Doing now:** opening the PR and waiting for CI.", 1);
+  expect(doing?.doingNow).toBe("opening the PR and waiting for CI.");
+  expect(doing?.steps).toBeNull();
+});
+
+it("reads a decision that takes several numbers as multi", () => {
+  const head = "**Goal:** Ship it\n**Done:** Merged the fix\n\n### Next steps\n> [!TIP]\n> **Decision needed:** which should I set up?\n";
+  const multi = parseStatusReport(head + "> 1. Lint rule (recommended)\n> 2. CI check (recommended)\n> 3. Weekly list\n>\n> Reply with one or more numbers, e.g. **1,3**.", 1);
+  expect(multi?.steps).toMatchObject({ mode: "multi", items: ["Lint rule", "CI check", "Weekly list"], recommended: [1, 2] });
+  // The reply line after a long list still counts.
+  const items = Array.from({ length: 10 }, (_, index) => `> ${index + 1}. Option ${index + 1}`).join("\n");
+  expect(parseStatusReport(head + items + "\n>\n> Reply with the numbers.", 1)?.steps?.mode).toBe("multi");
+  expect(parseStatusReport(head + "> 1. Lint rule\n> 2. CI check\n>\n> Reply with the number.", 1)?.steps?.mode).toBe("choice");
+});
+
+it("reads a go-list under a **Path forward:** line without taking it for a recommendation", () => {
+  const report = parseStatusReport(
+    "**Goal:** Ship it\n**Done:** Merged the fix\n\n### Next steps\n> [!TIP]\n> **Path forward:** finish the menu, then the docs\n> 1. Add the item · one step instead of three\n> 2. Update the README · keep docs current\n>\n> Reply **go** for all, or **go 1,3**.\n\n_2026-10-23 12:13 CEST_",
+    1,
+  );
+  expect(report?.steps).toEqual({
+    mode: "go",
+    question: "",
+    items: ["Add the item · one step instead of three", "Update the README · keep docs current"],
+    recommended: [],
+  });
+});
+
+it("hands back with the status prompt the user set, or the built-in one", () => {
+  expect(handBackInstructions("")).toContain(DEFAULT_STATUS_PROMPT);
+  expect(handBackInstructions("**Goal:** <x>")).toContain("**Goal:** <x>");
+  // bb truncates thread instructions at 4096 characters.
+  expect(handBackInstructions("", true).length).toBeLessThan(4096);
+});
+
+it("asks for numbered options the reply buttons can offer, with or without a prompt of your own", () => {
+  expect(handBackInstructions("")).toContain(DECISION_ASK);
+  expect(handBackInstructions("My own prompt")).toContain(DECISION_ASK);
+  const ask = "Which store should we use?\n\n1. Postgres · already running (recommended)\n2. SQLite · simpler\n\nReply with the number.";
+  expect(parseDecisionOptions(ask).map((option) => option.recommended)).toEqual([true, false]);
+});
+
+it("reads a report written to the built-in template, Stack and Architecture included", () => {
+  expect(DEFAULT_STATUS_PROMPT).toContain("### Stack");
+  expect(DEFAULT_STATUS_PROMPT).toContain("### Architecture");
+  const report = parseStatusReport(
+    [
+      "**Goal:** Ship the importer",
+      "**Done:** Merged the parser",
+      "**Next:** Nothing pending.",
+      "**Blocked:** Waiting for release (last: v1.2.0, 2026-11-01).",
+      "**Due:** 2026-11-20 · customer demo",
+      "",
+      "### Stack",
+      "`✅ [#12 Parser](https://example.com/pr/12) · merged`",
+      "  `👀 [#13 Importer](https://example.com/pr/13) · in review`",
+      "",
+      "### Progress",
+      "```",
+      "[██████████] Parser     done",
+      "[█████░░░░░] Importer   50%  ← here",
+      "```",
+      "",
+      "### Architecture",
+      "```",
+      "upload → parser*",
+      "```",
+      "",
+      "_2026-11-11 12:00 CET_",
+    ].join("\n"),
+    1,
+  );
+  expect(report).toMatchObject({
+    goal: "Ship the importer",
+    done: "Merged the parser",
+    blocked: "Waiting for release (last: v1.2.0, 2026-11-01).",
+    due: "2026-11-20 · customer demo",
+  });
+  expect(report?.milestones).toHaveLength(2);
+  expect(releaseWaitStated("**Goal:** x\n**Done:** y\n**Blocked:** Waiting for release (last: v1.2.0, 2026-11-01).")).toBe(true);
+});
+
+describe("a report's Due line", () => {
+  it("is read when present and absent otherwise", () => {
+    expect(parseStatusReport("**Goal:** Ship\n**Next:** Send\n**Due:** 2026-11-05 · invoices fall due", 1)?.due).toBe("2026-11-05 · invoices fall due");
+    expect(parseStatusReport("**Goal:** Ship\n**Next:** Send", 1)).not.toHaveProperty("due");
+  });
+
+  it("doesn't make a report out of a reply that isn't one", () => {
+    expect(parseStatusReport("**Goal:** Ship\n**Due:** 2026-11-05", 1)).toBeNull();
+  });
+});
+
+describe("the status prompt's Due line", () => {
+  it("is only in the built-in prompt, and only with the feature on", () => {
+    expect(statusPrompt("", true)).toContain("**Due:**");
+    expect(statusPrompt("", false)).not.toContain("**Due:**");
+    expect(statusPrompt("My own prompt", true)).toBe("My own prompt");
+    expect(handBackInstructions("", true)).toContain("**Due:**");
+    expect(handBackInstructions("", false)).not.toContain("**Due:**");
+  });
+});
+
+
+describe("sending a status report prompt", () => {
+  it("accepts a long prompt of your own, not only the short built-in one", async () => {
+    const { rpcContract } = await import("./server");
+    const input = (rpcContract as unknown as Record<string, { input: { safeParse(value: unknown): { success: boolean } } }>).thread_reply!.input;
+    expect(input.safeParse({ threadId: "t", text: statusPrompt("x".repeat(6000), true) }).success).toBe(true);
+    expect(input.safeParse({ threadId: "t", text: "" }).success).toBe(false);
+  });
+});

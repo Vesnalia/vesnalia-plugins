@@ -1,0 +1,783 @@
+// @vitest-environment jsdom
+// Comments: one list beside the code for everything said about the review (spec §4), with the same items as cards at
+// their lines. It took over Feedback, Threads, and the comment list of Draft review.
+import { afterEach, expect, test, vi } from "vitest";
+import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
+import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { defaultPreferences } from "../src/preferences";
+import { patchReviewState, setHideNits } from "../lib/panel-state";
+import type { FeedbackItem, FeedbackView } from "../lib/feedback";
+import { TOUCH_CONTROL } from "./touch";
+import { toast } from "sonner";
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+// The lines pierre is asked to show something under, and what's shown there.
+vi.mock("@pierre/diffs/react", () => ({
+  FileDiff: ({ lineAnnotations, renderAnnotation }: any) => (
+    <div data-testid="filediff">
+      {lineAnnotations?.map((annotation: any, index: number) => <div key={index} data-annotation={`${annotation.side}:${annotation.lineNumber}`}>{renderAnnotation?.(annotation)}</div>)}
+    </div>
+  ),
+}));
+
+afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); vi.clearAllMocks(); });
+// jsdom has no scrollIntoView. A reveal waits for the code to draw, then lands on the file with it: under a loaded
+// machine that can happen after a test's own checks, as an uncaught error.
+Element.prototype.scrollIntoView ??= () => {};
+
+const now = Date.now();
+const HOUR = 3_600_000;
+const file = (path: string, lines: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${lines}`;
+const patch = file("src/a.ts", "@@ -1,2 +1,2 @@\n one\n-two\n+TWO\n") + file("src/b.ts", "@@ -1 +1 @@\n-x\n+bb\n");
+const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [
+  { id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }] },
+  { id: "c2", title: "Caching", overview: "Keeps rows.", diffs: [{ file: "src/b.ts" }] },
+] };
+const said = (id: string, databaseId: number, author: string, body: string, hours: number) => ({ id, databaseId, author, body, createdAt: now - hours * HOUR });
+// Everyone's threads: yours with alice's answer, bob's resolved one on an old line, dave's on code since changed, carol's on a file.
+const threads = () => [
+  { id: "t1", isResolved: false, isOutdated: false, path: "src/a.ts", line: 2, side: "RIGHT", subjectType: "LINE", comments: [said("c1", 111, "me", "**Blocking:** Why upper case?", 48), said("c2", 112, "alice", "It's a constant.", 5)] },
+  { id: "t2", isResolved: true, isOutdated: false, path: "src/a.ts", line: 2, side: "LEFT", subjectType: "LINE", resolvedBy: "bob", comments: [said("c3", 113, "bob", "Old line note.", 30)] },
+  { id: "t3", isResolved: false, isOutdated: true, path: "src/a.ts", line: null, side: "RIGHT", subjectType: "LINE", originalLine: 9, comments: [said("c4", 114, "dave", "This moved.", 20)] },
+  { id: "t4", isResolved: false, isOutdated: false, path: "src/b.ts", line: null, side: "RIGHT", subjectType: "FILE", comments: [said("c5", 115, "carol", "Document this file.", 10)] },
+];
+// Your feedback on t1: alice answered, and the agent's check says it's partly done, with a reply it drafted.
+const mine = (over: Partial<FeedbackItem> = {}): FeedbackItem => ({
+  id: "t1", kind: "thread", title: "Why upper case?", label: "Blocking", replyDraft: { body: "Thanks, I'll look again.", author: "agent", updatedAt: now },
+  assessment: { id: "t1", verdict: "partial", evidence: "Renamed in one place of two.", file: "src/a.ts", line: 2, assessedAt: now - 2 * HOUR },
+  thread: { id: "t1", commentId: 111, reviewId: "R1", path: "src/a.ts", line: 2, originalLine: 2, startLine: null, side: "RIGHT", subjectType: "LINE", body: "**Blocking:** Why upper case?", createdAt: now - 48 * HOUR, isResolved: false, resolvedBy: null, isOutdated: false, replies: [{ author: "alice", bot: false, mine: false, body: "It's a constant.", createdAt: now - 5 * HOUR }], status: "answered", replyAt: now - 5 * HOUR, url: null },
+  ...over,
+});
+const feedbackOf = (items: FeedbackItem[] = [mine()], run: FeedbackView["run"] = { headSha: "abcdef1234", summary: "", suggestedVerdict: "REQUEST_CHANGES", suggestedBody: "", assessedAt: now - 2 * HOUR, current: false }): FeedbackView => ({
+  baseline: { sha: "old", at: now - 48 * HOUR, verdict: "REQUEST_CHANGES" }, head: "new", fetchedAt: now, suggestionInDraft: false, run, items,
+});
+// The draft: yours on a.ts:2, one on an older diff at a.ts:1, and the agent's nit on b.ts:1; a question for the agent.
+const comments = [
+  { file: "src/a.ts", line: 2, side: "RIGHT", severity: "blocking", body: "Upper case reads as a constant." },
+  { file: "src/a.ts", line: 1, side: "RIGHT", body: "Drafted before the last push." },
+  { file: "src/b.ts", line: 1, side: "RIGHT", author: "agent", severity: "nit", body: "Spacing." },
+];
+const discussions = [{ file: "src/b.ts", line: 1, side: "LEFT", waiting: false, entries: [{ author: "reviewer", kind: "message", body: "Is x still used?", createdAt: now - HOUR }] }];
+
+async function renderWorkspace({ review = {}, rpc = {} }: { review?: Record<string, unknown>; rpc?: Record<string, unknown> } = {}) {
+  patchReviewState("pr-42", { activeId: "c1" });
+  const app = await loadPluginApp(() => import("../app"));
+  const handlers = {
+    setReviewPresence: () => ({ ok: true }),
+    getReviewBundle: () => ({ review: { targetKey: "pr-42", kind: "pr", status: "ready", createdAt: 1, title: "Parse rows", headSha: "new", url: "https://github.com/acme/web/pull/42", repo: "acme/web", number: 42, ...review }, guide: structuredClone(guide), patch, revision: "r1" }),
+    getChecks: () => ({ bucket: "none", checks: [] }),
+    getPreferences: () => ({ preferences: defaultPreferences, revision: 0 }),
+    getFileViews: () => ({ views: [] }),
+    checkRepoAccess: () => ({ accessible: true, repo: "acme/web", account: "me" }),
+    checkForUpdates: () => ({ hasNewCommits: false }),
+    getDraft: vi.fn(() => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: structuredClone(comments) }, stale: [{ file: "src/a.ts", line: 1, side: "RIGHT" }], discussions })),
+    getReviewerNotes: () => ({ body: "", revision: 0 }),
+    getConversation: () => ({ threadId: null, legacy: [], defaults: null }),
+    getSinceReview: () => ({ baseline: null, files: [] }),
+    markSeen: () => ({ ok: true }),
+    getReviewThreads: vi.fn(() => ({ threads: threads() })),
+    getFeedback: vi.fn(() => ({ feedback: feedbackOf() })),
+    getReplyDrafts: vi.fn(() => ({ drafts: [{ threadId: "t1", body: "Thanks, I'll look again.", author: "agent", updatedAt: now }] })),
+    refreshFeedback: vi.fn(() => ({ feedback: feedbackOf() })),
+    checkFeedback: vi.fn(() => ({ ok: true })),
+    replyToThread: vi.fn(() => ({ ok: true })),
+    replyToFeedback: vi.fn(() => ({ ok: true, feedback: feedbackOf([mine({ replyDraft: null, thread: { ...mine().thread!, status: "open" } })]) })),
+    resolveThread: vi.fn(() => ({ ok: true })),
+    unresolveThread: vi.fn(() => ({ ok: true })),
+    saveReplyDraft: vi.fn(() => ({ ok: true })),
+    discardReplyDraft: vi.fn(() => ({ ok: true })),
+    ...rpc,
+  };
+  const slot = renderSlot(app.navPanels[0]!, { subPath: "pr-42" }, { rpc: handlers as any });
+  await slot.findByRole("main", { name: /^Review\b/ });
+  await slot.findByTestId("filediff");
+  return { slot, rpc: handlers };
+}
+type Slot = Awaited<ReturnType<typeof renderWorkspace>>["slot"];
+/** Comments, from the band's button where BB's title bar didn't take it, read from GitHub. A panel left open opens so again. */
+async function openComments(slot: Slot) {
+  const button = await slot.findByRole("button", { name: /^Comments/ });
+  if (!slot.queryByRole("region", { name: "Comments" })) fireEvent.click(button);
+  const list = within(slot.getByRole("region", { name: "Comments" }));
+  await waitFor(() => expect(list.queryByText("Reading GitHub…")).toBeNull());
+  return list;
+}
+const chip = (list: ReturnType<typeof within>, name: string) => list.getByRole("radio", { name: new RegExp(`^${name}, \\d+$`) });
+const headings = (list: ReturnType<typeof within>) => list.getAllByRole("heading", { level: 3 }).map((heading: HTMLElement) => heading.textContent);
+const rows = (list: ReturnType<typeof within>) => list.getAllByRole("button")
+  .filter((button: HTMLElement) => button.closest("[data-comment-row]") && !/^(Expand|Collapse) /.test(button.getAttribute("aria-label") ?? ""))
+  .map((button: HTMLElement) => button.getAttribute("aria-label"));
+const code = (slot: Slot, path: string) => within(slot.container.querySelector<HTMLElement>(`[data-file="${path}"]`)!);
+
+test("one list: chips count what they show, the groups come in order, and each item shows once", async () => {
+  const { slot } = await renderWorkspace();
+  const list = await openComments(slot);
+  // Not submitted counts every draft comment, as Submit does; the one on an older diff shows in Needs you.
+  expect(list.getAllByRole("radio").map((radio) => radio.getAttribute("aria-label"))).toEqual(["All, 8", "Needs you, 2", "Not submitted, 3", "On GitHub, 3"]);
+  expect(chip(list, "All").getAttribute("aria-checked")).toBe("true");
+  expect(headings(list)).toEqual(["Needs you · 2", "Not submitted · only in BB · 3", "On GitHub · 3", "Private · with the agent · 1"]);
+  expect(list.getByText("1 blocking · 1 nit")).toBeTruthy();
+  expect(list.getByText("+1 on an older diff, in Needs you")).toBeTruthy();
+  expect(list.getByText("Yours: 1 of 1 handled")).toBeTruthy();
+  expect(rows(list)).toEqual([
+    "Older diff · not submitted · src/a.ts:1",
+    "You · Author replied · src/a.ts:2 · Blocking · agent's check: Partly addressed · Agent reply draft · not sent",
+    "Draft · not submitted · src/a.ts:2 · Blocking",
+    "Agent draft · not submitted · src/b.ts:1 · Nit",
+    "@carol · Open · File comment · src/b.ts",
+    "Private · with the agent · src/b.ts:1 (old line)",
+  ]);
+  // Resolved and outdated threads fold under On GitHub.
+  expect(list.getByRole("button", { name: "1 resolved · 1 outdated" }).getAttribute("aria-expanded")).toBe("false");
+  // The same count as Submit's, in the Finish bar and the title bar.
+  expect(slot.getByText("3 to send", { exact: false })).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Finish review: Comment, 3 comments" })).toBeTruthy();
+  // The title bar's Comments says how many need you.
+  expect(slot.getByRole("button", { name: "Comments, 2 need you" })).toBeTruthy();
+  // A file's row counts what the list has at it: a.ts's two drafts, and its threads not resolved, the outdated one too.
+  expect(within(slot.container.querySelector<HTMLElement>('[data-file="src/a.ts"] [data-file-header]')!).getByText("2 not submitted · 2 on GitHub")).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+test("a chip shows its group alone: Needs you by urgency, and Not submitted every draft comment in reading order", async () => {
+  const { slot } = await renderWorkspace();
+  const list = await openComments(slot);
+  // A radio group: one Tab stop, and the arrows move the choice.
+  expect(list.getAllByRole("radio").map((radio) => radio.tabIndex)).toEqual([0, -1, -1, -1]);
+  fireEvent.keyDown(chip(list, "All"), { key: "ArrowRight" });
+  expect(chip(list, "Needs you").getAttribute("aria-checked")).toBe("true");
+  fireEvent.keyDown(chip(list, "Needs you"), { key: "ArrowLeft" });
+  expect(chip(list, "All").getAttribute("aria-checked")).toBe("true");
+  fireEvent.click(chip(list, "Needs you"));
+  expect(headings(list)).toEqual(["Needs you · 2"]);
+  expect(rows(list)).toEqual(["Older diff · not submitted · src/a.ts:1", "You · Author replied · src/a.ts:2 · Blocking · agent's check: Partly addressed · Agent reply draft · not sent"]);
+  fireEvent.click(chip(list, "Not submitted"));
+  expect(rows(list)).toEqual(["Older diff · not submitted · src/a.ts:1", "Draft · not submitted · src/a.ts:2 · Blocking", "Agent draft · not submitted · src/b.ts:1 · Nit"]);
+  fireEvent.click(chip(list, "On GitHub"));
+  fireEvent.click(list.getByRole("button", { name: "1 resolved · 1 outdated" }));
+  expect(rows(list)).toEqual([
+    "@carol · Open · File comment · src/b.ts",
+    "@bob · Resolved · src/a.ts:2 (old line)",
+    "@dave · Open · Outdated · src/a.ts:9",
+  ]);
+  slot.lifecycle.unmount();
+});
+
+test("a row shows its item in the code, switching chapters, and its chevron opens it in place as the full card", async () => {
+  const { slot } = await renderWorkspace();
+  const list = await openComments(slot);
+  fireEvent.click(list.getByRole("button", { name: "Agent draft · not submitted · src/b.ts:1 · Nit" }));
+  await waitFor(() => expect(slot.container.querySelector('[data-file="src/b.ts"]')).toBeTruthy());
+  expect(await code(slot, "src/b.ts").findByRole("article", { name: "Draft comment on src/b.ts:1" })).toBeTruthy();
+  // The list stays beside the code.
+  expect(slot.getByRole("region", { name: "Comments" })).toBeTruthy();
+  fireEvent.click(list.getByRole("button", { name: "Expand GitHub thread on src/a.ts:2" }));
+  const card = list.getByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  expect(within(card).getByText("It's a constant.")).toBeTruthy();
+  expect(within(card).getByText("Renamed in one place of two.")).toBeTruthy();
+  expect(within(card).getByRole("group", { name: "Agent reply draft · not sent on src/a.ts:2" })).toBeTruthy();
+  fireEvent.click(list.getByRole("button", { name: "Collapse GitHub thread on src/a.ts:2" }));
+  expect(list.queryByRole("article", { name: "GitHub thread on src/a.ts:2" })).toBeNull();
+  slot.lifecycle.unmount();
+});
+
+test("a row and a pill show what waits with an item: a thread's reply draft, and a draft's messages with the agent", async () => {
+  const talk = [{ file: "src/a.ts", line: 2, side: "RIGHT", waiting: false, entries: [
+    { author: "reviewer", kind: "message", body: "Is this right?", createdAt: now - HOUR },
+    { author: "agent", kind: "message", body: "Yes.", createdAt: now - HOUR },
+  ] }];
+  const { slot } = await renderWorkspace({ rpc: { getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: structuredClone(comments) }, stale: [], discussions: talk }) } });
+  const list = await openComments(slot);
+  const row = (id: string) => within(slot.container.querySelector<HTMLElement>(`[data-comment-row="${id}"]`)!);
+  expect(row("t1").getByText("Agent reply draft · not sent")).toBeTruthy();
+  expect(row("draft:src/a.ts:2:RIGHT").getByTitle("2 messages with the agent")).toBeTruthy();
+  expect(list.getByRole("button", { name: /^Draft · not submitted · src\/a\.ts:2 · Blocking · 2 messages with the agent$/ })).toBeTruthy();
+  fireEvent.keyDown(document.body, { key: "i" });
+  const pill = within(await code(slot, "src/a.ts").findByRole("group", { name: "GitHub thread on src/a.ts:2, folded" }));
+  // After its state, and on a phone ahead of its first line: CSS shows one of the two.
+  expect(pill.getAllByText("Agent reply draft · not sent")).toHaveLength(2);
+  slot.lifecycle.unmount();
+});
+
+// Ask agent sat above the discussion, so it didn't look like it could go on (ted-2026-11-03 01).
+test("in the list, a discussion with the agent goes on from Reply at its foot, which has the focus back once its box closes", async () => {
+  const talk = [{ file: "src/a.ts", line: 2, side: "RIGHT", waiting: false, entries: [
+    { author: "reviewer", kind: "message", body: "Is this right?", createdAt: now - HOUR },
+    { author: "agent", kind: "message", body: "Yes.", createdAt: now - HOUR },
+  ] }, ...discussions];
+  const { slot } = await renderWorkspace({ rpc: { getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: structuredClone(comments) }, stale: [], discussions: talk }) } });
+  const list = await openComments(slot);
+  fireEvent.click(list.getByRole("button", { name: "Expand Draft comment on src/a.ts:2" }));
+  const card = within(list.getByRole("article", { name: "Draft comment on src/a.ts:2" }));
+  expect(card.queryByRole("button", { name: "Ask agent about the comment on src/a.ts:2" })).toBeNull();
+  const thread = within(card.getByRole("region", { name: "Discussion with agent on src/a.ts:2" }));
+  fireEvent.click(thread.getByRole("button", { name: "Reply" }));
+  const box = card.getByRole("textbox", { name: "Message to agent" });
+  await waitFor(() => expect(document.activeElement).toBe(box));
+  fireEvent.keyDown(box, { key: "Escape" });
+  await waitFor(() => expect(document.activeElement).toBe(thread.getByRole("button", { name: "Reply" })));
+  // A question with no comment ends the same way, with Dismiss beside Reply; unanswered, its chat is a link apart.
+  fireEvent.click(list.getByRole("button", { name: "Expand Private discussion on src/b.ts:1 (old line)" }));
+  const question = within(list.getByRole("article", { name: "Private discussion on src/b.ts:1 (old line)" }));
+  expect(question.getAllByRole("button").map((button) => button.textContent)).toEqual(["Open its chat", "Reply", "Dismiss"]);
+  slot.lifecycle.unmount();
+});
+
+test("GitHub threads show at their lines with every message; a resolved one is a pill; outdated and file comments wait in the file's fold", async () => {
+  const { slot } = await renderWorkspace();
+  const open = await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  expect(open.closest("[data-annotation]")!.getAttribute("data-annotation")).toBe("additions:2");
+  // Where it is, in words as well as GitHub's mark, as every draft card says "not submitted".
+  expect(within(open).getByText("On GitHub")).toBeTruthy();
+  expect(within(open).getByText("It's a constant.")).toBeTruthy();
+  expect(within(open).getByText("@alice")).toBeTruthy();
+  expect(within(open).getByText("Author replied")).toBeTruthy();
+  expect(within(open).getByText("Partly addressed")).toBeTruthy();
+  // Resolved, it starts as its pill: who, its state, and its first line, without its actions.
+  const resolved = code(slot, "src/a.ts").getByRole("group", { name: "GitHub thread on src/a.ts:2 (old line), folded" });
+  expect(within(resolved).getByText(/Resolved/)).toBeTruthy();
+  expect(within(resolved).getByText("Old line note.")).toBeTruthy();
+  expect(within(resolved).queryByRole("button", { name: "Reply" })).toBeNull();
+  fireEvent.click(within(resolved).getByRole("button", { name: "Show GitHub thread on src/a.ts:2 (old line)" }));
+  const card = code(slot, "src/a.ts").getByRole("article", { name: "GitHub thread on src/a.ts:2 (old line)" });
+  expect(within(card).getByRole("button", { name: "Reply" })).toBeTruthy();
+  expect(within(card).getByRole("button", { name: "Unresolve" })).toBeTruthy();
+  const fold = code(slot, "src/a.ts").getByRole("button", { name: "Outdated (1)" });
+  expect(code(slot, "src/a.ts").queryByText("This moved.")).toBeNull();
+  fireEvent.click(fold);
+  expect(code(slot, "src/a.ts").getByText("This moved.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: /^Next: Caching/ }));
+  await waitFor(() => expect(slot.container.querySelector('[data-file="src/b.ts"]')).toBeTruthy());
+  fireEvent.click(await code(slot, "src/b.ts").findByRole("button", { name: "File comments (1)" }));
+  expect(code(slot, "src/b.ts").getByText("Document this file.")).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+test("a card shows the latest two replies and a long message's start until asked; Show the fix and ⋯ Open on GitHub go there", async () => {
+  const long = `**Blocking:** ${"Why upper case here, when nothing else is? ".repeat(8)}`;
+  const { slot } = await renderWorkspace({ rpc: {
+    getReviewThreads: () => ({ threads: [{ ...threads()[0], comments: [said("c1", 111, "me", long, 48), said("c2", 112, "alice", "It's a constant.", 5), said("c6", 116, "me", "Is it?", 4), said("c7", 117, "alice", "Yes, see the fix.", 3)] }, ...threads().slice(1)] }),
+    getFeedback: () => ({ feedback: feedbackOf([mine({ assessment: { ...mine().assessment!, file: "src/b.ts", line: 1 } })]) }),
+  } });
+  const card = within(await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:2" }));
+  const touch = expect.arrayContaining(TOUCH_CONTROL.split(" "));
+  expect(card.queryByText("It's a constant.")).toBeNull();
+  const earlier = card.getByRole("button", { name: "Show 1 earlier reply" });
+  expect(earlier.className.split(" ")).toEqual(touch);
+  fireEvent.click(earlier);
+  expect(card.getByText("It's a constant.")).toBeTruthy();
+  const more = card.getByRole("button", { name: "More" });
+  expect(more.getAttribute("aria-expanded")).toBe("false");
+  expect(more.className.split(" ")).toEqual(touch);
+  fireEvent.click(more);
+  expect(card.getByRole("button", { name: "Less" }).getAttribute("aria-expanded")).toBe("true");
+  fireEvent.click(card.getByRole("button", { name: "More on the thread on src/a.ts:2" }));
+  fireEvent.click(within(await slot.findByRole("dialog")).getByRole("button", { name: "Open on GitHub" }));
+  expect(slot.inspection.navigateCalls).toContainEqual({ method: "openUrl", url: "https://github.com/acme/web/pull/42#discussion_r111" });
+  // The agent's check found the fix in another chapter.
+  fireEvent.click(card.getByRole("button", { name: /^Show the fix/ }));
+  await waitFor(() => expect(slot.container.querySelector('[data-file="src/b.ts"]')).toBeTruthy());
+  slot.lifecycle.unmount();
+});
+
+test("a thread card hidden in the code keeps one plain line: its replies, and who said what first; a resolved one hides to its pill", async () => {
+  const { slot } = await renderWorkspace();
+  const line = (card: HTMLElement) => card.querySelector("p.truncate")?.textContent;
+  const yours = await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  fireEvent.click(within(yours).getByRole("button", { name: "Hide" }));
+  expect(line(yours)).toBe("1 reply · You: Blocking: Why upper case?");
+  fireEvent.click(code(slot, "src/a.ts").getByRole("button", { name: "Show GitHub thread on src/a.ts:2 (old line)" }));
+  fireEvent.click(within(code(slot, "src/a.ts").getByRole("article", { name: "GitHub thread on src/a.ts:2 (old line)" })).getByRole("button", { name: "Hide" }));
+  expect(code(slot, "src/a.ts").getByRole("group", { name: "GitHub thread on src/a.ts:2 (old line), folded" })).toBeTruthy();
+  fireEvent.click(code(slot, "src/a.ts").getByRole("button", { name: "Outdated (1)" }));
+  const daves = code(slot, "src/a.ts").getAllByRole("article").find((card) => within(card).queryByText("This moved."))!;
+  fireEvent.click(within(daves).getByRole("button", { name: "Hide" }));
+  expect(line(daves)).toBe("@dave: This moved.");
+  slot.lifecycle.unmount();
+});
+
+test("leaving a review forgets the comment last gone to, so reopening it doesn't open its fold again", async () => {
+  let { slot } = await renderWorkspace();
+  const list = await openComments(slot);
+  fireEvent.click(list.getByRole("button", { name: "1 resolved · 1 outdated" }));
+  fireEvent.click(list.getByRole("button", { name: /^@dave · / }));
+  await waitFor(() => expect(code(slot, "src/a.ts").getByText("This moved.")).toBeTruthy());
+  slot.lifecycle.unmount();
+  ({ slot } = await renderWorkspace());
+  await openComments(slot);
+  expect(code(slot, "src/a.ts").getByRole("button", { name: "Outdated (1)" }).getAttribute("aria-expanded")).toBe("false");
+  slot.lifecycle.unmount();
+});
+
+test("Reply posts now: on your thread through your feedback, on someone else's as a reply; both read again after", async () => {
+  const { slot, rpc } = await renderWorkspace();
+  const card = await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  // Your thread has the agent's drafted reply.
+  fireEvent.click(within(card).getByRole("button", { name: "Send reply" }));
+  await waitFor(() => expect(rpc.replyToFeedback).toHaveBeenCalledWith({ targetKey: "pr-42", threadId: "t1", body: "Thanks, I'll look again.", account: "me" }));
+  await waitFor(() => expect(rpc.getReviewThreads).toHaveBeenCalledTimes(2));
+  fireEvent.click(code(slot, "src/a.ts").getByRole("button", { name: "Show GitHub thread on src/a.ts:2 (old line)" }));
+  const bobs = code(slot, "src/a.ts").getByRole("article", { name: "GitHub thread on src/a.ts:2 (old line)" });
+  fireEvent.click(within(bobs).getByRole("button", { name: "Reply" }));
+  fireEvent.change(within(bobs).getByRole("textbox", { name: "Reply on src/a.ts:2 (old line)" }), { target: { value: "Agreed." } });
+  fireEvent.click(within(bobs).getByRole("button", { name: "Send reply" }));
+  await waitFor(() => expect(rpc.replyToThread).toHaveBeenCalledWith({ targetKey: "pr-42", inReplyTo: 113, body: "Agreed.", threadId: "t2", account: "me" }));
+  await waitFor(() => expect(rpc.getReviewThreads).toHaveBeenCalledTimes(3));
+  slot.lifecycle.unmount();
+});
+
+test("images in GitHub's comments, by anyone, and in the agent's words show as links; your own draft's stay as written", async () => {
+  const image = (alt: string) => `![${alt}](https://attacker.example/${alt}.png)`;
+  const { slot } = await renderWorkspace({ rpc: {
+    getReviewThreads: () => ({ threads: [{ ...threads()[0], comments: [said("c1", 111, "bob", `Look ${image("bob")}`, 48), said("c2", 112, "alice", '<img src="https://attacker.example/alice.gif">', 5)] }] }),
+    getFeedback: () => ({ feedback: feedbackOf([], null) }),
+    getReplyDrafts: () => ({ drafts: [{ threadId: "t1", body: `Reply ${image("reply")}`, author: "agent", updatedAt: now }] }),
+    getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [
+      { file: "src/a.ts", line: 1, side: "RIGHT", body: `Mine ${image("mine")}` },
+      { file: "src/a.ts", line: 2, side: "RIGHT", author: "agent", body: `Agent ${image("agent")}`, evidence: `Checked ${image("evidence")}` },
+    ] }, stale: [], discussions: [{ file: "src/a.ts", line: 1, side: "RIGHT", waiting: false, entries: [
+      { author: "reviewer", kind: "message", body: `Asked ${image("asked")}`, createdAt: now - HOUR },
+      { author: "agent", kind: "message", body: `Answered ${image("answer")}`, createdAt: now },
+    ] }] }),
+  } });
+  const cards = code(slot, "src/a.ts");
+  await cards.findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  fireEvent.click(cards.getByRole("button", { name: "How the agent checked" }));
+  const texts = cards.getAllByTestId("bb-markdown").map((markdown: HTMLElement) => markdown.textContent);
+  expect(texts).toEqual(expect.arrayContaining([
+    "Look [Image: bob](https://attacker.example/bob.png)",
+    "[Image](https://attacker.example/alice.gif)",
+    "Agent [Image: agent](https://attacker.example/agent.png)",
+    "Checked [Image: evidence](https://attacker.example/evidence.png)",
+    "Reply [Image: reply](https://attacker.example/reply.png)",
+    "Answered [Image: answer](https://attacker.example/answer.png)",
+    "Mine ![mine](https://attacker.example/mine.png)",
+    "Asked ![asked](https://attacker.example/asked.png)",
+  ]));
+  expect(texts.join("\n")).not.toMatch(/!\[(bob|agent|evidence|reply|answer)\]|<img/);
+  expect(slot.container.querySelector("img[src^='https://attacker.example']")).toBeNull();
+  slot.lifecycle.unmount();
+});
+
+// The text around a suggestion was linked with it, so its code could show as links (96-recheck-2 P2 #3).
+test("a suggestion by the agent or on GitHub shows its code as written, and only the words around it link images", async () => {
+  const suggestion = (alt: string) => `Use:\n\tthe logo\n![${alt}](https://attacker.example/${alt}.png)\n\n\`\`\`suggestion\n<img src={logo} alt="Logo" />\nif (!["a"].includes(kind)) return;\n\`\`\``;
+  const { slot } = await renderWorkspace({ rpc: {
+    getReviewThreads: () => ({ threads: [{ ...threads()[0], comments: [said("c1", 111, "bob", suggestion("bob"), 48)] }] }),
+    getFeedback: () => ({ feedback: feedbackOf([], null) }),
+    getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [
+      { file: "src/a.ts", line: 2, side: "RIGHT", author: "agent", body: suggestion("agent") },
+    ] }, stale: [], discussions: [] }),
+  } });
+  const cards = code(slot, "src/a.ts");
+  await cards.findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  const shown = cards.getAllByRole("figure", { name: "Suggested change" }).map((figure: HTMLElement) => figure.querySelector("pre code")?.textContent);
+  expect(shown).toEqual(['<img src={logo} alt="Logo" />\nif (!["a"].includes(kind)) return;', '<img src={logo} alt="Logo" />\nif (!["a"].includes(kind)) return;']);
+  const texts = cards.getAllByTestId("bb-markdown").map((markdown: HTMLElement) => markdown.textContent);
+  expect(texts.join("\n")).toMatch(/\[Image: bob\]\(https:\/\/attacker\.example\/bob\.png\)/);
+  expect(texts.join("\n")).toMatch(/\[Image: agent\]\(https:\/\/attacker\.example\/agent\.png\)/);
+  slot.lifecycle.unmount();
+});
+
+// GitHub sends a comment written in its editor with CRLF line endings, so its suggestion wasn't boxed (96-recheck-3 P3).
+test("a suggestion written with CRLF line endings shows as a suggested change", async () => {
+  const body = "Shorter:\r\n\r\n```suggestion\r\n  three(); four;\r\n```\r\nThanks.";
+  const { slot } = await renderWorkspace({ rpc: {
+    getReviewThreads: () => ({ threads: [{ ...threads()[0], comments: [said("c1", 111, "bob", body, 48)] }] }),
+    getFeedback: () => ({ feedback: feedbackOf([], null) }),
+  } });
+  const cards = code(slot, "src/a.ts");
+  await cards.findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  expect(cards.getByRole("figure", { name: "Suggested change" }).querySelector("pre code")?.textContent).toBe("  three(); four;");
+  expect(cards.getByText("Thanks.")).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+// GitHub, as CommonMark, also ends the block at an indented or longer fence, so the box showed lines it doesn't apply
+// (96-recheck-3 P3).
+test("a suggestion ends where GitHub ends it, at an indented or longer fence", async () => {
+  for (const close of ["   ```", "`````"]) {
+    const body = `\`\`\`suggestion\n  three();\n${close}\nAfter.\n\`\`\``;
+    const { slot } = await renderWorkspace({ rpc: {
+      getReviewThreads: () => ({ threads: [{ ...threads()[0], comments: [said("c1", 111, "bob", body, 48)] }] }),
+      getFeedback: () => ({ feedback: feedbackOf([], null) }),
+    } });
+    const cards = code(slot, "src/a.ts");
+    await cards.findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+    expect(cards.getByRole("figure", { name: "Suggested change" }).querySelector("pre code")?.textContent).toBe("  three();");
+    slot.lifecycle.unmount();
+  }
+});
+
+// The box opened only on three backticks, which a suggestion holding a fence can't use (96-fixes-4, SUMMARY SG).
+test("a suggestion opened with a longer fence shows the shorter fence it holds in one box", async () => {
+  const body = "Add the example:\n\n````suggestion\nRun:\n```sh\nnpm test\n```\n````\nAfter.";
+  const { slot } = await renderWorkspace({ rpc: {
+    getReviewThreads: () => ({ threads: [{ ...threads()[0], comments: [said("c1", 111, "bob", body, 48)] }] }),
+    getFeedback: () => ({ feedback: feedbackOf([], null) }),
+  } });
+  const cards = code(slot, "src/a.ts");
+  await cards.findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  expect(cards.getAllByRole("figure", { name: "Suggested change" }).map((figure: HTMLElement) => figure.querySelector("pre code")?.textContent)).toEqual(["Run:\n```sh\nnpm test\n```"]);
+  expect(cards.getByText("After.")).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+test("a resolve in the code shows in the list at once, and one in the list in the code: they read the same threads", async () => {
+  let resolved = false;
+  const { slot, rpc } = await renderWorkspace({ rpc: {
+    getReviewThreads: vi.fn(() => ({ threads: threads().map((thread) => thread.id === "t1" ? { ...thread, isResolved: resolved } : thread) })),
+    resolveThread: vi.fn(() => { resolved = true; return { ok: true }; }),
+    unresolveThread: vi.fn(() => { resolved = false; return { ok: true }; }),
+  } });
+  const list = await openComments(slot);
+  const resolve = within(code(slot, "src/a.ts").getByRole("article", { name: "GitHub thread on src/a.ts:2" })).getByRole("button", { name: "Resolve" });
+  // Unlike the draft, it doesn't wait for Submit, and says so.
+  expect(document.getElementById(resolve.getAttribute("aria-describedby")!)?.textContent).toBe("Posts to GitHub now");
+  fireEvent.click(resolve);
+  await waitFor(() => expect(rpc.resolveThread).toHaveBeenCalledWith({ targetKey: "pr-42", threadId: "t1", account: "me" }));
+  // Yours: your feedback is read from GitHub again too.
+  await waitFor(() => expect(rpc.refreshFeedback).toHaveBeenCalledWith({ targetKey: "pr-42" }));
+  await list.findByRole("button", { name: "2 resolved · 1 outdated" });
+  // Resolved from its card, the card stays open where it is rather than fold to a pill, so its button keeps the focus.
+  expect(within(code(slot, "src/a.ts").getByRole("article", { name: "GitHub thread on src/a.ts:2" })).getByRole("button", { name: "Unresolve" })).toBeTruthy();
+  fireEvent.click(list.getByRole("button", { name: "2 resolved · 1 outdated" }));
+  fireEvent.click(list.getByRole("button", { name: /^Expand GitHub thread on src\/a\.ts:2$/ }));
+  fireEvent.click(within(list.getByRole("article", { name: "GitHub thread on src/a.ts:2" })).getByRole("button", { name: "Unresolve" }));
+  await waitFor(() => expect(rpc.unresolveThread).toHaveBeenCalledWith({ targetKey: "pr-42", threadId: "t1", account: "me" }));
+  await waitFor(() => expect(within(code(slot, "src/a.ts").getByRole("article", { name: "GitHub thread on src/a.ts:2" })).queryByText("Resolved")).toBeNull());
+  slot.lifecycle.unmount();
+});
+
+test("until the page has verified your GitHub account, Reply and Resolve say so and post nothing", async () => {
+  const { slot, rpc } = await renderWorkspace({ rpc: { checkRepoAccess: () => new Promise(() => {}) } });
+  const card = await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  fireEvent.click(within(card).getByRole("button", { name: "Resolve" }));
+  fireEvent.click(within(card).getByRole("button", { name: "Send reply" }));
+  await waitFor(() => expect(vi.mocked(toast.error).mock.calls).toEqual([
+    ["Your GitHub account isn’t verified yet. Try again in a moment, or reload this review."],
+    ["Your GitHub account isn’t verified yet. Try again in a moment, or reload this review."],
+  ]));
+  expect(rpc.resolveThread).not.toHaveBeenCalled();
+  expect(rpc.replyToFeedback).not.toHaveBeenCalled();
+  // The drafted reply is still there to send.
+  expect(within(card).getByRole("button", { name: "Send reply" })).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+test("the check strip says what the agent checked, when, and how much is addressed; Check again and ↻ ask again", async () => {
+  const { slot, rpc } = await renderWorkspace();
+  const list = await openComments(slot);
+  const strip = list.getByRole("status", { name: "" });
+  expect(strip.textContent).toContain("Agent’s check·abcdef1·2h0 of 1 addressed");
+  // How much is addressed starts its own line, with no dot left at the end of the first.
+  expect(within(strip).getByText("0 of 1 addressed").parentElement!.className).toContain("basis-full");
+  expect(within(strip).getByText("older commit")).toBeTruthy();
+  fireEvent.click(within(strip).getByRole("button", { name: "Check again" }));
+  await waitFor(() => expect(rpc.checkFeedback).toHaveBeenCalledWith({ targetKey: "pr-42" }));
+  fireEvent.click(slot.getByRole("button", { name: "Refresh comments" }));
+  await waitFor(() => expect(rpc.refreshFeedback).toHaveBeenCalledWith({ targetKey: "pr-42" }));
+  expect(rpc.getReviewThreads).toHaveBeenCalledTimes(2);
+  // The server says your threads changed: read again.
+  await slot.emitRealtime("feedback:pr-42", {});
+  await waitFor(() => expect(rpc.getFeedback).toHaveBeenCalledTimes(2));
+  slot.lifecycle.unmount();
+});
+
+test("Refresh comments stays focusable while it reads GitHub again, unavailable rather than disabled", async () => {
+  let finish!: () => void;
+  const { slot, rpc } = await renderWorkspace({ rpc: { refreshFeedback: vi.fn(() => new Promise((resolve) => { finish = () => resolve({ feedback: feedbackOf() }); })) } });
+  await openComments(slot);
+  const refresh = slot.getByRole("button", { name: "Refresh comments" });
+  refresh.focus();
+  fireEvent.click(refresh);
+  await waitFor(() => expect(refresh.getAttribute("aria-disabled")).toBe("true"));
+  expect([refresh.hasAttribute("disabled"), document.activeElement === refresh]).toEqual([false, true]);
+  fireEvent.click(refresh);
+  expect(rpc.refreshFeedback).toHaveBeenCalledTimes(1);
+  finish();
+  await waitFor(() => expect(refresh.getAttribute("aria-disabled")).toBe("false"));
+  slot.lifecycle.unmount();
+});
+
+test("when GitHub can't be read the list says so, apart from having no threads, and still shows what it has", async () => {
+  let { slot } = await renderWorkspace({ rpc: { getReviewThreads: () => ({ threads: [], error: "HTTP 502: Bad Gateway" }) } });
+  let list = await openComments(slot);
+  expect(list.getByText("Couldn’t load review threads.")).toBeTruthy();
+  expect(list.getByText("HTTP 502: Bad Gateway")).toBeTruthy();
+  // Your thread, as your feedback last read it.
+  expect(list.getByRole("button", { name: /^You · Author replied · src\/a\.ts:2/ })).toBeTruthy();
+  slot.lifecycle.unmount();
+  ({ slot } = await renderWorkspace({ rpc: { getReviewThreads: () => ({ threads: threads().slice(0, 1), error: "gh timed out after 120s" }) } }));
+  list = await openComments(slot);
+  expect(list.getByText("Couldn’t load every thread: gh timed out after 120s")).toBeTruthy();
+  slot.lifecycle.unmount();
+  ({ slot } = await renderWorkspace({ rpc: { getReviewThreads: () => ({ threads: [] }), getFeedback: () => ({ feedback: feedbackOf([], null) }), getReplyDrafts: () => ({ drafts: [] }) } }));
+  list = await openComments(slot);
+  fireEvent.click(chip(list, "On GitHub"));
+  expect(list.getByText("Nothing on GitHub yet.")).toBeTruthy();
+  expect(list.queryByText(/Couldn’t load/)).toBeNull();
+  slot.lifecycle.unmount();
+});
+
+test("⋯ Comment options: hide nits, show resolved threads, add a comment by line, and the PR on GitHub", async () => {
+  const { slot } = await renderWorkspace();
+  const list = await openComments(slot);
+  const options = async () => { fireEvent.click(slot.getByRole("button", { name: "Comment options" })); return within(await slot.findByRole("dialog")); };
+  let menu = await options();
+  fireEvent.click(menu.getByRole("switch", { name: "Hide nits" }));
+  await waitFor(() => expect(list.queryByRole("button", { name: /src\/b\.ts:1 · Nit/ })).toBeNull());
+  expect(list.getByText("1 blocking · 1 nit · 1 hidden")).toBeTruthy();
+  fireEvent.click(menu.getByRole("switch", { name: "Show resolved threads" }));
+  expect(list.getByRole("button", { name: "@bob · Resolved · src/a.ts:2 (old line)" })).toBeTruthy();
+  fireEvent.click(menu.getByRole("button", { name: "Open PR on GitHub" }));
+  expect(slot.inspection.navigateCalls).toContainEqual({ method: "openUrl", url: "https://github.com/acme/web/pull/42" });
+  menu = await options();
+  fireEvent.click(menu.getByRole("button", { name: "Add comment by line…" }));
+  const form = within(list.getByRole("region", { name: "New comment" }));
+  expect((form.getByRole("combobox", { name: "Comment file" }) as HTMLSelectElement).value).toBe("src/a.ts");
+  expect(form.getByRole("textbox", { name: "Draft comment" })).toBeTruthy();
+  // The box's controls are 44px on any touch screen, an iPad's included. Line 1 has a comment, which saving replaces.
+  const touch = expect.arrayContaining(TOUCH_CONTROL.split(" "));
+  for (const control of [form.getByRole("combobox", { name: "Severity" }), form.getByRole("button", { name: "Cancel" }), form.getByRole("button", { name: "Ask agent" }), form.getByRole("button", { name: "Replace comment" })]) {
+    expect(control.className.split(" ")).toEqual(touch);
+  }
+  slot.lifecycle.unmount();
+});
+
+test("Hide nits never hides a nit that needs you, and Not submitted keeps its heading saying how many it hides", async () => {
+  const draftOf = (nits: Array<Record<string, unknown>>, stale: Array<Record<string, unknown>> = []) => () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: nits }, stale, discussions: [] });
+  let { slot } = await renderWorkspace({ rpc: { getDraft: draftOf([
+    { file: "src/a.ts", line: 2, side: "RIGHT", severity: "nit", body: "Name it." },
+    { file: "src/b.ts", line: 1, side: "RIGHT", author: "agent", severity: "nit", body: "Spacing." },
+  ]) } });
+  let list = await openComments(slot);
+  fireEvent.click(slot.getByRole("button", { name: "Comment options" }));
+  fireEvent.click(within(await slot.findByRole("dialog")).getByRole("switch", { name: "Hide nits" }));
+  await waitFor(() => expect(list.queryByRole("button", { name: /src\/b\.ts:1/ })).toBeNull());
+  expect(headings(list)).toContainEqual(expect.stringMatching(/^Not submitted/));
+  expect(list.getByText("2 nits · 2 hidden")).toBeTruthy();
+  fireEvent.click(chip(list, "Not submitted"));
+  expect(list.queryByText("No comments to submit yet.")).toBeNull();
+  expect(list.getByText("2 nits · 2 hidden")).toBeTruthy();
+  slot.lifecycle.unmount();
+  // A nit on an older diff holds Submit, so it stays: in Needs you, and in the code.
+  ({ slot } = await renderWorkspace({ rpc: {
+    getDraft: draftOf([{ file: "src/a.ts", line: 1, side: "RIGHT", severity: "nit", body: "Drafted before the last push." }], [{ file: "src/a.ts", line: 1, side: "RIGHT" }]),
+    getFeedback: () => ({ feedback: feedbackOf([]) }),
+    getReplyDrafts: () => ({ drafts: [] }),
+  } }));
+  list = await openComments(slot);
+  expect(chip(list, "Needs you").getAttribute("aria-label")).toBe("Needs you, 1");
+  fireEvent.click(chip(list, "Needs you"));
+  expect(list.queryByText("Nothing needs you.")).toBeNull();
+  expect(rows(list)).toEqual([expect.stringMatching(/^Older diff · not submitted · src\/a\.ts:1/)]);
+  expect(code(slot, "src/a.ts").getByText("Drafted before the last push.")).toBeTruthy();
+  expect(list.queryByText(/hidden/)).toBeNull();
+  slot.lifecycle.unmount();
+});
+
+test("with Hide nits on, a nit on an older diff counts wherever comments are counted: the file's row, All files and the chapter's end", async () => {
+  setHideNits(true);
+  const { slot } = await renderWorkspace({ rpc: {
+    getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [
+      { file: "src/a.ts", line: 1, side: "RIGHT", severity: "nit", body: "Drafted before the last push." },
+      { file: "src/a.ts", line: 2, side: "RIGHT", severity: "nit", body: "Name it." },
+    ] }, stale: [{ file: "src/a.ts", line: 1, side: "RIGHT" }], discussions: [] }),
+    getReviewThreads: () => ({ threads: [] }),
+    getFeedback: () => ({ feedback: feedbackOf([]) }),
+    getReplyDrafts: () => ({ drafts: [] }),
+  } });
+  // The older diff's nit holds Submit, so it shows and counts; the other nit is hidden and doesn't.
+  await code(slot, "src/a.ts").findByText("Drafted before the last push.");
+  expect(code(slot, "src/a.ts").queryByText("Name it.")).toBeNull();
+  expect(within(slot.container.querySelector<HTMLElement>('[data-file="src/a.ts"] [data-file-header]')!).getByText("1 not submitted")).toBeTruthy();
+  expect(within(slot.getByRole("main")).getByText("1 comment")).toBeTruthy();
+  const nav = within(slot.getByRole("navigation", { name: "Chapters" }).parentElement!);
+  fireEvent.click(nav.getByRole("button", { name: "All files" }));
+  expect(within((await slot.findByRole("list", { name: "All files" })).querySelector<HTMLElement>('[title="src/a.ts"]')!.closest("li")!).getByText("1 draft comment")).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+test("on a touch screen, which has no + beside a line, the empty list says to tap a line", async () => {
+  const matchMedia = vi.spyOn(window, "matchMedia").mockImplementation((query: string) => ({ matches: query === "(pointer: coarse)", media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false }) as MediaQueryList);
+  try {
+    const { slot } = await renderWorkspace({ rpc: { getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [] }, stale: [] }), getReviewThreads: () => ({ threads: [] }), getFeedback: () => ({ feedback: feedbackOf([], null) }), getReplyDrafts: () => ({ drafts: [] }) } });
+    const list = await openComments(slot);
+    expect(list.getByText("No comments yet. Tap a line to comment.")).toBeTruthy();
+    slot.lifecycle.unmount();
+  } finally {
+    matchMedia.mockRestore();
+  }
+});
+
+test("with a mouse, chips past a narrow panel's edge scroll sideways, the end fading until the last one shows", async () => {
+  const sizes = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) { return this.getAttribute("role") === "radiogroup" ? 420 : 0; });
+  const widths = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) { return this.getAttribute("role") === "radiogroup" ? 366 : 0; });
+  try {
+    const { slot } = await renderWorkspace();
+    const list = await openComments(slot);
+    const chips = list.getByRole("radiogroup", { name: "Show" });
+    expect(chips.className).toContain("overflow-x-auto");
+    expect(chips.className).toContain("pointer-coarse:flex-wrap");
+    await waitFor(() => expect(chips.hasAttribute("data-more")).toBe(true));
+    expect(chips.className).toContain("data-[more]:[mask-image:");
+    chips.scrollLeft = 54;
+    fireEvent.scroll(chips);
+    await waitFor(() => expect(chips.hasAttribute("data-more")).toBe(false));
+    slot.lifecycle.unmount();
+  } finally {
+    sizes.mockRestore();
+    widths.mockRestore();
+  }
+});
+
+test("empty states: no comments yet; nothing needs you, with Show all; a local review's comments stay in BB", async () => {
+  const none = { getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [] }, stale: [] }), getReviewThreads: () => ({ threads: [] }), getFeedback: () => ({ feedback: feedbackOf([], null) }), getReplyDrafts: () => ({ drafts: [] }) };
+  let { slot } = await renderWorkspace({ rpc: none });
+  let list = await openComments(slot);
+  // With a mouse: click, and the keyboard's way in.
+  expect(list.getByText("No comments yet. Select a line, or click + beside one. From the keyboard: ⋯ › Add comment by line.")).toBeTruthy();
+  slot.lifecycle.unmount();
+  ({ slot } = await renderWorkspace({ rpc: { getFeedback: () => ({ feedback: feedbackOf([], null) }), getReplyDrafts: () => ({ drafts: [] }), getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: comments.slice(0, 1) }, stale: [] }) } }));
+  list = await openComments(slot);
+  fireEvent.click(chip(list, "Needs you"));
+  expect(list.getByText("Nothing needs you.")).toBeTruthy();
+  fireEvent.click(list.getByRole("button", { name: "Show all" }));
+  expect(chip(list, "All").getAttribute("aria-checked")).toBe("true");
+  slot.lifecycle.unmount();
+  ({ slot } = await renderWorkspace({ review: { kind: "ref" }, rpc: none }));
+  list = await openComments(slot);
+  expect(list.getByText("Comments on a local review stay in BB.")).toBeTruthy();
+  expect(list.queryByRole("radio")).toBeNull();
+  slot.lifecycle.unmount();
+});
+
+test("the Finish bar says the verdict and how many go, and opens Finish review", async () => {
+  const { slot } = await renderWorkspace();
+  await openComments(slot);
+  const bar = slot.getByRole("button", { name: "Finish review" }).parentElement!;
+  expect(bar.textContent).toContain("Comment · 3 to send");
+  fireEvent.click(slot.getByRole("button", { name: "Finish review" }));
+  await slot.findByRole("heading", { name: "Finish review" });
+  // A merged PR has nothing to finish.
+  slot.lifecycle.unmount();
+  const merged = await renderWorkspace({ review: { prState: "MERGED", archivedAt: 1 } });
+  await openComments(merged.slot);
+  expect(merged.slot.queryByRole("button", { name: "Finish review" })).toBeNull();
+  merged.slot.lifecycle.unmount();
+});
+
+test("while you write in the code, the list says where, and Show in diff goes back there", async () => {
+  const { slot } = await renderWorkspace();
+  const list = await openComments(slot);
+  fireEvent.click(within(code(slot, "src/a.ts").getByRole("article", { name: "Draft comment on src/a.ts:2" })).getByRole("button", { name: "Edit" }));
+  expect(list.getByText("Writing a comment on src/a.ts:2")).toBeTruthy();
+  fireEvent.click(list.getByRole("button", { name: "Show in diff" }));
+  expect(code(slot, "src/a.ts").getByRole("textbox", { name: "Draft comment" })).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+test("an ask from your review summary has no place in the code: its row opens it in place", async () => {
+  const ask: FeedbackItem = { id: "summary:1", kind: "summary", title: "Make the TTL configurable", thread: null, replyDraft: null, assessment: { id: "summary:1", verdict: "disputed", evidence: "The author says a constant is enough.", assessedAt: now } };
+  const { slot } = await renderWorkspace({ rpc: { getFeedback: () => ({ feedback: feedbackOf([mine(), ask]) }) } });
+  const list = await openComments(slot);
+  fireEvent.click(list.getByRole("button", { name: "From your review summary · the PR · agent's check: Author disagrees" }));
+  expect(within(list.getByRole("article", { name: "Make the TTL configurable" })).getByText("The author says a constant is enough.")).toBeTruthy();
+  slot.lifecycle.unmount();
+});
+
+test("GitHub threads in code off hides them there; showing one from the list turns them on again", async () => {
+  const { slot } = await renderWorkspace();
+  await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:2" });
+  // Diff options' switch, from the band.
+  const threadsInCode = async () => {
+    fireEvent.click(within(slot.getByRole("main")).getByRole("button", { name: "Diff options" }));
+    return slot.findByRole("switch", { name: "GitHub threads in code" });
+  };
+  fireEvent.click(await threadsInCode());
+  fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+  await waitFor(() => expect(code(slot, "src/a.ts").queryByRole("article", { name: "GitHub thread on src/a.ts:2" })).toBeNull());
+  const list = await openComments(slot);
+  fireEvent.click(list.getByRole("button", { name: /^You · Author replied · src\/a\.ts:2/ }));
+  expect(await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:2" })).toBeTruthy();
+  expect((await threadsInCode()).getAttribute("aria-checked")).toBe("true");
+  slot.lifecycle.unmount();
+});
+
+// The strip scrolls sideways, so it clips up and down too: it needs the chips' 2px ring inside it.
+test("the filter chips' strip leaves room for their 2px focus ring on top as below, and keeps its place in the row", async () => {
+  const { slot } = await renderWorkspace();
+  const list = await openComments(slot);
+  const strip = list.getByRole("radiogroup", { name: "Show" });
+  const classes = strip.className.split(" ");
+  expect(classes).toEqual(expect.arrayContaining(["overflow-x-auto", "py-0.5", "-mt-0.5"]));
+  expect(classes).not.toContain("pb-0.5");
+  for (const chip of within(strip).getAllByRole("radio")) {
+    expect(chip.className.split(" ")).toContain("focus-visible:ring-2");
+    expect(chip.className).not.toMatch(/ring-offset/);
+  }
+  slot.lifecycle.unmount();
+});
+
+test("on your own PR, every thread whose latest comment isn't yours or a bot's needs your reply, and bots' threads fold", async () => {
+  const bot = { id: "t5", isResolved: false, isOutdated: false, path: "src/b.ts", line: 1, side: "LEFT", subjectType: "LINE", comments: [{ ...said("c6", 116, "ci[bot]", "Coverage dropped.", 3), bot: true }] };
+  const erin = { id: "t6", isResolved: false, isOutdated: false, path: "src/a.ts", line: 1, side: "RIGHT", subjectType: "LINE", comments: [said("c7", 117, "erin", "Why bb?", 2)] };
+  // The server keeps everyone's threads on your PR, erin's too.
+  const { label: _, ...yours } = mine();
+  const erins: FeedbackItem = { ...yours, id: "t6", title: "Why bb?", replyDraft: null, assessment: null, thread: {
+    ...mine().thread!, id: "t6", commentId: 117, path: "src/a.ts", line: 1, body: "Why bb?", replies: [], author: "erin",
+    status: "question", replyAt: now - 2 * HOUR, needsReply: { comments: 1, at: now - 2 * HOUR, by: "erin" },
+  } };
+  const { slot, rpc } = await renderWorkspace({
+    review: { ownPr: true, author: "me" },
+    rpc: {
+      getReviewThreads: vi.fn(() => ({ threads: [...threads(), bot, erin] })),
+      getFeedback: vi.fn(() => ({ feedback: feedbackOf([mine({ assessment: null, replyDraft: null }), erins], null) })),
+      refreshFeedback: vi.fn(() => ({ feedback: feedbackOf([mine({ assessment: null, replyDraft: null }), erins], null) })),
+      getReplyDrafts: vi.fn(() => ({ drafts: [] })),
+    },
+  });
+  const list = await openComments(slot);
+  // alice answered yours; dave's, carol's and erin's wait for you; the bot's doesn't.
+  expect(headings(list)[0]).toBe("Needs you · 5");
+  expect(rows(list).filter((row: string | null) => row?.includes("Needs your reply"))).toEqual([
+    "Needs your reply to @erin · src/a.ts:1",
+    "Needs your reply to @alice · Your thread · src/a.ts:2 · Blocking",
+    "Needs your reply to @dave · Outdated · src/a.ts:9",
+    "Needs your reply to @carol · File comment · src/b.ts",
+  ]);
+  // The row leads with the chip its card has; whose thread it is starts the line under it.
+  const alices = list.getByRole("button", { name: /^Needs your reply to @alice/ });
+  expect(within(alices).getByText("Needs your reply to @alice")).toBeTruthy();
+  expect(alices.textContent).toContain("Your thread · It's a constant.");
+  expect(list.getByRole("button", { name: "1 resolved · 1 from bots" }).getAttribute("aria-expanded")).toBe("false");
+  // No one answers your feedback on your own PR: no "Yours: … handled", and no agent's check of it.
+  expect(list.queryByText(/^Yours:/)).toBeNull();
+  expect(list.queryByRole("button", { name: "Check again" })).toBeNull();
+  // A reply to erin's goes through what the server keeps of your PR's threads, which it reads again at once.
+  const card = await code(slot, "src/a.ts").findByRole("article", { name: "GitHub thread on src/a.ts:1" });
+  expect(within(card).getByText("Needs your reply to @erin")).toBeTruthy();
+  fireEvent.click(within(card).getByRole("button", { name: "Reply" }));
+  fireEvent.change(within(card).getByRole("textbox", { name: "Reply on src/a.ts:1" }), { target: { value: "It reads better." } });
+  fireEvent.click(within(card).getByRole("button", { name: "Send reply" }));
+  await waitFor(() => expect(rpc.replyToFeedback).toHaveBeenCalledWith({ targetKey: "pr-42", threadId: "t6", body: "It reads better.", account: "me" }));
+  expect(rpc.replyToThread).not.toHaveBeenCalled();
+  slot.lifecycle.unmount();
+});
+
+test("a comment on a line only in the folder shows in the list with Not on GitHub yet, going with Send, uncounted by Not submitted, never in the PR's code", async () => {
+  const local = { file: "src/a.ts", line: 2, side: "LOCAL", body: "Only in the folder." };
+  const getDraft = () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [local] }, stale: [], discussions: [] });
+  const { slot } = await renderWorkspace({ review: { ownPr: true, feature: { environmentId: "env1", hostId: "h", machine: "MaxBook", path: "/src/web", branch: "feat", baseRef: "main", repo: "acme/web" } }, rpc: { getDraft } });
+  const list = await openComments(slot);
+  const row = (await list.findByText("Only in the folder.")).closest<HTMLElement>("[data-comment-row]")!;
+  const pill = within(row).getByText("Not on GitHub yet");
+  expect(pill.closest("[title]")?.getAttribute("title")).toBe("On a line only in the folder. It goes with Send, and can’t post until it’s pushed.");
+  // Said in words, not only in the pill's tooltip, which a phone can't show.
+  expect(within(row).getByText("Draft · goes with Send")).toBeTruthy();
+  expect(list.getByText("1 isn’t on GitHub yet. It goes with Send, not Submit.")).toBeTruthy();
+  expect(list.getAllByRole("radio").map((radio) => radio.getAttribute("aria-label"))).toContain("Not submitted, 0");
+  expect(code(slot, "src/a.ts").queryByText("Only in the folder.")).toBeNull();
+  slot.lifecycle.unmount();
+});

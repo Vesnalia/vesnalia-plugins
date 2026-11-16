@@ -1,0 +1,48 @@
+{
+  "name": "bb-plugin-diff-plus",
+  "version": "1.2.1",
+  "license": "MIT AND CC-BY-SA-4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nfour/bb-plugins.git",
+    "directory": "bb-plugin-diff-plus"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "bb": ">=0.48",
+    "bbPluginSdk": ">=0.6.94"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "dev": "bb plugin dev",
+    "check": "tsc --noEmit",
+    "test": "node --test src/*.test.ts",
+    "icons": "node scripts/icons.mjs"
+  },
+  "bb": {
+    "name": "Diff Plus",
+    "description": "Browse the files in BB's Diff tab as a folder tree, with counts and +/- per folder.",
+    "branding": {
+      "icon": "FileDiff"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "dependencies": {
+    "picomatch": "^4.0.7",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.94",
+    "@radix-ui/react-dropdown-menu": "^2.2.1",
+    "@types/node": "^22.20.5",
+    "@types/picomatch": "^4.0.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}

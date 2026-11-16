@@ -1,0 +1,52 @@
+{
+  "name": "bb-plugin-system-messages-tab",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Moves [bb system] notices and messages from other threads out of \"Your messages\" into their own tab, dates every outline entry, and lists entries newest first.",
+  "license": "MIT",
+  "keywords": [
+    "bb-plugin",
+    "chat",
+    "navigation"
+  ],
+  "engines": {
+    "bb": ">=0.48",
+    "bbPluginSdk": ">=0.6.94"
+  },
+  "bb": {
+    "name": "System Messages Tab",
+    "description": "Moves [bb system] notices and messages from other threads out of \"Your messages\" into their own tab, dates every outline entry, and lists entries newest first.",
+    "branding": {
+      "icon": "Bell"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build": "bb plugin build . && node scripts/strip-map-paths.mjs"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.94",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.11.9",
+    "prettier": "^3.9.10",
+    "typescript": "^5.7.0"
+  },
+  "author": "FlowGoCrazy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlowGoCrazy/bb-plugin-system-messages-tab.git"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

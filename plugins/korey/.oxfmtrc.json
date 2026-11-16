@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    ".turbo/",
+    "coverage/",
+    ".serena/",
+    "bun.lock",
+    "korey.openapi.json",
+    "generated/"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "name": "bb-plugin-gitea",
+  "version": "1.1.3",
+  "description": "Gitea issues and pull requests inside BB, backed by the Gitea tea CLI.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nick-Motion/bb-plugin-gitea.git"
+  },
+  "type": "module",
+  "engines": {
+    "bb": ">=0.44",
+    "bbPluginSdk": ">=0.5.29"
+  },
+  "bb": {
+    "name": "Gitea",
+    "description": "Gitea issues and pull requests inside BB, backed by the Gitea tea CLI.",
+    "branding": {
+      "icon": "./icons/teacup.svg",
+      "experimental_icons": {
+        "teacup": "./icons/teacup.svg"
+      }
+    },
+    "server": "./server.ts",
+    "host": "./host.ts",
+    "app": "./app.tsx"
+  },
+  "scripts": {
+    "build": "bb plugin build .",
+    "dev": "bb plugin dev .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "files": [
+    "dist",
+    "server.ts",
+    "host.ts",
+    "branch-contract.ts",
+    "branch-inputs.ts",
+    "branch-order.ts",
+    "branch-provider.ts",
+    "worktree-git.ts",
+    "environment-picker.tsx",
+    "pull-diff.ts",
+    "display-cache.ts",
+    "pull-files-view.ts",
+    "auto-fixer.ts",
+    "draft-title.ts",
+    "app.tsx",
+    "components",
+    "lib",
+    "icons",
+    "skills",
+    "README.md",
+    "CHANGELOG.md",
+    "PLUGIN_OVERVIEW.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@pierre/trees": "1.0.0-beta.6",
+    "@radix-ui/react-slot": "^1.3.0",
+    "@radix-ui/react-tabs": "^1.1.17",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.5.29",
+    "@pierre/diffs": "^1.2.9",
+    "@radix-ui/react-popover": "^1.1.23",
+    "@radix-ui/react-select": "^2.3.3",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "better-sqlite3": "^12.11.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cron-parser": "^5.10.1",
+    "hono": "^4.13.10",
+    "jsdom": "^30.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^3.4.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vitest": "^4.1.1"
+  }
+}

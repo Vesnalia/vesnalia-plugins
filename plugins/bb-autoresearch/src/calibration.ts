@@ -1,0 +1,635 @@
+// Calibration: gates on the baseline, then repeated A/A measurement on every
+// bench host. Produces the noise floor, the minimum detectable effect, and
+// the cost of one evaluation per host, recorded as a segment. Each host then
+// decides with its own win threshold (v1); the segment's columns hold the
+// worst host's numbers. A host much noisier than its peers is not used, and a
+// guardrail that can't be judged fails calibration. Changing the oracle
+// mid-run calibrates again on the current best and starts a new segment.
+import { BenchTransferError } from "./bench.ts";
+import type { Ctx } from "./context.ts";
+import type { BenchHostRow, StudyRow } from "./db/store.ts";
+import { guardrailProblems, worstGuardrailCalibration, type GuardrailCalibration } from "./guardrails.ts";
+import { chanceRatio, hostThresholdsText, NOISY_REPLACEMENTS, noisyHostText, noisyOutliers, unclearNoisyHostText, type ExcludedHost, type NoisyHost } from "./host-choice.ts";
+import { checkHealth } from "./health.ts";
+import { parseMeasureOutput } from "./metrics.ts";
+import { strategyFor, BenchError, type CalibrationOutcome } from "./noise.ts";
+import { studySingleMachine, withBench, withGateLock, type Pipeline } from "./pipeline.ts";
+import { remoteGates, singleMachineText } from "./single-machine.ts";
+import { RemoteHostLostError } from "./bench-provider/runner.ts";
+import { identityText } from "./identity.ts";
+import { clip } from "./prompts.ts";
+import { ignoreIncludePathspecs } from "./scope.ts";
+import type { HostRunner } from "./host/runner.ts";
+import { bestBranch, oracleHash, segmentRef, type StudySpec } from "./spec.ts";
+
+export interface CalibrationReport {
+  ok: boolean;
+  problems: string[];
+  report: string;
+  baselineSha: string;
+  gateSeconds: number;
+  noiseFloor: number | null;
+  mde: number | null;
+  evalSeconds: number | null;
+  oracleHash: string;
+  details: Record<string, number | string | boolean>;
+  /** Per bench host results (noise floor, MDE, eval cost). */
+  hosts: CalibratedHost[];
+  /** Per guardrail: A/A noise and CI half-width (worst host that measures). */
+  guardrails: GuardrailCalibration[];
+  /** Things the human should know that don't fail calibration (a bench host left out for its noise, a scope pattern). */
+  warnings: string[];
+  finishedAt: number;
+}
+
+/** One bench host in a calibration report or segment. */
+export interface CalibratedHost {
+  hostId: string;
+  name: string;
+  mode: string;
+  noiseFloor: number;
+  mde: number;
+  evalSeconds: number;
+  report: string;
+  guardrails?: GuardrailCalibration[];
+  sideRuns?: number | null;
+  runSeconds?: number | null;
+  /** Not used: much noisier than its peers (why, in words). Absent: it measures. */
+  excluded?: string;
+}
+
+export async function runCalibration(ctx: Ctx, pipeline: Pipeline, studyId: string): Promise<CalibrationReport> {
+  const { store } = ctx;
+  const study = store.study(studyId)!;
+  const spec = store.spec(study);
+  const runner = ctx.bb.hostRunner(study.host_id!);
+  const repo = study.repo_path!;
+  const timeoutMs = spec.oracle.timeout_minutes * 60_000;
+  const problems: string[] = [];
+
+  const finish = (partial: Partial<CalibrationReport> & { baselineSha: string; oracleHash: string }): CalibrationReport => ({
+    ok: problems.length === 0,
+    problems,
+    report: "",
+    gateSeconds: 0,
+    noiseFloor: null,
+    mde: null,
+    evalSeconds: null,
+    details: {},
+    hosts: [],
+    guardrails: [],
+    warnings: [],
+    finishedAt: ctx.now(),
+    ...partial,
+  });
+
+  // 1. Baseline: the existing best (re-calibration) or the spec's base ref.
+  const existingBest = await runner.resolveRef(repo, `refs/heads/${bestBranch(study.slug)}`);
+  // Before any promotion the baseline follows the spec's base ref; after one, re-calibration measures best.
+  // Mid-run (an oracle change) it always measures the current best.
+  const hasPromotions = Boolean(study.best_sha && study.base_sha && study.best_sha !== study.base_sha);
+  const useBest = Boolean(study.best_sha) && (hasPromotions || store.hasRun(study.id));
+  const baseSha = useBest ? study.best_sha : await runner.resolveRef(repo, spec.study.base);
+  if (!baseSha) {
+    problems.push(`base ref ${JSON.stringify(spec.study.base)} not found in ${repo}`);
+    return finish({ baselineSha: "", oracleHash: oracleHash(spec) });
+  }
+
+  // 2. Oracle hash includes the content of protected paths at the baseline.
+  // (git ls-tree doesn't expand `**` pathspecs, so the host filters the whole tree with the scope matcher.)
+  const prot = await runner.protectedHash(repo, baseSha, spec.scope.protected);
+  const hash = oracleHash(spec, prot.hash);
+  const protectedWarnings =
+    spec.scope.protected.length && prot.files === 0
+      ? [`[scope] protected (${spec.scope.protected.join(", ")}) matches no files at the baseline: a typo? The benchmark harness, if it lives in the repo, is then neither protected nor part of the oracle hash.`]
+      : [];
+  const scopeWarnings = await trackedIgnoredWarning(runner, repo, baseSha, spec.scope.ignore ?? []);
+
+  // 3. Gates on the baseline (single-machine mode: holding the edit host's bench lock, like every gate).
+  // With gates on remote bench hosts, they run there instead, once the machines have joined (below).
+  const gatesRemote = remoteGates(spec);
+  let gateStarted = ctx.now();
+  if (spec.oracle.gate.length && !gatesRemote) {
+    const red = await withGateLock(ctx, study, null, async () => {
+      const dir = await runner.checkout(repo, `${study.slug}-gate`, baseSha);
+      for (const command of spec.oracle.gate) {
+        const r = await runner.exec({ cwd: dir, command, timeoutMs });
+        if (r.exitCode !== 0) return `gate is red on the baseline: ${clip(command, 200)} exited ${r.exitCode}${r.timedOut ? " (timeout)" : ""}: ${clip(`${r.stdout}\n${r.stderr}`.trim(), 600)}`;
+      }
+      return null;
+    });
+    if (red) {
+      problems.push(red);
+      return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds: (ctx.now() - gateStarted) / 1000 });
+    }
+  }
+  let gateSeconds = (ctx.now() - gateStarted) / 1000;
+  const single = studySingleMachine(store, study, spec);
+  // Who the plugin's commits in the repo are by, read fresh on the edit host.
+  pipeline.forgetIdentity(study.id);
+  const identity = await pipeline.commitIdentity(study);
+
+  // 3b. Remote bench hosts: the provider can lend what the spec asks for, and every slot's machine joins on the baseline.
+  const remoteWarnings: string[] = [];
+  let remoteRows: BenchHostRow[] = [];
+  if ((spec.oracle.remote_bench ?? []).length) {
+    const fleet = pipeline.remote;
+    if (!fleet) {
+      problems.push("remote bench hosts are not available in this plugin instance");
+      return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds });
+    }
+    const v = await fleet.validate(study, spec);
+    remoteWarnings.push(...v.warnings);
+    if (v.problems.length) {
+      problems.push(...v.problems);
+      return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds, warnings: remoteWarnings });
+    }
+    const joined = await fleet.joinForCalibration(study, baseSha);
+    if (joined.problems.length || !joined.hosts.length) {
+      problems.push(...(joined.problems.length ? joined.problems : ["remote bench: no machine joined"]));
+      return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds, warnings: remoteWarnings });
+    }
+    remoteRows = joined.hosts;
+    if (gatesRemote && spec.oracle.gate.length) {
+      const gateHost = remoteRows.find((h) => spec.oracle.remote_bench[store.remoteHostByBench(study.id, h.host_id)?.entry ?? -1]?.gates) ?? remoteRows[0]!;
+      gateStarted = ctx.now();
+      const red = await withBench(ctx, study, gateHost.host_id, "gate", null, async () => {
+        const site = pipeline.site(study, gateHost);
+        const dir = await site.checkout("gate", baseSha, "best", "baseline gates");
+        for (const command of spec.oracle.gate) {
+          const r = await site.runner.run({ cwd: dir, command, timeoutMs, label: "gate baseline" });
+          if (r.exitCode !== 0) return `gate is red on the baseline on ${gateHost.name}: ${clip(command, 200)} exited ${r.exitCode}${r.timedOut ? " (timeout)" : ""}: ${clip(`${r.stdout}\n${r.stderr}`.trim(), 600)}`;
+        }
+        return null;
+      });
+      gateSeconds = (ctx.now() - gateStarted) / 1000;
+      if (red) {
+        problems.push(red);
+        return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds, warnings: remoteWarnings });
+      }
+    }
+  }
+
+  // 4. A/A measurement on two checkouts of the baseline on every bench host, each holding its own lock.
+  const strategy = strategyFor(spec.oracle.noise);
+  store.deleteCalibrationSamples(study.id);
+  const hosts = [...pipeline.benchHosts(study).filter((h) => h.mode !== "remote"), ...remoteRows];
+  if (!hosts.length) {
+    problems.push("the study has no bench host");
+    return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds });
+  }
+  const perHost = await Promise.all(hosts.map((h) => calibrateOne(ctx, pipeline, study, h, baseSha, timeoutMs)));
+  for (const r of perHost) if (r.problem) problems.push(r.problem);
+  // A remote machine that left mid-calibration is dropped (its slot fills again later); the others count.
+  for (const r of perHost) if (r.lost) remoteWarnings.push(r.lost);
+  const done = perHost.filter((r): r is CalibratedResult => r.outcome !== null);
+  if (!done.length && !problems.length) problems.push("every bench host left during calibration");
+  if (perHost.some((r) => r.problem) || !done.length) return finish({ baselineSha: baseSha, oracleHash: hash, gateSeconds, warnings: remoteWarnings });
+  // Much noisier than its peers: a BB machine or the edit host leaves the dispatch set, a remote machine is replaced.
+  const { kept: ok, noisy, unclear } = splitNoisyHosts(done, spec, (id) => pipeline.remote?.acceptsNoisy(study, id) ?? false);
+  const noisyWarnings = [...applyNoisyHosts(ctx, pipeline, study, spec, done, noisy, "calibration"), ...unclear];
+  for (const r of ok) if (r.h.mode === "remote") pipeline.remote?.markCalibrated(study, r.h.host_id, r.outcome, baseSha);
+  for (const r of ok) problems.push(...r.outcome.problems.map((p) => (done.length > 1 ? `${r.h.name}: ${p}` : p)));
+  // A guardrail whose CI can't get narrower than its limit can never be judged: fail, with the two fixes.
+  problems.push(...guardrailProblems(ok.map((r) => ({ host: r.h.name, guardrails: r.outcome.guardrails ?? [] })), spec));
+  const first = ok[0]!.outcome;
+  if (first.bestRun) {
+    store.updateStudy(study.id, { best_run_json: JSON.stringify(first.bestRun), best_run_sha: baseSha });
+  }
+  // The segment's columns hold the worst host's numbers; each host decides with its own threshold (measurementMde).
+  const noiseFloor = Math.max(...ok.map((r) => r.outcome.noiseFloor));
+  const mde = Math.max(...ok.map((r) => r.outcome.mde));
+  const evalSeconds = Math.max(...ok.map((r) => r.outcome.evalSeconds));
+  const serialized = single.on && spec.oracle.gate.length > 0;
+  const gateLine = spec.oracle.gate.length
+    ? gatesRemote
+      ? ` Gates take ${gateSeconds.toFixed(1)} s on a remote machine (gates = true): candidates' gates run there too, under that machine's bench lock.`
+      : serialized
+      ? ` Gates take ${gateSeconds.toFixed(1)} s on the edit host, holding the bench, so each candidate occupies the bench about ${(evalSeconds + gateSeconds).toFixed(1)} s.`
+      : ` Gates take ${gateSeconds.toFixed(1)} s on the edit host.`
+    : "";
+  const identityLine = ` ${identityText(identity)}`;
+  const singleLine = single.on || spec.oracle.quiet_bench ? ` ${singleMachineText(single, spec, hosts.find((h) => h.host_id === study.host_id)?.name ?? null)}` : "";
+  const holdoutLine = spec.oracle.holdout ? " Holdout runs on every bench host." : "";
+  const guardrails = worstGuardrailCalibration(ok.map((r) => r.outcome.guardrails ?? []));
+  const guardrailLine = guardrails.length ? ` Guardrails: ${guardrails.map((g) => g.text).join("; ")}.` : "";
+  return finish({
+    baselineSha: baseSha,
+    oracleHash: hash,
+    gateSeconds,
+    noiseFloor,
+    mde,
+    evalSeconds,
+    report: hostsHeadline(spec, ok, noisy) + holdoutLine + gateLine + guardrailLine + singleLine + identityLine,
+    details: { ...first.details, existingBest: existingBest ?? "", benchHosts: ok.length, singleMachine: single.on, quietBench: spec.oracle.quiet_bench, commitIdentity: `${identity.name} <${identity.email}>`, commitIdentitySource: identity.source },
+    hosts: calibratedHosts(done, noisy, spec),
+    guardrails,
+    warnings: [...noisyWarnings, ...scopeWarnings, ...protectedWarnings, ...remoteWarnings, ...(identity.source === "fallback" ? [identityText(identity)] : [])],
+  });
+}
+
+interface HostResult {
+  h: BenchHostRow;
+  outcome: CalibrationOutcome | null;
+  problem: string | null;
+  /** A remote machine left while calibrating (not a calibration failure). */
+  lost: string | null;
+  /** The problem is a failed health check (an automatic recalibration retries it). */
+  health?: boolean;
+}
+
+type CalibratedResult = HostResult & { outcome: CalibrationOutcome };
+
+/** Calibrated hosts split into those that measure and those much noisier than their peers (`max_host_noise_ratio`). */
+export function splitNoisyHosts<T extends { h: Pick<BenchHostRow, "host_id" | "name">; outcome: Pick<CalibrationOutcome, "noiseFloor"> }>(results: readonly T[], spec: StudySpec, keep: (hostId: string) => boolean = () => false): { kept: T[]; noisy: Array<{ r: T; host: NoisyHost }>; unclear: string[] } {
+  const ratio = spec.oracle.max_host_noise_ratio ?? 2;
+  if (spec.oracle.noise === "deterministic" || !(ratio > 0) || results.length < 2) return { kept: [...results], noisy: [], unclear: [] };
+  const samples = calibrationSamples(spec);
+  const outliers = noisyOutliers(results.map((r) => ({ hostId: r.h.host_id, name: r.h.name, noiseFloor: r.outcome.noiseFloor })), ratio, chanceRatio(spec.oracle.noise, samples));
+  const byId = new Map(outliers.filter((o) => o.significant && !keep(o.hostId)).map((o) => [o.hostId, o] as const));
+  const unclear = [
+    ...outliers.filter((o) => !o.significant).map((o) => unclearNoisyHostText(o, ratio, noiseUnit(spec), samples, spec.oracle.noise === "expensive" ? "runs" : "pairs")),
+    ...outliers.filter((o) => o.significant && keep(o.hostId)).map((o) => `${o.name} is much noisier than the other bench hosts (${noisyHostText(o, ratio, noiseUnit(spec))}), but its remote bench entry already replaced ${NOISY_REPLACEMENTS} machines in a row that were too: it is kept, with its own win threshold`),
+  ];
+  return {
+    kept: results.filter((r) => !byId.has(r.h.host_id)),
+    noisy: results.filter((r) => byId.has(r.h.host_id)).map((r) => ({ r, host: byId.get(r.h.host_id)! })),
+    unclear,
+  };
+}
+
+/** A/A samples behind each host's noise floor: calibration pairs (noisy) or runs (expensive). */
+export function calibrationSamples(spec: Pick<StudySpec, "oracle">): number {
+  return spec.oracle.noise === "expensive" ? spec.oracle.protocol.calibration_runs : spec.oracle.protocol.calibration_pairs;
+}
+
+/** "per pair" (noisy) or "per run" (expensive): what a noise floor is measured in. */
+export function noiseUnit(spec: Pick<StudySpec, "oracle">): string {
+  return spec.oracle.noise === "expensive" ? "per run" : "per pair";
+}
+
+/**
+ * Take the noisy hosts out: BB machines and the edit host leave the dispatch
+ * set until the next calibration (`excluded_json`); remote machines are
+ * replaced (during the study's calibration they leave when it ends, so the
+ * replacement calibrates on arrival once the study runs). Every other
+ * calibrated host measures again. Returns one warning line per noisy host.
+ */
+function applyNoisyHosts(ctx: Ctx, pipeline: Pipeline, study: StudyRow, spec: StudySpec, all: readonly CalibratedResult[], noisy: ReadonlyArray<{ r: CalibratedResult; host: NoisyHost }>, when: "calibration" | "recalibration"): string[] {
+  // The segment this calibration opens (as recordCalibration and runAutoRecalibration number it).
+  const segment = when === "recalibration" ? study.segment + 1 : ctx.store.candidateCount(study.id) > 0 ? study.segment + 1 : Math.max(1, study.segment);
+  const { store } = ctx;
+  const limit = spec.oracle.max_host_noise_ratio ?? 2;
+  const noisyIds = new Set(noisy.map((n) => n.r.h.host_id));
+  for (const r of all) if (r.h.mode !== "remote" && !noisyIds.has(r.h.host_id)) store.updateBenchHost(study.id, r.h.host_id, { excluded_json: null });
+  const lines: string[] = [];
+  for (const { r, host } of noisy) {
+    const why = noisyHostText(host, limit, noiseUnit(spec));
+    if (r.h.mode === "remote") {
+      if (when === "calibration") pipeline.remote?.markNoisy(study, r.h.host_id, `much noisier than the other bench hosts: ${why}`);
+      else {
+        const row = store.remoteHostByBench(study.id, r.h.host_id);
+        if (row) pipeline.remote?.leave(row, `much noisier than the other bench hosts: ${why}`, { expected: true });
+      }
+      lines.push(`${r.h.name} is much noisier than the other bench hosts (${why}): it is replaced by a new machine, which calibrates on arrival.`);
+    } else {
+      const ex: ExcludedHost = { reason: why, noise: host.noise, peers: host.peers, segment, at: ctx.now() };
+      store.updateBenchHost(study.id, r.h.host_id, { excluded_json: JSON.stringify(ex) });
+      lines.push(`${r.h.name} is much noisier than the other bench hosts (${why}): it measures nothing until the next calibration.`);
+    }
+    store.event(study.id, "bench.noisy_host", "plugin", { host: r.h.host_id, mode: r.h.mode, noise: host.noise, peers: host.peers, ratio: Math.round(host.ratio * 100) / 100, limit, action: r.h.mode === "remote" ? "replaced" : "excluded", when });
+  }
+  return lines;
+}
+
+/** The report's per-host records: every calibrated host, the noisy ones marked. */
+function calibratedHosts(all: readonly CalibratedResult[], noisy: ReadonlyArray<{ r: CalibratedResult; host: NoisyHost }>, spec: StudySpec): CalibratedHost[] {
+  const why = new Map(noisy.map((n) => [n.r.h.host_id, noisyHostText(n.host, spec.oracle.max_host_noise_ratio ?? 2, noiseUnit(spec))] as const));
+  return all.map((r) => ({
+    hostId: r.h.host_id,
+    name: r.h.name,
+    mode: r.h.mode,
+    noiseFloor: r.outcome.noiseFloor,
+    mde: r.outcome.mde,
+    evalSeconds: r.outcome.evalSeconds,
+    report: r.outcome.report,
+    guardrails: r.outcome.guardrails ?? [],
+    sideRuns: r.outcome.sideRuns ?? null,
+    runSeconds: r.outcome.runSeconds ?? null,
+    ...(why.has(r.h.host_id) ? { excluded: why.get(r.h.host_id)! } : {}),
+  }));
+}
+
+/**
+ * The report's headline. One host: its own report. Several: each host's win
+ * threshold (its own, never below min_effect), quietest first, then the
+ * quietest host's report, and the hosts left out.
+ */
+export function hostsHeadline(spec: StudySpec, kept: ReadonlyArray<{ h: Pick<BenchHostRow, "name">; outcome: Pick<CalibrationOutcome, "mde" | "noiseFloor" | "report"> }>, noisy: ReadonlyArray<{ r: { h: Pick<BenchHostRow, "name"> }; host: NoisyHost }> = []): string {
+  const minEffect = spec.oracle.protocol.min_effect;
+  const left = noisy.length ? ` Not used: ${noisy.map((n) => `${n.r.h.name} (${noisyHostText(n.host, spec.oracle.max_host_noise_ratio ?? 2, noiseUnit(spec))})`).join("; ")}.` : "";
+  if (kept.length <= 1) return `${kept[0]?.outcome.report ?? ""}${left}`;
+  const quietest = kept.reduce((a, r) => (r.outcome.mde < a.outcome.mde ? r : a), kept[0]!);
+  const thresholds = hostThresholdsText(kept.map((r) => ({ name: r.h.name, mde: Math.max(minEffect, r.outcome.mde) })));
+  const noise = [...kept].sort((a, b) => a.outcome.mde - b.outcome.mde).map((r) => `${r.h.name} ${(r.outcome.noiseFloor * 100).toFixed(2)}%`).join(", ");
+  return `${kept.length} bench hosts, each deciding with its own win threshold: ${thresholds} (noise floor ${noiseUnit(spec)}: ${noise}); a candidate goes to the quietest free host. ${quietest.h.name}: ${quietest.outcome.report}${left}`;
+}
+
+/** Calibrate one host for a study-wide calibration; failures become problems, a lost remote machine a note. */
+async function calibrateOne(ctx: Ctx, pipeline: Pipeline, study: StudyRow, h: BenchHostRow, baseSha: string, timeoutMs: number): Promise<HostResult> {
+  try {
+    return { h, outcome: await calibrateHost(ctx, pipeline, study, h, baseSha, timeoutMs), problem: null, lost: null };
+  } catch (e) {
+    if (h.mode === "remote" && (e instanceof RemoteHostLostError || ctx.store.remoteHostByBench(study.id, h.host_id)?.state === "gone")) {
+      return { h, outcome: null, problem: null, lost: `${h.name} left during calibration (${clip(e instanceof Error ? e.message : String(e), 200)}); it was not counted` };
+    }
+    if (e instanceof BenchError) return { h, outcome: null, problem: `${h.name}: ${e.message}: ${clip(e.output.trim(), 600)}`, lost: null };
+    if (e instanceof HealthError) return { h, outcome: null, problem: `${h.name}: ${e.message}`, lost: null, health: true };
+    if (e instanceof BenchTransferError) return { h, outcome: null, problem: `${h.name}: ${e.message}`, lost: null };
+    throw e;
+  }
+}
+
+/** A bench host failed its health check before calibrating. */
+export class HealthError extends Error {}
+
+/**
+ * A repo that tracks files under an ignore pattern (a `build/` directory of
+ * sources, say) would have new files there left out of every candidate: warn
+ * so the human can narrow `[scope] ignore`.
+ */
+export async function trackedIgnoredWarning(runner: { exec: HostRunner["exec"] }, repo: string, sha: string, ignore: readonly string[]): Promise<string[]> {
+  if (!ignore.length) return [];
+  const specs = ignoreIncludePathspecs(ignore).map((p) => `'${p}'`).join(" ");
+  const r = await runner.exec({ cwd: repo, command: `git diff --name-only --no-renames $(git hash-object -t tree /dev/null) ${sha} -- ${specs} | head -n 20`, timeoutMs: 60_000 }).catch(() => null);
+  const paths = r && r.exitCode === 0 ? r.stdout.split("\n").map((l) => l.trim()).filter(Boolean) : [];
+  if (!paths.length) return [];
+  return [
+    `the baseline tracks file(s) matching [scope] ignore (${paths.slice(0, 5).join(", ")}${paths.length > 5 ? ", …" : ""}): changes to them are submitted, but new files next to them are left out of candidates. If they are sources, set [scope] ignore without the pattern that matches them.`,
+  ];
+}
+
+/** The outcome with the largest MDE (the worst host: what the segment's columns hold). */
+export function headlineOutcome<T extends { mde: number }>(outcomes: T[]): T {
+  return outcomes.reduce((w, o) => (o.mde > w.mde ? o : w), outcomes[0]!);
+}
+
+/** Calibrate one bench host: health, transfer, two baseline checkouts, build, A/A, a holdout smoke run. */
+export async function calibrateHost(ctx: Ctx, pipeline: Pipeline, study: StudyRow, h: BenchHostRow, baseSha: string, timeoutMs: number): Promise<CalibrationOutcome> {
+  const { store } = ctx;
+  const spec = store.spec(study);
+  const strategy = strategyFor(spec.oracle.noise);
+  return await withBench(ctx, study, h.host_id, "calibration", null, async () => {
+    const health = await checkHealth(ctx, study, h, spec, "calibration", async () => undefined);
+    if (!health.ok) throw new HealthError(`health check failed: ${health.problems.join("; ")}`);
+    const site = pipeline.site(study, h);
+    site.invalidateBest();
+    const a = await site.checkout("best", baseSha, "best", "baseline");
+    const b = await site.checkout("cand", baseSha, "best", "baseline");
+    if (spec.oracle.build) {
+      for (const dir of [a, b]) {
+        const r = await site.build(dir, spec, "baseline");
+        if (!r.ok) throw new BenchError("best", "build failed on the baseline", r.output);
+      }
+    }
+    if (spec.oracle.holdout) {
+      // The holdout must work on this host; its output is discarded (agents never see it).
+      const r = await site.runner.run({ cwd: a, command: spec.oracle.holdout.measure, timeoutMs, label: "holdout" });
+      const metric = spec.oracle.holdout.metric ?? spec.metric.name;
+      if (r.exitCode !== 0 || parseMeasureOutput(r.stdout).metrics[metric] === undefined) {
+        throw new BenchError("best", `the holdout command does not work on this host (exit ${r.exitCode}, or no METRIC ${metric} line)`, "");
+      }
+    }
+    site.markBestBuilt(baseSha, a);
+    // Side runs are chosen by the strategy (noisy "auto"); it gets single runs to time and repeats them itself.
+    const bench = site.bench(spec, { best: a, candidate: b }, { label: "calibration", sideRuns: 1 });
+    const outcome = await strategy.calibrate({
+      bench,
+      spec,
+      rng: ctx.rng,
+      record: (s) => {
+        for (const [metric, value] of Object.entries(s.metrics)) {
+          store.addSample({ study_id: study.id, candidate_id: null, run: "calibration", pair: s.pair, side: s.side, metric, value, host_id: h.host_id });
+        }
+      },
+    });
+    store.updateBenchHost(study.id, h.host_id, {
+      noise_floor: outcome.noiseFloor,
+      mde: outcome.mde,
+      eval_seconds: outcome.evalSeconds,
+      evals_since_drift: 0,
+      drift_status: null,
+      baseline_json: outcome.baselineRuns ? JSON.stringify({ sha: baseSha, runs: outcome.baselineRuns.slice(0, 20) }) : null,
+      side_runs: outcome.sideRuns ?? null,
+      run_seconds: outcome.runSeconds ?? null,
+    });
+    return outcome;
+  });
+}
+
+/** Persist a finished calibration: the segment, refs, and the study's calibration status. */
+export async function recordCalibration(ctx: Ctx, study: StudyRow, report: CalibrationReport): Promise<void> {
+  const { store } = ctx;
+  if (!report.ok) {
+    store.tx(() => {
+      store.updateStudy(study.id, { calibration_status: "failed", calibration_json: JSON.stringify(report) });
+      store.setStudyState(study.id, "draft", "plugin", { reason: "calibration failed", problems: report.problems });
+    });
+    return;
+  }
+  const runner = ctx.bb.hostRunner(study.host_id!);
+  const repo = study.repo_path!;
+  // A new segment starts only once candidates were judged under the previous oracle.
+  const k = store.candidateCount(study.id) > 0 ? study.segment + 1 : Math.max(1, study.segment);
+  // Create (or keep) studies/<slug>/best at the baseline and pin the segment base.
+  const branch = `refs/heads/${bestBranch(study.slug)}`;
+  const current = await runner.resolveRef(repo, branch);
+  if (current !== report.baselineSha) {
+    const r = await runner.updateRef(repo, branch, report.baselineSha, current);
+    if (!r.ok) throw new Error(`could not set ${bestBranch(study.slug)} to the baseline`);
+  }
+  const segRef = segmentRef(study.slug, k);
+  const seg = await runner.resolveRef(repo, segRef);
+  if (seg !== report.baselineSha) await runner.updateRef(repo, segRef, report.baselineSha, seg);
+  store.tx(() => {
+    store.upsertSegment({
+      study_id: study.id,
+      k,
+      baseline_sha: report.baselineSha,
+      oracle_hash: report.oracleHash,
+      noise_floor: report.noiseFloor,
+      mde: report.mde,
+      eval_seconds: report.evalSeconds,
+      gate_seconds: report.gateSeconds,
+      report: report.report,
+      spec_version: study.spec_version,
+      details_json: JSON.stringify({ hosts: report.hosts, guardrails: report.guardrails ?? [], warnings: report.warnings ?? [] }),
+    });
+    store.updateStudy(study.id, {
+      calibration_status: "ready",
+      calibration_json: JSON.stringify(report),
+      base_sha: store.candidateCount(study.id) > 0 ? study.base_sha : report.baselineSha,
+      best_sha: report.baselineSha,
+      segment: k,
+    });
+    store.event(study.id, "calibration.ready", "plugin", { segment: k, mde: report.mde, noise_floor: report.noiseFloor, eval_seconds: report.evalSeconds, oracle: report.oracleHash, hosts: report.hosts.length, warnings: (report.warnings ?? []).length });
+    if (k > Math.max(1, study.segment)) store.event(study.id, "segment.started", "plugin", { segment: k, baseline: report.baselineSha, oracle: report.oracleHash, spec_version: study.spec_version });
+  });
+}
+
+export interface AutoRecalibration {
+  ok: boolean;
+  /** A bench host failed its health check: nothing changed, and the caller tries again later (`retry_seconds`). */
+  retry?: boolean;
+  problems: string[];
+  /** The new segment (when ok). */
+  segment: number | null;
+  /** Per host: side runs, per-run seconds, noise floor and MDE before and after. */
+  hosts: Array<{ hostId: string; name: string; before: HostCalibration; after: HostCalibration | null }>;
+  report: CalibrationReport | null;
+}
+
+interface HostCalibration {
+  sideRuns: number;
+  runSeconds: number | null;
+  noiseFloor: number | null;
+  mde: number | null;
+}
+
+/** Health-check every host under its own bench lock; the problems of those that fail (remote machines that left are skipped). */
+async function unhealthyHosts(ctx: Ctx, study: StudyRow, hosts: readonly BenchHostRow[], notify: (kind: string, text: string) => Promise<void>): Promise<string[]> {
+  const spec = ctx.store.spec(study);
+  if (!spec.oracle.health.enabled) return [];
+  const out = await Promise.all(
+    hosts.map(async (h) => {
+      try {
+        return await withBench(ctx, study, h.host_id, "calibration", null, async () => {
+          const r = await checkHealth(ctx, study, ctx.store.benchHost(study.id, h.host_id) ?? h, spec, "calibration", notify);
+          return r.ok ? null : `${h.name}: health check failed: ${r.problems.join("; ")}`;
+        });
+      } catch {
+        return null; // calibrateOne sees the same error and reports it
+      }
+    }),
+  );
+  return out.filter((x): x is string => x !== null);
+}
+
+/**
+ * Automatic recalibration (v0.2.4): best's runs got much shorter than at
+ * calibration, so their relative noise grew for that reason alone. A/A on
+ * best on every bench host (side runs chosen again when "auto"), then a new
+ * segment with the SAME oracle: no gates (best passed them), no approval, no
+ * state change. An A/A median that excludes zero is a warning here, not a
+ * failure (both checkouts are best). If the new MDE exceeds `max_mde` the
+ * hosts keep their old calibration and the caller pauses the study. A host
+ * whose health check fails changes nothing (`retry`): the caller tries
+ * again after `retry_seconds`, a bounded number of times (v1).
+ */
+export async function runAutoRecalibration(ctx: Ctx, pipeline: Pipeline, studyId: string, why: string, notify: (kind: string, text: string) => Promise<void> = async () => undefined): Promise<AutoRecalibration> {
+  const { store } = ctx;
+  const study = store.study(studyId)!;
+  const spec = store.spec(study);
+  const baseSha = study.best_sha!;
+  const prev = store.segment(study.id, study.segment);
+  const timeoutMs = spec.oracle.timeout_minutes * 60_000;
+  const hosts = pipeline.benchHosts(study);
+  const snapshot = (h: BenchHostRow): HostCalibration => ({ sideRuns: Math.max(1, h.side_runs ?? 1), runSeconds: h.run_seconds, noiseFloor: h.noise_floor, mde: h.mde });
+  const before = new Map(hosts.map((h) => [h.host_id, { row: h, cal: snapshot(h) }] as const));
+  const problems: string[] = [];
+  const warnings: string[] = [];
+  const hostLines = (after: (id: string) => HostCalibration | null) => hosts.map((h) => ({ hostId: h.host_id, name: h.name, before: before.get(h.host_id)!.cal, after: after(h.host_id) }));
+  // Every host must be healthy first: a failed health check is retried later (the caller), before any A/A runs.
+  const unhealthy = await unhealthyHosts(ctx, study, hosts, notify);
+  if (unhealthy.length) return { ok: false, retry: true, problems: unhealthy, segment: null, hosts: hostLines(() => null), report: null };
+  store.event(study.id, "recalibration.started", "plugin", { segment: study.segment, best: baseSha, reason: why });
+  store.deleteCalibrationSamples(study.id);
+  const results = await Promise.all(hosts.map((h) => calibrateOne(ctx, pipeline, study, h, baseSha, timeoutMs)));
+  for (const r of results) {
+    if (r.problem) problems.push(r.problem);
+    if (r.lost) warnings.push(r.lost);
+  }
+  const restore = () => {
+    for (const { row, cal } of before.values()) {
+      store.updateBenchHost(study.id, row.host_id, { noise_floor: cal.noiseFloor, mde: cal.mde, side_runs: row.side_runs, run_seconds: cal.runSeconds, eval_seconds: row.eval_seconds, baseline_json: row.baseline_json });
+    }
+  };
+  // Health failed between the check and the A/A on a host (and nothing else went wrong): retried like the check.
+  if (problems.length && results.every((r) => !r.problem || r.health)) {
+    restore();
+    return { ok: false, retry: true, problems, segment: null, hosts: hostLines(() => null), report: null };
+  }
+  const done = results.filter((r): r is CalibratedResult => r.outcome !== null);
+  // A host much noisier than its peers is left out (or replaced), so its problems don't count.
+  const { kept: ok, noisy, unclear } = problems.length ? { kept: done, noisy: [], unclear: [] } : splitNoisyHosts(done, spec, (id) => pipeline.remote?.acceptsNoisy(study, id) ?? false);
+  for (const r of ok) {
+    for (const p of r.outcome.problems) {
+      const text = results.length > 1 ? `${r.h.name}: ${p}` : p;
+      // Both checkouts are best: a biased A/A median is chance (or a checkout effect), worth a note, not a pause.
+      if (/excludes zero/u.test(p)) warnings.push(text);
+      else problems.push(text);
+    }
+  }
+  problems.push(...guardrailProblems(ok.map((r) => ({ host: r.h.name, guardrails: r.outcome.guardrails ?? [] })), spec));
+  if (problems.length) {
+    restore();
+    store.tx(() => {
+      store.updateStudy(study.id, { recalibrate_due: null });
+      store.event(study.id, "recalibration.failed", "plugin", { segment: study.segment, problems: problems.slice(0, 5) });
+    });
+    return { ok: false, problems, segment: null, hosts: hostLines(() => null), report: null };
+  }
+  if (!ok.length) {
+    restore();
+    store.updateStudy(study.id, { recalibrate_due: null });
+    return { ok: false, problems: ["every bench host left during the recalibration"], segment: null, hosts: hostLines(() => null), report: null };
+  }
+  warnings.push(...applyNoisyHosts(ctx, pipeline, study, spec, done, noisy, "recalibration"), ...unclear);
+  for (const r of ok) if (r.h.mode === "remote") pipeline.remote?.markCalibrated(study, r.h.host_id, r.outcome, baseSha);
+  const first = ok[0]!.outcome;
+  // A run of best for the new baseline (raw values on the page, single-run classes' cache).
+  if (first.bestRun) store.updateStudy(study.id, { best_run_json: JSON.stringify(first.bestRun), best_run_sha: baseSha });
+  const guardrails = worstGuardrailCalibration(ok.map((r) => r.outcome.guardrails ?? []));
+  const report: CalibrationReport = {
+    ok: true,
+    problems: [],
+    report: `Automatic recalibration on best (${why}). ${hostsHeadline(spec, ok, noisy)}`,
+    baselineSha: baseSha,
+    gateSeconds: prev?.gate_seconds ?? 0,
+    noiseFloor: Math.max(...ok.map((r) => r.outcome.noiseFloor)),
+    mde: Math.max(...ok.map((r) => r.outcome.mde)),
+    evalSeconds: Math.max(...ok.map((r) => r.outcome.evalSeconds)),
+    oracleHash: prev?.oracle_hash ?? oracleHash(spec),
+    details: { ...first.details, auto: true },
+    hosts: calibratedHosts(done, noisy, spec),
+    guardrails,
+    warnings,
+    finishedAt: ctx.now(),
+  };
+  const k = study.segment + 1;
+  const runner = ctx.bb.hostRunner(study.host_id!);
+  const segRef = segmentRef(study.slug, k);
+  const seg = await runner.resolveRef(study.repo_path!, segRef);
+  if (seg !== baseSha) await runner.updateRef(study.repo_path!, segRef, baseSha, seg);
+  const fresh = store.study(study.id)!;
+  store.tx(() => {
+    store.upsertSegment({
+      study_id: study.id,
+      k,
+      baseline_sha: baseSha,
+      oracle_hash: report.oracleHash,
+      noise_floor: report.noiseFloor,
+      mde: report.mde,
+      eval_seconds: report.evalSeconds,
+      gate_seconds: report.gateSeconds,
+      report: report.report,
+      spec_version: fresh.spec_version,
+      details_json: JSON.stringify({ hosts: report.hosts, guardrails: report.guardrails, warnings: report.warnings, auto: true, reason: why }),
+    });
+    store.updateStudy(study.id, { segment: k, calibration_status: "ready", calibration_json: JSON.stringify(report), calibration_approved_at: ctx.now(), recalibrate_due: null });
+    store.event(study.id, "calibration.ready", "plugin", { segment: k, mde: report.mde, noise_floor: report.noiseFloor, eval_seconds: report.evalSeconds, oracle: report.oracleHash, hosts: report.hosts.length, warnings: report.warnings.length, auto: true });
+    store.event(study.id, "segment.started", "plugin", { segment: k, baseline: baseSha, oracle: report.oracleHash, spec_version: fresh.spec_version, auto: true, reason: why });
+  });
+  const after = new Map(ok.map((r) => [r.h.host_id, { sideRuns: Math.max(1, r.outcome.sideRuns ?? 1), runSeconds: r.outcome.runSeconds ?? null, noiseFloor: r.outcome.noiseFloor, mde: r.outcome.mde }] as const));
+  return { ok: true, problems: [], segment: k, hosts: hostLines((id) => after.get(id) ?? null), report };
+}

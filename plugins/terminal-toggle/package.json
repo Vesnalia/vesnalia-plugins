@@ -1,0 +1,49 @@
+{
+  "name": "bb-plugin-terminal-toggle",
+  "version": "0.1.0",
+  "description": "Toggle the last focused native terminal and return to the composer.",
+  "type": "module",
+  "license": "MIT",
+  "files": [
+    "app.tsx",
+    "server.ts",
+    "src",
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "docs/verification.md"
+  ],
+  "engines": {
+    "bbPluginSdk": ">=0.6.104 <1"
+  },
+  "bb": {
+    "name": "Terminal Toggle",
+    "description": "Toggle the last focused native terminal with Ctrl+backtick. Press again to hide the panel and return to the composer.",
+    "branding": {
+      "icon": "Terminal"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.104",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "^26.1.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sonner": "^1.7.4",
+    "typescript": "^5.7.0",
+    "vitest": "^5.0.5"
+  }
+}

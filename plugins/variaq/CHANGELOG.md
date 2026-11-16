@@ -1,0 +1,82 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## 0.6.1 - 2026-10-13
+
+Maintenance release: review-findings fixes and regression coverage; no compatibility or functional changes.
+
+- Convert invalid `--compare` values on `bb variaq report-campaign`, `analyze-runs`, and `analyze-campaign` from an uncaught `ZodError` into structured `PluginError` CLI errors with valid-value hints, preserving valid-comparison behavior and output contracts.
+- Correct the `SECURITY.md` dependency review to the current audit state: the `source-map-js` row is remediated by the 1.2.2 override, five development-only packages remain (three high, two moderate), and advisory lists per package are now complete with production dependencies still clean.
+- Extend regression coverage: operation-level schema violations (e.g. exceeding the group-by limit) surface as structured CLI errors, and the fake VariaQ harness echoes the received `--compare` value into report envelopes/artifacts so tests prove the comparison selector is actually forwarded to the subprocess.
+
+## 0.6.0 - 2026-10-11
+
+Compatibility release for VariaQ 0.8.0 on BB 0.46 / Plugin SDK 0.6.37.
+
+- Accept stable VariaQ 0.8.x series releases and the tested 0.8.0rc1 candidate while retaining 0.6.x and schema-v1 support; paired_solvers comparisons unlock on stable VariaQ 0.8.x.
+- Prepare an immutable stable VariaQ 0.8.0 integration CI leg (pin the stable tag SHA when the VariaQ stable branch is pushed).
+- Pin the transitive development dependency `source-map-js` to 1.2.2 (GHSA-68fv-2mgg-jv7q) via a narrowly scoped npm override; runtime dependencies remain clean. The five remaining development advisories live inside `node_modules/npm` bundled dependencies that npm overrides cannot reach; they require an upstream npm/bb-app refresh and do not affect the shipped plugin.
+- Accept the tested VariaQ 0.8.0rc1 candidate while retaining stable 0.6.x support and schema-v1 validation; preserve candidate suffixes and reject unverified versions.
+- Target BB 0.46 / Plugin SDK 0.6.37, update build dependencies, and verify real local integration with both VariaQ 0.6.0 and 0.8.0rc1.
+- Forward paired_solvers through existing campaign analysis/report tools and CLI, including expanded CSV paths, without plugin-side science. Reject unsupported run-comparison requests clearly.
+- Validate canonical nested campaign solver parameters, including numeric candidate matrices, using non-recursive tool schemas.
+- Keep GPU integration explicitly opt-in with VARIAQ_TEST_GPU=1, independently of CUDA-Q CPU tests.
+- Run hosted legacy and candidate integration against immutable VariaQ commit pins.
+- Document the development-toolchain audit findings separately from runtime dependencies.
+
+- Fix duplicated plot-format requests in `variaq_report_campaign` when both `formats: ["plots"]` and `plots: true` are supplied; `formats` is now canonical and `plots: true` only ensures "plots" appears once.
+- Update GitHub Actions to Node 24-native action versions (`actions/checkout@v6`, `actions/setup-node@v7`, `actions/setup-python@v7`) to resolve Node 20 deprecation warnings while preserving existing workflow behavior.
+- Apply a compatible `overrides` remediation for npm audit findings in the `bb-app` development dependency chain; runtime dependencies remain clean.
+
+## 0.5.0 - 2026-02-19
+
+- VariaQ 0.6.0 compatibility; `schema_version` `1` validation remains mandatory.
+- Campaign planning (`variaq_campaign_plan`) and execution (`variaq_campaign_run`) with VariaQ's max-run guard preserved.
+- Campaign list/show (`variaq_campaign_list`, `variaq_campaign_show`).
+- Analysis tools (`variaq_analyze_runs`, `variaq_analyze_campaign`) that return VariaQ-derived groups, quality/feasibility/timing/resource summaries, and scaling points without recalculating statistics in the plugin.
+- Report generation (`variaq_report_campaign`) for JSON/CSV/Markdown (and optional plots when matplotlib is installed), with safe output path containment under the configured report output directory.
+- Preserved source_run_ids, report IDs, null metrics, and mixed campaign status summaries (success/failed/skipped/unavailable).
+- Hosted CI updated to VariaQ `v0.6.0` with bounded campaign plan/run, analyze-campaign, and report-generation smoke coverage.
+- No external domain semantics, adapter execution, Ollama Fleet, Triagewall, physical QPU, UI, or web API added.
+
+## 0.4.0 - 2025-08-29
+
+- VariaQ 0.5.x compatibility; `schema_version` `1` validation remains mandatory.
+- Family-aware problem generation for all VariaQ 0.5 generic families: `maxcut`, `assignment`, `subset-selection`, `graph-partition`.
+- Capability model consumes VariaQ's per-solver `supported_families` from `variaq capabilities --json`; no plugin-side hardcoded solver/family matrix.
+- Compare-quantum eligibility derived from VariaQ capabilities rather than a plugin-level family check.
+- `variaq_problem_import` agent tool and `bb variaq problem-import` CLI command for importing structured problem artifacts, with safe temporary-file staging and no arbitrary filesystem traversal.
+- Solve/benchmark/compare-quantum paths inspect the problem family and reject unsupported solver/family combinations with structured VariaQ errors before invoking VariaQ where practical.
+- Objective sense (`maximize` / `minimize`) and opaque problem/run IDs are preserved across all families.
+- `runs list`, `run show`, and `run reproduce` are family-neutral.
+- Added `bb variaq status` human formatting for VariaQ capabilities.
+- Smoke script now exercises an `assignment` workflow in addition to MaxCut.
+- Updated hosted CI to VariaQ `v0.5.0` and added generic-family unit and integration coverage.
+- No external domain semantics, adapter execution, Ollama Fleet, Triagewall, physical QPU, UI, or web API added.
+
+## 0.2.0 - 2025-02-10
+
+- Target VariaQ 0.3.x and its stable machine-readable CLI contract.
+- Validate VariaQ `schema_version = "1"` envelopes; reject unknown future schemas with a clear compatibility error.
+- Consume native `--json` output from VariaQ for: `capabilities`, `problem generate/show`, `solve`, `benchmark`, `compare quantum`, `runs list/show`, and `runs reproduce`.
+- Replace plugin-side capability inference with `variaq capabilities --json`; VariaQ is now authoritative about solver, framework, and CUDA-Q availability.
+- Return structured benchmark/comparison results directly; remove the old run-ID scraping path and human comparison-table parsing.
+- Preserve structured errors (`type`, `message`, `run_id`, `context`, `retryable`) and warnings from VariaQ.
+- Preserve VariaQ exit semantics: `0` success, `1` solver/runtime failure, `2` usage/lookup/input error.
+- Reproduction results now include `lineage` and `environment_differences`.
+- Update CI to verify against VariaQ `v0.3.0`.
+
+Physical-QPU execution and remote quantum-provider integration are not part of this release.
+
+## 0.1.0 - 2025-01-22
+
+- Initial thin integration with the standalone VariaQ CLI.
+- Eight experiment and persisted-run tools, plus status and version tools (ten BB agent tools total), and the matching `bb variaq` CLI.
+- Safe argv-based subprocess boundary with bounded output and timeouts.
+- Persisted-run resolution for solve, benchmark, reproduce, and quantum comparison operations.
+- `compare-quantum` support based only on stable run IDs, not presentation prose.
+- Dynamic CUDA-Q CPU, NVIDIA target, driver, and GPU capability detection.
+- Explicit VariaQ nonzero-exit and timeout propagation.
+
+Physical-QPU execution and remote quantum-provider integration are not part of this release.

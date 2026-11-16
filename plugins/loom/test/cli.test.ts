@@ -1,0 +1,1139 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createCli, formatMetrics } from "../src/cli";
+import { formatDuration, readyToLand } from "../src/format";
+import { ensureSpecReview } from "../src/spec-review";
+import type { ProjectMetrics } from "../src/metrics";
+import { TICKET_STATES } from "../src/states";
+import { START_FAILED } from "../src/workers";
+import { FakePort, makeHost, specToml, type Doc } from "./helpers";
+
+let host: ReturnType<typeof makeHost>;
+let fake: FakePort;
+
+beforeEach(() => {
+  fake = new FakePort();
+  host = makeHost({ port: fake });
+  host.bb.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
+});
+
+const run = (argv: string[], threadId?: string) => host.harness.runCli(argv, threadId === undefined ? undefined : { threadId });
+const propose = (edit?: (doc: Doc) => void) => host.projects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_env" });
+const errorOf = (stdout: string) => (JSON.parse(stdout) as { ok: false; error: { code: string; message: string; hint?: string } }).error;
+const humanEvents = () => host.store.events(host.store.projectBySlug("csv")!.id).filter((event) => event.kind === "human.action").map((event) => JSON.parse(event.data_json) as Record<string, unknown>);
+
+async function approved() {
+  await propose();
+  await host.projects.approve("csv", "human");
+}
+
+describe("auto-merge confirm", () => {
+  const SHA = "a".repeat(40);
+  const URL = "https://github.com/acme/shop/pull/1";
+  async function manual() {
+    await propose((doc) => void (doc.merge = { strategy: "pr", forge: { kind: "gh", auto_merge: { method: "squash" } } }));
+    await host.projects.approve("csv", "human");
+    await run(["start", "csv"]);
+    host.store.updateTicket(host.store.ticketByKey("CSV-1")!.id, { state: "pr_open", pr_url: URL, pushed_sha: SHA });
+  }
+  const confirmed = () => host.store.ticketEvents(host.store.ticketByKey("CSV-1")!.id, ["ticket.merge_confirmed"]);
+
+  it("shows the commit it would confirm and confirms only with --sha naming it", async () => {
+    await manual();
+    const asked = await run(["auto-merge", "csv", "confirm", "--ticket", "CSV-1", "--json"]);
+    expect(errorOf(asked.stdout)).toMatchObject({ code: "loom_invalid_input", message: `CSV-1's pull request ${URL} is at ${SHA}. Look at that pull request and commit, then confirm them with --pr ${URL} --sha ${SHA}.` });
+    expect(errorOf((await run(["auto-merge", "csv", "confirm", "--ticket", "CSV-1", "--sha", SHA, "--json"])).stdout)).toMatchObject({ code: "loom_invalid_input", message: expect.stringContaining("--pr") });
+    expect(confirmed()).toEqual([]);
+
+    const done = await run(["auto-merge", "csv", "confirm", "--ticket", "CSV-1", "--pr", URL, "--sha", SHA]);
+    expect(done).toMatchObject({ exitCode: 0 });
+    expect(done.stdout).toContain("Confirmed CSV-1's merge at aaaaaaaaaaaa");
+    expect(confirmed()).toEqual([expect.objectContaining({ actor: "human" })]);
+    expect(humanEvents().at(-1)).toMatchObject({ action: "confirm", key: "CSV-1", pr: URL, sha: SHA });
+  });
+
+  it("refuses once the head has moved since it was printed, and from a Loom thread", async () => {
+    await manual();
+    host.store.updateTicket(host.store.ticketByKey("CSV-1")!.id, { pushed_sha: "b".repeat(40) });
+    const moved = await run(["auto-merge", "csv", "confirm", "--ticket", "CSV-1", "--pr", URL, "--sha", SHA, "--json"]);
+    expect(errorOf(moved.stdout).message).toContain("CSV-1's pull request moved since you saw it");
+    const planner = await run(["auto-merge", "csv", "confirm", "--ticket", "CSV-1", "--pr", URL, "--sha", "b".repeat(40), "--json"], "thr_plan");
+    expect(errorOf(planner.stdout).code).toBe("loom_human_only");
+    expect(confirmed()).toEqual([]);
+  });
+
+  // Tony's re-review: the CLI took the pull request from the ticket's state, so a command printed for PR #1 at sha A
+  // confirmed PR #2 once the ticket moved to it at the same sha.
+  it("refuses once the ticket moved to another pull request at the same commit", async () => {
+    await manual();
+    const printed = errorOf((await run(["auto-merge", "csv", "confirm", "--ticket", "CSV-1", "--json"])).stdout).message;
+    expect(printed).toContain(`--pr ${URL} --sha ${SHA}`);
+    const OTHER = "https://github.com/acme/shop/pull/2";
+    host.store.updateTicket(host.store.ticketByKey("CSV-1")!.id, { pr_url: OTHER });
+    const replayed = await run(["auto-merge", "csv", "confirm", "--ticket", "CSV-1", "--pr", URL, "--sha", SHA, "--json"]);
+    expect(errorOf(replayed.stdout).message).toContain(`CSV-1's pull request moved since you saw it: you confirmed ${URL}, and the ticket's pull request is ${OTHER} now`);
+    expect(confirmed()).toEqual([]);
+  });
+});
+
+describe("read commands", () => {
+  it("list says so when there are no projects, and lists projects otherwise", async () => {
+    expect((await run(["list"])).stdout).toContain("No Loom projects yet");
+    expect(JSON.parse((await run(["list", "--json"])).stdout)).toEqual([]);
+    await propose();
+    const listed = await run(["list"]);
+    expect(listed).toMatchObject({ exitCode: 0 });
+    expect(listed.stdout).toContain("csv");
+    expect(listed.stdout).toContain("draft");
+    expect(listed.stdout).toContain("CSV export");
+    expect(JSON.parse((await run(["list", "--json"])).stdout)).toMatchObject([{ slug: "csv", state: "draft", ticketCount: 0 }]);
+    expect(listed.stdout).toContain("  0 tickets  CSV export");
+    await propose((doc) => doc.ticket.pop());
+    await run(["approve", "csv"]);
+    expect((await run(["list"])).stdout).toContain("  1 ticket   CSV export");
+  });
+
+  it("show prints the state, the goal, the merge setup and the next step", async () => {
+    await propose();
+    const draft = (await run(["show", "csv"])).stdout;
+    expect(draft).toContain("CSV export (csv) · draft");
+    expect(draft).toContain("Let people export their orders");
+    expect(draft).toContain("integration branch loom/csv");
+    expect(draft).toContain("bb loom approve csv");
+    await host.projects.approve("csv", "human");
+    expect((await run(["show", "csv"])).stdout).toContain("bb loom start csv");
+    expect(JSON.parse((await run(["show", "csv", "--json"])).stdout)).toMatchObject({ slug: "csv", state: "ready", ticketCount: 2, ticketCounts: { queued: 2 } });
+  });
+
+  it("spec prints the TOML as a version comment and the file, and takes --version", async () => {
+    await propose();
+    const out = (await run(["spec", "csv"])).stdout;
+    expect(out.startsWith("# csv · spec v1 (draft)")).toBe(true);
+    expect(out).toContain('slug = "csv"');
+    await host.projects.approve("csv", "human");
+    await propose((doc) => (doc.project.name = "Orders CSV"));
+    expect((await run(["spec", "csv"])).stdout).toContain("spec v1 (approved)");
+    const pending = (await run(["spec", "csv", "--version", "2"])).stdout;
+    expect(pending).toContain("spec v2 (pending)");
+    expect(pending).toContain("Orders CSV");
+    expect(JSON.parse((await run(["spec", "csv", "--version", "2", "--json"])).stdout)).toMatchObject({ version: 2, status: "pending" });
+    const missing = await run(["spec", "csv", "--version", "9", "--json"]);
+    expect(missing.exitCode).toBe(1);
+    expect(errorOf(missing.stdout).code).toBe("loom_not_found");
+  });
+
+  it("tickets lists keys, states and dependencies, with a state filter", async () => {
+    await approved();
+    host.projects.block("CSV-2", "waiting", "human");
+    const all = (await run(["tickets", "csv"])).stdout;
+    expect(all).toContain("CSV-1  queued");
+    expect(all).toContain("Order rows");
+    expect(all).toContain("CSV-2  blocked");
+    expect(all).toContain("after CSV-1");
+    const blockedOnly = (await run(["tickets", "csv", "--state", "blocked"])).stdout;
+    expect(blockedOnly).toContain("CSV-2  blocked");
+    expect(blockedOnly).not.toContain("Order rows");
+    expect(JSON.parse((await run(["tickets", "csv", "--state", "queued,blocked", "--json"])).stdout)).toHaveLength(2);
+    expect((await run(["tickets", "csv", "--state", "flying", "--json"])).exitCode).toBe(1);
+  });
+
+  it("ticket prints its posts indented by reply depth", async () => {
+    await approved();
+    const brief = host.store.posts(host.store.ticketByKey("CSV-1")!.id)[0]!;
+    const reply = host.projects.post("CSV-1", { body: "Keep the header row.", parentId: brief.id, author: "human" });
+    host.projects.post("CSV-1", { body: "Agreed.\nSecond line.", parentId: reply.id, author: "human" });
+    const out = (await run(["ticket", "CSV-1"])).stdout;
+    const lines = out.split("\n");
+    expect(lines[0]).toBe("CSV-1 · queued · Order rows");
+    expect(lines).toContain(`#${brief.id} planner brief ${new Date(brief.at).toISOString().slice(0, 16)}Z`);
+    expect(lines).toContain("Build the row mapper.");
+    expect(lines.find((line) => line.includes(`#${reply.id} human reply`))?.startsWith("  #")).toBe(true);
+    expect(lines).toContain("  Keep the header row.");
+    expect(lines.find((line) => line.includes("human reply") && line.startsWith("    #"))).toBeDefined();
+    expect(lines).toContain("    Second line.");
+    const json = JSON.parse((await run(["ticket", "CSV-1", "--json"])).stdout) as { posts: Array<{ depth: number }> };
+    expect(json.posts.map((post) => post.depth)).toEqual([0, 1, 2]);
+    expect(errorOf((await run(["ticket", "CSV-9", "--json"])).stdout).code).toBe("loom_not_found");
+  });
+});
+
+describe("approve and the spec review", () => {
+  it("refuses a draft in its spec review and names --skip-review, which approves it and logs the override", async () => {
+    await propose();
+    await ensureSpecReview(host.engine.ctx, "csv");
+    const refused = await run(["approve", "csv", "--json"]);
+    expect(refused.exitCode).toBe(1);
+    expect(errorOf(refused.stdout)).toMatchObject({ code: "loom_invalid_state", message: "Draft v1 of csv is still in its spec review (round 1 of 3)." });
+    expect(errorOf(refused.stdout).hint).toContain("bb loom approve csv --skip-review");
+
+    const approved = await run(["approve", "csv", "--skip-review"]);
+    expect(approved.exitCode).toBe(0);
+    expect(host.store.projectBySlug("csv")?.state).toBe("ready");
+    expect(humanEvents()).toEqual([{ action: "approve", slug: "csv", pending: false, skipReview: true }]);
+    expect(host.store.specReviews(host.store.projectBySlug("csv")!.id)[0]!.state).toBe("superseded");
+  });
+});
+
+describe("human commands", () => {
+  it("approve creates the tickets and says what comes next", async () => {
+    await propose();
+    const out = await run(["approve", "csv"]);
+    expect(out.exitCode).toBe(0);
+    expect(out.stdout).toContain("CSV-1, CSV-2");
+    expect(out.stdout).toContain("bb loom start csv");
+    expect(errorOf((await run(["approve", "csv", "--json"])).stdout).code).toBe("loom_invalid_state");
+  });
+
+  it("approve applies a pending version, and refuses another version", async () => {
+    await approved();
+    await propose((doc) => (doc.project.name = "Orders CSV"));
+    expect(errorOf((await run(["approve", "csv", "--version", "5", "--json"])).stdout).code).toBe("loom_invalid_state");
+    const out = await run(["approve", "csv", "--version", "2"]);
+    expect(out.stdout).toContain("Applied spec v2");
+    expect(humanEvents().at(-1)).toMatchObject({ action: "approve", slug: "csv", pending: true });
+  });
+
+  it("approve of a pending version says which tickets it queued again", async () => {
+    await approved();
+    const id = host.store.ticketByKey("CSV-1")!.id;
+    host.store.setTicketState(id, "working", "loom");
+    host.store.setTicketState(id, "blocked", "loom", { reason: START_FAILED });
+    const reviewed = host.store.ticketByKey("CSV-2")!.id;
+    for (const state of ["working", "checking", "review", "blocked"] as const) host.store.setTicketState(reviewed, state, "loom");
+    host.store.updateTicket(reviewed, { head_sha: "abc1234", review_round: 1, blocked_reason: "bb refused to start a reviewer: HTTP 400: Unsupported provider claude" });
+    await propose((doc) => (doc.project.name = "Orders CSV"));
+    const out = await run(["approve", "csv", "--version", "2"]);
+    expect(out.stdout).toContain("Queued again, because bb never started its worker: CSV-1.");
+    expect(out.stdout).toContain("Back in review, because bb refused to start its reviewer: CSV-2.");
+    expect(host.store.ticketByKey("CSV-1")!.state).toBe("queued");
+    expect(host.store.ticketByKey("CSV-2")!.state).toBe("review");
+  });
+
+  it("start, pause, resume and archive move the project", async () => {
+    await approved();
+    const started = (await run(["start", "csv"])).stdout;
+    expect(started).toContain("csv is running");
+    expect(started).not.toContain("does not run workers");
+    expect((await run(["pause", "csv"])).stdout).toContain("csv is paused");
+    const resumed = (await run(["resume", "csv"])).stdout;
+    expect(resumed).toContain("csv is running");
+    expect(resumed).not.toContain("does not run workers");
+    expect((await run(["pause", "csv", "--now"])).stdout).toContain("csv is paused");
+    expect(host.store.projectBySlug("csv")?.system_reason).toBe("pause --now");
+    expect((await run(["archive", "csv"])).stdout).toContain("csv is archived");
+    expect(host.store.projectBySlug("csv")?.state).toBe("archived");
+  });
+
+  it("refuses an invalid move with the current state and a hint", async () => {
+    await propose();
+    const out = await run(["start", "csv", "--json"]);
+    expect(out.exitCode).toBe(1);
+    const error = errorOf(out.stdout);
+    expect(error.code).toBe("loom_invalid_state");
+    expect(error.message).toContain("draft");
+    expect(error.hint).toContain("bb loom approve csv");
+    expect(humanEvents()).toEqual([]);
+  });
+
+  it("an unknown project is a loom_not_found error", async () => {
+    const out = await run(["approve", "nope", "--json"]);
+    expect(out.exitCode).toBe(1);
+    expect(errorOf(out.stdout)).toMatchObject({ code: "loom_not_found" });
+  });
+
+  it("post adds a human reply and block blocks a ticket", async () => {
+    await approved();
+    const brief = host.store.posts(host.store.ticketByKey("CSV-1")!.id)[0]!;
+    const posted = await run(["post", "CSV-1", "Please", "keep", "the", "header", "--reply-to", String(brief.id)]);
+    expect(posted.stdout).toContain("Posted #");
+    expect(host.store.posts(host.store.ticketByKey("CSV-1")!.id).at(-1)).toMatchObject({ body: "Please keep the header", parent_id: brief.id, author_kind: "human", kind: "reply" });
+    const other = host.store.posts(host.store.ticketByKey("CSV-2")!.id)[0]!;
+    expect(errorOf((await run(["post", "CSV-1", "hi", "--reply-to", String(other.id), "--json"])).stdout).code).toBe("loom_not_found");
+
+    const blocked = await run(["block", "CSV-1", "Waiting on data"]);
+    expect(blocked.stdout).toContain("CSV-1 is blocked: Waiting on data");
+    expect(host.store.ticketByKey("CSV-1")).toMatchObject({ state: "blocked", blocked_reason: "Waiting on data" });
+    expect(errorOf((await run(["block", "CSV-1", "again", "--json"])).stdout).code).toBe("loom_invalid_state");
+  });
+
+  it("requeue puts a blocked ticket back in the queue with the note as a reply, and refuses a ticket that is not blocked", async () => {
+    await approved();
+    expect(errorOf((await run(["requeue", "CSV-1", "--json"])).stdout)).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("only a blocked ticket") });
+    await run(["block", "CSV-1", "Waiting on data"]);
+    const out = await run(["requeue", "CSV-1", "--note", "Data is ready"]);
+    expect(out.stdout).toContain("CSV-1 is queued again");
+    expect(host.store.ticketByKey("CSV-1")).toMatchObject({ state: "queued", blocked_reason: null });
+    expect(host.store.posts(host.store.ticketByKey("CSV-1")!.id).at(-1)).toMatchObject({ kind: "reply", author_kind: "human", body: "Data is ready" });
+    expect(errorOf((await run(["requeue", "CSV-9", "--json"])).stdout).code).toBe("loom_not_found");
+    await run(["block", "CSV-1", "again"]);
+    expect((await run(["requeue", "CSV-1"])).exitCode).toBe(0);
+    expect(host.store.posts(host.store.ticketByKey("CSV-1")!.id).at(-1)).toMatchObject({ kind: "block" });
+  });
+
+  it("requeue --review sends a blocked ticket back to review as it is, and refuses one with nothing that passed its checks", async () => {
+    await approved();
+    await run(["block", "CSV-1", "Reviewers are down"]);
+    const refused = errorOf((await run(["requeue", "CSV-1", "--review", "--json"])).stdout);
+    expect(refused).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("A plain requeue starts a new worker"), hint: expect.stringContaining("bb loom requeue CSV-1` without --review") });
+    expect(host.store.ticketByKey("CSV-1")?.state).toBe("blocked");
+
+    const ticket = host.store.ticketByKey("CSV-1")!;
+    host.store.updateTicket(ticket.id, { head_sha: "abc1234", branch: "loom/csv/csv-1-1", review_round: 1 });
+    host.store.addPost({ project_id: ticket.project_id, ticket_id: ticket.id, parent_id: null, author_kind: "loom", author_thread_id: null, kind: "check", body: "Checks passed (1 command).", data_json: JSON.stringify({ passed: true, head: "abc1234", runs: [], outside: [], protectedHits: [] }) });
+    host.hostPort.refs.set("refs/heads/loom/csv/csv-1-1", "abc1234");
+    const out = await run(["requeue", "CSV-1", "--review"]);
+    expect(out.stdout).toBe("CSV-1 is back in review as it is: new reviewers judge the commit whose checks passed last, in round 2.\n");
+    expect(host.store.ticketByKey("CSV-1")).toMatchObject({ state: "review", review_round: 2, head_sha: "abc1234" });
+    expect(humanEvents().at(-1)).toEqual({ action: "requeue", slug: "csv", key: "CSV-1", review: true });
+  });
+
+  it("cancel cancels a ticket with a reason and refuses a ticket that cannot move", async () => {
+    await approved();
+    const out = await run(["cancel", "CSV-2", "Not", "needed", "any", "more"]);
+    expect(out.stdout).toContain("CSV-2 is cancelled: Not needed any more");
+    expect(host.store.ticketByKey("CSV-2")?.state).toBe("cancelled");
+    expect(host.store.posts(host.store.ticketByKey("CSV-2")!.id).at(-1)!.body).toBe("Cancelled: Not needed any more");
+    expect(errorOf((await run(["cancel", "CSV-2", "again", "--json"])).stdout).code).toBe("loom_invalid_state");
+  });
+
+  it("block, cancel and post reach the live worker through the engine", async () => {
+    await approved();
+    await run(["start", "csv"]);
+    await host.engine.tick();
+    expect(fake.callsTo("spawnThread")).toHaveLength(1);
+    await run(["post", "CSV-1", "Use", "the", "v2", "API"]);
+    expect(fake.callsTo("send")).toEqual([["thr_w1", { summary: "[loom] Reply on CSV-1 from the human", detail: "Use the v2 API" }]]);
+    await run(["pause", "csv", "--now"]);
+    expect(fake.callsTo("stop")).toEqual([["thr_w1"]]);
+    await run(["block", "CSV-1", "Wrong", "approach"]);
+    expect(host.store.ticketByKey("CSV-1")).toMatchObject({ state: "blocked", branch: "wt-thr_w1" });
+    expect(fake.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(host.store.threadByThreadId("thr_w1")?.state).toBe("ended");
+  });
+
+  it("start is refused with loom_no_checkout when the bb project has no checkout", async () => {
+    await approved();
+    fake.checkout = null;
+    const out = await run(["start", "csv", "--json"]);
+    expect(out.exitCode).toBe(1);
+    expect(errorOf(out.stdout)).toMatchObject({ code: "loom_no_checkout" });
+    expect(host.store.projectBySlug("csv")?.state).toBe("ready");
+    expect(humanEvents()).toEqual([]);
+  });
+
+  it("writes one human.action event per human command and none for a failed one", async () => {
+    await propose();
+    await run(["approve", "csv"]);
+    await run(["start", "csv"]);
+    await run(["post", "CSV-1", "hello"]);
+    await run(["block", "CSV-2", "later"]);
+    await run(["requeue", "CSV-2"]);
+    await run(["cancel", "CSV-2", "dropped"]);
+    await run(["pause", "csv", "--now"]);
+    await run(["resume", "csv"]);
+    await run(["start", "csv"]);
+    await run(["archive", "csv"]);
+    expect(humanEvents()).toEqual([
+      { action: "approve", slug: "csv", pending: false },
+      { action: "start", slug: "csv" },
+      { action: "post", slug: "csv", key: "CSV-1" },
+      { action: "block", slug: "csv", key: "CSV-2" },
+      { action: "requeue", slug: "csv", key: "CSV-2" },
+      { action: "cancel", slug: "csv", key: "CSV-2" },
+      { action: "pause", slug: "csv", now: true },
+      { action: "resume", slug: "csv" },
+      { action: "archive", slug: "csv" },
+    ]);
+  });
+});
+
+describe("land", () => {
+  const doneTicket = (key: string) => {
+    for (const state of ["working", "checking", "review", "approved", "merging", "done"] as const) host.store.setTicketState(host.store.ticketByKey(key)!.id, state, "loom");
+  };
+
+  async function running() {
+    await approved();
+    await run(["start", "csv"]);
+  }
+
+  it("prints the pull request url, and --json prints { url, done }", async () => {
+    await running();
+    doneTicket("CSV-1");
+    const text = await run(["land", "csv"]);
+    expect(text).toMatchObject({ exitCode: 0 });
+    expect(text.stdout).toContain("https://github.com/acme/shop/pull/1");
+    expect(text.stdout).toContain("csv");
+
+    const json = await run(["land", "csv", "--json"]);
+    expect(JSON.parse(json.stdout)).toEqual({ url: "https://github.com/acme/shop/pull/1", done: false });
+    expect(host.hostPort.callsTo("prCreate")).toHaveLength(1);
+    expect(host.hostPort.callsTo("push")).toHaveLength(2);
+  });
+
+  it("passes --title and --ready on, and says when the project is done", async () => {
+    await running();
+    doneTicket("CSV-1");
+    host.projects.block("CSV-2", "x", "human");
+    host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, "cancelled", "human");
+    const out = await run(["land", "csv", "--title", "Export orders", "--ready", "--json"]);
+    expect(JSON.parse(out.stdout)).toEqual({ url: "https://github.com/acme/shop/pull/1", done: true });
+    expect(host.hostPort.callsTo("prCreate")[0]).toMatchObject({ title: "Export orders", draft: false });
+    expect(host.store.projectBySlug("csv")?.state).toBe("done");
+    expect((await run(["land", "csv"])).stdout).toContain("done");
+  });
+
+  it("--direct pushes to the base branch with no pull request, and --json prints where and at which commit", async () => {
+    await running();
+    doneTicket("CSV-1");
+    const text = await run(["land", "csv", "--direct"]);
+    expect(text).toMatchObject({ exitCode: 0 });
+    expect(text.stdout).toContain("Landed csv on origin/main at ");
+    expect(text.stdout).toContain("bb loom land --direct");
+    const json = await run(["land", "csv", "--direct", "--json"]);
+    expect(JSON.parse(json.stdout)).toMatchObject({ url: null, pushed: "origin/main", done: false });
+    expect(host.hostPort.callsTo("prCreate")).toEqual([]);
+    expect(host.hostPort.callsTo("push").map((push) => push.branch)).toEqual(["main", "main"]);
+    expect(humanEvents().filter((event) => event.action === "land")).toEqual([
+      { action: "land", slug: "csv", direct: true },
+      { action: "land", slug: "csv", direct: true },
+    ]);
+  });
+
+  it("refuses --title and --ready with --direct, and writes no event", async () => {
+    await running();
+    doneTicket("CSV-1");
+    for (const extra of [["--ready"], ["--title", "Export orders"]]) {
+      const out = await run(["land", "csv", "--direct", ...extra, "--json"]);
+      expect(out.exitCode).toBe(1);
+      expect(errorOf(out.stdout)).toMatchObject({ code: "loom_invalid_input", message: expect.stringContaining("do not go with --direct") });
+    }
+    expect(humanEvents().filter((event) => event.action === "land")).toEqual([]);
+    expect(host.hostPort.callsTo("push")).toEqual([]);
+  });
+
+  it("writes one human.action event, and none for a refusal", async () => {
+    await running();
+    const refused = await run(["land", "csv", "--json"]);
+    expect(refused.exitCode).toBe(1);
+    expect(humanEvents().filter((event) => event.action === "land")).toEqual([]);
+    doneTicket("CSV-1");
+    await run(["land", "csv"]);
+    expect(humanEvents().filter((event) => event.action === "land")).toEqual([{ action: "land", slug: "csv" }]);
+  });
+
+  it("is refused with loom_invalid_state while a ticket is merging or when no ticket is done, and loom_unavailable with the host's message", async () => {
+    await running();
+    expect(errorOf((await run(["land", "csv", "--json"])).stdout)).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("no ticket is done yet") });
+    doneTicket("CSV-1");
+    for (const state of ["working", "checking", "review", "approved", "merging"] as const) host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, state, "loom");
+    expect(errorOf((await run(["land", "csv", "--json"])).stdout)).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("a ticket is merging") });
+    host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, "done", "loom");
+
+    host.hostPort.scripted.push = [{ outcome: "unavailable", message: "git push to origin failed: rejected" }];
+    const out = await run(["land", "csv", "--json"]);
+    expect(out.exitCode).toBe(1);
+    expect(errorOf(out.stdout)).toMatchObject({ code: "loom_unavailable", message: "git push to origin failed: rejected" });
+  });
+
+  it("show says to land once every ticket is finished, while the project is running or paused", async () => {
+    const land = "Next: Every ticket is finished. Land it with `bb loom land csv`, which pushes the integration branch and opens one pull request.";
+    await running();
+    doneTicket("CSV-1");
+    expect((await run(["show", "csv"])).stdout).toContain("Next: Pause it with `bb loom pause csv`.");
+    host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, "cancelled", "human");
+    expect((await run(["show", "csv"])).stdout).toContain(land);
+    await run(["pause", "csv"]);
+    expect((await run(["show", "csv"])).stdout).toContain(land);
+  });
+
+  it("is refused on the pull request strategy", async () => {
+    await propose((doc) => (doc.merge = { strategy: "pr" }));
+    await host.projects.approve("csv", "human");
+    await run(["start", "csv"]);
+    expect(errorOf((await run(["land", "csv", "--json"])).stdout)).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("pull request per ticket") });
+  });
+});
+
+describe("land on a multi-repo project", () => {
+  const PR = (n: number) => `https://github.com/acme/shop/pull/${n}`;
+  const doneTicket = (key: string) => {
+    for (const state of ["working", "checking", "review", "approved", "merging", "done"] as const) host.store.setTicketState(host.store.ticketByKey(key)!.id, state, "loom");
+  };
+  const withRepos = (doc: Doc) => {
+    doc.repo = [
+      { name: "web", project: "proj_web" },
+      { name: "api", project: "proj_api", base: "trunk", remote: "upstream" },
+    ];
+    doc.ticket[0].repo = "web";
+    doc.ticket[1].repo = "api";
+    doc.ticket[1].depends_on = [];
+  };
+  const landEvents = () => humanEvents().filter((event) => event.action === "land");
+
+  async function running() {
+    fake.addBbProject("proj_web", { host_env: "/src/web" });
+    fake.addBbProject("proj_api", { host_env: "/src/api" });
+    await propose(withRepos);
+    await host.projects.approve("csv", "human");
+    await run(["start", "csv"]);
+  }
+
+  it("prints one line per repo landed, and --json has one entry per repo", async () => {
+    await running();
+    doneTicket("CSV-1");
+    const text = await run(["land", "csv"]);
+    expect(text).toMatchObject({ exitCode: 0, stdout: `Landed the repo "web": ${PR(1)}\nRun \`bb loom land csv\` again after more tickets merge to push them too.\n` });
+
+    doneTicket("CSV-2");
+    const json = await run(["land", "csv", "--json"]);
+    expect(JSON.parse(json.stdout)).toEqual({
+      repos: [
+        { repo: "web", url: PR(1), sha: "base000" },
+        { repo: "api", url: PR(2), sha: "base000" },
+      ],
+      unlanded: [],
+      done: true,
+    });
+    expect(host.hostPort.callsTo("push").map((push) => [push.repo, push.remote])).toEqual([
+      ["/src/web", "origin"],
+      ["/src/web", "origin"],
+      ["/src/api", "upstream"],
+    ]);
+    expect(host.store.projectBySlug("csv")?.state).toBe("done");
+    expect((await run(["land", "csv"])).stdout).toBe(`Landed the repo "web": ${PR(1)}\nLanded the repo "api": ${PR(2)}\nEvery ticket is done or cancelled and every repo with merged work is landed, so the project is done.\n`);
+  });
+
+  it("--repo lands only that repo, records it on the human.action event, and names the repos still to land", async () => {
+    await running();
+    doneTicket("CSV-1");
+    doneTicket("CSV-2");
+    const text = await run(["land", "csv", "--repo", "web"]);
+    expect(text.stdout).toBe(`Landed the repo "web": ${PR(1)}\nStill to land: the repo "api" has merged work that is not landed yet. Run \`bb loom land csv\` to land every repo with merged work.\n`);
+    expect(host.hostPort.callsTo("push").map((push) => push.repo)).toEqual(["/src/web"]);
+    expect(landEvents()).toEqual([{ action: "land", slug: "csv", repo: "web" }]);
+    expect(host.store.projectBySlug("csv")?.state).toBe("running");
+  });
+
+  it("--direct prints where each repo was pushed", async () => {
+    await running();
+    doneTicket("CSV-1");
+    doneTicket("CSV-2");
+    const text = await run(["land", "csv", "--direct"]);
+    expect(text.stdout).toBe(
+      'Landed the repo "web" on origin/main at base000.\nLanded the repo "api" on upstream/trunk at base000.\nEvery ticket is done or cancelled and every repo with merged work is landed, so the project is done.\n',
+    );
+    expect(host.hostPort.callsTo("push").map((push) => [push.repo, push.remote, push.branch])).toEqual([
+      ["/src/web", "origin", "main"],
+      ["/src/api", "upstream", "trunk"],
+    ]);
+    expect(landEvents()).toEqual([{ action: "land", slug: "csv", direct: true }]);
+  });
+
+  it("refuses an unknown repo with the list of repos, and --repo on a single-repo project, with no event", async () => {
+    await running();
+    doneTicket("CSV-1");
+    const unknown = await run(["land", "csv", "--repo", "mobile", "--json"]);
+    expect(unknown.exitCode).toBe(1);
+    expect(errorOf(unknown.stdout)).toEqual({ code: "loom_invalid_input", message: 'Project csv has no repo "mobile"; its repos are web, api.' });
+    expect(landEvents()).toEqual([]);
+    expect(host.hostPort.callsTo("push")).toEqual([]);
+
+    host = makeHost({ port: (fake = new FakePort()) });
+    host.bb.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
+    await approved();
+    await run(["start", "csv"]);
+    doneTicket("CSV-1");
+    expect(errorOf((await run(["land", "csv", "--repo", "web", "--json"])).stdout)).toMatchObject({ code: "loom_invalid_input", message: expect.stringContaining("has no [[repo]] tables") });
+  });
+
+  it("finishes a project whose tickets were all cancelled, with nothing to push", async () => {
+    await running();
+    for (const key of ["CSV-1", "CSV-2"]) host.store.setTicketState(host.store.ticketByKey(key)!.id, "cancelled", "human");
+    const text = await run(["land", "csv"]);
+    expect(text).toMatchObject({ exitCode: 0, stdout: "Every ticket is done or cancelled and every repo with merged work is landed, so the project is done.\n" });
+    expect(host.hostPort.callsTo("push")).toEqual([]);
+    expect(host.store.projectBySlug("csv")?.state).toBe("done");
+  });
+
+  it("reports the repos that landed and the ones that did not when one fails", async () => {
+    await running();
+    doneTicket("CSV-1");
+    doneTicket("CSV-2");
+    host.hostPort.scripted.push = [{ outcome: "ok" }, { outcome: "unavailable", message: "git push to upstream failed: rejected" }];
+    const out = await run(["land", "csv", "--json"]);
+    expect(out.exitCode).toBe(1);
+    expect(errorOf(out.stdout)).toEqual({
+      code: "loom_unavailable",
+      message: `Landed web (${PR(1)}); api did not land. The repo "api" failed: git push to upstream failed: rejected`,
+      hint: "Fix that, then run `bb loom land csv --repo api`.",
+    });
+  });
+});
+
+describe("repos in show, tickets and ticket", () => {
+  const PR = (n: number) => `https://github.com/acme/shop/pull/${n}`;
+  const minute = (at: number) => `${new Date(at).toISOString().slice(0, 16)}Z`;
+  const doneTicket = (key: string) => {
+    for (const state of ["working", "checking", "review", "approved", "merging", "done"] as const) host.store.setTicketState(host.store.ticketByKey(key)!.id, state, "loom");
+  };
+  const withRepos = (doc: Doc) => {
+    doc.repo = [
+      { name: "web", project: "proj_web" },
+      { name: "api", project: "proj_api", base: "trunk", remote: "upstream" },
+    ];
+    doc.ticket[0].repo = "web";
+    doc.ticket[1].repo = "api";
+    doc.ticket[1].depends_on = [];
+  };
+  async function running() {
+    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    fake.addBbProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
+    await propose(withRepos);
+    await host.projects.approve("csv", "human");
+    await run(["start", "csv"]);
+  }
+  const showLines = async () => (await run(["show", "csv"])).stdout.split("\n");
+  const repoBlock = async () => {
+    const lines = await showLines();
+    const start = lines.indexOf("Repos:");
+    return lines.slice(start, start + 3);
+  };
+
+  it("a single-repo project prints show, tickets and ticket with no repo", async () => {
+    await approved();
+    await run(["start", "csv"]);
+    host.projects.block("CSV-2", "waiting", "human");
+    expect((await run(["show", "csv"])).stdout).toBe(
+      [
+        "CSV export (csv) · running",
+        "Goal: Let people export their orders as a CSV file from the admin page.",
+        "Key CSV · base main · integration branch loom/csv",
+        "Spec: approved v1.",
+        "Tickets: 2 (queued 1, blocked 1)",
+        "Planner thread: thr_plan",
+        "Next: Pause it with `bb loom pause csv`.",
+        "",
+      ].join("\n"),
+    );
+    expect((await run(["tickets", "csv"])).stdout).toBe("CSV-1  queued     P2  Order rows\nCSV-2  blocked    P2  Export endpoint  (after CSV-1)\n");
+    const ticket = (await run(["ticket", "CSV-2"])).stdout.split("\n");
+    expect(ticket.slice(0, 3)).toEqual(["CSV-2 · blocked · Export endpoint", "Blocked: waiting", ""]);
+    expect(ticket.join("\n")).not.toContain("Repo");
+  });
+
+  it("show lists each repo of a multi-repo project with its bb project, base, integration branch and landed pull request", async () => {
+    await running();
+    const lines = await showLines();
+    expect(lines.slice(0, 6)).toEqual([
+      "CSV export (csv) · running",
+      "Goal: Let people export their orders as a CSV file from the admin page.",
+      "Key CSV · base main · integration branch loom/csv",
+      "Repos:",
+      "  web · bb project shop-web (proj_web) · base main · integration branch loom/csv · not landed yet",
+      "  api · bb project shop-api (proj_api) · base trunk · integration branch loom/csv · not landed yet",
+    ]);
+    expect(lines[6]).toBe("Spec: approved v1.");
+
+    doneTicket("CSV-1");
+    doneTicket("CSV-2");
+    expect((await showLines()).find((line) => line.startsWith("Next:"))).toBe(
+      'Next: Every ticket is finished, and the repos "web" and "api" have merged work that is not landed yet. Land them with `bb loom land csv`, which pushes each repo\'s integration branch and opens its pull request.',
+    );
+    await run(["land", "csv", "--repo", "web"]);
+    const landedAt = host.store.projectRepo(host.store.projectBySlug("csv")!.id, "web")!.landed_at!;
+    expect(await repoBlock()).toEqual([
+      "Repos:",
+      `  web · bb project shop-web (proj_web) · base main · integration branch loom/csv · pull request ${PR(1)} · landed ${minute(landedAt)}`,
+      "  api · bb project shop-api (proj_api) · base trunk · integration branch loom/csv · not landed yet · merged work to land",
+    ]);
+    expect((await showLines()).find((line) => line.startsWith("Next:"))).toBe(
+      'Next: Every ticket is finished, and the repo "api" has merged work that is not landed yet. Land it with `bb loom land csv`, which pushes each repo\'s integration branch and opens its pull request.',
+    );
+
+    const json = JSON.parse((await run(["show", "csv", "--json"])).stdout) as { repos: unknown[] };
+    expect(json.repos).toEqual([
+      { name: "web", bbProjectId: "proj_web", bbProjectName: "shop-web", base: "main", branch: "loom/csv", prUrl: PR(1), landedAt, toLand: false },
+      { name: "api", bbProjectId: "proj_api", bbProjectName: "shop-api", base: "trunk", branch: "loom/csv", prUrl: null, landedAt: null, toLand: true },
+    ]);
+    expect(JSON.parse((await run(["list", "--json"])).stdout)[0].repos).toEqual(json.repos);
+  });
+
+  it("show prints a repo's bb project id when bb cannot name it, and --json leaves the name null", async () => {
+    await running();
+    fake.bbProjects = new Error("bb is restarting");
+    expect((await repoBlock()).slice(1)).toEqual([
+      "  web · bb project proj_web · base main · integration branch loom/csv · not landed yet",
+      "  api · bb project proj_api · base trunk · integration branch loom/csv · not landed yet",
+    ]);
+    const json = JSON.parse((await run(["show", "csv", "--json"])).stdout) as { repos: Array<{ bbProjectName: string | null }> };
+    expect(json.repos.map((entry) => entry.bbProjectName)).toEqual([null, null]);
+
+    fake.bbProjects = [];
+    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    expect((await repoBlock())[2]).toBe("  api · bb project proj_api · base trunk · integration branch loom/csv · not landed yet");
+  });
+
+  it("show on the pull request strategy lists each repo's bb project and base only", async () => {
+    fake.addBbProject("proj_web", { host_env: "/src/web" }, { name: "shop-web" });
+    fake.addBbProject("proj_api", { host_env: "/src/api" }, { name: "shop-api" });
+    await propose((doc) => {
+      withRepos(doc);
+      doc.merge = { strategy: "pr" };
+    });
+    expect(await repoBlock()).toEqual(["Repos:", "  web · bb project shop-web (proj_web) · base main", "  api · bb project shop-api (proj_api) · base trunk"]);
+  });
+
+  it("says landing finishes the project when every ticket is finished and every repo with merged work is landed", async () => {
+    await running();
+    doneTicket("CSV-1");
+    await run(["land", "csv"]);
+    host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, "cancelled", "human");
+    expect((await showLines()).find((line) => line.startsWith("Next:"))).toBe("Next: Every ticket is finished, and every repo with merged work is landed. Run `bb loom land csv` to finish the project.");
+    await run(["land", "csv"]);
+    expect(host.store.projectBySlug("csv")!.state).toBe("done");
+  });
+
+  it("tickets and ticket show each ticket's repo on a multi-repo project, and --json carries it", async () => {
+    await running();
+    expect((await run(["tickets", "csv"])).stdout).toBe("CSV-1  queued     web  P2  Order rows\nCSV-2  queued     api  P2  Export endpoint\n");
+    expect(JSON.parse((await run(["tickets", "csv", "--json"])).stdout).map((ticket: { key: string; repo: string }) => [ticket.key, ticket.repo])).toEqual([
+      ["CSV-1", "web"],
+      ["CSV-2", "api"],
+    ]);
+    expect((await run(["ticket", "CSV-2"])).stdout.split("\n").slice(0, 2)).toEqual(["CSV-2 · queued · Export endpoint", "Repo: api"]);
+    expect(JSON.parse((await run(["ticket", "CSV-2", "--json"])).stdout)).toMatchObject({ key: "CSV-2", repo: "api" });
+  });
+});
+
+describe("report", () => {
+  let hook = "";
+  const finished = async () => {
+    await approved();
+    await run(["start", "csv"]);
+    for (const state of ["working", "checking", "review", "approved", "merging", "done"] as const) host.store.setTicketState(host.store.ticketByKey("CSV-1")!.id, state, "loom");
+    host.store.setTicketState(host.store.ticketByKey("CSV-2")!.id, "cancelled", "human");
+    expect(JSON.parse((await run(["land", "csv", "--direct", "--json"])).stdout)).toMatchObject({ done: true });
+  };
+  const record = () => host.store.record(host.store.projectBySlug("csv")!.id);
+
+  beforeEach(() => {
+    hook = "";
+    host = makeHost({ port: fake, settings: () => ({ doneHook: hook, doneRecord: "full" }) });
+    host.bb.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
+  });
+
+  it("prints the project's record as Markdown, and --json prints { slug, markdown }", async () => {
+    await approved();
+    const text = await run(["report", "csv"]);
+    expect(text.exitCode).toBe(0);
+    expect(text.stdout).toContain("# CSV export (csv)");
+    expect(text.stdout).toContain("### CSV-1 · Order rows (queued)");
+    expect(JSON.parse((await run(["report", "csv", "--json"])).stdout)).toEqual({ slug: "csv", markdown: text.stdout });
+  });
+
+  it("--send is refused on a project that is not done and when no hook is set", async () => {
+    await approved();
+    hook = "save-note";
+    expect(errorOf((await run(["report", "csv", "--send", "--json"])).stdout)).toMatchObject({ code: "loom_invalid_state", message: expect.stringContaining("only a finished project") });
+    host.store.setProjectState(host.store.projectBySlug("csv")!.id, "running", "human");
+    host.store.setProjectState(host.store.projectBySlug("csv")!.id, "done", "loom");
+    hook = " ";
+    expect(errorOf((await run(["report", "csv", "--send", "--json"])).stdout)).toMatchObject({ code: "loom_invalid_state", hint: expect.stringContaining("doneHook") });
+    expect(humanEvents().filter((event) => event.action === "report")).toEqual([]);
+  });
+
+  it("--send queues a finished project's record again and logs one human action", async () => {
+    await finished();
+    host.store.updateRecord(record()!.id, { state: "sent" });
+    hook = "save-note";
+    const out = await run(["report", "csv", "--send"]);
+    expect(out).toMatchObject({ exitCode: 0, stdout: expect.stringContaining("Queued the record of csv") });
+    expect(record()?.state).toBe("pending");
+    expect(humanEvents().filter((event) => event.action === "report")).toEqual([{ action: "report", slug: "csv", send: true }]);
+  });
+});
+
+describe("readyToLand", () => {
+  const project = (over: Partial<Parameters<typeof readyToLand>[0]> = {}) => ({ state: "running", strategy: "integration", ticketCounts: { done: 2, cancelled: 1 }, ...over });
+
+  it("counts a multi-repo project whose tickets are all finished and which still has a repo to land", () => {
+    const repo = (name: string, toLand: boolean) => ({ name, bbProjectId: `proj_${name}`, bbProjectName: null, base: "main", branch: "loom/csv", prUrl: null, landedAt: toLand ? null : 1, toLand });
+    const multi = { ...project({ ticketCounts: { done: 2 } }), repos: [repo("web", false), repo("api", true)] };
+    expect(readyToLand(multi)).toBe(true);
+    expect(readyToLand({ ...multi, ticketCounts: { done: 1, working: 1 } })).toBe(false);
+  });
+
+  it("is true for a running or paused integration project whose tickets are all done or cancelled, with one done", () => {
+    expect(readyToLand(project())).toBe(true);
+    expect(readyToLand(project({ state: "paused", ticketCounts: { done: 1 } }))).toBe(true);
+  });
+
+  it("is false for the pull request strategy, another state, no done ticket or an unfinished ticket", () => {
+    expect(readyToLand(project({ strategy: "pr" }))).toBe(false);
+    for (const state of ["draft", "ready", "done", "archived"]) expect(readyToLand(project({ state })), state).toBe(false);
+    expect(readyToLand(project({ ticketCounts: { cancelled: 2 } }))).toBe(false);
+    expect(readyToLand(project({ ticketCounts: {} }))).toBe(false);
+    for (const state of ["queued", "working", "review", "merging", "blocked"]) expect(readyToLand(project({ ticketCounts: { done: 1, [state]: 1 } })), state).toBe(false);
+  });
+});
+
+describe("sync", () => {
+  it("prints what the reads found, reads one ticket's pull request with --ticket, and writes no human.action event", async () => {
+    await approved();
+    const result = { slug: "csv", tickets: [], message: "Read 2 pull requests: CSV-1 merged and 1 is still open.", problem: false };
+    const sync = vi.spyOn(host.engine, "syncPullRequests").mockResolvedValue(result);
+    expect((await run(["sync", "csv"])).stdout).toBe("Read 2 pull requests: CSV-1 merged and 1 is still open.\n");
+    expect(JSON.parse((await run(["sync", "csv", "--ticket", "CSV-1", "--json"])).stdout)).toEqual(result);
+    expect(sync.mock.calls).toEqual([["csv", {}], ["csv", { key: "CSV-1" }]]);
+    expect(humanEvents()).toEqual([]);
+  });
+
+  it("refuses a project that is not running or paused", async () => {
+    await approved();
+    const error = errorOf((await run(["sync", "csv", "--json"])).stdout);
+    expect(error).toMatchObject({ code: "loom_invalid_state", message: "Project csv is ready; Loom reads pull requests only while a project is running or paused." });
+  });
+});
+
+describe("rollout and live", () => {
+  const rollout = (doc: Doc) => {
+    doc.merge = { strategy: "pr" };
+    doc.rollout = { deploy: { how: "Shipit deploys main" }, stage: [{ name: "expand", goal: "The model is live" }], milestone: [{ ref: "traffic-low", title: "Old traffic is near zero" }] };
+    doc.ticket[0].rollout = { stage: "expand", rollback: "Revert the commit" };
+    doc.ticket[1].rollout = { requires_live: ["csv-model", "traffic-low"] };
+  };
+
+  it("rollout prints the deploy order as sentences, or says the project has none", async () => {
+    await approved();
+    expect((await run(["rollout", "csv"])).stdout).toBe("csv has no rollout: its spec has no [rollout] table, no repo deploy and no ticket rollout.\n");
+    expect(JSON.parse((await run(["rollout", "csv", "--json"])).stdout)).toBeNull();
+  });
+
+  it("rollout and live read and mark a project's steps and milestones, with a human.action for each mark", async () => {
+    await propose(rollout);
+    await host.projects.approve("csv", "human");
+    const text = (await run(["rollout", "csv"])).stdout;
+    expect(text).toContain("Next: CSV-1 is next; its pull request is not open yet. 1 step waits on it.");
+    expect(text).toContain("expand: The model is live. 0 of 1 step live.");
+    expect(text).toContain("- CSV-1 Order rows: no pull request yet, not live. Deploys: Shipit deploys main. Rollback: Revert the commit.");
+    expect(text).toContain("- traffic-low Old traffic is near zero: does not hold. CSV-2 needs it.");
+    expect((await run(["live", "csv", "CSV-1", "--note", "Deployed by hand"])).stdout).toBe("CSV-1 is live.\n");
+    expect(JSON.parse((await run(["live", "csv", "traffic-low", "--json"])).stdout)).toMatchObject({ target: "traffic-low", live_by: "human" });
+    expect((await run(["live", "csv", "traffic-low", "--undo"])).stdout).toBe("traffic-low is no longer marked live.\n");
+    expect(humanEvents()).toEqual([
+      { action: "live", slug: "csv", key: "CSV-1", note: "Deployed by hand" },
+      { action: "live", slug: "csv", milestone: "traffic-low" },
+      { action: "unlive", slug: "csv", milestone: "traffic-low" },
+    ]);
+    const twice = errorOf((await run(["live", "csv", "CSV-1", "--json"])).stdout);
+    expect(twice).toMatchObject({ code: "loom_invalid_state", message: expect.stringMatching(/^CSV-1 is already live: marked by human at /), hint: "Undo it with `bb loom live csv CSV-1 --undo` first to mark it again." });
+    expect(errorOf((await run(["live", "csv", "nope", "--json"])).stdout)).toMatchObject({ code: "loom_not_found" });
+    expect(JSON.parse((await run(["rollout", "csv", "--json"])).stdout)).toMatchObject({ counts: { steps: 2, live: 1 } });
+  });
+});
+
+describe("loom_human_only", () => {
+  async function setup() {
+    await approved();
+    const project = host.store.projectBySlug("csv")!;
+    host.store.addThread({ thread_id: "thr_worker", project_id: project.id, role: "worker", state: "active" });
+    host.store.addThread({ thread_id: "thr_review", project_id: project.id, role: "reviewer", state: "active" });
+    const spec = host.store.addSpecReview({ project_id: project.id, version: 1, round: 1, spawn_token: "tok_spec" });
+    host.store.updateSpecReview(spec.id, { thread_id: "thr_spec" });
+  }
+
+  const humanCommands = [
+    ["approve", "csv"],
+    ["approve", "csv", "--skip-review"],
+    ["start", "csv"],
+    ["pause", "csv"],
+    ["resume", "csv"],
+    ["archive", "csv"],
+    ["post", "CSV-1", "hello"],
+    ["block", "CSV-1", "why"],
+    ["requeue", "CSV-1"],
+    ["cancel", "CSV-1", "why"],
+    ["land", "csv"],
+    ["report", "csv", "--send"],
+    ["sync", "csv"],
+    ["live", "csv", "CSV-1"],
+  ];
+
+  it("refuses every state-changing command from a planner, worker, reviewer or spec reviewer thread", async () => {
+    await setup();
+    const before = host.store.events(host.store.projectBySlug("csv")!.id).length;
+    for (const threadId of ["thr_plan", "thr_worker", "thr_review", "thr_spec"]) {
+      for (const argv of humanCommands) {
+        const out = await run([...argv, "--json"], threadId);
+        expect(out.exitCode, `${threadId} ${argv.join(" ")}`).toBe(1);
+        expect(errorOf(out.stdout).code, `${threadId} ${argv.join(" ")}`).toBe("loom_human_only");
+      }
+    }
+    expect(host.store.projectBySlug("csv")?.state).toBe("ready");
+    expect(host.store.events(host.store.projectBySlug("csv")!.id)).toHaveLength(before);
+  });
+
+  it("lets read commands through for a Loom thread, and human commands through for an ordinary thread", async () => {
+    await setup();
+    expect((await run(["list"], "thr_worker")).exitCode).toBe(0);
+    expect((await run(["show", "csv"], "thr_plan")).exitCode).toBe(0);
+    expect((await run(["tickets", "csv"], "thr_review")).exitCode).toBe(0);
+    expect((await run(["ticket", "CSV-1"], "thr_plan")).exitCode).toBe(0);
+    expect((await run(["spec", "csv"], "thr_plan")).exitCode).toBe(0);
+    expect((await run(["start", "csv"], "thr_ordinary")).exitCode).toBe(0);
+  });
+});
+
+describe("--json", () => {
+  it("every command prints machine-readable output", async () => {
+    await propose();
+    const commands = [
+      ["list"],
+      ["show", "csv"],
+      ["spec", "csv"],
+      ["tickets", "csv"],
+      ["approve", "csv"],
+      ["tickets", "csv"],
+      ["ticket", "CSV-1"],
+      ["post", "CSV-1", "hello"],
+      ["block", "CSV-2", "later"],
+      ["requeue", "CSV-2", "--note", "now"],
+      ["cancel", "CSV-2", "dropped"],
+      ["start", "csv"],
+      ["pause", "csv"],
+      ["resume", "csv"],
+      ["archive", "csv"],
+    ];
+    for (const argv of commands) {
+      const out = await run([...argv, "--json"]);
+      expect(out.exitCode, argv.join(" ")).toBe(0);
+      expect(() => JSON.parse(out.stdout), argv.join(" ")).not.toThrow();
+    }
+  });
+});
+
+describe("metrics and feed", () => {
+  const HOUR = 3_600_000;
+  const sample = (over: Partial<ProjectMetrics> = {}): ProjectMetrics => ({
+    counts: { ...Object.fromEntries(TICKET_STATES.map((state) => [state, 0])), queued: 2, working: 1, done: 4 } as ProjectMetrics["counts"],
+    wip: 3,
+    throughput: [
+      { day: "2026-01-01", done: 1 },
+      { day: "2026-01-02", done: 3 },
+    ],
+    cycleTime: { p50: 3 * HOUR + 12 * 60_000, p85: 5 * HOUR, n: 4 },
+    leadTime: { p50: 26 * HOUR, p85: 50 * HOUR, n: 4 },
+    wipAge: [{ key: "CSV-3", state: "review", ageMs: 26 * HOUR }],
+    firstPassApproval: { rate: 0.5, n: 4 },
+    reviewRounds: { mean: 1.5, n: 4 },
+    checks: { total: 6, failed: 2 },
+    blocks: 1,
+    humanInterventions: 2,
+    tokens: { total: 7000, perDoneTicket: 1750, byRole: { planner: 1000, worker: 4000, reviewer: 2000 }, unreported: 0 },
+    cumulativeFlow: [],
+    activeMs: 7 * HOUR,
+    windowActiveMs: 7 * HOUR,
+    timeInState: { ms: { ...Object.fromEntries(TICKET_STATES.map((state) => [state, 0])), queued: 2 * HOUR, working: 4 * HOUR, checking: HOUR, review: 3 * HOUR } as ProjectMetrics["counts"], flowEfficiency: 0.4, n: 3 },
+    checksByCommand: [
+      { command: "npm test", runs: 31, failed: 7, p50Ms: 100_000 },
+      { command: "npm run lint", runs: 1, failed: 0, p50Ms: 12_000 },
+    ],
+    scopeFlags: { outside: 3, protectedHits: 0 },
+    findings: { total: 17, blocking: 5, shouldFix: 12, rounds: 12, changesRequested: 4 },
+    tokensByTicket: [
+      { key: "CSV-9", tokens: 310_000 },
+      { key: "CSV-4", tokens: 240_000 },
+    ],
+    reliability: { failedAttempts: 3, rateLimitRetries: 4, timeouts: 2, mergesSentBack: 1 },
+    finalReviews: { runs: 0, passed: 0, failed: 0, unfinished: 0, tokens: 0 },
+    ...over,
+  });
+
+  it("formats durations in two units at most", () => {
+    expect(formatDuration(45_000)).toBe("45s");
+    expect(formatDuration(0)).toBe("0s");
+    expect(formatDuration(12 * 60_000 + 30_000)).toBe("12m 30s");
+    expect(formatDuration(3 * HOUR + 12 * 60_000)).toBe("3h 12m");
+    expect(formatDuration(3 * HOUR)).toBe("3h");
+    expect(formatDuration(26 * HOUR)).toBe("1d 2h");
+    expect(formatDuration(48 * HOUR)).toBe("2d");
+  });
+
+  it("prints one line per metric, with units", () => {
+    const lines = formatMetrics(sample()).trimEnd().split("\n");
+    expect(lines).toEqual([
+      "tickets queued 2, working 1, done 4",
+      "work in progress 3",
+      "throughput 4 done in the last 2 days, 2.0 per day",
+      "cycle time p50 3h 12m, p85 5h (4 tickets)",
+      "lead time p50 1d 2h, p85 2d 2h (4 tickets)",
+      "work item age oldest CSV-3 (review) 1d 2h, 3 in flight",
+      "first-pass approval 50% (2 of 4 tickets with a verdict)",
+      "review rounds 1.5 per done ticket (4 done)",
+      "checks 6 run, 2 failed (33%)",
+      "blocks 1",
+      "human interventions 2",
+      "tokens (sampled) 7000 in all, 1750 per done ticket; planner 1000, worker 4000, reviewer 2000",
+      "active time 7h",
+      "time in state (3 done tickets) queued 20%, working 40%, checking 10%, review 30%; flow efficiency 40%",
+      "checks by command npm test 31 runs, 7 failed, p50 1m 40s; npm run lint 1 run, 0 failed, p50 12s",
+      "scope flags 3 outside scope, 0 on protected paths",
+      "review findings 17 in 12 rounds (5 blocking, 12 should-fix), changes requested in 4",
+      "tokens by ticket CSV-9 310000, CSV-4 240000",
+      "reliability 3 failed attempts, 4 rate-limit retries, 2 timeouts, 1 merge sent back",
+    ]);
+    const one = formatMetrics(sample({ reliability: { failedAttempts: 1, rateLimitRetries: 1, timeouts: 1, mergesSentBack: 2 } }));
+    expect(one).toContain("reliability 1 failed attempt, 1 rate-limit retry, 1 timeout, 2 merges sent back\n");
+  });
+
+  it("says how many threads report no token usage, when any", () => {
+    const tokens = (unreported: number) => formatMetrics(sample({ tokens: { ...sample().tokens, unreported } }));
+    expect(tokens(1)).toContain("tokens (sampled) 7000 in all, 1750 per done ticket; planner 1000, worker 4000, reviewer 2000; 1 thread reports no token usage\n");
+    expect(tokens(2)).toContain("reviewer 2000; 2 threads report no token usage\n");
+    expect(tokens(0)).toContain("reviewer 2000\n");
+  });
+
+  it("says so when there is nothing to measure yet", () => {
+    const empty = sample({
+      counts: Object.fromEntries(TICKET_STATES.map((state) => [state, 0])) as ProjectMetrics["counts"],
+      wip: 0,
+      throughput: [],
+      cycleTime: { p50: null, p85: null, n: 0 },
+      leadTime: { p50: null, p85: null, n: 0 },
+      wipAge: [],
+      firstPassApproval: { rate: null, n: 0 },
+      reviewRounds: { mean: null, n: 0 },
+      checks: { total: 0, failed: 0 },
+      tokens: { total: 0, perDoneTicket: null, byRole: { planner: 0, worker: 0, reviewer: 0 }, unreported: 0 },
+      activeMs: 0,
+      windowActiveMs: 0,
+      timeInState: { ms: Object.fromEntries(TICKET_STATES.map((state) => [state, 0])) as ProjectMetrics["counts"], flowEfficiency: null, n: 0 },
+      checksByCommand: [],
+      scopeFlags: { outside: 0, protectedHits: 0 },
+      findings: { total: 0, blocking: 0, shouldFix: 0, rounds: 0, changesRequested: 0 },
+      tokensByTicket: [],
+      reliability: { failedAttempts: 0, rateLimitRetries: 0, timeouts: 0, mergesSentBack: 0 },
+    });
+    const text = formatMetrics(empty);
+    expect(text).toContain("time in state none yet\n");
+    expect(text).toContain("checks by command none yet\n");
+    expect(text).toContain("scope flags 0 outside scope, 0 on protected paths\n");
+    expect(text).toContain("review findings none yet\n");
+    expect(text).toContain("tokens by ticket none yet\n");
+    expect(text).toContain("reliability 0 failed attempts, 0 rate-limit retries, 0 timeouts, 0 merges sent back\n");
+    expect(text).toContain("tickets none");
+    expect(text).toContain("cycle time none yet");
+    expect(text).toContain("work item age none in flight");
+    expect(text).toContain("first-pass approval none yet");
+    expect(text).toContain("review rounds none yet");
+    expect(text).toContain("checks none run");
+    expect(text).toContain("tokens (sampled) 0 in all");
+    expect(text).not.toContain("NaN");
+  });
+
+  it("metrics prints the project's numbers, and --json prints ProjectMetrics", async () => {
+    await approved();
+    const text = (await run(["metrics", "csv"])).stdout;
+    expect(text).toContain("tickets queued 2\n");
+    expect(text).toContain("work in progress 0\n");
+    expect(text).toContain("cycle time none yet\n");
+    const metrics = JSON.parse((await run(["metrics", "csv", "--json"])).stdout) as ProjectMetrics;
+    expect(metrics.counts.queued).toBe(2);
+    expect(metrics.wip).toBe(0);
+    expect(metrics.throughput).toHaveLength(14);
+    expect(Object.keys(metrics).sort()).toEqual([
+      "activeMs",
+      "blocks",
+      "checks",
+      "checksByCommand",
+      "counts",
+      "cumulativeFlow",
+      "cycleTime",
+      "finalReviews",
+      "findings",
+      "firstPassApproval",
+      "humanInterventions",
+      "leadTime",
+      "reliability",
+      "reviewRounds",
+      "scopeFlags",
+      "throughput",
+      "timeInState",
+      "tokens",
+      "tokensByTicket",
+      "windowActiveMs",
+      "wip",
+      "wipAge",
+    ]);
+    expect(Object.keys(metrics.tokens).sort()).toEqual(["byRole", "perDoneTicket", "total", "unreported"]);
+    expect((await run(["metrics", "csv"])).stdout).not.toMatch(/human interventions [1-9]/);
+  });
+
+  it("metrics --days sets the throughput and cumulative flow window, and prints the new sections", async () => {
+    await approved();
+    const lines = (await run(["metrics", "csv", "--days", "7"])).stdout.trimEnd().split("\n");
+    expect(lines).toContain("throughput 0 done in the last 7 days, 0.0 per day");
+    for (const label of ["time in state", "checks by command", "scope flags", "review findings", "tokens by ticket", "reliability"]) expect(lines.some((line) => line.startsWith(`${label} `)), label).toBe(true);
+    const metrics = JSON.parse((await run(["metrics", "csv", "--days", "30", "--json"])).stdout) as ProjectMetrics;
+    expect(metrics.throughput).toHaveLength(30);
+    expect(metrics.cumulativeFlow).toHaveLength(30);
+    expect(metrics.timeInState).toMatchObject({ flowEfficiency: null, n: 0 });
+    expect((await run(["metrics", "csv", "--days", "0"])).exitCode).not.toBe(0);
+    expect((await run(["metrics", "csv", "--days", "91"])).exitCode).not.toBe(0);
+  });
+
+  it("metrics counts the human's commands as interventions", async () => {
+    await approved();
+    await run(["start", "csv"]);
+    await run(["pause", "csv"]);
+    await run(["post", "CSV-1", "hi"]);
+    expect(JSON.parse((await run(["metrics", "csv", "--json"])).stdout)).toMatchObject({ humanInterventions: 2 });
+  });
+
+  it("metrics refuses an unknown project", async () => {
+    const out = await run(["metrics", "nope", "--json"]);
+    expect(out.exitCode).toBe(1);
+    expect(errorOf(out.stdout).code).toBe("loom_not_found");
+  });
+
+  it("feed prints one dated sentence per event, oldest first, and --after prints only newer ones", async () => {
+    await approved();
+    const lines = (await run(["feed", "csv"])).stdout.trimEnd().split("\n");
+    expect(lines[0]).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\dZ {2}The project was created\.$/);
+    expect(lines).toContain(lines.find((line) => line.endsWith("CSV-1 was created."))!);
+    const all = JSON.parse((await run(["feed", "csv", "--json"])).stdout) as { rows: Array<{ id: number; text: string }>; lastId: number };
+    expect(all.rows.map((row) => row.text)).toEqual(lines.map((line) => line.slice(19)));
+    expect(all.lastId).toBe(all.rows.at(-1)!.id);
+
+    await run(["start", "csv"]);
+    const later = (await run(["feed", "csv", "--after", String(all.lastId)])).stdout.trimEnd().split("\n");
+    expect(later.map((line) => line.slice(19))).toEqual(["The project moved from ready to running.", "The human ran start."]);
+    expect((await run(["feed", "csv", "--after", "999999"])).stdout).toBe("No events.\n");
+    expect(JSON.parse((await run(["feed", "csv", "--after", "999999", "--json"])).stdout)).toEqual({ rows: [], lastId: 999999 });
+  });
+
+  it("feed keeps only the newest 200 events", async () => {
+    await approved();
+    const project = host.store.projectBySlug("csv")!;
+    for (let n = 0; n < 250; n += 1) host.store.event(project.id, null, "custom", "loom", { n });
+    const { rows } = JSON.parse((await run(["feed", "csv", "--json"])).stdout) as { rows: Array<{ text: string }> };
+    expect(rows).toHaveLength(200);
+    expect(rows.at(-1)).toMatchObject({ text: "custom by loom." });
+  });
+
+  it("feed --after pages forward from the id, 200 events at a time, so older events can be read", async () => {
+    await approved();
+    const project = host.store.projectBySlug("csv")!;
+    for (let n = 0; n < 250; n += 1) host.store.event(project.id, null, "custom", "loom", { n });
+    const page = async (after: number) => JSON.parse((await run(["feed", "csv", "--after", String(after), "--json"])).stdout) as { rows: Array<{ id: number }>; lastId: number };
+    const first = await page(0);
+    expect(first.rows).toHaveLength(200);
+    const second = await page(first.lastId);
+    expect(second.rows[0]!.id).toBeGreaterThan(first.lastId);
+    expect(first.rows.length + second.rows.length).toBe(host.store.projectEvents(project.id).length);
+  });
+
+  it("feed refuses an unknown project", async () => {
+    expect(errorOf((await run(["feed", "nope", "--json"])).stdout).code).toBe("loom_not_found");
+  });
+});

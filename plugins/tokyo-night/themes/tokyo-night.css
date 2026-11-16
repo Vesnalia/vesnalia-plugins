@@ -1,0 +1,50 @@
+/* Tokyo Night — official palette (tokyo-night/tokyo-night-vscode-theme)
+   Light mode is upstream Tokyo Night Light, shared by every variant. */
+
+:root, .light {
+  /* anchors */
+  --canvas: #d5d6db;
+  --ink: #343b58;
+
+  /* accent */
+  --primary: #34548a;
+  --primary-foreground: #d5d6db;
+  --file-accent: #0f4b6e;
+
+  /* text tiers - mode-independent, recompute from whichever anchors are active */
+  --muted-foreground: color-mix(in oklch, var(--ink) 70%, var(--canvas));
+  --subtle-foreground: color-mix(in oklch, var(--ink) 58%, var(--canvas));
+  --readback-foreground: color-mix(in oklch, var(--ink) 64%, var(--canvas));
+
+  /* semantic */
+  --destructive: #8c4351;
+  --destructive-foreground: #d5d6db;
+  --destructive-text: #8c4351;
+  --warning: #8f5e15;
+  --warning-text: #8f5e15;
+  --attention: #965027;
+  --success: #385f0d;
+  --diff-added: #385f0d;
+  --diff-removed: #8c4351;
+  --pr-merged: #5a3e8e;
+}
+
+.dark {
+  --canvas: #1a1b26;
+  --ink: #c0caf5;
+
+  --primary: #7aa2f7;
+  --primary-foreground: #1a1b26;
+  --file-accent: #7dcfff;
+
+  --destructive: #f7768e;
+  --destructive-foreground: #1a1b26;
+  --destructive-text: #ff7a93;
+  --warning: #e0af68;
+  --warning-text: #e0af68;
+  --attention: #ff9e64;
+  --success: #9ece6a;
+  --diff-added: #9ece6a;
+  --diff-removed: #f7768e;
+  --pr-merged: #bb9af7;
+}

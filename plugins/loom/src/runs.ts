@@ -1,0 +1,126 @@
+// Loom's own record of each call it makes to the machine for a ticket's checks and merge, shown in the ticket page's check and merge cards.
+import type { Store, TicketRow } from "./db/store";
+import type { HostInput, HostMethod, HostOutput } from "./host-contract";
+import type { HostPort } from "./ports";
+import { clip } from "./prompts";
+
+export type RunStage = "check" | "merge";
+
+export const RUN_OUTPUT_MAX = 70_000;
+
+export const STEP_LABELS: Partial<Record<HostMethod, string>> = {
+  commitAll: "git commit",
+  worktreeState: "git status",
+  ensureWorktree: "prepare the Loom worktree",
+  merge: "git merge",
+  resetHard: "git reset --hard",
+  prState: "read the pull request",
+  prBatch: "read the pull requests",
+  prCommit: "build the pull request's commit",
+  push: "git push",
+  prCreate: "open the pull request",
+  stackBase: "build the commit to stack on",
+  prRetarget: "move the pull request to another base",
+  prRequestReview: "ask the reviewers to review again",
+  fetchBranch: "git fetch",
+};
+
+const sha12 = (sha: string) => sha.slice(0, 12);
+
+function differing(files: readonly string[]): string {
+  if (files.length === 0) return "No files differ from the base.";
+  const head = files.length === 1 ? "1 file differs from the base:" : `${files.length} files differ from the base:`;
+  return [head, ...files].join("\n");
+}
+
+export function stepSummary(method: HostMethod, output: unknown): { ok: boolean; text: string } {
+  const unavailable = output as { outcome?: unknown; message?: unknown };
+  if (unavailable.outcome === "unavailable" && typeof unavailable.message === "string") return { ok: false, text: unavailable.message };
+  switch (method) {
+    case "commitAll": {
+      const { sha, committed } = output as HostOutput<"commitAll">;
+      return { ok: true, text: committed ? `Committed ${sha12(sha)}.` : `Nothing new to commit; HEAD is ${sha12(sha)}.` };
+    }
+    case "worktreeState": {
+      const state = output as HostOutput<"worktreeState">;
+      const where = `HEAD ${sha12(state.head)} on ${state.branch ?? "a detached HEAD"}, ${state.dirty ? "with uncommitted changes" : "clean"}.`;
+      return { ok: true, text: `${where} ${differing(state.changed)}` };
+    }
+    case "resetHard":
+      return { ok: true, text: `Reset to ${sha12((output as HostOutput<"resetHard">).sha)}.` };
+    case "ensureWorktree":
+      return { ok: true, text: `Ready at ${(output as { path: string }).path}.` };
+    case "merge": {
+      const merged = output as HostOutput<"merge">;
+      if (merged.outcome === "conflict") return { ok: false, text: ["Conflicts in:", ...merged.files].join("\n") };
+      if (merged.outcome === "unfinished") return { ok: false, text: "The worktree has a merge that is not finished, so Loom left it as it is." };
+      return { ok: true, text: `Merged as ${sha12(merged.sha)}; the branch was at ${sha12(merged.before)}.${merged.already ? " (already merged)" : ""}` };
+    }
+    case "prState":
+      return { ok: true, text: `The pull request is ${(output as { state: string }).state.toLowerCase()}.` };
+    case "prBatch": {
+      const read = output as HostOutput<"prBatch">;
+      if (read.outcome !== "ok") return { ok: false, text: "unavailable" };
+      const lines = [...read.pulls.map((pull) => `#${pull.number} is ${pull.state.toLowerCase()}${pull.base === null ? "" : ` on ${pull.base}`}.`), ...read.missing.map((miss) => miss.message)];
+      return { ok: read.missing.length === 0, text: lines.join("\n") };
+    }
+    case "prCommit": {
+      const built = output as HostOutput<"prCommit">;
+      if (built.outcome === "diverged") return { ok: false, text: `The branch has commits Loom did not push; its tip is ${sha12(built.tip)}.` };
+      if (built.outcome !== "ok") return { ok: false, text: "unavailable" };
+      return { ok: true, text: built.created ? `Built ${sha12(built.sha)} with the reviewed work's files.` : `The branch already has the reviewed work at ${sha12(built.sha)}; nothing new to commit.` };
+    }
+    case "push":
+      return { ok: true, text: "Pushed." };
+    case "prCreate":
+      return { ok: true, text: `Opened ${(output as { url: string }).url}.` };
+    case "stackBase": {
+      const built = output as HostOutput<"stackBase">;
+      if (built.outcome === "conflict") return { ok: false, text: ["The commits to stack on conflict in:", ...built.files].join("\n") };
+      if (built.outcome !== "ok") return { ok: false, text: "unavailable" };
+      return { ok: true, text: `Built ${sha12(built.sha)}${built.tip === null ? "" : `, with the base branch at ${sha12(built.tip)}`}.` };
+    }
+    case "prRetarget":
+      return { ok: true, text: "Moved." };
+    case "prRequestReview": {
+      const asked = output as HostOutput<"prRequestReview">;
+      if (asked.outcome !== "ok") return { ok: false, text: "unavailable" };
+      const lines = [asked.requested.length > 0 ? `Asked ${asked.requested.join(", ")}.` : "Asked no one.", ...asked.failed.map((miss) => `${miss.login}: ${miss.message}`)];
+      return { ok: asked.failed.length === 0, text: lines.join("\n") };
+    }
+    default:
+      return { ok: true, text: JSON.stringify(output) };
+  }
+}
+
+/** A host port that records every call it passes on as a run of `ticket` in `stage`. */
+export function recordingHost(store: Store, host: HostPort, ticket: Pick<TicketRow, "id" | "project_id">, stage: RunStage): HostPort {
+  return {
+    async call<M extends HostMethod>(hostId: string, method: M, input: HostInput<M>): Promise<HostOutput<M>> {
+      const exec = method === "exec";
+      const label = exec ? (input as HostInput<"exec">).command : (STEP_LABELS[method] ?? method);
+      const id = store.startRun({ project_id: ticket.project_id, ticket_id: ticket.id, stage, kind: exec ? "command" : "git", label });
+      let output: HostOutput<M>;
+      try {
+        output = await host.call(hostId, method, input);
+      } catch (error) {
+        store.finishRun(id, { ok: false, output: clip(error instanceof Error ? error.message : String(error), RUN_OUTPUT_MAX) });
+        throw error;
+      }
+      if (exec) {
+        const result = output as HostOutput<"exec">;
+        store.finishRun(id, {
+          ok: result.exitCode === 0 && !result.timedOut,
+          output: clip(result.output, RUN_OUTPUT_MAX),
+          exitCode: result.exitCode,
+          timedOut: result.timedOut,
+          durationMs: result.durationMs,
+        });
+      } else {
+        const summary = stepSummary(method, output);
+        store.finishRun(id, { ok: summary.ok, output: clip(summary.text, RUN_OUTPUT_MAX) });
+      }
+      return output;
+    },
+  };
+}

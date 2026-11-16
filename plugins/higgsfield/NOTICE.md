@@ -1,0 +1,17 @@
+# Higgsfield Credits
+
+Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+
+- Оригинальный автор: VladPolet (https://github.com/VladPolet)
+- Исходный репозиторий: https://github.com/VladPolet/bb-plugin-higgsfield
+- Каталог в репозитории: (корень)
+- Версия: v0.1.0, коммит 8571cae36b50e7ad82eef3f57ba35c51c22bc3bb
+- Ссылка на исходник: https://github.com/VladPolet/bb-plugin-higgsfield/tree/8571cae36b50e7ad82eef3f57ba35c51c22bc3bb
+- Лицензия: MIT (текст в файле LICENSE рядом)
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

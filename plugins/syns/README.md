@@ -1,0 +1,184 @@
+# Syns bb plugin
+
+A bb plugin that gives
+[Thread Pages](https://github.com/unifedev/bb-thread-pages) read and write access
+to the calling session's [Syns](https://syns.dev) repository, through the Syns
+CLI. The short product description is in [PLUGIN_OVERVIEW.md](./PLUGIN_OVERVIEW.md).
+
+```
+page                     threadPage.invoke("syns.readMany", { paths })
+  ↓ Thread Pages bridge  validated against this plugin's declared schema, rate-limited, no dialog
+server half              session → machine and folder; method → CLI arguments; CLI failure → code + reason
+  ↓ bb host call
+host half                runs `syns … --json` in that folder, on that machine
+  ↓
+Syns CLI → Syns API      the only thing that touches the repository
+```
+
+## Install
+
+On bb: bb 0.43 or later and Thread Pages 1.13.4 or later; on Claude Code: Unife Pages 0.5.4 or later (see *On Claude
+Code* below): the first that show a document a page holds as a frame of the page held in its folder, which the
+workspace runs each app in. Both need
+the Syns CLI, 0.3.25 or later — installed and logged in (`syns login`) on every machine whose
+sessions should reach a repository (`syns upgrade`). An older CLI's refusal comes back in its own words.
+
+```sh
+bb plugin install https://github.com/synsdev/syns-bb-plugin
+```
+
+The bb plugin id is `syns`: Thread Pages takes a contributor's namespace from the
+plugin id, and the methods are `syns.*`.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `agentInstructions` | `true` | Tell every eligible session about `syns.*`, in a fragment of about 1 KiB that the host places after its own instruction |
+| `synsPath` | unset | Absolute path of the `syns` executable, when it is not on the daemon's `PATH` or in `~/.cargo/bin`, `~/.local/bin`, `/usr/local/bin`, `/opt/homebrew/bin` |
+
+## On Claude Code
+
+`hosts/claude` is a Claude Code plugin, `syns-pages`, published in the Syns marketplace. Everything Syns, in one
+command:
+
+```sh
+claude plugin install syns --marketplace synsdev/syns-claude-plugins
+```
+
+or this plugin alone (it brings Unife Pages): `claude plugin install syns-pages --marketplace
+synsdev/syns-claude-plugins`. Its `unife-pages.json` names `bin/syns-pages.mjs`, a self-contained bundle of the same
+table and dispatch (`npm run build:claude`). The Unife Pages daemon starts the process and supervises it, and it
+registers the same declaration as on bb. For development, load the checkout with `claude --plugin-dir …/hosts/claude`
+beside Unife Pages. The CLI runs on this machine, in the folder the
+daemon names for the calling session. Settings are the environment: `SYNS_PATH` (the executable) and
+`SYNS_PAGES_INSTRUCTION=0` (declare no fragment). `node hosts/claude/bin/syns-pages.mjs` also runs by hand.
+
+## The workspace
+
+The plugin also gives the host a page script: the Syns page host (`src/pagehost.ts`, `window.SynsPages`) and its
+bootstrap. The host puts it first in every page of a session whose folder is a Syns repository, or a folder placed in
+one, right after its kernel; for any other page the plugin answers none and the page is served as written. One
+`syns repo --json` in the session's folder decides, at each page load. The script is versioned as the plugin.
+
+In the page, the bootstrap keeps the page as served (`SynsPages.page`), holds its scripts back and loads the
+repository's workspace, `.page/index.html`, around it, in one read; the page's scripts then run in the workspace's
+frame. When the repository has no `.page/index.html`, or the folder is not a repository yet, the page is put back as
+written and its scripts run.
+
+## What agents are told
+
+The plugin ships no skills. Its instruction fragment, which the host places after
+its own instruction, says when the page the agent writes every turn opens inside
+the repository's workspace, the two commands an agent runs before its first page
+(copy the workspace from `bartsoj/syns-workspace-light-template`, make the folder a
+repository, signing in when the push asks for it), that what the person keeps
+using is an app: a folder holding an `index.html`, while the page reports and asks,
+and that the page and every app fit the workspace's design.
+
+The full method reference is in `bb pages guide`.
+
+## The methods
+
+| Method | Effect | What it does |
+| --- | --- | --- |
+| `syns.repo` | read | Owner, name and head `version`; in a placed folder also `holder`, `path` and `number`. The call a page polls with `watch` |
+| `syns.whoami` | read | The account logged in on that machine |
+| `syns.ls` | read | Files and folders, each file with a content hash, `blob`. Paged: 1,500 entries, or 9,000 one-string lines with `format: "lines"` |
+| `syns.readMany` | read | Up to 64 whole files at one version, in one CLI run; what did not fit comes back as `deferred` |
+| `syns.read` | read | A window of one file's lines |
+| `syns.glob` · `syns.grep` | read | Find files by path pattern · search their texts |
+| `syns.diff` | read | The paths, and optionally the patches, between two versions |
+| `syns.history` | read | Versions, their paths, and who or what made each |
+| `syns.changes` | read | What changed since a version, in one CLI run: each path's status, who made its newest change and, on request, its text |
+| `syns.commit` | write | Several files and deletions as one version, all or nothing |
+| `syns.write` · `syns.edit` · `syns.rm` | write | One file's text (optionally only if new) · a replacement in it · its removal |
+| `syns.move` · `syns.copy` | write | A file or folder moved, its history kept, or copied, as one version, no content sent |
+| `syns.revert` | write | One file, text or picture, back to an earlier version |
+| `syns.readBinary` | read | A file's bytes, such as a picture, as base64 in pieces of up to 720 KiB |
+| `syns.writeBinary` | write | A file's bytes: whole up to 720 KiB, or larger in ordered pieces, published after the last; up to 25 MiB |
+| `syns.place` | write | A template placed as a new folder of the session's repository |
+| `syns.shareInfo` · `syns.share` · `syns.unshare` | read · write · write | A placed folder's sharing: shown, shared under an identity of its own, stopped |
+| `syns.folderVisibility` · `syns.repoVisibility` | write | A placed folder's own visibility · the repository's, from its root |
+| `syns.collaborators` · `syns.collaboratorAdd` · `syns.collaboratorRole` · `syns.collaboratorRemove` | read · write | The scope's people and their roles: a shared placed folder's own, or at a root the whole repository's |
+| `syns.enableChecks` | write | Turn on the checks a placed folder recorded from its template |
+| `syns.explore` · `syns.users` | read | Public repositories, templates among them · people, to share with |
+
+Each of the last twelve is one CLI command run in the page's scope, its answer
+and its refusals the CLI's own: the plugin is a thin adapter. The sharing and
+visibility methods reach other people at once; a page offers them only on a
+control the reader presses, saying who gets what.
+
+Each page call is one CLI run, on bb and on Claude Code alike; a scoped call's first in a minute also runs the
+scope check, `syns repo --json --within=<session folder>`. A call is answered within 25 seconds, and at that limit
+its run is stopped. Every request the CLI sends names the host in its User-Agent: `SYNS_CALLER` is `bb-plugin` on
+bb and `claude-pages` on Claude Code. On bb the host worker is held until 15 minutes after the last run.
+
+`version` is a commit SHA and opaque. Every file write requires
+`base`, the version the page last read; a moved head refuses it as `conflict`
+with reason `stale_head` and the current version. While an agent is mid-turn in
+the folder with unpublished edits, writes are refused as `checkout_dirty`.
+Failures carry a fixed `code` and usually a `reason`: `no_repo`, `no_access`,
+`cli_missing`, `timeout`, `stale_head`, `checkout_dirty`, `exists`, `no_match`,
+`many_matches`, `bad_pattern`, `invalid_change`, `bad_offset`, `bad_hash`,
+`too_large`. `syns.commit` also takes a picture's bytes beside texts, inline or
+as an upload `syns.writeBinary` gathered with `hold: true`.
+
+Page authors get the full reference, generated from the code, with
+`bb pages guide`, section *Capabilities from contributors*.
+
+## Known limits
+
+- **`syns.rm` of a path that is not there succeeds** with `changed: 0`, as the
+  CLI does.
+- **Pictures cross in pieces.** A page call carries at most 1 MiB, so bytes
+  travel as base64 in 720 KiB pieces; an 8 MiB photo is 12 calls each way. The
+  plugin holds a picture being gathered or read in memory for a minute between
+  pieces, and bb's host calls carry at most 8 MiB, so larger standard input and
+  output cross between the plugin's two halves in slices, also in memory only.
+- **Pages show published state.** An agent's edits in the folder reach a page
+  after its turn ends and is pushed.
+- **A placed folder is all its page sees.** Run in a folder whose `.syns.yaml`
+  names a `holder` and a `path`, every path is counted from the folder, and
+  `syns.repo` reports the holder's head, which moves with any change to the
+  holder. This needs a Syns CLI with folders (roadmap 239–241).
+- **A placed folder's people need a shared folder.** From a placed folder's
+  page the collaborator methods act on the folder's own people. Until the
+  folder is shared they answer `bad_scope`, saying to share it first. At a
+  repository's root they act on the whole repository: adding someone there
+  grants every folder.
+- Thread Pages refuses any result over 10,000 JSON values, which is why `syns.ls`
+  and `syns.glob` are paged and `syns.grep` lowers its row limit as context grows.
+- Proven on one machine. A session on a second enrolled host, a worktree
+  environment and a repository the account cannot reach are not yet shown live.
+
+## Adding a method
+
+Every method is one entry in `src/methods/`: its name, description, effect,
+parameter and result schemas, bounds, reasons, how its parameters become CLI
+arguments, and how the CLI's output becomes its result. The declaration sent to
+Thread Pages, the generated part of the guide, and the dispatch all come from
+that table. Add an entry and its test; touch nothing else.
+
+```sh
+npm install
+npm test            # no network, no login — the CLI is replayed from recordings. Two suites read beyond this folder and are
+                    # skipped without it: the fragment's slot from this machine's `bb pages status`, and the
+                    # declaration through the protocol's own code, read from a Unife monorepo checkout
+                    # (UNIFE_MONO, else ../../unife-mono)
+npm run typecheck
+npm run build       # bb plugin build
+```
+
+Argument safety is not optional: the CLI is started with an argument array,
+never a shell; option values go as `--option=value`, positionals after `--`,
+texts on standard input. A page's path, pattern or text is never read as a flag.
+
+## Design
+
+The verification tools, the live fixture page among them, are in
+[`verify/`](./verify/README.md). The specification, every decision with its
+reasoning, and the measured facts about bb, Thread Pages and the CLI that the
+code rests on live in the Syns repository `bartsoj/syns`, under `products/pages/`.
+
+## Licence
+
+MIT.

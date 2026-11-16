@@ -1,0 +1,79 @@
+{
+  "name": "bb-plugin-vesper",
+  "version": "1.0.0",
+  "description": "Rauno Freiberg's Vesper colors for BB, as dark, light and auto palettes with matching code colors.",
+  "type": "module",
+  "license": "MIT",
+  "files": [
+    "assets/icon.svg",
+    "src/server.ts",
+    "themes",
+    "skills"
+  ],
+  "engines": {
+    "bb": ">=0.46",
+    "bbPluginSdk": ">=0.6.37"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "bb": {
+    "name": "Vesper",
+    "description": "Rauno Freiberg's Vesper colors for BB, as dark, light and auto palettes with matching code colors.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./src/server.ts",
+    "skills": [
+      "skills"
+    ],
+    "themes": [
+      {
+        "id": "vesper",
+        "name": "Vesper",
+        "description": "Peppermint and orange. Follows the app's light/dark mode.",
+        "css": "./themes/vesper.css",
+        "codeTheme": {
+          "dark": "./themes/vesper-code-dark.json",
+          "light": "./themes/vesper-code-light.json"
+        }
+      },
+      {
+        "id": "vesper-dark",
+        "name": "Vesper Dark",
+        "description": "Vesper's dark palette, always dark.",
+        "css": "./themes/vesper-dark.css",
+        "codeTheme": {
+          "dark": "./themes/vesper-code-dark.json",
+          "light": "./themes/vesper-code-dark.json"
+        }
+      },
+      {
+        "id": "vesper-light",
+        "name": "Vesper Light",
+        "description": "Paper-white inversion of the same three hues, always light.",
+        "css": "./themes/vesper-light.css",
+        "codeTheme": {
+          "dark": "./themes/vesper-code-light.json",
+          "light": "./themes/vesper-code-light.json"
+        }
+      }
+    ]
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.37",
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dillionverma/bb-plugin-vesper.git"
+  },
+  "homepage": "https://github.com/dillionverma/bb-plugin-vesper#readme",
+  "bugs": {
+    "url": "https://github.com/dillionverma/bb-plugin-vesper/issues"
+  }
+}

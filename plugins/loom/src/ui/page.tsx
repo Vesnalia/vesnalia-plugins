@@ -1,0 +1,511 @@
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { experimental_usePluginId, useBbNavigate, type ExperimentalPageTitle, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { ControlAction, ProjectView } from "../contract";
+import { isMultiRepoProject } from "../format";
+import { readyToLand, specReviewBlocks } from "../format";
+import { BadgeNotice } from "./badge-notice";
+import { STAGES } from "../next-step";
+import { AboutStrip } from "./about";
+import { AgentsView } from "./agents";
+import { Board } from "./board";
+import { ChangesTab, landingFiles, useViewed } from "./changes";
+import { BUTTON_PRIMARY, ConfirmButton, MoreMenu, RepoChip, StateBadge, SyncButton, countsLabel, listText, mergeLabel, momentLabel, useAction, useLoom, useLoomWrite, useSyncPullRequests } from "./common";
+import { Guide } from "./guide";
+import { HealthStrip } from "./health";
+import { Home } from "./home";
+import { InsightsTab } from "./insights";
+import { MergeOrderTab } from "./merge-order";
+import { RolloutTab } from "./rollout";
+import { NewProject } from "./new-project";
+import { NextStepBar, repoLand } from "./next-step-bar";
+import { PlannerPage } from "./planner-page";
+import { PlanningView } from "./planning";
+import { createStored, createStoredMap, useScrollMemory, useStored } from "./remember";
+import { useWaiting } from "./questions";
+import { SpecPage, bbProjectNamesOf } from "./spec-page";
+import { tabBadges, type TabBadge } from "./tab-badges";
+import { TicketView } from "./ticket";
+import { TimelineStrip } from "./timeline-strip";
+
+type Tab = "board" | "agents" | "insights" | "spec" | "planner" | "changes" | "merge" | "rollout";
+const TABS: ReadonlyArray<{ tab: Tab; label: string }> = [
+  { tab: "board", label: "Board" },
+  { tab: "agents", label: "Agents" },
+  { tab: "insights", label: "Insights" },
+  { tab: "spec", label: "Spec" },
+  { tab: "planner", label: "Planner" },
+  { tab: "changes", label: "Changes" },
+  { tab: "merge", label: "Merge order" },
+  { tab: "rollout", label: "Rollout" },
+];
+
+// 36rem, where Tailwind's @xl starts: under it the page's container queries (`@max-xl/loom:`) switch to the phone layout.
+const NARROW_PX = 576;
+
+/** Whether the Loom page measured itself narrower than NARROW_PX; bb's title bar over it reads this to shorten its crumbs. */
+export const narrowPage = (() => {
+  let narrow = false;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => narrow,
+    set(next: boolean): void {
+      if (next === narrow) return;
+      narrow = next;
+      for (const listener of [...listeners]) listener();
+    },
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  };
+})();
+
+/** The scrollLeft that brings `tab` wholly into `bar`'s view, with `margin` to spare; null when it is in view already. */
+export function sidewaysInto(bar: Pick<DOMRect, "left" | "right">, tab: Pick<DOMRect, "left" | "right">, scrollLeft: number, margin = 16): number | null {
+  if (tab.left < bar.left) return Math.max(0, scrollLeft - (bar.left - tab.left) - margin);
+  if (tab.right > bar.right) return scrollLeft + (tab.right - bar.right) + margin;
+  return null;
+}
+
+/** A project shows its changes once it has started: before that no worker has changed anything. */
+const hasChangesTab = (state: ProjectView["overview"]["state"]) => state !== "draft" && state !== "ready";
+
+const BADGE_TONES = { destructive: "bg-destructive text-destructive-foreground", warning: "bg-warning text-black" };
+
+export type Route = { view: "home" } | { view: "guide" } | { view: "new" } | { view: "plan"; threadId: string } | { view: "project"; slug: string } | { view: "ticket"; slug: string; key: string };
+
+/**
+ * The route remainder: "_home" is home, "_guide" the guide, "_new" New project, "_plan/<threadId>" a conversation,
+ * "<slug>" a project, "<slug>/<KEY>" a ticket. A slug never starts with "_". "" is where bb's rail opens the page, home
+ * here; the page reopens there on the route it was last left on (see `routeOf`).
+ */
+export function parseRoute(subPath: string): Route {
+  const [first, second] = subPath.split("/").filter((part) => part !== "");
+  if (first === undefined || first === "_home") return { view: "home" };
+  if (first === "_guide") return { view: "guide" };
+  if (first === "_new") return { view: "new" };
+  if (first === "_plan") return second === undefined ? { view: "home" } : { view: "plan", threadId: second };
+  return second === undefined ? { view: "project", slug: first } : { view: "ticket", slug: first, key: second };
+}
+
+/** What a control's toast says once it went through. */
+export function controlDone(action: ControlAction, version?: number, repo?: string): string {
+  const where = repo === undefined ? "" : `${repo}: `;
+  switch (action) {
+    case "approve":
+      return version === undefined ? "Spec approved" : `Approved v${version}`;
+    case "start":
+      return "Project started";
+    case "pause":
+      return "Paused: work in flight carries on, and nothing new starts";
+    case "pauseNow":
+      return "Paused, and its workers stopped";
+    case "resume":
+      return "Project resumed";
+    case "land":
+      return `${where}Landed: the branch is pushed and its pull request is open`;
+    case "landDirect":
+      return `${where}Landed on the base branch`;
+    case "archive":
+      return "Project archived";
+  }
+}
+
+export function formatRoute(route: Route): string {
+  switch (route.view) {
+    case "home":
+      return "_home";
+    case "guide":
+      return "_guide";
+    case "new":
+      return "_new";
+    case "plan":
+      return `_plan/${route.threadId}`;
+    case "project":
+      return route.slug;
+    case "ticket":
+      return `${route.slug}/${route.key}`;
+  }
+}
+
+/** The route the page was last left on, on this device. */
+export const lastRoute = createStored<string | null>("lastRoute", null, (value) => (typeof value === "string" ? formatRoute(parseRoute(value)) : null));
+const TAB_NAMES: readonly string[] = TABS.map((entry) => entry.tab);
+/** The tab each project was last left on. */
+export const projectTabs = createStoredMap<Tab>("projectTab", 50, (value): value is Tab => typeof value === "string" && TAB_NAMES.includes(value));
+
+/** The route a subPath shows: at "", where bb's rail opens the page, the route it was last left on. */
+export function routeOf(subPath: string): Route {
+  return parseRoute(subPath === "" ? (lastRoute.get() ?? "") : subPath);
+}
+
+/** Whether the header offers Sync pull requests: a running or paused project with a pull request per ticket and one open. */
+export const canSyncPullRequests = (overview: ProjectView["overview"]) => overview.strategy === "pr" && (overview.state === "running" || overview.state === "paused") && (overview.ticketCounts.pr_open ?? 0) > 0;
+
+/** The header's secondary controls: the next-step bar's action is left out here, and Archive sits in the ⋯ menu. */
+function Controls({ view, busy, primary, onControl }: { view: ProjectView; busy: boolean; primary: ControlAction | null; onControl(action: ControlAction, version?: number): void }) {
+  const { overview } = view;
+  const { syncing, sync } = useSyncPullRequests(overview.slug);
+  const live = overview.state === "running" || overview.state === "paused" || overview.state === "done";
+  const landable = overview.strategy === "integration" && live && (overview.ticketCounts.done ?? 0) > 0;
+  const land = repoLand(overview.repos);
+  // A multi-repo project lands each repo onto its own base.
+  const bases = [...new Set(overview.repos.map((repo) => repo.base))];
+  const base = !isMultiRepoProject(overview) ? overview.base : bases.length === 1 ? bases[0]! : null;
+  const act = (label: string, action: ControlAction, version?: number, confirm?: string) =>
+    action === primary ? null : <ConfirmButton key={label} label={label} confirmLabel={confirm} disabled={busy} onConfirm={() => onControl(action, version)} />;
+  return (
+    <span data-controls className="ml-auto flex flex-wrap items-center gap-2">
+      {canSyncPullRequests(overview) && (
+        <SyncButton label="Sync pull requests" title="Read every open pull request now instead of at its next check, and act on what it says" syncing={syncing} disabled={busy} onSync={() => void sync()} />
+      )}
+      {overview.state === "draft" && !specReviewBlocks(view.specReview) && act("Approve", "approve")}
+      {overview.state !== "draft" && overview.state !== "archived" && overview.pendingVersion !== null && !specReviewBlocks(view.specReview) && act(`Approve v${overview.pendingVersion}`, "approve", overview.pendingVersion)}
+      {overview.state === "ready" && act("Start", "start")}
+      {overview.state === "running" && act("Pause", "pause")}
+      {overview.state === "running" && act("Pause now", "pauseNow")}
+      {overview.state === "paused" && act("Resume", "resume")}
+      {landable && act(land?.label ?? "Land", "land", undefined, land?.confirm)}
+      {landable && act(base === null ? "Land to each repo's base" : `Land to ${base}`, "landDirect", undefined, land === null ? undefined : `Click again to land ${listText(land.names)} to ${base ?? "their bases"}`)}
+      {overview.state !== "archived" && (
+        <MoreMenu>
+          <ConfirmButton label="Archive project" danger disabled={busy} onConfirm={() => onControl("archive")} />
+        </MoreMenu>
+      )}
+    </span>
+  );
+}
+
+/**
+ * The spec page for the version waiting for the human, or the newest one. Its review panel offers Approve only when the
+ * next-step bar does not carry it. Rewound, it shows the version in force then and takes no comments.
+ */
+function SpecTab({ view, busy, rewound, requested, onApprove }: { view: ProjectView; busy: boolean; rewound: boolean; requested: number | null; onApprove(version: number): void }) {
+  const { spec, overview } = view;
+  const barApproves = view.next?.action?.control === "approve";
+  const waiting = specReviewBlocks(view.specReview) ? null : overview.state === "draft" ? spec.version : overview.state === "archived" ? null : spec.pendingVersion;
+  const approve = rewound || barApproves || waiting === null ? null : { version: waiting, label: `Approve v${waiting}`, busy, onApprove: () => onApprove(waiting) };
+  return (
+    <div className="space-y-3 p-4">
+      {rewound && (
+        <p data-spec-rewound className="text-xs text-muted-foreground">
+          At this moment, version {spec.version} was the spec in force.
+        </p>
+      )}
+      {!rewound && spec.pendingVersion !== null && (
+        <p data-spec-pending className="text-xs text-muted-foreground">
+          v{spec.pendingVersion} waits for your approval; until then the project runs on v{spec.version} and its tickets stay as they are.
+        </p>
+      )}
+      <SpecPage slug={overview.slug} version={rewound ? spec.version : (requested ?? undefined)} readOnly={rewound} bbProjectNames={bbProjectNamesOf(view)} specReview={view.specReview} approve={approve} />
+    </div>
+  );
+}
+
+/** In place of the next-step bar while the page is rewound: when it shows, and the way back. */
+function RewindBar({ now, stage, onNow }: { now: number; stage: number | null; onNow(): void }) {
+  return (
+    <section data-rewind-bar aria-label="Rewound" className="space-y-2 rounded-md border border-warning bg-warning/10 px-4 py-3">
+      <ol className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+        {STAGES.map((label, index) => (
+          <li key={label} data-stage={label} aria-current={index === stage ? "step" : undefined} className={index === stage ? "font-semibold text-foreground" : stage !== null && index < stage ? "text-muted-foreground" : "text-subtle-foreground"}>
+            {stage !== null && index < stage ? "✓" : index + 1} {label}
+          </li>
+        ))}
+      </ol>
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="min-w-[min(100%,18rem)] flex-1 text-sm text-warning-text">
+          <b>Rewound to {momentLabel(now)}.</b> You are seeing the project as it was then; nothing here can change it, and its controls come back at now.
+        </p>
+        <button type="button" className={BUTTON_PRIMARY} onClick={onNow}>
+          Back to now
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The project's tabs in one row that scrolls sideways by itself when the tabs do not fit, with the chosen tab scrolled
+ * into view, sideways only. On a narrow page it stays at the top while the page scrolls; `onHeight` tells the spec
+ * page's own sticky bar how far below it to stop.
+ */
+function TabBar({ tabs, selected, badges, onTab, onHeight }: { tabs: ReadonlyArray<{ tab: Tab; label: string }>; selected: Tab; badges: Partial<Record<Tab, TabBadge>>; onTab(tab: Tab): void; onHeight(px: number): void }) {
+  const bar = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const element = bar.current;
+    const chosen = element?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+    if (element == null || chosen == null) return;
+    const left = sidewaysInto(element.getBoundingClientRect(), chosen.getBoundingClientRect(), element.scrollLeft);
+    if (left !== null) element.scrollLeft = left;
+  }, [selected, tabs.length]);
+  useLayoutEffect(() => {
+    const element = bar.current;
+    if (element === null || typeof ResizeObserver === "undefined") return;
+    const measure = () => onHeight(element.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [onHeight]);
+  return (
+    <div
+      ref={bar}
+      role="tablist"
+      aria-label="Project"
+      data-tab-bar
+      className="flex min-w-0 shrink-0 flex-nowrap gap-1 overflow-x-auto border-b border-border-seam px-3 pt-1.5 [scrollbar-width:none] @max-xl/loom:sticky @max-xl/loom:top-0 @max-xl/loom:z-20 @max-xl/loom:bg-surface-recessed/95 @max-xl/loom:backdrop-blur"
+    >
+      {tabs.map((entry) => {
+        const badge = badges[entry.tab];
+        return (
+          <button
+            key={entry.tab}
+            type="button"
+            role="tab"
+            aria-selected={selected === entry.tab}
+            aria-description={badge?.label}
+            title={badge?.label}
+            onClick={() => onTab(entry.tab)}
+            className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-t-md px-3 py-1.5 text-xs whitespace-nowrap ${selected === entry.tab ? "bg-surface-selected text-foreground" : "text-muted-foreground hover:bg-state-hover"}`}
+          >
+            {entry.label}
+            {badge !== undefined && (
+              <span data-tab-badge={entry.tab} aria-hidden className={`inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-none font-semibold ${BADGE_TONES[badge.tone]}`}>
+                {badge.text}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProjectPanel({ slug, tab, onTab, at, onSeek, go }: { slug: string; tab: Tab; onTab(tab: Tab): void; at: number | null; onSeek(at: number | null): void; go(subPath: string): void }) {
+  const navigate = useBbNavigate();
+  const remote = useLoom("project", at === null ? { slug } : { slug, at }, { keep: true });
+  const send = useLoomWrite("control");
+  const { busy, act } = useAction();
+  const [chosenChange, setChosenChange] = useState<string | null>(null);
+  // The spec version the Planner page asked to open; a tab change by the human opens the spec's own default again.
+  const [specVersion, setSpecVersion] = useState<number | null>(null);
+  const [tabsHeight, setTabsHeight] = useState(0);
+  const plannerWaiting = useWaiting(remote.data?.overview.plannerThreadId ?? "");
+  const loaded = remote.data;
+  const wantChanges = loaded !== undefined && at === null && loaded.at === null && hasChangesTab(loaded.overview.state) && (tab === "changes" || readyToLand(loaded.overview));
+  const changes = useLoom("changes", { slug }, { keep: true, enabled: wantChanges });
+  const viewed = useViewed(slug);
+  const view = remote.data;
+  if (view === undefined) {
+    return remote.error === null ? <p role="status" className="p-4 text-sm text-muted-foreground">Loading…</p> : <p role="alert" className="p-4 text-sm text-destructive-text">Could not load {slug}: {remote.error}</p>;
+  }
+  const { overview } = view;
+  // Either side counts: the shown view can still be the past one while the live view loads.
+  const rewound = at !== null || view.at !== null;
+  const changesTab = !rewound && hasChangesTab(overview.state);
+  // The merge order is of the project now, so a rewound page leaves it out, as it does the changes.
+  const mergeTab = changesTab && view.mergeOrder !== null;
+  const rolloutTab = !rewound && view.rollout !== null;
+  const shownTab = (rewound && tab === "planner") || (!changesTab && tab === "changes") || (!mergeTab && tab === "merge") || (!rolloutTab && tab === "rollout") ? "board" : tab;
+  const landing = landingFiles(changes.data ?? null);
+  const badges: Partial<Record<Tab, TabBadge>> = rewound ? {} : tabBadges(view, landing === null ? null : viewed.unviewed(landing), plannerWaiting);
+  const shownBadge = badges[shownTab];
+  const openChanges = (id: string | null) => {
+    setChosenChange(id);
+    onTab("changes");
+  };
+  const control = (action: ControlAction, version?: number, repo?: string) =>
+    act(() => send({ slug, action, ...(version === undefined ? {} : { version }), ...(repo === undefined ? {} : { repo }), confirm: true }), controlDone(action, version, repo));
+
+  return (
+    <div className="flex min-h-full flex-col" style={tabsHeight > 0 ? ({ "--loom-tabs": `${tabsHeight}px` } as CSSProperties) : undefined}>
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border-seam px-4 py-2.5">
+        <h1 className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere]">{overview.name}</h1>
+        <span className="text-xs text-muted-foreground">{overview.key}</span>
+        <StateBadge state={overview.state} />
+        <span className="text-xs text-muted-foreground">{mergeLabel(overview)} · {countsLabel(overview.ticketCounts)}</span>
+        {rewound ? (
+          <span className="ml-auto">
+            <StateBadge state="rewound" />
+          </span>
+        ) : (
+          <Controls view={view} busy={busy} primary={view.next?.action?.control ?? null} onControl={(action, version) => void control(action, version)} />
+        )}
+      </div>
+      <AboutStrip overview={overview} onGoal={() => onTab("spec")} />
+      {rewound ? (
+        <div className="px-4 pt-3">
+          <RewindBar now={view.now} stage={view.next?.stage ?? null} onNow={() => onSeek(null)} />
+        </div>
+      ) : (
+        view.next !== null && (
+          <div className="px-4 pt-3">
+            {/* On a multi-repo project "branch" opens the first repo with work to land, as pickSource reads it. */}
+            <NextStepBar next={view.next} busy={busy} repos={overview.repos} onAct={(action, version) => void control(action, version)} onReviewChanges={changesTab ? () => openChanges("branch") : undefined} />
+          </div>
+        )
+      )}
+      {view.prUrl !== null && (
+        <p className="border-b border-border-seam px-4 py-2 text-xs text-muted-foreground">
+          Pull request <button type="button" className="text-left underline [overflow-wrap:anywhere]" onClick={() => navigate.openUrl(view.prUrl!)}>{view.prUrl}</button>
+        </p>
+      )}
+      {isMultiRepoProject(overview) && overview.repos.some((repo) => repo.prUrl !== null) && (
+        <p data-repo-prs className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border-seam px-4 py-2 text-xs text-muted-foreground">
+          Pull requests
+          {overview.repos.flatMap((repo) =>
+            repo.prUrl === null
+              ? []
+              : [
+                  <span key={repo.name} className="inline-flex min-w-0 items-center gap-1">
+                    <RepoChip name={repo.name!} />
+                    <button type="button" aria-label={`Open the pull request in ${repo.name}`} className="underline [overflow-wrap:anywhere]" onClick={() => navigate.openUrl(repo.prUrl!)}>
+                      {repo.prUrl}
+                    </button>
+                  </span>,
+                ],
+          )}
+        </p>
+      )}
+      {view.health !== null && <HealthStrip health={view.health} />}
+      <TimelineStrip slug={slug} at={at} onSeek={onSeek} onTicket={(key) => go(`${slug}/${key}`)} />
+      <TabBar
+        tabs={TABS.filter((entry) => (entry.tab !== "planner" || (overview.plannerThreadId !== null && !rewound)) && (entry.tab !== "changes" || changesTab) && (entry.tab !== "merge" || mergeTab) && (entry.tab !== "rollout" || rolloutTab))}
+        selected={shownTab}
+        badges={badges}
+        onTab={(next) => {
+          setSpecVersion(null);
+          onTab(next);
+        }}
+        onHeight={setTabsHeight}
+      />
+      <div role="tabpanel" className="min-h-0 flex-1">
+        {shownBadge !== undefined && (
+          <div className="px-4 pt-3">
+            <BadgeNotice key={shownTab} slug={slug} tab={shownTab} badge={shownBadge} onTicket={(key) => go(`${slug}/${key}`)} />
+          </div>
+        )}
+        {shownTab === "board" && <Board slug={slug} cards={view.board} strategy={overview.strategy} now={view.now} draftVersion={overview.state === "draft" ? view.spec.version : null} onChanges={changesTab ? openChanges : undefined} />}
+        {shownTab === "agents" && <AgentsView agents={view.agents} byRole={view.metrics.tokens.byRole} unreported={view.metrics.tokens.unreported} now={view.now} />}
+        {shownTab === "insights" && <InsightsTab slug={slug} at={at} onTicket={(key) => go(`${slug}/${key}`)} />}
+        {shownTab === "spec" && <SpecTab view={view} busy={busy} rewound={rewound} requested={specVersion} onApprove={(version) => void control("approve", version)} />}
+        {shownTab === "planner" && overview.plannerThreadId !== null && (
+          <PlannerPage
+            threadId={overview.plannerThreadId}
+            project={view}
+            busy={busy}
+            onControl={(action, version) => void control(action, version)}
+            onSpec={(version) => {
+              setSpecVersion(version);
+              onTab("spec");
+            }}
+            onTicket={(key) => go(`${slug}/${key}`)}
+          />
+        )}
+        {shownTab === "merge" && <MergeOrderTab order={view.mergeOrder} onTicket={(key) => go(`${slug}/${key}`)} />}
+        {shownTab === "rollout" && <RolloutTab slug={slug} rollout={view.rollout} mergeOrder={view.mergeOrder} now={view.now} onTicket={(key) => go(`${slug}/${key}`)} />}
+        {shownTab === "changes" && (
+          <ChangesTab changes={changes.data ?? null} error={changes.error} view={view} busy={busy} chosen={chosenChange} onChoose={setChosenChange} onControl={(action, repo) => void control(action, undefined, repo)} onReload={changes.reload} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function LoomPage({ subPath }: PluginNavPanelProps) {
+  // bb's rail opens the page at its root. The page replaces that address with the place it was last left, home included,
+  // so Back never lands on the root again and resumes a newer place.
+  const remembered = useStored(lastRoute);
+  const resume = subPath === "" ? (remembered ?? formatRoute({ view: "home" })) : null;
+  const route = parseRoute(resume ?? subPath);
+  const navigate = useBbNavigate();
+  const go = useCallback((next: string) => navigate.toPluginPanel("loom", { subPath: next }), [navigate]);
+  useEffect(() => {
+    if (subPath !== "") lastRoute.set(formatRoute(parseRoute(subPath)));
+    else if (resume !== null) navigate.toPluginPanel("loom", { subPath: resume, replace: true });
+    // Only a change of place counts; `navigate` is a new object on each render.
+  }, [subPath, resume]);
+  // Each project opens on the tab it was last left on.
+  const tabs = useStored(projectTabs);
+  const slug = route.view === "project" || route.view === "ticket" ? route.slug : null;
+  const tab = (slug === null ? undefined : tabs[slug]) ?? "board";
+  // A planning conversation that proposed is its project's Planner tab from then on; the redirect replaces the
+  // conversation's address, so Back does not land on it and bounce forward again.
+  const openPlanner = useCallback(
+    (next: string) => {
+      projectTabs.put(next, "planner");
+      navigate.toPluginPanel("loom", { subPath: next, replace: true });
+    },
+    [navigate],
+  );
+  const scroller = useScrollMemory(route.view === "project" ? `${formatRoute(route)}#${tab}` : formatRoute(route));
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  const scrollerRef = scroller.ref;
+  const rootRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      scrollerRef(node);
+      setRoot(node);
+    },
+    [scrollerRef],
+  );
+  useLayoutEffect(() => {
+    if (root === null || typeof ResizeObserver === "undefined") return;
+    const measure = () => narrowPage.set(root.clientWidth > 0 && root.clientWidth < NARROW_PX);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    return () => {
+      observer.disconnect();
+      narrowPage.set(false);
+    };
+  }, [root]);
+  // The ticket route reads the rewind too, so it lives here, with the project it belongs to.
+  const [rewind, setRewind] = useState<{ slug: string; at: number } | null>(null);
+  const at = rewind !== null && rewind.slug === slug ? rewind.at : null;
+  const seek = (next: number | null) => setRewind(next === null || slug === null ? null : { slug, at: next });
+
+  return (
+    <section data-loom-page className="flex h-full min-h-0 min-w-0 flex-col bg-surface-recessed text-foreground">
+      {/* The page's narrow layouts (`@max-xl/loom:`) ask this box by name, not a part's own container; it never scrolls sideways. */}
+      <div ref={rootRef} onScroll={scroller.onScroll} data-loom-scroll className="@container/loom min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+        {route.view === "home" && <Home go={go} />}
+        {route.view === "guide" && <Guide onStart={() => go("_new")} />}
+        {route.view === "new" && <NewProject go={go} />}
+        {route.view === "plan" && <PlanningView threadId={route.threadId} openProject={openPlanner} />}
+        {route.view === "project" && <ProjectPanel key={route.slug} slug={route.slug} tab={tab} onTab={(next) => projectTabs.put(route.slug, next)} at={at} onSeek={seek} go={go} />}
+        {route.view === "ticket" && <TicketView ticketKey={route.key} at={at} onNow={() => seek(null)} />}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * bb's title bar on the Loom page: where the page is, with a ticket's project linking back to it. Home keeps bb's own
+ * "Loom". On a narrow page a ticket's project goes by its key, as bb does not shorten that crumb.
+ */
+export function useLoomPageTitle({ subPath }: PluginNavPanelProps): ExperimentalPageTitle | null {
+  const pluginId = experimental_usePluginId();
+  useStored(lastRoute);
+  const narrow = useSyncExternalStore(narrowPage.subscribe, narrowPage.get, narrowPage.get);
+  const route = routeOf(subPath);
+  const slug = route.view === "project" || route.view === "ticket" ? route.slug : null;
+  // The sidebar's reads of home and of the conversation, so the names cost no read of their own, even on a ticket, whose page reads no project.
+  const project = useLoom("home", null, { enabled: slug !== null }).data?.projects.find((entry) => entry.slug === slug);
+  const name = project?.name ?? slug ?? "";
+  const conversation = useLoom("planningSession", { threadId: route.view === "plan" ? route.threadId : "" }, { enabled: route.view === "plan" }).data?.title;
+  switch (route.view) {
+    case "home":
+      return null;
+    case "guide":
+      return { title: "How Loom works" };
+    case "new":
+      return { title: "New project" };
+    case "plan":
+      return conversation === undefined ? { title: "Planning" } : { breadcrumbs: [{ label: "Planning" }, { label: conversation }] };
+    case "project":
+      return { title: name };
+    case "ticket":
+      return { breadcrumbs: [{ label: narrow ? (project?.key ?? name) : name, to: `/plugins/${encodeURIComponent(pluginId)}/loom/${encodeURIComponent(route.slug)}` }, { label: route.key }] };
+  }
+}

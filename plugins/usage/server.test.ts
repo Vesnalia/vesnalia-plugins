@@ -1,0 +1,2579 @@
+import { grokLimitsMigration, syncGrokLimits, loadStoredGrokLimits } from "./server";
+import Database from "better-sqlite3";
+import { createHash, randomBytes } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { z } from "zod";
+
+vi.mock("@bb/plugin-sdk", () => ({
+  defineRpcContract: <T>(contract: T) => contract,
+}));
+
+import plugin, {
+  rpcContract, dashboardRecordsSql, devinCommand, extractOpenCodeJson, jsonAgentRoots, loadProviderLimits, loadCodexResetCredits, loadStoredOpenCodeGoLimits,
+  kilocodeCommand, openCodeCommand, openCodeSql, openCodeV2Sql, runHostCommand, syncDevin, syncKilocode, syncOpenCode, syncOpenCodeGo,
+} from "./server";
+import { resetPricingCatalog, setPricingCatalog } from "./lib/pricing";
+import { getEmptyUsageView, getSourceIssueMessage } from "./lib/usage-view-state";
+import { groupProviderLimits, type ProviderLimitSource } from "./lib/provider-limits";
+import { providerResetAction } from "./lib/provider-resets";
+
+function localDay(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Same markers host-json-collector.ts's hostJsonCollector() wraps its
+// gzipped result in; not exported (they're a private wire format between
+// the generated host script and extractHostJsonScan), so the fixture
+// reproduces them rather than importing.
+const SCAN_BEGIN = "__BB_USAGE_SCAN_BEGIN__";
+const SCAN_END = "__BB_USAGE_SCAN_END__";
+
+function fakeHostScanOutput(agentId: string, rows: Array<Record<string, unknown>>) {
+  const scan = { agentId, fileCount: 1, changedFileCount: 1, reusedFileCount: 0, failureCount: 0, error: null, rows };
+  const encoded = gzipSync(Buffer.from(JSON.stringify(scan))).toString("base64");
+  return `${SCAN_BEGIN}\n${encoded}\n${SCAN_END}\n__BB_HOST_COMMAND_DONE__:0\n`;
+}
+
+// The command is a shell wrapper around `node -e eval(gunzip(base64(...)))`
+// where the gzipped payload is the generated collector script with
+// agentId/roots baked in as a literal object — decode it the same way
+// to tell which JSON-agent sync this particular terminal is for.
+function agentIdFromCommand(command: string): string | null {
+  // Outer layer: eval(gunzip(base64(<script source>))). Match only up to
+  // the closing quote of the base64 argument — the rest of the call
+  // (,'base64')) has its single quotes mangled by shellQuote's bash
+  // escaping (' becomes '"'"') once this is embedded in the full
+  // command, so anchoring on that literal text would never match here.
+  const outer = command.match(/Buffer\.from\("([A-Za-z0-9+/=]+)"/);
+  if (!outer) return null;
+  const source = gunzipSync(Buffer.from(outer[1]!, "base64")).toString("utf8");
+  // Inner layer: the collector function is invoked as
+  // (function hostJsonCollector(encodedInput, dependencies) {...})("<base64 JSON>", {...}) —
+  // encodedInput is JSON.stringify(input) base64'd separately from the
+  // gzip layer above.
+  const inner = source.match(/\}\)\("([A-Za-z0-9+/=]+)"/);
+  if (!inner) return null;
+  const input = JSON.parse(Buffer.from(inner[1]!, "base64").toString("utf8")) as { agentId?: string };
+  return input.agentId ?? null;
+}
+
+function hostFileWriteMock(stagedFiles: Map<string, string>) {
+  return vi.fn(async (args: { path: string; content: string; expectedSha256?: string | null }) => {
+    const currentContent = stagedFiles.get(args.path);
+    const currentSha256 = currentContent === undefined
+      ? null
+      : createHash("sha256").update(currentContent).digest("hex");
+    if (args.expectedSha256 !== undefined && args.expectedSha256 !== currentSha256) {
+      return { outcome: "conflict" as const, currentSha256 };
+    }
+    stagedFiles.set(args.path, args.content);
+    return {
+      outcome: "written" as const,
+      sha256: createHash("sha256").update(args.content).digest("hex"),
+      sizeBytes: args.content.length,
+    };
+  });
+}
+
+// Oversized commands reach the terminal as `sh '<staged path>'`; resolve that
+// back to the staged file contents before decoding which agent it belongs to.
+function commandTextFor(command: string, stagedFiles: Map<string, string>) {
+  const stagedPath = command.match(/sh '([^']+\.sh)'/)?.[1];
+  return (stagedPath ? stagedFiles.get(stagedPath) : undefined) ?? command;
+}
+
+describe("JSON agent roots", () => {
+  it("points Copilot at its session state root", () => {
+    expect(jsonAgentRoots("/home/user", "copilot", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+      "/home/user/.copilot/session-state",
+    ]);
+  });
+  it("includes active and archived Codex sessions", () => {
+    expect(jsonAgentRoots("/home/user", "codex", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+      "/home/user/.codex/sessions",
+      "/home/user/.codex/archived_sessions",
+    ]);
+  });
+
+  it("scans both session directories in each configured Codex home", () => {
+    expect(jsonAgentRoots("/home/user", "codex", {
+      piSessionRoots: "", primeSessionRoots: "",
+      codexHomes: "~/.codex/; ~/custom-codex/; /mnt/codex\n~/custom-codex",
+    })).toEqual([
+      "/home/user/.codex/sessions", "/home/user/.codex/archived_sessions",
+      "/home/user/custom-codex/sessions", "/home/user/custom-codex/archived_sessions",
+      "/mnt/codex/sessions", "/mnt/codex/archived_sessions",
+    ]);
+  });
+
+  it("points Antigravity at the provider bridge's own usage log", () => {
+    expect(jsonAgentRoots("/home/user", "antigravity", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+      "/home/user/.antigravity-acp/usage.jsonl",
+    ]);
+  });
+
+  it("points DeepSeek Harness at its compressed session root", () => {
+    expect(jsonAgentRoots("/home/user", "dsh", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+      "/home/user/.dsh/sessions",
+    ]);
+  });
+
+  it("includes Prime root and recursive-agent sessions", () => {
+    expect(jsonAgentRoots("/home/user", "prime", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+      "/home/user/.prime/agent/sessions",
+      "/home/user/.prime/agent/session-artifacts",
+    ]);
+  });
+
+  it("derives artifact directories for custom Prime session roots", () => {
+    expect(jsonAgentRoots("/home/user", "prime", {
+      piSessionRoots: "",
+      primeSessionRoots: "~/prime-sessions; /var/lib/prime/sessions/",
+    })).toEqual([
+      "/home/user/.prime/agent/sessions",
+      "/home/user/.prime/agent/session-artifacts",
+      "/home/user/prime-sessions",
+      "/home/user/session-artifacts",
+      "/var/lib/prime/sessions",
+      "/var/lib/prime/session-artifacts",
+    ]);
+  });
+
+  it("includes the bb pi provider bridge session directory by default", () => {
+    expect(jsonAgentRoots("/home/user", "pi", { piSessionRoots: "", primeSessionRoots: "" })).toEqual([
+      "/home/user/.pi/agent/sessions",
+      "/home/user/.bb/pi-bridge-sessions",
+    ]);
+  });
+
+  it("moves known Prime roots out of legacy Pi extra roots", () => {
+    expect(jsonAgentRoots("/home/user", "pi", {
+      piSessionRoots: "~/.prime/agent; ~/.prime/agent/sessions; ~/.prime/agent/session-artifacts; /data/pi; /data/prime/sessions",
+      primeSessionRoots: "/data/prime/sessions",
+    })).toEqual([
+      "/home/user/.pi/agent/sessions",
+      "/home/user/.bb/pi-bridge-sessions",
+      "/data/pi",
+    ]);
+  });
+});
+
+describe("Freebuff retirement upgrade", () => {
+  it.each([
+    ["offline", false], ["unavailable", false], ["partial", false],
+    ["offline", true], ["unavailable", true], ["partial", true],
+  ] as const)("clears stale %s states while preserving history=%s", async (status, withHistory) => {
+    const db = new Database(":memory:");
+    const machines = [{ id: "host-1", name: "Machine", status: "connected" }];
+    const now = new Date().toISOString();
+    let handlers: { dashboard: () => Promise<z.infer<typeof rpcContract.dashboard.output>> } | undefined;
+    let appliedMigrations = 0;
+    let historyBefore: unknown;
+    let activeStatesBefore: unknown;
+    const history = () => ({
+      events: db.prepare("SELECT * FROM usage_events ORDER BY event_key").all(),
+      // Later migrations may add empty columns; compare the recorded values.
+      sources: (db.prepare("SELECT * FROM usage_sources ORDER BY source_id").all() as Array<Record<string, unknown>>)
+        .map(({ scan_revision: _, ...source }) => source),
+      mappings: db.prepare("SELECT * FROM usage_event_sources ORDER BY event_key, source_id").all(),
+    });
+    const activeStates = () => db.prepare("SELECT * FROM usage_sync_state WHERE provider_id <> 'freebuff' ORDER BY machine_id, provider_id").all();
+    const bb = {
+      settings: { define: vi.fn() },
+      storage: {
+        database: () => db,
+        migrate: (_db: unknown, statements: string[]) => {
+          if (appliedMigrations === 0) {
+            // The released plugin has nine migrations. Seed an existing user's
+            // database before running any appended upgrade migrations.
+            for (const statement of statements.slice(0, 9)) db.exec(statement);
+            appliedMigrations = 9;
+            const insertState = db.prepare(`INSERT INTO usage_sync_state
+              (machine_id, provider_id, status, last_attempt_at, last_success_at, record_count, error)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`);
+            for (const hostId of ["host-1", "host-2"]) {
+              insertState.run(hostId, "freebuff", status, now, null, 0, status === "offline" ? null : "Previous scan failed");
+            }
+            for (const agentId of ["kilocode", "codex-work"]) {
+              insertState.run("host-1", agentId, "no-data", now, now, 0, null);
+            }
+            if (withHistory) {
+              db.prepare(`INSERT INTO usage_events
+                (event_key, timestamp, day, provider_id, provider_name, model, cost_usd, cache_savings_usd,
+                 processed_tokens, cached_input_tokens, cache_write_tokens, uncached_input_tokens, output_tokens,
+                 model_provider_id, model_provider_name, logged_cost_usd, pricing_status, project)
+                VALUES ('legacy-freebuff', ?, ?, 'freebuff', 'Freebuff', 'mimo-2.6-flash', 0.0042, 0,
+                  1950, 400, 0, 1200, 350, 'freebuff', 'Freebuff', 0.0042, 'logged', 'project')`)
+                .run(now, now.slice(0, 10));
+              db.prepare(`INSERT INTO usage_sources
+                (source_id, machine_id, machine_name, provider_id, root_reference, content_sha, last_seen_generation, last_success_at)
+                VALUES ('legacy-source', 'host-1', 'Machine', 'freebuff', 'root-hash', 'content-hash', 'generation', ?)`)
+                .run(now);
+              db.prepare("INSERT INTO usage_event_sources VALUES ('legacy-freebuff', 'legacy-source')").run();
+            }
+            historyBefore = history();
+            activeStatesBefore = activeStates();
+          }
+          for (const statement of statements.slice(appliedMigrations)) db.exec(statement);
+          appliedMigrations = statements.length;
+        },
+      },
+      rpc: { register: (_contract: unknown, registered: unknown) => { handlers = registered as typeof handlers; } },
+      sdk: { hosts: { list: async () => machines } },
+      background: { service: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    try {
+      // Cleanup must work before a sync and remain correct on restart.
+      for (let startup = 0; startup < 2; startup++) {
+        await plugin(bb);
+        const dashboard = await handlers!.dashboard();
+        expect(dashboard.sources.map((source) => source.agentId)).toEqual(["codex-work", "kilocode"]);
+        expect(activeStates()).toEqual(activeStatesBefore);
+        expect(history()).toEqual(historyBefore);
+        expect(getSourceIssueMessage(dashboard.machines, dashboard.sources)).toBeNull();
+        expect(getEmptyUsageView({
+          machines: dashboard.machines, sources: dashboard.sources, hasRecordsOutsideView: dashboard.records.length > 0,
+        }).kind).toBe(withHistory ? "filtered" : "no-data");
+        expect(dashboard.records).toHaveLength(withHistory ? 1 : 0);
+        if (withHistory) {
+          expect(dashboard.records[0]).toMatchObject({ agentId: "freebuff", costUsd: 0.0042, processedTokens: 1950 });
+          expect(dashboard.agents).toContainEqual({ id: "freebuff", name: "Freebuff" });
+        }
+      }
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("sync RPC", () => {
+  it("returns before a slow collection completes", async () => {
+    let handlers: { sync: () => unknown } | undefined;
+    const collection = new Promise<never>(() => {});
+    const db = { prepare: vi.fn(() => ({ get: vi.fn() })) };
+    const bb = {
+      settings: { define: vi.fn() },
+      storage: { database: vi.fn(() => db), migrate: vi.fn() },
+      rpc: {
+        register: vi.fn((_contract: unknown, registered: unknown) => {
+          handlers = registered as { sync: () => unknown };
+        }),
+      },
+      sdk: { hosts: { list: vi.fn(() => collection) } },
+      realtime: { publish: vi.fn() },
+      background: { service: vi.fn() },
+      log: { error: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await plugin(bb);
+
+    expect(handlers?.sync()).toEqual({ ok: true });
+    expect(bb.sdk.hosts.list).toHaveBeenCalledOnce();
+  });
+
+  it.each(["antigravity", "copilot", "kilocode"])("dispatches %s through syncAll and stores its usage", async (targetAgent) => {
+    // Regression test for the exact gap flagged in review on
+    // https://github.com/MayankBansal12/bb-plugin-usage/pull/21: AGENTS and
+    // jsonAgentRoots knew about "antigravity", but syncAll()'s Promise.all
+    // never called syncJsonAgent(..., "antigravity", ...), so no scan ever
+    // ran for it in production even though the unit tests (which call
+    // scan()/parseHostUsageAggregates directly) all passed. This drives the
+    // real, unmodified plugin factory end-to-end through its public sync()
+    // RPC and asserts a row actually lands in the database for Antigravity.
+    const db = new Database(":memory:");
+    let handlers: { sync: () => unknown } | undefined;
+    const commandsByTerminalId = new Map<string, string>();
+    const stagedFiles = new Map<string, string>();
+
+    const bb = {
+      settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
+      storage: {
+        database: vi.fn(() => db),
+        migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
+      },
+      rpc: {
+        register: vi.fn((_contract: unknown, registered: unknown) => {
+          handlers = registered as { sync: () => unknown };
+        }),
+      },
+      sdk: {
+        hosts: {
+          list: vi.fn(async () => [{ id: "host-1", name: "Machine", status: "connected" }]),
+          directory: vi.fn(async () => ({ directory: "/home/user" })),
+        },
+        files: { write: hostFileWriteMock(stagedFiles) },
+        terminals: {
+          create: vi.fn(async (input: { start: { command: string } }) => {
+            const id = `terminal-${commandsByTerminalId.size}`;
+            commandsByTerminalId.set(id, input.start.command);
+            return { id, status: "starting" };
+          }),
+          get: vi.fn(async (args: { terminalId: string }) => ({ id: args.terminalId, status: "running" })),
+          output: vi.fn(async (args: { terminalId: string }) => {
+            const command = commandTextFor(commandsByTerminalId.get(args.terminalId) ?? "", stagedFiles);
+            const agentId = agentIdFromCommand(command);
+            const text = agentId === targetAgent
+              ? fakeHostScanOutput(targetAgent, [{
+                day: new Date().toISOString().slice(0, 10),
+                modelProviderId: "google",
+                model: "gemini-4-ultra-preview",
+                loggedCostUsd: null,
+                uncachedInputTokens: 13814,
+                cachedInputTokens: 0,
+                cacheWriteTokens: 0,
+                outputTokens: 53,
+              }])
+              : fakeHostScanOutput(agentId ?? "codex", []); // every other agent: empty, uninteresting scan
+            return { chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false };
+          }),
+          close: vi.fn(async () => undefined),
+        },
+      },
+      realtime: { publish: vi.fn() },
+      background: { service: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await plugin(bb);
+    expect(handlers?.sync()).toEqual({ ok: true });
+
+    await vi.waitFor(() => {
+      const row = db.prepare("SELECT provider_id FROM usage_events WHERE provider_id = ?").get(targetAgent);
+      expect(row).toBeTruthy();
+    }, { timeout: 2000 });
+
+    const syncState = db.prepare(
+      "SELECT status, record_count recordCount FROM usage_sync_state WHERE machine_id = 'host-1' AND provider_id = ?",
+    ).get(targetAgent);
+    expect(syncState).toEqual({ status: "ready", recordCount: 1 });
+
+    if (targetAgent === "antigravity") {
+      // This host has another working agent but no Copilot history. The new
+      // collector must complete without records or an unavailable-data banner.
+      await vi.waitFor(() => {
+        expect(db.prepare(`SELECT status, record_count recordCount, error
+          FROM usage_sync_state WHERE machine_id = 'host-1' AND provider_id = 'copilot'`).get())
+          .toEqual({ status: "no-data", recordCount: 0, error: null });
+      });
+      expect(db.prepare("SELECT * FROM usage_events WHERE provider_id = 'copilot'").all()).toEqual([]);
+      const sources = db.prepare(`SELECT machine_id machineId, status FROM usage_sync_state
+        WHERE provider_id IN ('antigravity', 'copilot')`).all() as Array<{ machineId: string; status: string }>;
+      expect(getSourceIssueMessage([{ id: "host-1", name: "Machine", status: "connected" }], sources)).toBeNull();
+      expect(bb.log.warn).not.toHaveBeenCalledWith(expect.stringContaining("/copilot:"));
+    }
+
+    // The terminal contract caps start.command at 10,000 characters; every
+    // collector command must fit, whether inline or staged through files.write.
+    for (const command of commandsByTerminalId.values()) {
+      expect(command.length).toBeLessThanOrEqual(10_000);
+    }
+
+    db.close();
+  });
+
+  it("stages an oversized collector script through files.write and still records its rows", async () => {
+    // A huge configured session root inflates the serialized scan input enough
+    // that the compressed collector command no longer fits the terminal's
+    // 10,000-character limit, forcing the files.write staging path.
+    const db = new Database(":memory:");
+    let handlers: { sync: () => unknown } | undefined;
+    const commandsByTerminalId = new Map<string, string>();
+    const stagedFiles = new Map<string, string>();
+    const write = hostFileWriteMock(stagedFiles);
+
+    const bb = {
+      settings: {
+        define: vi.fn(() => ({
+          get: async () => ({ piSessionRoots: `/data/${randomBytes(6_000).toString("hex")}`, primeSessionRoots: "" }),
+        })),
+      },
+      storage: {
+        database: vi.fn(() => db),
+        migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
+      },
+      rpc: {
+        register: vi.fn((_contract: unknown, registered: unknown) => {
+          handlers = registered as { sync: () => unknown };
+        }),
+      },
+      sdk: {
+        hosts: {
+          list: vi.fn(async () => [{ id: "host-1", name: "Machine", status: "connected" }]),
+          directory: vi.fn(async () => ({ directory: "/home/user" })),
+        },
+        files: { write },
+        terminals: {
+          create: vi.fn(async (input: { start: { command: string } }) => {
+            const id = `terminal-${commandsByTerminalId.size}`;
+            commandsByTerminalId.set(id, input.start.command);
+            return { id, status: "starting" };
+          }),
+          get: vi.fn(async (args: { terminalId: string }) => ({ id: args.terminalId, status: "running" })),
+          output: vi.fn(async (args: { terminalId: string }) => {
+            const command = commandTextFor(commandsByTerminalId.get(args.terminalId) ?? "", stagedFiles);
+            const agentId = agentIdFromCommand(command);
+            const text = agentId === "pi"
+              ? fakeHostScanOutput("pi", [{
+                day: new Date().toISOString().slice(0, 10),
+                modelProviderId: "google",
+                model: "gemini-2.5-pro",
+                loggedCostUsd: null,
+                uncachedInputTokens: 100,
+                cachedInputTokens: 0,
+                cacheWriteTokens: 0,
+                outputTokens: 10,
+              }])
+              : fakeHostScanOutput(agentId ?? "codex", []);
+            return { chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false };
+          }),
+          close: vi.fn(async () => undefined),
+        },
+      },
+      realtime: { publish: vi.fn() },
+      background: { service: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await plugin(bb);
+    expect(handlers?.sync()).toEqual({ ok: true });
+
+    await vi.waitFor(() => {
+      const row = db.prepare("SELECT provider_id FROM usage_events WHERE provider_id = 'pi'").get();
+      expect(row).toBeTruthy();
+    }, { timeout: 2000 });
+
+    expect(write).toHaveBeenCalled();
+    for (const command of commandsByTerminalId.values()) {
+      expect(command.length).toBeLessThanOrEqual(10_000);
+    }
+    const stagedPaths = [...stagedFiles.keys()];
+    expect(stagedPaths.every((path) => path.startsWith("/home/user/.cache/bb-plugin-usage/host-command-"))).toBe(true);
+
+    const syncState = db.prepare(
+      "SELECT status, record_count recordCount FROM usage_sync_state WHERE machine_id = 'host-1' AND provider_id = 'pi'",
+    ).get();
+    expect(syncState).toEqual({ status: "ready", recordCount: 1 });
+
+    db.close();
+  });
+
+  it("actually dispatches a DeepSeek Harness scan through syncAll, not just through direct scan() calls", async () => {
+    // Same wiring regression shape as the Antigravity test above: the agent
+    // must reach syncAll()'s Promise.all, not just AGENTS/jsonAgentRoots.
+    const db = new Database(":memory:");
+    let handlers: { sync: () => unknown } | undefined;
+    const commandsByTerminalId = new Map<string, string>();
+    const stagedFiles = new Map<string, string>();
+
+    const bb = {
+      settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
+      storage: {
+        database: vi.fn(() => db),
+        migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
+      },
+      rpc: {
+        register: vi.fn((_contract: unknown, registered: unknown) => {
+          handlers = registered as { sync: () => unknown };
+        }),
+      },
+      sdk: {
+        hosts: {
+          list: vi.fn(async () => [{ id: "host-1", name: "Machine", status: "connected" }]),
+          directory: vi.fn(async () => ({ directory: "/home/user" })),
+        },
+        files: { write: hostFileWriteMock(stagedFiles) },
+        terminals: {
+          create: vi.fn(async (input: { start: { command: string } }) => {
+            const id = `terminal-${commandsByTerminalId.size}`;
+            commandsByTerminalId.set(id, input.start.command);
+            return { id, status: "starting" };
+          }),
+          get: vi.fn(async (args: { terminalId: string }) => ({ id: args.terminalId, status: "running" })),
+          output: vi.fn(async (args: { terminalId: string }) => {
+            const command = commandTextFor(commandsByTerminalId.get(args.terminalId) ?? "", stagedFiles);
+            const agentId = agentIdFromCommand(command);
+            const text = agentId === "dsh"
+              ? fakeHostScanOutput("dsh", [{
+                day: new Date().toISOString().slice(0, 10),
+                modelProviderId: "deepseek",
+                model: "deepseek-v4-pro",
+                loggedCostUsd: null,
+                uncachedInputTokens: 100,
+                cachedInputTokens: 0,
+                cacheWriteTokens: 0,
+                outputTokens: 20,
+              }])
+              : fakeHostScanOutput(agentId ?? "codex", []); // every other agent: empty, uninteresting scan
+            return { chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false };
+          }),
+          close: vi.fn(async () => undefined),
+        },
+      },
+      realtime: { publish: vi.fn() },
+      background: { service: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await plugin(bb);
+    expect(handlers?.sync()).toEqual({ ok: true });
+
+    await vi.waitFor(() => {
+      const row = db.prepare("SELECT provider_id FROM usage_events WHERE provider_id = 'dsh'").get();
+      expect(row).toBeTruthy();
+    }, { timeout: 2000 });
+
+    const syncState = db.prepare(
+      "SELECT status, record_count recordCount FROM usage_sync_state WHERE machine_id = 'host-1' AND provider_id = 'dsh'",
+    ).get();
+    expect(syncState).toEqual({ status: "ready", recordCount: 1 });
+
+    db.close();
+  });
+
+  it("collects Codex profile accounts as separate dashboard agents", async () => {
+    const db = new Database(":memory:");
+    let handlers: {
+      sync: () => unknown;
+      dashboard: () => Promise<{
+        agents: Array<{ id: string; name: string }>;
+        records: Array<{ agentId: string; agentName: string; processedTokens: number }>;
+      }>;
+    } | undefined;
+
+    // Decode the generated collector script's baked-in scan input so the test
+    // can answer codex scans with profile-tagged rows and assert the scan
+    // covers the account root.
+    function scanInputFromCommand(command: string): { agentId?: string; roots?: string[]; accountRoot?: string } | null {
+      const outer = command.match(/Buffer\.from\("([A-Za-z0-9+/=]+)"/);
+      if (!outer) return null;
+      const source = gunzipSync(Buffer.from(outer[1]!, "base64")).toString("utf8");
+      const inner = source.match(/\}\)\("([A-Za-z0-9+/=]+)"/);
+      if (!inner) return null;
+      return JSON.parse(Buffer.from(inner[1]!, "base64").toString("utf8"));
+    }
+
+    const commandsByTerminalId = new Map<string, string>();
+    const stagedFiles = new Map<string, string>();
+    const day = new Date().toISOString().slice(0, 10);
+    const aggregateRow = (account?: string) => ({
+      day,
+      modelProviderId: "openai",
+      model: "gpt-5.6-sol",
+      project: "app",
+      ...(account === undefined ? {} : { account }),
+      loggedCostUsd: null,
+      uncachedInputTokens: 40,
+      cachedInputTokens: 60,
+      cacheWriteTokens: 5,
+      outputTokens: 20,
+    });
+
+    const bb = {
+      settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
+      storage: {
+        database: vi.fn(() => db),
+        migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
+      },
+      rpc: {
+        register: vi.fn((_contract: unknown, registered: unknown) => {
+          handlers = registered as typeof handlers;
+        }),
+      },
+      sdk: {
+        hosts: {
+          list: vi.fn(async () => [{ id: "host-1", name: "Machine", status: "connected" }]),
+          directory: vi.fn(async () => ({ directory: "/home/user" })),
+        },
+        files: { write: hostFileWriteMock(stagedFiles) },
+        terminals: {
+          create: vi.fn(async (input: { start: { command: string } }) => {
+            const id = `terminal-${commandsByTerminalId.size}`;
+            commandsByTerminalId.set(id, input.start.command);
+            return { id, status: "starting" };
+          }),
+          get: vi.fn(async (args: { terminalId: string }) => ({ id: args.terminalId, status: "running" })),
+          output: vi.fn(async (args: { terminalId: string }) => {
+            const command = commandTextFor(commandsByTerminalId.get(args.terminalId) ?? "", stagedFiles);
+            const input = scanInputFromCommand(command);
+            const text = input?.agentId === "codex"
+              ? fakeHostScanOutput("codex", [aggregateRow(), aggregateRow("saiens")])
+              : fakeHostScanOutput(input?.agentId ?? "codex", []);
+            return { chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false };
+          }),
+          close: vi.fn(async () => undefined),
+        },
+      },
+      realtime: { publish: vi.fn() },
+      background: { service: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await plugin(bb);
+    expect(handlers?.sync()).toEqual({ ok: true });
+
+    await vi.waitFor(() => {
+      expect(db.prepare("SELECT COUNT(*) count FROM usage_events").get()).toEqual({ count: 2 });
+    }, { timeout: 2000 });
+
+    const codexScan = [...commandsByTerminalId.values()]
+      .map((command) => scanInputFromCommand(commandTextFor(command, stagedFiles)))
+      .find((input) => input?.agentId === "codex");
+    expect(codexScan).toMatchObject({
+      roots: ["/home/user/.codex/sessions", "/home/user/.codex/archived_sessions"],
+      accountRoot: "/home/user/.codex-profiles",
+    });
+
+    const providers = db.prepare(
+      "SELECT provider_id, provider_name FROM usage_events ORDER BY provider_id",
+    ).all();
+    expect(providers).toEqual([
+      { provider_id: "codex", provider_name: "Codex" },
+      { provider_id: "codex-saiens", provider_name: "Codex (saiens)" },
+    ]);
+    expect(db.prepare(
+      "SELECT status, record_count recordCount FROM usage_sync_state WHERE machine_id = 'host-1' AND provider_id = 'codex'",
+    ).get()).toEqual({ status: "ready", recordCount: 2 });
+
+    const dashboard = await handlers!.dashboard();
+    expect(dashboard.agents).toEqual(expect.arrayContaining([
+      { id: "codex", name: "Codex" },
+      { id: "codex-saiens", name: "Codex (saiens)" },
+    ]));
+    expect(dashboard.records).toEqual(expect.arrayContaining([
+      expect.objectContaining({ agentId: "codex", agentName: "Codex", processedTokens: 125 }),
+      expect.objectContaining({ agentId: "codex-saiens", agentName: "Codex (saiens)", processedTokens: 125 }),
+    ]));
+
+    db.close();
+  });
+});
+
+describe("provider limit loading", () => {
+  const openDbs: Database.Database[] = [];
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    for (const db of openDbs.splice(0)) db.close();
+  });
+
+  function emptyDb() {
+    const db = new Database(":memory:");
+    openDbs.push(db);
+    db.exec(`
+      CREATE TABLE usage_sources (source_id TEXT PRIMARY KEY, machine_id TEXT NOT NULL, machine_name TEXT NOT NULL, provider_id TEXT NOT NULL);
+      CREATE TABLE usage_event_sources (event_key TEXT NOT NULL, source_id TEXT NOT NULL, PRIMARY KEY (event_key, source_id));
+    `);
+    return db;
+  }
+
+  it("does not block the dashboard when a connected machine stalls", async () => {
+    const usageLimits = vi.fn(({ signal }: { signal: AbortSignal }) => new Promise<never>((_resolve, reject) => {
+      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+    }));
+    const debug = vi.fn();
+    const bb = {
+      sdk: { system: { usageLimits } },
+      log: { debug },
+    } as unknown as BbPluginApi;
+
+    await expect(loadProviderLimits(bb, [
+      { id: "host_1", name: "Slow machine", status: "connected" },
+    ], emptyDb(), 10)).resolves.toEqual([]);
+    expect(usageLimits).toHaveBeenCalledWith({ hostId: "host_1", signal: expect.any(AbortSignal) });
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining("Provider limits unavailable"));
+  });
+
+  it("keeps limits returned by responsive machines", async () => {
+    const usageLimits = vi.fn(async (_args: { hostId: string; signal: AbortSignal }) => ({
+      codex: {
+        status: "ok",
+        planLabel: "Pro",
+        windows: [{ label: "5 hours", usedPercent: 42, resetsAt: null }],
+      },
+      claudeCode: { status: "unavailable", planLabel: null, windows: [] },
+      cursor: { status: "unavailable", planLabel: null, windows: [] },
+    }));
+    const bb = {
+      sdk: { system: { usageLimits } },
+      log: { debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await expect(loadProviderLimits(bb, [
+      { id: "host_1", name: "Fast machine", status: "connected" },
+    ], emptyDb(), 1_000)).resolves.toEqual([expect.objectContaining({
+      machineId: "host_1",
+      providerId: "codex",
+      planLabel: "Pro",
+      status: "ok",
+    })]);
+  });
+
+  it("uses current provider ids and ignores providers omitted from the response", async () => {
+    const usageLimits = vi.fn(async () => ({
+      codex: {
+        status: "ok",
+        planLabel: "Plus",
+        accountEmail: null,
+        windows: [{ label: "5 hours", usedPercent: 20, resetsAt: null }],
+      },
+      "claude-code": {
+        status: "ok",
+        planLabel: "Max",
+        accountEmail: null,
+        windows: [{ label: "5 hours", usedPercent: 30, resetsAt: null }],
+      },
+      "acp-cursor": {
+        status: "ok",
+        planLabel: "Pro",
+        accountEmail: null,
+        windows: [{ label: "Monthly", usedPercent: 40, resetsAt: null }],
+      },
+    }));
+    const bb = {
+      sdk: { system: { usageLimits } },
+      log: { debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await expect(loadProviderLimits(bb, [
+      { id: "host_1", name: "Current machine", status: "connected" },
+    ], emptyDb(), 1_000)).resolves.toEqual([
+      expect.objectContaining({ providerId: "codex", status: "ok" }),
+      expect.objectContaining({ providerId: "claude", status: "ok" }),
+      expect.objectContaining({ providerId: "cursor", status: "ok" }),
+    ]);
+  });
+
+  describe("aliases for the same provider", () => {
+    const nativeCursor = {
+      status: "ok",
+      planLabel: "Pro",
+      accountEmail: "native@example.com",
+      windows: [{ label: "Monthly", usedPercent: 40, resetsAt: null }],
+    };
+    const sdkCursor = {
+      status: "ok",
+      planLabel: "Team",
+      accountEmail: "sdk@example.com",
+      windows: [{ label: "Plan usage", usedPercent: 5, resetsAt: null }],
+    };
+    const legacyCursor = {
+      status: "ok",
+      planLabel: "Legacy",
+      accountEmail: null,
+      windows: [{ label: "Requests", usedPercent: 70, resetsAt: null }],
+    };
+    const okEmpty = { status: "ok", planLabel: "Free", accountEmail: null, windows: [] };
+
+    function load(usage: Record<string, unknown>) {
+      const bb = {
+        sdk: { system: { usageLimits: vi.fn(async () => usage) } },
+        log: { debug: vi.fn() },
+      } as unknown as BbPluginApi;
+      return loadProviderLimits(bb, [
+        { id: "host_1", name: "Current machine", status: "connected" },
+      ], emptyDb(), 1_000);
+    }
+
+    function cursorRow(limit: Pick<ProviderLimitSource, "planLabel" | "accountEmail" | "windows">) {
+      return {
+        machineId: "host_1",
+        providerId: "cursor",
+        status: "ok",
+        error: null,
+        planLabel: limit.planLabel,
+        accountEmail: limit.accountEmail,
+        windows: limit.windows,
+      };
+    }
+
+    it.each([
+      ["native over SDK", { "acp-cursor": nativeCursor, "acp-cursor-sdk": sdkCursor }, nativeCursor],
+      ["native over SDK and legacy", { cursor: legacyCursor, "acp-cursor-sdk": sdkCursor, "acp-cursor": nativeCursor }, nativeCursor],
+      ["SDK over legacy", { "acp-cursor-sdk": sdkCursor, cursor: legacyCursor }, sdkCursor],
+      ["SDK only", { "acp-cursor-sdk": sdkCursor }, sdkCursor],
+      ["legacy only", { cursor: legacyCursor }, legacyCursor],
+    ])("prefers %s among usable Cursor quotas", async (_name, usage, expected) => {
+      const rows = await load(usage);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toEqual(expect.objectContaining(cursorRow(expected)));
+    });
+
+    it.each([
+      ["error", { status: "error", message: "native failed", planLabel: null, accountEmail: null }],
+      ["not_installed", { status: "not_installed" }],
+      ["unauthenticated", { status: "unauthenticated" }],
+      ["expired", { status: "expired" }],
+      ["ok without windows", okEmpty],
+    ])("uses SDK quotas when native Cursor is %s", async (_name, native) => {
+      const rows = await load({ "acp-cursor": native, "acp-cursor-sdk": sdkCursor });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toEqual(expect.objectContaining(cursorRow(sdkCursor)));
+    });
+
+    it("falls back to legacy Cursor quotas when native and SDK are unusable", async () => {
+      const rows = await load({
+        "acp-cursor": { status: "error", message: "native failed", planLabel: null, accountEmail: null },
+        "acp-cursor-sdk": { status: "unauthenticated" },
+        cursor: legacyCursor,
+      });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toEqual(expect.objectContaining(cursorRow(legacyCursor)));
+    });
+
+    it.each([
+      ["native", { "acp-cursor": { status: "error", message: "native failed" }, "acp-cursor-sdk": { status: "expired" } }, "native failed"],
+      ["SDK", { "acp-cursor": { status: "not_installed" }, "acp-cursor-sdk": { status: "error", message: "sdk failed" } }, "sdk failed"],
+      ["first", {
+        "acp-cursor": { status: "error", message: "native failed" },
+        "acp-cursor-sdk": { status: "error", message: "sdk failed" },
+      }, "native failed"],
+      ["SDK (native empty)", { "acp-cursor": okEmpty, "acp-cursor-sdk": { status: "error", message: "sdk failed" } }, "sdk failed"],
+    ])("reports the %s error when no Cursor alias has quotas", async (_name, usage, message) => {
+      const rows = await load(usage);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toEqual(expect.objectContaining({ providerId: "cursor", status: "error", error: message, windows: [] }));
+    });
+
+    it("omits Cursor when every alias is unavailable or empty", async () => {
+      await expect(load({
+        "acp-cursor": { status: "not_installed" },
+        "acp-cursor-sdk": okEmpty,
+        cursor: { status: "unauthenticated" },
+      })).resolves.toEqual([]);
+    });
+
+    it("applies the same selection to Claude Code aliases", async () => {
+      const rows = await load({
+        "claude-code": { status: "error", message: "rate limited", planLabel: null, accountEmail: null },
+        claudeCode: { status: "ok", planLabel: "Max", accountEmail: null, windows: [{ label: "5 hours", usedPercent: 30, resetsAt: null }] },
+      });
+      expect(rows).toEqual([expect.objectContaining({ providerId: "claude", status: "ok", planLabel: "Max" })]);
+    });
+  });
+
+  describe("request timeout", () => {
+    const quota = {
+      "acp-cursor": {
+        status: "ok",
+        planLabel: "Team",
+        accountEmail: null,
+        windows: [{ label: "Plan usage", usedPercent: 5, resetsAt: null }],
+      },
+    };
+
+    // AbortSignal.timeout runs on Node's internal timers, which fake timers do not control.
+    function fakeAbortSignalTimeout() {
+      vi.useFakeTimers();
+      return vi.spyOn(AbortSignal, "timeout").mockImplementation((ms) => {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(new DOMException("The operation timed out.", "TimeoutError")), ms);
+        return controller.signal;
+      });
+    }
+
+    function stalledUsageLimits(resolveAfterMs?: number) {
+      return vi.fn(({ signal }: { signal: AbortSignal }) => new Promise((resolve, reject) => {
+        const timer = resolveAfterMs === undefined ? undefined : setTimeout(() => resolve(quota), resolveAfterMs);
+        signal.addEventListener("abort", () => {
+          clearTimeout(timer);
+          reject(signal.reason);
+        }, { once: true });
+      }));
+    }
+
+    function bbWith(usageLimits: ReturnType<typeof stalledUsageLimits>) {
+      return { sdk: { system: { usageLimits } }, log: { debug: vi.fn() } } as unknown as BbPluginApi;
+    }
+
+    it("retains quota responses that take more than five seconds", async () => {
+      const timeout = fakeAbortSignalTimeout();
+      const result = loadProviderLimits(bbWith(stalledUsageLimits(6_000)), [
+        { id: "host_1", name: "Current machine", status: "connected" },
+      ], emptyDb());
+      await vi.advanceTimersByTimeAsync(6_000);
+      await expect(result).resolves.toEqual([
+        expect.objectContaining({ providerId: "cursor", status: "ok" }),
+      ]);
+      expect(timeout).toHaveBeenCalledWith(20_000);
+    });
+
+    it("aborts a stalled request at the 20 second default", async () => {
+      fakeAbortSignalTimeout();
+      const usageLimits = stalledUsageLimits();
+      let settled = false;
+      const result = loadProviderLimits(bbWith(usageLimits), [
+        { id: "host_1", name: "Current machine", status: "connected" },
+      ], emptyDb()).finally(() => { settled = true; });
+      const { signal } = usageLimits.mock.calls[0]![0];
+
+      await vi.advanceTimersByTimeAsync(19_999);
+      expect(signal.aborted).toBe(false);
+      expect(settled).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(signal.aborted).toBe(true);
+      await expect(result).resolves.toEqual([]);
+    });
+  });
+
+  it("surfaces a provider error (e.g. rate limited) instead of hiding the provider", async () => {
+    const usageLimits = vi.fn(async () => ({
+      codex: { status: "ok", planLabel: "Pro", windows: [{ label: "5 hours", usedPercent: 10, resetsAt: null }] },
+      claudeCode: { status: "error", message: "rate limited", planLabel: null, accountEmail: null },
+      cursor: { status: "not_installed" },
+    }));
+    const debug = vi.fn();
+    const bb = {
+      sdk: { system: { usageLimits } },
+      log: { debug },
+    } as unknown as BbPluginApi;
+
+    await expect(loadProviderLimits(bb, [
+      { id: "host_1", name: "Fast machine", status: "connected" },
+    ], emptyDb(), 1_000)).resolves.toEqual([
+      expect.objectContaining({ providerId: "codex", status: "ok" }),
+      expect.objectContaining({ providerId: "claude", status: "error", error: "rate limited" }),
+    ]);
+  });
+
+  it("surfaces an error for providers with usage records when the whole limits call fails", async () => {
+    const usageLimits = vi.fn(async () => { throw new Error("rate limited"); });
+    const debug = vi.fn();
+    const bb = {
+      sdk: { system: { usageLimits } },
+      log: { debug },
+    } as unknown as BbPluginApi;
+
+    const db = emptyDb();
+    db.prepare("INSERT INTO usage_sources (source_id, machine_id, machine_name, provider_id) VALUES (?, ?, ?, ?)")
+      .run("claude-source", "host_1", "Fast machine", "claude");
+    db.prepare("INSERT INTO usage_event_sources (event_key, source_id) VALUES (?, ?)")
+      .run("event-1", "claude-source");
+
+    await expect(loadProviderLimits(bb, [
+      { id: "host_1", name: "Fast machine", status: "connected" },
+    ], db, 1_000)).resolves.toEqual([expect.objectContaining({
+      machineId: "host_1",
+      providerId: "claude",
+      status: "error",
+    })]);
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining("Provider limits unavailable"));
+  });
+
+  it("queries connected machines concurrently", async () => {
+    let activeCalls = 0;
+    let maxActiveCalls = 0;
+    const usageLimits = vi.fn(async ({ hostId }: { hostId: string }) => {
+      activeCalls += 1;
+      maxActiveCalls = Math.max(maxActiveCalls, activeCalls);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      activeCalls -= 1;
+      return {
+        "claude-code": {
+          status: "ok",
+          planLabel: "Max",
+          accountEmail: "dev@example.com",
+          windows: [{ label: "5 hours", usedPercent: hostId === "host_1" ? 30 : 32, resetsAt: null }],
+        },
+      };
+    });
+    const bb = {
+      sdk: { system: { usageLimits } },
+      log: { debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    const sources = await loadProviderLimits(bb, [
+      { id: "host_1", name: "Studio", status: "connected" },
+      { id: "host_2", name: "Air", status: "connected" },
+    ], emptyDb(), 1_000);
+    expect(sources).toHaveLength(2);
+    expect(maxActiveCalls).toBe(2);
+    expect(usageLimits.mock.calls.map((call) => call[0].hostId)).toEqual(["host_1", "host_2"]);
+  });
+});
+
+describe("Codex reset account matching", () => {
+  const base: ProviderLimitSource = {
+    machineId: "laptop", machineName: "Laptop", agentId: "codex", agentName: "Codex",
+    providerId: "codex", providerName: "Codex", accountEmail: "user@example.com", accountIdentity: null,
+    planLabel: "Pro", windows: [{ label: "Weekly", usedPercent: 95, resetsAt: null }],
+    status: "ok", error: null, lastUpdatedAt: null,
+  };
+  const bb = {
+    sdk: { hosts: { directory: vi.fn(async () => ({ directory: "/home/user" })) } },
+    log: { debug: vi.fn() },
+  } as unknown as BbPluginApi;
+  const output = (accountEmail: string, planType: string) => `__BB_CODEX_RESETS_BEGIN__\n${JSON.stringify({
+    accountEmail, planType, resetCredits: { availableCount: 1, credits: [{ expiresAt: null }] },
+  })}\n__BB_CODEX_RESETS_END__`;
+
+  it("attaches verified details to the matching account and serializes them through RPC", async () => {
+    const execute = vi.fn(async () => output(" USER@EXAMPLE.COM ", "pro"));
+    const limits = await loadCodexResetCredits(bb, groupProviderLimits([base]), execute);
+    expect(limits[0]?.resetCredits).toEqual({ availableCount: 1, credits: [{ expiresAt: null }] });
+    const wire = rpcContract.providerLimits.output.parse({ limits, accountPoolError: null });
+    expect(wire.limits[0]?.resetCredits).toEqual(limits[0]?.resetCredits);
+    expect(execute).toHaveBeenCalledWith(bb, { id: "laptop", name: "Laptop" }, expect.any(String), expect.any(AbortSignal),
+      expect.objectContaining({ title: "Usage: Codex reset credits", home: "/home/user" }));
+  });
+
+  it.each([
+    { accountEmail: "other@example.com", planType: "pro", planLabel: "Pro" },
+    { accountEmail: "user@example.com", planType: "plus", planLabel: "Pro" },
+    { accountEmail: "user@example.com", planType: "business", planLabel: "Business" },
+    { accountEmail: "user@example.com", planType: "pro", planLabel: null },
+  ])("does not infer eligibility across accounts or workspace plans: %j", async ({ accountEmail, planType, planLabel }) => {
+    const limits = groupProviderLimits([{ ...base, planLabel }]);
+    expect(await loadCodexResetCredits(bb, limits, async () => output(accountEmail, planType))).toEqual(limits);
+  });
+
+  it("keeps quota cards when the CLI is absent, old, or fails", async () => {
+    const limits = groupProviderLimits([base]);
+    expect(await loadCodexResetCredits(bb, limits, async () => "")).toEqual(limits);
+    expect(await loadCodexResetCredits(bb, limits, async () => { throw new Error("host unavailable"); })).toEqual(limits);
+  });
+
+  it("skips unidentified accounts, errored providers, and other providers", async () => {
+    const execute = vi.fn(async () => "");
+    for (const source of [
+      { ...base, accountEmail: null }, { ...base, status: "error" as const },
+      { ...base, providerId: "claude" },
+    ]) await loadCodexResetCredits(bb, groupProviderLimits([source]), execute);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("uses a responsive matching host without adding shared reset counts together", async () => {
+    const limits = groupProviderLimits([base, { ...base, machineId: "desktop", machineName: "Desktop" }]);
+    const execute: typeof runHostCommand = async (_bb, machine) => machine.id === "desktop" ? "" : output("user@example.com", "pro");
+    expect((await loadCodexResetCredits(bb, limits, execute))[0]?.resetCredits?.availableCount).toBe(1);
+  });
+});
+
+describe("host command output", () => {
+  it("collects output while the terminal is still running, then closes it", async () => {
+    const text = "query result\n__BB_HOST_COMMAND_DONE__:0\n";
+    const create = vi.fn(async (input: unknown) => ({ id: "terminal-1", status: "starting", input }));
+    const get = vi.fn(async () => ({ id: "terminal-1", status: "running" }));
+    const output = vi.fn(async () => ({
+      chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }],
+      truncated: false,
+    }));
+    const close = vi.fn(async () => undefined);
+    const bb = { sdk: { terminals: { create, get, output, close } } } as unknown as BbPluginApi;
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      "printf result",
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).resolves.toBe(text);
+
+    expect(get).toHaveBeenCalledOnce();
+    expect(output).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledWith({ terminalId: "terminal-1", mode: "force" });
+    expect(create.mock.calls[0]?.[0]).toMatchObject({
+      start: { mode: "command", command: expect.stringContaining("__BB_HOST_COMMAND_DONE__") },
+    });
+  });
+
+  it("surfaces a command diagnostic before closing the held terminal", async () => {
+    const text = "__BB_USAGE_ERROR__:OpenCode query failed\n__BB_HOST_COMMAND_DONE__:1\n";
+    const close = vi.fn(async () => undefined);
+    const bb = {
+      sdk: { terminals: {
+        create: vi.fn(async () => ({ id: "terminal-1", status: "starting" })),
+        get: vi.fn(async () => ({ id: "terminal-1", status: "running" })),
+        output: vi.fn(async () => ({ chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false })),
+        close,
+      } },
+    } as unknown as BbPluginApi;
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      "exit 127",
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).rejects.toThrow("OpenCode query failed");
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("surfaces bounded terminal output when a command has no structured diagnostic", async () => {
+    const text = "CLI compatibility error\n__BB_HOST_COMMAND_DONE__:1\n";
+    const bb = {
+      sdk: { terminals: {
+        create: vi.fn(async () => ({ id: "terminal-1", status: "starting" })),
+        get: vi.fn(async () => ({ id: "terminal-1", status: "running" })),
+        output: vi.fn(async () => ({ chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false })),
+        close: vi.fn(async () => undefined),
+      } },
+    } as unknown as BbPluginApi;
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      "exit 1",
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).rejects.toThrow("CLI compatibility error");
+  });
+
+  it("times out and closes a stalled machine terminal", async () => {
+    const close = vi.fn(async () => undefined);
+    const bb = {
+      sdk: { terminals: {
+        create: vi.fn(async () => ({ id: "terminal-1", status: "starting" })),
+        get: vi.fn(async () => ({ id: "terminal-1", status: "running" })),
+        output: vi.fn(async () => ({ chunks: [], truncated: false })),
+        close,
+      } },
+    } as unknown as BbPluginApi;
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Stalled machine" },
+      "opencode db query",
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1, pollMs: 1, home: "/home/user" },
+    )).rejects.toThrow("timed out");
+    expect(close).toHaveBeenCalledWith({ terminalId: "terminal-1", mode: "force" });
+  });
+
+  function stagedRun(text: string, overrides: { write?: unknown; directory?: unknown } = {}) {
+    const stagedFiles = new Map<string, string>();
+    const create = vi.fn(async (input: { start: { command: string } }) => ({ id: "terminal-1", status: "starting", input }));
+    const bb = {
+      sdk: {
+        files: { write: overrides.write ?? hostFileWriteMock(stagedFiles) },
+        hosts: { directory: overrides.directory ?? vi.fn(async () => ({ directory: "/resolved/home" })) },
+        terminals: {
+          create,
+          get: vi.fn(async () => ({ id: "terminal-1", status: "running" })),
+          output: vi.fn(async () => ({
+            chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }],
+            truncated: false,
+          })),
+          close: vi.fn(async () => undefined),
+        },
+      },
+      log: { debug: vi.fn() },
+    } as unknown as BbPluginApi;
+    return { bb, create, stagedFiles };
+  }
+
+  it("stages oversized commands on the host and runs them with sh", async () => {
+    const command = `printf '%s' '${"x".repeat(11_000)}'`;
+    const text = "scan result\n__BB_HOST_COMMAND_DONE__:0\n";
+    const { bb, create, stagedFiles } = stagedRun(text);
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      command,
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).resolves.toBe(text);
+
+    const startCommand = create.mock.calls[0]![0].start.command;
+    expect(startCommand.length).toBeLessThanOrEqual(10_000);
+    expect(startCommand).toContain("__BB_HOST_COMMAND_DONE__");
+
+    const stagedPaths = [...stagedFiles.keys()];
+    expect(stagedPaths).toHaveLength(1);
+    expect(stagedPaths[0]).toMatch(/^\/home\/user\/\.cache\/bb-plugin-usage\/host-command-[0-9a-f]{64}\.sh$/);
+    expect(stagedFiles.get(stagedPaths[0]!)).toBe(command);
+    expect(startCommand).toContain(`sh '${stagedPaths[0]}'`);
+    expect(bb.sdk.files.write).toHaveBeenCalledWith(expect.objectContaining({
+      hostId: "host-1",
+      path: stagedPaths[0],
+      content: command,
+      createParents: true,
+    }));
+    expect(bb.sdk.hosts.directory).not.toHaveBeenCalled();
+  });
+
+  it("reuses an identical staged script across concurrent runs without rewriting it", async () => {
+    const command = `printf '%s' '${"x".repeat(11_000)}'`;
+    const text = "scan result\n__BB_HOST_COMMAND_DONE__:0\n";
+    const { bb, create, stagedFiles } = stagedRun(text);
+    const storeFile = vi.spyOn(stagedFiles, "set");
+
+    const results = await Promise.all([0, 1].map(() => runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      command,
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )));
+
+    expect(results).toEqual([text, text]);
+    expect(storeFile).toHaveBeenCalledOnce();
+    expect(stagedFiles.size).toBe(1);
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]![0].start.command).toBe(create.mock.calls[1]![0].start.command);
+    const writes = await Promise.all(vi.mocked(bb.sdk.files.write).mock.results.map((result) => result.value));
+    expect(writes.map((result) => result.outcome)).toEqual(["written", "conflict"]);
+  });
+
+  it("does not launch a terminal when cancelled during the staging write", async () => {
+    const command = `printf '%s' '${"x".repeat(11_000)}'`;
+    const controller = new AbortController();
+    const reason = new Error("Usage sync cancelled");
+    let finishWrite!: () => void;
+    const write = vi.fn(async () => {
+      await new Promise<void>((resolve) => { finishWrite = resolve; });
+      return { outcome: "written" as const, sha256: createHash("sha256").update(command).digest("hex") };
+    });
+    const { bb, create } = stagedRun("unreachable\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+
+    const result = runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      command,
+      controller.signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    );
+    const rejection = expect(result).rejects.toBe(reason);
+    expect(write).toHaveBeenCalledOnce();
+    controller.abort(reason);
+    finishWrite();
+
+    await rejection;
+    expect(create).not.toHaveBeenCalled();
+    expect(bb.sdk.terminals.close).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { outcome: "conflict" as const, currentSha256: "mismatch" },
+    { outcome: "written" as const, sha256: "wrong", sizeBytes: 1 },
+  ])("surfaces the staging error when the staged file cannot be verified (%s)", async (result) => {
+    const command = `printf '%s' '${"x".repeat(11_000)}'`;
+    const write = vi.fn(async () => result);
+    const { bb, create } = stagedRun("unreachable\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+
+    // An oversized command cannot be submitted inline either, so the staging
+    // failure is reported instead of creating a terminal the host must reject.
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      command,
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).rejects.toThrow("Usage test could not stage its command on Machine: the staged command file did not verify");
+
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("surfaces the staging error when the host file write throws", async () => {
+    const command = `printf '%s' '${"x".repeat(11_000)}'`;
+    const write = vi.fn(async () => { throw new Error("host.write_file unsupported"); });
+    const { bb, create } = stagedRun("unreachable\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      command,
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).rejects.toThrow("Usage test could not stage its command on Machine: host.write_file unsupported");
+
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("surfaces staged command diagnostics and exit codes identically", async () => {
+    const command = `printf '%s' '${"x".repeat(11_000)}'`;
+    const { bb } = stagedRun("__BB_USAGE_ERROR__:collector broke\n__BB_HOST_COMMAND_DONE__:1\n");
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      command,
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).rejects.toThrow("collector broke");
+  });
+
+  it("keeps commands under the limit inline without touching the files API", async () => {
+    const write = vi.fn();
+    const { bb } = stagedRun("small\n__BB_HOST_COMMAND_DONE__:0\n", { write });
+
+    await expect(runHostCommand(
+      bb,
+      { id: "host-1", name: "Machine" },
+      "printf small",
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: "/home/user" },
+    )).resolves.toContain("small");
+    expect(write).not.toHaveBeenCalled();
+  });
+});
+
+describe("Windows host command output", () => {
+  const windowsHome = "C:\\Users\\me";
+
+  // Simulates a Windows host: files live in a map, and the collector "runs"
+  // when the terminal is polled, writing whatever `finish` returns.
+  function windowsRun(options: {
+    finish?: (runDirectory: string, files: Map<string, string>) => void;
+    states?: string[];
+    terminalText?: string;
+    unreadable?: string[];
+    home?: string;
+  } = {}) {
+    const files = new Map<string, string>();
+    let runDirectory = "";
+    let polls = 0;
+    const write = vi.fn(async (args: { path: string; content: string }) => {
+      files.set(args.path, args.content);
+      runDirectory = args.path.replace(/\/command\.sh$/, "");
+      return { outcome: "written" as const, sha256: "", sizeBytes: args.content.length };
+    });
+    const read = vi.fn(async (args: { path: string }) => {
+      const content = files.get(args.path);
+      if (content === undefined || options.unreadable?.some((suffix) => args.path.endsWith(suffix))) {
+        throw new Error(`ENOENT: ${args.path}`);
+      }
+      return { content, contentEncoding: "utf8" as const, sizeBytes: Buffer.byteLength(content), path: args.path, sha256: "" };
+    });
+    const remove = vi.fn(async (args: { path: string }) => {
+      for (const path of files.keys()) if (path.startsWith(`${args.path}/`)) files.delete(path);
+    });
+    const get = vi.fn(async () => {
+      const status = options.states?.[Math.min(polls, options.states.length - 1)] ?? "running";
+      if (polls === 0) options.finish?.(runDirectory, files);
+      polls += 1;
+      return { id: "terminal-1", status };
+    });
+    const bb = {
+      sdk: {
+        files: { write, read, remove },
+        terminals: {
+          create: vi.fn(async (input: { start: { command: string } }) => ({ id: "terminal-1", status: "starting", input })),
+          get,
+          output: vi.fn(async () => ({
+            chunks: [{ seq: 1, dataBase64: Buffer.from(options.terminalText ?? "").toString("base64") }],
+            truncated: false,
+          })),
+          close: vi.fn(async () => undefined),
+        },
+      },
+    } as unknown as BbPluginApi;
+    const run = (command = "printf result") => runHostCommand(
+      bb,
+      { id: "host-1", name: "Windows machine" },
+      command,
+      new AbortController().signal,
+      { title: "Usage test", timeoutMs: 1_000, pollMs: 1, home: options.home ?? windowsHome },
+    );
+    return { bb, files, run, runDirectory: () => runDirectory };
+  }
+
+  const finishWith = (output: string, status: string) => (runDirectory: string, files: Map<string, string>) => {
+    files.set(`${runDirectory}/output.txt`, output);
+    files.set(`${runDirectory}/status`, status);
+  };
+
+  it("runs the command under sh through a file-backed launcher and cleans up", async () => {
+    const { bb, files, run, runDirectory } = windowsRun({ finish: finishWith("scan result\n", "0") });
+
+    await expect(run("printf result")).resolves.toBe("scan result\n");
+
+    expect(runDirectory()).toMatch(/^C:\/Users\/me\/\.cache\/bb-plugin-usage\/runs\/[0-9a-f-]{36}$/);
+    const script = vi.mocked(bb.sdk.files.write).mock.calls[0]![0].content;
+    expect(script.startsWith("HOME='C:/Users/me'; export HOME; ")).toBe(true);
+    expect(script).toContain(`( printf result ) > '${runDirectory()}/output.txt' 2>&1`);
+    expect(script).toContain(`mv -f '${runDirectory()}/status.tmp' '${runDirectory()}/status'`);
+
+    const launcher = vi.mocked(bb.sdk.terminals.create).mock.calls[0]![0].start;
+    expect(launcher).toMatchObject({ mode: "command" });
+    const encoded = (launcher as { command: string }).command
+      .match(/^powershell\.exe -NoLogo -NoProfile -NonInteractive -EncodedCommand ([A-Za-z0-9+/=]+)$/)?.[1];
+    expect(encoded).toBeDefined();
+    const decoded = Buffer.from(encoded!, "base64").toString("utf16le");
+    expect(decoded).toContain(`& $bbSh '${runDirectory()}/command.sh'`);
+    expect(decoded).toContain("exit $LASTEXITCODE");
+
+    expect(bb.sdk.terminals.output).not.toHaveBeenCalled();
+    expect(bb.sdk.terminals.close).toHaveBeenCalledWith({ terminalId: "terminal-1", mode: "force" });
+    expect(bb.sdk.files.remove).toHaveBeenCalledWith({ hostId: "host-1", path: runDirectory(), recursive: true });
+    expect(files.size).toBe(0);
+  });
+
+  it.each([
+    ["an ASCII apostrophe", "C:\\Users\\O'Brien Smith", "O''Brien Smith"],
+    ["a curly apostrophe", "C:\\Users\\O\u2019Brien Smith", "O\u2019\u2019Brien Smith"],
+  ])("quotes a home path with %s for PowerShell and sh", async (_label, home, escaped) => {
+    const { bb, run, runDirectory } = windowsRun({ home, finish: finishWith("ok\n", "0") });
+
+    await expect(run()).resolves.toBe("ok\n");
+
+    const launcher = (vi.mocked(bb.sdk.terminals.create).mock.calls[0]![0].start as { command: string }).command;
+    const decoded = Buffer.from(launcher.split(" ").at(-1)!, "base64").toString("utf16le");
+    const quotedDirectory = runDirectory().replace(/^C:\/Users\/[^/]+/, `C:/Users/${escaped}`);
+    expect(decoded).toContain(`& $bbSh '${quotedDirectory}/command.sh'`);
+    expect(decoded).toContain(`-LiteralPath '${quotedDirectory}/status'`);
+    // Native node and python receive $HOME paths verbatim, so HOME must be a
+    // C:/ path rather than an MSYS /c/ path that conversion might skip.
+    const script = vi.mocked(bb.sdk.files.write).mock.calls[0]![0].content;
+    expect(script.startsWith(`HOME='${home.replace(/\\/g, "/").replace(/'/g, `'"'"'`)}'; export HOME; `)).toBe(true);
+  });
+
+  it("surfaces the collector diagnostic for a nonzero exit status", async () => {
+    const { run } = windowsRun({ finish: finishWith("__BB_USAGE_ERROR__:Node.js is required\n", "127") });
+
+    await expect(run()).rejects.toThrow("Node.js is required");
+  });
+
+  it("collects a status written just before the terminal exits", async () => {
+    const { run } = windowsRun({ finish: finishWith("late result\n", "0"), states: ["exited"] });
+
+    await expect(run()).resolves.toBe("late result\n");
+  });
+
+  it("reports the launcher's terminal output when it exits without a status", async () => {
+    const { bb, run } = windowsRun({
+      states: ["exited"],
+      terminalText: "\x1b[31mpowershell.exe: The term is not recognized\x1b[0m\r\n",
+    });
+
+    await expect(run()).rejects.toThrow("Usage test stopped before its output could be collected: powershell.exe: The term is not recognized");
+    expect(bb.sdk.files.remove).toHaveBeenCalledOnce();
+  });
+
+  it("fails instead of returning empty output when the output file cannot be read", async () => {
+    const { run } = windowsRun({ finish: finishWith("scan result\n", "0"), unreadable: ["/output.txt"] });
+
+    await expect(run()).rejects.toThrow("Usage test finished but its output could not be read.");
+  });
+
+  it("does not launch a terminal when the command cannot be staged", async () => {
+    const { bb, run } = windowsRun();
+    vi.mocked(bb.sdk.files.write).mockRejectedValueOnce(new Error("disk full"));
+
+    await expect(run()).rejects.toThrow("Usage test could not stage its command on Windows machine: disk full");
+    expect(bb.sdk.terminals.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("OpenCode query", () => {
+  it("keeps the v1 CLI query alongside the v2 read-only database query", () => {
+    const command = openCodeCommand();
+    expect(command).toContain("command -v opencode");
+    expect(command).toContain("opencode db");
+    expect(command).toContain("session_message");
+    expect(command).toContain("mode=ro");
+    expect(command).toContain("--format json");
+    expect(command).toContain("bb_usage_query_status=$?");
+    expect(command).not.toMatch(/(?:^|; )status=\$\?/);
+    expect(command).not.toContain("command -v sqlite3");
+    expect(command).toContain("time_created >= CAST(strftime");
+    expect(command).toContain("-89 days");
+    expect(command).not.toContain("-365 days");
+    expect(command).toContain("WITH recent_sessions AS MATERIALIZED");
+    expect(command).toContain("FROM session");
+    expect(command).toContain("JOIN message m ON m.session_id = rs.id");
+    expect(command).toContain("time_updated >= CAST(strftime");
+    expect(command).toContain("$.role");
+    expect(command).toContain("assistant");
+    expect(command).toContain("$.tokens.cache.read");
+  });
+
+  it("aggregates v2 assistant steps from the new tables without duplicating migrated v1 messages", () => {
+    const db = new Database(":memory:");
+    db.exec(`CREATE TABLE session_v2 (id TEXT PRIMARY KEY, time_updated INTEGER NOT NULL);
+      CREATE TABLE session_message (session_id TEXT, type TEXT, time_created INTEGER, data TEXT);
+      CREATE TABLE message (session_id TEXT, time_created INTEGER, data TEXT);`);
+    const now = Date.now();
+    const day = localDay(now);
+    db.prepare("INSERT INTO session_v2 VALUES (?, ?)").run("s1", now);
+    const insert = db.prepare("INSERT INTO session_message VALUES (?, ?, ?, ?)");
+    insert.run("s1", "assistant", now, JSON.stringify({ model: { providerID: "opencode-go", id: "glm-5.3-flash" },
+      cost: 0.25, tokens: { input: 10, output: 20, reasoning: 5, cache: { read: 30, write: 2 } } }));
+    // An earlier version of this step also lives in the migrated v1 table.
+    db.prepare("INSERT INTO message VALUES (?, ?, ?)").run("s1", now,
+      JSON.stringify({ role: "assistant", providerID: "opencode-go", modelID: "glm-5.3-flash",
+        cost: 0.25, tokens: { input: 10, output: 20 } }));
+    insert.run("s1", "assistant", now, JSON.stringify({ model: { providerID: "opencode-go", id: "glm-5.3-flash" },
+      cost: 0, tokens: { input: 3, output: 4, cache: { read: 6 } } }));
+    insert.run("s1", "assistant", now, JSON.stringify({ model: { providerID: "opencode-go", id: "glm-5.3-flash" }, error: {} }));
+    insert.run("s1", "model-switched", now, JSON.stringify({ model: { providerID: "opencode-go", id: "other" } }));
+    const rows = db.prepare(openCodeV2Sql()).all() as Array<Record<string, unknown>>;
+    expect(rows).toHaveLength(2); // logged and unpriced steps stay separate
+    expect(rows.map((row) => row.day)).toEqual([day, day]);
+    expect(rows.map((row) => row.loggedCostUsd)).toEqual([0, 0.25]);
+    expect(rows.map((row) => row.outputTokens)).toEqual([4, 20]);
+    expect(rows.map((row) => row.reasoningTokens)).toEqual([0, 5]);
+    db.close();
+  });
+
+  it("runs the v2 collector through the host shell without opencode db", () => {
+    const home = mkdtempSync(join(tmpdir(), "usage-opencode-v2-"));
+    try {
+      const dir = join(home, "opencode");
+      mkdirSync(dir);
+      const db = new Database(join(dir, "opencode.db"));
+      db.exec(`CREATE TABLE session_v2 (id TEXT PRIMARY KEY, time_updated INTEGER NOT NULL);
+        CREATE TABLE session_message (session_id TEXT, type TEXT, time_created INTEGER, data TEXT);`);
+      const now = Date.now();
+      db.prepare("INSERT INTO session_v2 VALUES (?, ?)").run("s1", now);
+      db.prepare("INSERT INTO session_message VALUES (?, 'assistant', ?, ?)").run("s1", now,
+        JSON.stringify({ model: { providerID: "openai", id: "test-model" }, cost: 1.5,
+          tokens: { input: 12, output: 5, cache: { read: 9, write: 1 } } }));
+      db.close();
+      const output = execFileSync("sh", ["-c", openCodeCommand()], {
+        encoding: "utf8", env: { ...process.env, XDG_DATA_HOME: home },
+      });
+      expect(JSON.parse(extractOpenCodeJson(output))).toMatchObject([{ day: localDay(now),
+        modelProviderId: "openai", model: "test-model", loggedCostUsd: 1.5, inputTokens: 12 }]);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it("falls back to the CLI when a v1 database has a session_message table but no session_v2", () => {
+    const home = mkdtempSync(join(tmpdir(), "usage-opencode-v1-"));
+    try {
+      const dir = join(home, "opencode");
+      const bin = join(home, "bin");
+      mkdirSync(dir);
+      mkdirSync(bin);
+      const db = new Database(join(dir, "opencode.db"));
+      db.exec(`CREATE TABLE session (id TEXT PRIMARY KEY, time_updated INTEGER NOT NULL);
+        CREATE TABLE message (session_id TEXT, time_created INTEGER, data TEXT);
+        CREATE TABLE session_message (id TEXT);`);
+      const now = Date.now();
+      db.prepare("INSERT INTO session VALUES (?, ?)").run("s1", now);
+      db.prepare("INSERT INTO message VALUES (?, ?, ?)").run("s1", now,
+        JSON.stringify({ role: "assistant", providerID: "openai", modelID: "v1-model", cost: 0.5,
+          tokens: { input: 7, output: 3, cache: { read: 2, write: 1 } } }));
+      db.close();
+      // Stand in for the v1 CLI: validate the arguments and run its SQL verbatim.
+      const cli = join(bin, "opencode");
+      writeFileSync(cli, [
+        "#!/bin/sh",
+        "[ \"$1\" = db ] && [ \"$3\" = --format ] && [ \"$4\" = json ] || exit 1",
+        "python3 -c 'import json,sqlite3,sys; db=sqlite3.connect(sys.argv[1]); db.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in db.execute(sys.argv[2])]))' \"$XDG_DATA_HOME/opencode/opencode.db\" \"$2\"",
+      ].join("\n") + "\n");
+      chmodSync(cli, 0o755);
+      const output = execFileSync("sh", ["-c", openCodeCommand()], {
+        encoding: "utf8", env: { ...process.env, XDG_DATA_HOME: home, PATH: `${bin}:${process.env.PATH}` },
+      });
+      expect(JSON.parse(extractOpenCodeJson(output))).toMatchObject([{ day: localDay(now),
+        modelProviderId: "openai", model: "v1-model", loggedCostUsd: 0.5, inputTokens: 7,
+        cachedInputTokens: 2, cacheWriteTokens: 1, outputTokens: 3 }]);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects failed and incomplete OpenCode query output", () => {
+    expect(() => extractOpenCodeJson("no markers")).toThrow("incomplete output");
+    expect(() => extractOpenCodeJson("__BB_USAGE_BEGIN__\n[]\n__BB_USAGE_END__:1")).toThrow("failed with code 1");
+  });
+
+  it("retains prior usage and isolates a failed OpenCode query to its source state", async () => {
+    const db = new Database(":memory:");
+    db.exec(`
+      CREATE TABLE usage_events (event_key TEXT PRIMARY KEY);
+      CREATE TABLE usage_sources (
+        source_id TEXT PRIMARY KEY, machine_id TEXT NOT NULL, machine_name TEXT NOT NULL, provider_id TEXT NOT NULL
+      );
+      CREATE TABLE usage_event_sources (event_key TEXT NOT NULL, source_id TEXT NOT NULL, PRIMARY KEY (event_key, source_id));
+      CREATE TABLE usage_sync_state (
+        machine_id TEXT NOT NULL, provider_id TEXT NOT NULL, status TEXT NOT NULL, last_attempt_at TEXT,
+        last_success_at TEXT, record_count INTEGER NOT NULL DEFAULT 0, error TEXT, PRIMARY KEY (machine_id, provider_id)
+      );
+      INSERT INTO usage_events (event_key) VALUES ('existing-event');
+      INSERT INTO usage_sources (source_id, machine_id, machine_name, provider_id)
+        VALUES ('existing-source', 'host-1', 'Machine', 'opencode');
+      INSERT INTO usage_event_sources (event_key, source_id) VALUES ('existing-event', 'existing-source');
+    `);
+    const warn = vi.fn();
+    const info = vi.fn();
+    const bb = { log: { warn, info } } as unknown as BbPluginApi;
+
+    await expect(syncOpenCode(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => { throw new Error("query stalled"); },
+    )).resolves.toBeUndefined();
+
+    expect(db.prepare("SELECT COUNT(*) count FROM usage_events").get()).toEqual({ count: 1 });
+    expect(db.prepare("SELECT status, record_count recordCount, error FROM usage_sync_state").get()).toEqual({
+      status: "unavailable", recordCount: 1, error: "query stalled",
+    });
+    expect(warn).toHaveBeenCalledWith("Machine/opencode: query stalled");
+
+    await expect(syncOpenCode(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => { throw new Error("OpenCode CLI is required to collect OpenCode usage."); },
+    )).resolves.toBeUndefined();
+
+    expect(db.prepare("SELECT status, record_count recordCount, error FROM usage_sync_state").get()).toEqual({
+      status: "skipped",
+      recordCount: 1,
+      error: "OpenCode CLI is not installed; hosted OpenCode Go usage is already collected via Prime Agent sessions.",
+    });
+    expect(info).toHaveBeenCalledWith("Machine/opencode: skipped (no local OpenCode CLI)");
+
+    await expect(syncOpenCode(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => "__BB_USAGE_BEGIN__\n[{}]\n__BB_USAGE_END__:0\n__BB_HOST_COMMAND_DONE__:0\n",
+    )).resolves.toBeUndefined();
+
+    expect(db.prepare("SELECT COUNT(*) count FROM usage_events").get()).toEqual({ count: 1 });
+    expect(db.prepare("SELECT status, record_count recordCount, error FROM usage_sync_state").get()).toEqual({
+      status: "unavailable", recordCount: 1, error: "OpenCode returned an invalid aggregate row at index 0.",
+    });
+    db.close();
+  });
+
+  it("buckets OpenCode usage by the enrolled host's local day, not UTC", () => {
+    const db = new Database(":memory:");
+    db.exec(`
+      CREATE TABLE session (id TEXT PRIMARY KEY, time_updated INTEGER NOT NULL);
+      CREATE TABLE message (session_id TEXT NOT NULL, time_created INTEGER NOT NULL, data TEXT NOT NULL);
+    `);
+    const seed = (localHour: number, localMinute: number, id: string) => {
+      const d = new Date();
+      d.setHours(localHour, localMinute, 0, 0);
+      const t = d.getTime();
+      db.prepare("INSERT INTO session (id, time_updated) VALUES (?, ?)").run(id, t);
+      db.prepare("INSERT INTO message (session_id, time_created, data) VALUES (?, ?, ?)").run(
+        id,
+        t,
+        JSON.stringify({
+          role: "assistant",
+          providerID: "anthropic",
+          modelID: "claude-sonnet-5",
+          cost: 0.02,
+          tokens: { input: 100, "cache.read": 60, "cache.write": 5, output: 15, reasoning: 5 },
+        }),
+      );
+      return t;
+    };
+    // Local 00:30 exercises positive offsets (UTC day is the previous day);
+    // local 17:30 exercises negative offsets (UTC day is the next day).
+    const tA = seed(0, 30, "sA");
+    const tB = seed(17, 30, "sB");
+    const rows = db.prepare(openCodeSql()).all() as Array<{ day: string }>;
+    const days = new Set(rows.map((r) => r.day));
+    expect(days.has(localDay(tA))).toBe(true);
+    expect(days.has(localDay(tB))).toBe(true);
+    db.close();
+  });
+
+  it("cuts off at real local midnight, not a mis-converted epoch", () => {
+    // 'localtime' shifts the value into local time but '%s' still formats it
+    // as UTC, so the cutoff needs a trailing 'utc' to become a real epoch.
+    // Without it the boundary drifts by the host's offset (7h in Los Angeles,
+    // 12h in Auckland), dropping or admitting hours of the oldest day.
+    const db = new Database(":memory:");
+    const cutoff = db.prepare(
+      "SELECT CAST(strftime('%s','now','localtime','start of day','-89 days','utc') AS INTEGER) c",
+    ).get() as { c: number };
+    const asLocal = new Date(cutoff.c * 1000);
+    expect(asLocal.getHours()).toBe(0);
+    expect(asLocal.getMinutes()).toBe(0);
+    expect(openCodeSql()).not.toContain("'start of day', '-89 days')");
+    db.close();
+  });
+});
+
+describe("SQLite collector sync (Devin, Kilo Code)", () => {
+  function usageDb() {
+    const db = new Database(":memory:");
+    db.exec(`
+      CREATE TABLE usage_events (
+        event_key TEXT PRIMARY KEY, timestamp TEXT NOT NULL, day TEXT NOT NULL,
+        provider_id TEXT NOT NULL, provider_name TEXT NOT NULL, model TEXT NOT NULL,
+        cost_usd REAL NOT NULL, cache_savings_usd REAL NOT NULL, processed_tokens INTEGER NOT NULL,
+        cached_input_tokens INTEGER NOT NULL, cache_write_tokens INTEGER NOT NULL,
+        uncached_input_tokens INTEGER NOT NULL, output_tokens INTEGER NOT NULL,
+        model_provider_id TEXT NOT NULL DEFAULT 'unknown', model_provider_name TEXT NOT NULL DEFAULT 'Unknown',
+        logged_cost_usd REAL, pricing_status TEXT NOT NULL DEFAULT 'unknown', project TEXT NOT NULL DEFAULT 'Unknown'
+      );
+      CREATE TABLE usage_sources (
+        source_id TEXT PRIMARY KEY, machine_id TEXT NOT NULL, machine_name TEXT NOT NULL,
+        provider_id TEXT NOT NULL, root_reference TEXT NOT NULL, content_sha TEXT NOT NULL,
+        last_seen_generation TEXT NOT NULL, last_success_at TEXT NOT NULL, pricing_version TEXT
+      );
+      CREATE TABLE usage_event_sources (event_key TEXT NOT NULL, source_id TEXT NOT NULL, PRIMARY KEY (event_key, source_id));
+      CREATE TABLE usage_sync_state (
+        machine_id TEXT NOT NULL, provider_id TEXT NOT NULL, status TEXT NOT NULL, last_attempt_at TEXT,
+        last_success_at TEXT, record_count INTEGER NOT NULL DEFAULT 0, error TEXT, PRIMARY KEY (machine_id, provider_id)
+      );
+    `);
+    return db;
+  }
+
+  function decodeCollectorInput(command: string) {
+    const outer = command.match(/Buffer\.from\("([A-Za-z0-9+/=]+)"/);
+    if (!outer) return null;
+    const source = gunzipSync(Buffer.from(outer[1]!, "base64")).toString("utf8");
+    const inner = source.match(/\}\)\("([A-Za-z0-9+/=]+)"/);
+    if (!inner) return null;
+    return JSON.parse(Buffer.from(inner[1]!, "base64").toString("utf8")) as { agentId?: string; dbPaths?: string[] };
+  }
+
+  it("targets the Devin CLI session database through a node collector", () => {
+    const command = devinCommand("/home/user");
+    expect(command).toContain("command -v node");
+    expect(command).toContain("node -e");
+    const input = decodeCollectorInput(command);
+    expect(input).toMatchObject({
+      agentId: "devin",
+      dbPaths: [
+        "/home/user/.local/share/devin/cli/sessions.db",
+        "/home/user/Library/Application Support/devin/cli/sessions.db",
+      ],
+    });
+  });
+
+  it("stores scanned Devin aggregates and reports ready", async () => {
+    const db = usageDb();
+    const info = vi.fn();
+    const bb = { log: { info, warn: vi.fn() } } as unknown as BbPluginApi;
+    const output = fakeHostScanOutput("devin", [{
+      day: new Date().toISOString().slice(0, 10),
+      modelProviderId: "devin",
+      model: "swe-2-max",
+      project: "project-a",
+      loggedCostUsd: null,
+      uncachedInputTokens: 150,
+      cachedInputTokens: 60,
+      cacheWriteTokens: 5,
+      outputTokens: 30,
+    }]);
+
+    await syncDevin(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => output,
+    );
+
+    const event = db.prepare("SELECT provider_id, provider_name, model, project, processed_tokens, pricing_status FROM usage_events").get();
+    expect(event).toEqual({
+      provider_id: "devin", provider_name: "Devin", model: "swe-2-max",
+      project: "project-a", processed_tokens: 245, pricing_status: "unknown",
+    });
+    expect(db.prepare("SELECT status, record_count recordCount FROM usage_sync_state").get())
+      .toEqual({ status: "ready", recordCount: 1 });
+    db.close();
+  });
+
+  it("reports no-data when the host scan finds no Devin session database", async () => {
+    const db = usageDb();
+    const bb = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as BbPluginApi;
+
+    await syncDevin(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => fakeHostScanOutput("devin", []),
+    );
+
+    expect(db.prepare("SELECT status, record_count recordCount, error FROM usage_sync_state").get())
+      .toEqual({ status: "no-data", recordCount: 0, error: null });
+    db.close();
+  });
+
+  it("retains prior usage and isolates a failed Devin scan to its source state", async () => {
+    const db = usageDb();
+    db.prepare("INSERT INTO usage_events (event_key, timestamp, day, provider_id, provider_name, model, cost_usd, cache_savings_usd, processed_tokens, cached_input_tokens, cache_write_tokens, uncached_input_tokens, output_tokens) VALUES ('devin-event', '2026-08-09T00:00:00Z', '2026-08-09', 'devin', 'Devin', 'swe-2-max', 0, 0, 60, 0, 0, 40, 20)").run();
+    db.prepare("INSERT INTO usage_sources (source_id, machine_id, machine_name, provider_id, root_reference, content_sha, last_seen_generation, last_success_at) VALUES ('devin-source', 'host-1', 'Machine', 'devin', 'ref', 'sha', 'gen', '2026-08-09T00:00:00Z')").run();
+    db.prepare("INSERT INTO usage_event_sources (event_key, source_id) VALUES ('devin-event', 'devin-source')").run();
+    const warn = vi.fn();
+    const bb = { log: { info: vi.fn(), warn } } as unknown as BbPluginApi;
+
+    await syncDevin(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => { throw new Error("Node.js is required to scan Devin usage."); },
+    );
+
+    expect(db.prepare("SELECT COUNT(*) count FROM usage_events").get()).toEqual({ count: 1 });
+    expect(db.prepare("SELECT status, record_count recordCount, error FROM usage_sync_state").get()).toEqual({
+      status: "unavailable",
+      recordCount: 1,
+      error: "Usage scan failed: Node.js is required to scan Devin usage.",
+    });
+    expect(warn).toHaveBeenCalledWith("Machine/devin: Usage scan failed: Node.js is required to scan Devin usage.");
+    db.close();
+  });
+
+  it("dispatches a Devin scan through syncAll like the JSON agents", async () => {
+    const db = new Database(":memory:");
+    let handlers: { sync: () => unknown } | undefined;
+    const commandsByTerminalId = new Map<string, string>();
+    const stagedFiles = new Map<string, string>();
+    const bb = {
+      settings: { define: vi.fn(() => ({ get: async () => ({ piSessionRoots: "", primeSessionRoots: "" }) })) },
+      storage: {
+        database: vi.fn(() => db),
+        migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
+      },
+      rpc: {
+        register: vi.fn((_contract: unknown, registered: unknown) => {
+          handlers = registered as { sync: () => unknown };
+        }),
+      },
+      sdk: {
+        hosts: {
+          list: vi.fn(async () => [{ id: "host-1", name: "Machine", status: "connected" }]),
+          directory: vi.fn(async () => ({ directory: "/home/user" })),
+        },
+        files: { write: hostFileWriteMock(stagedFiles) },
+        terminals: {
+          create: vi.fn(async (input: { start: { command: string } }) => {
+            const id = `terminal-${commandsByTerminalId.size}`;
+            commandsByTerminalId.set(id, input.start.command);
+            return { id, status: "starting" };
+          }),
+          get: vi.fn(async (args: { terminalId: string }) => ({ id: args.terminalId, status: "running" })),
+          output: vi.fn(async (args: { terminalId: string }) => {
+            const agentId = decodeCollectorInput(commandTextFor(commandsByTerminalId.get(args.terminalId) ?? "", stagedFiles))?.agentId;
+            const text = agentId === "devin"
+              ? fakeHostScanOutput("devin", [{
+                day: new Date().toISOString().slice(0, 10),
+                modelProviderId: "devin",
+                model: "swe-2-max",
+                project: "project-a",
+                loggedCostUsd: null,
+                uncachedInputTokens: 150,
+                cachedInputTokens: 60,
+                cacheWriteTokens: 5,
+                outputTokens: 30,
+              }])
+              : fakeHostScanOutput(agentId ?? "codex", []);
+            return { chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false };
+          }),
+          close: vi.fn(async () => undefined),
+        },
+      },
+      realtime: { publish: vi.fn() },
+      background: { service: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await plugin(bb);
+    expect(handlers?.sync()).toEqual({ ok: true });
+
+    await vi.waitFor(() => {
+      const row = db.prepare("SELECT provider_id FROM usage_events WHERE provider_id = 'devin'").get();
+      expect(row).toBeTruthy();
+    }, { timeout: 2000 });
+
+    expect(db.prepare(
+      "SELECT status, record_count recordCount FROM usage_sync_state WHERE machine_id = 'host-1' AND provider_id = 'devin'",
+    ).get()).toEqual({ status: "ready", recordCount: 1 });
+    db.close();
+  });
+
+  it("targets the Kilo Code session database through a node collector", () => {
+    const command = kilocodeCommand("/home/user");
+    expect(command).toContain("command -v node");
+    expect(command).toContain("node -e");
+    const input = decodeCollectorInput(command);
+    expect(input).toMatchObject({
+      agentId: "kilocode",
+      dbPaths: [
+        "/home/user/.local/share/kilo/kilo.db",
+        "/home/user/Library/Application Support/kilo/kilo.db",
+      ],
+    });
+  });
+
+  it("stores scanned Kilo Code aggregates and reports ready", async () => {
+    const db = usageDb();
+    const bb = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as BbPluginApi;
+    const output = fakeHostScanOutput("kilocode", [{
+      day: new Date().toISOString().slice(0, 10),
+      modelProviderId: "kilo",
+      model: "kilo-auto/free",
+      project: "project-a",
+      loggedCostUsd: 0.42,
+      uncachedInputTokens: 800,
+      cachedInputTokens: 400,
+      cacheWriteTokens: 10,
+      outputTokens: 375,
+    }]);
+
+    await syncKilocode(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => output,
+    );
+
+    const event = db.prepare("SELECT provider_id, provider_name, model, project, processed_tokens, pricing_status, logged_cost_usd FROM usage_events").get();
+    expect(event).toEqual({
+      provider_id: "kilocode", provider_name: "Kilo Code", model: "kilo-auto/free",
+      project: "project-a", processed_tokens: 1585, pricing_status: "logged", logged_cost_usd: 0.42,
+    });
+    expect(db.prepare("SELECT status, record_count recordCount FROM usage_sync_state").get())
+      .toEqual({ status: "ready", recordCount: 1 });
+    db.close();
+  });
+
+  it("reports no-data when the host has no Kilo Code session database", async () => {
+    const db = usageDb();
+    const bb = { log: { info: vi.fn(), warn: vi.fn() } } as unknown as BbPluginApi;
+
+    await syncKilocode(
+      bb,
+      db as unknown as ReturnType<BbPluginApi["storage"]["database"]>,
+      { id: "host-1", name: "Machine" },
+      "/home/user",
+      new AbortController().signal,
+      async () => fakeHostScanOutput("kilocode", []),
+    );
+
+    expect(db.prepare("SELECT status, record_count recordCount, error FROM usage_sync_state").get())
+      .toEqual({ status: "no-data", recordCount: 0, error: null });
+    db.close();
+  });
+});
+
+describe("dashboard query", () => {
+  it("fetches one buffer day beyond the 90 the UI shows", () => {
+    // The server timezone must not clip a host that is already on the next
+    // local day; the dashboard applies the exact 90-day range itself.
+    const sql = dashboardRecordsSql();
+    expect(sql).toContain("day >= date('now', 'localtime', '-90 days')");
+    expect(sql).not.toContain("-365 days");
+  });
+});
+
+describe("OpenCode Go limits", () => {
+  const markedOutput = [
+    "__BB_USAGE_BEGIN__",
+    JSON.stringify({ usage: { rolling: { status: "ok", percent: 4, resetsAt: "2026-08-21T22:54:37.384Z" } } }),
+    "__BB_USAGE_END__:0",
+    "",
+  ].join("\n");
+
+  function goLimitsDb() {
+    const db = new Database(":memory:");
+    db.exec(`CREATE TABLE opencode_go_limits (
+      machine_id TEXT PRIMARY KEY, machine_name TEXT NOT NULL, plan_label TEXT NOT NULL DEFAULT 'Go',
+      windows_json TEXT NOT NULL, fetched_at TEXT NOT NULL, account_fingerprint TEXT
+    );
+    CREATE TABLE opencode_go_limit_state (
+      machine_id TEXT PRIMARY KEY, machine_name TEXT NOT NULL, status TEXT NOT NULL,
+      error TEXT, last_attempt_at TEXT NOT NULL, last_success_at TEXT
+    )`);
+    return db;
+  }
+
+  it("persists a parsed snapshot from a successful host query", async () => {
+    const db = goLimitsDb();
+    const info = vi.fn();
+    const bb = { log: { info, warn: vi.fn(), debug: vi.fn() } } as unknown as BbPluginApi;
+
+    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+
+    const row = db.prepare("SELECT machine_id, machine_name, plan_label, windows_json FROM opencode_go_limits").get() as {
+      machine_id: string; machine_name: string; plan_label: string; windows_json: string;
+    };
+    expect(row).toEqual({
+      machine_id: "host-1",
+      machine_name: "Machine",
+      plan_label: "Go",
+      windows_json: JSON.stringify([{ label: "Rolling (5h)", usedPercent: 4, resetsAt: "2026-08-21T22:54:37.384Z" }]),
+    });
+    expect(info).toHaveBeenCalledWith(expect.stringContaining("1 limit windows"));
+    expect(db.prepare("SELECT status, error, last_success_at IS NOT NULL hasSuccess FROM opencode_go_limit_state").get())
+      .toEqual({ status: "ok", error: null, hasSuccess: 1 });
+  });
+
+  it("persists the credential fingerprint as the grouping identity", async () => {
+    const db = goLimitsDb();
+    const bb = { log: { info: vi.fn(), warn: vi.fn(), debug: vi.fn() } } as unknown as BbPluginApi;
+    const output = [
+      `__BB_GO_FINGERPRINT__:${"a".repeat(64)}`,
+      "__BB_USAGE_BEGIN__",
+      JSON.stringify({ usage: { rolling: { status: "ok", percent: 4, resetsAt: "2026-08-21T22:54:37.384Z" } } }),
+      "__BB_USAGE_END__:0",
+      "",
+    ].join("\n");
+
+    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => output);
+
+    expect(loadStoredOpenCodeGoLimits(db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, new Set(["host-1"])))
+      .toEqual([expect.objectContaining({ accountIdentity: "a".repeat(64) })]);
+  });
+
+  it("retains the previous snapshot when a later fetch fails generically", async () => {
+    const db = goLimitsDb();
+    const warn = vi.fn();
+    const bb = { log: { info: vi.fn(), warn, debug: vi.fn() } } as unknown as BbPluginApi;
+    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+
+    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
+      throw new Error("Usage: OpenCode Go limits timed out after 60 seconds.");
+    });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("retaining previous snapshot"));
+    expect((db.prepare("SELECT COUNT(*) count FROM opencode_go_limits").get() as { count: number }).count).toBe(1);
+    expect(db.prepare("SELECT status, error FROM opencode_go_limit_state").get()).toEqual({
+      status: "error",
+      error: "Usage: OpenCode Go limits timed out after 60 seconds.",
+    });
+    expect(loadStoredOpenCodeGoLimits(db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, new Set(["host-1"])))
+      .toEqual([expect.objectContaining({ status: "error", windows: [expect.objectContaining({ label: "Rolling (5h)" })] })]);
+  });
+
+  it("retains the previous snapshot for diagnostics that only contain a sentinel", async () => {
+    const db = goLimitsDb();
+    const warn = vi.fn();
+    const bb = { log: { info: vi.fn(), warn, debug: vi.fn() } } as unknown as BbPluginApi;
+    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+
+    for (const diagnostic of [
+      "collector failed near no-opencode-go-credential handling",
+      "no-opencode-go-plan response was malformed",
+    ]) {
+      await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
+        throw new Error(diagnostic);
+      });
+    }
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("retaining previous snapshot"));
+    expect((db.prepare("SELECT COUNT(*) count FROM opencode_go_limits").get() as { count: number }).count).toBe(1);
+    expect((db.prepare("SELECT COUNT(*) count FROM opencode_go_limit_state").get() as { count: number }).count).toBe(1);
+  });
+
+  it("drops the stored snapshot when the machine has no Go credential or plan", async () => {
+    const db = goLimitsDb();
+    const debug = vi.fn();
+    const bb = { log: { info: vi.fn(), warn: vi.fn(), debug } } as unknown as BbPluginApi;
+    await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => markedOutput);
+
+    for (const diagnostic of ["no-opencode-go-credential", "no-opencode-go-plan"]) {
+      await syncOpenCodeGo(bb, db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, { id: "host-1", name: "Machine" }, "/home/user", new AbortController().signal, async () => {
+        throw new Error(diagnostic);
+      });
+    }
+
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining("not configured"));
+    expect((db.prepare("SELECT COUNT(*) count FROM opencode_go_limits").get() as { count: number }).count).toBe(0);
+    expect((db.prepare("SELECT COUNT(*) count FROM opencode_go_limit_state").get() as { count: number }).count).toBe(0);
+  });
+
+  it("serves connected snapshots and surfaces malformed cached data as an error", () => {
+    const db = goLimitsDb();
+    db.prepare("INSERT INTO opencode_go_limits (machine_id, machine_name, plan_label, windows_json, fetched_at) VALUES (?, ?, 'Go', ?, ?)")
+      .run("host-1", "Machine", JSON.stringify([{ label: "Weekly", usedPercent: 25, resetsAt: null }]), new Date().toISOString());
+    db.prepare("INSERT INTO opencode_go_limit_state (machine_id, machine_name, status, error, last_attempt_at, last_success_at) VALUES (?, ?, 'ok', NULL, ?, ?)")
+      .run("host-1", "Machine", new Date().toISOString(), new Date().toISOString());
+
+    db.prepare("INSERT INTO opencode_go_limits (machine_id, machine_name, plan_label, windows_json, fetched_at) VALUES (?, ?, 'Go', ?, ?)")
+      .run("host-2", "Broken", "{invalid", new Date().toISOString());
+    db.prepare("INSERT INTO opencode_go_limit_state (machine_id, machine_name, status, error, last_attempt_at, last_success_at) VALUES (?, ?, 'ok', NULL, ?, ?)")
+      .run("host-2", "Broken", new Date().toISOString(), new Date().toISOString());
+
+    const limits = loadStoredOpenCodeGoLimits(db as unknown as ReturnType<BbPluginApi["storage"]["database"]>, new Set(["host-1", "host-2"]));
+    expect(limits.find((limit) => limit.machineId === "host-1")).toEqual(expect.objectContaining({
+      machineId: "host-1",
+      providerId: "opencode-go",
+      providerName: "OpenCode Go",
+      planLabel: "Go",
+      status: "ok",
+      lastUpdatedAt: expect.any(String),
+    }));
+    expect(limits.find((limit) => limit.machineId === "host-2")).toEqual(expect.objectContaining({
+      machineId: "host-2", status: "error", error: "Stored OpenCode Go limits could not be read.",
+    }));
+  });
+});
+
+
+it("prices OpenCode mixed recorded and unpriced requests independently", async () => {
+  const db = new Database(":memory:");
+  try {
+    db.exec("CREATE TABLE session (id TEXT, time_updated INTEGER); CREATE TABLE message (session_id TEXT, time_created INTEGER, data TEXT);");
+    const now = Date.now();
+    db.prepare("INSERT INTO session VALUES (?, ?)").run("test", now);
+    for (const cost of [7, 0]) db.prepare("INSERT INTO message VALUES (?, ?, ?)").run("test", now, JSON.stringify({
+      role: "assistant", providerID: "openai", modelID: "gpt-5.6-sol", cost, tokens: { input: 1000000, output: 0 },
+    }));
+    const { parseOpenCode } = await import("./collectors");
+    const rows = parseOpenCode(JSON.stringify(db.prepare(openCodeSql()).all()), { machineId: "test", machineName: "test" });
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map(r => r.eventKey)).size).toBe(2);
+    expect(rows.reduce((sum, r) => sum + r.costUsd, 0)).toBe(12);
+  } finally { db.close(); }
+});
+
+
+describe("Grok limit snapshots", () => {
+  it("hides first-time errors while retaining diagnostics, then shows valid zero usage", async () => {
+    const db = new Database(":memory:");
+    try {
+      db.exec(grokLimitsMigration);
+      const warn = vi.fn();
+      const bb = { log: { warn } } as unknown as BbPluginApi;
+      const machine = { id: "host-grok", name: "Grok machine" };
+      const connected = new Set([machine.id]);
+      await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => { throw new Error("Node.js is required"); });
+      expect(loadStoredGrokLimits(db, connected)).toEqual([]);
+      expect(db.prepare("SELECT error FROM grok_limits").get()).toEqual({ error: "Node.js is required" });
+      expect(warn).toHaveBeenCalled();
+      const snapshot = { accountIdentity: "a".repeat(64), windows: [{ label: "Weekly credits", usedPercent: 0, resetsAt: null }] };
+      await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => `__BB_USAGE_BEGIN__\n${JSON.stringify(snapshot)}\n__BB_USAGE_END__:0`);
+      expect(loadStoredGrokLimits(db, connected)).toEqual([expect.objectContaining({ status: "ok", error: null, windows: snapshot.windows })]);
+    } finally { db.close(); }
+  });
+
+  it("retains a successful snapshot on errors, hides offline machines, and clears on logout", async () => {
+    const db = new Database(":memory:");
+    db.exec(grokLimitsMigration);
+    const bb = { log: { warn: vi.fn() } } as unknown as BbPluginApi;
+    const machine = { id: "host-grok", name: "Grok machine" };
+    const snapshot = { accountIdentity: "a".repeat(64), windows: [{ label: "Weekly credits", usedPercent: 40, resetsAt: null }] };
+    await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => `__BB_USAGE_BEGIN__\n${JSON.stringify(snapshot)}\n__BB_USAGE_END__:0`);
+    expect(loadStoredGrokLimits(db, new Set([machine.id]))).toEqual([expect.objectContaining({ status: "ok", windows: snapshot.windows, accountIdentity: snapshot.accountIdentity })]);
+    await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => { throw new Error("Request failed"); });
+    expect(loadStoredGrokLimits(db, new Set([machine.id]))).toEqual([expect.objectContaining({ status: "error", windows: snapshot.windows, error: "Request failed" })]);
+    expect(loadStoredGrokLimits(db, new Set())).toEqual([]);
+    await syncGrokLimits(bb, db, machine, "/home/user", AbortSignal.timeout(1000), async () => "__BB_USAGE_ERROR__:no-grok-credential");
+    expect(loadStoredGrokLimits(db, new Set([machine.id]))).toEqual([]);
+    db.close();
+  });
+});
+
+
+describe("Account Pooler limits RPC integration", () => {
+  it.each(["local@example.com", "pool@example.com"])("preserves local limits for %s on pool failures and missing observations", async (localEmail) => {
+    const db = new Database(":memory:");
+    let read: (() => Promise<unknown>) | undefined;
+    const poolAccounts = [{
+      id: "pool-account", provider: "codex", kind: "oauth", label: "Pooled Codex",
+      email: "pool@example.com", subscriptionType: null, enabled: true, status: "ready", error: null,
+      observedAt: 1789300800000, fiveHourUtilization: null, fiveHourResetAt: null,
+      sevenDayUtilization: null, sevenDayResetAt: null, familyWeekly: {},
+      limitWindows: [{ slot: "primary", windowMinutes: 10080, utilization: 0.17, resetAt: 1789905600000, status: null }],
+    }];
+    const callRpc = vi.fn().mockResolvedValue(poolAccounts);
+    const hosts = vi.fn().mockResolvedValue([]);
+    const bb = {
+      settings: { define: vi.fn() },
+      storage: {
+        database: () => db,
+        migrate: (_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); },
+      },
+      rpc: { register: (_contract: unknown, handlers: { providerLimits: () => Promise<unknown> }) => { read = handlers.providerLimits; } },
+      sdk: {
+        hosts: { list: hosts },
+        plugins: {
+          list: vi.fn().mockResolvedValue({ plugins: [{ id: "account-pool", enabled: true }] }), callRpc,
+        },
+        system: { usageLimits: vi.fn().mockResolvedValue({ codex: {
+          status: "ok", accountEmail: localEmail, planLabel: "Pro",
+          windows: [{ label: "Weekly limit", usedPercent: 80, resetsAt: "2026-09-20T12:00:00.000Z" }],
+        } }) },
+      },
+      background: { service: vi.fn() },
+      log: { debug: vi.fn(), warn: vi.fn() },
+    } as unknown as BbPluginApi;
+    try {
+      await plugin(bb);
+      const first = rpcContract.providerLimits.output.parse(await read!());
+      expect(first.accountPoolError).toBeNull();
+      expect(first.limits).toHaveLength(1);
+      expect(first.limits[0]).toMatchObject({
+        poolAccount: { label: "Pooled Codex" }, machines: [],
+        windows: [{ label: "Weekly", usedPercent: 17 }],
+      });
+      hosts.mockResolvedValue([{ id: "laptop", name: "Laptop", status: "connected" }]);
+      callRpc.mockRejectedValue(new Error("Pool temporarily unavailable"));
+      const next = rpcContract.providerLimits.output.parse(await read!());
+      expect(next.accountPoolError).toContain("last reported");
+      expect(next.limits).toHaveLength(localEmail === "pool@example.com" ? 1 : 2);
+      expect(next.limits.find((limit) => limit.accountEmail === localEmail)?.windows).toEqual([
+        { label: localEmail === "pool@example.com" ? "Weekly" : "Weekly limit", usedPercent: 80, resetsAt: "2026-09-20T12:00:00.000Z" },
+      ]);
+      expect(next.limits.some((limit) => limit.poolAccount?.id === "pool-account")).toBe(true);
+
+      callRpc.mockResolvedValue([{ ...poolAccounts[0], observedAt: null, limitWindows: [] }]);
+      const unobserved = rpcContract.providerLimits.output.parse(await read!());
+      expect(unobserved.accountPoolError).toBeNull();
+      expect(unobserved.limits.find((limit) => limit.accountEmail === localEmail)?.windows).toEqual([
+        { label: "Weekly limit", usedPercent: 80, resetsAt: "2026-09-20T12:00:00.000Z" },
+      ]);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("provider limits after a reset", () => {
+  const resetsAt = "2026-09-20T12:00:00.000Z";
+  const poolAccountId = "6f1c2b9e-4b8f-4f7a-9d55-0c4c7b1d2e3f";
+
+  function setup() {
+    const db = new Database(":memory:");
+    let read: ((input?: { refreshPoolAccountId: string } | null) => Promise<unknown>) | undefined;
+    // Stored pool quota, as returned by account.list until an upstream refresh.
+    const stored = {
+      id: poolAccountId, provider: "codex", kind: "oauth", label: "Pooled Codex",
+      email: "user@example.com", subscriptionType: "pro", enabled: true, status: "exhausted", error: null as string | null,
+      observedAt: Date.parse("2026-09-13T12:00:00Z") as number | null, fiveHourUtilization: null, fiveHourResetAt: null,
+      sevenDayUtilization: null, sevenDayResetAt: null, familyWeekly: {},
+      limitWindows: [{ slot: "primary", windowMinutes: 10080, utilization: 1, resetAt: Date.parse(resetsAt), status: null }],
+    };
+    let refreshUpstream = async () => {
+      stored.limitWindows = [{ ...stored.limitWindows[0]!, utilization: 0 }];
+      stored.status = "ready";
+      stored.observedAt = Date.now();
+    };
+    const callRpc = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "account.list") return [structuredClone(stored)];
+      if (method === "account.refreshUsage") {
+        await refreshUpstream();
+        return { account: structuredClone(stored) };
+      }
+      throw new Error(`Unexpected ${method}`);
+    });
+    const bb = {
+      settings: { define: vi.fn() },
+      storage: {
+        database: () => db,
+        migrate: (_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); },
+      },
+      rpc: { register: (_contract: unknown, handlers: { providerLimits: typeof read }) => { read = handlers.providerLimits; } },
+      sdk: {
+        hosts: { list: vi.fn().mockResolvedValue([{ id: "laptop", name: "Laptop", status: "connected" }]) },
+        plugins: { list: vi.fn().mockResolvedValue({ plugins: [{ id: "account-pool", enabled: true }] }), callRpc },
+        // The local bridge still reports the pre-reset reading for the same cycle.
+        system: { usageLimits: vi.fn().mockResolvedValue({ codex: {
+          status: "ok", accountEmail: "user@example.com", planLabel: "pro",
+          windows: [{ label: "Weekly limit", usedPercent: 100, resetsAt }],
+        } }) },
+      },
+      background: { service: vi.fn() },
+      log: { debug: vi.fn(), warn: vi.fn() },
+    } as unknown as BbPluginApi;
+    return {
+      db, callRpc, stored, bb,
+      setRefresh: (refresh: typeof refreshUpstream) => { refreshUpstream = refresh; },
+      read: async (input?: { refreshPoolAccountId: string } | null) => {
+        rpcContract.providerLimits.input.parse(input ?? null);
+        return rpcContract.providerLimits.output.parse(await read!(input));
+      },
+    };
+  }
+
+  it("refreshes the reset account upstream so a cleared quota replaces the stored and local readings", async () => {
+    const { db, bb, callRpc, read } = setup();
+    const now = Date.parse("2026-09-15T12:00:00Z");
+    try {
+      await plugin(bb);
+      const before = (await read()).limits;
+      expect(before).toHaveLength(1);
+      expect(before[0]!.windows).toEqual([{ label: "Weekly", usedPercent: 100, resetsAt }]);
+      expect(providerResetAction(before[0]!, now)?.label).toBe("Reset options");
+      expect(callRpc.mock.calls.map(([call]) => call.method)).toEqual(["account.list"]);
+
+      const after = await read({ refreshPoolAccountId: poolAccountId });
+      expect(after.accountPoolError).toBeNull();
+      expect(callRpc.mock.calls.slice(1).map(([call]) => call)).toEqual([
+        expect.objectContaining({ method: "account.refreshUsage", input: { accountId: poolAccountId } }),
+        expect.objectContaining({ method: "account.list" }),
+      ]);
+      expect(after.limits[0]).toMatchObject({ status: "ok", windows: [{ label: "Weekly", usedPercent: 0, resetsAt }] });
+      expect(providerResetAction(after.limits[0]!, now)).toBeNull();
+    } finally {
+      db.close();
+    }
+  });
+
+  it("marks the reset account stale when the upstream refresh fails or is skipped", async () => {
+    for (const refresh of [
+      async () => { throw new Error("upstream failed"); },
+      // account.refreshUsage resolves without a new observation when the read fails or is skipped.
+      async () => {},
+    ]) {
+      const { db, bb, read, setRefresh } = setup();
+      setRefresh(refresh);
+      try {
+        await plugin(bb);
+        const result = await read({ refreshPoolAccountId: poolAccountId });
+        expect(result.accountPoolError).toContain("Showing the last reported values");
+        expect(result.limits[0]).toMatchObject({ status: "error", windows: [{ label: "Weekly", usedPercent: 100 }] });
+        expect(providerResetAction(result.limits[0]!, Date.parse("2026-09-15T12:00:00Z"))).toBeNull();
+      } finally {
+        db.close();
+      }
+    }
+  });
+
+  it("does not answer a reset refresh with a read that started before it", async () => {
+    const { db, bb, callRpc, read } = setup();
+    try {
+      await plugin(bb);
+      let releaseList!: () => void;
+      const listStarted = new Promise<void>((resolve) => {
+        callRpc.mockImplementationOnce(async () => {
+          resolve();
+          await new Promise<void>((release) => { releaseList = release; });
+          return [];
+        });
+      });
+      const earlier = read();
+      await listStarted;
+      const refreshed = read({ refreshPoolAccountId: poolAccountId });
+      releaseList();
+      await earlier;
+      expect((await refreshed).limits[0]!.windows).toEqual([{ label: "Weekly", usedPercent: 0, resetsAt }]);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("retained usage through the real sync path", () => {
+  const DAY = new Date().toISOString().slice(0, 10);
+  const catalog = (rate: number) => ({ openai: { id: "openai", name: "OpenAI", models: {
+    "gpt-test": { id: "gpt-test", cost: { input: rate, output: rate, cache_read: 0, cache_write: 0 } },
+  } } });
+  function piRow(overrides: Record<string, unknown> = {}) {
+    return { day: DAY, modelProviderId: "openai", model: "gpt-test", project: "proj", loggedCostUsd: null,
+      uncachedInputTokens: 1000, cachedInputTokens: 0, cacheWriteTokens: 0, outputTokens: 500, ...overrides };
+  }
+  function fakeHostScanOutputWith(agentId: string, rows: Array<Record<string, unknown>>, failureCount: number) {
+    const scan = { agentId, fileCount: 1, changedFileCount: 1, reusedFileCount: 0, failureCount, error: null, rows };
+    const encoded = gzipSync(Buffer.from(JSON.stringify(scan))).toString("base64");
+    return `${SCAN_BEGIN}\n${encoded}\n${SCAN_END}\n__BB_HOST_COMMAND_DONE__:0\n`;
+  }
+
+  // Drives the unmodified plugin factory end-to-end through its public sync()
+  // RPC (like the Antigravity regression test above); the mutable `state`
+  // object lets each subsequent sync serve a different pi scan.
+  async function bootHarness(state: { rows: Array<Record<string, unknown>>; failureCount: number; codexHomes?: string }, targetAgent = "pi") {
+    const db = new Database(":memory:");
+    let handlers: { sync: () => unknown; dashboard: () => Promise<{ sync: { running: boolean } }> } | undefined;
+    const commandsByTerminalId = new Map<string, string>();
+    const stagedFiles = new Map<string, string>();
+    const bb = {
+      settings: { define: vi.fn(() => ({ get: async () => ({ codexHomes: state.codexHomes ?? "", piSessionRoots: "", primeSessionRoots: "" }) })) },
+      storage: {
+        database: vi.fn(() => db),
+        migrate: vi.fn((_db: unknown, statements: string[]) => { for (const statement of statements) db.exec(statement); }),
+      },
+      rpc: {
+        register: vi.fn((_contract: unknown, registered: unknown) => {
+          handlers = registered as typeof handlers;
+        }),
+      },
+      sdk: {
+        hosts: {
+          list: vi.fn(async () => [{ id: "host-1", name: "Machine", status: "connected" }]),
+          directory: vi.fn(async () => ({ directory: "/home/user" })),
+        },
+        files: { write: hostFileWriteMock(stagedFiles) },
+        terminals: {
+          create: vi.fn(async (input: { start: { command: string } }) => {
+            const id = `terminal-${commandsByTerminalId.size}`;
+            commandsByTerminalId.set(id, input.start.command);
+            return { id, status: "starting" };
+          }),
+          get: vi.fn(async (args: { terminalId: string }) => ({ id: args.terminalId, status: "running" })),
+          output: vi.fn(async (args: { terminalId: string }) => {
+            const command = commandTextFor(commandsByTerminalId.get(args.terminalId) ?? "", stagedFiles);
+            const agentId = agentIdFromCommand(command);
+            const text = agentId === targetAgent
+              ? fakeHostScanOutputWith(targetAgent, state.rows, state.failureCount)
+              : fakeHostScanOutput(agentId ?? "codex", []);
+            return { chunks: [{ seq: 1, dataBase64: Buffer.from(text).toString("base64") }], truncated: false };
+          }),
+          close: vi.fn(async () => undefined),
+        },
+      },
+      realtime: { publish: vi.fn() },
+      background: { service: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+    } as unknown as BbPluginApi;
+
+    await plugin(bb);
+    expect(handlers?.sync()).toEqual({ ok: true });
+    await vi.waitFor(async () => expect((await handlers!.dashboard()).sync.running).toBe(false));
+    return { db, syncAgain: async () => {
+      handlers!.sync();
+      await vi.waitFor(async () => expect((await handlers!.dashboard()).sync.running).toBe(false));
+    } };
+  }
+
+
+  afterEach(() => resetPricingCatalog());
+  const totals = (db: Database) => db.prepare(`SELECT COUNT(*) count, SUM(processed_tokens) tokens,
+    SUM(cost_usd) cost FROM usage_events`).get();
+
+  it("preserves the existing Codex source and missing history as archive and custom roots are added", async () => {
+    setPricingCatalog(catalog(1000), "codex-archive-v1");
+    const state = { rows: [piRow(), piRow({ account: "work" })], failureCount: 0, codexHomes: "" };
+    const { db, syncAgain } = await bootHarness(state, "codex");
+    try {
+      const legacySourceId = createHash("sha256")
+        .update(["host-1", "codex", "host-json-scan-v1", "/home/user/.codex/sessions"].join("\0")).digest("hex");
+      expect(db.prepare("SELECT source_id id FROM usage_sources WHERE provider_id='codex'").all())
+        .toEqual([{ id: legacySourceId }]);
+      const previousRootReference = db.prepare("SELECT root_reference ref FROM usage_sources WHERE source_id=?").get(legacySourceId);
+      state.codexHomes = "~/custom-codex";
+      state.rows = [piRow({ project: "archived" })];
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 3, tokens: 4500, cost: 4.5 });
+      expect(db.prepare("SELECT source_id id FROM usage_sources WHERE provider_id='codex'").all())
+        .toEqual([{ id: legacySourceId }]);
+      expect(db.prepare("SELECT root_reference ref FROM usage_sources WHERE source_id=?").get(legacySourceId))
+        .not.toEqual(previousRootReference);
+      expect(db.prepare("SELECT DISTINCT source_id id FROM usage_event_sources").all()).toEqual([{ id: legacySourceId }]);
+      state.rows = [];
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 3, tokens: 4500, cost: 4.5 });
+    } finally { db.close(); }
+  });
+
+  it("replaces inflated Codex buckets once on the first complete scan after the dedup fix", async () => {
+    setPricingCatalog(catalog(1000), "codex-revision-v1");
+    const state = { rows: [piRow(), piRow({ project: "copied-only" })], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state, "codex");
+    try {
+      // A database written before the fix has no revision on its Codex source.
+      db.prepare("UPDATE usage_sources SET scan_revision=NULL").run();
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 3 });
+      state.rows = [piRow({ uncachedInputTokens: 400, outputTokens: 100 })];
+      state.failureCount = 1;
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 3 });
+      state.failureCount = 0;
+      await syncAgain();
+      // The reported bucket drops to the corrected value; the absent one is kept.
+      expect(totals(db)).toEqual({ count: 2, tokens: 2000, cost: 2 });
+      state.rows = [piRow({ uncachedInputTokens: 300, outputTokens: 100 })];
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 2000, cost: 2 });
+    } finally { db.close(); }
+  });
+
+  it.each([0, 1])("retains smaller and missing buckets across nonempty and empty scans (failures: %s)", async (failureCount) => {
+    setPricingCatalog(catalog(1000), "retention-v1");
+    const state = { rows: [piRow(), piRow({ project: "second" })], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state);
+    try {
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 3 });
+      state.failureCount = failureCount;
+      state.rows = [piRow({ uncachedInputTokens: 300, outputTokens: 100 })];
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 3 });
+      state.rows = [];
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 3 });
+      state.rows = [piRow({ uncachedInputTokens: 2000 })];
+      state.failureCount = 0;
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 4000, cost: 4 });
+    } finally { db.close(); }
+  });
+
+  it("sums and prices the retained buckets when old logs disappear and new usage changes the mix", async () => {
+    setPricingCatalog(catalog(1000), "mix-v1");
+    const state = { rows: [piRow()], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state);
+    try {
+      state.rows = [piRow({ uncachedInputTokens: 300, outputTokens: 1000 })];
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 1, tokens: 2000, cost: 2 });
+      expect(db.prepare(`SELECT processed_tokens total, uncached_input_tokens + cached_input_tokens
+        + cache_write_tokens + output_tokens buckets FROM usage_events`).get()).toEqual({ total: 2000, buckets: 2000 });
+    } finally { db.close(); }
+  });
+
+  it("applies catalog increases and decreases to both observed and missing retained rows", async () => {
+    setPricingCatalog(catalog(1000), "prices-v1");
+    const state = { rows: [piRow(), piRow({ project: "missing" })], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state);
+    try {
+      state.rows = [piRow()];
+      setPricingCatalog(catalog(2000), "prices-v2");
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 6 });
+      setPricingCatalog(catalog(500), "prices-v3");
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 1.5 });
+      state.rows = [];
+      setPricingCatalog(catalog(1000), "prices-v4");
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 2, tokens: 3000, cost: 3 });
+    } finally { db.close(); }
+  });
+
+  it("lets logged-cost corrections flow through at unchanged token counts", async () => {
+    setPricingCatalog(catalog(1000), "logged-v1");
+    const state = { rows: [piRow({ loggedCostUsd: 2 })], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state);
+    try {
+      state.rows = [piRow({ loggedCostUsd: 1 })];
+      await syncAgain();
+      expect(db.prepare("SELECT cost_usd cost, logged_cost_usd logged, pricing_status status FROM usage_events").get())
+        .toEqual({ cost: 1, logged: 1, status: "logged" });
+    } finally { db.close(); }
+  });
+
+  it("uses the logged fallback when catalog pricing disappears", async () => {
+    setPricingCatalog(catalog(1000), "fallback-v1");
+    const state = { rows: [piRow({ loggedCostUsd: 0.5 })], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state, "dsh");
+    try {
+      expect(totals(db)).toEqual({ count: 1, tokens: 1500, cost: 1.5 });
+      setPricingCatalog({}, "fallback-v2");
+      await syncAgain();
+      expect(db.prepare("SELECT cost_usd cost, pricing_status status FROM usage_events").get())
+        .toEqual({ cost: 0.5, status: "logged" });
+    } finally { db.close(); }
+  });
+
+  it("bounds preserved history by age even when the next scan is empty", async () => {
+    setPricingCatalog(catalog(1000), "age-v1");
+    const state = { rows: [piRow()], failureCount: 0 };
+    const { db, syncAgain } = await bootHarness(state);
+    try {
+      db.prepare("UPDATE usage_events SET day='2000-01-01'").run();
+      state.rows = [];
+      await syncAgain();
+      expect(totals(db)).toEqual({ count: 0, tokens: null, cost: null });
+      expect(db.prepare("SELECT COUNT(*) count FROM usage_event_sources").get()).toEqual({ count: 0 });
+    } finally { db.close(); }
+  });
+});

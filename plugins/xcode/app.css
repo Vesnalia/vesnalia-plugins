@@ -1,0 +1,519 @@
+/*
+ * Plugin stylesheet.
+ *
+ * Panel surfaces hold no colors — everything comes from the host theme's CSS
+ * variables via Tailwind utilities, so custom palettes keep working.
+ *
+ * The chat card is the one exception, and a controlled one: build verdicts
+ * carry Xcode's own status vocabulary (green build, red failure, yellow
+ * warning, blue activity), so those four hues are declared here — but always
+ * blended with a live theme token via color-mix, never used raw. Mixing with
+ * `--foreground` makes each hue darken on light themes and lighten on dark
+ * ones (contrast tracks the theme for free), and the running state leans on
+ * `--primary` so live activity wears the user's accent.
+ */
+
+/*
+ * The host's prompt-stack card, reproduced exactly.
+ *
+ * `PromptStackCard` (apps/app/src/components/promptbox/banner/PromptStackCard.tsx)
+ * is `rounded-lg border border-border bg-surface-raised-solid`. This plugin's
+ * Tailwind build cannot generate `bg-surface-raised-solid` — the token is not
+ * in our theme — but the host defines it as a live CSS variable on :root, so
+ * we consume the variable itself and inherit any theme that redefines it.
+ * `--card` is the documented fallback (identical in the stock themes).
+ *
+ * No margins, and that is NOT a style choice. The stack track is now a CSS
+ * `grid gap-2` (FollowUpPromptBox/NewThreadPromptBox), and grid gap — unlike
+ * the `space-y-2` margins it replaced — is applied by the container between
+ * items, so it survives the plugin slot's `display: contents` wrapper: the
+ * banner becomes a real grid item and gets the same 8px as every host card.
+ * This card used to own a `margin-bottom: 0.5rem` to reproduce the old
+ * discarded margin; under the grid that margin stacked on top of the gap and
+ * gave the banner 16px of bottom space where its neighbours got 8.
+ */
+.bbx-stack-card {
+  overflow: hidden;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--border);
+  background: var(--surface-raised-solid, var(--card));
+}
+
+/*
+ * The one place the row departs from host chrome, and deliberately: the border
+ * carries a quiet tint of the run's own status. A shell command has no state
+ * worth colouring; a build does, and this is what makes a red frame findable
+ * from across the room without the row ever raising its voice. The mix stays
+ * low (30%) so it reads as a tint on the host border rather than a highlight,
+ * and the eased transition IS the card's motion moment — a verdict landing
+ * shows up as the frame settling from activity to outcome.
+ */
+.bbx-stack-card.bbx-tinted {
+  border-color: color-mix(in srgb, var(--bbx) 30%, var(--border));
+  transition: border-color 0.35s ease;
+}
+
+.bbx-status-pass {
+  --bbx: color-mix(in oklab, #30d158 62%, var(--foreground) 38%);
+}
+.bbx-status-fail {
+  --bbx: color-mix(in oklab, #ff453a 72%, var(--destructive) 28%);
+}
+.bbx-status-warn {
+  --bbx: color-mix(in oklab, #ffd60a 55%, var(--foreground) 45%);
+}
+.bbx-status-run {
+  --bbx: color-mix(in oklab, #0a84ff 55%, var(--primary) 45%);
+}
+.bbx-status-muted {
+  --bbx: var(--muted-foreground);
+}
+
+/* Consumers of the resolved status color. */
+.bbx-text {
+  color: var(--bbx);
+}
+
+.bbx-chip {
+  color: var(--bbx);
+  background: color-mix(in srgb, var(--bbx) 11%, transparent);
+  border-color: color-mix(in srgb, var(--bbx) 28%, transparent);
+}
+/*
+ * Live progress (shadcn Progress, indeterminate): a soft comet — a gradient
+ * segment sweeping the track with an eased return, not a hard block bouncing
+ * corner to corner. `finishing` switches to a full-width breath: the work is
+ * done, we are only waiting for the verdict to land.
+ */
+.bbx-progress-track {
+  background: color-mix(in srgb, var(--bbx) 13%, transparent);
+}
+.bbx-progress-comet {
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--bbx) 85%, transparent) 45%,
+    var(--bbx) 60%,
+    transparent
+  );
+  animation: bbx-comet 1.8s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+  will-change: transform;
+}
+@keyframes bbx-comet {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+/*
+ * Determinate fill: elapsed against this checkout's median. Eased rather than
+ * linear because the value only moves on the frontend's one-second tick, and an
+ * unsmoothed bar visibly steps.
+ */
+.bbx-progress-fill {
+  background: var(--bbx);
+  transition: transform 900ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+.bbx-progress-breath {
+  background: color-mix(in srgb, var(--bbx) 55%, transparent);
+  animation: bbx-breath 2.4s ease-in-out infinite;
+}
+@keyframes bbx-breath {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+
+/*
+ * The compiler swarm. A lit dot is one live compiler process; an idle slot is
+ * capacity this run has used before and will use again. The pulse is slow and
+ * staggered per dot — at twelve dots a unison blink reads as an alarm.
+ */
+.bbx-worker {
+  background: var(--bbx);
+  animation: bbx-worker-pulse 1.6s ease-in-out infinite;
+}
+.bbx-worker-idle {
+  background: color-mix(in srgb, var(--bbx) 20%, transparent);
+  transform: scale(0.72);
+}
+@keyframes bbx-worker-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(0.82);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bbx-progress-comet {
+    animation: none;
+    transform: none;
+    width: 100%;
+    opacity: 0.4;
+  }
+  .bbx-progress-breath {
+    animation: none;
+    opacity: 0.5;
+  }
+  /* A stepping bar is worse than a still one when motion is unwelcome. */
+  .bbx-progress-fill {
+    transition: none;
+  }
+  /* Lit dots stay fully lit, idle ones stay dim: the count still reads. */
+  .bbx-worker {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bb-xcode-indeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.4);
+  }
+  50% {
+    transform: translateX(0%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.4);
+  }
+}
+
+/* Sweeping bar for work with no honest completion percentage. */
+.bb-xcode-indeterminate-bar {
+  animation: bb-xcode-indeterminate 1.6s ease-in-out infinite;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+/*
+ * Running indicator. A slow, low-contrast pulse: this panel sits open for hours
+ * while a build runs, so the "something is happening" signal has to survive
+ * peripheral vision without ever demanding attention.
+ */
+@keyframes bb-xcode-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.bb-xcode-ping {
+  animation: bb-xcode-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/*
+ * Reduced motion is not "no signal": the dot still needs to read as live, so
+ * the sweep and the pulse degrade to a gentle opacity breath rather than
+ * stopping dead.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .bb-xcode-indeterminate-bar {
+    animation: none;
+    transform: none;
+    opacity: 0.5;
+  }
+
+  .bb-xcode-ping {
+    animation: bb-xcode-breathe 3s ease-in-out infinite;
+  }
+
+  @keyframes bb-xcode-breathe {
+    0%,
+    100% {
+      opacity: 0.15;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.45;
+      transform: scale(1);
+    }
+  }
+}
+
+/* ===========================================================================
+ * Simulators
+ *
+ * Appended verbatim from the plugin this half was merged in from. Every rule
+ * below is prefixed `bbxs-`, so the two stylesheets share a file without
+ * sharing a selector. The reasoning in the block comment that follows is why
+ * these rules are authored CSS rather than Tailwind classes, and it still
+ * applies here.
+ * ======================================================================== */
+/*
+ * Authored CSS, imported by `app.tsx` and preserved unscoped.
+ *
+ * Two reasons anything lives here rather than in a Tailwind class.
+ *
+ * 1. **The plugin Tailwind build silently drops arbitrary values containing
+ *    commas.** `color-mix(in oklab,a,b)` written as `[...]` compiles to
+ *    nothing, with no error. Every mix in this plugin is therefore authored
+ *    here. Comma-free arbitraries — `w-[26rem]`, `text-[13px]`,
+ *    `calc(100%-1rem)`, `var(--x)` — are fine in JSX.
+ *
+ * 2. **Compiled plugin CSS is `@scope`-wrapped and matches DESCENDANTS only,
+ *    never the scope root itself.** A Tailwind class on the element that *is*
+ *    the root compiles, ships, and does nothing. Imported CSS has no such
+ *    limit, so anything that has to work on a root element is here.
+ *
+ * Colour is one variable and one class swap: a tone sets `--bbxs` from a host
+ * token, and `--bbxs-ink` is that hue mixed 55/45 toward the foreground so text
+ * stays legible in both themes without a second token per tone.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Tones
+ * ------------------------------------------------------------------------ */
+
+.bbxs-tone {
+  --bbxs: var(--muted-foreground);
+  --bbxs-ink: color-mix(in oklab, var(--bbxs) 55%, var(--foreground) 45%);
+  --bbxs-wash: color-mix(in oklab, var(--bbxs) 12%, transparent);
+  --bbxs-edge: color-mix(in oklab, var(--bbxs) 40%, var(--border));
+}
+
+.bbxs-tone-live {
+  --bbxs: var(--success, oklch(0.72 0.16 150));
+}
+
+.bbxs-tone-stalled {
+  --bbxs: var(--warning, oklch(0.78 0.15 80));
+}
+
+.bbxs-tone-dead {
+  --bbxs: var(--destructive);
+}
+
+.bbxs-ink {
+  color: var(--bbxs-ink);
+}
+
+.bbxs-wash {
+  background-color: var(--bbxs-wash);
+}
+
+/* ---------------------------------------------------------------------------
+ * The live dot
+ *
+ * Reduced motion is not "no signal": the dot stops breathing and stays lit
+ * rather than disappearing, because its job is to say the stream is live.
+ * ------------------------------------------------------------------------ */
+
+.bbxs-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--bbxs);
+  animation: bbxs-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes bbxs-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bbxs-dot {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The frame
+ *
+ * A focusable region with a visible ring, because arrow keys move a crosshair
+ * over it and typing while it holds focus routes to the device.
+ * ------------------------------------------------------------------------ */
+
+.bbxs-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-mix(in oklab, var(--muted) 60%, var(--background));
+  outline: none;
+}
+
+.bbxs-frame:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ring);
+}
+
+.bbxs-frame-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  /* A simulator frame is a screenshot of a UI: keep the pixels honest rather
+     than letting the browser soften a 1px divider into something else. */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* The aspect box shown before the first frame, and behind a 404 tile. There is
+   deliberately no spinner: a grid of twelve spinners is a screensaver, and a
+   spinner where the honest answer is "waiting for the first frame" reads as
+   broken. */
+.bbxs-skeleton {
+  background-color: var(--muted);
+  border-radius: var(--radius-md, 0.375rem);
+}
+
+/* A sentence over a dimmed frame — every non-streaming state, never a bare
+   spinner. */
+.bbxs-veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  background-color: color-mix(in oklab, var(--background) 78%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+/* ---------------------------------------------------------------------------
+ * The composer banner frame
+ *
+ * The host mounts plugin banners under a `display: contents` wrapper and the
+ * prompt stack spaces itself with `margin-bottom: 8px`. A contents box
+ * generates no box, so that margin is discarded and a `chrome: "card"` banner
+ * sits flush against the card below. Owning the frame is what lets the plugin
+ * own the 8px.
+ * ------------------------------------------------------------------------ */
+
+.bbxs-stack-card {
+  margin-bottom: 0.5rem; /* -bottom, never -top: the native stack spaces downward */
+  overflow: hidden;
+  border-radius: var(--radius-lg, 0.5rem);
+  border: 1px solid var(--border);
+  background: var(--surface-raised-solid, var(--card));
+}
+
+/* ---------------------------------------------------------------------------
+ * Progress
+ *
+ * Determinate when the manifest gave a denominator, an indeterminate comet when
+ * it did not — degrading to a half-lit track rather than to nothing.
+ * ------------------------------------------------------------------------ */
+
+.bbxs-comet {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--muted);
+}
+
+.bbxs-comet::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, var(--bbxs, var(--primary)), transparent);
+  animation: bbxs-comet 1.4s ease-in-out infinite;
+}
+
+@keyframes bbxs-comet {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bbxs-comet::after {
+    animation: none;
+    width: 50%;
+    background: color-mix(in oklab, var(--bbxs, var(--primary)) 45%, transparent);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Scrolling
+ *
+ * A permanently-visible thin scrollbar, because a list cut by `max-height`
+ * looks exactly like a list that ended.
+ * ------------------------------------------------------------------------ */
+
+.bbxs-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--foreground) 25%, transparent) transparent;
+}
+
+.bbxs-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bbxs-scroll::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--foreground) 25%, transparent);
+  border-radius: 9999px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Diff tiles
+ * ------------------------------------------------------------------------ */
+
+/* The mask is painted over the head frame at 40%, which is why odiff is run
+   with `--diff-mask`: its default output is the comparison image with changed
+   pixels tinted, and overlaying that would render a washed-out second copy of
+   the frame rather than a highlight. */
+.bbxs-mask {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  mix-blend-mode: normal;
+  pointer-events: none;
+}
+
+.bbxs-tile-crossfade {
+  transition: opacity 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bbxs-tile-crossfade {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Coarse pointers
+ *
+ * The frame must not pan, zoom or select under a finger — every touch is input
+ * for the device, not for the page.
+ * ------------------------------------------------------------------------ */
+
+@media (pointer: coarse) {
+  .bbxs-frame {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}

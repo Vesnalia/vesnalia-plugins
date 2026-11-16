@@ -1,0 +1,718 @@
+import { FINAL_BOUND, FINAL_STARTED } from "../src/final-review";
+import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import { makePluginAgentConfigurationContext } from "@get-bb/plugin-sdk/testing";
+import { beforeEach, describe, expect, it } from "vitest";
+import { specVerdict } from "../src/spec-review";
+import { FINAL_REVIEWER_TOOLS, MACHINE_WORKER_TOOLS, ORDINARY_TOOLS, PLANNER_TOOLS, REVIEWER_TOOLS, SKILLS, SPEC_REVIEWER_TOOLS, WORKER_TOOLS, registerTools } from "../src/tools";
+import { readFileSync } from "node:fs";
+import { mergeConfirmOf } from "../src/auto-merge";
+import { specOf } from "../src/workers";
+import { Clock, FakePort, checkOutHead, makeHost, seedMachineProject, seedProject, specToml, type Doc, type EngineHarness } from "./helpers";
+
+let host: ReturnType<typeof makeHost>;
+
+beforeEach(() => {
+  host = makeHost();
+  registerTools(host.bb, host.projects, host.engine);
+});
+
+const text = (result: PluginAgentToolResult) => (typeof result === "string" ? result : result.content.map((part) => (part.type === "text" ? part.text : "")).join("\n"));
+const isError = (result: PluginAgentToolResult) => typeof result !== "string" && result.isError === true;
+
+const propose = (edit?: (doc: Doc) => void, threadId = "thr_plan") => host.harness.callAgentTool("loom_propose", { spec_toml: specToml(edit) }, { threadId, projectId: "proj_1" });
+
+/** bb starts a spec reviewer as thr_spec_<n>; without this stub the fake SDK refuses the spawn and the review fails. */
+const stubSpawn = () => {
+  let n = 0;
+  host.harness.sdk.stub("threads.spawn", async () => ({ id: `thr_spec_${++n}`, environmentId: `env_spec_${n}` }));
+};
+
+const configure = (threadId: string, over: Parameters<typeof makePluginAgentConfigurationContext>[0] = {}) =>
+  host.harness.resolveAgentConfiguration(makePluginAgentConfigurationContext({ ...over, thread: { id: threadId, ...over.thread } }));
+
+describe("agent configuration", () => {
+  it("gives a side-chat fork nothing", async () => {
+    const config = await configure("thr_side", { origin: { kind: "fork", pluginId: "side-chat" } });
+    expect(config.tools).toEqual([]);
+    expect(config.skills).toEqual([]);
+  });
+
+  it("gives an ordinary thread loom_propose and both skills", async () => {
+    const config = await configure("thr_new");
+    expect(config.tools.map((tool) => tool.name)).toEqual([...ORDINARY_TOOLS]);
+    expect(config.skills).toEqual([SKILLS.plan, SKILLS.usage]);
+    expect(config.instructions).toBeNull();
+  });
+
+  it("ignores a role claimed in metadata when no row exists", async () => {
+    const config = await configure("thr_forged", { pluginMetadata: { role: "worker", project: "csv", spawnToken: "forged" } });
+    expect(config.tools.map((tool) => tool.name)).toEqual([...ORDINARY_TOOLS]);
+    expect(config.skills).toEqual([SKILLS.plan, SKILLS.usage]);
+  });
+
+  it("gives a planner its tools, both skills and instructions that name its project", async () => {
+    await propose();
+    const config = await configure("thr_plan", { pluginMetadata: { project: "somebody-else" } });
+    expect(config.tools.map((tool) => tool.name)).toEqual([...PLANNER_TOOLS]);
+    expect(config.skills).toEqual([SKILLS.plan, SKILLS.usage]);
+    expect(config.instructions).toContain('"csv"');
+    expect(config.instructions).not.toContain("somebody-else");
+    expect(config.instructions).toContain("you never start, pause or approve the project");
+    expect(config.instructions).toContain("only after Loom's spec review of it passes");
+  });
+
+  it("gives a worker row exactly the worker tools and the usage skill, and a reviewer row exactly the reviewer tools, the usage skill and the one-verdict instruction", async () => {
+    await propose();
+    const project = host.store.projectBySlug("csv")!;
+    host.store.addThread({ thread_id: "thr_worker", project_id: project.id, role: "worker", state: "active" });
+    host.store.addThread({ spawn_token: "tok_1", project_id: project.id, role: "reviewer", state: "spawning" });
+    const worker = await configure("thr_worker");
+    expect(worker.tools.map((tool) => tool.name)).toEqual([...WORKER_TOOLS]);
+    expect(worker.skills).toEqual([SKILLS.usage]);
+    expect(worker.instructions).toBe("You are a Loom worker on a ticket; follow the brief in your first message.");
+    const reviewer = await configure("thr_reviewer", { pluginMetadata: { spawnToken: "tok_1" } });
+    expect(reviewer.tools.map((tool) => tool.name)).toEqual([...REVIEWER_TOOLS]);
+    expect(REVIEWER_TOOLS).toEqual(["loom_note", "loom_checkout", "loom_approve", "loom_request_changes"]);
+    expect(reviewer.skills).toEqual([SKILLS.usage]);
+    expect(reviewer.instructions).toBe("You are a Loom reviewer for a ticket, round 0; change nothing; follow the brief and call one verdict tool.");
+    expect(host.store.threadBySpawnToken("tok_1")?.thread_id).toBe("thr_reviewer");
+  });
+
+  it("keeps loom_resume for a worker whose resume is pending, once a spec version moved new workers off machines", async () => {
+    await propose();
+    const project = host.store.projectBySlug("csv")!;
+    const row = host.store.addThread({ thread_id: "thr_worker", project_id: project.id, role: "worker", state: "active" });
+    host.store.updateThread(row.id, { resume_json: JSON.stringify({ sha: "home1", tree: "t1" }) });
+    expect((await configure("thr_worker")).tools.map((tool) => tool.name)).toEqual([...MACHINE_WORKER_TOOLS]);
+  });
+
+  it("gives a spec reviewer bound by its spawn token exactly its two tools, the usage skill and the one-verdict instruction", async () => {
+    await propose();
+    const project = host.store.projectBySlug("csv")!;
+    host.store.addSpecReview({ project_id: project.id, version: 1, round: 1, spawn_token: "tok_spec" });
+    const config = await configure("thr_spec", { pluginMetadata: { spawnToken: "tok_spec", role: "spec-review" } });
+    expect(config.tools.map((tool) => tool.name)).toEqual([...SPEC_REVIEWER_TOOLS]);
+    expect(config.skills).toEqual([SKILLS.usage]);
+    expect(config.instructions).toBe("You are Loom's spec reviewer for spec v1; change nothing; follow the brief and call one verdict tool.");
+    expect(host.store.specReviewBySpawnToken("tok_spec")?.thread_id).toBe("thr_spec");
+    const forged = await configure("thr_forged", { pluginMetadata: { spawnToken: "forged", role: "spec-review" } });
+    expect(forged.tools.map((tool) => tool.name)).toEqual([...ORDINARY_TOOLS]);
+  });
+
+  it("gives a final reviewer bound by its spawn token only loom_final_review, and a forged token nothing of it", async () => {
+    await propose();
+    const project = host.store.projectBySlug("csv")!;
+    await host.projects.approve("csv", "human");
+    const ticket = host.store.tickets(project.id)[0]!;
+    host.store.event(project.id, ticket.id, FINAL_STARTED, "loom", { sha: "sq1", url: "https://github.com/acme/shop/pull/1", token: "tok_final" });
+    const config = await configure("thr_final", { pluginMetadata: { spawnToken: "tok_final", role: "final-review", ticket: ticket.key } });
+    expect(config.tools.map((tool) => tool.name)).toEqual([...FINAL_REVIEWER_TOOLS]);
+    expect(config.skills).toEqual([]);
+    expect(config.instructions).toContain("change nothing, run nothing");
+    expect(host.store.eventByData(FINAL_BOUND, "thread", "thr_final")).not.toBeNull();
+    const forged = await configure("thr_forged", { pluginMetadata: { spawnToken: "forged", role: "final-review" } });
+    expect(forged.tools.map((tool) => tool.name)).toEqual([...ORDINARY_TOOLS]);
+  });
+});
+
+describe("loom_propose", () => {
+  it("creates a draft from an ordinary thread, makes it the planner, moves it into the new section and starts its spec review", async () => {
+    stubSpawn();
+    const result = await propose();
+    expect(isError(result)).toBe(false);
+    const output = text(result);
+    expect(output).toContain("Draft ready: `csv` · spec v1.");
+    expect(output).toContain("Spec review: a separate reviewer now checks v1 against the human's request and for work the goal does not need (round 1 of 3). Do not hand over yet");
+    expect(output).not.toContain("bb loom approve csv");
+    expect(host.harness.sdk.callsTo("threads.spawn")).toHaveLength(1);
+
+    expect(host.store.projectBySlug("csv")).toMatchObject({ state: "draft", host_id: "host_env", bb_project_id: "proj_1", planner_thread_id: "thr_plan", section_id: "sec_1" });
+    expect(host.harness.sdk.callsTo("threadSections.create")).toEqual([[{ name: "Loom · CSV export (csv)" }]]);
+    expect(host.harness.sdk.callsTo("threads.update")).toEqual([[{ threadId: "thr_plan", sectionId: "sec_1" }]]);
+    expect(host.harness.sdk.callsTo("threads.updatePluginMetadata")).toEqual([[{ threadId: "thr_plan", set: { project: "csv", role: "planner" }, pluginId: "loom" }]]);
+  });
+
+  it("hands over once the spec review passed, and says when the reviewer could not start yet", async () => {
+    const failed = text(await propose());
+    expect(failed).toContain("Spec review: its reviewer for v1 could not start (");
+    expect(failed).not.toContain("bb loom approve csv");
+
+    stubSpawn();
+    await propose();
+    await specVerdict(host.engine.ctx, "thr_spec_1", [], "Fits the request.");
+    const passed = text(await propose());
+    expect(passed).toContain("Spec review: v1 passed.");
+    expect(passed).toContain("bb loom spec csv");
+    expect(passed).toContain("bb loom approve csv");
+    expect(passed).toContain("bb loom start csv");
+  });
+
+  it("uses the server's primary host when the thread has no environment", async () => {
+    host.state.environmentId = null;
+    await propose();
+    expect(host.store.projectBySlug("csv")?.host_id).toBe("host_primary");
+  });
+
+  it("lists the warnings", async () => {
+    const output = text(await propose((doc) => (doc.agents.reviewer = { ...doc.agents.worker })));
+    expect(output).toContain("Warnings:");
+    expect(output).toContain("agents.reviewer: the reviewer uses the same provider and model as the worker");
+  });
+
+  it("refuses an invalid spec with numbered errors and creates nothing", async () => {
+    const result = await propose((doc) => {
+      doc.project.key = "csv";
+      doc.ticket[0].scope = [];
+    });
+    expect(isError(result)).toBe(true);
+    const output = text(result);
+    expect(output).toContain("Spec not saved.");
+    expect(output).toContain("1. project.key:");
+    expect(output).toContain("2. ticket[0].scope:");
+    expect(host.store.projects()).toEqual([]);
+    expect(host.harness.sdk.callsTo("threadSections.create")).toEqual([]);
+  });
+
+  it("refuses a spec shorter than the tool's minimum before running", async () => {
+    await expect(host.harness.callAgentTool("loom_propose", { spec_toml: "x" }, { threadId: "thr_plan", projectId: "proj_1" })).rejects.toThrow();
+  });
+
+  it("revises the draft from the planner thread and reports the change", async () => {
+    await propose();
+    const revised = text(await propose((doc) => (doc.project.goal = "Export orders and customers as CSV files from the admin page.")));
+    expect(revised).toContain("Draft `csv` revised · spec v2.");
+    expect(text(await propose((doc) => (doc.project.goal = "Export orders and customers as CSV files from the admin page.")))).toContain("No change");
+  });
+
+  it("describes a pending version after approval", async () => {
+    stubSpawn();
+    await propose();
+    await host.projects.approve("csv", "human");
+    const output = text(await propose((doc) => (doc.project.goal = "Export orders as CSV, with a delimiter the person can choose.")));
+    expect(output).toContain("Spec v2 of `csv` is pending");
+    expect(output).toContain("Spec review: a separate reviewer now checks v2");
+    expect(output).not.toContain("Needs you (human)");
+    expect(output).toContain("Ticket changes after approval go through the planner's board tools.");
+  });
+
+  it("hands a pending version that changes only operational settings over at once, with the reason its review was skipped", async () => {
+    stubSpawn();
+    await propose();
+    await host.projects.approve("csv", "human");
+    const output = text(await propose((doc) => (doc.budget = { max_tokens: 9_000_000 })));
+    expect(output).toContain("Spec review: Loom skipped it, because against v1 v2 changes only operational settings (budget.max_tokens). You may hand over now.");
+    expect(output).toContain("Needs you (human): read it with `bb loom spec csv --version 2`, then apply it with `bb loom approve csv --version 2`.");
+    expect(host.harness.sdk.callsTo("threads.spawn")).toHaveLength(1);
+  });
+
+  it("refuses a worker row", async () => {
+    await propose();
+    const project = host.store.projectBySlug("csv")!;
+    host.store.addThread({ thread_id: "thr_worker", project_id: project.id, role: "worker", state: "active" });
+    const result = await propose((doc) => (doc.project.slug = "other"), "thr_worker");
+    expect(isError(result)).toBe(true);
+    expect(text(result)).toContain("Workers and reviewers cannot propose projects.");
+  });
+
+  it("refuses another thread proposing an existing slug", async () => {
+    await propose();
+    const result = await propose(undefined, "thr_other");
+    expect(isError(result)).toBe(true);
+    expect(text(result)).toContain("this thread is not its planner");
+  });
+
+  it("reports a taken section name and creates nothing", async () => {
+    host.state.takenNames.add("Loom · CSV export (csv)");
+    const result = await propose();
+    expect(isError(result)).toBe(true);
+    expect(text(result)).toContain('A sidebar section named "Loom · CSV export (csv)" already exists.');
+    expect(host.store.projects()).toEqual([]);
+  });
+});
+
+describe("tools of threads on machines of their own", () => {
+  it("gives a worker on a machine of its own loom_resume too, and the loom_resume tool carries the earlier work in", async () => {
+    const fake = new FakePort();
+    fake.addThread("thr_plan", "idle");
+    host = makeHost({ port: fake });
+    registerTools(host.bb, host.projects, host.engine);
+    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    await seedMachineProject(hh);
+    const { spawnWorker, specOf } = await import("../src/workers");
+    const project = host.store.projectBySlug("csv")!;
+    await spawnWorker(host.engine.ctx, project, specOf(host.store, project), host.store.ticketByKey("CSV-1")!);
+    const workerId = host.store.ticketByKey("CSV-1")!.worker_thread_id!;
+    expect((await configure(workerId)).tools.map((tool) => tool.name)).toEqual([...MACHINE_WORKER_TOOLS]);
+    expect(MACHINE_WORKER_TOOLS).toEqual([...WORKER_TOOLS, "loom_resume"]);
+    const row = host.store.threadByThreadId(workerId)!;
+    host.store.updateThread(row.id, { resume_json: JSON.stringify({ sha: "home1", tree: "home1" }) });
+    const result = await host.harness.callAgentTool("loom_resume", {}, { threadId: workerId, projectId: "proj_1" });
+    expect(isError(result)).toBe(false);
+    expect(text(result)).toContain("Loom put CSV-1's earlier work in your worktree");
+    expect(host.store.thread(row.id)!.resume_json).toBeNull();
+  });
+});
+
+describe("loom_confirm_merge", () => {
+  const call = (name: string, input: unknown, threadId: string) => host.harness.callAgentTool(name, input, { threadId, projectId: "proj_1" });
+  async function setup(forge: Doc) {
+    const fake = new FakePort();
+    fake.addThread("thr_plan", "idle");
+    host = makeHost({ port: fake });
+    registerTools(host.bb, host.projects, host.engine);
+    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    await seedProject(hh, (doc: Doc) => void (doc.merge = { strategy: "pr", forge }));
+    const ticket = host.store.ticketByKey("CSV-1")!;
+    host.store.updateTicket(ticket.id, { state: "pr_open", pr_url: "https://github.com/acme/shop/pull/1", pushed_sha: "a".repeat(40) });
+  }
+
+  const SHA = "a".repeat(40);
+  const ticket = () => host.store.ticketByKey("CSV-1")!;
+  const confirmations = () => host.store.ticketEvents(ticket().id, ["ticket.merge_confirmed"]);
+
+  // Tony's review: the tool took a planner's note as the human's word, so a planner merged a pull request on its own.
+  it("only asks the human: a planner's request authorizes no merge, and the human's confirmation of that commit does", async () => {
+    await setup({ kind: "gh", auto_merge: { method: "squash" } });
+    const said = await call("loom_confirm_merge", { key: "CSV-1", sha: SHA, note: "No human requested this; I independently decide to merge" }, "thr_plan");
+    expect(isError(said)).toBe(false);
+    expect(text(said)).toBe("Asked the human to confirm CSV-1's merge at aaaaaaaaaaaa. Loom does not merge it until they confirm, on the Planner page, the ticket or its board card.");
+    expect(confirmations()).toEqual([]);
+    const spec = specOf(host.store, host.store.projectBySlug("csv")!);
+    expect(mergeConfirmOf(host.store, spec, ticket())).toMatchObject({ confirmed: false, sha: SHA, requested: { note: "No human requested this; I independently decide to merge" } });
+    expect(host.store.posts(ticket().id).at(-1)!.body).toContain("The planner asks you to confirm the merge of CSV-1's pull request at aaaaaaaaaaaa");
+
+    host.engine.confirmMerge("CSV-1", { prUrl: ticket().pr_url!, sha: SHA });
+    expect(confirmations()).toEqual([expect.objectContaining({ actor: "human" })]);
+    expect(mergeConfirmOf(host.store, spec, ticket())).toMatchObject({ confirmed: true, requested: null });
+  });
+
+  it("asks only about the commit Loom pushed last, says why when Loom would not merge, and is the planner's only", async () => {
+    await setup({ kind: "gh", auto_merge: { method: "squash" } });
+    const stale = await call("loom_confirm_merge", { key: "CSV-1", sha: "b".repeat(40), note: "merge it" }, "thr_plan");
+    expect(isError(stale)).toBe(true);
+    expect(text(stale)).toContain(`CSV-1's pull request is at ${SHA}, not ${"b".repeat(40)}`);
+    const stranger = await call("loom_confirm_merge", { key: "CSV-1", sha: SHA, note: "merge it" }, "thr_other");
+    expect(isError(stranger)).toBe(true);
+    expect(host.store.ticketEvents(ticket().id, ["ticket.merge_requested"])).toEqual([]);
+
+    await setup({ kind: "gh", auto_merge: { method: "squash", mode: "auto" } });
+    const refused = await call("loom_confirm_merge", { key: "CSV-1", sha: SHA, note: "merge it" }, "thr_plan");
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain('sets auto_merge.mode = "auto"');
+  });
+});
+
+describe("worker and planner tools", () => {
+  let fake: FakePort;
+  let harness: Awaited<ReturnType<typeof setup>>;
+  let hh: EngineHarness;
+
+  async function setup() {
+    fake = new FakePort();
+    fake.addThread("thr_plan", "idle");
+    host = makeHost({ port: fake });
+    registerTools(host.bb, host.projects, host.engine);
+    hh = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    const project = await seedProject(hh, (doc: Doc) => {
+      doc.ticket[1].depends_on = [];
+    });
+    return { project };
+  }
+
+  const ticketNamed = (key: string) => host.store.ticketByKey(key)!;
+  const call = (name: string, input: unknown, threadId: string) => host.harness.callAgentTool(name, input, { threadId, projectId: "proj_1" });
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+  const startWorkerFor = async (key: string) => {
+    const { spawnWorker, specOf } = await import("../src/workers");
+    const project = host.store.projectBySlug("csv")!;
+    await spawnWorker(host.engine.ctx, project, specOf(host.store, project), ticketNamed(key));
+    return host.store.ticketByKey(key)!.worker_thread_id!;
+  };
+
+  beforeEach(async () => {
+    harness = await setup();
+  });
+
+  it("gives a planner its tools, the worker tools stay away from it, and a worker cannot use the planner tools", async () => {
+    const planner = await configure("thr_plan");
+    expect(planner.tools.map((tool) => tool.name)).toEqual([...PLANNER_TOOLS]);
+    expect(PLANNER_TOOLS).toEqual(["loom_propose", "loom_discover", "loom_board", "loom_ticket", "loom_requeue", "loom_confirm_merge", "loom_add_tickets", "loom_edit_ticket", "loom_cancel_ticket", "loom_post", "loom_ask_human"]);
+    const workerId = await startWorkerFor("CSV-1");
+    const worker = await configure(workerId);
+    expect(worker.tools.map((tool) => tool.name)).toEqual([...WORKER_TOOLS]);
+    expect(worker.instructions).toBe("You are a Loom worker on CSV-1; follow the brief in your first message.");
+    for (const [name, input] of [
+      ["loom_board", {}],
+      ["loom_ticket", { key: "CSV-1" }],
+      ["loom_requeue", { key: "CSV-1", note: "x" }],
+      ["loom_confirm_merge", { key: "CSV-1", sha: "a".repeat(40), note: "x" }],
+      ["loom_cancel_ticket", { key: "CSV-1", reason: "x" }],
+      ["loom_post", { key: "CSV-1", text: "x" }],
+      ["loom_ask_human", { why: "x", steps: [] }],
+    ] as const) {
+      const result = await call(name, input, workerId);
+      expect(isError(result)).toBe(true);
+      expect(text(result)).toContain("planner");
+    }
+    expect(harness.project.state).toBe("running");
+  });
+
+  it("loom_note adds a note under the worker's name, and a reply when asked, for the worker of a working ticket only", async () => {
+    const workerId = await startWorkerFor("CSV-1");
+    expect(text(await call("loom_note", { text: "Mapper done" }, workerId))).toContain("Noted");
+    const note = host.store.posts(ticketNamed("CSV-1").id).at(-1)!;
+    expect(note).toMatchObject({ kind: "note", author_kind: "worker", author_thread_id: workerId, body: "Mapper done" });
+    await call("loom_note", { text: "Edge cases too", reply_to: note.id }, workerId);
+    expect(host.store.posts(ticketNamed("CSV-1").id).at(-1)).toMatchObject({ kind: "note", parent_id: note.id });
+    expect(isError(await call("loom_note", { text: "x", reply_to: 9999 }, workerId))).toBe(true);
+    expect(isError(await call("loom_note", { text: "x" }, "thr_plan"))).toBe(true);
+
+    host.store.setTicketState(ticketNamed("CSV-1").id, "checking", "loom");
+    const late = await call("loom_note", { text: "late" }, workerId);
+    expect(isError(late)).toBe(true);
+    expect(text(late)).toContain("working");
+  });
+
+  it("loom_submit hands the work in, and is refused from a thread that is not the live worker of a working ticket", async () => {
+    const workerId = await startWorkerFor("CSV-1");
+    const other = await startWorkerFor("CSV-2");
+    host.hostPort.worktree("/wt/env_1").dirty = true;
+    const refused = await call("loom_submit", { summary: "done" }, "thr_plan");
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain("Loom worker");
+    expect(isError(await call("loom_submit", { summary: "done" }, "thr_unknown"))).toBe(true);
+    expect(isError(await call("loom_submit", { summary: "   " }, workerId))).toBe(true);
+
+    const result = await call("loom_submit", { summary: "Mapped every order" }, workerId);
+    expect(isError(result)).toBe(false);
+    expect(text(result)).toContain("Submitted CSV-1");
+    expect(ticketNamed("CSV-1").state).toBe("checking");
+    expect(ticketNamed("CSV-2").state).toBe("working");
+    expect(isError(await call("loom_submit", { summary: "again" }, workerId))).toBe(true);
+    expect(other).not.toBe(workerId);
+    const { settleChecks } = await import("../src/checks");
+    await settleChecks(host.engine.ctx);
+    expect(ticketNamed("CSV-1").state).toBe("review");
+  });
+
+  it("loom_submit takes the proposed pull request text only on a project that opens pull requests, and loom_pr_reply only in a fix round", async () => {
+    const workerId = await startWorkerFor("CSV-1");
+    const refused = await call("loom_submit", { summary: "done", pr: { title: "T" } }, workerId);
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain("opens no pull request for each, so leave pr out");
+    await expect(call("loom_submit", { summary: "done", pr: { title: "T", draft: true } }, workerId)).rejects.toThrow('Unrecognized key: "draft"');
+    const reply = await call("loom_pr_reply", { item: "thread:1", text: "Done." }, workerId);
+    expect(isError(reply)).toBe(true);
+    expect(text(reply)).toContain("no fix round is open now");
+    expect(ticketNamed("CSV-1").state).toBe("working");
+  });
+
+  it("loom_block records the reason and the needs, and the ticket blocks once the thread stopped", async () => {
+    const workerId = await startWorkerFor("CSV-1");
+    const result = await call("loom_block", { reason: "No API key", needs: "A key in the CI settings" }, workerId);
+    expect(isError(result)).toBe(false);
+    expect(text(result)).toContain("end your turn");
+    await settle();
+    expect(ticketNamed("CSV-1")).toMatchObject({ state: "blocked", blocked_reason: "No API key. Needs: A key in the CI settings" });
+    expect(isError(await call("loom_block", { reason: "again", needs: "x" }, workerId))).toBe(true);
+    expect(isError(await call("loom_block", { reason: "x", needs: "y" }, "thr_plan"))).toBe(true);
+  });
+
+  it("loom_board and loom_ticket show the planner its board and a ticket's thread", async () => {
+    const board = text(await call("loom_board", {}, "thr_plan"));
+    expect(board).toContain("Board for csv: 2 tickets");
+    expect(board).toContain("CSV-1  queued");
+    expect(text(await call("loom_board", { state: "blocked" }, "thr_plan"))).toContain("No tickets in blocked");
+    const ticket = text(await call("loom_ticket", { key: "CSV-2" }, "thr_plan"));
+    expect(ticket).toContain("CSV-2 · queued · Export endpoint");
+    expect(ticket).toContain("planner brief");
+    expect(isError(await call("loom_ticket", { key: "CSV-77" }, "thr_plan"))).toBe(true);
+  });
+
+  it("loom_requeue sends a blocked ticket back with a reply, and loom_post answers on a ticket", async () => {
+    await host.engine.block("CSV-1", "stuck", "human");
+    expect(text(await call("loom_post", { key: "CSV-1", text: "Use the v2 API" }, "thr_plan"))).toContain("Posted");
+    const posted = host.store.posts(ticketNamed("CSV-1").id).at(-1)!;
+    expect(posted).toMatchObject({ kind: "reply", author_kind: "planner", author_thread_id: "thr_plan" });
+    await call("loom_post", { key: "CSV-1", text: "Details", reply_to: posted.id }, "thr_plan");
+    expect(host.store.posts(ticketNamed("CSV-1").id).at(-1)!.parent_id).toBe(posted.id);
+
+    expect(text(await call("loom_requeue", { key: "CSV-1", note: "Answered above" }, "thr_plan"))).toContain("CSV-1 is queued again");
+    expect(ticketNamed("CSV-1").state).toBe("queued");
+    const again = await call("loom_requeue", { key: "CSV-1", note: "x" }, "thr_plan");
+    expect(isError(again)).toBe(true);
+    expect(text(again)).toContain("only a blocked ticket");
+  });
+
+  it("loom_requeue with review: true sends a blocked ticket back as it is, and says why it cannot", async () => {
+    await host.engine.block("CSV-1", "stuck", "human");
+    const refused = await call("loom_requeue", { key: "CSV-1", note: "", review: true }, "thr_plan");
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain("CSV-1 has no commit that passed its checks, so it cannot go back as it is. A plain requeue starts a new worker from its branch instead.");
+
+    const ticket = ticketNamed("CSV-1");
+    host.store.updateTicket(ticket.id, { head_sha: "abc1234", branch: "loom/csv/csv-1-1", review_round: 1 });
+    host.store.addPost({ project_id: ticket.project_id, ticket_id: ticket.id, parent_id: null, author_kind: "loom", author_thread_id: null, kind: "check", body: "Checks passed.", data_json: JSON.stringify({ passed: true, head: "abc1234" }) });
+    host.hostPort.refs.set("refs/heads/loom/csv/csv-1-1", "abc1234");
+    expect(text(await call("loom_requeue", { key: "CSV-1", note: "The reviewers were down.", review: true }, "thr_plan"))).toBe("CSV-1 is back in review as it is, in round 2: new reviewers judge the commit whose checks passed last.");
+    expect(ticketNamed("CSV-1").state).toBe("review");
+    expect(host.store.posts(ticket.id).at(-1)).toMatchObject({ kind: "reply", author_kind: "planner", author_thread_id: "thr_plan", body: "The reviewers were down." });
+  });
+
+  it("loom_add_tickets adds a batch with dependencies and refuses a cycle", async () => {
+    const tickets = [
+      { ref: "docs", title: "Docs", body: "Write them.", acceptance: ["WHEN built THE SYSTEM SHALL list it"], scope: ["docs/**"], depends_on: ["CSV-1"] },
+      { ref: "more", title: "More docs", body: "Write more.", acceptance: ["WHEN built THE SYSTEM SHALL list more"], scope: ["docs/more/**"], depends_on: ["docs"] },
+    ];
+    expect(text(await call("loom_add_tickets", { tickets }, "thr_plan"))).toContain("Added CSV-3, CSV-4");
+    expect(host.store.ticketByKey("CSV-4")?.deps_json).toBe('["CSV-3"]');
+
+    const cyclic = [
+      { ...tickets[0], ref: "x", depends_on: ["y"] },
+      { ...tickets[1], ref: "y", depends_on: ["x"] },
+    ];
+    const refused = await call("loom_add_tickets", { tickets: cyclic }, "thr_plan");
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain("dependency cycle");
+    expect(host.store.tickets(harness.project.id)).toHaveLength(4);
+  });
+
+  it("loom_edit_ticket changes only the patched fields, and refuses a working ticket", async () => {
+    const before = ticketNamed("CSV-2");
+    expect(text(await call("loom_edit_ticket", { key: "CSV-2", patch: { title: "Export v2" } }, "thr_plan"))).toContain("CSV-2 changed: title");
+    expect(ticketNamed("CSV-2")).toMatchObject({ title: "Export v2", verify_json: before.verify_json, deps_json: before.deps_json, priority: before.priority });
+
+    await startWorkerFor("CSV-1");
+    const refused = await call("loom_edit_ticket", { key: "CSV-1", patch: { title: "x" } }, "thr_plan");
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain("only a queued or blocked");
+    await expect(call("loom_edit_ticket", { key: "CSV-2", patch: { ref: "new" } }, "thr_plan")).rejects.toThrow();
+    await expect(call("loom_edit_ticket", { key: "CSV-2", patch: { priority: 9 } }, "thr_plan")).rejects.toThrow();
+  });
+
+  it("refuses a repo on a single-repo project in loom_add_tickets and loom_edit_ticket", async () => {
+    const docs = { ref: "docs", title: "Docs", body: "Write them.", acceptance: ["WHEN built THE SYSTEM SHALL list it"], scope: ["docs/**"], repo: "web" };
+    const added = await call("loom_add_tickets", { tickets: [docs] }, "thr_plan");
+    expect(isError(added)).toBe(true);
+    expect(text(added)).toContain('tickets[0].repo: "web" names a repo, but this project has no [[repo]] table');
+    const edited = await call("loom_edit_ticket", { key: "CSV-2", patch: { repo: "web" } }, "thr_plan");
+    expect(isError(edited)).toBe(true);
+    expect(text(edited)).toContain('patch.repo: "web" names a repo');
+    expect(ticketNamed("CSV-2").repo).toBeNull();
+  });
+
+  it("loom_cancel_ticket cancels, ending a live worker", async () => {
+    const workerId = await startWorkerFor("CSV-1");
+    expect(text(await call("loom_cancel_ticket", { key: "CSV-1", reason: "No longer needed" }, "thr_plan"))).toContain("CSV-1 is cancelled");
+    expect(ticketNamed("CSV-1").state).toBe("cancelled");
+    expect(host.store.threadByThreadId(workerId)?.state).toBe("ended");
+  });
+
+  it("loom_ask_human records the planner's steps for the page, refuses a step the human could not take, and clears", async () => {
+    await host.engine.block("CSV-1", "stuck", "human");
+    const recorded = text(await call("loom_ask_human", { why: "CSV-1 needs your answer.", steps: [{ action: "requeue", key: "CSV-1", text: "Requeue CSV-1 once you answered." }] }, "thr_plan"));
+    expect(recorded).toBe("The Loom page now asks the human to: Requeue CSV-1 once you answered.");
+    expect(host.store.eventsOfKind(harness.project.id, "planner.asked").at(-1)!.actor).toBe("thr_plan");
+    const refused = await call("loom_ask_human", { why: "x", steps: [{ action: "approve", version: 3, text: "Approve v3." }] }, "thr_plan");
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain("no spec version of csv waits for approval");
+    expect(text(await call("loom_ask_human", { why: "", steps: [] }, "thr_plan"))).toBe("Your asks are cleared.");
+  });
+
+  it("refuses a planner that does not belong to the ticket's project", async () => {
+    await host.projects.propose({ toml: specToml((doc) => ((doc.project.slug = "other"), (doc.project.key = "OTH"))), threadId: "thr_plan2", bbProjectId: "proj_1", hostId: "host_1" });
+    for (const [name, input] of [
+      ["loom_ticket", { key: "CSV-1" }],
+      ["loom_requeue", { key: "CSV-1", note: "x" }],
+      ["loom_edit_ticket", { key: "CSV-1", patch: { title: "x" } }],
+      ["loom_cancel_ticket", { key: "CSV-1", reason: "x" }],
+      ["loom_post", { key: "CSV-1", text: "x" }],
+    ] as const) {
+      const result = await call(name, input, "thr_plan2");
+      expect(isError(result)).toBe(true);
+      expect(text(result)).toContain("another project");
+    }
+    expect(ticketNamed("CSV-1").title).toBe("Order rows");
+  });
+
+  describe("reviewer tools", () => {
+    const findings = [{ severity: "blocking", title: "Off by one", detail: "The loop skips the last order.", file: "src/model/a.ts", line: 12 }];
+
+    async function reviewing() {
+      const workerId = await startWorkerFor("CSV-1");
+      await reachReviewFrom(workerId);
+      const { spawnReviewers, settleReviews } = await import("../src/review");
+      const { specOf } = await import("../src/workers");
+      const project = host.store.projectBySlug("csv")!;
+      await spawnReviewers(host.engine.ctx, project, specOf(host.store, project));
+      const row = host.store.threads({ ticketId: ticketNamed("CSV-1").id, role: "reviewer" })[0]!;
+      checkOutHead(hh, row);
+      return { workerId, reviewerId: row.thread_id!, settleReviews };
+    }
+
+    async function reachReviewFrom(workerId: string) {
+      host.hostPort.worktree(`/wt/${host.store.threadByThreadId(workerId)!.environment_id}`).dirty = true;
+      await call("loom_submit", { summary: "Done" }, workerId);
+      const { settleChecks } = await import("../src/checks");
+      await settleChecks(host.engine.ctx);
+      expect(ticketNamed("CSV-1").state).toBe("review");
+    }
+
+    it("loom_approve approves for the reviewer row, and a worker, a planner and an unknown thread are refused", async () => {
+      const { workerId, reviewerId, settleReviews } = await reviewing();
+      for (const threadId of [workerId, "thr_plan", "thr_unknown"]) {
+        const refused = await call("loom_approve", { summary: "Looks good" }, threadId);
+        expect(isError(refused)).toBe(true);
+        expect(text(refused)).toContain("Loom reviewer");
+        const asked = await call("loom_request_changes", { summary: "No", findings }, threadId);
+        expect(isError(asked)).toBe(true);
+      }
+      expect(ticketNamed("CSV-1").state).toBe("review");
+      const result = await call("loom_approve", { summary: "Every criterion holds" }, reviewerId);
+      expect(isError(result)).toBe(false);
+      expect(text(result)).toContain("approval of CSV-1");
+      await settleReviews(host.engine.ctx);
+      expect(ticketNamed("CSV-1").state).toBe("approved");
+    });
+
+    it("loom_request_changes sends the findings to the worker, and its parameters are validated", async () => {
+      const { workerId, reviewerId, settleReviews } = await reviewing();
+      for (const bad of [
+        { summary: "x", findings: [] },
+        { summary: "", findings },
+        { summary: "x", findings: [{ ...findings[0], severity: "nit" }] },
+        { summary: "x", findings: [{ ...findings[0], line: 1.5 }] },
+        { summary: "x", findings: [{ ...findings[0], title: "" }] },
+        { summary: "x", findings: Array.from({ length: 21 }, () => findings[0]) },
+      ]) {
+        await expect(call("loom_request_changes", bad, reviewerId)).rejects.toThrow();
+      }
+      const result = await call("loom_request_changes", { summary: "Two problems", findings: [findings[0], { severity: "should-fix", title: "Naming", detail: "Rename m." }] }, reviewerId);
+      expect(isError(result)).toBe(false);
+      await settleReviews(host.engine.ctx);
+      expect(ticketNamed("CSV-1").state).toBe("working");
+      expect(fake.sent(workerId).at(-1)).toContain("1. [blocking] Off by one (src/model/a.ts:12)");
+    });
+
+    it("refuses a verdict while the worktree is not on head_sha", async () => {
+      const { reviewerId } = await reviewing();
+      host.hostPort.worktree(`/wt/${host.store.threadByThreadId(reviewerId)!.environment_id}`).head = "other";
+      const result = await call("loom_approve", { summary: "ok" }, reviewerId);
+      expect(isError(result)).toBe(true);
+      expect(text(result)).toContain("Call loom_checkout first: your worktree does not have the reviewed work of CSV-1 yet. Then review again.");
+    });
+
+    it("loom_note accepts a note from the live worker of a working ticket or from a reviewer of a ticket in review, and from nobody else", async () => {
+      const { workerId, reviewerId } = await reviewing();
+      const note = await call("loom_note", { text: "Checked the mapper against the criteria" }, reviewerId);
+      expect(isError(note)).toBe(false);
+      expect(host.store.posts(ticketNamed("CSV-1").id).at(-1)).toMatchObject({ kind: "note", author_kind: "reviewer", author_thread_id: reviewerId, body: "Checked the mapper against the criteria" });
+      const refused = await call("loom_note", { text: "late" }, workerId);
+      expect(isError(refused)).toBe(true);
+      expect(text(refused)).toContain("working");
+      expect(isError(await call("loom_note", { text: "x" }, "thr_plan"))).toBe(true);
+    });
+  });
+
+  it("clips a long result to 12000 characters", async () => {
+    const long = Array.from({ length: 200 }, (_, i) => ({ ref: `t${i}`, title: "T".repeat(100), body: "b", acceptance: ["WHEN a THE SYSTEM SHALL b"], scope: [`d${i}/**`] }));
+    await call("loom_add_tickets", { tickets: long.slice(0, 50) }, "thr_plan");
+    await call("loom_add_tickets", { tickets: long.slice(50, 100).map((t, i) => ({ ...t, ref: `u${i}` })) }, "thr_plan");
+    expect(text(await call("loom_board", {}, "thr_plan")).length).toBeLessThanOrEqual(12_000);
+  });
+});
+
+describe("the board tools on a multi-repo project", () => {
+  const call = (name: string, input: unknown) => host.harness.callAgentTool(name, input, { threadId: "thr_plan", projectId: "proj_1" });
+  const docs = { title: "Docs", body: "Write them.", acceptance: ["WHEN built THE SYSTEM SHALL list it"], scope: ["docs/**"] };
+
+  beforeEach(async () => {
+    const fake = new FakePort();
+    fake.addThread("thr_plan", "idle");
+    fake.addBbProject("proj_web", { host_1: "/src/web" });
+    fake.addBbProject("proj_api", { host_1: "/src/api" });
+    host = makeHost({ port: fake });
+    registerTools(host.bb, host.projects, host.engine);
+    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    await seedProject(hh, (doc: Doc) => {
+      doc.repo = [
+        { name: "web", project: "proj_web" },
+        { name: "api", project: "proj_api" },
+      ];
+      doc.ticket[0].repo = "web";
+      doc.ticket[1].repo = "api";
+    });
+  });
+
+  it("loom_add_tickets stores the repo, and refuses a ticket without one while listing the repos", async () => {
+    expect(text(await call("loom_add_tickets", { tickets: [{ ...docs, ref: "docs", repo: "web" }] }))).toContain("Added CSV-3");
+    expect(host.store.ticketByKey("CSV-3")?.repo).toBe("web");
+    const refused = await call("loom_add_tickets", { tickets: [{ ...docs, ref: "more" }] });
+    expect(isError(refused)).toBe(true);
+    expect(text(refused)).toContain("tickets[0].repo: is required, because this project lists [[repo]] tables. Set it to one of: web, api.");
+  });
+
+  it("loom_edit_ticket moves a queued ticket to another repo, and loom_board shows each ticket's repo", async () => {
+    expect(text(await call("loom_edit_ticket", { key: "CSV-2", patch: { repo: "web" } }))).toContain("CSV-2 changed: repo");
+    expect(host.store.ticketByKey("CSV-2")?.repo).toBe("web");
+    const board = text(await call("loom_board", {}));
+    expect(board).toContain("Board for csv (repos web, api): 2 tickets");
+    expect(board).toContain("CSV-1  queued     P2  repo web  Order rows");
+    expect(board).toContain("CSV-2  queued     P2  repo web  Export endpoint");
+  });
+
+  it("names repo in the loom_add_tickets and loom_edit_ticket descriptions", () => {
+    const description = (name: string) => host.harness.registrations.agentTools.find((tool) => tool.name === name)!.description;
+    expect(description("loom_add_tickets")).toContain("every ticket sets repo to one of those repo names");
+    expect(description("loom_edit_ticket")).toContain("priority, repo, rollout.");
+    expect(description("loom_edit_ticket")).toContain("rollout alone also changes a done ticket");
+    expect(description("loom_edit_ticket")).toContain("cancel the ticket and add a new one in the other repo");
+  });
+});
+
+describe("the loom skill", () => {
+  it("names every planner, worker and reviewer tool and every human command", () => {
+    const skill = readFileSync(new URL("../skills/loom/SKILL.md", import.meta.url), "utf8");
+    for (const tool of [...PLANNER_TOOLS, ...WORKER_TOOLS, ...REVIEWER_TOOLS]) expect(skill, tool).toContain(tool);
+    for (const command of ["post", "block", "requeue", "cancel", "approve", "start", "pause", "resume", "archive", "land"]) expect(skill, command).toContain(`bb loom ${command}`);
+    for (const heading of ["## Reviewers", "## Merging", "## Landing"]) expect(skill, heading).toContain(heading);
+    expect(skill).not.toContain("later release");
+    expect(skill).not.toContain("runs no workers");
+  });
+});
+
+describe("loom_discover", () => {
+  it("reports how this thread's repository is reached, every choice found for a GitHub checkout", async () => {
+    const output = text(await host.harness.callAgentTool("loom_discover", {}, { threadId: "thr_plan", projectId: "proj_1" }));
+    expect(output).toContain("This thread's repository (bb project proj_1), checkout /repo");
+    expect(output).toContain("- Forge for origin: found: gh can open pull requests on github.com.");
+    expect(output).not.toContain("ask:");
+    expect(host.hostPort.calls.map((call) => [call.hostId, call.method])).toEqual([
+      ["host_env", "remotes"],
+      ["host_env", "ghStatus"],
+      ["host_env", "ghStatus"],
+      ["host_env", "trialWorktree"],
+    ]);
+  });
+
+  it("says what to ask when gh cannot serve the remote", async () => {
+    host.hostPort.ghState = "signed_out";
+    const output = text(await host.harness.callAgentTool("loom_discover", {}, { threadId: "thr_plan", projectId: "proj_1" }));
+    expect(output).toContain("- Forge for origin: ask: gh is not signed in to github.com.");
+  });
+
+  it("starts with the human's standing planner instructions from Loom's settings, so a planner started anywhere carries them out", async () => {
+    host = makeHost({ settings: () => ({ doneHook: "", doneRecord: "summary", plannerInstructions: "Create a Shuttle board for every project.\nAdd each pull request to it." }) });
+    registerTools(host.bb, host.projects, host.engine);
+    const output = text(await host.harness.callAgentTool("loom_discover", {}, { threadId: "thr_plan", projectId: "proj_1" }));
+    expect(output.startsWith("## The human's standing instructions\n")).toBe(true);
+    expect(output).toContain('"""\nCreate a Shuttle board for every project.\nAdd each pull request to it.\n"""\n\nThis thread\'s repository (bb project proj_1)');
+    expect(text(await makeDiscover())).not.toContain("standing instructions");
+  });
+});
+
+async function makeDiscover() {
+  const plain = makeHost();
+  registerTools(plain.bb, plain.projects, plain.engine);
+  return plain.harness.callAgentTool("loom_discover", {}, { threadId: "thr_plan", projectId: "proj_1" });
+}

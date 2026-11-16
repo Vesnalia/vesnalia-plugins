@@ -1,0 +1,225 @@
+# Developing the Korey plugin
+
+Run the commands below from the repository root. For connector setup and
+everyday use, see the [README](../README.md).
+
+TypeScript source, tests, test helpers, and the Vitest configuration live in
+`plugin/`.
+
+Use the Bun version pinned in `package.json` and Node.js 24, as specified in
+`.nvmrc`:
+
+```sh
+nvm use
+bun install --frozen-lockfile
+bun run check
+bb plugin install .
+```
+
+`bunfig.toml` requires newly resolved package versions to be at least one day
+old. This applies to direct and transitive dependencies; existing lockfile
+entries remain unchanged during frozen installs.
+
+CI uses a task matrix on Blacksmith Linux runners with the Node.js version in
+`.nvmrc` and the Bun version in `package.json`. Linting, formatting, SDK dependency
+pins, TypeScript type checking, tests, plugin builds, and generated OpenAPI code
+checks each run as a separate job with the same setup. `bun run check` runs all of
+these checks locally.
+
+`bun run lint` runs Oxlint, and `bun run check:format` checks formatting with
+Oxfmt. Use `bun run format` to apply formatting. Generated files and local tool
+state are excluded from linting and formatting; `bun run check:openapi` regenerates
+the OpenAPI client and checks it for uncommitted changes.
+
+The `validate-production-build` CI job tests production-only installs with
+lifecycle scripts and optional dependencies disabled, then builds all three
+entries using bb 0.43.4. This checks that users can build the plugin from
+a managed Git install, without relying on development dependencies or code
+generation during installation. It does not publish or deploy anything.
+
+The manifest requires bb 0.43.4 or newer and plugin SDK 0.5.9 or newer. The
+development SDK is pinned to 0.5.9 for bb 0.43.4. The test suite exercises the
+SDK 0.5.9 backend and UI harnesses; live compatibility with another bb version
+needs a separate smoke test, including resolution forms, host RPC, and other
+experimental runtime surfaces.
+macOS descriptor validation runs with mocked `lsof` output on Linux; CI does
+not run a real macOS host.
+
+Runtime imports that bb does not provide belong in `dependencies`; SDK types,
+React, and development tools belong in `devDependencies`.
+
+Local installations of the earlier test package use a different plugin
+identity and storage namespace. Reconfigure the token and relink conversations
+after installing `bb-plugin-korey`; no unpublished test state is migrated.
+
+## Dependencies
+
+`zod` is the only production dependency. The plugin uses it for API response
+validation and its own contracts. bb supplies the SDK and React at runtime.
+
+The development dependencies support these tasks:
+
+- `@get-bb/plugin-sdk` and `bb-app` provide SDK declarations, test harnesses,
+  compatibility checks, and plugin builds.
+- `typescript` and the `@types/*` packages type-check the plugin, tests, and SDK
+  declarations with `skipLibCheck: false`.
+- `vitest`, `@testing-library/react`, `jsdom`, `react`, and `react-dom` run the
+  backend and frontend tests.
+- `better-sqlite3`, `cron-parser`, and `hono` are peers used by the SDK's backend
+  test harness. SQLite is also imported directly by the storage tests.
+- `node-gyp` supports the native build step Bun invokes during clean SQLite
+  installs, including development and CI installations.
+- `oxlint`, `oxfmt`, and `typed-openapi` run the lint, formatting, and OpenAPI
+  generation scripts.
+
+The remaining 16 UI packages are required by bb 0.43.4's SDK compatibility check:
+`@pierre/diffs`, the `@radix-ui/*` entries, `class-variance-authority`, `clsx`,
+`sonner`, `tailwind-merge`, and `vaul`. Our code does not import them. bb scaffolds
+their development dependency pins for app plugins and supplies their runtime
+implementations. Removing these entries makes `bun run check:sdk` fail even when
+the plugin does not use those components. Revisit them if bb makes this check
+depend on the plugin's actual imports.
+
+Keep bb-managed version ranges when updating dependencies; the lockfile can
+still select newer compatible releases within those ranges. `@types/node`
+tracks Node.js 24, and `@types/better-sqlite3` stays on 7.x to satisfy the SDK's
+peer dependency. Newer SDK and Sonner versions must wait for a compatible bb
+release.
+
+## API contract
+
+`korey.openapi.json` is a pinned copy of Korey's public OpenAPI document.
+`generated/korey-api.ts` is committed because managed Git installs disable
+lifecycle scripts and omit development dependencies. Refresh both deliberately:
+
+```sh
+bun run openapi:sync
+bun run generate:openapi
+git diff -- korey.openapi.json generated/korey-api.ts
+```
+
+Generation preserves OpenAPI's default of allowing additional properties when
+`additionalProperties` is omitted. Explicitly closed schemas stay strict in the
+generated file. The client derives tolerant response schemas from that file:
+it ignores extra fields and displays unknown content blocks as placeholders
+with Korey links. Known required fields remain validated. New request and resolution
+schemas stay strict.
+
+`check:openapi` compares generated code with the pinned local spec. It does not
+fetch Korey's live spec or fail just because Korey changes its public API.
+
+Mutation POSTs are never retried automatically and never follow redirects.
+Only a documented rejection for the specific endpoint is classified as a
+definite failure. For example, the pinned message endpoint does not list `400`
+or `422`; those responses remain uncertain until inspected. A status code alone
+does not establish that a write had no effect. Response polling uses bounded
+backoff for transient network errors, `429`, and `5xx`, and honors `Retry-After`.
+
+The response endpoint can return `404` with `error: "not-found"` and
+`message: "No response yet"` after accepting a message but before the queue
+worker starts. Only that exact error is pending; invalid message IDs and
+inaccessible threads still fail. The endpoint can also return `200 complete`
+for an intermediate answer while the conversation is active. Polling checks
+the conversation state, waits for `ready`, then fetches a fresh response.
+Both reads share a bounded polling budget. These API behaviors are not fully
+described by the pinned OpenAPI document.
+
+Journals retain versioned request snapshots and the exact dispatched text.
+Reading history does not validate it against the current request schema;
+reconciliation uses recorded text, with a version 1 fallback for older journals.
+Shortcut operations use request version 2; general connector changes through
+`korey_ask` use version 3 with `action: "change"`. Consultations use version 4
+with `action: "consult"` and preserve the existing consultation prompt and
+reference format. All begin in `requested` without an approval timestamp and
+record attachment hashes, exact dispatched text, uploaded attachment IDs, and
+the accepted message ID. Consultations share response recovery but are excluded
+from unresolved-write checks. A polling timeout or caller cancellation after
+acceptance leaves `awaiting-response` with no error; resume reads the saved
+message without uploading or sending again. Explicitly resuming or reconciling
+`korey-complete` also refreshes answers cached by older versions.
+Version 1 journals retain their original prompts
+and approval history. Pending approval rows from older plugin versions are
+cancelled on reload and are never dispatched automatically.
+Unresolved operations can be closed locally through the confirmed
+`operation resolve` flow described in [usage](usage.md).
+
+Live Korey behavior still needs verification for readiness revision updates and
+verbatim message storage. Mapping recovery first searches the marker, then scans
+owned threads if search misses; each traversal stops after 20 pages. The public
+spec retrieved on 2026-09-24 lists `threads:read` and `threads:write`; the README
+uses those names, but token creation was not tested against an account.
+
+## OAuth connection
+
+Korey's authorization server is described at
+`https://api.korey.ai/.well-known/oauth-authorization-server`. Korey stores
+OAuth access tokens next to personal access tokens, so `/api/v1` accepts both
+with the same scope checks. The pinned OpenAPI document still describes only
+personal access tokens.
+
+`plugin/oauth.ts` implements the protocol, and `plugin/connection.ts` runs the
+sign-in. Each installation registers its own public client, named
+"bb Korey plugin", through dynamic client registration. Its redirect URI is the
+plugin's callback route on the bb server's loopback address. Korey ignores the
+port when matching loopback redirect URIs. A shared client ID would not work:
+Korey keeps one active token per user and client, so signing in on a second
+computer would sign out the first.
+
+The plugin reuses a registration only while a saved connection or an
+unfinished sign-in uses it. Any other sign-in registers a new client, because
+Korey associates a registration with the organization that approves it, and a
+client can be deleted in Korey. The plugin forgets its registration on `logout`
+and when Korey rejects the saved sign-in.
+
+Sign-in uses the authorization code flow with PKCE (S256) and a single-use
+`state`. Pending sign-ins are kept in memory for 15 minutes, matching Korey's
+consent window, and are lost on reload. Credentials are stored as JSON in the
+secret `oauthCredentials` setting.
+
+Secret settings keep the credentials out of the plugin database and away from
+the frontend. bb has no hidden settings, so the field appears in the settings
+form even though users should not edit it, and the form cannot clear secret
+fields. The **Korey
+account** section provides Disconnect and token removal instead. Move the
+credentials if bb adds hidden secret settings or a plugin secret store.
+
+Access tokens last one hour. Refresh tokens last 30 days and are single-use;
+each refresh also revokes the previous access token. The token source refreshes
+two minutes before expiry, shares one refresh between concurrent requests, and
+saves the rotated token before using it. A caller can stop waiting, but the
+refresh itself is not cancelled. If Korey rotates the token and the response is
+lost, the user must sign in again. A read that receives `401` refreshes and
+retries once. A mutation that receives `401` is not resent; it remains a
+documented rejection, and the token is replaced for the next request.
+
+`logout` revokes the access token, identifying the client with HTTP Basic
+authentication, and deletes the saved credentials.
+
+Sign-in was verified against a live Korey account on 2026-10-31.
+
+## Distribution
+
+This repository is intentionally marked `private` in `package.json` to prevent
+accidental npm publication. bb's managed Git installer installs runtime
+dependencies with scripts disabled and builds the server, app, and host
+artifacts itself.
+
+The repository root is the plugin: `package.json` declares the server, app,
+host, and skill entries. No bb checkout, collection manifest, or committed
+build output is required. The Git install tracks the default branch; use
+`bb plugin outdated` to inspect updates and `bb plugin update korey` to apply
+one. To pin a particular commit, install
+`git:https://github.com/useshortcut/bb-plugin-korey.git@<commit-sha>` instead.
+
+## Branding
+
+`assets/korey-mark.svg` is the compact mark used by Korey's browser extension.
+The full logos use the paths from `KoreyLogo.tsx` in the Korey web app, with the
+light and dark brand colors from `styles/colors.css` and the wordmark colors
+from `KoreyLogo.module.css`. These sources live under `korey-frontend/` in the
+Shortcut monorepo. Keep the plugin assets aligned with that artwork when Korey's
+branding changes.
+
+The manifest uses the compact mark for plugin icons and the full logos for
+larger surfaces. The README selects the light or dark logo to match the reader's
+theme.

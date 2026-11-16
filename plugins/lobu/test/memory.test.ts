@@ -1,0 +1,199 @@
+import { describe, expect, test } from "bun:test";
+import { rememberSubmissionSchema, memoryDraftSchema, memoryProposalSchema } from "../lib/memory-contract";
+import type { LobuApi, SaveMemoryInput } from "../lib/lobu-api";
+import {
+  describeOutcome,
+  draftFromText,
+  idempotencyKey,
+  matchWorkspaceHint,
+  outcomeForAgent,
+  pickWorkspace,
+  pickWorkspaceWithHints,
+  saveMemories,
+} from "../lib/memory";
+import type { WorkspaceOwner } from "../lib/workspaces";
+
+const BASE = "https://lobu.example";
+const owner = (overrides: Partial<WorkspaceOwner> = {}): WorkspaceOwner => ({
+  context: null,
+  name: "Acme",
+  personal: false,
+  ...overrides,
+});
+
+function fakeApi(fail: (memory: SaveMemoryInput) => boolean = () => false) {
+  const saves: { context: string | null; workspace: string; memory: SaveMemoryInput }[] = [];
+  const api = {
+    saveMemory: async (context: string | null, workspace: string, memory: SaveMemoryInput) => {
+      saves.push({ context, workspace, memory });
+      if (fail(memory)) throw new Error("semantic_type rejected");
+      // Like Lobu with no record of any of the names: ids link, names come back unlinked.
+      const refs = memory.entity_ids ?? [];
+      return {
+        id: saves.length,
+        viewUrl: `/${workspace}/events?id=${saves.length}`,
+        entityIds: refs.filter((ref): ref is number => typeof ref === "number"),
+        unlinked: refs.flatMap((ref) => (typeof ref === "number" ? [] : [{ name: ref.name, reason: "not_found" }])),
+      };
+    },
+  } as unknown as LobuApi;
+  return { api, saves };
+}
+
+describe("draftFromText", () => {
+  test("uses the first non-empty line as the title", () => {
+    expect(draftFromText("\n  Lobu rejects bound tokens on REST\nUse MCP instead.")).toEqual({
+      title: "Lobu rejects bound tokens on REST",
+      content: "Lobu rejects bound tokens on REST\nUse MCP instead.",
+      kind: "note",
+    });
+  });
+
+  test("shortens a long first line", () => {
+    const draft = draftFromText("x".repeat(200));
+    expect(draft.title).toHaveLength(80);
+    expect(draft.title.endsWith("…")).toBe(true);
+    expect(draft.content).toHaveLength(200);
+  });
+});
+
+describe("pickWorkspace", () => {
+  const owners = new Map([
+    ["acme", owner()],
+    ["me", owner({ personal: true })],
+  ]);
+  test("prefers the remembered choice, then the personal workspace, then the first", () => {
+    expect(pickWorkspace(owners, "acme")).toBe("acme");
+    expect(pickWorkspace(owners, "gone")).toBe("me");
+    expect(pickWorkspace(new Map([["acme", owner()]]), null)).toBe("acme");
+    expect(pickWorkspace(new Map(), null)).toBeNull();
+  });
+});
+
+describe("workspace hints", () => {
+  const owners = new Map([
+    ["acme", owner({ name: "Acme Corp" })],
+    ["me", owner({ personal: true })],
+  ]);
+  test("matches by slug, then case-insensitive name", () => {
+    expect(matchWorkspaceHint(owners, "acme")).toBe("acme");
+    expect(matchWorkspaceHint(owners, "acme corp")).toBe("acme");
+    expect(matchWorkspaceHint(owners, "ME")).toBe("me");
+    expect(matchWorkspaceHint(owners, "unknown")).toBeNull();
+    expect(matchWorkspaceHint(owners, null)).toBeNull();
+    expect(matchWorkspaceHint(owners, "  ")).toBeNull();
+  });
+  test("a unanimous hint wins; disagreement falls back with a note", () => {
+    expect(pickWorkspaceWithHints(owners, "me", ["acme", null])).toEqual({ workspace: "acme", note: null });
+    expect(pickWorkspaceWithHints(owners, null, [null, undefined])).toEqual({ workspace: "me", note: null });
+    expect(pickWorkspaceWithHints(owners, null, ["acme", "me"])).toEqual({
+      workspace: "me",
+      note: "Drafts suggest different workspaces (acme, me); check before saving.",
+    });
+    expect(pickWorkspaceWithHints(owners, null, ["unknown"])).toEqual({ workspace: "me", note: null });
+  });
+});
+
+describe("proposal schemas", () => {
+  const legacy = { title: "Staging needs VPN", content: "Staging deploys need the office VPN.", kind: "fact" as const };
+  test("older drafts without evidence or workspace still parse", () => {
+    expect(memoryDraftSchema.safeParse(legacy).success).toBe(true);
+  });
+  test("new proposals require evidence", () => {
+    expect(memoryProposalSchema.safeParse(legacy).success).toBe(false);
+    expect(
+      memoryProposalSchema.safeParse({ ...legacy, evidence: "User: staging fails on office wifi" }).success,
+    ).toBe(true);
+  });
+  test("accepts entityIds and normalizes entity_ids alias", () => {
+    const withCamel = memoryProposalSchema.safeParse({
+      ...legacy,
+      evidence: "User: staging fails",
+      entityIds: [42, 99],
+    });
+    expect(withCamel.success).toBe(true);
+    if (withCamel.success) expect(withCamel.data.entityIds).toEqual([42, 99]);
+
+    const withSnake = memoryProposalSchema.safeParse({
+      ...legacy,
+      evidence: "User: staging fails",
+      entity_ids: [123],
+    });
+    expect(withSnake.success).toBe(true);
+    if (withSnake.success) expect(withSnake.data.entityIds).toEqual([123]);
+  });
+});
+
+describe("saveMemories", () => {
+  const submission = rememberSubmissionSchema.parse({
+    workspace: "acme",
+    memories: [
+      { title: "Use bun", content: "The repo blocks npm.", kind: "preference" },
+      { title: "Bad kind", content: "This one fails.", kind: "fact" },
+    ],
+  });
+
+  test("saves each kept memory with its kind and reports failures per memory", async () => {
+    const { api, saves } = fakeApi((memory) => memory.title === "Bad kind");
+    const outcome = await saveMemories(api, owner({ context: "work" }), BASE, "thread-1", submission);
+    expect(saves.map((s) => [s.context, s.workspace, s.memory.semantic_type])).toEqual([
+      ["work", "acme", "preference"],
+      ["work", "acme", "fact"],
+    ]);
+    expect(outcome).toEqual({
+      workspace: "acme",
+      saved: [{ eventId: 1, title: "Use bun", url: `${BASE}/acme/events?id=1`, entityIds: [] }],
+      failed: [{ title: "Bad kind", error: "semantic_type rejected" }],
+      unlinked: [],
+    });
+    expect(describeOutcome(outcome)).toEqual({
+      title: "Saved 1 of 2 memories to acme",
+      detail: `- [Use bun](${BASE}/acme/events?id=1)\n- Not saved: Bad kind (semantic_type rejected)`,
+    });
+  });
+
+  test("sends a stable idempotency key so a resubmit cannot duplicate", async () => {
+    const first = fakeApi();
+    const second = fakeApi();
+    await saveMemories(first.api, owner(), BASE, "thread-1", submission);
+    await saveMemories(second.api, owner(), BASE, "thread-1", submission);
+    expect(first.saves.map((s) => s.memory.idempotency_key)).toEqual(second.saves.map((s) => s.memory.idempotency_key));
+    const [a, b] = first.saves;
+    expect(a?.memory.idempotency_key).not.toBe(b?.memory.idempotency_key);
+    expect(idempotencyKey("thread-2", "acme", submission.memories[0]!)).not.toBe(a?.memory.idempotency_key);
+  });
+
+  test("sends ids and mentioned names as entity_ids, and reports names Lobu left unlinked", async () => {
+    const { api, saves } = fakeApi();
+    const entitySubmission = rememberSubmissionSchema.parse({
+      workspace: "acme",
+      memories: [
+        {
+          title: "Project rule",
+          content: "Link to repo",
+          kind: "fact",
+          entityIds: [10, 20],
+          mentions: ["https://github.com/acme/payments/pull/3", "acme/payments", "Priya Raman"],
+        },
+      ],
+    });
+    const outcome = await saveMemories(api, owner(), BASE, "thread-1", entitySubmission);
+    // A repository URL is sent by its owner/repo name, and each name once.
+    expect(saves[0]?.memory.entity_ids).toEqual([10, 20, { name: "acme/payments" }, { name: "Priya Raman" }]);
+    expect(outcome.saved[0]?.entityIds).toEqual([10, 20]);
+    expect(describeOutcome(outcome).detail).toContain("(entities: 10, 20)");
+    expect(outcomeForAgent(outcome)).toContain('"Priya Raman": no record has this exact name; left unlinked.');
+  });
+});
+
+describe("outcomeForAgent", () => {
+  test("tells the agent what happened", () => {
+    expect(outcomeForAgent(null)).toContain("chose not to save");
+    expect(outcomeForAgent({ workspace: "acme", saved: [], failed: [], unlinked: [] })).toBe(
+      "Saved nothing to Lobu. The user unticked every proposed memory.",
+    );
+    expect(outcomeForAgent({ workspace: "acme", saved: [{ eventId: 1, title: "Use bun", url: null }], failed: [], unlinked: [] })).toBe(
+      "Saved 1 memory to acme:\n- Use bun",
+    );
+  });
+});

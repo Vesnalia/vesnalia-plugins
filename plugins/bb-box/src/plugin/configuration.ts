@@ -1,0 +1,558 @@
+// bb-box's configuration at run time (029): the document and secrets in
+// plugin storage, and the checked writes the settings page and the CLI make.
+// Writes go one at a time: storage has no compare-and-set, so the revision
+// check and the write must not interleave.
+
+import { SHARED_BY_BACKENDS, layeredStorage, scopedStorage, type Backends } from "../backends/index.ts";
+import { kindInfo } from "../backends/kinds.ts";
+import type { Arch, BackendDriver, BackendStorage, MachineSize, DoctorReport, FieldDescriptor, MachineNature, BoxForm, GuestOs, Price, WarmShortfall } from "../backends/types.ts";
+import type { BoxRecord } from "../core/boxes.ts";
+import type { DevicePlatform } from "../core/device.ts";
+import {
+  GENERAL_DEFAULTS,
+  MONITOR_DEFAULTS,
+  SCHEMA,
+  backendPart,
+  blocking,
+  checkDocument,
+  emptyDocument,
+  exported,
+  generalConfig,
+  kindDefaults,
+  knownKinds,
+  readDraft,
+  upgradeDocument,
+  withSecretChanges,
+  withoutSecrets,
+  type ConfigDocument,
+  type GeneralConfig,
+  type InUse,
+  type Problem,
+  type SaveReceipt,
+  type SecretChanges,
+  type Secrets,
+} from "../core/document.ts";
+import { COPY_KEY, DOCUMENT_KEY, SECRETS_KEY, type MovedCopy } from "../core/move.ts";
+import { EMPTY_LEDGER, SAVED_KEY, keptReceipts, receiptView, secretVersion, stampedLedger, stampsMoved, submissionDigest, type SaveLedger, type SavedRecord, type StoredReceipt } from "../core/saves.ts";
+import type { Preset } from "../core/sizes.ts";
+
+const DOCTOR_PREFIX = "config/doctor/";
+const SETUP_DONE_KEY = "config/setup-done";
+/** The longest a check of a draft may run its backend's doctor. */
+export const TEST_TIMEOUT_MS = 30_000;
+
+export type FieldView = FieldDescriptor & {
+  readonly key: string;
+  /** The backend type whose value the field takes while it and the rest of its set are empty, and that type's label. */
+  readonly inherits?: { readonly from: string; readonly label: string; readonly set: readonly string[] };
+  readonly offWhenEmpty?: true;
+};
+
+export interface DriverView {
+  readonly type: string;
+  readonly label: string;
+  readonly description: string;
+  readonly nature: MachineNature;
+  /** The kinds its backends can make. */
+  readonly kinds: readonly string[];
+  readonly warmKinds: readonly string[];
+  readonly fields: readonly FieldView[];
+  readonly hostFields: readonly FieldView[];
+  /** Paths in bb-box's repository: the guide first, then the scripts in the order it runs them. */
+  readonly setup: { readonly guide: string; readonly scripts: readonly string[]; readonly needs?: string };
+  readonly several: boolean;
+}
+
+export interface KindInfoView {
+  readonly id: string;
+  readonly label: string;
+  readonly description: string;
+  readonly gpu: boolean;
+  readonly desktop: boolean;
+  /** The OS, which the settings name the kind by, and the features it promises, for its badges. */
+  readonly os: GuestOs;
+  readonly arch: Arch;
+  readonly features: readonly string[];
+  readonly device: DevicePlatform | null;
+  /** Its boxes have Docker on every backend that offers it now, on none, or, when null, on some or while none offers it (041). */
+  readonly docker: boolean | null;
+  /** Driver types that can make it. */
+  readonly drivers: readonly string[];
+  /** Its spare boxes now (032): ready to claim, and being made. */
+  readonly spares: { readonly ready: number; readonly making: number };
+}
+
+export interface DoctorRun {
+  readonly report: DoctorReport;
+  readonly at: number;
+  readonly revision: number | null;
+}
+
+export interface SetupDone {
+  readonly at: number;
+  readonly revision: number;
+}
+
+export interface ApplyOperation {
+  readonly id: string;
+  readonly submission?: unknown;
+}
+
+export interface BackendState {
+  readonly id: string;
+  readonly type: string;
+  readonly label: string;
+  /** What its boxes are, as a badge; null for a driver bb-box no longer has. */
+  readonly form: BoxForm | null;
+  readonly state: "active" | "off" | "misconfigured";
+  readonly problems: readonly Problem[];
+  /** Boxes it holds, in any state but gone. */
+  readonly boxes: number;
+  /** The kinds it offers now: none while it is off or not valid. */
+  readonly kinds: readonly string[];
+  /** Its doctor's last run, kept across restarts. */
+  readonly doctor: DoctorRun | null;
+  /** Its warm pools that are short for want of room now, and why (#356). */
+  readonly warmShort: readonly WarmShortfall[];
+  readonly changed: number;
+  readonly hostEstimates?: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  readonly hosts?: readonly string[];
+  /** What its kinds' snapshots hold and cost, and on a backend that charges, the rate held and this month's spend (070). */
+  readonly snapshots?: BackendSnapshotsView | null;
+}
+
+export interface BackendSnapshotsView {
+  /** Each distinct offer, with the kinds that have it. */
+  readonly offers: readonly { readonly kinds: readonly string[]; readonly words: string }[];
+  /** What one snapshot costs; null where it is on the person's own storage. */
+  readonly price: Price | null;
+  /** Where snapshots cost money or are held at a price. */
+  readonly paid: {
+    readonly currency: Price["currency"];
+    readonly count: number;
+    readonly unknown: number;
+    readonly monthly: number;
+    readonly spent: number;
+    readonly ceiling: number;
+    readonly past: boolean;
+    readonly included: { readonly included: number; readonly used: number } | null;
+    readonly billing: "billed" | "estimate" | null;
+  } | null;
+}
+
+export interface ConfigState {
+  /** Each secret as { set: true } or { set: false }. */
+  readonly document: ConfigDocument;
+  readonly revision: number;
+  readonly defaults: {
+    readonly general: typeof GENERAL_DEFAULTS;
+    readonly monitor: typeof MONITOR_DEFAULTS;
+    readonly kinds: Readonly<Record<string, { enabled: true; presets: Record<Preset, MachineSize>; default: Preset; largest: MachineSize }>>;
+  };
+  readonly kinds: readonly KindInfoView[];
+  readonly drivers: readonly DriverView[];
+  readonly backends: readonly BackendState[];
+  /** Problems with the stored document. */
+  readonly problems: readonly Problem[];
+  /** The copy of BB's settings the move kept, while it is kept. */
+  readonly migrated: { readonly at: number; readonly version: string } | null;
+  readonly receipts: readonly SaveReceipt[];
+  readonly setupDone: SetupDone | null;
+}
+
+export type SecretChange = "set" | "cleared";
+
+export interface DraftRead {
+  readonly document: ConfigDocument;
+  readonly secrets: Readonly<Record<string, Readonly<Record<string, SecretChange>>>>;
+  readonly unknownTypes: readonly string[];
+}
+
+export interface CheckResult {
+  readonly problems: readonly Problem[];
+  /** The tested backend's doctor, when a test was asked for and its fields are valid. */
+  readonly doctor: DoctorReport | null;
+  readonly read?: DraftRead | null;
+}
+
+export type ApplyResult =
+  /** `problems` are those saved anyway, in a backend that is off and has no boxes, for the page to show. */
+  | { readonly ok: true; readonly state: ConfigState; readonly problems: readonly Problem[]; readonly receipt?: SaveReceipt; readonly replayed?: true }
+  | { readonly ok: false; readonly reason: "revision"; readonly state: ConfigState }
+  | { readonly ok: false; readonly reason: "problems"; readonly problems: readonly Problem[] };
+
+export interface ConfigurationDeps {
+  readonly kv: BackendStorage;
+  readonly backends: Backends;
+  readonly drivers: readonly BackendDriver<any>[];
+  /** Every box record. */
+  boxes(): Promise<readonly BoxRecord[]>;
+  snapshotsHeld?(): ReadonlyMap<string, { readonly count: number; readonly words: string }>;
+  heldOnProvider?(backendIds: readonly string[]): Promise<NonNullable<InUse["onProvider"]>>;
+  snapshotsOf?(backendId: string): BackendSnapshotsView | null;
+  /** Each kind's spares now, ready and being made. */
+  spareCounts?(): Promise<Readonly<Record<string, { readonly ready: number; readonly making: number }>>>;
+  /** Tells open panels and pages that the configuration changed. */
+  changed(): void;
+  logError(operation: string, error: unknown): void;
+  readonly now?: () => number;
+  readonly testTimeoutMs?: number;
+}
+
+function fieldViews(fields: Readonly<Record<string, FieldDescriptor>> | undefined, inherits?: { readonly from: string; readonly label: string; readonly sets: readonly (readonly string[])[] }): FieldView[] {
+  return Object.entries(fields ?? {}).map(([key, field]) => {
+    const set = inherits?.sets.find((candidate) => candidate.includes(key));
+    return set ? { key, ...field, inherits: { from: inherits!.from, label: inherits!.label, set } } : { key, ...field };
+  });
+}
+
+/** A driver's fields for the settings page. Each it inherits names the type it takes values from, with that type's label. */
+export function driverFields(driver: BackendDriver<any>, drivers: readonly BackendDriver<any>[]): FieldView[] {
+  const inherits = driver.inherits && { ...driver.inherits, label: drivers.find((other) => other.type === driver.inherits!.from)?.label ?? driver.inherits.from };
+  const offWhenEmpty = new Set(driver.offWhenEmpty ?? []);
+  return fieldViews(driver.fields, inherits).map((field) => (offWhenEmpty.has(field.key) ? { ...field, offWhenEmpty: true } : field));
+}
+
+function failedReport(detail: string): DoctorReport {
+  return { ok: false, summary: "The checks did not finish.", checks: [{ id: "doctor", name: "Checks", status: "fail", detail, fix: null }], notes: [] };
+}
+
+/** Runs a doctor for at most `ms`, aborting it then. A doctor that ignores the abort is not waited for. */
+export async function boundedDoctor(run: (signal: AbortSignal) => Promise<DoctorReport>, ms: number, outer?: AbortSignal): Promise<DoctorReport> {
+  const timeout = AbortSignal.timeout(ms);
+  const signal = outer ? AbortSignal.any([outer, timeout]) : timeout;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<DoctorReport>((resolve) => {
+    timer = setTimeout(() => resolve(failedReport(`The checks took longer than ${Math.round(ms / 1000)} s.`)), ms + 1_000);
+  });
+  try {
+    return await Promise.race([
+      run(signal).catch((error) =>
+        failedReport(timeout.aborted ? `The checks took longer than ${Math.round(ms / 1000)} s.` : error instanceof Error ? error.message : String(error)),
+      ),
+      late,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export class Configuration {
+  readonly #deps: ConfigurationDeps;
+  #document: ConfigDocument;
+  #secrets: Secrets;
+  #ledger: SaveLedger;
+  #configuredRevision: number | null = null;
+  #setupDone: SetupDone | null = null;
+  readonly #doctor = new Map<string, DoctorRun>();
+  /** Writes and the reconfiguring after them, one at a time. */
+  #queue: Promise<unknown> = Promise.resolve();
+
+  private constructor(deps: ConfigurationDeps, document: ConfigDocument, secrets: Secrets, ledger: SaveLedger) {
+    this.#deps = deps;
+    this.#document = document;
+    this.#secrets = secrets;
+    this.#ledger = ledger;
+  }
+
+  /** The stored document and secrets, and each backend's last doctor run. */
+  static async load(deps: ConfigurationDeps): Promise<Configuration> {
+    const saved = await deps.kv.get<SavedRecord>(SAVED_KEY);
+    const mirror = (await deps.kv.get<ConfigDocument>(DOCUMENT_KEY)) ?? emptyDocument();
+    const stored = saved && saved.document.revision >= mirror.revision ? saved.document : mirror;
+    const secrets = (await deps.kv.get<Secrets>(SECRETS_KEY)) ?? {};
+    // Earlier kind IDs move to their kinds once (041), as a write would.
+    const upgraded = upgradeDocument(stored);
+    const repaired = stored.revision + 1;
+    const ledger = saved ? stampedLedger(saved.ledger, upgraded ?? stored, secrets, deps.drivers, repaired) : stampedLedger(EMPTY_LEDGER, upgraded ?? stored, secrets, deps.drivers, stored.revision);
+    const moved = upgraded !== null || (saved !== undefined && stampsMoved(ledger, repaired));
+    const document = moved ? { ...(upgraded ?? stored), revision: repaired } : stored;
+    const configuration = new Configuration(deps, document, secrets, ledger);
+    if (moved) await configuration.#store(document, secrets, ledger).catch((error) => deps.logError("bring the configuration's saves up to date", error));
+    else if (saved && saved.document.revision > mirror.revision) await deps.kv.set(DOCUMENT_KEY, saved.document).catch((error) => deps.logError("copy the saved configuration", error));
+    for (const key of await deps.kv.list(DOCTOR_PREFIX)) {
+      const run = await deps.kv.get<DoctorRun>(key);
+      if (run) configuration.#doctor.set(key.slice(DOCTOR_PREFIX.length), { ...run, revision: run.revision ?? null });
+    }
+    configuration.#setupDone = (await deps.kv.get<SetupDone>(SETUP_DONE_KEY)) ?? null;
+    return configuration;
+  }
+
+  async #store(document: ConfigDocument, secrets: Secrets, ledger: SaveLedger): Promise<void> {
+    await this.#deps.kv.set(SECRETS_KEY, secrets);
+    await this.#deps.kv.set(SAVED_KEY, { document, ledger } satisfies SavedRecord);
+    await this.#deps.kv.set(DOCUMENT_KEY, document);
+  }
+
+  #now(): number {
+    return (this.#deps.now ?? Date.now)();
+  }
+
+  get liveRevision(): number {
+    return this.#configuredRevision ?? this.#document.revision;
+  }
+
+  get setupDone(): SetupDone | null {
+    return this.#setupDone;
+  }
+
+  async noteSetupDone(): Promise<void> {
+    if (this.#setupDone) return;
+    const making = this.#deps.backends.statuses().some((status) => status.state === "active" && status.kinds.length > 0);
+    const madeBoxes = !making && (await Promise.resolve().then(() => this.#deps.boxes()).catch(() => [])).length > 0;
+    if ((!making && !madeBoxes) || this.#setupDone) return;
+    this.#setupDone = { at: this.#now(), revision: this.#document.revision };
+    await this.#deps.kv.set(SETUP_DONE_KEY, this.#setupDone).catch((error) => this.#deps.logError("mark setup done", error));
+  }
+
+  get document(): ConfigDocument {
+    return this.#document;
+  }
+
+  get secrets(): Secrets {
+    return this.#secrets;
+  }
+
+  general(): GeneralConfig {
+    return generalConfig(this.#document);
+  }
+
+  /** Builds the backends from the stored document. */
+  async configure(): Promise<void> {
+    const revision = this.#document.revision;
+    await this.#deps.backends.configure(this.#document, this.#secrets);
+    this.#configuredRevision = revision;
+  }
+
+  async inUse(removing: readonly string[] = []): Promise<InUse> {
+    const backends = new Map<string, number>();
+    const hosts = new Map<string, Map<string, number>>();
+    for (const box of await this.#deps.boxes()) {
+      if (box.state === "gone") continue;
+      backends.set(box.backend, (backends.get(box.backend) ?? 0) + 1);
+      // Only the hosts the configuration lists count: a Proxmox node, say, is no host of its backend's.
+      const host = box.guest?.host;
+      const listed = this.#document.backends.find((backend) => backend.id === box.backend)?.hosts?.some((each) => each.name === host);
+      if (!host || !listed) continue;
+      const counts = hosts.get(box.backend) ?? new Map<string, number>();
+      counts.set(host, (counts.get(host) ?? 0) + 1);
+      hosts.set(box.backend, counts);
+    }
+    const onProvider = removing.length && this.#deps.heldOnProvider ? await this.#deps.heldOnProvider(removing) : new Map();
+    return { backends, hosts, snapshots: this.#deps.snapshotsHeld?.() ?? new Map(), onProvider };
+  }
+
+  #removedBy(document: ConfigDocument): string[] {
+    const kept = new Set(document.backends.map((backend) => backend.id));
+    return this.#document.backends.map((backend) => backend.id).filter((id) => !kept.has(id));
+  }
+
+  /** Problems with the stored document. */
+  async problems(): Promise<Problem[]> {
+    return checkDocument(this.#document, this.#secrets, this.#deps.drivers, await this.inUse());
+  }
+
+  async recordDoctor(id: string, report: DoctorReport, revision: number = this.liveRevision): Promise<void> {
+    const run: DoctorRun = { report, at: this.#now(), revision };
+    this.#doctor.set(id, run);
+    await this.#deps.kv.set(DOCTOR_PREFIX + id, run).catch((error) => this.#deps.logError("doctor report", error));
+  }
+
+  async migrated(): Promise<MovedCopy | null> {
+    return (await this.#deps.kv.get<MovedCopy>(COPY_KEY)) ?? null;
+  }
+
+  async removeMigrated(): Promise<boolean> {
+    const had = (await this.migrated()) !== null;
+    await this.#deps.kv.delete(COPY_KEY);
+    return had;
+  }
+
+  /** The document as it leaves bb-box: no secret values. */
+  exported(): ConfigDocument {
+    return exported(this.#document, this.#secrets, this.#deps.drivers);
+  }
+
+  #snapshotsOf(backendId: string): { readonly snapshots?: BackendSnapshotsView } {
+    const view = this.#deps.snapshotsOf?.(backendId) ?? null;
+    return view && (view.offers.length || view.paid) ? { snapshots: view } : {};
+  }
+
+  async state(): Promise<ConfigState> {
+    // A write's reconfiguring finishes first, so the backends' states match the document.
+    await this.#queue.catch(() => {});
+    return this.#snapshot();
+  }
+
+  async #snapshot(): Promise<ConfigState> {
+    const { drivers } = this.#deps;
+    await this.noteSetupDone();
+    const ledger = this.#ledger;
+    const inUse = await this.inUse();
+    const statuses = this.#deps.backends.statuses();
+    const copy = await this.migrated();
+    const spares = (await this.#deps.spareCounts?.()) ?? {};
+    const offered = this.#deps.backends.kinds();
+    const docker = (id: string): boolean | null => {
+      const has = new Set(offered.filter((each) => each.kind.id === id).map((each) => each.kind.capabilities.features.includes("docker")));
+      return has.size === 1 ? has.has(true) : null;
+    };
+    return {
+      document: exported(this.#document, this.#secrets, drivers, (owner, key) => secretVersion(ledger, owner, key)),
+      revision: this.#document.revision,
+      defaults: { general: GENERAL_DEFAULTS, monitor: MONITOR_DEFAULTS, kinds: kindDefaults(drivers) },
+      kinds: knownKinds(drivers).map((id) => ({
+        id,
+        ...kindInfo(id),
+        docker: docker(id),
+        drivers: drivers.filter((driver) => driver.kinds.includes(id) || driver.sharedKinds?.includes(id)).map((driver) => driver.type),
+        spares: spares[id] ?? { ready: 0, making: 0 },
+      })),
+      drivers: drivers.map((driver) => ({
+        type: driver.type,
+        label: driver.label,
+        description: driver.description,
+        nature: driver.nature,
+        kinds: driver.kinds,
+        warmKinds: driver.warmKinds ?? [],
+        fields: driverFields(driver, drivers),
+        hostFields: fieldViews(driver.hostFields),
+        setup: driver.setup,
+        several: driver.several !== undefined,
+      })),
+      backends: this.#document.backends.map((backend) => {
+        const status = statuses.find((candidate) => candidate.id === backend.id);
+        return {
+          id: backend.id,
+          type: backend.type,
+          label: status?.label ?? backend.label ?? backend.type,
+          form: drivers.find((driver) => driver.type === backend.type)?.form ?? null,
+          state: status?.state ?? "misconfigured",
+          problems: status?.fieldProblems ?? [],
+          boxes: inUse.backends.get(backend.id) ?? 0,
+          kinds: status?.kinds ?? [],
+          doctor: this.#doctor.get(backend.id) ?? null,
+          warmShort: this.#deps.backends.warmShort(backend.id),
+          changed: ledger.backends[backend.id]?.changed ?? this.#document.revision,
+          ...(backend.hosts?.length ? { hostEstimates: this.#deps.backends.hostEstimates(backend.id) } : {}),
+          hosts: this.#deps.backends.hosts(backend.id),
+          ...this.#snapshotsOf(backend.id),
+        };
+      }),
+      problems: checkDocument(this.#document, this.#secrets, drivers, inUse),
+      migrated: copy ? { at: copy.at, version: copy.version } : null,
+      receipts: keptReceipts(ledger.receipts, this.#now()).map(receiptView),
+      setupDone: this.#setupDone,
+    };
+  }
+
+  /** The IDs of a draft's backends that are on. */
+  enabledIn(input: unknown): string[] {
+    return readDraft(input, this.#deps.drivers).document.backends.filter((backend) => backend.enabled).map((backend) => backend.id);
+  }
+
+  /**
+   * Problems with a draft, saving nothing. With `test`, a backend's ID, also
+   * runs that backend's doctor against the draft (029).
+   */
+  async check(input: unknown, test?: string, signal?: AbortSignal, options: { readonly read?: boolean } = {}): Promise<CheckResult> {
+    const { drivers } = this.#deps;
+    const draft = readDraft(input, drivers);
+    const secrets = withSecretChanges(this.#secrets, draft.secrets, draft.document);
+    const problems = [...draft.problems, ...checkDocument(draft.document, secrets, drivers, await this.inUse(this.#removedBy(draft.document)))];
+    if (options.read) return { problems, doctor: null, read: draft.problems.length ? null : draftRead(draft.document, draft.secrets, drivers) };
+    if (test === undefined) return { problems, doctor: null };
+    const backend = draft.document.backends.find((candidate) => candidate.id === test);
+    if (!backend) return { problems: [...problems, { path: `backends.${test}`, message: `There is no backend ${test} in the configuration to check.` }], doctor: null };
+    // A backend of a type this version lacks cannot be built; checkDocument's problem says why.
+    const driver = drivers.find((candidate) => candidate.type === backend.type);
+    if (!driver) return { problems, doctor: null };
+    const parsed = driver.parse(backendPart(backend, driver, secrets, draft.document.backends));
+    if (!parsed.ok) return { problems, doctor: null };
+    const doctor = await this.#test(backend.id, driver, parsed.config, signal);
+    // The report is the backend's own when the draft's fields are those it was built from.
+    const tested = this.#document.revision;
+    const stored = this.#document.backends.find((candidate) => candidate.id === backend.id);
+    const live = stored && driver.parse(backendPart(stored, driver, this.#secrets, this.#document.backends));
+    if (live?.ok && JSON.stringify(live.config) === JSON.stringify(parsed.config)) await this.recordDoctor(backend.id, doctor, tested);
+    return { problems, doctor };
+  }
+
+  /**
+   * A backend built from a draft, only for its doctor: within the time
+   * limit, with no acquire or upkeep, and disposed after. Its storage is a
+   * layer over the backend's own, so the SSH key it makes on first use is
+   * the backend's, and nothing else it writes stays.
+   */
+  async #test(id: string, driver: BackendDriver<any>, config: unknown, signal?: AbortSignal): Promise<DoctorReport> {
+    const storage = layeredStorage(scopedStorage(this.#deps.kv, `backend/${id}/`));
+    const sharedStorage = layeredStorage(scopedStorage(this.#deps.kv, SHARED_BY_BACKENDS));
+    let backend: ReturnType<BackendDriver<any>["create"]> | null = null;
+    try {
+      backend = driver.create(config, { ...this.#deps.backends.context(id, storage, sharedStorage), warm: () => 0 });
+      const built = backend;
+      return await boundedDoctor((bounded) => built.doctor(bounded), this.#deps.testTimeoutMs ?? TEST_TIMEOUT_MS, signal);
+    } catch (error) {
+      return failedReport(error instanceof Error ? error.message : String(error));
+    } finally {
+      await backend?.dispose?.().catch((error) => this.#deps.logError(`dispose the check of ${id}`, error));
+    }
+  }
+
+  /**
+   * Saves a draft as the whole configuration, if `revision` is the current
+   * one or null, and its problems allow it. Then rebuilds what changed,
+   * answers with the state after it, and tells open pages. The draft's own
+   * revision is ignored.
+   */
+  apply(input: unknown, revision: number | null, operation?: ApplyOperation): Promise<ApplyResult> {
+    const write = this.#queue.catch(() => {}).then(async (): Promise<ApplyResult> => {
+      const submission = operation && submissionDigest(operation.submission === undefined ? input : operation.submission);
+      const earlier = operation && this.#ledger.receipts.find((receipt) => receipt.operation === operation.id);
+      if (operation && earlier) return earlier.submission === submission ? { ok: true, state: await this.#snapshot(), problems: [], receipt: receiptView(earlier), replayed: true } : refusedOperation(operation.id, earlier);
+      if (revision !== null && revision !== this.#document.revision) return { ok: false, reason: "revision", state: await this.#snapshot() };
+      const { drivers } = this.#deps;
+      const draft = readDraft(input, drivers);
+      const secrets = withSecretChanges(this.#secrets, draft.secrets, draft.document);
+      const inUse = await this.inUse(this.#removedBy(draft.document));
+      const all = [...draft.problems, ...checkDocument(draft.document, secrets, drivers, inUse)];
+      const problems = blocking(all, draft.document, inUse, drivers);
+      if (problems.length) return { ok: false, reason: "problems", problems };
+      const next = this.#document.revision + 1;
+      const document: ConfigDocument = { ...withoutSecrets(draft.document, drivers), schema: SCHEMA, revision: next };
+      const now = this.#now();
+      const receipt: StoredReceipt | null = operation && submission ? { operation: operation.id, submission, revision: next, at: now } : null;
+      const stamped = stampedLedger(this.#ledger, document, secrets, drivers, next);
+      const ledger: SaveLedger = { ...stamped, receipts: keptReceipts(receipt ? [...stamped.receipts, receipt] : stamped.receipts, now) };
+      await this.#store(document, secrets, ledger);
+      this.#document = document;
+      this.#secrets = secrets;
+      this.#ledger = ledger;
+      await this.configure().catch((error) => this.#deps.logError("configure", error));
+      this.#deps.changed();
+      return { ok: true, state: await this.#snapshot(), problems: all, ...(receipt ? { receipt: receiptView(receipt) } : {}) };
+    });
+    this.#queue = write;
+    return write;
+  }
+}
+
+function draftRead(document: ConfigDocument, changes: SecretChanges, drivers: readonly BackendDriver<any>[]): DraftRead {
+  const known = (type: string) => drivers.some((driver) => driver.type === type);
+  const bare = withoutSecrets(document, drivers);
+  const change = (value: string | null): SecretChange => (value === null ? "cleared" : "set");
+  const secrets = Object.fromEntries(Object.entries(changes).map(([owner, keys]) => [owner, Object.fromEntries(Object.entries(keys).map(([key, value]) => [key, change(value)]))]));
+  return {
+    document: { ...bare, backends: bare.backends.filter((backend) => known(backend.type)) },
+    secrets,
+    unknownTypes: [...new Set(document.backends.filter((backend) => !known(backend.type)).map((backend) => backend.type))],
+  };
+}
+
+function refusedOperation(id: string, earlier: StoredReceipt): ApplyResult {
+  return {
+    ok: false,
+    reason: "problems",
+    problems: [{ path: "operation", message: `Operation ${id} was saved at revision ${earlier.revision} with other changes, so these were not saved. A new save needs a new operation ID.` }],
+  };
+}

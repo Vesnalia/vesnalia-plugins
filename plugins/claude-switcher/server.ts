@@ -1,0 +1,9221 @@
+// Claude Switcher — bb plugin backend.
+//
+// Seven jobs:
+//   1. Measure every Claude Code account on this machine (one config dir
+//      each) and publish the windows to bb's Provider usage panel.
+//   2. When a thread is created, put a new project on the best account, and
+//      move a known one off an account already measured unable to run, so
+//      the first turn does not fail. Before every turn, the same for the
+//      model the turn is sent with (bb's dispatch checkpoint), whatever the
+//      preferred model.
+//   3. When a turn fails on a subscription limit, move the thread's project to
+//      another account (CLAUDE_CONFIG_DIR as a project machine env var) and
+//      retry the turn; when no account is free, retry at the earliest reset.
+//   4. Let the user pin a project to an account from Settings or the CLI.
+//   5. Optionally, when a turn ends with the project's account close to its
+//      limit, move the project to an account with more room.
+//   6. Keep the history of moves and a forecast of each weekly window.
+//   7. Log an account in from Settings (`claude auth login` as a child).
+import {
+  PluginCliError,
+  cliCommand,
+  defineCli,
+  defineRpcContract,
+  type BbPluginApi,
+  type MessageDispatchHookContext,
+  type MessageDispatchHookDecision,
+  type PluginThreadEventPayloads,
+  type PluginTurnFailedEvent,
+} from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import {
+  STUCK_WAIT_MS,
+  atascoLine,
+  heldBy,
+  heldLong,
+  waitingForTeam,
+  type Atasco,
+  type EsperaTeam,
+  type HeldRow,
+} from "./src/atascos.js";
+import {
+  discoverAccounts,
+  expandHome,
+  planOf,
+  type Account,
+  type AccountsIo,
+} from "./src/accounts.js";
+import { nextDayStart, paceOf, type DayStart, type Pace } from "./src/pace.js";
+import {
+  HISTORIAL_DIAS,
+  HISTORIAL_MIGRATIONS,
+  addSample,
+  addStuck,
+  historyText,
+  prune as pruneHistorial,
+  readSamples,
+  readStuck,
+  type HistorialDb,
+} from "./src/historial.js";
+import {
+  healthReport,
+  healthText,
+  isoInZone,
+  type HealthReport,
+} from "./src/health.js";
+import {
+  freshReading,
+  UsageCollector,
+  type LoginState,
+  type Measurement,
+} from "./src/collector.js";
+import {
+  forecastWindow,
+  recordSample,
+  type Forecast,
+  type Series,
+} from "./src/forecast.js";
+import type { CredentialIo } from "./src/credentials.js";
+import { LoginFlow, type LoginIo, type LoginStatus } from "./src/login.js";
+import {
+  loginHelperPath,
+  nodeAccountsIo,
+  nodeCredentialIo,
+  nodeLoginIo,
+  nodeSessionsIo,
+} from "./src/node-io.js";
+import {
+  ADVISED_DECLINES,
+  adviseOpus,
+  CLAUDE_CODE_PROVIDER,
+  declineReason,
+  bestAccount,
+  decideAhead,
+  decidePlacement,
+  decideSwitch,
+  reportedFreeAt,
+  resetOfAccount,
+  FALLBACK_MODEL,
+  isApiErrorBody,
+  isNetworkBlock,
+  isRefusal,
+  isSessionLoss,
+  isSessionLost,
+  SESSION_LOST_INFO,
+  sessionLost,
+  MAX_ATTEMPTS,
+  mayAdviseOpus,
+  measuredOut,
+  isCalorTick,
+  modelFamily,
+  fullestWindow,
+  opusInstead,
+  opusInsteadText,
+  RESET_BUFFER_MS,
+  reserveWait,
+  unreadTeamSeats,
+  RESET_JITTER_MS,
+  settle,
+  type PlacementInput,
+  type SwitchDecision,
+} from "./src/switch.js";
+import {
+  canRunModel,
+  chooseAccount,
+  holdsForReserve,
+  isUsable,
+  modelWindow,
+  opusRoom,
+  reserveToSpare,
+  reserving,
+  spendsReservedWeekly,
+  type AccountUsage,
+} from "./src/policy.js";
+import {
+  usageFetchMethod,
+  usageListMethod,
+  usageSourceRpcContract,
+} from "./src/usage-source-contract.js";
+import { toMeasurement, toResource } from "./src/usage-source.js";
+import { shareSessions, type SessionsIo } from "./src/sessions.js";
+import { Seats, capacityFor, isTeamSeat, seatCeiling } from "./src/seats.js";
+import { planRebalance, type RebalanceProject } from "./src/rebalance.js";
+import { listText, projectName, sharedWith } from "./src/ui.js";
+
+export const ENV_VAR = "CLAUDE_CONFIG_DIR";
+/** Realtime channel app.tsx listens on after any state change. */
+export const CHANGED = "accounts-changed";
+/** Realtime channel of the advice a thread shows (see thread_advice); payload `{ threadId }`. */
+export const ADVICE_CHANGED = "opus-advice";
+/**
+ * After a switch, turns that were already running on the old account keep
+ * failing on it for a while. A failure of another turn of the same project
+ * inside this window is one of those: retried as is, no second switch.
+ */
+export const SWITCH_GRACE_MS = 60_000;
+/** How long a list keeps the projects' accounts it read (see sharedProjects). */
+export const PROJECTS_FRESH_MS = 30_000;
+/**
+ * An account that refused a turn (its organization turned subscription access
+ * off, or its login stopped working) is chosen for nothing this long, though
+ * its usage still measures fine.
+ */
+export const REFUSAL_MS = 6 * 60 * 60_000;
+/**
+ * A turn that ends well on a refusing account this long after its refusal
+ * brings it back (refusalBack): it runs turns again. [SUPUESTO] 60 s, so
+ * that a turn ending in the same instant as the refusal proves nothing
+ * (2026-11-13: turns ended well 10 to 74 min after their account's mark).
+ */
+export const REFUSAL_PROOF_MS = 60_000;
+/**
+ * A turn the network refused (Cloudflare's block page, see isNetworkBlock)
+ * is retried this long after, on the same account: another account does
+ * not mend the network, and a move loses the thread's cache. [SUPUESTO]
+ * 2 min: the block of 2026-11-13 lasted half an hour, and the retries are
+ * capped by MAX_ATTEMPTS.
+ */
+export const NETWORK_BLOCK_RETRY_MS = 2 * 60_000;
+/**
+ * A machine's run of network blocks (one STUCK line for it) ends after this
+ * long without one there. [SUPUESTO] 10 min.
+ */
+export const NETWORK_STREAK_MS = 10 * 60_000;
+/**
+ * This many accounts refusing on one machine within REFUSAL_STORM_MS is the
+ * machine or its network, not the accounts (see stormFrom). [SUPUESTO] 3, and
+ * 5 min: on 2026-11-13 the first three refused within 32 s, five within
+ * 2 min 47 s.
+ */
+export const REFUSAL_STORM_ACCOUNTS = 3;
+export const REFUSAL_STORM_MS = 5 * 60_000;
+/**
+ * A run of refusals taken as its machine's stays open at most this long from
+ * its first refusal, however often refused since (its own retries keep it
+ * fresh): then it closes and the refusals count from zero again. [SUPUESTO]
+ * 15 min: the block of 2026-11-13 lasted 30 min, one test again.
+ */
+export const REFUSAL_STORM_MAX_MS = 15 * 60_000;
+/**
+ * How long a usage limit with no reset reported keeps its account marked
+ * (see limitedAt). [SUPUESTO] 30 min: no default of bb's or ours fits, and
+ * the next turn there may fail once more after it (Astra r4 high 1).
+ */
+export const LIMIT_NO_RESET_MS = 30 * 60_000;
+/**
+ * How long an account whose turn failed for want of a session on a machine
+ * (see sessionLostAt) is no place for a project with threads there, unless
+ * a turn ends well on it there first or it is picked by hand. [SUPUESTO]
+ * 6 h, the refusal's (REFUSAL_MS): a login does not come back with a reset,
+ * and someone has to log in on that machine.
+ */
+export const SESSION_LOST_MS = 6 * 60 * 60_000;
+/** How long a project's machines, read from its environments, are taken as they were (see hostsOf). */
+export const HOSTS_FRESH_MS = 10 * 60_000;
+/** A measurement older than this is taken again before moving a project ahead of the limit. */
+export const AHEAD_FRESH_MS = 60_000;
+/** bb fails a dispatch whose checkpoint takes 10 s: the placement before a turn is left behind well before. */
+export const DISPATCH_LIMIT_MS = 3_000;
+/** How long a rescue waits for the model of a turn that ended, its log unread. */
+export const MODEL_READ_LIMIT_MS = 60_000;
+/**
+ * The whole dispatch checkpoint, every read in it together, answers within
+ * this long: each read gets what is left, at most DISPATCH_LIMIT_MS (Astra
+ * SEATS-R4-002).
+ */
+export const DISPATCH_BUDGET_MS = 8_000;
+/** Less than this left of DISPATCH_BUDGET_MS: no further read is started; the message waits. */
+const DISPATCH_MIN_MS = 500;
+/** A message whose dispatch ran out of DISPATCH_BUDGET_MS is asked about again this soon (Astra SEATS-R4-002). */
+const OUT_OF_TIME_WAIT_MS = 5_000;
+/** One project's rescue off an account that cannot run, its queue included, is not waited for longer (Astra SEATS-R4-004). */
+const RESCUE_LIMIT_MS = 10_000;
+/** How long a rescue waits for the projects' models read at load (see seedProjectModels). */
+export const SEED_WAIT_MS = 30_000;
+/**
+ * A new project's first message waits this long, once, when its placement
+ * has not finished within DISPATCH_LIMIT_MS (the accounts are measured
+ * first): bb asks again sooner, as soon as the placement ends (E44).
+ */
+export const FIRST_PLACEMENT_WAIT_MS = 5_000;
+/**
+ * A message that would start on a default account without a login waits
+ * at most this many times for something that could give its project an
+ * account; then it is refused (E44).
+ */
+export const MAX_START_WAITS = 3;
+/**
+ * Sharing a moved project's sessions (see shareProjectSessions) is waited
+ * for this long at most: it runs in the project's queue and before a turn
+ * (Codex E46-001).
+ */
+export const SESSIONS_LIMIT_MS = 2_000;
+/** A login left waiting in the browser this long is given up. */
+export const LOGIN_TIMEOUT_MS = 10 * 60_000;
+/** A thread waiting for a seat is asked about again after this long (sooner when a seat frees). */
+export const SEAT_RECHECK_MS = 30_000;
+/** A project whose Claude Code thread did anything this recently is at work: `rebalance` leaves it (its prompt cache lives up to an hour). */
+export const REBALANCE_QUIET_MS = 60 * 60_000;
+/** `rebalance` leaves no usable Ultra account more than this many projects above the one with fewest (Aitor 2026-11-03). */
+export const REBALANCE_SPREAD = 10;
+/**
+ * A turn held off a Max account that keeps the reserved model (see
+ * reserveWait) is asked about again after this long at most: a seat or a
+ * measurement may free an account before the reset it waits for.
+ */
+export const RESERVE_RECHECK_MS = 5 * 60_000;
+/**
+ * A turn told to start starts within this long nearly always, measured: half
+ * within 1 s, 90 % within 6 s (cuenta nuestra, docs/revision-2026-11-04/PLAN.md).
+ */
+const STARTING_MS = 10_000;
+/** Not asked again in this long, and no row held: that wait is over (every hold is asked again within RESERVE_RECHECK_MS). */
+const WAIT_FORGOTTEN_MS = 2 * RESERVE_RECHECK_MS;
+/** How long looking for stuck threads may take: it is only a look, and health and the refresh wait for it. */
+const STUCK_READ_LIMIT_MS = 15_000;
+/**
+ * Times a turn waits, SEAT_RECHECK_MS apart, on an account that cannot run it
+ * with another that can, before it starts anyway: the placement should have
+ * moved it, so a bb that fails every write would hold it for ever with no
+ * failure to see (code-reviewer r1). Started, it fails where the user is told.
+ */
+const BLOCKED_WAITS = 10;
+/** A seat reserved for a turn that has not started within this long is freed. */
+export const SEAT_TTL_MS = 90_000;
+/** Times a message waits because its project's account could not be read for its seat; then it goes (Astra SEATS-R01). */
+const SEAT_READ_WAITS = 3;
+/** A message sent while the seats are counted after a load is asked about again after this long (Astra SEATS-R02). */
+const SEATS_COUNTING_WAIT_MS = 5_000;
+/**
+ * How long `reserve` waits for the seats to be counted after a load before
+ * it fails, temporarily, granting nothing (Codex ULTRA-R02).
+ */
+const RESERVE_COUNT_WAIT_MS = 5_000;
+/** sysexits' EX_TEMPFAIL: `reserve` may be asked again in a moment. */
+const EXIT_TEMPFAIL = 75;
+/** Tries of each read that counts the seats after a load, this long apart (Astra SEATS-R02). */
+const SEAT_COUNT_TRIES = 3;
+const SEAT_COUNT_RETRY_MS = 2_000;
+/** Changes of the seats within this long are announced once (Astra SEATS-R09). */
+const SEATS_CHANGED_MS = 250;
+const KV_SEATS = "seat-samples";
+/** The seat samples kept: a week of them (see noteSeatSample). */
+const SEAT_SAMPLES_MS = 7 * 24 * 60 * 60_000;
+/**
+ * A seat sample, whole in itself (Astra SEATS-R06): [at, running,
+ * reserved, session %, weekly % (null: no weekly window), session reset,
+ * weekly reset], `at` the measurement's own time.
+ */
+const seatSampleSchema = z.tuple([
+  z.number(),
+  z.number(),
+  z.number(),
+  z.number(),
+  z.number().nullable(),
+  z.number().nullable(),
+  z.number().nullable(),
+]);
+type SeatSample = z.infer<typeof seatSampleSchema>;
+/** An account directory name: one path segment, no leading dot. */
+const ACCOUNT_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+/** Note written next to CLAUDE_CONFIG_DIR; the account name is read back from it (values are secret). */
+const NOTE_PREFIX = 'Claude Code account "';
+const NOTE_SUFFIX = '" (set by the Claude Switcher plugin)';
+export function noteFor(name: string): string {
+  return `${NOTE_PREFIX}${name}${NOTE_SUFFIX}`;
+}
+export function accountFromNote(note: string | null): string | null {
+  if (
+    note === null ||
+    !note.startsWith(NOTE_PREFIX) ||
+    !note.endsWith(NOTE_SUFFIX)
+  )
+    return null;
+  return (
+    note.slice(NOTE_PREFIX.length, note.length - NOTE_SUFFIX.length) || null
+  );
+}
+const KV_LAST_SWITCH = "last-switch";
+/** Every move (automatic, ahead of the limit, or by hand), latest first. */
+const KV_HISTORY = "switch-history";
+/** Retries cancelled by hand, per thread: the thread's latest turn at the time. */
+const KV_CANCELLED = "cancelled-retries";
+/** Usage samples per account and window, for the forecast. */
+const KV_SERIES = "usage-series";
+/** The day's first reading of each account's weekly window, for the day's pace (see src/pace.ts). */
+const KV_PACE = "pace-day";
+/** Seats held from outside bb (`reserve`): a reload must not lose them. */
+const KV_EXTERNAL = "external-seats";
+/** Each running thread's seat budget, as its turn started: a reload counts it there (limpieza 2026-11-06, n.º 86). */
+const KV_RUNNING = "running-seats";
+/** This plugin as bb names it in a queued row's `waitingOn`. */
+const PLUGIN_ID = "claude-switcher";
+/** The model of each project's latest turn (see projectModel). */
+const KV_PROJECT_MODELS = "project-models";
+const externalHoldSchema = z.object({
+  id: z.string(),
+  account: z.string(),
+  until: z.number(),
+  at: z.number(),
+});
+const HISTORY_LIMIT = 100;
+/** A thread as bb reports it (the SDK does not export the type by name). */
+type ThreadResponse = PluginThreadEventPayloads["thread.created"]["thread"];
+/** Where a turn runs, as placeTurn leaves it (see there). */
+type TurnPlace =
+  | {
+      account: string;
+      byDefault: boolean;
+      /** The project's writes of its variable (`movesOf().envWrites`) for which it is there (Astra SEATS-R3-002, SEATS-R4-001). */
+      writes: number;
+    }
+  | "external"
+  | "unknown";
+/**
+ * The seat of a project whose variable names an account not among the ones
+ * found: nobody's, never the default's (Astra SEATS-R3-001).
+ */
+const UNKNOWN_SEAT = Symbol("unknown seat");
+/** A queued row bb removed, as `message.cancelled` reports it. */
+type CancelledEntry = PluginThreadEventPayloads["message.cancelled"]["entry"];
+/** When this plugin first ran: a project created later is new. */
+const KV_INSTALLED_AT = "installed-at";
+/** New projects already placed, kept, or pinned by the user: no longer new. */
+const KV_HANDLED_PROJECTS = "handled-projects";
+/** What each declined thread's banner is asked on (see adviceBasis), by thread. */
+const KV_ADVICE = "advice-bases";
+/** The account each project was put on by hand (see pins), by project. */
+const KV_PINS = "pins";
+/** A stored basis of a banner (see adviceBasis). */
+const storedBasisSchema = z.object({
+  projectId: z.string(),
+  model: z.string(),
+  reason: z.enum(ADVISED_DECLINES),
+  requestId: z.string(),
+  chain: z.string().nullable(),
+  at: z.number(),
+});
+/**
+ * How long a basis read back after a restart is checked against bb (see
+ * restoredHolds; code-reviewer r6, CR-L2): one judged longer ago than this
+ * is dropped without reading its thread (every window of a limit has reset
+ * since), and one whose check could not tell this many refreshes in a row
+ * (the thread could not be read, or bb's log does not say how its retry
+ * failed) is dropped at the last.
+ */
+const RESTORED_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
+const RESTORED_CHECKS = 5;
+
+/**
+ * A hidden thread (a plugin's worker, a summary): moving the whole project
+ * for it would surprise the user, and its owner decides about it. A visible
+ * thread is the user's work even when a plugin's composer opened it.
+ */
+function notTheUsersThread(
+  thread: Pick<ThreadResponse, "visibility" | "originPluginId">,
+): string | null {
+  if (thread.visibility !== "hidden") return null;
+  return typeof thread.originPluginId === "string"
+    ? `hidden thread of plugin ${thread.originPluginId}`
+    : "hidden thread";
+}
+
+const paceSchema = z.object({
+  budget: z.number(),
+  spent: z.number(),
+  dayPercent: z.number(),
+  background: z.boolean(),
+});
+const windowSchema = z.object({
+  usedPercent: z.number(),
+  resetsAt: z.number().nullable(),
+  /** The provider reported no such window: a Team seat's general weekly. */
+  absent: z.literal(true).optional(),
+  /**
+   * The answer lacked it (incomplete, or whole only for a lock): 100 % that
+   * nobody measured. The panel draws no such week (Astra r2 low).
+   */
+  missing: z.literal(true).optional(),
+});
+const accountStateSchema = z.object({
+  name: z.string(),
+  email: z.string().nullable(),
+  accountUuid: z.string().nullable(),
+  configDir: z.string().nullable(),
+  observedAt: z.number().nullable(),
+  problem: z
+    .discriminatedUnion("kind", [
+      z.object({ kind: z.literal("unauthenticated") }),
+      z.object({ kind: z.literal("error"), message: z.string() }),
+    ])
+    .nullable(),
+  usage: z
+    .object({
+      blocked: z.boolean(),
+      /** A window was missing from the answer: `blocked` means "unknown", not "out". */
+      unknown: z.boolean().optional(),
+      session: windowSchema,
+      weekly: windowSchema,
+      models: z.record(z.string(), windowSchema),
+    })
+    .nullable(),
+  // Optional: a server older than the app (during an update) sends none.
+  /** The plan behind the login (see planOf): ultra, max, team or unknown. */
+  plan: z.enum(["ultra", "max", "team", "unknown"]).optional(),
+  /** «Ultra · sin tope de 5 h», «Team»...: the same text on every screen. */
+  planLabel: z.string().optional(),
+  /** The label where room is short (the CLI's list): «Ultra · con 5 h». */
+  planShort: z.string().optional(),
+  /** Whether the account has the 5-hour window; null while its usage says nothing. */
+  fiveHour: z.boolean().nullable().optional(),
+  /** The day's pace of its weekly window; null on a Team seat or without a reset. */
+  pace: paceSchema.nullable().optional(),
+});
+const projectStateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  /** Account named by the project's CLAUDE_CONFIG_DIR variable; null = default account. */
+  account: z.string().nullable(),
+  /** The variable is there with this plugin's note (account null + owned = it names an account that is gone). */
+  owned: z.boolean(),
+  /** CLAUDE_CONFIG_DIR is set on the project (or inherited) by something other than this plugin. */
+  external: z.boolean(),
+});
+const forecastSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("runs-out"),
+    at: z.number(),
+    percentPerDay: z.number(),
+  }),
+  z.object({
+    kind: z.literal("lasts"),
+    until: z.number(),
+    percentPerDay: z.number(),
+  }),
+  z.object({ kind: z.literal("steady") }),
+  z.object({ kind: z.literal("unknown") }),
+]);
+const dayStartSchema = z.object({
+  at: z.number(),
+  usedPercent: z.number(),
+  resetsAt: z.number(),
+});
+const seriesSchema = z.object({
+  resetsAt: z.number().nullable(),
+  points: z.array(z.tuple([z.number(), z.number()])),
+});
+const loginStatusSchema = z.object({
+  name: z.string(),
+  phase: z.enum(["running", "done", "failed", "cancelled"]),
+  startedAt: z.number(),
+  manualUrl: z.string().nullable(),
+  wantsCode: z.boolean(),
+  message: z.string().nullable(),
+});
+const switchRecordSchema = z.object({
+  // A time a Date can hold: the history prints it as a date.
+  at: z.number().min(0).max(8.64e15),
+  threadId: z.string(),
+  projectId: z.string(),
+  from: z.string(),
+  to: z.string(),
+  reason: z.string(),
+});
+const stateSchema = z.object({
+  accounts: z.array(accountStateSchema),
+  projects: z.array(projectStateSchema),
+  defaultAccountName: z.string(),
+  preferredModel: z.string(),
+  autoSwitch: z.boolean(),
+  /** The day's pace holds background work off the accounts saved for the user (the setting; off by default). */
+  paceHoldsBackground: z.boolean(),
+  lastSwitch: switchRecordSchema.nullable(),
+  /** The account the switch policy would pick now; null when none can run. */
+  bestAccount: z.string().nullable(),
+  /** Every move of a project, latest first (at most HISTORY_LIMIT). */
+  history: z.array(switchRecordSchema),
+  /** Per account, per window ("weekly" or a model's display name): how it stands at the pace measured. */
+  forecasts: z.record(z.string(), z.record(z.string(), forecastSchema)),
+  /** The login started from bb, running or just ended; null when none. */
+  login: loginStatusSchema.nullable(),
+  /** Per account: its seats (capacity 0 = no limit), taken and waited for. */
+  seats: z
+    .record(
+      z.string(),
+      z.object({
+        capacity: z.number(),
+        running: z.number(),
+        reserved: z.number(),
+        queued: z.array(
+          z.object({ threadId: z.string(), title: z.string().nullable() }),
+        ),
+        /** Seats held from outside bb (`reserve`), by id; only when there is one. */
+        external: z
+          .array(z.object({ id: z.string(), until: z.number() }))
+          .optional(),
+      }),
+    )
+    .optional(),
+});
+export type State = z.infer<typeof stateSchema>;
+export type SwitchRecord = z.infer<typeof switchRecordSchema>;
+
+export const rpcContract = defineRpcContract({
+  /** `project`: a view's project, read fresh when the shared read lacks it. */
+  accounts_list: {
+    input: z.object({ project: z.string() }).nullable(),
+    output: stateSchema,
+  },
+  accounts_refresh: { input: z.null(), output: stateSchema },
+  project_set_account: {
+    input: z.object({ projectId: z.string(), account: z.string().nullable() }),
+    output: stateSchema,
+  },
+  /** Log an account in from bb: a new directory under the accounts dir, or a listed account without a login. */
+  account_login_start: {
+    input: z.object({ name: z.string().max(255) }),
+    output: stateSchema,
+  },
+  account_login_code: {
+    input: z.object({ code: z.string().max(4096) }),
+    output: stateSchema,
+  },
+  /** Stops a running login; when none runs, forgets the last outcome. */
+  account_login_cancel: { input: z.null(), output: stateSchema },
+  /** The Opus advice the thread shows over its composer; null: none. */
+  thread_advice: {
+    input: z.object({ threadId: z.string() }),
+    output: z.object({ text: z.string().nullable() }),
+  },
+});
+
+export interface PluginDeps {
+  credentialIo: CredentialIo;
+  accountsIo: AccountsIo;
+  loginIo: LoginIo;
+  /**
+   * The filesystem a moved project's Claude Code sessions are shared on
+   * (see src/sessions.ts); none: they are not.
+   */
+  sessionsIo?: SessionsIo;
+  /** Path of bin/open-login.sh, the BROWSER a login runs. */
+  loginHelper: string;
+  /** The plugin process's environment, inherited by a login. */
+  env: Record<string, string | undefined>;
+  now: () => number;
+  random: () => number;
+}
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) return resolve();
+    const timer = setTimeout(done, ms);
+    function done() {
+      signal.removeEventListener("abort", done);
+      clearTimeout(timer);
+      resolve();
+    }
+    signal.addEventListener("abort", done, { once: true });
+  });
+}
+
+/** What a project's CLAUDE_CONFIG_DIR variable says, as bb reports it. */
+interface ProjectAccount {
+  /** The account it names, or null: none, or one that no longer exists. */
+  account: string | null;
+  /** The variable is there and carries this plugin's note. */
+  owned: boolean;
+  /** Set by hand or inherited: never touched by this plugin. */
+  external: boolean;
+}
+
+export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
+  const settings = bb.settings.define({
+    accountsDir: {
+      type: "string",
+      label: "Accounts directory",
+      description:
+        "Every subdirectory holding a .claude.json is one Claude Code account (its CLAUDE_CONFIG_DIR). The CLI's default directory (~/.claude, login in ~/.claude.json) is always the default account.",
+      default: "~/.claude-accounts",
+    },
+    defaultAccountName: {
+      type: "string",
+      label: "Name of the default account (~/.claude)",
+      default: "default",
+    },
+    preferredModel: {
+      type: "string",
+      label: "Preferred model",
+      description:
+        "Model display name as the usage API reports it (e.g. Fable). Only accounts that can still run it are chosen; when none can, the retry waits for the first moment an account can run it again. Empty = any.",
+      default: "",
+    },
+    autoSwitch: {
+      type: "boolean",
+      label:
+        "Choose accounts automatically: start new projects on the best one, and switch when a turn hits a subscription limit",
+      default: true,
+    },
+    switchAheadPercent: {
+      type: "number",
+      label: "Switch ahead of the limit at (%)",
+      description:
+        "After each turn of a thread in the preferred model (every thread when none is set), when the project's account is at or above this share of its session, weekly or preferred-model window and another account is below it, the project moves there before a turn fails. Threads sent with another model use the setting below. Needs the automatic choice above. 0 = off (switch only when a turn fails).",
+      default: 0,
+    },
+    switchAheadOtherPercent: {
+      type: "number",
+      label: "Switch ahead of the limit, threads in another model (%)",
+      description:
+        "For a thread sent with a model other than the preferred one (e.g. Opus while Fable is preferred): after each turn, when the project's account is at or above this share of its session, weekly or that model's window and another account is below it, the project moves there before a turn fails. Needs the automatic choice above; no effect without a preferred model. 0 = off.",
+      default: 0,
+    },
+    maximumWaitHours: {
+      type: "number",
+      label: "Maximum automatic wait (hours)",
+      description:
+        "When no account is free, retry at the earliest reset only if it is closer than this. 0 = no limit.",
+      default: 6,
+    },
+    refreshMinutes: {
+      type: "number",
+      label: "Usage refresh interval (minutes)",
+      description: "Never below 1.",
+      default: 5,
+    },
+    claudeCommand: {
+      type: "string",
+      label: "Claude Code executable",
+      description:
+        "Used to log an account in from bb (`claude auth login`). A name looked up in the bb server's PATH, or a full path.",
+      default: "claude",
+    },
+    // ponytail: 4 and 2 are a guess, not measured per thread. Each usage
+    // sample carries the seats taken then (KV_SEATS, `bb claude-switcher
+    // seats`): with a week of them, the share of a window per hour and per
+    // seat sets these defaults.
+    seatsMax: {
+      type: "number",
+      label: "Threads at once per Max account",
+      description:
+        "A thread whose turn is about to start waits when the project's account already runs this many; it starts as soon as one of them ends, first come first served. With the automatic choice on, a project with no turn under way moves to another account with a free seat rather than wait. 0 = no limit.",
+      default: 4,
+    },
+    seatsTeam: {
+      type: "number",
+      label: "Threads at once per Team account",
+      description:
+        "A thread whose turn is about to start waits when the project's account already runs this many; it starts as soon as one of them ends, first come first served. With the automatic choice on, a project with no turn under way moves to another account with a free seat rather than wait. 0 = no limit.",
+      default: 2,
+    },
+    // Aitor 2026-11-05 («hay cuota de claude … Tenemos opus!»); 50 is the
+    // delegating session's default, not a measure. Since 2026-11-06 («los
+    // Opus tienen que salir por Team sí o sí») Haiku's only.
+    otherModelUpTo: {
+      type: "number",
+      label: "Haiku on a Max or Ultra account that keeps the preferred one, up to (%)",
+      description:
+        "A Haiku turn runs on a Max or Ultra account that can still run the preferred model only while that account's weekly and preferred-model windows are both at or under this share. Opus and Sonnet never run on a Max or Ultra account while Fable is preferred, whatever this says: they run on a Team seat or wait for one. 0 = never.",
+      default: 50,
+    },
+    // Aitor 2026-11-07 («la cuenta de viaulab, se sigue disparando el tema
+    // la cuenta semanal y fable se queda sin gastar»). 0.5 is our own count
+    // (a regression of the week's reads, ±40 %: reparto-fable PLAN §0), not
+    // a measure made for it; real reads will set it.
+    reserveShare: {
+      type: "number",
+      label: "Weekly the preferred model spends per point of its own window",
+      description:
+        "How many points of a Max or Ultra account's general weekly one point of the preferred model's own window spends (about 0.5 for Fable, our own count from a week of reads, ±40 %). With it, the room another model has on an account is (100 − weekly) − this × (100 − preferred): the preferred model goes to the account with the most such room, in steps of 10 points, and to a Team seat last; below 0, the account reaches 100 % of its weekly with the preferred model left unspent.",
+      default: 0.5,
+    },
+    // PLAN §B3 (reparto-fable, 2026-11-07); 20 is our own count, not a measure.
+    roomMoveGap: {
+      type: "number",
+      label: "Move a preferred-model turn for room, gap (points)",
+      description:
+        "Before a turn in the preferred model on a Max or Ultra account whose room for another model (see above) is below 0, the project moves to a Max or Ultra account with a free seat and at least this many points more room. With another thread of the project at work, only below −10 and not within the minutes below of its last move. Needs the automatic choice. 0 or less = never.",
+      default: 20,
+    },
+    // PLAN §B5 (reparto-fable, 2026-11-07) [SUPUESTO]: Aitor 2026-11-07,
+    // «tampoco quiero que hilos se queden parados … el trabajo prima», with
+    // «los Opus tienen que salir por Team sí o sí» (2026-11-06) as the order.
+    // 15 is our own count, not a measure.
+    opusOverflowRoom: {
+      type: "number",
+      label: "Opus and Sonnet on a Max or Ultra with no Team seat able, from room (points)",
+      description:
+        "With no Team seat able to take an Opus or Sonnet turn (quota and a free seat), the turn runs on the Max or Ultra account with the most room for another model (see above) if that room is at least this, after every Team seat; with none, it waits for a Team seat as before, and a turn held that way longer than the maximum automatic wait takes the Ultra with the most room whatever it is. 100 = never (Opus and Sonnet only by Team, as before).",
+      default: 15,
+    },
+    stuckMoveMinutes: {
+      type: "number",
+      label: "A project moved for a seat with threads at work stays (minutes)",
+      description:
+        "A thread that would wait for a seat on its project's account moves the project at once to another account with a free seat, also while other threads of the project are at work (their next turns run there): to one with seats for all of them when the project asks for more than its account has, else to a seat for the thread. A project so moved is not moved again that way within this many minutes. Needs the automatic choice. 0 = never: a project with a thread at work stays.",
+      default: 10,
+    },
+    // On by default (Aitor, 2026-11-03: «que no sea un "máximo 4"»).
+    seatsFollowLoad: {
+      type: "boolean",
+      label: "Seats follow each account's load",
+      description:
+        "A Max or Ultra account takes one thread more than the setting above while its day's pace is under 50 % and its 5-hour session (when it has one) under 40 %, and one fewer once its pace passes 90 %; each change is in the history. Off: the setting above, always.",
+      default: true,
+    },
+    dayStartHour: {
+      type: "number",
+      label: "Hour the day starts (Europe/Madrid)",
+      description:
+        "Each day from this hour gets an even share of what is left of an account's weekly window; the panel and `health` show how much of it is spent. With the setting below on, at 90 % of it the account takes no more background work.",
+      default: 9,
+    },
+    // Off by default (Aitor, 2026-10-31): the pace is measured and shown,
+    // and holds nothing back until this is switched on.
+    paceHoldsBackground: {
+      type: "boolean",
+      label: "Keep accounts that spent today's share for your own threads",
+      description:
+        "An Ultra or Max account at 90 % of its share of the day takes no more background work (threads another thread, an automation or a plugin opens) unless no other account can run it; your own threads are never held back by it. Off: the day's share is only shown.",
+      default: false,
+    },
+    loginPrivateWindow: {
+      type: "boolean",
+      label:
+        "Open logins in a private Chrome window on macOS (so they do not reuse the browser's Claude session)",
+      default: true,
+    },
+  });
+  /**
+   * Per thread, the Opus advice of its latest judgment when nothing queued
+   * carries it (a decline: beyond the maximum wait, or no account will
+   * free): the thread shows it in a banner over its composer (D3; Sol
+   * B2-004), which schedules nothing and changes no model. Replaced by
+   * every judgment of the thread, dropped when a turn of it starts, when it
+   * is archived, and when the automatic choice is switched off (the advice
+   * names where the placement would send an Opus turn, and none is placed
+   * then). Asked again after every usage refresh (see reviseAdvice), also
+   * after a restart: what it is asked on is kept in storage (adviceBasis).
+   */
+  const shownAdvice = new Map<string, string>();
+  /**
+   * Per thread whose latest judgment declined its turn in a way that can
+   * tell it (see mayAdviseOpus), what that judgment judged on: after every
+   * usage refresh its banner is asked again (see reviseAdvice). Dropped
+   * with the banner's generation (a turn of the thread, its archiving or
+   * deletion, the automatic choice switched off) and by any later judgment
+   * of the thread that is no such decline. Kept in storage (KV_ADVICE): a
+   * restart reads them back, and the first refresh asks each again once bb
+   * says its thread still waits on the turn judged (Sol B2-R5-002).
+   */
+  type AdviceBasis = {
+    projectId: string;
+    /** The failed turn's model. */
+    model: string;
+    decision: Extract<SwitchDecision, { kind: "decline" }>;
+    /** The failed turn's request. */
+    requestId: string;
+    /** The first request of its retry chain (see loggedTurn); null: unknown. */
+    chain: string | null;
+    /**
+     * When it was judged; a later judgment of the same decline keeps it
+     * (see judgedAdvice). Read back after a restart, it says how long the
+     * basis is checked (see RESTORED_MAX_AGE_MS).
+     */
+    at: number;
+    /** Read back from storage, not yet checked against bb (see reviseAdvice). */
+    restored?: boolean;
+    /** Checks of it read back that could not tell, in a row (see restoredHolds). */
+    misses?: number;
+    /** The refresh whose pass counted the latest of them (see refreshes). */
+    missedIn?: number;
+  };
+  const adviceBasis = new Map<string, AdviceBasis>();
+  /** Writes in order, like the history; awaited by nothing that decides. */
+  let basesWrites: Promise<void> = Promise.resolve();
+  /** What storage keeps of a basis (see storedBasisSchema). */
+  function storedOf(basis: AdviceBasis) {
+    return {
+      projectId: basis.projectId,
+      model: basis.model,
+      reason: basis.decision.reason,
+      requestId: basis.requestId,
+      chain: basis.chain,
+      at: basis.at,
+    };
+  }
+  function storeBases(): void {
+    const snapshot = Object.fromEntries(
+      [...adviceBasis].map(([threadId, basis]) => [threadId, storedOf(basis)]),
+    );
+    basesWrites = basesWrites.then(async () => {
+      try {
+        await bb.storage.kv.set(KV_ADVICE, snapshot);
+      } catch (error) {
+        bb.log.warn(
+          `could not store what the banners are asked on (a restart reads them as they were): ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    });
+  }
+  /**
+   * Per thread, the generation its judgments belong to: a judgment takes
+   * the thread's as it begins and shows or takes away the banner only while
+   * that still holds. A turn of the thread starting, its archiving and the
+   * automatic choice switched off begin a new one, so a judgment that was
+   * reading meanwhile says nothing when its reads end (Sol B2-R2-003). One
+   * counter for every thread, only growing: switching off moves them all.
+   * In memory, a number per thread whose turn started since the plugin did.
+   */
+  let generations = 0;
+  let switchedOffIn = 0;
+  const generationOf = new Map<string, number>();
+  function generation(threadId: string): number {
+    return Math.max(generationOf.get(threadId) ?? 0, switchedOffIn);
+  }
+  /** A turn of the thread starts, or it is archived or deleted: its banner goes, and what its pending judgments found with it. */
+  function adviceOver(threadId: string): void {
+    generationOf.set(threadId, ++generations);
+    if (adviceBasis.delete(threadId)) storeBases();
+    showAdvice(threadId, null);
+  }
+  /**
+   * What a judgment of the thread shows, and what the refreshes ask again
+   * (`basis`: its decline's; null for any other judgment): only in the
+   * generation it began in (see generation).
+   */
+  function judgedAdvice(
+    threadId: string,
+    text: string | null,
+    judgedIn: number,
+    basis: AdviceBasis | null,
+  ): void {
+    if (judgedIn !== generation(threadId)) return;
+    if (basis !== null) {
+      // The same decline judged again (a rescue on every refresh): when it
+      // was first judged stays, and storage, which keeps nothing else that
+      // changed, is not written (code-reviewer r6, N3).
+      const before = adviceBasis.get(threadId);
+      const kept = before === undefined ? basis : { ...basis, at: before.at };
+      const same =
+        before !== undefined &&
+        JSON.stringify(storedOf(kept)) === JSON.stringify(storedOf(before));
+      adviceBasis.set(threadId, same ? kept : basis);
+      if (!same) storeBases();
+    } else if (adviceBasis.delete(threadId)) storeBases();
+    showAdvice(threadId, text);
+  }
+  function showAdvice(threadId: string, text: string | null): void {
+    // Never a banner with the automatic choice off. A second guard (a
+    // mutant of it is equivalent): every text comes from a judgment that
+    // began with it on or from a basis kept since, and switching off ends
+    // both (see generation, adviceBasis) (code-reviewer r4, N1).
+    if (text !== null && !current.autoSwitch) return;
+    if ((shownAdvice.get(threadId) ?? null) === text) return;
+    if (text === null) shownAdvice.delete(threadId);
+    else shownAdvice.set(threadId, text);
+    bb.realtime.publish(ADVICE_CHANGED, { threadId });
+  }
+  let current = await settings.get();
+  /**
+   * The reserved model and how much of it a turn in another model may spend
+   * (see ChoiceOptions.reserveSpareUpTo). `projectId`: a Team without a
+   * session on another machine still takes its turns (code-reviewer r1, low 3).
+   */
+  const reserveOf = (projectId?: string) => ({
+    reserveModel: current.preferredModel,
+    reserveSpareUpTo: current.otherModelUpTo,
+    reserveShare: current.reserveShare,
+    opusOverflowRoom: current.opusOverflowRoom,
+    noTeamTakes: (model: string) => noTeamTakes(model, undefined, undefined, projectId),
+  });
+  settings.onChange((next) => {
+    const moved =
+      next.accountsDir !== current.accountsDir ||
+      next.defaultAccountName !== current.defaultAccountName;
+    // What the views show of the pace: whether an account is kept for the
+    // user, and the day it counts (Codex PACE-R1-001).
+    const paceShown =
+      next.paceHoldsBackground !== current.paceHoldsBackground ||
+      next.dayStartHour !== current.dayStartHour;
+    // The default is `~/.claude` whatever it is called: renamed, it keeps
+    // the seats it has taken (Astra SEATS-R08).
+    if (next.defaultAccountName !== current.defaultAccountName)
+      seatKeys.set(next.defaultAccountName, seatKey(current.defaultAccountName));
+    current = next;
+    // A Map visits no key deleted before its turn: the current one may go.
+    if (!next.autoSwitch) {
+      switchedOffIn = ++generations;
+      if (adviceBasis.size > 0) {
+        adviceBasis.clear();
+        storeBases();
+      }
+      for (const threadId of shownAdvice.keys()) showAdvice(threadId, null);
+    }
+    // Found again (and stale measurements pruned) on next use: an account of
+    // the old directory must not be picked.
+    if (moved) accounts = [];
+    // An open view asks again now, not at the next refresh.
+    if (paceShown) bb.realtime.publish(CHANGED, { at: deps.now() });
+  });
+
+  const collector = new UsageCollector({
+    io: deps.credentialIo,
+    now: deps.now,
+    onMeasured: (name, measurement) => {
+      noteSeatSample(name, measurement);
+      notePaceDay(name, measurement);
+      noteCeiling(name);
+    },
+    warn: (message) => bb.log.warn(message),
+  });
+  /** What the accounts' look skips is said once per load: 2373 of the 10000 lines the log keeps were one such message (2026-11-03). */
+  const skipsSaid = new Set<string>();
+  const warnOnce = (message: string) => {
+    if (skipsSaid.has(message)) return;
+    skipsSaid.add(message);
+    bb.log.warn(message);
+  };
+  let accounts: Account[] = [];
+  /**
+   * Each account's seat budget by name, kept while the accounts are looked
+   * for again (a directory changed, the default renamed): see seatKey.
+   */
+  const seatKeys = new Map<string, string>();
+  /** The budgets known to be a login's (an accountUuid), not a name's. */
+  const loginKeys = new Set<string>();
+  /**
+   * An account's seat budget: its login (accountUuid), so two directories
+   * logged into one account share it and a renamed default keeps it; its
+   * name while the login is unknown (Astra SEATS-R08).
+   */
+  function seatKey(name: string): string {
+    return (
+      accounts.find((a) => a.name === name)?.accountUuid ??
+      seatKeys.get(name) ??
+      name
+    );
+  }
+  /** The names a seat budget goes by: one, or the aliases of one login. */
+  function namesOf(key: string): string[] {
+    const names = accounts
+      .filter((a) => seatKey(a.name) === key)
+      .map((a) => a.name);
+    for (const [name, k] of seatKeys)
+      if (k === key && !names.includes(name)) names.push(name);
+    return names.length > 0 ? names : [key];
+  }
+  /** The accounts found: each name's budget is its login's from now on, with what was counted under it before. */
+  function noteSeatKeys(): void {
+    for (const a of accounts) {
+      if (a.accountUuid === null) continue;
+      const was = seatKeys.get(a.name) ?? a.name;
+      if (was !== a.accountUuid && !loginKeys.has(was)) {
+        seats.rekey(was, a.accountUuid);
+        // Where the running turns started moves with it (Codex RS-004).
+        let moved = false;
+        for (const m of [runningSeats, startedBefore])
+          for (const [id, k] of m)
+            if (k === was) {
+              m.set(id, a.accountUuid);
+              moved = true;
+            }
+        if (moved) storeRunning();
+      }
+      seatKeys.set(a.name, a.accountUuid);
+      loginKeys.add(a.accountUuid);
+    }
+  }
+  /**
+   * Seats per account (see src/seats.ts): a thread's turn starts only with
+   * one. Kept in memory: a reload counts again the threads bb says run
+   * (see rebuildSeats). Keyed by seatKey; every change is announced.
+   */
+  const seats = new Seats(
+    (key) => seatCapacity(key).capacity,
+    seatsChanged,
+    deps.now,
+  );
+  /**
+   * The seats of the budget `key`: the setting for its kind, and on a Max
+   * or Ultra account one more or one fewer by its load when
+   * seatsFollowLoad is on (see seatCeiling). Synchronous, as the seats
+   * need it.
+   */
+  function seatCapacity(key: string): { capacity: number; why: string | null } {
+    // Of the directories logged into the same account, the latest measured
+    // (Codex PLAZAS-R2-004): a stale alias does not keep its seats.
+    const name = namesOf(key)
+      .map((n) => ({ n, at: collector.get(n)?.observedAt ?? -Infinity }))
+      .reduce((a, b) => (b.at > a.at ? b : a)).n;
+    const usage = collector.get(name)?.usage;
+    const kind = accounts.find((a) => a.name === name)?.kind;
+    const weeklyAbsent = usage?.weekly.absent === true;
+    const sessionAbsent = usage?.session.absent === true;
+    const base = capacityFor(kind, weeklyAbsent, current, sessionAbsent);
+    if (current.seatsFollowLoad !== true || usage === null || usage === undefined)
+      return { capacity: base, why: null };
+    const session = settle({ ...usage, name }, deps.now()).session;
+    return seatCeiling(
+      base,
+      isTeamSeat(kind, weeklyAbsent, sessionAbsent),
+      paceFor(name)?.dayPercent ?? null,
+      session.absent === true ? null : session.usedPercent,
+    );
+  }
+  /** Each budget's seats as last measured, to tell a change (see noteCeiling). */
+  const ceilings = new Map<string, number>();
+  /**
+   * After a measurement of `name`: its seats changed by its load go in the
+   * history, with why (Aitor 2026-11-03), and a seat more lets the next in
+   * line in.
+   */
+  function noteCeiling(name: string): void {
+    const key = seatKey(name);
+    const { capacity, why } = seatCapacity(key);
+    // First measured: against the setting.
+    const previous = ceilings.get(key) ?? capacityFor(
+      accounts.find((a) => a.name === name)?.kind,
+      collector.get(name)?.usage?.weekly.absent === true,
+      current,
+      collector.get(name)?.usage?.session.absent === true,
+    );
+    ceilings.set(key, capacity);
+    if (capacity === previous) return;
+    const reason = `Seats on ${name}: ${previous} → ${capacity}, ${why ?? "back to the setting"}`;
+    bb.log.info(reason);
+    void addHistory({
+      at: deps.now(),
+      threadId: "",
+      projectId: "",
+      from: name,
+      to: name,
+      reason,
+    });
+    if (capacity > previous) admitWaiting();
+  }
+  /**
+   * Per account, a sample of its seats and usage each time it is measured,
+   * a week of them (see noteSeatSample): what share of a window an hour of
+   * one seat costs (`bb claude-switcher seats`).
+   */
+  const seatSamples: Record<string, SeatSample[]> = {};
+  /** The seat history's database (src/historial.ts); null when it could not be opened. */
+  let historial: HistorialDb | null = null;
+  /** A write to the seat history; a failure is logged, never thrown. */
+  // ponytail: a write that fails is lost to the history (logged), also when
+  // the database comes back: `history --dias` reads the database only. Tope
+  // conocido (Astra ASIENTOS-R5-002); the way up is to keep the rows that
+  // failed for 7 days and write them again once it answers.
+  function toHistorial(what: string, write: (db: HistorialDb) => void): void {
+    if (historial === null) return;
+    try {
+      write(historial);
+    } catch (error) {
+      bb.log.warn(
+        `could not write ${what} to the seat history: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  /**
+   * The samples older than a week go, by the clock and not only as their
+   * account is measured again: as they load, are stored and are listed
+   * (Astra SEATS-R2-006). An account left with none goes too.
+   */
+  function pruneSeatSamples(): void {
+    const now = deps.now();
+    for (const [name, samples] of Object.entries(seatSamples)) {
+      const kept = samples.filter(([t]) => now - t <= SEAT_SAMPLES_MS);
+      if (kept.length === 0) delete seatSamples[name];
+      else seatSamples[name] = kept;
+    }
+  }
+  /** Titles of the threads waiting for a seat, for the list. */
+  const seatTitles = new Map<string, string | null>();
+  /**
+   * Turns announced without a reservation whose project's account was not
+   * read in time, by thread: their project. Each refresh reads it again and
+   * counts the seat (Astra SEATS-R3-003); the turn's end forgets it.
+   */
+  const unseated = new Map<string, string>();
+  /** Waits of a thread's message because its project's account could not be read for its seat (Astra SEATS-R01). */
+  const seatReadWaits = new Map<string, number>();
+  /**
+   * Each time a message of the thread takes a seat or a place in a queue,
+   * one more: a cancellation acts only on the place it found (Astra
+   * SEATS-R4-003). Forgotten as the thread goes.
+   */
+  const seatGenerations = new Map<string, number>();
+  /**
+   * The seats are counted after the load (see rebuildSeats): till then a
+   * turn waits, so none is let in against an empty count (Astra SEATS-R02).
+   */
+  let seatsReady = false;
+  /** The count after the load (see rebuildSeats), for `reserve` to wait for. */
+  let seatsCounted: Promise<void> = Promise.resolve();
+  /**
+   * The last count read every thread it found running (Codex ULTRA-R2-003):
+   * a count that ended with a read failed (seatsReady all the same) leaves
+   * seats it could not tell, and `reserve` grants none on it.
+   */
+  let seatsComplete = false;
+  /** A count is under way (see countSeats). */
+  let seatsCounting = false;
+  /** A message waited for the count: bb is asked again once it is done. */
+  let seatsAwaited = false;
+  /**
+   * The threads whose turn ended (or that went) while the seats are being
+   * counted: none of them is counted as running (Astra SEATS-R03). Null
+   * when no count is under way.
+   */
+  let endedWhileCounting: Set<string> | null = null;
+  const freeSeats = (name: string) => seats.free(seatKey(name));
+  /** Seats free on the account beyond those owed to the threads already waiting there. */
+  const seatRoom = (name: string) =>
+    seats.free(seatKey(name)) - seats.queue(seatKey(name)).length;
+  /** The project of each thread that took a seat or a place in a queue (see projectSeated). */
+  const seatProjects = new Map<string, string>();
+  /**
+   * Threads with a turn under way, by thread: their project. Set as bb
+   * announces the turn, before any read, so a turn whose seat could not be
+   * counted is still known to run; gone as it ends, fails or the thread
+   * goes (Codex PLAZAS-002).
+   */
+  const turnsUnderWay = new Map<string, string>();
+  /**
+   * Per project, the turns started by any of its Claude threads, hidden
+   * ones too: a rebalance moves a project only if none started while it
+   * looked (Codex PLAZAS-R3-002).
+   */
+  const turnsStarted = new Map<string, number>();
+  /** Another thread of the project has a turn under way, or holds a seat for one about to start. */
+  function projectSeated(projectId: string, except: string): boolean {
+    for (const [threadId, project] of turnsUnderWay)
+      if (project === projectId && threadId !== except) return true;
+    for (const [threadId, project] of seatProjects)
+      if (
+        project === projectId &&
+        threadId !== except &&
+        seats.seatOf(threadId) !== null
+      )
+        return true;
+    return false;
+  }
+  /**
+   * When each thread was told to start, first and last, until it starts, loses
+   * its seat or is told to wait. Another plugin may hold a turn this one lets
+   * go, asked again and again: that ties the project for SEAT_TTL_MS from the
+   * first time, then only for STARTING_MS from each, the time the turn that
+   * goes starts in (code-reviewer r6, r8).
+   */
+  const toldToStart = new Map<string, { first: number; last: number }>();
+  /**
+   * Another thread of the project told to start and not started. A turn reads the project's variable as it starts:
+   * moving the project now would start it on another account, one that may
+   * keep the reserve or not run its model (Astra IR5-001). A seat only
+   * admitted from a queue does not count: its turn is placed again before it
+   * starts. Measured from the log: half of the turns start within 1 s, 5 of
+   * 242 past SEAT_TTL_MS (docs/revision-2026-11-04/PLAN.md).
+   */
+  function siblingAdmitted(projectId: string, threadId?: string): string | null {
+    const now = deps.now();
+    for (const [sibling, project] of seatProjects) {
+      if (project !== projectId || sibling === threadId) continue;
+      const told = toldToStart.get(sibling);
+      if (
+        told !== undefined &&
+        (now - told.first < SEAT_TTL_MS || now - told.last < STARTING_MS)
+      )
+        return sibling;
+    }
+    return null;
+  }
+  /** A thread of the project holds a seat or waits for one. */
+  function projectAtSeats(projectId: string): boolean {
+    for (const [threadId, project] of seatProjects)
+      if (
+        project === projectId &&
+        (seats.seatOf(threadId) !== null || seats.position(threadId) !== null)
+      )
+        return true;
+    return false;
+  }
+  /**
+   * The thread's turn would wait for a seat on `name`, and no other thread
+   * of its project holds one: such a project moves to an account with a
+   * free seat (Aitor 2026-11-03, «necesitaría abrir más hilos»). A project
+   * with a turn under way stays: moving it moves that thread too.
+   */
+  function seatsFullFor(thread: ThreadResponse, name: string): boolean {
+    const key = seatKey(name);
+    if (seats.seatOf(thread.id)?.account === key) return false;
+    const queue = seats.queue(key);
+    const ahead = queue.findIndex((q) => q.threadId === thread.id);
+    return (
+      seats.free(key) <= (ahead === -1 ? queue.length : ahead) &&
+      !projectSeated(thread.projectId, thread.id)
+    );
+  }
+  /** The seats the thread's project holds or waits for on the seat budget `key`, the thread's own included. */
+  function projectWants(thread: ThreadResponse, key: string): number {
+    let wanted = 1;
+    for (const [threadId, project] of seatProjects)
+      if (
+        project === thread.projectId &&
+        threadId !== thread.id &&
+        (seats.seatOf(threadId)?.account === key ||
+          seats.position(threadId)?.account === key)
+      )
+        wanted += 1;
+    return wanted;
+  }
+  /** When each project last moved for a crowded seat (see crowded): not again within stuckMoveMinutes. */
+  const crowdedMoves = new Map<string, { at: number; to: string }>();
+  /** When each project last moved for room (see roomMove in src/switch.ts). */
+  const roomMoves = new Map<string, number>();
+  /** The project moved for a seat or for room within stuckMoveMinutes. */
+  function movedRecently(projectId: string, now: number): boolean {
+    const limit = current.stuckMoveMinutes * 60_000;
+    const last = Math.max(crowdedMoves.get(projectId)?.at ?? -Infinity, roomMoves.get(projectId) ?? -Infinity);
+    return now - last <= limit;
+  }
+  /**
+   * Projects with a move under way, from its decision until it is recorded
+   * (crowdedMoves), with when it was decided, and projects with a turn held
+   * meanwhile: asked again as the move ends, landed or not (Astra
+   * ASIENTOS-R4-001/002). No hold outlives SEAT_TTL_MS, the time
+   * siblingAdmitted ties a project for from the first time: a write that
+   * never answers held the project for ever (Astra r5 medium 3).
+   */
+  const seatMoving = new Map<string, { since: number }>();
+  const heldForMove = new Set<string>();
+  function moving(projectId: string): boolean {
+    const hold = seatMoving.get(projectId);
+    return hold !== undefined && deps.now() - hold.since < SEAT_TTL_MS;
+  }
+  /**
+   * The move each dispatch holds its project for, till that dispatch ends,
+   * given up or not, and the move's variable write has ended: the move's
+   * history is stored after its write, and until its thread is told to
+   * start no siblingAdmitted protects it (Astra r4 medium 2). Set before
+   * anything is awaited (Astra r5 medium 3). A write still under way when
+   * the dispatch gives up would land on top of a sibling's move (Astra r6
+   * medium 2).
+   */
+  const heldMoves = new Map<
+    string,
+    { projectId: string; hold: { since: number }; written: Promise<unknown> }
+  >();
+  /** Ends `hold`, unless another move holds the project since. */
+  function releaseMove(projectId: string, hold: { since: number }): void {
+    if (seatMoving.get(projectId) === hold) seatMoving.delete(projectId);
+    wakeHeldForMove(projectId);
+  }
+  function wakeHeldForMove(projectId: string): void {
+    if (moving(projectId) || movesOf(projectId).inFlight > 0) return;
+    if (!heldForMove.delete(projectId)) return;
+    void bb.experimental_hooks
+      .recheck("message.dispatch")
+      .catch((error: unknown) =>
+        bb.log.warn(
+          `bb not asked again after a move of project ${projectId}: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
+  }
+  /**
+   * The thread's turn would wait for a seat on `name` while another thread
+   * of its project is at work there, so seatsFullFor keeps the project
+   * (Aitor 2026-11-05, «hay demasiadas cosas atascadas … Tenemos opus!»):
+   * it moves anyway, its siblings' next turns with it, at once (Aitor
+   * 2026-11-05 13:15, «que cuando termine una … salga otra»: 0.2.41 waited
+   * stuckMoveMinutes first): to an account with seats for all when the
+   * project asks for more than the account has ("crowded", first ask
+   * only), else to a seat for the thread ("stuck"). Also for the reserved
+   * model since 0.2.48 (Aitor 2026-11-07, «tampoco quiero que hilos se queden
+   * parados … el trabajo prima»): its targets rank by room, a Team seat
+   * last (see ChoiceOptions.reserveShare). Null: neither, or
+   * stuckMoveMinutes is 0, or the project moved so within it.
+   */
+  function crowded(
+    thread: ThreadResponse,
+    name: string,
+    model: string,
+    now: number,
+  ):
+    | {
+        kind: "stuck" | "crowded";
+        minutes: number;
+        wanted: number;
+        capacity: number;
+        /** A sibling's turn is under way, not only told to start. */
+        working: boolean;
+      }
+    | null {
+    const limit = current.stuckMoveMinutes * 60_000;
+    if (!(limit > 0) || !current.autoSwitch) return null;
+    const key = seatKey(name);
+    if (seats.seatOf(thread.id)?.account === key) return null;
+    const queue = seats.queue(key);
+    const ahead = queue.findIndex((q) => q.threadId === thread.id);
+    if (seats.free(key) > (ahead === -1 ? queue.length : ahead)) return null;
+    if (!projectSeated(thread.projectId, thread.id)) return null;
+    // One rest between moves, whichever rule made the last one: a seat or
+    // room (Codex r1 medium 3).
+    if (movedRecently(thread.projectId, now)) return null;
+    const wanted = projectWants(thread, key);
+    const capacity = seats.snapshot([key])[key]!.capacity;
+    const since = seats.waitingSince(thread.id);
+    const minutes = since === null ? 0 : Math.floor((now - since) / 60_000);
+    let working = false;
+    for (const [threadId, project] of turnsUnderWay)
+      if (project === thread.projectId && threadId !== thread.id) working = true;
+    // Seats for all first, at the first ask only: placeTurn falls back to
+    // a seat for the thread alone when no account has them.
+    if (since === null && capacity > 0 && wanted > capacity)
+      return { kind: "crowded", minutes, wanted, capacity, working };
+    return { kind: "stuck", minutes, wanted, capacity, working };
+  }
+  /**
+   * Whose seat a turn of a project on `at` takes (Astra SEATS-R3-001): its
+   * account's (by name), the default's when it has no variable, none (null)
+   * on an account set outside this plugin, and UNKNOWN_SEAT when the
+   * variable names an account not among the ones found: never the default's.
+   */
+  function seatFor(at: ProjectAccount): string | typeof UNKNOWN_SEAT | null {
+    if (at.external) return null;
+    if (at.owned && at.account === null) return UNKNOWN_SEAT;
+    return at.account ?? current.defaultAccountName;
+  }
+  /** A seat budget for the log: the account's name. */
+  function seatName(key: string): string {
+    return namesOf(key)[0]!;
+  }
+  function occupancy(key: string): string {
+    const s = seats.snapshot([key])[key]!;
+    const taken = s.running + s.reserved + (s.external?.length ?? 0);
+    return `${taken}/${s.capacity === 0 ? "∞" : s.capacity} taken, ${s.queued.length} waiting`;
+  }
+  /**
+   * The card hears every change of the seats (it has no clock of its own),
+   * the changes of SEATS_CHANGED_MS as one, and only when the seats did
+   * change (Astra SEATS-R09).
+   */
+  let seatsAnnounce: ReturnType<typeof setTimeout> | null = null;
+  let seatsAnnounced = "";
+  function seatsChanged(): void {
+    seatsAnnounce ??= setTimeout(() => {
+      seatsAnnounce = null;
+      const now = JSON.stringify(seats.snapshot());
+      if (now === seatsAnnounced) return;
+      seatsAnnounced = now;
+      bb.realtime.publish(CHANGED, { at: deps.now() });
+    }, SEATS_CHANGED_MS);
+  }
+  bb.onDispose(() => {
+    if (seatsAnnounce !== null) clearTimeout(seatsAnnounce);
+  });
+  /**
+   * Reservations whose turn never started are freed, and every free seat
+   * goes to the first in its account's queue; bb is asked again at once
+   * when someone got one, or when `freed` (a seat just ended) and threads
+   * wait on other accounts: one whose project can move to the seat goes
+   * now, not at its next SEAT_RECHECK_MS (Aitor 2026-11-05, «que cuando
+   * termine una … salga otra»).
+   */
+  function admitWaiting(freed = false): void {
+    const now = deps.now();
+    const held = seats.holds().length;
+    const expired = seats.expire(now, SEAT_TTL_MS);
+    if (expired.length > 0) freed = true;
+    for (const key of expired)
+      bb.log.info(
+        `a seat reserved on ${seatName(key)} expired (its turn did not start, or its hold from outside bb ended); ${occupancy(key)}`,
+      );
+    if (seats.holds().length !== held) storeHolds();
+    const admitted = seats.admitAll(now);
+    for (const threadId of admitted) {
+      const key = seats.seatOf(threadId)?.account ?? "?";
+      bb.log.info(
+        `thread ${threadId}: admitted to a seat on ${seatName(key)}; ${occupancy(key)}`,
+      );
+    }
+    const waitingElsewhere =
+      freed &&
+      (heldForMove.size > 0 ||
+        Object.values(seats.snapshot()).some((s) => s.queued.length > 0));
+    if (admitted.length > 0 || waitingElsewhere)
+      void bb.experimental_hooks
+        .recheck("message.dispatch")
+        .catch((error: unknown) =>
+          bb.log.warn(
+            `bb not asked again after a seat freed: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        );
+  }
+  /**
+   * The seat budget each running turn started on (KV_RUNNING): its project
+   * may move while it works, and the turn keeps running where it started.
+   */
+  const runningSeats = new Map<string, string>();
+  /** Read at load: where each turn running before the reload started. */
+  let startedBefore = new Map<string, string>();
+  let runningWrites: Promise<void> = Promise.resolve();
+  /**
+   * The stored starts could not be read at load: nothing is written over
+   * them (Astra R4-001) until a later write reads them, keeps the ones of
+   * turns not ended since and writes them with this session's (Astra
+   * RS-007).
+   */
+  let runningUnread = false;
+  /** Turns that ended while the stored starts were unread. */
+  const endedWhileUnread = new Set<string>();
+  let runningRead: Promise<void> | null = null;
+  function readRunningAgain(): void {
+    runningRead ??= (async () => {
+      try {
+        const parsed = z
+          .record(z.string(), z.string())
+          .safeParse(await bb.storage.kv.get<unknown>(KV_RUNNING));
+        if (parsed.success)
+          for (const [id, k] of Object.entries(parsed.data))
+            if (!runningSeats.has(id) && !endedWhileUnread.has(id))
+              startedBefore.set(id, k);
+        runningUnread = false;
+        endedWhileUnread.clear();
+        storeRunning();
+      } catch {
+        // Still unread: the next write tries again.
+      } finally {
+        runningRead = null;
+      }
+    })();
+  }
+  function storeRunning(): void {
+    if (runningUnread) {
+      readRunningAgain();
+      return;
+    }
+    // What a count could not confirm yet stays (Codex RS-002).
+    const snapshot = Object.fromEntries([...startedBefore, ...runningSeats]);
+    runningWrites = runningWrites.then(async () => {
+      try {
+        await bb.storage.kv.set(KV_RUNNING, snapshot);
+      } catch (error) {
+        bb.log.warn(
+          `could not store where the running turns started (a reload counts them on their project's account): ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    });
+  }
+  /** Writes in order (see storeHolds). */
+  let holdsWrites
+: Promise<void> = Promise.resolve();
+  /**
+   * The seats held from outside bb (or `snapshot`, what they are to be),
+   * to storage (KV_EXTERNAL), in order: true when written. A failure is
+   * logged; reserve and unreserve say it (Codex ULTRA-R2-004).
+   */
+  function storeHolds(snapshot = seats.holds()): Promise<boolean> {
+    const written = holdsWrites.then(async () => {
+      try {
+        await bb.storage.kv.set(KV_EXTERNAL, snapshot);
+        return true;
+      } catch (error) {
+        bb.log.warn(
+          `could not store the seats held from outside bb (a reload forgets them): ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return false;
+      }
+    });
+    holdsWrites = written.then(() => {});
+    return written;
+  }
+  /** The hold `id` as it counts now, if any. */
+  function holdOf(id: string) {
+    return seats.holds().find((h) => h.id === id);
+  }
+  /** The thread's turn ended or the thread went: its seat goes to the next in line. */
+  function releaseSeat(threadId: string, why: string): void {
+    seatTitles.delete(threadId);
+    seatProjects.delete(threadId);
+    toldToStart.delete(threadId);
+    unseated.delete(threadId);
+    endedWhileCounting?.add(threadId);
+    const counted = runningSeats.delete(threadId);
+    if (runningUnread) endedWhileUnread.add(threadId);
+    if (startedBefore.delete(threadId) || counted) storeRunning();
+    const key = seats.release(threadId);
+    if (key === null) return;
+    bb.log.info(
+      `thread ${threadId}: seat on ${seatName(key)} released (${why}); ${occupancy(key)}`,
+    );
+    admitWaiting(true);
+  }
+  /** The thread's turn started on the seat budget `key`: its seat runs there. */
+  /**
+   * seats.reserve, and a seat the thread gave up on another account (a move
+   * that failed, or went elsewhere) goes at once to the threads waiting
+   * (Codex ASIENTOS-R2-001).
+   */
+  function reserveSeat(threadId: string, key: string, now: number): boolean {
+    const had = seats.seatOf(threadId)?.account;
+    const got = seats.reserve(threadId, key, now);
+    if (had !== undefined && had !== key) admitWaiting(true);
+    return got;
+  }
+  function confirmSeat(threadId: string, key: string): void {
+    unseated.delete(threadId);
+    // A turn sent now, past the checkpoint, after its project moved: its
+    // seat on the old account goes to the threads waiting there (Codex
+    // ASIENTOS-R3-002).
+    const had = seats.seatOf(threadId)?.account;
+    const { over } = seats.confirm(threadId, key, deps.now());
+    runningSeats.set(threadId, key);
+    storeRunning();
+    if (had !== undefined && had !== key) admitWaiting(true);
+    seatTitles.delete(threadId);
+    const line = `thread ${threadId}: running on ${seatName(key)}${over ? " over capacity" : ""}; ${occupancy(key)}`;
+    if (over) bb.log.warn(line);
+    else bb.log.info(line);
+  }
+  /**
+   * The turns not counted as they started (see unseated): counted now, each
+   * read within DISPATCH_LIMIT_MS; one still unread waits for the next
+   * refresh (Astra SEATS-R3-003).
+   */
+  async function countUnseated(): Promise<void> {
+    await Promise.all(
+      [...unseated].map(async ([threadId, projectId]) => {
+        const read = await within(
+          projectAccount(projectId),
+          DISPATCH_LIMIT_MS,
+          `thread ${threadId}: its project's account not read to count its seat`,
+        );
+        // Ended, or counted, meanwhile.
+        if (typeof read !== "object" || unseated.get(threadId) !== projectId)
+          return;
+        unseated.delete(threadId);
+        if (seats.seatOf(threadId) !== null) return;
+        seatProjects.set(threadId, projectId);
+        const seat = seatFor(read.value);
+        if (seat === UNKNOWN_SEAT) {
+          bb.log.debug(
+            `thread ${threadId}: no seat counted: its project's account is not among the accounts found`,
+          );
+          return;
+        }
+        if (seat !== null) confirmSeat(threadId, seatKey(seat));
+      }),
+    );
+  }
+  /**
+   * Before a turn of the thread starts on `account`: null when it has a
+   * seat there, else the wait bb holds its message on.
+   */
+  function seatWait(
+    thread: ThreadResponse,
+    account: string,
+    /** Why this account and not the project's, for a turn queued elsewhere: what the log and the thread say. */
+    why?: string,
+  ): MessageDispatchHookDecision | null {
+    admitWaiting();
+    const now = deps.now();
+    const key = seatKey(account);
+    seatProjects.set(thread.id, thread.projectId);
+    const queuedBefore = seats.position(thread.id) !== null;
+    if (reserveSeat(thread.id, key, now)) {
+      seatTitles.delete(thread.id);
+      if (queuedBefore)
+        bb.log.info(
+          `thread ${thread.id}: admitted to a seat on ${account}; ${occupancy(key)}`,
+        );
+      return null;
+    }
+    seatTitles.set(thread.id, thread.title ?? null);
+    const s = seats.snapshot([key])[key]!;
+    const ahead = (seats.position(thread.id)?.position ?? 1) - 1;
+    const taken = `${s.running + s.reserved + (s.external?.length ?? 0)}/${s.capacity} threads running, ${ahead} ahead in the queue`;
+    const reason =
+      why === undefined
+        ? `Waiting for a seat on ${account}: ${taken}`
+        : `Waiting for a seat on ${account} for ${why}; ${taken}`;
+    bb.log.info(`thread ${thread.id}: ${reason}`);
+    return { action: "wait", reason, sendAt: now + SEAT_RECHECK_MS };
+  }
+  /** By account name: aliases of one login show the same seats. */
+  function seatsState(): NonNullable<State["seats"]> {
+    const out: NonNullable<State["seats"]> = {};
+    const snapshot = seats.snapshot(accounts.map((a) => seatKey(a.name)));
+    const named = new Set<string>();
+    const show = (name: string, key: string) => {
+      const s = snapshot[key]!;
+      named.add(key);
+      out[name] = {
+        ...s,
+        queued: s.queued.map((threadId) => ({
+          threadId,
+          title: seatTitles.get(threadId) ?? null,
+        })),
+      };
+    };
+    for (const a of accounts) show(a.name, seatKey(a.name));
+    for (const key of Object.keys(snapshot))
+      if (!named.has(key)) show(seatName(key), key);
+    return out;
+  }
+  /** The views' latest read of every project's account (see sharedProjects). */
+  let projectsRead: {
+    at: number;
+    value: Promise<State["projects"]>;
+    /** The project a view needed when this read was made for it. */
+    need?: string;
+  } | null = null;
+  /** When each account last refused a turn (in memory: a reload forgets it). */
+  const refusedAt = new Map<string, number>();
+  /** The HTTP status of each account's latest refusal, as bb gave it (null: none), for health. */
+  const refusedHttp = new Map<string, number | null>();
+  /**
+   * The machine of each thread whose refusal is being judged, and whether it
+   * counts towards a run of refusals there (see stormFrom): not when its text
+   * is the API's own error body. Set by the failure's handler.
+   */
+  const refusalSeen = new Map<string, { host: string; counts: boolean }>();
+  /** The refusals that set an account aside, per machine, within REFUSAL_STORM_MS of the latest (see stormFrom). */
+  const refusalsOn = new Map<string, Array<{ account: string; at: number }>>();
+  /**
+   * The machines whose refusals are taken as theirs, not the accounts', since
+   * REFUSAL_STORM_ACCOUNTS accounts refused there within REFUSAL_STORM_MS
+   * (see stormFrom); open until REFUSAL_STORM_MS without a refusal there.
+   */
+  const storms = new Map<string, { since: number; opened: number; last: number }>();
+  /** Each machine's run of network blocks, for its one STUCK line (see noteBlock). */
+  const blockRuns = new Map<string, { since: number; last: number }>();
+  /**
+   * The usage limits turns just failed on, per account and scope, each
+   * until the reset its 429 reported (none reported: LIMIT_NO_RESET_MS).
+   * Scope "": the whole account's; a model's name, lower case: that model's
+   * alone, its own window explaining the limit (see limitScope; Astra r3
+   * medium 2). Until then such an account is no Team seat that takes a turn
+   * held off the reserve (noTeamTakes), no destination of a retry
+   * (decideSwitch), of a placement before a turn nor of a wait moved up
+   * (moveUpWait; Astra r5 medium 1), and it is out for such a turn where the
+   * dispatch, the placement and the rescue ask whether it can run (teamOut,
+   * blockedOff, stranded; Astra r6 to r8): its read lags the 429, so no read
+   * ends a mark (Astra r4 high 1). Elsewhere (otherThatRuns, the judge of a
+   * thread left in error) its numbers decide. In memory: a reload forgets
+   * them.
+   */
+  const limitedAt = new Map<string, Map<string, number>>();
+  /**
+   * Until when `name`'s marks stand for a turn in `model` (see limitedAt);
+   * null: none does. With the project, a session lost on one of its
+   * machines too (see sessionLostOn): every path a limit's mark keeps an
+   * account from keeps it from such a project as well (sin-login
+   * 2026-11-10).
+   */
+  function limitedUntil(name: string, model: string, projectId?: string): number | null {
+    const now = deps.now();
+    let until: number | null = sessionLostOn(name, projectId)?.until ?? null;
+    for (const [scope, end] of limitedAt.get(name) ?? [])
+      if ((scope === "" || scope === model.toLowerCase()) && now < end)
+        until = Math.max(until ?? end, end);
+    return until;
+  }
+  /**
+   * Marks `name` for `scope` till `until`; a later 429 of the same scope
+   * never shortens it: one with no reset reported does not cut a reset
+   * known (see limitedAt; Astra r5 medium 2).
+   */
+  function markLimited(name: string, scope: string, until: number): void {
+    const marks = limitedAt.get(name) ?? new Map<string, number>();
+    marks.set(scope, Math.max(marks.get(scope) ?? until, until));
+    limitedAt.set(name, marks);
+  }
+  /**
+   * Whose a usage limit on `account` is, by its read as the turn in `model`
+   * failed: that model's when its own window is full while the session and
+   * the general weekly are not (a Fable window at 100 % takes no Team seat
+   * from Opus); otherwise, or unread, the whole account's (null).
+   */
+  function limitScope(account: AccountUsage | undefined, model: string, now: number): string | null {
+    if (account === undefined || account.unknown === true || model === "") return null;
+    const a = settle(account, now);
+    const own = modelWindow(a, model);
+    return own !== undefined &&
+      own.usedPercent >= 100 &&
+      a.session.usedPercent < 100 &&
+      a.weekly.usedPercent < 100
+      ? model
+      : null;
+  }
+  function refusing(name: string): boolean {
+    const at = refusedAt.get(name);
+    return at !== undefined && deps.now() - at < REFUSAL_MS;
+  }
+  /**
+   * A turn ended well on `name`: its refusal's mark goes if it stood
+   * REFUSAL_PROOF_MS or more (2026-11-13: accounts that ran turns well kept
+   * their mark for hours). Nothing else ends it before REFUSAL_MS.
+   */
+  function refusalBack(name: string): void {
+    const at = refusedAt.get(name);
+    if (at === undefined || !refusing(name)) return;
+    const after = deps.now() - at;
+    if (after < REFUSAL_PROOF_MS) return;
+    refusedAt.delete(name);
+    bb.log.info(
+      `account ${name}: a turn ended well on it ${Math.round(after / 1000)} s after its refusal; taken as back`,
+    );
+  }
+  /**
+   * The accounts a turn failed on for want of a session, per machine (bb's
+   * host id; "" when the thread's machine could not be told), and when
+   * (Aitor 2026-11-10: «no han cambiado de cuentas»). A login is a
+   * machine's: the same account may run on another, so the mark keeps the
+   * account from the projects with threads on that machine only (see
+   * hostsOf). It ends after SESSION_LOST_MS, when a turn ends well on the
+   * account there (thread.idle) or when the account is picked by hand. In
+   * memory: a reload forgets them, and the next failure marks again.
+   */
+  const sessionLostAt = new Map<string, Map<string, number>>();
+  /** The machine of each thread whose latest failure was a session lost, as it was judged (see markRefused). */
+  const failedHost = new Map<string, string>();
+  /** The thread's machine, from its project's environments; "" when they do not say. */
+  async function threadHost(thread: ThreadResponse): Promise<string> {
+    const environments = await readHosts(thread.projectId);
+    return environments?.find((e) => e.id === thread.environmentId)?.hostId ?? "";
+  }
+  /** The accounts as `measured`, those a session lost keeps from the project blocked (see sessionLostOn). */
+  function sessionBlocked<A extends AccountUsage>(measured: A[], projectId: string): A[] {
+    return measured.map((a) => {
+      if (sessionLostOn(a.name, projectId) === null) return a;
+      const { unknown: _, ...known } = a;
+      return { ...known, blocked: true } as A;
+    });
+  }
+  /** Each project's machines as its environments said, and when (see hostsOf). */
+  const hostsRead = new Map<
+    string,
+    { at: number; hosts: ReadonlySet<string>; byEnvironment: ReadonlyMap<string, string> }
+  >();
+  const hostsReading = new Map<string, Promise<unknown>>();
+  /** The machines' names, as bb lists them, for the texts (see hostLabel). */
+  const hostNames = new Map<string, string>();
+  /**
+   * The machines the project's threads run on, as its environments say:
+   * null when not read (yet), and a mark then keeps the account from it,
+   * whatever its machine. Read in the background, never awaited where a
+   * decision is taken: a missing or old read is asked for, and the next
+   * decision has it.
+   */
+  function hostsOf(projectId: string): ReadonlySet<string> | null {
+    const read = hostsRead.get(projectId);
+    if (read === undefined || deps.now() - read.at >= HOSTS_FRESH_MS) void readHosts(projectId);
+    return read?.hosts ?? null;
+  }
+  /** Reads the project's machines (see hostsOf); the environments too, for the thread's. */
+  function readHosts(projectId: string) {
+    const under = hostsReading.get(projectId);
+    if (under !== undefined)
+      return under as Promise<Awaited<ReturnType<typeof bb.sdk.environments.list>> | null>;
+    const run = (async () => {
+      try {
+        const environments = await bb.sdk.environments.list({ projectId });
+        hostsRead.set(projectId, {
+          at: deps.now(),
+          hosts: new Set(environments.filter((e) => e.status !== "destroyed").map((e) => e.hostId)),
+          byEnvironment: new Map(environments.map((e) => [e.id, e.hostId])),
+        });
+        return environments;
+      } catch (error) {
+        bb.log.warn(
+          `project ${projectId}: its machines not read (an account without a session on one is kept from it, whatever its machine): ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return null;
+      } finally {
+        hostsReading.delete(projectId);
+      }
+    })();
+    hostsReading.set(projectId, run);
+    return run;
+  }
+  /**
+   * Until when a session lost keeps `name` from the project (see
+   * sessionLostAt), and on which machine; null when none does. No project
+   * given, or its machines unknown: any machine's mark does.
+   */
+  function sessionLostOn(name: string, projectId?: string): { host: string; until: number } | null {
+    const marks = sessionLostAt.get(name);
+    if (marks === undefined) return null;
+    const now = deps.now();
+    const hosts = projectId === undefined ? null : hostsOf(projectId);
+    let found: { host: string; until: number } | null = null;
+    for (const [host, at] of marks) {
+      const until = at + SESSION_LOST_MS;
+      if (now >= until) {
+        marks.delete(host);
+        continue;
+      }
+      if (host !== "" && hosts !== null && !hosts.has(host)) continue;
+      if (found === null || until > found.until) found = { host, until };
+    }
+    if (marks.size === 0) sessionLostAt.delete(name);
+    return found;
+  }
+  /** Every usage limit's mark still standing, per account and scope (see limitedAt), for health. */
+  function limitMarks(): Array<{ account: string; scope: string; until: number }> {
+    const now = deps.now();
+    return [...limitedAt].flatMap(([account, marks]) =>
+      [...marks].filter(([, until]) => now < until).map(([scope, until]) => ({ account, scope, until })),
+    );
+  }
+  /** Every session lost still standing, per account and machine (see sessionLostAt), for health. */
+  function sessionMarks(): Array<{ account: string; host: string; hostName: string; until: number }> {
+    const now = deps.now();
+    return [...sessionLostAt].flatMap(([account, marks]) =>
+      [...marks]
+        .filter(([, at]) => now < at + SESSION_LOST_MS)
+        .map(([host, at]) => ({ account, host, hostName: hostLabel(host), until: at + SESSION_LOST_MS })),
+    );
+  }
+  /** A machine by its name, for the texts; its id when bb did not name it. */
+  function hostLabel(host: string): string {
+    return host === "" ? "una máquina sin identificar" : (hostNames.get(host) ?? host);
+  }
+  /**
+   * Every project's machines, read in the background once a session is
+   * lost: the decisions that follow keep the account from the projects on
+   * that machine only, and an unread project from all of them.
+   */
+  async function readAllHosts(): Promise<void> {
+    try {
+      const listed = await bb.sdk.projects.list({ includePersonal: true });
+      await Promise.all(listed.map((p) => readHosts(p.id)));
+    } catch (error) {
+      bb.log.warn(
+        `the projects' machines not read (an account without a session on one is kept from every unread project): ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  /** The machines' names (see hostLabel), read once per machine not named yet. */
+  async function nameHost(host: string): Promise<void> {
+    if (host === "" || hostNames.has(host)) return;
+    try {
+      for (const h of await bb.sdk.hosts.list()) hostNames.set(h.id, h.name);
+    } catch (error) {
+      bb.log.debug(
+        `the machines' names not read: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  /**
+   * `name` ran a turn well, started `since`, on `host` (undefined: a
+   * machine not read), or was picked by hand (no turn: on every machine). A
+   * turn clears the marks set when it had already started, or later: its
+   * machine's, and the one on a machine unknown, which no other turn could
+   * (code-reviewer r1, lows 1 and 2).
+   */
+  function sessionBack(name: string, turn?: { host: string | undefined; since: number }): void {
+    const marks = sessionLostAt.get(name);
+    if (marks === undefined) return;
+    const gone: string[] = [];
+    for (const [host, at] of marks)
+      if (turn === undefined || ((host === "" || host === turn.host) && turn.since >= at)) gone.push(host);
+    if (gone.length === 0) return;
+    for (const host of gone) marks.delete(host);
+    if (marks.size === 0) sessionLostAt.delete(name);
+    bb.log.info(
+      `account ${name}: its session is taken as back${turn === undefined ? "" : ` on ${gone.map(hostLabel).join(", ")}`}`,
+    );
+  }
+  /**
+   * The text of the failed turn's error in bb's log; null when the log does
+   * not name the turn or cannot be read. bb's failure event carries no
+   * text: a session lost (isSessionLoss) or a network block
+   * (isNetworkBlock) is told by this alone. Only an error before the
+   * thread's next turn is the turn's: its failure may wait in the project's
+   * queue while another turn of the thread runs and fails (Codex Astra r1
+   * NET-002).
+   */
+  async function failureText(threadId: string, requestId: string): Promise<string | null> {
+    try {
+      const turns = await bb.sdk.threads.events.list({
+        threadId,
+        types: ["client/turn/requested"],
+        order: "desc",
+        limit: "20",
+      });
+      const at = turns.findIndex(
+        (r) => r.type === "client/turn/requested" && r.data.requestId === requestId,
+      );
+      if (at === -1) return null;
+      const own = turns[at]!;
+      // Newest first: the turn requested right after this one, if any.
+      const next = turns[at - 1];
+      const errors = await bb.sdk.threads.events.list({
+        threadId,
+        types: ["provider/error"],
+        order: next === undefined ? "desc" : "asc",
+        limit: next === undefined ? "1" : "50",
+        afterSeq: String(own.seq),
+      });
+      const failed =
+        next === undefined ? errors[0] : errors.filter((r) => r.seq < next.seq).at(-1);
+      if (failed?.type !== "provider/error") return null;
+      return `${failed.data.message} ${failed.data.detail ?? ""}`;
+    } catch (error) {
+      bb.log.warn(
+        `thread ${threadId}: its failure not read from bb's log (a session lost or a network block is not told): ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+  /** Why a project moves off `name` before a turn, for the history. */
+  function whyOut(name: string, model: string, projectId?: string): string {
+    if (loggedOut(name)) return "is not logged in";
+    const lost = sessionLostOn(name, projectId);
+    if (lost !== null) return `sin sesión en ${hostLabel(lost.host)}`;
+    if (refusing(name)) return "refused a turn";
+    // The project's machines only: another's session lost is no limit of it
+    // (code-reviewer r1, low 5).
+    if (limitedUntil(name, model, projectId) !== null)
+      return `answered ${model === "" ? "a turn" : model} with a usage limit that has not reset yet`;
+    if (reservedFor(name, model, undefined, projectId) && canRunHere(name, model))
+      return `would spend ${current.preferredModel}'s weekly`;
+    const known = measuredAccounts(model).find((a) => a.name === name);
+    if ((known === undefined || known.unknown === true) && unreadKeepsReserve(name))
+      return `is not read yet and may spend ${current.preferredModel}'s weekly`;
+    return model === "" ? "is out of usage" : `cannot run ${model}`;
+  }
+  /** `name` is measured able to run `model`, the reserve apart. */
+  function canRunHere(name: string, model: string): boolean {
+    const known = measuredAccounts(model).find((a) => a.name === name);
+    return (
+      known !== undefined &&
+      known.unknown !== true &&
+      bestAccount([known], model, deps.now()) === name
+    );
+  }
+  /** Switches applied per project, for the grace window after each one. */
+  const recentSwitches = new Map<
+    string,
+    {
+      at: number;
+      to: string;
+      /**
+       * The thread whose failure caused it: its next failure is on the new
+       * account. Null for a placement: the placing thread's first turn may
+       * have started on the old account, so it gets the grace retry too.
+       */
+      threadId: string | null;
+      /** Set when it was a wait: leftovers wait for the same reset. */
+      sendAt: number | undefined;
+      /**
+       * Set when the wait told its thread to switch to Opus (see
+       * opusInstead), for a turn in that model: a leftover in that model
+       * that waits for the same reset is told it too, as the latest reads
+       * have it (see followsAdvice).
+       */
+      advice?: { model: string };
+      /** Threads already given their one grace retry. */
+      graced: Set<string>;
+    }
+  >();
+  /**
+   * When each project last changed account for real, through applyAccount
+   * (recentSwitches also holds a wait on the same account): a wait queued
+   * before it waited on the account the project was on before.
+   */
+  const accountChangedAt = new Map<string, number>();
+  /** One turn.failed or thread.created handler per project at a time: handlers run concurrently. */
+  const projectQueue = new Map<string, Promise<void>>();
+  async function inProjectQueue(
+    projectId: string,
+    work: () => Promise<void>,
+  ): Promise<void> {
+    const previous = projectQueue.get(projectId) ?? Promise.resolve();
+    const run = previous.catch(() => undefined).then(work);
+    projectQueue.set(projectId, run);
+    try {
+      await run;
+    } finally {
+      if (projectQueue.get(projectId) === run) projectQueue.delete(projectId);
+    }
+  }
+
+  /**
+   * A project is new when bb created it after this plugin first ran and it
+   * was never placed, kept or pinned since. Null when the install time cannot
+   * be read or stored: then no project is moved for being new.
+   */
+  let installedAt: number | null = null;
+  const handled = new Set<string>();
+  const cancelled = new Map<string, string>();
+  /**
+   * Removals of queued rows by this plugin, under way or landed without
+   * bb's word yet, by row id: bb's `message.cancelled` for one of them is
+   * this plugin's own, unless the removal fails because the row was gone
+   * before (the user's, then; `held` keeps the event until the removal
+   * answers) (Codex r8, IR8-002).
+   */
+  const ownDeletes = new Map<
+    string,
+    { done: boolean; held: CancelledEntry | null }
+  >();
+  try {
+    const stored = await bb.storage.kv.get<unknown>(KV_INSTALLED_AT);
+    if (typeof stored === "number") {
+      installedAt = stored;
+    } else {
+      await bb.storage.kv.set(KV_INSTALLED_AT, deps.now());
+      installedAt = deps.now();
+    }
+    const raw = await bb.storage.kv.get<unknown>(KV_HANDLED_PROJECTS);
+    const list = z.array(z.string()).safeParse(raw);
+    if (list.success) for (const id of list.data) handled.add(id);
+    else if (raw !== undefined && raw !== null)
+      bb.log.warn(
+        "the list of projects already placed is unreadable; starting it again",
+      );
+    const rawCancelled = await bb.storage.kv.get<unknown>(KV_CANCELLED);
+    const byHand = z.record(z.string(), z.string()).safeParse(rawCancelled);
+    if (byHand.success)
+      for (const [threadId, requestId] of Object.entries(byHand.data))
+        cancelled.set(threadId, requestId);
+    else if (rawCancelled !== undefined && rawCancelled !== null)
+      bb.log.warn(
+        "the list of retries cancelled by hand is unreadable; starting it again",
+      );
+  } catch (error) {
+    installedAt = null;
+    bb.log.warn(
+      `could not read the plugin's storage; new projects will not be placed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  /** Latest first. Unreadable storage starts it again: a list, not a decision. */
+  let history: SwitchRecord[] = [];
+  try {
+    // Record by record: one that cannot be read does not take the rest along.
+    const stored = await bb.storage.kv.get<unknown>(KV_HISTORY);
+    // No history yet: a version before it kept only the last switch.
+    const records = Array.isArray(stored)
+      ? stored
+      : stored == null
+        ? [await bb.storage.kv.get<unknown>(KV_LAST_SWITCH)].filter(
+            (record) => record != null,
+          )
+        : [];
+    history = records
+      .flatMap((record) => {
+        const parsed = switchRecordSchema.safeParse(record);
+        return parsed.success ? [parsed.data] : [];
+      })
+      .slice(0, HISTORY_LIMIT);
+    const dropped = Math.min(records.length, HISTORY_LIMIT) - history.length;
+    if (dropped > 0 || (stored != null && !Array.isArray(stored)))
+      bb.log.warn(
+        `the stored history of moves had ${dropped > 0 ? `${dropped} unreadable record${dropped === 1 ? "" : "s"}` : "an unreadable shape"}; kept the rest`,
+      );
+  } catch (error) {
+    bb.log.warn(
+      `could not read the history of moves; starting it again: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  /** Usage samples per account and window, inside the window's current reset. */
+  let series: Record<string, Record<string, Series>> = {};
+  try {
+    // Account by account, for the same reason.
+    const stored = await bb.storage.kv.get<unknown>(KV_SERIES);
+    const byAccount = z.record(z.string(), z.unknown()).safeParse(stored);
+    const unreadable: string[] = [];
+    for (const [name, value] of Object.entries(
+      byAccount.success ? byAccount.data : {},
+    )) {
+      const parsed = z.record(z.string(), seriesSchema).safeParse(value);
+      if (parsed.success) series[name] = parsed.data;
+      else unreadable.push(name);
+    }
+    if (unreadable.length > 0 || (stored != null && !byAccount.success))
+      bb.log.warn(
+        `the stored usage samples ${unreadable.length > 0 ? `of ${unreadable.join(", ")}` : ""} could not be read; their forecast starts again`,
+      );
+  } catch (error) {
+    bb.log.warn(
+      `could not read the usage samples; starting them again: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  /** The day's first reading of each account's weekly window (see src/pace.ts). */
+  let paceDay: Record<string, DayStart> = {};
+  try {
+    const parsed = z
+      .record(z.string(), dayStartSchema)
+      .safeParse(await bb.storage.kv.get<unknown>(KV_PACE));
+    if (parsed.success) paceDay = parsed.data;
+  } catch (error) {
+    bb.log.warn(
+      `could not read the day's first readings; the day's pace starts again: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  // Where the turns running before the reload started.
+  try {
+    const parsed = z
+      .record(z.string(), z.string())
+      .safeParse(await bb.storage.kv.get<unknown>(KV_RUNNING));
+    if (parsed.success) startedBefore = new Map(Object.entries(parsed.data));
+  } catch (error) {
+    runningUnread = true;
+    bb.log.warn(
+      `could not read where the running turns started; they count on their project's account, and what is stored is kept for the next load: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  // The seats held from outside bb before the reload.
+  try {
+    const parsed = z
+      .array(externalHoldSchema)
+      .safeParse(await bb.storage.kv.get<unknown>(KV_EXTERNAL));
+    if (parsed.success) seats.restoreHolds(parsed.data, deps.now());
+  } catch (error) {
+    bb.log.warn(
+      `could not read the seats held from outside bb; they are not counted: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  /**
+   * The account each project was put on by hand, until an automatic move
+   * takes it elsewhere or another pick replaces it (Aitor 2026-11-05: a pick
+   * holds until the account is out for real; see PlacementInput.pinned).
+   */
+  const pins = new Map<string, string>();
+  try {
+    const parsed = z
+      .record(z.string(), z.string())
+      .safeParse(await bb.storage.kv.get<unknown>(KV_PINS));
+    if (parsed.success)
+      for (const [projectId, name] of Object.entries(parsed.data))
+        pins.set(projectId, name);
+  } catch (error) {
+    bb.log.warn(
+      `could not read the projects picked by hand; their next Opus turn is placed as any: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  let pinsWrites: Promise<void> = Promise.resolve();
+  function storePins(): void {
+    const snapshot = Object.fromEntries(pins);
+    pinsWrites = pinsWrites.then(async () => {
+      try {
+        await bb.storage.kv.set(KV_PINS, snapshot);
+      } catch (error) {
+        bb.log.warn(
+          `could not store the projects picked by hand: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    });
+  }
+  // The model of each project's latest turn (see projectModel). Not read:
+  // nothing is written over what it holds, for a later load to find.
+  let storedProjectModels: Record<string, string> = {};
+  let projectModelsRead = true;
+  try {
+    const parsed = z
+      .record(z.string(), z.string())
+      .safeParse(await bb.storage.kv.get<unknown>(KV_PROJECT_MODELS));
+    if (parsed.success) storedProjectModels = parsed.data;
+  } catch (error) {
+    projectModelsRead = false;
+    bb.log.warn(
+      `could not read the projects' models; the preferred model judges them, and they are not stored until a reload: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  // The seat history (src/historial.ts): the plugin's SQLite database, a
+  // week of it. Unopened, the samples live in memory until a reload, as
+  // before, and the history says it has none.
+  try {
+    const db = bb.storage.database();
+    bb.storage.migrate(db, HISTORIAL_MIGRATIONS);
+    historial = db;
+  } catch (error) {
+    bb.log.warn(
+      `could not open the seat history; samples are kept in memory only until a reload: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  // The seat samples kept: those of the history, and once, those 0.2.42 and
+  // before kept in kv (one of another shape, before 0.2.31's second round,
+  // is left out), which go to the history and leave kv.
+  // Each step apart: one that fails leaves the others' samples (Codex
+  // ASIENTOS-002), and kv keeps its own until the history has them all.
+  const kept = new Map<string, Map<number, SeatSample>>();
+  const keep = (name: string, s: SeatSample) => {
+    const own = kept.get(name) ?? new Map<number, SeatSample>();
+    if (!own.has(s[0])) own.set(s[0], s);
+    kept.set(name, own);
+  };
+  let fromKv: [string, SeatSample][] | null = null;
+  try {
+    const parsed = z
+      .record(z.string(), z.array(z.unknown()))
+      .safeParse(await bb.storage.kv.get<unknown>(KV_SEATS));
+    if (parsed.success) {
+      fromKv = [];
+      for (const [name, samples] of Object.entries(parsed.data))
+        for (const sample of samples) {
+          const one = seatSampleSchema.safeParse(sample);
+          if (one.success) fromKv.push([name, one.data]);
+        }
+    }
+  } catch (error) {
+    bb.log.warn(
+      `could not read the seat samples 0.2.42 kept: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  for (const [name, s] of fromKv ?? []) keep(name, s);
+  if (historial !== null) {
+    if (fromKv !== null) {
+      let imported = false;
+      try {
+        for (const [name, [at, running, reserved, session, weekly, sessionResets, weeklyResets]] of fromKv)
+          addSample(historial, { at, account: name, running, reserved, external: null, waiting: null, capacity: null, session, weekly, sessionResets, weeklyResets, preferredWeekly: null });
+        imported = true;
+      } catch (error) {
+        bb.log.warn(
+          `could not move the seat samples 0.2.42 kept to the seat history; kept in memory, and in storage for the next load: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      if (imported)
+        try {
+          await bb.storage.kv.delete(KV_SEATS);
+        } catch (error) {
+          bb.log.warn(
+            `could not delete the seat samples 0.2.42 kept (now in the seat history; the next load tries again): ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+    }
+    try {
+      pruneHistorial(historial, deps.now());
+      for (const r of readSamples(historial, deps.now() - SEAT_SAMPLES_MS))
+        keep(r.account, [r.at, r.running, r.reserved, r.session, r.weekly, r.sessionResets, r.weeklyResets]);
+    } catch (error) {
+      bb.log.warn(
+        `could not read the seat history; starting the samples again: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  for (const [name, own] of kept)
+    seatSamples[name] = [...own.values()].sort((a, b) => a[0] - b[0]);
+  pruneSeatSamples();
+  // What the banners were asked on before the restart, thread by thread:
+  // checked against bb by the first refresh (see reviseAdvice). None with
+  // the automatic choice off, which ends them all.
+  try {
+    const stored = await bb.storage.kv.get<unknown>(KV_ADVICE);
+    const byThread = z.record(z.string(), z.unknown()).safeParse(stored);
+    const entries = Object.entries(byThread.success ? byThread.data : {});
+    let unreadable = 0;
+    for (const [threadId, value] of entries) {
+      const parsed = storedBasisSchema.safeParse(value);
+      if (!parsed.success) {
+        unreadable += 1;
+        continue;
+      }
+      if (!current.autoSwitch) continue;
+      const { reason, ...rest } = parsed.data;
+      adviceBasis.set(threadId, {
+        ...rest,
+        decision: { kind: "decline", reason },
+        restored: true,
+      });
+    }
+    if (unreadable > 0 || (stored != null && !byThread.success))
+      bb.log.warn(
+        `what the banners are asked on had ${unreadable > 0 ? `${unreadable} unreadable thread${unreadable === 1 ? "" : "s"}` : "an unreadable shape"}; kept the rest`,
+      );
+    // Written again without what could not be read, so the next start
+    // reads it all and says nothing (code-reviewer r6, N1).
+    if (
+      adviceBasis.size !== entries.length ||
+      (stored != null && !byThread.success)
+    )
+      storeBases();
+  } catch (error) {
+    bb.log.warn(
+      `could not read what the banners are asked on; they come back with the next judgments: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  /** The hour the day starts in Madrid (the setting, a whole hour 0-23; 9 when unreadable). */
+  function dayHour(): number {
+    const h = Math.floor(current.dayStartHour);
+    return Number.isFinite(h) && h >= 0 && h <= 23 ? h : 9;
+  }
+  /** The day's pace of the account's weekly window now; null on a Team seat, without a reset or unmeasured. */
+  function paceFor(name: string): Pace | null {
+    const usage = collector.get(name)?.usage;
+    if (usage === null || usage === undefined) return null;
+    const now = deps.now();
+    return paceOf(settle({ ...usage, name }, now).weekly, paceDay[name], now, dayHour());
+  }
+  /**
+   * The account is saved for the user (SPEC 2026-10-30 §2): its day's pace
+   * at 90 %, or not known for a weekly window it has (no reset: nothing is
+   * spent blind). A Team seat has no general weekly: no pace holds it back.
+   */
+  /**
+   * Background work: a thread another thread, an automation or a plugin
+   * opened (the user opens the rest). Every choice of another account for
+   * it puts the accounts saved for the user last (Codex ULTRA-R01).
+   */
+  function isBackground(
+    thread: Pick<ThreadResponse, "parentThreadId" | "originPluginId">,
+  ): boolean {
+    return (
+      typeof thread.parentThreadId === "string" ||
+      typeof thread.originPluginId === "string"
+    );
+  }
+  /**
+   * savedForUser for background work while the brake is on
+   * (paceHoldsBackground); nothing otherwise: the user's own threads, and
+   * every thread with the brake off (the default), are placed as if no
+   * account were saved. Every choice that weighs the pace asks here.
+   */
+  function paceFilter(background: boolean): {
+    savedForUser?: (name: string) => boolean;
+  } {
+    return background && current.paceHoldsBackground === true
+      ? { savedForUser }
+      : {};
+  }
+  function savedForUser(name: string): boolean {
+    const usage = collector.get(name)?.usage;
+    if (usage === null || usage === undefined) return false;
+    if (usage.weekly.absent === true) return false;
+    return paceFor(name)?.background !== true;
+  }
+  let seriesWrites: Promise<void> = Promise.resolve();
+  /**
+   * Note the measured windows of every known account (the weekly one and
+   * each model's) and drop the accounts that are gone. One write per pass.
+   */
+  function recordSamples(): Promise<void> {
+    // No account found (an unreadable home, a directory being changed) is
+    // not every account removed: the samples wait.
+    if (accounts.length === 0) return seriesWrites;
+    const next: Record<string, Record<string, Series>> = {};
+    for (const account of accounts) {
+      const m = collector.get(account.name);
+      const own = series[account.name] ?? {};
+      if (
+        m?.usage === null ||
+        m?.usage === undefined ||
+        m.observedAt === null
+      ) {
+        if (series[account.name] !== undefined) next[account.name] = own;
+        continue;
+      }
+      // Only a fresh measurement is a sample: a failed query keeps the old usage.
+      if (!freshReading(m)) {
+        next[account.name] = own;
+        continue;
+      }
+      const windows: [
+        string,
+        { usedPercent: number; resetsAt: number | null },
+      ][] = [["weekly", m.usage.weekly], ...Object.entries(m.usage.models)];
+      const updated: Record<string, Series> = {};
+      for (const [name, w] of windows)
+        updated[name] = recordSample(own[name], {
+          at: m.observedAt,
+          usedPercent: w.usedPercent,
+          resetsAt: w.resetsAt,
+        });
+      next[account.name] = updated;
+    }
+    series = next;
+    for (const name of Object.keys(seatSamples))
+      if (next[name] === undefined) delete seatSamples[name];
+    for (const name of Object.keys(paceDay))
+      if (!accounts.some((a) => a.name === name)) delete paceDay[name];
+    const paceSnapshot = { ...paceDay };
+    const snapshot = series;
+    pruneSeatSamples();
+    toHistorial("the week's end", (db) => pruneHistorial(db, deps.now()));
+    seriesWrites = seriesWrites.then(async () => {
+      await storePaceDay(paceSnapshot);
+      try {
+        await bb.storage.kv.set(KV_SERIES, snapshot);
+      } catch (error) {
+        bb.log.warn(
+          `could not store the usage samples: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    });
+    return seriesWrites;
+  }
+  /** The day's first readings, to storage; a failure is logged, not thrown. */
+  async function storePaceDay(snapshot: Record<string, DayStart>): Promise<void> {
+    try {
+      await bb.storage.kv.set(KV_PACE, snapshot);
+    } catch (error) {
+      bb.log.warn(
+        `could not store the day's first readings: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  /**
+   * The account was measured, by whichever path (the refresh, bb's usage
+   * panel, a placement): the day's first reading of its weekly window is
+   * kept or replaced, and stored when it changes (Codex ULTRA-R03). Only a
+   * fresh measurement counts: a failed query keeps the old usage.
+   */
+  function notePaceDay(name: string, m: Measurement): void {
+    if (!freshReading(m)) return;
+    // An answer without the general weekly (incomplete: no reset) touches
+    // nothing (see nextDayStart, Codex ULTRA-R04); one that has it is a
+    // reading of the week, whatever else it lacks. A Team seat has no
+    // general weekly at all: no first reading.
+    const kept = paceDay[name];
+    const day =
+      m.usage.weekly.absent === true
+        ? undefined
+        : nextDayStart(
+            kept,
+            {
+              at: m.observedAt,
+              usedPercent: m.usage.weekly.usedPercent,
+              resetsAt: m.usage.weekly.resetsAt,
+            },
+            dayHour(),
+          );
+    if (day === kept) return;
+    if (day === undefined) delete paceDay[name];
+    else paceDay[name] = day;
+    const snapshot = { ...paceDay };
+    seriesWrites = seriesWrites.then(() => storePaceDay(snapshot));
+  }
+  /**
+   * The account was measured: a sample of its seats as they are now, with
+   * the usage it was measured at, whole in itself (Astra SEATS-R06/R07).
+   * One per account and measurement: a measurement seen again (a failed
+   * query keeps the old one) adds nothing and changes nothing.
+   */
+  function noteSeatSample(name: string, m: Measurement): void {
+    if (!freshReading(m)) return;
+    const at = m.observedAt;
+    const own = (seatSamples[name] ?? []).filter(
+      ([t]) => at - t <= SEAT_SAMPLES_MS,
+    );
+    if (own.some(([t]) => t === at)) return;
+    const key = seatKey(name);
+    const taken = seats.snapshot([key])[key]!;
+    const { session, weekly } = m.usage;
+    own.push([
+      at,
+      taken.running,
+      taken.reserved,
+      session.usedPercent,
+      weekly.absent === true ? null : weekly.usedPercent,
+      session.resetsAt,
+      weekly.absent === true ? null : weekly.resetsAt,
+    ]);
+    seatSamples[name] = own;
+    toHistorial(`a sample of ${name}`, (db) =>
+      addSample(db, {
+        at,
+        account: name,
+        running: taken.running,
+        reserved: taken.reserved,
+        external: taken.external?.length ?? 0,
+        waiting: taken.queued.length,
+        capacity: taken.capacity,
+        session: session.usedPercent,
+        weekly: weekly.absent === true ? null : weekly.usedPercent,
+        sessionResets: session.resetsAt,
+        weeklyResets: weekly.absent === true ? null : weekly.resetsAt,
+        preferredWeekly: modelWindow({ name, ...m.usage }, current.preferredModel)?.usedPercent ?? null,
+      }),
+    );
+  }
+  function forecasts(): State["forecasts"] {
+    const now = deps.now();
+    const out: State["forecasts"] = {};
+    for (const [name, windows] of Object.entries(series)) {
+      const own: Record<string, Forecast> = {};
+      for (const [w, s] of Object.entries(windows))
+        own[w] = forecastWindow(s, now);
+      out[name] = own;
+    }
+    return out;
+  }
+  // ---- Login from bb -------------------------------------------------------
+  /** What the check after a finished login found, shown with its status. */
+  let loginNote: { of: LoginStatus; text: string } | null = null;
+  function loginStatus(): State["login"] {
+    const status = login.status();
+    // The note of the very login on show: each end is its own status object.
+    return status !== null && loginNote?.of === status
+      ? { ...status, message: loginNote.text }
+      : status;
+  }
+  const login = new LoginFlow(deps.loginIo, {
+    command: () => current.claudeCommand.trim() || "claude",
+    helper: deps.loginHelper,
+    timeoutMs: LOGIN_TIMEOUT_MS,
+    now: deps.now,
+    onShared(name, linked, failed) {
+      bb.log.info(
+        linked.length === 0
+          ? `created the directory of ${name}; nothing to share from the default account's directory`
+          : `created the directory of ${name}, sharing ${linked.join(", ")} with the default account's directory`,
+      );
+      if (failed.length > 0)
+        bb.log.warn(
+          `the directory of ${name} could not share ${failed.join("; ")}: link them by hand (see the README)`,
+        );
+    },
+    onChange(status) {
+      bb.log.info(
+        `login of ${status.name}: ${status.phase}${status.message === null ? "" : ` (${status.message})`}`,
+      );
+      bb.realtime.publish(CHANGED, { at: deps.now() });
+      if (status.phase !== "done") return;
+      // The directory and its login are new: find and measure the account.
+      void (async () => {
+        try {
+          const found = await discover();
+          const account = found.find((a) => a.name === status.name);
+          if (account !== undefined) await collector.collect(account);
+          await recordSamples();
+          // Exit 0 is Claude Code's word; what it left is checked here.
+          const twin =
+            account === undefined ? null : sharedWith(account, found);
+          const text =
+            account === undefined
+              ? "Claude Code reported a login, but no account was found in its directory"
+              : collector.get(account.name)?.problem?.kind === "unauthenticated"
+                ? "Claude Code reported a login, but the account still has no login; try again"
+                : twin !== null
+                  ? `logged in to the same Claude account as ${twin}: the two share one usage. Log in again and pick another account in the browser`
+                  : null;
+          if (text !== null) {
+            loginNote = { of: status, text };
+            bb.log.warn(`login of ${status.name}: ${text}`);
+          }
+        } catch (error) {
+          const text = `the account could not be checked after its login: ${error instanceof Error ? error.message : String(error)}`;
+          loginNote = { of: status, text };
+          bb.log.warn(`login of ${status.name}: ${text}`);
+        }
+        bb.realtime.publish(CHANGED, { at: deps.now() });
+      })();
+    },
+  });
+  /**
+   * An absolute path without `.`, `..` or repeated slashes, in lower case:
+   * for comparing where two paths lead, on a disk that may ignore case.
+   */
+  function plainPath(path: string): string {
+    const parts: string[] = [];
+    for (const part of path.toLowerCase().split("/")) {
+      if (part === "" || part === ".") continue;
+      if (part === "..") parts.pop();
+      else parts.push(part);
+    }
+    return `/${parts.join("/")}`;
+  }
+  /**
+   * Where a login for `name` goes: the default account (no directory), a
+   * listed account without a login, or a new directory under the accounts
+   * dir. An account already logged in is refused: its store would be
+   * overwritten while a thread may be using it. The exception is a directory
+   * logged in to the Claude account of another one (the browser answered
+   * with the session it had): its login is the mistake to redo.
+   */
+  async function loginTarget(name: string): Promise<Account> {
+    await discover();
+    // A listed account keeps the name its directory has, whatever it is.
+    const known = accounts.find((a) => a.name === name);
+    if (known !== undefined) {
+      if (known.configDir !== null && sharedWith(known, accounts) !== null)
+        return known;
+      if (collector.get(name) === undefined) await collector.collect(known);
+      if (collector.get(name)?.problem?.kind !== "unauthenticated")
+        throw new Error(`${name} is already logged in`);
+      return known;
+    }
+    // From here the name becomes a new directory: a trust boundary.
+    if (!ACCOUNT_NAME.test(name))
+      throw new Error(
+        "an account name starts with a letter or a digit and goes on with letters, digits, dots, dashes or underscores (up to 64)",
+      );
+    if (name === "default" && name !== current.defaultAccountName)
+      throw new Error(
+        `"default" names the default account, called ${current.defaultAccountName} here; use that name`,
+      );
+    // On a disk that ignores case, `Team` IS the directory of `team`: the
+    // login would overwrite the store of an account that may be in use.
+    const lower = name.toLowerCase();
+    const twin = accounts.find((a) => a.name.toLowerCase() === lower);
+    if (twin !== undefined)
+      throw new Error(
+        `an account named ${twin.name} already exists; use that name`,
+      );
+    const dir = expandHome(
+      current.accountsDir.trim(),
+      deps.accountsIo.home,
+    ).replace(/\/+$/, "");
+    // Under ~/.claude a new name can be `projects` or `plugins`: the login
+    // would write into what every account shares, and list it as an account.
+    const own = plainPath(`${deps.accountsIo.home}/.claude`);
+    const plain = plainPath(dir);
+    if (plain === own || plain.startsWith(`${own}/`))
+      throw new Error(
+        "the accounts directory is inside the default account's directory (~/.claude); set another one to add accounts from here",
+      );
+    for (const entry of await deps.loginIo.entries(dir)) {
+      if (entry.name.toLowerCase() !== lower) continue;
+      if (entry.name !== name)
+        throw new Error(
+          `a directory named ${entry.name} already exists in the accounts directory; use that name`,
+        );
+      // A link would take the login, and what is linked into it, elsewhere.
+      if (!entry.directory)
+        throw new Error(`${name} in the accounts directory is not a directory`);
+    }
+    return {
+      name,
+      configDir: `${dir}/${name}`,
+      email: null,
+      accountUuid: null,
+    };
+  }
+  /** Writes in order, like the handled list. */
+  let historyWrites: Promise<void> = Promise.resolve();
+  function addHistory(record: SwitchRecord): Promise<void> {
+    history = [record, ...history].slice(0, HISTORY_LIMIT);
+    const snapshot = history;
+    historyWrites = historyWrites.then(async () => {
+      try {
+        await bb.storage.kv.set(KV_HISTORY, snapshot);
+      } catch (error) {
+        bb.log.warn(
+          `could not record the move in the history: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    });
+    return historyWrites;
+  }
+  /** Writes in order, so a slow write never overwrites a later, longer list. */
+  let handledWrites: Promise<void> = Promise.resolve();
+  function markHandled(projectId: string): Promise<void> {
+    if (handled.has(projectId)) return handledWrites;
+    handled.add(projectId);
+    handledWrites = handledWrites.then(async () => {
+      try {
+        await bb.storage.kv.set(KV_HANDLED_PROJECTS, [...handled]);
+      } catch (error) {
+        bb.log.warn(
+          `could not record project ${projectId} as handled: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    });
+    return handledWrites;
+  }
+
+  async function discover(): Promise<Account[]> {
+    accounts = await discoverAccounts(deps.accountsIo, {
+      accountsDir: current.accountsDir,
+      defaultAccountName: current.defaultAccountName,
+      warn: warnOnce,
+    });
+    noteSeatKeys();
+    // A measurement of an account that is gone must never be chosen.
+    collector.prune(accounts);
+    // Which account a project's note names depends on the accounts found.
+    projectsRead = null;
+    return accounts;
+  }
+
+  /**
+   * The banners' pass under way (see reviseAdvice), and whether one was
+   * asked for since it began. The pass only tells, so nothing that decides
+   * waits for it (Sol B2-R5-003): a refresh asks for it and goes on. One at
+   * a time: asked while one runs, it runs once more after it, on the reads
+   * of then.
+   */
+  let bannerPass: Promise<void> | null = null;
+  let passAgain = false;
+  /**
+   * Projects a pass did not read because a move of theirs was under way:
+   * the pass runs again once that move is over (see applyAccount; Sol
+   * B2-R6-002).
+   */
+  const passAfterMove = new Set<string>();
+  /**
+   * Refreshes so far: a basis read back counts at most one check that could
+   * not tell per refresh, however many passes run in it (see restoredHolds;
+   * code-reviewer r7, CR-L1).
+   */
+  let refreshes = 0;
+  /** A turn was held off the reserve before the first reads: they ask it again. */
+  let firstReadsAwaited = false;
+  function askBannersAgain(): void {
+    passAgain = true;
+    bannerPass ??= (async () => {
+      try {
+        while (passAgain) {
+          passAgain = false;
+          try {
+            await reviseAdvice();
+          } catch (error) {
+            bb.log.warn(
+              `the banners were not asked again: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
+        }
+      } finally {
+        bannerPass = null;
+      }
+    })();
+  }
+
+  async function refreshAll(): Promise<void> {
+    try {
+      const found = await discover();
+      await collector.collectAll(found);
+      await recordSamples();
+      bb.realtime.publish(CHANGED, { at: deps.now() });
+    } finally {
+      const first = refreshes === 0;
+      refreshes += 1;
+      // Seats reserved for turns that never started are freed with it.
+      admitWaiting();
+      // The threads not listed since the load: counted again, or every
+      // failure of a start not recorded stays nobody's (code-reviewer r2,
+      // medium 2).
+      if (!underWayListed) countSeats();
+      // What waited on the accounts not read yet does not wait a full recheck.
+      if (first && firstReadsAwaited)
+        void bb.experimental_hooks
+          .recheck("message.dispatch")
+          .catch((error: unknown) =>
+            bb.log.warn(
+              `bb not asked again after the first reads: ${error instanceof Error ? error.message : String(error)}`,
+            ),
+          );
+      // Also when the refresh fails: the reads it left grow old, and a
+      // banner on reads older than two refreshes must go (Sol B2-R5-001).
+      askBannersAgain();
+    }
+  }
+
+  /** A refresh asked for (Settings, the CLI): it answers once the banners are asked again on its reads too. */
+  async function refreshByHand(): Promise<void> {
+    try {
+      await refreshAll();
+    } finally {
+      await bannerPass;
+    }
+  }
+
+  // ponytail: bb has no batch read of machine environments, so a list costs
+  // one call per project, seconds each when bb is busy, and every open view
+  // refetches on the same event. The views' lists share one read, kept
+  // PROJECTS_FRESH_MS; a change made here drops it, one made in bb's own
+  // settings shows within that time. Everything else reads fresh, and
+  // decisions read projectAccount directly. A view that needs a project the
+  // shared read lacks (made a moment ago, picked in the new-thread composer)
+  // gets a fresh read, which the next lists share.
+  function sharedProjects(need?: string): Promise<State["projects"]> {
+    const kept = projectsRead;
+    if (kept === null || deps.now() - kept.at >= PROJECTS_FRESH_MS)
+      return readProjects();
+    // Already read again for this project (one bb does not list): no more.
+    if (need === undefined || kept.need === need) return kept.value;
+    return kept.value.then((projects) => {
+      if (projects.some((p) => p.id === need)) return projects;
+      // Another view already read again for the same reason: share it.
+      if (projectsRead !== null && projectsRead !== kept)
+        return projectsRead.value;
+      return readProjects(need);
+    });
+  }
+
+  /** A fresh read, which the views' next lists share; `need`, see sharedProjects. */
+  function readProjects(need?: string): Promise<State["projects"]> {
+    const now = deps.now();
+    const value = (async () => {
+      // The personal project too: a variable set there must be visible and releasable.
+      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      for (const p of projects) projectNames.set(p.id, p.name);
+      return Promise.all(
+        projects.map(async (p) => ({
+          id: p.id,
+          name: p.name,
+          ...(await projectAccount(p.id)),
+        })),
+      );
+    })();
+    const read = { at: now, value, need };
+    projectsRead = read;
+    // A failed read is not kept; its callers still see the failure.
+    value.catch(() => {
+      if (projectsRead === read) projectsRead = null;
+    });
+    return value;
+  }
+
+  /**
+   * The project's account is whatever its CLAUDE_CONFIG_DIR machine variable
+   * says, read from bb every time: bb never returns values, so the name comes
+   * from the note this plugin writes next to it. A variable with another note
+   * (set by hand, or inherited from the global environment) is "external"
+   * and this plugin never touches it.
+   */
+  async function projectAccount(projectId: string): Promise<ProjectAccount> {
+    const env = await bb.sdk.projects.machineEnvironment({ projectId });
+    const own = env.variables.find((v) => v.name === ENV_VAR);
+    if (own !== undefined) {
+      const name = accountFromNote(own.note);
+      if (name === null) return { account: null, owned: false, external: true };
+      const known = accounts.some((a) => a.name === name);
+      return { account: known ? name : null, owned: true, external: false };
+    }
+    const inherited = env.inheritedVariables.some((v) => v.name === ENV_VAR);
+    return { account: null, owned: false, external: inherited };
+  }
+
+  /**
+   * The moves of each project's account by this plugin, under way and
+   * done: a read of the project's account that overlaps or crosses one says
+   * nothing about where a turn started (Codex IR15-001).
+   */
+  type MoveMark = { writes: number; picks: number };
+  const moves = new Map<
+    string,
+    {
+      epoch: number;
+      inFlight: number;
+      picks: number;
+      writes: number;
+      envWrites: number;
+      envWriting: number;
+    }
+  >();
+  function movesOf(projectId: string): {
+    epoch: number;
+    inFlight: number;
+    /** Choices by hand (a pick, also one that confirms the account; a release): each outranks an automatic move still under way. */
+    picks: number;
+    /**
+     * Writes of the project's account, counted as each starts and once it
+     * is over (landed or not): what decides whether a decision still holds
+     * (applyAccount) and whether a move's origin is known (noteMove). An
+     * attempt dropped before its write moves nothing here, so it never
+     * drops nor hides the one that replaced it (Codex E46-R3-001,
+     * E46-R4-002); `epoch`, which every attempt moves, only tells a read
+     * of the account that a move crossed it.
+     */
+    writes: number;
+    /**
+     * Every write of the project's variable, a move's or one that confirms
+     * the account it names, counted as it starts and once it is over: a
+     * read of the account that one crossed says nothing about where a turn
+     * starts (Astra SEATS-R3-002, SEATS-R4-001).
+     */
+    envWrites: number;
+    /**
+     * Writes of the project's variable under way: one may land any moment,
+     * so what a read said may no longer hold (Astra SEATS-R3-002).
+     */
+    envWriting: number;
+  } {
+    let move = moves.get(projectId);
+    if (move === undefined) {
+      move = {
+        epoch: 0,
+        inFlight: 0,
+        picks: 0,
+        writes: 0,
+        envWrites: 0,
+        envWriting: 0,
+      };
+      moves.set(projectId, move);
+    }
+    return move;
+  }
+  /** The project's moves and picks as they stand, for noteMove: taken BEFORE reading the project's account. */
+  function moveMark(projectId: string): MoveMark {
+    const { writes, picks } = movesOf(projectId);
+    return { writes, picks };
+  }
+
+  /**
+   * The account each project left for a turn in another model (its
+   * excursion, 2026-10-13: the Max accounts are Fable's): a turn in the
+   * preferred model takes the project back there. In memory, like
+   * aheadLeft: a reload forgets it and the project stays where it is.
+   * Kept by noteMove, next to every applyAccount, and cleared by a pick by
+   * hand and by `release`.
+   */
+  const excursions = new Map<string, { from: string; model: string }>();
+  /** A turn in `model` is another model's: it must not spend what the preferred model needs. */
+  function otherModel(model: string): boolean {
+    return reserving({
+      preferredModel: model,
+      ...reserveOf(),
+    });
+  }
+  /**
+   * After applyAccount moved the project from `fromName` to `toName` for a
+   * turn in `model`. A move for another model notes the FIRST account left
+   * and keeps it through later moves; a move for the preferred model is a
+   * new home and forgets it. `before`: the project's moves and picks when
+   * the caller captured them, BEFORE reading the project's account: the
+   * origin is noted only when exactly this move's write happened since
+   * (writes + 2)
+   * and nobody picked by hand meanwhile, so neither a stale read, a move
+   * that crossed the write nor a pick that confirmed the account names a
+   * wrong origin (Codex BM-R2-003, BM-R3-001, BM-INSPECT-004).
+   */
+  function noteMove(
+    projectId: string,
+    fromName: string,
+    toName: string,
+    model: string,
+    before: MoveMark,
+  ): void {
+    if (fromName === toName) return;
+    if (!otherModel(model)) {
+      excursions.delete(projectId);
+      return;
+    }
+    if (excursions.has(projectId)) return;
+    const move = movesOf(projectId);
+    if (move.writes !== before.writes + 2 || move.picks !== before.picks) {
+      // Logged, not debug: the project's next turn in the preferred model
+      // then stays where it is, and this line is why (code-reviewer r1).
+      bb.log.info(
+        `project ${projectId}: excursion from ${fromName} not noted (${move.picks !== before.picks ? "picked or released by hand meanwhile" : "another move crossed it"})`,
+      );
+      return;
+    }
+    excursions.set(projectId, { from: fromName, model });
+  }
+  /**
+   * `name` is measured keeping the preferred model AND has a weekly window:
+   * a turn in `model` there spends what the preferred model needs (see
+   * spendsReservedWeekly). Never retried there without judging. Judged as
+   * the account will be when the turn is sent (`at`: a wait's send time;
+   * now by default), at the latest: a Max account whose Fable window
+   * resets before a wait ends keeps Fable again by then (code-reviewer
+   * r1, M1), as decideSwitch projects its waits. `projectId`: a Team
+   * without a session on another machine still takes its turns
+   * (code-reviewer r2, low 2).
+   */
+  function reservedFor(name: string, model: string, at = deps.now(), projectId?: string): boolean {
+    if (!otherModel(model)) return false;
+    const known = measuredAccounts(model).find((a) => a.name === name);
+    if (known === undefined || known.unknown === true) return false;
+    const sendBy =
+      Math.max(at, deps.now()) + RESET_BUFFER_MS + RESET_JITTER_MS;
+    return spendsReservedWeekly(settle(known, sendBy), {
+      preferredModel: model,
+      ...reserveOf(projectId),
+    });
+  }
+
+  /**
+   * Point the project at `account` (null = default). Refuses an external
+   * variable. False when an automatic move is dropped: a write of the
+   * project's account or a pick by hand happened while its sessions were
+   * shared; nothing is written, and the caller records no move and acts on
+   * none (Codex E46-R2-001, E46-R4-001). A choice by hand (`byHand`: a
+   * pick, a release) always writes.
+   *
+   * `share: false` (placeTurn, the dispatcher's path): the sharing is
+   * started and not waited for, its failures logged, and the move is not
+   * looked at again (Fable, 2026-10-29). Every race of rounds r2 to r6
+   * came from waiting for the sessions there. With the projects/ directory
+   * shared by the accounts (the Mac already; Linux with E46) the sharing
+   * does nothing; and the moves that matter most to live threads (an
+   * account out: turn.failed, then judge; a pick; moveAhead; moveUpWait)
+   * run in the project's queue, one at a time, and wait for it.
+   */
+  async function applyAccount(
+    projectId: string,
+    account: Account | null,
+    from: ProjectAccount,
+    options: {
+      byHand?: boolean;
+      share?: boolean;
+      /** The thread the move is for: its own seat does not hold the project back (see siblingAdmitted). */
+      forThread?: string;
+      /** Asked with the other checks after the sessions are shared: false drops the move (Codex OPUS-R5-002). */
+      stillValid?: () => boolean;
+      /**
+       * The pick by hand stays: the move is an excursion of a turn in a model
+       * other than the reserved one (Opus, Sonnet, Haiku), and the pick still
+       * holds for the reserved model (Aitor 2026-11-06: a project pinned to a
+       * Max keeps it for Fable; Codex r3 medium 1).
+       */
+      keepPin?: boolean;
+    } = {},
+  ): Promise<boolean> {
+    if (from.external) {
+      throw new Error(
+        `${ENV_VAR} on project ${projectId} was set outside this plugin; change it in the project's machine environment`,
+      );
+    }
+    const toName = account === null ? current.defaultAccountName : account.name;
+    const fromName = from.account ?? current.defaultAccountName;
+    // Every automatic move, whatever its reason (Astra IR5-001).
+    const siblingHolds = (): boolean => {
+      if (options.byHand === true || toName === fromName) return false;
+      const admitted = siblingAdmitted(projectId, options.forThread);
+      if (admitted === null) return false;
+      bb.log.info(
+        `project ${projectId}: not moved to ${toName}: thread ${admitted} was told to start where it is and has not`,
+      );
+      return true;
+    };
+    // Dropped here it is no move: a sibling's start stays known.
+    if (siblingHolds()) return false;
+    // A move for real (another account name): counted before the write
+    // starts and once it is over, landed or not.
+    const move =
+      toName === (from.account ?? current.defaultAccountName)
+        ? null
+        : movesOf(projectId);
+    if (move !== null) {
+      move.inFlight += 1;
+      move.epoch += 1;
+    }
+    let wrote = false;
+    // Every write of the variable, also one that confirms the account the
+    // project is on: a seat is reserved only on a read no write crossed
+    // (Astra SEATS-R4-001).
+    const env = movesOf(projectId);
+    let envWrote = false;
+    try {
+      // The sessions first, while the move is counted in flight: a turn of
+      // another thread of the project that reads the new account finds its
+      // session there (Codex E46-002). Links in the new account are
+      // harmless if the write below fails. Past SESSIONS_LIMIT_MS the
+      // variable is written anyway: a move without the sessions beats a
+      // queue hung on a filesystem or on bb (Fable, 2026-10-29); what is
+      // still under way only adds links.
+      if (move !== null && options.share === false)
+        void shareProjectSessions(projectId, account, toName, from.account);
+      else if (move !== null) {
+        const mark = { writes: move.writes, picks: move.picks };
+        const shared = await within(
+          shareProjectSessions(projectId, account, toName, from.account),
+          SESSIONS_LIMIT_MS,
+          `sessions of ${projectNames.get(projectId) ?? projectId} not shared into ${toName}`,
+        );
+        if (shared === "late")
+          bb.log.warn(
+            `sessions of ${projectNames.get(projectId) ?? projectId} not shared into ${toName} within ${SESSIONS_LIMIT_MS / 1000} s; the move goes on`,
+          );
+        if (
+          options.byHand !== true &&
+          (move.writes !== mark.writes ||
+            move.picks !== mark.picks ||
+            options.stillValid?.() === false)
+        ) {
+          bb.log.info(
+            `project ${projectId}: not moved to ${toName}: picked by hand or moved meanwhile`,
+          );
+          return false;
+        }
+      }
+      // Again after the sessions were shared: nothing is awaited between
+      // this look and the write.
+      if (siblingHolds()) return false;
+      if (move !== null) {
+        move.writes += 1;
+        wrote = true;
+      }
+      const unset = account === null || account.configDir === null;
+      if (!unset || from.owned) {
+        env.envWrites += 1;
+        env.envWriting += 1;
+        envWrote = true;
+      }
+      if (account === null || account.configDir === null) {
+        // Default account = no variable. Only ours can be there (see above).
+        if (from.owned) {
+          await bb.sdk.projects.deleteMachineEnvironmentVariable({
+            projectId,
+            name: ENV_VAR,
+          });
+        }
+      } else {
+        await bb.sdk.projects.setMachineEnvironmentVariable({
+          projectId,
+          name: ENV_VAR,
+          value: account.configDir,
+          note: noteFor(account.name),
+        });
+      }
+    } finally {
+      // Also after a failure: a delete may have landed before it.
+      projectsRead = null;
+      if (envWrote) {
+        env.envWrites += 1;
+        env.envWriting -= 1;
+      }
+      if (move !== null) {
+        if (wrote) move.writes += 1;
+        move.inFlight -= 1;
+        move.epoch += 1;
+        // A banners' pass left the project unread for this move: it runs
+        // again now, without being waited for (Sol B2-R6-002). With no pass
+        // under way, its part up to its first read (the bases in memory, a
+        // banner taken away) runs here, inside this `finally`.
+        if (move.inFlight === 0 && passAfterMove.delete(projectId))
+          askBannersAgain();
+        wakeHeldForMove(projectId);
+      }
+    }
+    if (toName !== (from.account ?? current.defaultAccountName))
+      accountChangedAt.set(projectId, deps.now());
+    if (
+      options.byHand !== true &&
+      options.keepPin !== true &&
+      toName !== fromName &&
+      // Back to the account picked by hand (the way home of an excursion
+      // that kept the pick): the pick stays.
+      pins.get(projectId) !== toName &&
+      pins.delete(projectId)
+    )
+      storePins();
+    bb.realtime.publish(CHANGED, { at: deps.now() });
+    return true;
+  }
+
+  /** The projects named in the last list (logs only). */
+  const projectNames = new Map<string, string>();
+  /** Projects already logged as having a path of another machine. */
+  const elsewhereLogged = new Set<string>();
+  /**
+   * Links into the account the project moved to the Claude Code sessions
+   * it lacks of the project's paths on this machine, so a thread resumed
+   * there finds its conversation (src/sessions.ts). Never fails the move:
+   * whatever goes wrong is logged.
+   */
+  async function shareProjectSessions(
+    projectId: string,
+    account: Account | null,
+    toName: string,
+    fromName: string | null,
+  ): Promise<void> {
+    const io = deps.sessionsIo;
+    if (io === undefined) return;
+    const name = projectNames.get(projectId) ?? projectId;
+    const dirOf = (a: Account | null | undefined) =>
+      a?.configDir ?? `${deps.accountsIo.home}/.claude`;
+    try {
+      const target = dirOf(account);
+      const left = accounts.find(
+        (a) => a.name === (fromName ?? current.defaultAccountName),
+      );
+      // The account left first: it has the thread's latest session.
+      const sources = [
+        ...(left === undefined ? [] : [dirOf(left)]),
+        ...accounts.map(dirOf),
+      ];
+      const environments = await bb.sdk.environments.list({ projectId });
+      const paths = [
+        ...new Set(
+          environments.flatMap((e) =>
+            e.path === null || e.status === "destroyed" ? [] : [e.path],
+          ),
+        ),
+      ];
+      const elsewhere: string[] = [];
+      for (const projectPath of paths) {
+        const result = await shareSessions({ projectPath, target, sources, io });
+        if (result.skipped === "no-project-dir") elsewhere.push(projectPath);
+        if (result.linked > 0)
+          bb.log.info(
+            `sessions of ${name} shared into ${toName}: ${result.linked} linked (${projectPath})`,
+          );
+        if (result.errors.length > 0)
+          bb.log.warn(
+            `sessions of ${name} not all shared into ${toName}: ${result.errors.slice(0, 3).join("; ")}${result.errors.length > 3 ? ` (+${result.errors.length - 3} more)` : ""} (${projectPath})`,
+          );
+      }
+      if (elsewhere.length > 0 && !elsewhereLogged.has(projectId)) {
+        elsewhereLogged.add(projectId);
+        bb.log.info(
+          `sessions not shared for ${name}: path not on this machine (${elsewhere.join(", ")})`,
+        );
+      }
+    } catch (error) {
+      bb.log.warn(
+        `sessions of ${name} not shared into ${toName}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /** How old a measurement may be to decide on: two refresh periods. */
+  function maxReadAgeMs(): number {
+    return 2 * Math.max(1, current.refreshMinutes) * 60_000;
+  }
+  /** The account's read is older than two refreshes, or there is none (see AccountUsage.stale). */
+  function readStale(name: string): boolean {
+    const m = collector.get(name);
+    return m?.observedAt == null || deps.now() - m.observedAt > maxReadAgeMs();
+  }
+
+  /** Measurements recent enough to decide on (see maxReadAgeMs). */
+  function measuredAccounts(model = current.preferredModel) {
+    // A refusing account is out, whatever its numbers say; so is one whose
+    // answer, incomplete, still says it is full.
+    return collector.usable(maxReadAgeMs(), model).map((raw) => {
+      const login = accounts.find((account) => account.name === raw.name);
+      // Not fresh: no room is read from it (Codex r1 medium 4).
+      const measured = readStale(raw.name) ? { ...raw, stale: true as const } : raw;
+      const a =
+        login !== undefined && planOf(login, measured).plan === "team"
+          ? { ...measured, team: true as const }
+          : measured;
+      if (!refusing(a.name) && !measuredOut(a, model, deps.now())) return a;
+      const { unknown: _, ...known } = a;
+      return { ...known, blocked: true };
+    });
+  }
+
+  /**
+   * The accounts whose latest usage read says nothing of what they can run
+   * now (see opusInstead): never read, its latest attempt had a problem (a
+   * 429, the endpoint down), or it is older than two refreshes (a rescue
+   * still runs after a refresh that failed: code-reviewer 0.2.20, CR-05).
+   * An account without a login is not one of them: it runs nothing until
+   * logged in again. With no account found (the accounts directory changed,
+   * and no read of it since worked), every reading still in memory is of an
+   * account not found, and none says anything (code-reviewer r6, CR-L1).
+   */
+  function unreadAccounts(): string[] {
+    if (accounts.length === 0) return collector.usable().map((a) => a.name);
+    const now = deps.now();
+    return accounts
+      .filter((account) => {
+        const m = collector.get(account.name);
+        if (m === undefined) return true;
+        if (m.problem?.kind === "unauthenticated") return false;
+        return (
+          m.problem !== null ||
+          m.observedAt === null ||
+          now - m.observedAt > maxReadAgeMs()
+        );
+      })
+      .map((account) => account.name);
+  }
+
+  /**
+   * `shared`: the views' list, which may reuse a recent read (see
+   * sharedProjects); `need`, a project that list must have.
+   */
+  async function state({
+    shared = false,
+    need,
+  }: { shared?: boolean; need?: string } = {}): Promise<State> {
+    if (accounts.length === 0) await discover();
+    const projects = await (shared ? sharedProjects(need) : readProjects());
+    return {
+      accounts: accounts.map((account) => {
+        const m = collector.get(account.name);
+        return {
+          name: account.name,
+          email: account.email,
+          accountUuid: account.accountUuid,
+          configDir: account.configDir,
+          observedAt: m?.observedAt ?? null,
+          problem: m?.problem ?? null,
+          usage: m?.usage ?? null,
+          ...planState(account, m?.usage ?? null),
+          pace: paceFor(account.name),
+        };
+      }),
+      projects,
+      defaultAccountName: current.defaultAccountName,
+      preferredModel: current.preferredModel,
+      autoSwitch: current.autoSwitch,
+      paceHoldsBackground: current.paceHoldsBackground === true,
+      lastSwitch:
+        (await bb.storage.kv.get<SwitchRecord>(KV_LAST_SWITCH)) ?? null,
+      bestAccount: bestAccount(
+        measuredAccounts(),
+        current.preferredModel,
+        deps.now(),
+        current.preferredModel,
+        undefined,
+        undefined,
+        undefined,
+        current.reserveShare,
+      ),
+      history,
+      forecasts: forecasts(),
+      login: loginStatus(),
+      seats: seatsState(),
+    };
+  }
+
+  /** What the views and `health` say of an account's plan (see planOf). */
+  function planState(account: Account, usage: Measurement["usage"]) {
+    const info = planOf(account, usage);
+    return {
+      plan: info.plan,
+      planLabel: info.label,
+      planShort: info.short,
+      fiveHour: info.fiveHour,
+    };
+  }
+
+  function findAccount(name: string): Account {
+    const account = accounts.find((a) => a.name === name);
+    if (account === undefined) {
+      throw new Error(
+        `unknown account "${name}"; known: ${accounts.map((a) => a.name).join(", ") || "none"}`,
+      );
+    }
+    return account;
+  }
+
+  /**
+   * The default account is "no variable": its name means null, and so does
+   * the literal `default` unless an account is actually called that.
+   */
+  function accountOrDefault(name: string): Account | null {
+    if (name === current.defaultAccountName) return null;
+    if (name === "default" && !accounts.some((a) => a.name === "default"))
+      return null;
+    return findAccount(name);
+  }
+
+  /**
+   * A project's account chosen by hand (thread header, Settings, `use`), in
+   * the project's queue: never interleaved with a failure or a placement.
+   * `choose` runs after a fresh discovery, so an account directory added
+   * since the last one is pickable.
+   */
+  /**
+   * No login, or MEASURED unable to run any model: a turn sent there would
+   * fail. Not measured yet, an incomplete answer with nothing measured full
+   * for every model, or no preferred model left do not count: those accounts
+   * may still run it.
+   */
+  function cannotRun(name: string): boolean {
+    if (loggedOut(name)) return true;
+    const known = measuredAccounts("").find((a) => a.name === name);
+    return (
+      known !== undefined &&
+      known.unknown !== true &&
+      bestAccount([known], "", deps.now()) !== name
+    );
+  }
+
+  /** `name` answered its usage query unauthenticated: no login, a turn there fails. */
+  function loggedOut(name: string): boolean {
+    return collector.get(name)?.problem?.kind === "unauthenticated";
+  }
+  /**
+   * The default account's login: "unknown" until a look at it has answered
+   * (Astra E44-R2-01), and while its last look could not check it (the
+   * store unreadable, the refresh failed: Astra E44-R3-01).
+   */
+  function defaultLogin(): LoginState {
+    return collector.get(current.defaultAccountName)?.login ?? "unknown";
+  }
+  /**
+   * A turn on `name` would start on a login nobody confirmed: none, or the
+   * default's whose last look could not check it (Astra E44-R3-01). Never
+   * looked at does not count: beforeStart looks at it first. Only the
+   * default's failed look counts: a project on an account of its own stays
+   * where it was put.
+   */
+  function unconfirmed(name: string): boolean {
+    return (
+      loggedOut(name) ||
+      (name === current.defaultAccountName &&
+        collector.get(name)?.login === "unknown")
+    );
+  }
+
+  async function pickAccount(
+    projectId: string,
+    choose: (find: (name: string) => Account) => Account | null,
+  ): Promise<void> {
+    // applyAccount announces the change before the pick has written all it
+    // writes (its history row, a new measure): the views read again once the
+    // pick is over, or a read they made in between can stand. Not for a pick
+    // that applied nothing (refused, or failed before): that read would clear
+    // the error Settings shows for it.
+    let applied = false;
+    let measuredPick = false;
+    try {
+      await inProjectQueue(projectId, async () => {
+        await discover();
+        const from = await projectAccount(projectId);
+        const to = choose(findAccount);
+        await applyAccount(projectId, to, from, { byHand: true });
+        applied = true;
+        // The pick is the user's: nothing to come back from, also when it
+        // confirms the account the project is on; and it outranks an
+        // automatic move whose answer is still pending (see noteMove).
+        excursions.delete(projectId);
+        // Any pick, the default account's too: it is the user's choice.
+        pins.set(projectId, to?.name ?? current.defaultAccountName);
+        storePins();
+        // Picked by hand, an account without a session is taken as logged
+        // in again, on every machine: nothing automatic holds the pick back,
+        // and a turn that fails there for want of a session marks it anew
+        // (sin-login 2026-11-10).
+        sessionBack(to?.name ?? current.defaultAccountName);
+        movesOf(projectId).picks += 1;
+        await markHandled(projectId);
+        const fromName = from.account ?? current.defaultAccountName;
+        const toName = to?.name ?? current.defaultAccountName;
+        measuredPick = collector.get(toName) !== undefined;
+        if (toName === fromName) return;
+        bb.log.info(
+          `project ${projectId}: picked by hand, ${fromName} → ${toName}`,
+        );
+        await addHistory({
+          at: deps.now(),
+          threadId: "",
+          projectId,
+          from: fromName,
+          to: toName,
+          reason: "Picked by hand",
+        });
+        // A turn already running on the old account fails there after the
+        // pick: like after a switch, it runs again once on the picked account.
+        // The pick is the user's, so it holds unless the account cannot run a
+        // turn (see cannotRun); its own failure is judged.
+        // A login made after the last measurement: look again before judging.
+        const picked = accounts.find((a) => a.name === toName);
+        if (
+          picked !== undefined &&
+          collector.get(toName)?.problem?.kind === "unauthenticated"
+        )
+          await collector.collect(picked);
+        if (!cannotRun(toName))
+          recentSwitches.set(projectId, {
+            at: deps.now(),
+            to: toName,
+            threadId: null,
+            sendAt: undefined,
+            graced: new Set(),
+          });
+        else recentSwitches.delete(projectId);
+      });
+    } finally {
+      if (applied) {
+        bb.realtime.publish(CHANGED, { at: deps.now() });
+        // What waits for this project is looked at now, not at its next
+        // ask (up to RESERVE_RECHECK_MS) or refresh: outside the project's
+        // queue, which the reads below enter themselves. recheck asks for
+        // the rows held by a plugin; the retries with a time are revisited.
+        void bb.experimental_hooks
+          .recheck("message.dispatch")
+          .catch((error: unknown) =>
+            bb.log.warn(
+              `bb not asked again after a pick: ${error instanceof Error ? error.message : String(error)}`,
+            ),
+          );
+        // An account never measured (just after a load) may have no login:
+        // nothing is released on it before the refresh looks at it.
+        if (measuredPick)
+          void revisitWaits().catch((error: unknown) =>
+            bb.log.warn(
+              `the waiting turns were not looked at again after a pick: ${error instanceof Error ? error.message : String(error)}`,
+            ),
+          );
+      }
+    }
+  }
+
+  // ---- Provider usage panel source -------------------------------------
+  bb.rpc.register(
+    usageSourceRpcContract,
+    {
+      async [usageListMethod]() {
+        return {
+          label: "Claude accounts",
+          resources: (await discover()).map(toResource),
+        };
+      },
+      async [usageFetchMethod]({ resourceId, refresh }) {
+        const account = accounts.find((a) => a.name === resourceId);
+        if (account === undefined)
+          throw new Error("Usage resource no longer exists.");
+        if (refresh || collector.get(account.name) === undefined)
+          await collector.collect(account);
+        return toMeasurement(account, collector.get(account.name));
+      },
+    },
+    {
+      experimental_discoverable: true,
+      experimental_description:
+        "Usage windows of every Claude Code account on this machine (one per CLAUDE_CONFIG_DIR).",
+    },
+  );
+
+  // ---- Page RPC ---------------------------------------------------------
+  bb.rpc.register(rpcContract, {
+    accounts_list: (input) => state({ shared: true, need: input?.project }),
+    async accounts_refresh() {
+      await refreshByHand();
+      return state();
+    },
+    async project_set_account({ projectId, account }) {
+      await pickAccount(projectId, (discovered) =>
+        account === null ? null : discovered(account),
+      );
+      return state();
+    },
+    async account_login_start({ name }) {
+      const target = await loginTarget(name);
+      const shareFrom = `${deps.accountsIo.home.replace(/\/+$/, "")}/.claude`;
+      await login.start(
+        { ...target, shareFrom },
+        {
+          ...deps.env,
+          CLAUDE_SWITCHER_PRIVATE: current.loginPrivateWindow ? "1" : "0",
+        },
+      );
+      return state();
+    },
+    async account_login_code({ code }) {
+      login.code(code);
+      return state();
+    },
+    async account_login_cancel() {
+      login.cancel();
+      return state();
+    },
+    async thread_advice({ threadId }) {
+      return { text: shownAdvice.get(threadId) ?? null };
+    },
+  });
+
+  // ---- Retry of a failed turn ---------------------------------------------
+  /**
+   * Waits queued back after bb did not take their retry, or after ours could
+   * not replace them (restoreQueued), by retryKey (their id never comes back
+   * when bb's answer is lost): newer than the move that released them, they
+   * still waited on the old account (Codex BM-INSPECT-R4-002). A mark is
+   * dropped by the next pass that reads the queue without its row; with the
+   * automatic choice off, it stays until a pass runs again (a few strings,
+   * and a stale mark matches no newer row: the attempt is part of the key).
+   * A row put back on a project that did not move is released too once its
+   * account is MEASURED able to run the turn (never on one that cannot be
+   * measured), as a wait releaseWait put back is: a wait for a reset that
+   * came early. Backoffs are never released: they are due within
+   * SHORT_WAIT_MS (code-reviewer 0.2.18 r1, CR1-01/CR1-02).
+   */
+  const putBack = new Map<string, number>();
+  /** Order of the marks: a pass drops only marks older than its read of the queue. */
+  let putBackMarks = 0;
+  function markPutBack(key: string): void {
+    putBack.set(key, ++putBackMarks);
+  }
+  /** A queued retry's turn: bb keeps one queued retry per thread, chain and attempt. */
+  function retryKey(threadId: string, of: string, attempt: number): string {
+    return JSON.stringify([threadId, of, attempt]);
+  }
+  /** Whether a retry with this key is queued on the thread; false when bb cannot be read. */
+  function rowQueued(threadId: string, key: string): Promise<boolean> {
+    return bb.sdk.threads.queuedMessages.list({ threadId }).then(
+      (rows) =>
+        rows.some(
+          (r) =>
+            r.payload.kind === "retry" &&
+            retryKey(threadId, r.payload.retryOfTurnRequestId, r.payload.attempt) ===
+              key,
+        ),
+      () => false,
+    );
+  }
+
+  /**
+   * Retry row bb (or its provider-retry plugin) already queued for the failed
+   * turn. bb stamps the row with `attempt` = the failed turn's attempt + 1 and
+   * keys it by the ORIGINAL request of the retry chain, while a retry's
+   * failure reports the retry's own id: past the first attempt only the
+   * attempt tells the rows apart. A retry row of an EARLIER turn can still be
+   * waiting on the thread (the user sent a message by hand meanwhile): it is
+   * skipped. bb allows one row per chain, so the first match is the one.
+   */
+  async function queuedRetry(
+    event: PluginTurnFailedEvent,
+  ): Promise<{
+    id: string;
+    reason: string;
+    sendAt: number | null;
+    key: string;
+  } | null> {
+    const rows = await bb.sdk.threads.queuedMessages.list({
+      threadId: event.threadId,
+    });
+    for (const row of rows) {
+      const payload = row.payload;
+      if (payload.kind !== "retry") continue;
+      if (payload.attempt !== event.attemptNumber + 1) continue;
+      if (
+        event.attemptNumber === 1 &&
+        payload.retryOfTurnRequestId !== event.requestId
+      )
+        continue;
+      return {
+        id: row.id,
+        reason: payload.reason,
+        sendAt: row.sendAt,
+        key: retryKey(event.threadId, payload.retryOfTurnRequestId, payload.attempt),
+      };
+    }
+    return null;
+  }
+
+  /** bb's answers for a row that is already on its way: sent meanwhile (404) or being sent right now (409). */
+  function alreadyOnItsWay(error: unknown): boolean {
+    const status =
+      typeof error === "object" && error !== null && "status" in error
+        ? error.status
+        : undefined;
+    const message = error instanceof Error ? error.message : String(error);
+    return (
+      (status === 404 && /queued message not found/i.test(message)) ||
+      (status === 409 && /already being sent/i.test(message))
+    );
+  }
+
+  /** bb's refusal to retry a turn that is no longer the thread's latest. */
+  function superseded(error: unknown): boolean {
+    const status =
+      typeof error === "object" && error !== null && "status" in error
+        ? error.status
+        : undefined;
+    const message = error instanceof Error ? error.message : String(error);
+    return status === 409 && /is not the failed turn/i.test(message);
+  }
+
+  /**
+   * Replace `rowId`, another plugin's retry of the turn, by one of ours: it is
+   * deleted here and queued again by the caller, so bb dispatches the retry
+   * through its checkpoint, where the turn is placed. An explicit send of
+   * the row would skip that checkpoint and run the turn where the project
+   * stood when the row was found, not when it is sent (Codex
+   * BM-INSPECT-R2-001). False when the row is already on its way: nothing to
+   * replace. Any other failure of the delete (its answer lost, bb refusing)
+   * is logged and ours is queued anyway: if the row is still there, bb
+   * refuses ours (one retry per turn) and the row stays, so the turn is
+   * never left without a retry (Codex BM-INSPECT-R3-001).
+   */
+  async function replaceQueued(threadId: string, rowId: string): Promise<boolean> {
+    try {
+      await deleteOwn(threadId, rowId);
+      return true;
+    } catch (error) {
+      // Sent between the list and this delete (bb would refuse a retry of a
+      // thread that is running again), or removed by the user: nothing to
+      // replace.
+      if (alreadyOnItsWay(error)) {
+        bb.log.info(
+          `thread ${threadId}: the queued retry is already on its way; leaving it`,
+        );
+        return false;
+      }
+      bb.log.warn(
+        `thread ${threadId}: could not remove the queued retry (${error instanceof Error ? error.message : String(error)}); queuing ours anyway`,
+      );
+      return true;
+    }
+  }
+
+  /**
+   * Retry the failed turn now (no sendAt) or at `sendAt`. bb keeps ONE retry
+   * per turn: if provider-retry got there first, its row is replaced by ours,
+   * at once or timed, so bb dispatches the retry through its checkpoint (see
+   * replaceQueued). A row queued meanwhile, between the list and ours, is
+   * replaced once more; a third one is left to bb, which dispatches it
+   * through the checkpoint at its own time. If ours cannot be queued after a
+   * row was replaced, that row is put back rather than leave the turn
+   * without any retry (code-reviewer r3, CR3-01).
+   */
+  async function retryTurn(
+    event: PluginTurnFailedEvent,
+    /**
+     * Asked right before each retry is queued, after the waits on the queue
+     * (its look, the removal of a row): what it says may change meanwhile
+     * (Sol B2-R6-004).
+     */
+    reason: string | (() => string),
+    sendAt?: number,
+    stuck = false,
+  ): Promise<void> {
+    const threadId = event.threadId;
+    let row = await queuedRetry(event);
+    if (row !== null) {
+      bb.log.info(
+        `thread ${threadId}: a retry of the turn is already queued ("${row.reason}"${row.sendAt === null ? "" : `, for ${new Date(row.sendAt).toISOString()}`})`,
+      );
+      // On a rescue it is left to whoever queued it: another plugin may be
+      // holding it, and replacing it would drop that hold (Codex r6,
+      // IR6-002).
+      if (stuck) return;
+    }
+    for (let replacements = 0; ; replacements++) {
+      if (row !== null && !(await replaceQueued(threadId, row.id))) return;
+      try {
+        await bb.sdk.threads.retry({
+          threadId,
+          turnRequestId: event.requestId,
+          reason: typeof reason === "string" ? reason : reason(),
+          ...(sendAt === undefined ? {} : { sendAt }),
+        });
+        return;
+      } catch (error) {
+        // Raced with another retry of the same turn between the list and ours.
+        // If this look fails too, nothing is known about a race, and the row
+        // replaced, if any, is still put back below (Codex BM-INSPECT-R4-001).
+        let raced: Awaited<ReturnType<typeof queuedRetry>> = null;
+        try {
+          raced = await queuedRetry(event);
+        } catch (lookError) {
+          bb.log.warn(
+            `thread ${threadId}: could not look at the queue again (${lookError instanceof Error ? lookError.message : String(lookError)}); going on without it`,
+          );
+        }
+        if (raced !== null) {
+          if (stuck || sendAt !== undefined || replacements > 0) {
+            bb.log[stuck ? "info" : "warn"](
+              row !== null && raced.id === row.id
+                ? `thread ${threadId}: the retry queued before could not be removed and is still there; leaving it`
+                : `thread ${threadId}: another retry was queued ${replacements > 0 ? "again" : "first"}; leaving it`,
+            );
+            return;
+          }
+          row = raced;
+          continue;
+        }
+        // A newer turn replaced the failed one (a message sent meanwhile): it
+        // runs on the project's account, and its own failure comes on its own.
+        if (superseded(error)) {
+          bb.log.info(
+            `thread ${threadId}: turn ${event.requestId} is no longer its latest; the newer turn goes on`,
+          );
+          return;
+        }
+        // bb has the turn already (ours refused for a retry it keeps, or
+        // the turn is no longer the failed one): nothing to restore, and
+        // nothing is known about a race (code-reviewer 0.2.18 r1, CR1-03).
+        if (bbHasTheTurn(error)) {
+          bb.log.info(
+            `thread ${threadId}: bb already has a retry of the turn (${error instanceof Error ? error.message : String(error)})`,
+          );
+          return;
+        }
+        if (row === null) throw error;
+        await restoreQueued(threadId, event, row, error);
+        return;
+      }
+    }
+  }
+
+  /**
+   * Ours could not be queued after `row` was replaced: `row` is queued again
+   * as it was, and marked put back so a later pass may still release it
+   * (Codex BM-INSPECT-R4-002). Unless bb has the turn: ours landed and only
+   * its answer was lost, or the turn is no longer the failed one
+   * (code-reviewer r4, CR4-01).
+   */
+  async function restoreQueued(
+    threadId: string,
+    event: PluginTurnFailedEvent,
+    row: { reason: string; sendAt: number | null; key: string },
+    error: unknown,
+  ): Promise<void> {
+    const message = error instanceof Error ? error.message : String(error);
+    bb.log.warn(
+      `thread ${threadId}: could not queue the retry (${message}); restoring the one queued before`,
+    );
+    try {
+      const back = await bb.sdk.threads.retry({
+        threadId,
+        turnRequestId: event.requestId,
+        reason: row.reason,
+        ...(row.sendAt === null ? {} : { sendAt: row.sendAt }),
+      });
+      if (back.delivery === "queued") markPutBack(row.key);
+    } catch (restoreError) {
+      const restore =
+        restoreError instanceof Error
+          ? restoreError.message
+          : String(restoreError);
+      if (bbHasTheTurn(restoreError)) {
+        bb.log.info(
+          `thread ${threadId}: the retry queued before is not restored: bb has the turn (${restore})`,
+        );
+        return;
+      }
+      // bb may have queued it and lost only its answer (as releaseWait
+      // allows for): looked for, and marked put back only when found, so
+      // no mark outlives a row that was never queued (Codex Sol 0.2.18 r1,
+      // R0218-CODEX-001; code-reviewer r2, CR2-01). The row found may be
+      // the one that could not be removed: a retry is queued either way
+      // (CR2-02).
+      if (await rowQueued(threadId, row.key)) {
+        markPutBack(row.key);
+        bb.log.info(
+          `thread ${threadId}: a retry of the turn is queued after all (the restore's answer was lost: ${restore})`,
+        );
+        return;
+      }
+      throw new Error(
+        `${message}; restoring the retry queued before failed too: ${restore}`,
+        { cause: error },
+      );
+    }
+  }
+
+  /**
+   * Record a move as the project's latest: shown in Settings, and leftover
+   * turns follow it. `cause` is the thread whose failure caused the move
+   * (null for a placement, which no failure caused).
+   */
+  async function recordMove(
+    record: SwitchRecord,
+    cause: string | null,
+    sendAt?: number,
+    advice?: { model: string },
+    /**
+     * The reason of the move's history row when it also tells the thread to
+     * switch to Opus, asked as that row is added, once the move is stored as
+     * the project's latest (null: `record.reason`): see judge (Sol
+     * B2-R4-002). The latest move keeps `record.reason`: the advice is the
+     * thread's.
+     */
+    told?: () => string | null,
+  ) {
+    recentSwitches.set(record.projectId, {
+      at: record.at,
+      to: record.to,
+      threadId: cause,
+      sendAt,
+      advice,
+      graced: new Set(),
+    });
+    try {
+      await bb.storage.kv.set(KV_LAST_SWITCH, record);
+    } catch (error) {
+      bb.log.warn(
+        `could not record the switch: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    await addHistory({ ...record, reason: told?.() ?? record.reason });
+  }
+
+  /**
+   * What a leftover in the same model is told when it follows a wait that
+   * told its thread to switch to Opus, while the wait is still ahead (one
+   * already due is retried at once: code-reviewer 0.2.20 r2, R2-02). Judged
+   * again on the latest reads, not copied (Sol B2-001): a refresh since may
+   * show the account named out of Opus, or fail to read one, and then
+   * nothing is said. From where the wait leaves the project, the account
+   * the leftover's turn started on ruled out as the failure's (unknown:
+   * none). No read here: the measurements as they stand.
+   */
+  function followsAdvice(
+    recent: {
+      to: string;
+      sendAt: number | undefined;
+      advice?: { model: string };
+    },
+    model: string,
+    now: number,
+    event: PluginTurnFailedEvent,
+    started: string | null | undefined,
+    projectId: string,
+    /** The thread is background work (see isBackground). */
+    background: boolean,
+  ): string | null {
+    if (
+      recent.advice === undefined ||
+      recent.sendAt === undefined ||
+      recent.sendAt <= now ||
+      recent.advice.model.toLowerCase() !== model.toLowerCase()
+    )
+      return null;
+    const on = opusInstead(
+      { kind: "wait", account: recent.to, sendAt: recent.sendAt, reason: "" },
+      {
+        currentAccount: recent.to,
+        failedAccount: typeof started === "string" ? started : null,
+        accounts: measuredAccounts(model),
+        preferredModel: model,
+        ...reserveOf(),
+        now,
+      },
+      unreadAccounts(),
+      placementOf(projectId, FALLBACK_MODEL, now, background),
+    );
+    return on === null ? null : opusInsteadText(model, on);
+  }
+
+  /**
+   * After a usage refresh (see askBannersAgain): the banner of each thread
+   * whose latest judgment declined its turn, asked again on the new reads
+   * (Sol B2-R4-001). A thread with a retry queued (bb's provider-retry) is
+   * never judged again until that retry runs, while the account an Opus
+   * turn would go to changes with the numbers. As a rescue's judgment would
+   * ask it: the account the turn failed on judged on its numbers like the
+   * rest, from where the project sits now, with the same function and the
+   * same placement (opusInstead): a new account, the banner gone (Fable
+   * back, no account for Opus, a read that failed) or back. A basis read
+   * back after a restart is checked against bb before anything else is
+   * asked of it (see restoredHolds; code-reviewer r6, CR-L2). Only the
+   * banner: nothing sent, retried, moved, queued or written. One read of
+   * each project's account for all its threads (Sol B2-R5-003), none for a
+   * banner that goes whatever the project's account (see adviseOpus): its
+   * model no longer the preferred one, a read of an account that says
+   * nothing (failed, missing or older than two refreshes: Sol B2-R5-001),
+   * or the preferred model back on some account (Sol B2-R6-003). A banner
+   * also goes when the project's account cannot be read. In every case its
+   * basis stays for the reads to come back. A judgment of the thread, a
+   * turn of it, its archiving or the automatic choice switched off while
+   * the project is read leave a basis other than the one read: what was
+   * read says nothing, and that thread's banner is theirs.
+   */
+  async function reviseAdvice(): Promise<void> {
+    const byProject = new Map<string, [string, AdviceBasis][]>();
+    for (const [threadId, stored] of adviceBasis) {
+      const basis =
+        stored.restored === true ? await restoredHolds(threadId, stored) : stored;
+      // A judgment of the thread that landed while the pass waited for that
+      // check: its basis, and its banner, are its own (Sol B2-R7-001).
+      if (basis === null || adviceBasis.get(threadId) !== basis) continue;
+      if (
+        !adviseOpus(
+          basis.decision,
+          {
+            accounts: measuredAccounts(basis.model),
+            preferredModel: basis.model,
+            ...reserveOf(),
+            now: deps.now(),
+          },
+          unreadAccounts(),
+          // As a rescue's judgment asks it: every account on its numbers.
+          null,
+        )
+      ) {
+        showAdvice(threadId, null);
+        continue;
+      }
+      const threads = byProject.get(basis.projectId) ?? [];
+      threads.push([threadId, basis]);
+      byProject.set(basis.projectId, threads);
+    }
+    for (const [projectId, threads] of byProject)
+      await askProject(projectId, threads);
+  }
+
+  /**
+   * The banners of a project's threads that the pass asks again (see
+   * reviseAdvice), on one read of where the project sits (code-reviewer
+   * r7, N3).
+   */
+  async function askProject(
+    projectId: string,
+    threads: [string, AdviceBasis][],
+  ): Promise<void> {
+    // A move of the project under way: where it sits is being written.
+    // Not read now: the pass runs again once the move is over, and the
+    // banners stay as they were until then (Sol B2-R6-002).
+    const move = movesOf(projectId);
+    if (move.inFlight > 0) {
+      passAfterMove.add(projectId);
+      return;
+    }
+    const epoch = move.epoch;
+    let at: ProjectAccount;
+    try {
+      at = await projectAccount(projectId);
+    } catch (error) {
+      for (const [threadId, basis] of threads) {
+        bb.log.warn(
+          `thread ${threadId}: its banner not asked again (the project's account could not be read: ${error instanceof Error ? error.message : String(error)})`,
+        );
+        // Where an Opus turn would go is not known: the banner goes
+        // (Sol B2-R6-003).
+        if (adviceBasis.get(threadId) === basis) showAdvice(threadId, null);
+      }
+      return;
+    }
+    // A move crossed the read: what it says is where the project was, or
+    // is going. Dropped, and the pass runs again (Sol B2-R6-002).
+    if (move.epoch !== epoch) {
+      passAgain = true;
+      return;
+    }
+    const now = deps.now();
+    for (const [threadId, basis] of threads) {
+      if (adviceBasis.get(threadId) !== basis) continue;
+      // Set outside this plugin: no placement there (see placeTurn).
+      if (at.external) {
+        showAdvice(threadId, null);
+        continue;
+      }
+      const on = opusInstead(
+        basis.decision,
+        {
+          currentAccount: at.account ?? current.defaultAccountName,
+          accounts: measuredAccounts(basis.model),
+          preferredModel: basis.model,
+          ...reserveOf(),
+          now,
+          stuck: true,
+        },
+        unreadAccounts(),
+        placementOf(projectId, FALLBACK_MODEL, now),
+      );
+      showAdvice(threadId, on === null ? null : opusInsteadText(basis.model, on));
+    }
+  }
+
+  /**
+   * A basis read back after a restart (see adviceBasis), checked against bb
+   * before the pass asks its banner (see waitsOnJudgedTurn); a thread that
+   * moved on while the plugin was away keeps nothing (Sol B2-R5-002). The
+   * basis checked, now the thread's; null when it is dropped, when a
+   * judgment of the thread replaced it meanwhile, or when bb could not be
+   * read or does not say yet (kept, unchecked and not shown: asked again by
+   * the next pass, up to RESTORED_CHECKS refreshes in a row). One judged
+   * more than RESTORED_MAX_AGE_MS before is dropped unread (code-reviewer
+   * r6, CR-L2).
+   */
+  async function restoredHolds(
+    threadId: string,
+    basis: AdviceBasis,
+  ): Promise<AdviceBasis | null> {
+    let holds: boolean | null = false;
+    if (deps.now() - basis.at > RESTORED_MAX_AGE_MS)
+      bb.log.debug(
+        `thread ${threadId}: what its banner was asked on is dropped (judged more than ${RESTORED_MAX_AGE_MS / 86_400_000} days ago)`,
+      );
+    else {
+      try {
+        holds = await waitsOnJudgedTurn(threadId, basis);
+      } catch (error) {
+        bb.log.warn(
+          `thread ${threadId}: its banner not asked again (the thread or its log could not be read: ${error instanceof Error ? error.message : String(error)})`,
+        );
+        holds = null;
+      }
+      if (adviceBasis.get(threadId) !== basis) return null;
+      if (holds === null) {
+        // One per refresh: a pass that runs again in it (after a move, or a
+        // read a move crossed) counts nothing more (code-reviewer r7, CR-L1).
+        if (basis.missedIn === refreshes) return null;
+        const misses = (basis.misses ?? 0) + 1;
+        if (misses < RESTORED_CHECKS) {
+          adviceBasis.set(threadId, { ...basis, misses, missedIn: refreshes });
+          return null;
+        }
+        bb.log.info(
+          `thread ${threadId}: what its banner was asked on is dropped (${RESTORED_CHECKS} checks in a row could not tell)`,
+        );
+        holds = false;
+      }
+    }
+    if (!holds) {
+      adviceBasis.delete(threadId);
+      storeBases();
+      return null;
+    }
+    // A copy: the object in the map stays as it was read (code-reviewer r6,
+    // N2).
+    const checked = { ...basis, restored: false };
+    adviceBasis.set(threadId, checked);
+    return checked;
+  }
+  /**
+   * Whether bb says the thread still waits on the turn `basis` judged: in
+   * error, in the same project, its latest turn that one or a later attempt
+   * of its chain. With the plugin running, such an attempt's start would
+   * have ended the banner, and only its failure's judgment could put one
+   * back: so that attempt must have been sent in the model judged and have
+   * failed in a way a failure's judgment takes up (a limit, a refusal), as
+   * a rescue reads it from bb's log (Sol B2-R6-001). Null: the log does not
+   * say yet how that attempt failed.
+   */
+  async function waitsOnJudgedTurn(
+    threadId: string,
+    basis: AdviceBasis,
+  ): Promise<boolean | null> {
+    const live = await bb.sdk.threads.get({ threadId });
+    if (!waitingThread(live) || live.projectId !== basis.projectId)
+      return false;
+    const turn = await latestTurn(threadId);
+    if (turn === null) return false;
+    if (turn.requestId === basis.requestId) return true;
+    if (turn.original !== basis.chain) return false;
+    // A turn whose log names no Claude model is the preferred model's, as
+    // a rescue judges it.
+    if (
+      (turn.model ?? current.preferredModel).toLowerCase() !==
+      basis.model.toLowerCase()
+    )
+      return false;
+    const failure = await loggedFailure(threadId, turn);
+    return failure === null ? null : declineReason(failure, true) === null;
+  }
+
+  /**
+   * Per thread, the retry chain it was last told to switch to Opus for, by
+   * the chain's first request (see loggedTurn, noteAdvice). Kept in memory:
+   * after a restart a thread still in error gets one more row.
+   */
+  const advised = new Map<string, string>();
+
+  /**
+   * Marks the turn's chain told; false when it already was (Sol B2-003: by
+   * thread and chain, not by attempt). A retry whose chain the log does not
+   * name is taken for the chain last told, the likelier case.
+   */
+  function tellOnce(
+    threadId: string,
+    chain: string | null,
+    requestId: string,
+  ): boolean {
+    const told = advised.get(threadId);
+    if (told !== undefined && (chain === null || told === chain)) return false;
+    advised.set(threadId, chain ?? requestId);
+    return true;
+  }
+
+  /**
+   * A thread told to switch to Opus where no move says it (see
+   * opusInstead): a history row from its account to the same one. Once
+   * per turn sent, retries included: a thread left in error is judged on
+   * every refresh, and where an Opus turn would go can change between two
+   * (code-reviewer 0.2.20, CR-04), and the turn's retries say nothing new;
+   * a new turn gets its own row, also when it is told only at a later
+   * attempt (r2, R2-01; Sol B2-003). The log says each one. `turn.chain`:
+   * see loggedTurn, read before the judgment checked anything. Only in the
+   * thread's generation the judgment began in, as the banner: switched off
+   * meanwhile (or a turn of it started, or it was archived), no row, and
+   * the chain is not taken for told (code-reviewer r3, N2).
+   */
+  async function noteAdvice(
+    threadId: string,
+    projectId: string,
+    account: string,
+    reason: string,
+    turn: { requestId: string; chain: string | null },
+    at: number,
+    /** The generation of the judgment that tells it (see generation). */
+    judgedIn: number,
+  ): Promise<void> {
+    if (judgedIn !== generation(threadId)) return;
+    if (!tellOnce(threadId, turn.chain, turn.requestId)) return;
+    await addHistory({
+      at,
+      threadId,
+      projectId,
+      from: account,
+      to: account,
+      reason,
+    });
+  }
+
+  /** Same variable state: nobody moved the project while we were deciding. */
+  function sameAccount(a: ProjectAccount, b: ProjectAccount): boolean {
+    return (
+      a.account === b.account &&
+      a.owned === b.owned &&
+      a.external === b.external
+    );
+  }
+
+  // ---- Placement before a new thread's first turn ----------------------
+  /**
+   * The way back from an excursion, for a turn in `model`, as decidePlacement
+   * takes it: the account the project left for another model; null when it
+   * left that account ahead of the limit and it is still at or above that
+   * share (see aheadLeft); undefined when there is no excursion or the turn
+   * is in another model. Shared by every placement, a new thread's included
+   * (Codex BM-INSPECT-R3-003).
+   */
+  function wayHome(
+    projectId: string,
+    model: string,
+    measured: ReturnType<typeof measuredAccounts>,
+    now: number,
+  ): string | null | undefined {
+    if (otherModel(model)) return undefined;
+    // A pick by hand left for a turn held off the reserve is the way home,
+    // before any excursion noted since (a reload forgets them, and a later
+    // one may start on a Team seat: Codex r1 medium 5, r2 medium 3).
+    const pin = pins.get(projectId);
+    if (pin !== undefined) return pin;
+    const excursion = excursions.get(projectId);
+    if (excursion === undefined) return undefined;
+    const left = aheadLeft.get(projectId);
+    const home = measured.find((a) => a.name === excursion.from);
+    return left !== undefined &&
+      left.account === excursion.from &&
+      home !== undefined &&
+      fullestWindow(settle(home, now), left.model).used >= left.threshold
+      ? null
+      : excursion.from;
+  }
+
+  /**
+   * Races the thread's first turn, on purpose: nothing here waits on the
+   * network unless no account has a usable measurement. When the turn starts
+   * first, it runs where the project was, and its failure gets the grace
+   * retry on the new account (see recordMove).
+   */
+  async function placeProject(thread: ThreadResponse): Promise<void> {
+    const projectId = thread.projectId;
+    // Always: picks up a changed accounts directory and prunes its measurements.
+    await discover();
+    const before = moveMark(projectId);
+    const from = await projectAccount(projectId);
+    if (from.external) {
+      bb.log.info(
+        `thread ${thread.id}: not placed (the project's CLAUDE_CONFIG_DIR was not set by this plugin)`,
+      );
+      await markHandled(projectId);
+      return;
+    }
+    let isNew = false;
+    if (installedAt !== null && !handled.has(projectId) && !from.owned) {
+      const project = await bb.sdk.projects.get({ projectId });
+      isNew = project.createdAt > installedAt;
+      bb.log.debug(
+        `thread ${thread.id}: project created at ${project.createdAt}, plugin installed at ${installedAt}: ${isNew ? "new" : "not new"}`,
+      );
+    }
+    let measured = measuredAccounts();
+    // A new project is placed once: measure every account first, not only
+    // those the startup refresh has reached.
+    if (measured.length === 0 || (isNew && measured.length < accounts.length)) {
+      await refreshAll();
+      measured = measuredAccounts();
+    }
+    if (measured.length === 0) {
+      // Nothing to decide on: the project stays new for its next thread.
+      bb.log.info(
+        `thread ${thread.id}: not placed (no account could be measured)`,
+      );
+      return;
+    }
+    const now = deps.now();
+    const fromName = from.account ?? current.defaultAccountName;
+    // Read before noteMove, which forgets it on the way home.
+    const excursion = excursions.get(projectId);
+    const decision = decidePlacement({
+      currentAccount: fromName,
+      isNew,
+      accounts: measured,
+      preferredModel: current.preferredModel,
+      // The share ranks a new project by room (0.2.48, B2): without the
+      // reserve here the choice was by deadline alone (PLAN §A row 1).
+      ...reserveOf(projectId),
+      excursionFrom: wayHome(projectId, current.preferredModel, measured, now),
+      freeSeats,
+      // Background work behind the accounts saved for the user (SPEC
+      // 2026-10-30 §2).
+      ...paceFilter(isBackground(thread)),
+      // Nor on an account with no session on one of its machines; a
+      // limit's mark is left to the placement before its turn, as before
+      // (sin-login 2026-11-10).
+      limitedUntil: (name: string) => sessionLostOn(name, projectId)?.until ?? null,
+      now,
+      currentLoggedOut: unconfirmed(fromName),
+    });
+    if (decision.kind === "keep") {
+      bb.log.info(
+        `thread ${thread.id}: project left on account ${fromName} (${isNew ? "the best account for a new project" : "its account can run"})`,
+      );
+      await markHandled(projectId);
+      return;
+    }
+    const latest = await projectAccount(projectId);
+    // A pick of the default account writes nothing; the handled mark shows it.
+    if (!sameAccount(from, latest) || (isNew && handled.has(projectId))) {
+      bb.log.info(
+        `thread ${thread.id}: not placed (the project's account changed meanwhile)`,
+      );
+      await markHandled(projectId);
+      return;
+    }
+    // Not its placement yet: the next thread of a new project is placed.
+    if (siblingAdmitted(projectId) !== null) {
+      bb.log.info(
+        `thread ${thread.id}: not placed (another thread is about to start on ${fromName})`,
+      );
+      return;
+    }
+    // Nor while another automatic move of the project is written (a
+    // dispatch's, before its thread is told to start): the project is being
+    // placed, and this thread's dispatch goes through placeTurn, which waits
+    // for that move (Astra r9 medium).
+    if (moving(projectId)) {
+      bb.log.info(
+        `thread ${thread.id}: not placed (another move of the project is under way)`,
+      );
+      return;
+    }
+    if (
+      !(await applyAccount(projectId, accountOrDefault(decision.account), latest))
+    ) {
+      bb.log.info(
+        `thread ${thread.id}: not placed (the project's account changed meanwhile)`,
+      );
+      await markHandled(projectId);
+      return;
+    }
+    await markHandled(projectId);
+    noteMove(
+      projectId,
+      fromName,
+      decision.account,
+      current.preferredModel,
+      before,
+    );
+    const reason =
+      decision.why === "new-project"
+        ? `New project placed on account ${decision.account}${current.preferredModel === "" ? "" : ` (${current.preferredModel})`}`
+        : decision.why === "back-from-excursion"
+          ? `Moved back to account ${decision.account} before the turn: ${fromName} was an excursion for ${excursion?.model ?? "another model"}`
+          : `Moved to account ${decision.account} before the turn: ${fromName} ${whyOut(fromName, current.preferredModel, projectId)}`;
+    bb.log.info(`thread ${thread.id}: ${reason}`);
+    await recordMove(
+      {
+        at: now,
+        threadId: thread.id,
+        projectId,
+        from: fromName,
+        to: decision.account,
+        reason,
+      },
+      null,
+    );
+  }
+
+  /**
+   * The placement of each project under way, from thread.created or from
+   * its first message's checkpoint (see placeNewProject): one per project,
+   * shared by both (E44).
+   */
+  const placing = new Map<string, Promise<void>>();
+  function placeOnce(thread: ThreadResponse): Promise<void> {
+    const under = placing.get(thread.projectId);
+    if (under !== undefined) return under;
+    const run = placeProject(thread).finally(() => {
+      if (placing.get(thread.projectId) === run)
+        placing.delete(thread.projectId);
+    });
+    placing.set(thread.projectId, run);
+    return run;
+  }
+  /**
+   * Before a thread's first turn: a project created after install and never
+   * placed is placed now, not only when bb announces the thread, which may
+   * come after the turn started on the default account (E44: on a machine
+   * whose `~/.claude` has no login, that turn fails with «Not logged in»,
+   * and so do its retries). A project seen before, or given an account
+   * already (here or outside this plugin), is left to placeTurn and
+   * thread.created as before.
+   */
+  async function placeNewProject(thread: ThreadResponse): Promise<void> {
+    const projectId = thread.projectId;
+    if (installedAt === null || handled.has(projectId)) return;
+    const under = placing.get(projectId);
+    if (under !== undefined) return under;
+    const project = await bb.sdk.projects.get({ projectId });
+    if (project.createdAt <= installedAt) return;
+    const at = await projectAccount(projectId);
+    if (at.owned || at.external) return;
+    // In the project's queue, like thread.created's: a pick by hand saved
+    // meanwhile runs after it and wins (Astra E44-R2-02). The checkpoint
+    // never waits for it longer than DISPATCH_LIMIT_MS, so a retry a
+    // handler of the queue sends through bb cannot hold it.
+    await inProjectQueue(projectId, () => placeOnce(thread));
+  }
+
+  // ---- Move ahead of the limit, after a turn -----------------------------
+  /** When the usage of each account was last asked for here, answered or not. */
+  const aheadAsked = new Map<string, number>();
+  /**
+   * The turn that just ended consumed some of the account: measure it again
+   * unless it was measured, or asked, within AHEAD_FRESH_MS (a provider that
+   * is failing is not asked again at every turn end). Outside the project's
+   * queue: a failed turn of the project must not wait on this query.
+   */
+  async function measureForAhead(projectId: string): Promise<void> {
+    const at = await projectAccount(projectId);
+    if (at.external) return;
+    const name = at.account ?? current.defaultAccountName;
+    const account = accounts.find((a) => a.name === name);
+    if (account === undefined) return;
+    const now = deps.now();
+    const latest = Math.max(
+      collector.get(name)?.observedAt ?? -Infinity,
+      aheadAsked.get(name) ?? -Infinity,
+    );
+    if (now - latest <= AHEAD_FRESH_MS) return;
+    aheadAsked.set(name, now);
+    await collector.collect(account);
+    await recordSamples();
+  }
+  /** Either switch-ahead threshold is on. */
+  function aheadConfigured(): boolean {
+    return (
+      current.switchAheadPercent > 0 || current.switchAheadOtherPercent > 0
+    );
+  }
+  /** The switch-ahead threshold for a thread in `model`: the preferred model's, or the other models' when one is set. */
+  function aheadThreshold(model: string): number {
+    const other =
+      current.preferredModel !== "" &&
+      model.toLowerCase() !== current.preferredModel.toLowerCase();
+    return other ? current.switchAheadOtherPercent : current.switchAheadPercent;
+  }
+
+  /**
+   * When a turn ends, the project's account may be close to its limit: move
+   * the project now, while another account has room, rather than let the
+   * next turn fail. Judged on the latest measurement of each account (see
+   * measureForAhead for the project's own).
+   */
+  /**
+   * The account each project last left ahead of the limit, with the model
+   * and the share that moved it: not a target for that project again while
+   * it is still at or above that share. Without it a project with a Fable
+   * thread and an Opus thread, each with its own percentage, moved back and
+   * forth between two accounts at every turn end (code-reviewer r2).
+   */
+  const aheadLeft = new Map<
+    string,
+    { account: string; model: string; threshold: number }
+  >();
+  /**
+   * The accounts a move made while nothing failed may take the project to,
+   * its own included. Nothing fails if the project stays, so a target has
+   * to be sure: an account listed now, measured within two refresh periods
+   * (a query that keeps failing leaves an old measurement), another Claude
+   * account (a directory of the same one shares its usage and gains
+   * nothing), and not the account the project last left ahead of the limit
+   * while it is still at or above that share (see aheadLeft).
+   */
+  function aheadTargets(
+    projectId: string,
+    fromName: string,
+    model: string,
+    now: number,
+  ) {
+    const maxAgeMs = maxReadAgeMs();
+    const own = accounts.find((a) => a.name === fromName);
+    const left = aheadLeft.get(projectId);
+    return measuredAccounts(model).filter((usage) => {
+      if (usage.name === fromName) return true;
+      if (sessionLostOn(usage.name, projectId) !== null) return false;
+      if (
+        left !== undefined &&
+        usage.name === left.account &&
+        fullestWindow(settle(usage, now), left.model).used >= left.threshold
+      )
+        return false;
+      const account = accounts.find((a) => a.name === usage.name);
+      const observedAt = collector.get(usage.name)?.observedAt ?? null;
+      return (
+        account !== undefined &&
+        observedAt !== null &&
+        now - observedAt <= maxAgeMs &&
+        (own === undefined ||
+          own.accountUuid === null ||
+          account.accountUuid !== own.accountUuid)
+      );
+    });
+  }
+  async function moveAhead(
+    thread: ThreadResponse,
+    model: string,
+  ): Promise<void> {
+    // Asked again: the settings may have changed while the account was measured.
+    if (!current.autoSwitch || !aheadConfigured()) return;
+    // The threshold is the thread's model's (`model`: read by the caller from
+    // bb's log): a thread in the preferred model moves at switchAheadPercent,
+    // one sent with another model (Opus while Fable is preferred: it only
+    // spends the 5-hour session of a Team seat) at switchAheadOtherPercent.
+    // Each can be off on its own.
+    const threshold = aheadThreshold(model);
+    if (!(threshold > 0)) return;
+    const projectId = thread.projectId;
+    const before = moveMark(projectId);
+    const from = await projectAccount(projectId);
+    if (from.external) return;
+    const fromName = from.account ?? current.defaultAccountName;
+    // A pick by hand holds until the account cannot run the turn, not
+    // until it nears a limit (Aitor 2026-11-05, (b); code-reviewer r4).
+    if (pins.get(projectId) === fromName) return;
+    const now = deps.now();
+    const decision = decideAhead({
+      currentAccount: fromName,
+      accounts: aheadTargets(projectId, fromName, model, now),
+      preferredModel: model,
+      ...reserveOf(projectId),
+      threshold,
+      freeSeats,
+      ...paceFilter(isBackground(thread)),
+      now,
+    });
+    if (decision.kind === "keep") return;
+    // Nor over another automatic move of the project under way (a
+    // dispatch's, its variable still being written): this read predates it.
+    // The next turn's end looks again (Astra r8 medium 2, the same guard as
+    // the rescue's; on in production: switchAheadOtherPercent 95, 2026-11-07).
+    if (moving(projectId)) {
+      bb.log.info(
+        `thread ${thread.id}: not moved ahead of the limit to ${decision.account}: another move of the project is under way; looked at again at the next turn's end`,
+      );
+      return;
+    }
+    // Moved by something else while the sessions were shared: this
+    // decision, taken on the account before, no longer holds.
+    if (
+      !(await applyAccount(projectId, accountOrDefault(decision.account), from, {
+        forThread: thread.id,
+        keepPin: otherModel(model),
+      }))
+    )
+      return;
+    await markHandled(projectId);
+    noteMove(projectId, fromName, decision.account, model, before);
+    const reason = `Switched ahead of the limit to ${decision.account}: ${fromName} at ${Math.round(decision.used)}% of ${decision.window}`;
+    bb.log.info(`thread ${thread.id}: ${reason}`);
+    await recordMove(
+      {
+        at: now,
+        threadId: thread.id,
+        projectId,
+        from: fromName,
+        to: decision.account,
+        reason,
+      },
+      // The thread's next turn runs on the new account: its failure is
+      // that account's, not a leftover of the old one.
+      thread.id,
+    );
+    aheadLeft.set(projectId, { account: fromName, model, threshold });
+  }
+
+  // First of the listeners of a turn's end, and without waiting: the ones
+  // below read the turn's log first, and a rescue sharing the project's
+  // sessions meanwhile must already see that a turn ended (Codex
+  // OPUS-0236-R4-001).
+  bb.events.on("thread.idle", ({ thread }) => {
+    const started = turnStart.get(thread.id);
+    if (
+      !current.autoSwitch ||
+      thread.providerId !== CLAUDE_CODE_PROVIDER ||
+      notTheUsersThread(thread) !== null ||
+      started === undefined
+    )
+      return;
+    endingTurns.set(thread.id, turnEnded(thread.projectId, started.activity));
+  });
+
+  bb.events.on("thread.idle", async ({ thread }) => {
+    if (
+      !current.autoSwitch ||
+      !aheadConfigured() ||
+      thread.providerId !== CLAUDE_CODE_PROVIDER ||
+      notTheUsersThread(thread) !== null
+    )
+      return;
+    // The threshold is the thread's model's, and the turn that just ended is
+    // the truth about it: bb's log names the model of every turn requested,
+    // also of the sends that skip the checkpoint (a Send now, an edited
+    // message), which the dispatch cache never saw (Codex R0216-INSPECT-001).
+    // Read before the account is measured and outside the project's queue:
+    // a thread whose model has no percentage costs no query (code-reviewer r1).
+    const model =
+      (await loggedTurn(thread.id)).model ??
+      threadModel.get(thread.id) ??
+      current.preferredModel;
+    if (!(aheadThreshold(model) > 0)) return;
+    // Emptied by a change of the accounts directory, until the next look.
+    if (accounts.length === 0) await discover();
+    await measureForAhead(thread.projectId);
+    await inProjectQueue(thread.projectId, () => moveAhead(thread, model));
+  });
+
+  // Aitor 2026-11-03: a turn that skips the checkpoint (a message from a
+  // child thread, a Send now, the provider's own follow-up) runs wherever
+  // the project sits: this plugin's own Opus thread ran on aitor that way
+  // for 15 hours. When a turn in another model than the reserved one ends
+  // where it spends the reserve's weekly, the project moves off at once,
+  // as the checkpoint would have moved it, so the next such turn does not
+  // start there; with nowhere to go it stays, and the checkpoint holds the
+  // next turn it sees.
+  // Only while nothing came after the turn started (Codex OPUS-002,
+  // OPUS-R2-001/002, OPUS-R4-001): a message of the project asked about at
+  // the checkpoint or a turn of it started since (a Fable turn placed
+  // meanwhile, another turn past the checkpoint), a pick by hand (also one
+  // that confirms the account) or a release, or any move outranks a turn
+  // that is over; what came before it does not. A turn whose start was
+  // not seen (the plugin loaded meanwhile) moves nothing.
+  /** What each thread's turn started after: the project's moves, picks and activity then. */
+  const turnStart = new Map<
+    string,
+    { epoch: number; picks: number; activity: number }
+  >();
+  /** Per project, its checkpoint messages and turn starts, counted together: their order. */
+  const activity = new Map<string, number>();
+  function noteActivity(projectId: string): number {
+    const n = (activity.get(projectId) ?? 0) + 1;
+    activity.set(projectId, n);
+    return n;
+  }
+  function projectMarks(projectId: string) {
+    const move = movesOf(projectId);
+    return {
+      epoch: move.epoch,
+      picks: move.picks,
+      activity: activity.get(projectId) ?? 0,
+    };
+  }
+  bb.events.on("thread.active", ({ thread }) => {
+    // Only the turns the checkpoint and the end of a turn look at: another
+    // provider's or a hidden thread's turn never stops the move (Codex
+    // OPUS-R6-002).
+    if (
+      thread.providerId !== CLAUDE_CODE_PROVIDER ||
+      notTheUsersThread(thread) !== null
+    )
+      return;
+    noteActivity(thread.projectId);
+    turnStart.set(thread.id, projectMarks(thread.projectId));
+  });
+  bb.events.on("thread.idle", async ({ thread }) => {
+    const started = turnStart.get(thread.id);
+    turnStart.delete(thread.id);
+    let ending = endingTurns.get(thread.id);
+    endingTurns.delete(thread.id);
+    try {
+      if (
+        !current.autoSwitch ||
+        thread.providerId !== CLAUDE_CODE_PROVIDER ||
+        notTheUsersThread(thread) !== null ||
+        started === undefined
+      )
+        return;
+      ending ??= turnEnded(thread.projectId, started.activity);
+      await afterTurn(thread, started, ending);
+    } finally {
+      ending?.();
+    }
+  });
+  /**
+   * A turn of the project ended: from now until its model is known, a
+   * rescue of it neither decides nor lands (Codex OPUS-0236-R2-001). The
+   * answer ends that wait; asking it again does nothing.
+   */
+  function turnEnded(projectId: string, activity: number): () => void {
+    turnEnds.set(projectId, (turnEnds.get(projectId) ?? 0) + 1);
+    const reads = modelReads.get(projectId) ?? new Map<number, number>();
+    modelReads.set(projectId, reads);
+    reads.set(activity, deps.now() + MODEL_READ_LIMIT_MS);
+    return () => {
+      reads.delete(activity);
+      if (reads.size === 0 && modelReads.get(projectId) === reads)
+        modelReads.delete(projectId);
+    };
+  }
+  /** Per thread, the end of its turn counted by the first listener, until the last one reads it. */
+  const endingTurns = new Map<string, () => void>();
+  /** Per project, the turns that ended (counted as each end begins). */
+  const turnEnds = new Map<string, number>();
+  /**
+   * Per project, the ended turns whose model is still being read: when
+   * each started (its activity count), and until when a rescue waits for it.
+   */
+  const modelReads = new Map<string, Map<number, number>>();
+  /**
+   * Whether a turn of the project that ended may still name its model:
+   * its log not read yet, within MODEL_READ_LIMIT_MS, and no newer turn
+   * or message has named it meanwhile (Codex OPUS-0236-R3-001).
+   */
+  function modelBeingRead(projectId: string, now: number): boolean {
+    const known = projectModel.get(projectId)?.at ?? 0;
+    for (const [at, until] of modelReads.get(projectId) ?? [])
+      if (at > known && now < until) return true;
+    return false;
+  }
+  async function afterTurn(
+    thread: ThreadResponse,
+    started: { epoch: number; picks: number; activity: number },
+    read: () => void,
+  ): Promise<void> {
+    const projectId = thread.projectId;
+    const stillLatest = () => {
+      const now = projectMarks(projectId);
+      return (
+        current.autoSwitch &&
+        now.epoch === started.epoch &&
+        now.picks === started.picks &&
+        now.activity === started.activity
+      );
+    };
+    const model =
+      (await loggedTurn(thread.id)).model ?? threadModel.get(thread.id) ?? null;
+    if (model === null) return;
+    // The model the turn ran, unless what the project's model says was
+    // seen later (a newer message or turn start, also of a turn that
+    // ended first: Codex OPUS-R4-001); a move or a pick meanwhile stops
+    // only the move below (Codex OPUS-R3-002).
+    if ((projectModel.get(projectId)?.at ?? 0) < started.activity)
+      noteProjectModel(projectId, model, started.activity);
+    read();
+    if (!stillLatest()) return;
+    if (!reserving({ preferredModel: model, ...reserveOf() }))
+      return;
+    await inProjectQueue(projectId, async () => {
+      // Asked again: the setting, a move or a newer message may have come
+      // while the log was read or the queue waited (Codex OPUS-004).
+      if (!stillLatest()) return;
+      // And once more after placeTurn's reads, just before it writes
+      // (Codex OPUS-R2-003): `abandoned` is asked then.
+      await placeTurn(
+        thread,
+        model,
+        {
+          get abandoned() {
+            return !stillLatest();
+          },
+        },
+        "after",
+      );
+    });
+  }
+
+  // ---- No project left where a turn cannot run ---------------------------
+  /**
+   * The model of each project's latest turn, as its checkpoint or the end
+   * of the turn named it, kept over a reload (with `at: 0`, so any new turn
+   * beats it: measured 2026-11-03 17:59Z, a reload that forgot it made the
+   * rescue move 7 projects). Aitor 2026-11-03: the rescue judged every project
+   * for the preferred model, and moved one working in Opus off a Team seat
+   * (or a Max account out of Fable) that still ran Opus, to a Max account
+   * whose weekly Fable needs (2 Nov 18:23).
+   */
+  const projectModel = new Map<string, { model: string; at: number }>(
+    Object.entries(storedProjectModels).map(([id, model]) => [
+      id,
+      { model, at: 0 },
+    ]),
+  );
+  /**
+   * The projects whose model was read at load from their latest thread
+   * (see seedProjectModels), until a turn names it: left out of the store,
+   * for only a turn's model is stored.
+   */
+  const seededModels = new Set<string>();
+  /** Writes in order (see storeHolds). */
+  let projectModelWrites: Promise<void> = Promise.resolve();
+  /** The latest write failed: the next turn stores it again, also with no change (Codex IR-001). */
+  let projectModelsUnsaved = false;
+  /** Stored as it changes, without holding the turn back: a failed write is logged and tried again. */
+  function noteProjectModel(projectId: string, model: string, at: number): void {
+    const before = seededModels.delete(projectId)
+      ? undefined
+      : projectModel.get(projectId)?.model;
+    projectModel.set(projectId, { model, at });
+    if (!projectModelsRead || (before === model && !projectModelsUnsaved)) return;
+    const snapshot = Object.fromEntries(
+      [...projectModel]
+        .filter(([id]) => !seededModels.has(id))
+        .map(([id, known]) => [id, known.model]),
+    );
+    projectModelWrites = projectModelWrites.then(async () => {
+      try {
+        await bb.storage.kv.set(KV_PROJECT_MODELS, snapshot);
+        projectModelsUnsaved = false;
+      } catch (error) {
+        projectModelsUnsaved = true;
+        bb.log.warn(
+          `could not store the projects' models (a reload forgets them): ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    });
+  }
+  /** The model a project's next turn is judged for: its latest turn's, else the preferred one. */
+  function modelOfProject(projectId: string): string {
+    return projectModel.get(projectId)?.model ?? current.preferredModel;
+  }
+  /**
+   * Limpieza 2026-11-06, punto 60 (Aitor 2026-11-06: «resolver hilos o
+   * decisiones … pendientes»): a project with no model stored (no turn since
+   * project-models began, or the store unread) was judged for the preferred
+   * model by the first rescue after a load, and moved off a Team seat out of
+   * Fable where its Opus thread ran (4 projects on installing 0.2.39). At
+   * load, each such project takes the model of the latest turn of its
+   * latest Claude Code thread (by updatedAt; the user's, as the checkpoint
+   * notes them), with `at: 0` so any turn beats it, from the list of
+   * threads the seat count reads anyway: one log read per project, none per
+   * other thread. Not stored until a turn names it (see seededModels). A
+   * read that fails is said and that project is judged as before; the
+   * rescue waits for this at most SEED_WAIT_MS.
+   */
+  let seedAsked = false;
+  let seedDone!: () => void;
+  const modelsSeeded = new Promise<void>((resolve) => (seedDone = resolve));
+  let seedLateSaid = false;
+  type LatestThreads = Map<string, { id: string; updatedAt: number }>;
+  /** `t` as its project's latest thread of the user, if it is the latest so far (as the checkpoint notes a model). */
+  function noteLatestThread(
+    latest: LatestThreads,
+    t: { id: string; projectId: string; updatedAt: number } & Parameters<
+      typeof notTheUsersThread
+    >[0] & { providerId: string },
+  ): void {
+    if (
+      t.providerId === CLAUDE_CODE_PROVIDER &&
+      notTheUsersThread(t) === null &&
+      (latest.get(t.projectId)?.updatedAt ?? -Infinity) < t.updatedAt
+    )
+      latest.set(t.projectId, { id: t.id, updatedAt: t.updatedAt });
+  }
+  function seedProjectModels(latest: LatestThreads | null): void {
+    if (seedAsked) return;
+    seedAsked = true;
+    void readSeeds(latest)
+      .catch((error: unknown) =>
+        bb.log.warn(
+          `the projects' models not read from their latest threads; the preferred model judges those with none stored: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      )
+      .finally(seedDone);
+  }
+  async function readSeeds(latest: LatestThreads | null): Promise<void> {
+    if (latest === null) {
+      bb.log.warn(
+        "the threads not listed to read each project's model at load; the preferred model judges those with none stored",
+      );
+      return;
+    }
+    const listed = await within(
+      bb.sdk.projects.list({ includePersonal: true }),
+      DISPATCH_LIMIT_MS,
+      "the projects not listed to count those with no thread",
+    );
+    // Late is said too (Astra MLC-002): a project with only archived
+    // threads, or none, is judged for the preferred model then.
+    if (listed === "late")
+      bb.log.warn(
+        "the projects not listed to count those with no thread: no answer in time; those not among the threads listed are judged for the preferred model",
+      );
+    const ids =
+      typeof listed === "object" ? listed.value.map((p) => p.id) : [...latest.keys()];
+    const asked = ids.filter((id) => !projectModel.has(id));
+    // An archived thread is a thread of its project too (Codex MLC-001):
+    // listed here, only when some project has no model, page by page. A
+    // page that is not read leaves every project judged as before.
+    const PAGE = 200;
+    for (let offset = 0; asked.length > 0; offset += PAGE) {
+      const what =
+        "the archived threads not listed to read each project's model at load; the preferred model judges those with none stored";
+      const page = await within(
+        bb.sdk.threads.list({ archived: true, limit: PAGE, offset }),
+        DISPATCH_LIMIT_MS,
+        what,
+      );
+      if (page === "late") bb.log.warn(`${what}: no answer in time`);
+      if (typeof page !== "object") return;
+      for (const t of page.value) noteLatestThread(latest, t);
+      if (page.value.length < PAGE) break;
+    }
+    let taken = 0;
+    let none = 0;
+    let unnamed = 0;
+    let unread = 0;
+    await Promise.all(
+      asked.map(async (projectId) => {
+        const thread = latest.get(projectId);
+        if (thread === undefined) {
+          none += 1;
+          return;
+        }
+        const what = `project ${projectId}: the model of its latest turn not read (the preferred model judges it)`;
+        const read = await within(latestTurn(thread.id), DISPATCH_LIMIT_MS, what);
+        if (read === "late") bb.log.warn(`${what}: no answer in time`);
+        if (typeof read !== "object") {
+          unread += 1;
+          return;
+        }
+        const model = read.value?.model ?? null;
+        if (model === null) {
+          unnamed += 1;
+          return;
+        }
+        // A turn named it while this was read: it stands.
+        if (projectModel.has(projectId)) return;
+        projectModel.set(projectId, { model, at: 0 });
+        seededModels.add(projectId);
+        taken += 1;
+      }),
+    );
+    bb.log.info(
+      `projects' models after loading: ${taken} from their latest turn, ${typeof listed === "object" ? none : "?"} with no thread, ${unnamed} whose latest turn names no model, ${unread} not read (of ${asked.length} with none stored)`,
+    );
+  }
+  /**
+   * Why `name` cannot run `model`, as measured now: not logged in, or out
+   * of it (session, weekly or the model's own window full, or locked)
+   * until when; null when it can, or nothing is known of it.
+   */
+  function stranded(name: string, now: number, model: string, projectId?: string): string | null {
+    if (loggedOut(name)) return "not logged in";
+    // No session there on one of the project's machines (sin-login 2026-11-10).
+    const lost = sessionLostOn(name, projectId);
+    if (lost !== null) return `sin sesión en ${hostLabel(lost.host)}`;
+    // A mark standing for the model: out whatever its read says, as in the
+    // placement (Astra r8 medium 1).
+    const marked = limitedUntil(name, model, projectId);
+    if (marked !== null)
+      return `answered ${model === "" ? "a turn" : model} with a usage limit until ${new Date(marked).toISOString().slice(0, 16).replace("T", " ")}`;
+    const known = measuredAccounts(model).find((a) => a.name === name);
+    if (known === undefined || known.unknown === true) return null;
+    const settled = settle(known, now);
+    if (isUsable(settled) && canRunModel(settled, model)) return null;
+    const full = [
+      settled.session,
+      settled.weekly,
+      modelWindow(settled, model),
+    ].filter((w) => w !== undefined && w.usedPercent >= 100);
+    const until = Math.max(...full.map((w) => w!.resetsAt ?? 0), 0);
+    return `exhausted for ${model === "" ? "every model" : model} until ${until === 0 ? "unknown" : new Date(until).toISOString().slice(0, 16).replace("T", " ")}`;
+  }
+  /**
+   * After every refresh (Aitor 2026-10-30, Añadido 2: «that no project stays
+   * on an exhausted account or one without a login without moving by
+   * itself, respecting the seats»): bb greys out the composer of a project
+   * whose account is at its limit, so the dispatch checkpoint never gets to
+   * move it (Fable at 100 %). Each project
+   * this plugin may move (not external) whose account cannot run the
+   * preferred model goes to the best account with a free seat, as a
+   * placement would choose it, whatever switchAheadPercent says. With none,
+   * it stays, said once per project and refresh.
+   */
+  async function rescueStranded(): Promise<void> {
+    if (!current.autoSwitch) return;
+    // The models read at load first (see seedProjectModels), within a bound.
+    if (
+      (await within(modelsSeeded, SEED_WAIT_MS, "the projects' models")) ===
+        "late" &&
+      !seedLateSaid
+    ) {
+      seedLateSaid = true;
+      bb.log.warn(
+        `the projects' models not read from their latest threads within ${SEED_WAIT_MS / 1000} s of a rescue; the preferred model judges those with none stored until they are`,
+      );
+    }
+    const now = deps.now();
+    // Each project read apart, within DISPATCH_LIMIT_MS: one that cannot be
+    // read is said and left out, the rest are looked at (Astra
+    // SEATS-R3-005).
+    const listed = await bb.sdk.projects.list({ includePersonal: true });
+    const projects = await Promise.all(
+      listed.map(async (p) => {
+        const read = await within(
+          projectAccount(p.id),
+          DISPATCH_LIMIT_MS,
+          `project ${p.name}: its account not read to rescue it`,
+        );
+        if (read === "late")
+          bb.log.warn(
+            `project ${p.name}: its account not read to rescue it: no answer in time`,
+          );
+        return typeof read === "object" ? { ...p, ...read.value } : null;
+      }),
+    );
+    for (const project of projects) {
+      if (project === null || project.external) continue;
+      if (
+        stranded(
+          project.account ?? current.defaultAccountName,
+          now,
+          modelOfProject(project.id),
+          project.id,
+        ) === null
+      )
+        continue;
+      // One project that cannot be moved, or whose queue is held, does not
+      // keep the rest where they are, nor the refresh (Astra SEATS-R4-004).
+      const rescued = await within(
+        inProjectQueue(project.id, () => rescue(project.id, project.name)),
+        RESCUE_LIMIT_MS,
+        `project ${project.name}: not moved off its account`,
+      );
+      if (rescued === "late")
+        bb.log.warn(
+          `project ${project.name}: not moved off its account: not done within ${RESCUE_LIMIT_MS / 1000} s; the refresh goes on`,
+        );
+    }
+  }
+  async function rescue(projectId: string, projectName: string): Promise<void> {
+    if (!current.autoSwitch) return;
+    const before = moveMark(projectId);
+    // Read again, in the project's queue: the shared list may be 30 s old.
+    // Within DISPATCH_LIMIT_MS: unread, this rescue is given up and nothing
+    // written (Astra SEATS-R4-004).
+    const read = await within(
+      projectAccount(projectId),
+      DISPATCH_LIMIT_MS,
+      `project ${projectName}: its account not read again to rescue it`,
+    );
+    if (read === "late")
+      bb.log.warn(
+        `project ${projectName}: its account not read again to rescue it: no answer in time`,
+      );
+    if (typeof read !== "object") return;
+    const from = read.value;
+    if (from.external) return;
+    const fromName = from.account ?? current.defaultAccountName;
+    const now = deps.now();
+    if (modelBeingRead(projectId, deps.now())) {
+      bb.log.debug(
+        `project ${projectName}: left on ${fromName}: the model of a turn that ended is being read`,
+      );
+      return;
+    }
+    const model = modelOfProject(projectId);
+    const why = stranded(fromName, now, model, projectId);
+    if (why === null) return;
+    // For another model than the reserved one, never to an account where
+    // it spends the reserve's weekly: that turn waits at the checkpoint.
+    const decision = decidePlacement({
+      currentAccount: fromName,
+      isNew: false,
+      accounts: aheadTargets(projectId, fromName, model, now),
+      preferredModel: model,
+      ...reserveOf(projectId),
+      // The pick by hand first, as before a turn (Codex r3 medium 2).
+      excursionFrom: wayHome(projectId, model, measuredAccounts(model), now),
+      // Nor to an account whose mark stands for the model (Astra r8 medium 1).
+      limitedUntil: (name: string) => limitedUntil(name, model, projectId),
+      freeSeats,
+      now,
+      currentLoggedOut: loggedOut(fromName),
+    });
+    if (decision.kind === "keep") {
+      bb.log.debug(
+        `project ${projectName}: left on ${fromName} (${why}): no other account with a free seat can run ${model === "" ? "a turn" : model}`,
+      );
+      return;
+    }
+    // Nor over another automatic move of the project under way (a
+    // dispatch's, its variable still being written): this read predates it.
+    // The next refresh looks again (Astra r8 medium 2, the same guard as the
+    // failure's judgment).
+    if (moving(projectId)) {
+      bb.log.info(
+        `project ${projectName}: left on ${fromName}: another move of the project is under way; looked at again at the next refresh`,
+      );
+      return;
+    }
+    // Decided for the model of the project's latest turn as known now: a
+    // message or a turn of it while the sessions are shared, or the end of
+    // a turn (whatever model its log names, read later or not), may change
+    // that model, and this move is dropped (Codex OPUS-R5-002, OPUS-R6-001,
+    // OPUS-0236-R2-001).
+    const seen = activity.get(projectId) ?? 0;
+    const ended = turnEnds.get(projectId) ?? 0;
+    if (
+      !(await applyAccount(projectId, accountOrDefault(decision.account), from, {
+        keepPin: otherModel(model),
+        stillValid: () =>
+          (activity.get(projectId) ?? 0) === seen &&
+          (turnEnds.get(projectId) ?? 0) === ended &&
+          modelOfProject(projectId) === model,
+      }))
+    )
+      return;
+    await markHandled(projectId);
+    noteMove(projectId, fromName, decision.account, model, before);
+    const s = seats.snapshot([seatKey(decision.account)])[
+      seatKey(decision.account)
+    ]!;
+    bb.log.info(
+      `project ${projectName}: moved from ${fromName} (${why}) to ${decision.account} (seats ${s.running + s.reserved}/${s.capacity === 0 ? "∞" : s.capacity})`,
+    );
+    await recordMove(
+      {
+        at: now,
+        threadId: "",
+        projectId,
+        from: fromName,
+        to: decision.account,
+        reason: `Moved to account ${decision.account}: ${fromName} ${why}`,
+      },
+      // No failure caused it: a turn still running on the old account gets
+      // the grace retry on the new one, as after a placement.
+      null,
+    );
+  }
+
+  /**
+   * The account each thread's turn started on (read when it turned active):
+   * a turn that started before its project moved runs on the old account,
+   * and its failure, however long after the move, is not the new account's.
+   * Null: unknown: the account is still being read, the read failed, or
+   * the project moved while it was read (Codex IR14-001, IR15-001/002).
+   * That turn's failure is no leftover, its report is nobody's and a
+   * refusal marks no account.
+   */
+  const startedOn = new Map<string, string | null>();
+  /** The latest `thread.active` of each thread still reading its account. */
+  const starting = new Map<string, number>();
+  /**
+   * When each thread's turn was announced: one that started before a
+   * session was lost read its credentials before, and its good end says
+   * nothing of the account there now (code-reviewer r1, low 2).
+   */
+  const startedTime = new Map<string, number>();
+  let starts = 0;
+  /**
+   * The project's moves (`movesOf().epoch`) when each thread's message was
+   * sent, by bb's dispatch checkpoint or by this plugin's own explicit
+   * send: bb reads the account as it starts the turn and announces
+   * `thread.active` after, so a move completed in between is not where the
+   * turn runs (Codex IR16-001). A turn announced with no anchor was sent
+   * past both (a queued row sent by hand): where the project stood when it
+   * started is unknown (Codex IR17-001).
+   */
+  const dispatchEpoch = new Map<string, number>();
+  /**
+   * The threads bb listed with a turn under way as the seats were counted
+   * after the load (see rebuildSeats), each until that turn ends (its
+   * `thread.idle`, `turn.failed`, a new turn's `thread.active` or the thread
+   * gone), and whether that list was read. A
+   * failure of one of them, or one come before the list, is of a turn that
+   * started before the load: where it runs is unknown, whatever its seat
+   * restored or counted says, and its failure marks nobody (culpa tras
+   * recarga, 2026-11-11; Codex Sol r1 RELOAD-001 to 003, code-reviewer r1
+   * low 3 and 4). No read of its own: every later turn of the thread, sent
+   * by this load (a release, a retry, one refused at the door), comes after
+   * that end.
+   */
+  const underWayAtLoad = new Set<string>();
+  let underWayListed = false;
+  function startedBeforeLoad(threadId: string): boolean {
+    return !underWayListed || underWayAtLoad.has(threadId);
+  }
+  /**
+   * Threads this load saw start a turn before the list was read: that list
+   * may show the turn under way, and it is no turn of before the load
+   * (code-reviewer r2, low 3).
+   */
+  const startedUnlisted = new Set<string>();
+  /** From here the thread's turn is no leftover of any account. */
+  function forgetStart(threadId: string): void {
+    startedOn.delete(threadId);
+    starting.delete(threadId);
+    startedTime.delete(threadId);
+    dispatchEpoch.delete(threadId);
+  }
+  /** Since when this plugin holds each thread's message: answered "wait", until it goes (see src/atascos.ts). */
+  const waitSince = new Map<string, number>();
+  /** When bb last heard "wait" for each of them: bb hides a row while it asks again (Codex R1-001), so a row missing from a read is not yet a wait over. */
+  const waitAsked = new Map<string, number>();
+  /** When each thread was last said to be stuck. */
+  const stuckSaid = new Map<string, number>();
+  /** How many times each thread waited in a row at the last look (see BLOCKED_WAITS). */
+  const blockedWaits = new Map<string, number>();
+  function forgetWait(threadId: string): void {
+    waitSince.delete(threadId);
+    waitAsked.delete(threadId);
+    blockedWaits.delete(threadId);
+  }
+  bb.events.on("thread.active", async ({ thread }) => {
+    // A turn of it runs: the advice of its last failure is over, and whatever
+    // it waited for (a message sent with "Send now" is never asked about).
+    adviceOver(thread.id);
+    forgetWait(thread.id);
+    toldToStart.delete(thread.id);
+    overdueTold.delete(thread.id);
+    // A hidden thread's turn too: it runs on the project's account, and
+    // keeps the project there (Codex PLAZAS-R2-003).
+    if (thread.providerId === CLAUDE_CODE_PROVIDER) {
+      turnsUnderWay.set(thread.id, thread.projectId);
+      turnsStarted.set(thread.projectId, (turnsStarted.get(thread.projectId) ?? 0) + 1);
+    }
+    if (
+      thread.providerId !== CLAUDE_CODE_PROVIDER ||
+      notTheUsersThread(thread) !== null
+    )
+      return;
+    seatProjects.set(thread.id, thread.projectId);
+    // A new turn: the one of before the load, if any, is over.
+    underWayAtLoad.delete(thread.id);
+    if (!underWayListed) startedUnlisted.add(thread.id);
+    // The previous turn's start is not this turn's, read or still being
+    // read (code-reviewer r13).
+    const anchor = dispatchEpoch.get(thread.id);
+    // The seat this turn's dispatch reserved: where it runs, whatever the
+    // read below says if the project moved meanwhile (Astra SEATS-R04).
+    const reserved =
+      anchor === undefined ? null : (seats.seatOf(thread.id)?.account ?? null);
+    // Its seat runs, reserved or not: a turn sent past the checkpoint
+    // spends the account all the same. An account set outside this plugin
+    // has no seats.
+    // Reserved by its dispatch: on the account it reserved (a move since
+    // does not take the turn along: Astra SEATS-R04), and at once, before
+    // anything is awaited, or the reservation may expire under the read
+    // below and its seat go to another (Astra SEATS-R2-002).
+    if (reserved !== null) confirmSeat(thread.id, reserved);
+    // A new turn: the previous one's pending count is not this one's.
+    else unseated.delete(thread.id);
+    forgetStart(thread.id);
+    const token = ++starts;
+    starting.set(thread.id, token);
+    // Unknown until read: a failure meanwhile is nobody's (Codex IR15-002).
+    startedOn.set(thread.id, null);
+    const startedAt = deps.now();
+    const move = movesOf(thread.projectId);
+    const busy = move.inFlight > 0;
+    // Within DISPATCH_LIMIT_MS: a read that hangs leaves the turn to be
+    // counted by the next refresh, not uncounted for all of it (Astra
+    // SEATS-R3-003).
+    const read = await within(
+      projectAccount(thread.projectId),
+      DISPATCH_LIMIT_MS,
+      `thread ${thread.id}: its project's account not read as its turn started`,
+    );
+    const seat = typeof read === "object" ? seatFor(read.value) : undefined;
+    // Unknown (null) also on an account not among the ones found: never
+    // the default's (Astra SEATS-R3-001).
+    let account: string | null | undefined =
+      seat === null ? undefined : typeof seat === "string" ? seat : null;
+    // The turn ended, or a newer one started, while the account was read:
+    // what that said stands, not this stale read (code-reviewer r12).
+    if (starting.get(thread.id) !== token) return;
+    forgetStart(thread.id);
+    // Not reserved: where the read says. Not read: on a seat it holds, else
+    // counted by the next refresh (Astra SEATS-R3-003). On an account not
+    // found: on nobody's (Astra SEATS-R3-001).
+    if (reserved === null) {
+      if (typeof seat === "string") confirmSeat(thread.id, seatKey(seat));
+      else if (seat === UNKNOWN_SEAT)
+        bb.log.debug(
+          `thread ${thread.id}: no seat counted: its project's account is not among the accounts found`,
+        );
+      else if (seat === undefined) {
+        const held = seats.seatOf(thread.id)?.account;
+        if (held !== undefined) confirmSeat(thread.id, held);
+        else {
+          unseated.set(thread.id, thread.projectId);
+          bb.log.info(
+            `thread ${thread.id}: its seat is counted on the next refresh (its project's account was not read)`,
+          );
+        }
+      }
+    }
+    // The project was being moved, or moved, since the turn was sent or
+    // while its account was read: the read says where the project is (or
+    // was) going, not where the turn started. Unknown, rather than the new
+    // account's; unknown too with no anchor to compare against.
+    if (
+      account !== undefined &&
+      (anchor === undefined ||
+        busy ||
+        move.inFlight > 0 ||
+        move.epoch !== anchor)
+    )
+      account = null;
+    if (account === null)
+      bb.log.debug(
+        `thread ${thread.id}: where its turn started is unknown (sent past the dispatch checkpoint, the project moved, or its account could not be read)`,
+      );
+    if (account !== undefined) {
+      startedOn.set(thread.id, account);
+      startedTime.set(thread.id, startedAt);
+    }
+  });
+  bb.events.on("thread.idle", ({ thread }) => {
+    // A turn that ended well where it started: the account has a session on
+    // the thread's machine (sin-login 2026-11-10). Its machine as last read:
+    // unread, only the mark on a machine unknown goes (code-reviewer r1,
+    // low 1), and the others stand till SESSION_LOST_MS.
+    const ran = startedOn.get(thread.id);
+    const since = startedTime.get(thread.id);
+    const host =
+      thread.environmentId === null
+        ? undefined
+        : hostsRead.get(thread.projectId)?.byEnvironment.get(thread.environmentId);
+    if (typeof ran === "string" && since !== undefined) {
+      sessionBack(ran, { host, since });
+      refusalBack(ran);
+      stormBack(host ?? "", since);
+    }
+    // Its turn ended there: a later failure that no new `thread.active`
+    // announces (a turn refused at the door) is the project's account's,
+    // not a leftover of the account this turn ran on (code-reviewer r11).
+    forgetStart(thread.id);
+    underWayAtLoad.delete(thread.id);
+    turnsUnderWay.delete(thread.id);
+    // Reserved too: a turn that ended needs none (its next asks again,
+    // and one that starts unannounced is counted as it starts).
+    releaseSeat(thread.id, "its turn ended");
+  });
+  /** The thread archived or deleted: nothing of its turns runs again, and what is kept for it goes. */
+  async function threadGone({ thread }: { thread: ThreadResponse }) {
+    forgetStart(thread.id);
+    underWayAtLoad.delete(thread.id);
+    turnsUnderWay.delete(thread.id);
+    releaseSeat(thread.id, "the thread is gone");
+    seatReadWaits.delete(thread.id);
+    seatGenerations.delete(thread.id);
+    startWaits.delete(thread.id);
+    threadModel.delete(thread.id);
+    adviceOver(thread.id);
+    forgetWait(thread.id);
+    toldToStart.delete(thread.id);
+    overdueTold.delete(thread.id);
+    stuckSaid.delete(thread.id);
+    failedHost.delete(thread.id);
+    // Forgotten in storage too, or the stored list only grows (Codex r8,
+    // IR8-004).
+    if (cancelled.delete(thread.id)) await storeCancelled(thread.id);
+  }
+  bb.events.on("thread.archived", threadGone);
+  // Deleted (bb deletes softly): as archived (code-reviewer r5, CR-2).
+  bb.events.on("thread.deleted", threadGone);
+
+  bb.events.on("thread.created", async ({ thread }) => {
+    const skipped =
+      notTheUsersThread(thread) ??
+      (thread.providerId === CLAUDE_CODE_PROVIDER
+        ? null
+        : `provider ${thread.providerId}`);
+    if (skipped !== null) {
+      bb.log.debug(`thread ${thread.id}: not placed (${skipped})`);
+      return;
+    }
+    if (!current.autoSwitch) {
+      // Created while the user manages accounts by hand: not new later on.
+      await markHandled(thread.projectId);
+      return;
+    }
+    await inProjectQueue(thread.projectId, () => placeOnce(thread));
+  });
+
+  // ---- The model of each turn, at bb's dispatch checkpoint ----------------
+  /**
+   * The model each thread's latest message was sent with, as the usage API
+   * names it. bb says it only at the checkpoint (a thread row and a failed
+   * turn carry none): a failure of the thread is judged against it, and
+   * against the preferred model when the thread has not been seen here.
+   */
+  const threadModel = new Map<string, string>();
+  /**
+   * What bb's log says of the thread's latest message, for a thread whose
+   * sending this plugin did not see (it was reloaded or restarted since: a
+   * long turn outlives both), or of a failed turn (`failed`), in one read
+   * (code-reviewer r4, L3):
+   *  - `model`: the model it was sent with; null when the log cannot be
+   *    read or names no Claude model: the preferred model decides then;
+   *  - `chain`, for a failed turn: the first request of its retry chain,
+   *    as bb keys its retries (see latestTurn): the turn's own at its first
+   *    attempt, else the one its row names (a retry's failure reports the
+   *    retry's own request); null when the log does not say (unreadable, or
+   *    the request not among its latest rows).
+   */
+  async function loggedTurn(
+    threadId: string,
+    failed?: { requestId: string; attemptNumber: number },
+  ): Promise<{ model: string | null; chain: string | null }> {
+    const first =
+      failed !== undefined && failed.attemptNumber <= 1
+        ? failed.requestId
+        : null;
+    try {
+      const rows = await bb.sdk.threads.events.list({
+        threadId,
+        types: ["client/turn/requested"],
+        order: "desc",
+        limit: failed === undefined ? "1" : "20",
+      });
+      const requested = rows.flatMap((r) =>
+        r.type === "client/turn/requested" ? [r.data] : [],
+      );
+      // A failed turn is judged by what that very turn was sent with (its
+      // request id), not by the latest message: the latest may be a newer
+      // turn in another model (code-reviewer r2). A turn the log does not
+      // name (an older id, or none) is judged by the latest message.
+      const own =
+        failed === undefined
+          ? undefined
+          : requested.find((r) => r.requestId === failed.requestId);
+      return {
+        model: modelFamily((own ?? requested[0])?.execution?.model ?? null),
+        chain: first ?? own?.retryOfRequestId ?? own?.requestId ?? null,
+      };
+    } catch (error) {
+      bb.log.warn(
+        `thread ${threadId}: its ${failed === undefined ? "model" : "turn's model and retry chain"} not read from bb: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return { model: null, chain: first };
+    }
+  }
+  /** A thread in one of these has a turn under way: a message sent then waits in bb's queue. */
+  const TURN_UNDER_WAY: ReadonlySet<string> = new Set([
+    "starting",
+    "active",
+    "stopping",
+  ]);
+  /**
+   * What the placement before a turn in `model` of the project decides on,
+   * but the account the project sits on (see decidePlacement): placeTurn's,
+   * and the Opus advice's, which names where an Opus turn would run (Sol
+   * B2-002; fix-B2-r3: one function, the same numbers).
+   */
+  function placementOf(
+    projectId: string,
+    model: string,
+    now: number,
+    /** For a thread of background work (see isBackground); false when the thread is not known. */
+    background = false,
+    /** The thread the turn is placed for: a seat it already holds counts as free for it (Codex OPUS-R2-004). */
+    threadId?: string,
+  ): Omit<PlacementInput, "currentAccount"> {
+    const measured = measuredAccounts(model);
+    const own = threadId === undefined ? null : seats.seatOf(threadId);
+    return {
+      isNew: false,
+      accounts: measured,
+      preferredModel: model,
+      ...reserveFor(threadId, now, projectId),
+      // An account whose mark stands for the model is no destination (Astra
+      // r5 medium 1). For every model, unlike decideSwitch, where a Fable
+      // turn is judged on its numbers (see the judge).
+      limitedUntil: (name: string) => limitedUntil(name, model, projectId),
+      excursionFrom: wayHome(projectId, model, measured, now),
+      freeSeats:
+        own === null
+          ? freeSeats
+          : (name) =>
+              // Its own seat is one whatever the rest: with the capacity
+              // lowered since it was admitted, free is below zero.
+              seatKey(name) === own.account
+                ? Math.max(freeSeats(name), 0) + 1
+                : freeSeats(name),
+      ...paceFilter(background),
+      now,
+    };
+  }
+  /**
+   * How long a turn in `model` kept where it spends the reserve's weekly
+   * waits, and why (see reserveWait): till the account that spares it
+   * frees, asked again within RESERVE_RECHECK_MS; a seat, within
+   * SEAT_RECHECK_MS; none in sight, RESERVE_RECHECK_MS.
+   */
+  function reserveHold(
+    input: PlacementInput,
+    model: string,
+    now: number,
+    /** Why the turn does not run where the project is. */
+    here: string,
+  ): { sendAt: number; reason: string; seatOn?: string; seatWhy?: string } {
+    const reserve = current.preferredModel;
+    if (refreshes === 0) firstReadsAwaited = true;
+    const free = reserveWait(input);
+    if (free === null)
+      return {
+        sendAt: now + RESERVE_RECHECK_MS,
+        reason: `Waiting for an account that spares ${reserve}'s weekly for ${model}: ${here}`,
+      };
+    if (free.at <= now)
+      return {
+        sendAt: now + SEAT_RECHECK_MS,
+        reason: `Waiting for a free seat for ${model} on ${free.account}: ${here}`,
+        seatOn: free.account,
+        seatWhy: `${model}: ${here}`,
+      };
+    return {
+      sendAt: Math.min(free.at + RESET_BUFFER_MS, now + RESERVE_RECHECK_MS),
+      reason: `Waiting for ${model} on ${free.account}, free from ${isoInZone(free.at).slice(0, 16).replace("T", " ")}: ${here}`,
+    };
+  }
+  /** The accounts other than `name` that could take a turn in `model` now: a free seat no queue is ahead for, and the reserve spared. */
+  function freeElsewhere(name: string, model: string, projectId?: string): string[] {
+    const now = deps.now();
+    return measuredAccounts(model)
+      .filter((a) => a.name !== name)
+      .map((a) => settle(a, now))
+      .filter(
+        (a) =>
+          chooseAccount([a], {
+            preferredModel: model,
+            ...reserveOf(projectId),
+            freeSeats: seatRoom,
+          }) !== null,
+      )
+      .map((a) => a.name);
+  }
+  /**
+   * The best account other than `name` that can run `model` now, its seats
+   * aside and without spending the reserve; null when none can.
+   */
+  function otherThatRuns(name: string, model: string, projectId?: string): string | null {
+    const now = deps.now();
+    const options = { preferredModel: model, ...reserveOf(projectId) };
+    // Nor one a session lost keeps from the project: its turn would wait in
+    // that queue for a move no placement makes (sin-login 2026-11-10).
+    const measured = measuredAccounts(model).filter(
+      (a) => projectId === undefined || sessionLostOn(a.name, projectId) === null,
+    );
+    return (
+      chooseAccount(
+        measured.filter((a) => a.name !== name).map((a) => settle(a, now)),
+        options,
+      )?.account ??
+      // A Team seat known by its login, for what the reserve is kept from.
+      (holdsForReserve(options)
+        ? chooseAccount(
+            unreadTeamSeats({
+              accounts: measured,
+              unreadTeams: unreadTeams(model),
+              currentAccount: name,
+              now,
+            }),
+            options,
+          )?.account
+        : null) ??
+      null
+    );
+  }
+  /**
+   * A turn in `model` on `name` could not run there, as measured now, and
+   * another account can: it waits and is placed again, rather than start
+   * where it fails (a pick by hand that crossed its placement).
+   */
+  function blockedOff(name: string, model: string, projectId?: string): boolean {
+    const usage = measuredAccounts(model).find((a) => a.name === name);
+    if (usage === undefined || usage.unknown === true) return false;
+    const settled = settle(usage, deps.now());
+    // A mark standing for the model: out whatever its read says, as in the
+    // placement (Astra r8 medium 1).
+    if (limitedUntil(name, model, projectId) === null && isUsable(settled) && canRunModel(settled, model))
+      return false;
+    return otherThatRuns(name, model, projectId) !== null;
+  }
+  /**
+   * With nothing measured of `name`, its login still says what it is: a Max
+   * or an Ultra keeps the reserved model's weekly until a read says otherwise
+   * (just after a reload, or with its reads failing: code-reviewer r3), also
+   * when the login says no more than that it is one of the two (Astra
+   * IR4-001). A Team seat, or a login that says nothing, starts as ever.
+   */
+  function unreadKeepsReserve(name: string): boolean {
+    // Only a login that says Team lets a model held off the reserve start
+    // unread (Aitor 2026-11-06, «sí o sí»): a login that says nothing of its
+    // plan may be a Max as well (Codex r1 high 2).
+    const login = accounts.find((a) => a.name === name);
+    return login === undefined || planOf(login, null).plan !== "team";
+  }
+  /** The Team seats by login, logged in, not refusing, with nothing measured of them. */
+  function unreadTeams(model: string): string[] {
+    // Nothing read yet because nothing was asked yet: the first reads are
+    // seconds away, and they ask the waits again (code-reviewer r5).
+    if (refreshes === 0) return [];
+    const measured = measuredAccounts(model);
+    return accounts
+      .filter((login) => {
+        if (planOf(login, null).plan !== "team") return false;
+        if (loggedOut(login.name) || refusing(login.name)) return false;
+        const known = measured.find((a) => a.name === login.name);
+        // Measured, and left out because only the clock would free it: that
+        // is a veto, not a seat never read (Astra FINAL-R8-003).
+        if (known === undefined) return (collector.get(login.name)?.usage ?? null) === null;
+        return known.unknown === true;
+      })
+      .map((login) => login.name);
+  }
+  /**
+   * A turn in `model` on `name` would spend the weekly the reserved model
+   * needs, and `model` is held off such an account (see holdsForReserve),
+   * as measured now or, unmeasured, as its login says.
+   */
+  /** `name` is a Team seat measured unable to run `model`, a model held off the reserve. */
+  function teamOut(name: string, model: string, projectId?: string): boolean {
+    if (!heldModel(model)) return false;
+    const usage = measuredAccounts(model).find((a) => a.name === name);
+    if (usage === undefined || usage.unknown === true || usage.team !== true)
+      return false;
+    const settled = settle(usage, deps.now());
+    // A mark standing for the model: out whatever its read says, as in the
+    // placement (Astra r8 medium 1).
+    return limitedUntil(name, model, projectId) !== null || !(isUsable(settled) && canRunModel(settled, model));
+  }
+  /**
+   * No Team seat, measured or known by its login, can take a turn in
+   * `model` now (see ChoiceOptions.noTeamTakes): unlocked, its session and
+   * windows under 100 %, and a seat free for the turn: one it holds, or one
+   * beyond the threads queued ahead of it (all of them, for no thread).
+   * `ruledOut`: the account a turn just failed on, never one that takes it
+   * whatever its read says (Codex r1 medium 5; see SwitchInput.noTeamTakes).
+   */
+  function noTeamTakes(model: string, threadId?: string, ruledOut?: string | null, projectId?: string): boolean {
+    const now = deps.now();
+    const measured = measuredAccounts(model);
+    const teams = [
+      ...measured
+        .filter((a) => a.team === true && a.unknown !== true)
+        .map((a) => settle(a, now)),
+      ...unreadTeamSeats({ accounts: measured, unreadTeams: unreadTeams(model), currentAccount: "", now }),
+    ];
+    return !teams.some((a) => {
+      if (a.name === ruledOut || limitedUntil(a.name, model, projectId) !== null) return false;
+      if (!isUsable(a) || !canRunModel(a, model)) return false;
+      const key = seatKey(a.name);
+      if (threadId !== undefined && seats.seatOf(threadId)?.account === key) return true;
+      const queue = seats.queue(key);
+      const ahead = threadId === undefined ? -1 : queue.findIndex((q) => q.threadId === threadId);
+      return seats.free(key) > (ahead === -1 ? queue.length : ahead);
+    });
+  }
+  /**
+   * The choice options for a turn of `threadId` (see reserveOf): a Team seat
+   * it holds or is first in line for counts as one that takes it, and once
+   * its message has been held longer than maximumWaitHours any Max or Ultra
+   * with room known takes it behind the Team seats ([SUPUESTO], reparto-fable
+   * PLAN §B5: «esa espera respeta maximumWaitHours»). Off with
+   * opusOverflowRoom at 100 or more, or maximumWaitHours 0.
+   */
+  function reserveFor(threadId: string | undefined, now: number, projectId?: string) {
+    const base = reserveOf(projectId);
+    if (threadId === undefined) return base;
+    return {
+      ...base,
+      noTeamTakes: (model: string) => noTeamTakes(model, threadId, undefined, projectId),
+      ...(overdue(threadId, now) ? { opusOverflowRoom: -Infinity } : {}),
+    };
+  }
+  /**
+   * Threads let out by maximumWaitHours (see reserveFor) and told to start,
+   * until a turn of theirs runs: asked again before it starts (another
+   * plugin held the message), the way out still stands, and the hour is not
+   * counted anew (Astra r3 medium 3).
+   */
+  const overdueTold = new Set<string>();
+  /** The thread's message has been held past maximumWaitHours, or it was let out for that and has not started (see reserveFor). */
+  function overdue(threadId: string, now: number): boolean {
+    const since = waitSince.get(threadId);
+    return (
+      current.opusOverflowRoom < 100 &&
+      current.maximumWaitHours > 0 &&
+      (overdueTold.has(threadId) ||
+        (since !== undefined &&
+          now - since >= current.maximumWaitHours * 3_600_000))
+    );
+  }
+  /** A turn in `model` goes to a Team seat only (see holdsForReserve). */
+  function heldModel(model: string): boolean {
+    return holdsForReserve({ preferredModel: model, ...reserveOf() });
+  }
+  function heldOff(name: string, model: string, projectId?: string, threadId?: string): boolean {
+    const options = { preferredModel: model, ...reserveFor(threadId, deps.now(), projectId) };
+    // A pick by hand no longer lets such a turn spend the reserve (Aitor
+    // 2026-11-06, «sí o sí»): `projectId` is kept for the callers.
+    if (!holdsForReserve(options)) return false;
+    void projectId;
+    const usage = measuredAccounts(model).find((a) => a.name === name);
+    if (usage === undefined || usage.unknown === true)
+      return unreadKeepsReserve(name);
+    // Off a Team seat it waits, whether it would run there or fail: a turn
+    // started on a Max or an Ultra to fail there is no wait for a Team seat
+    // (Aitor 2026-11-06, «sí o sí»; Codex r1 high 1).
+    return spendsReservedWeekly(settle(usage, deps.now()), options);
+  }
+  /**
+   * Before a turn starts: when the project's account is MEASURED unable to
+   * run the model the turn is sent with and another account can, the project
+   * moves there first. The preferred model does not decide here: a thread
+   * the user switched to Opus runs on an account with Opus left even when
+   * every account is out of the preferred one. `turn.abandoned` is set when
+   * the checkpoint stopped waiting: nothing is moved after that.
+   * Resolves to the account the turn runs on (`byDefault`: no variable, the
+   * machine's own `~/.claude`), "external" for a variable not set by this
+   * plugin, or null when the checkpoint stopped waiting.
+   */
+  async function placeTurn(
+    thread: ThreadResponse,
+    model: string,
+    /** `held`: set when the turn must wait (see reserveWait). */
+    turn: {
+      abandoned: boolean;
+      held?: { sendAt: number; reason: string; seatOn?: string; seatWhy?: string };
+      /** A Calor tick: it does not move the project; `refused` says what it would have done. */
+      tick?: boolean;
+      refused?: string;
+    },
+    /** "after": placed as a turn of the thread ends, for its next one (see the thread.idle below). */
+    when: "before" | "after" = "before",
+  ): Promise<TurnPlace | null> {
+    const projectId = thread.projectId;
+    // Emptied by a change of the accounts directory, until the next look.
+    if (accounts.length === 0) await discover();
+    const before = moveMark(projectId);
+    // Taken before the read: the seat is reserved only while the project's
+    // variable has not been written since (Astra SEATS-R3-002,
+    // SEATS-R4-001).
+    const writes = movesOf(projectId).envWrites;
+    const from = await projectAccount(projectId);
+    if (from.external) return "external";
+    // An account it names that is not among the ones found: not judged as
+    // the default; the dispatch looks for it again (Astra SEATS-R3-001).
+    if (seatFor(from) === UNKNOWN_SEAT) return "unknown";
+    const fromName = from.account ?? current.defaultAccountName;
+    const now = deps.now();
+    const excursion = excursions.get(projectId);
+    // Reservations whose turn never started are freed first, for both
+    // judgments below (Codex ASIENTOS-R2-002).
+    if (when === "before") admitWaiting();
+    let seatsFull = when === "before" && seatsFullFor(thread, fromName);
+    let busy =
+      when === "before" && !seatsFull && turn.tick !== true
+        ? crowded(thread, fromName, model, now)
+        : null;
+    if (busy !== null) seatsFull = true;
+    const input: PlacementInput = {
+      ...placementOf(projectId, model, now, isBackground(thread), thread.id),
+      unreadKeepsReserve,
+      unreadTeams: unreadTeams(model),
+      currentAccount: fromName,
+      currentLoggedOut: unconfirmed(fromName),
+      ...(seatsFull
+        ? {
+            seatsFull,
+            // A seat this thread already holds elsewhere (an Opus turn
+            // admitted to a Team seat's queue) is its own, whoever waits
+            // behind it (Codex PLAZAS-001, PLAZAS-R2-001).
+            freeSeats: (name: string) =>
+              seats.seatOf(thread.id)?.account === seatKey(name)
+                ? 1
+                : seatRoom(name),
+            aheadThreshold: aheadThreshold(model),
+            // Seats for all only when the project asks for more than the
+            // account has (c); a thread stuck past the limit (a) takes a
+            // Team seat for itself first (code-reviewer r2 high).
+            ...(busy?.kind === "crowded"
+              ? { seatsWanted: busy.wanted, seatsWantedOnly: true }
+              : {}),
+          }
+        : {}),
+      pinned: pins.get(projectId) === fromName,
+      projectSeats: projectWants(thread, seatKey(fromName)),
+      // Only before a real turn: a tick never moves (see placeTurn's refusal).
+      ...(when === "before" && current.autoSwitch && current.roomMoveGap > 0
+        ? {
+            roomMoveGap: current.roomMoveGap,
+            projectSeated: projectSeated(projectId, thread.id),
+            // stuckMoveMinutes 0 keeps a project with threads at work where
+            // it is, as it keeps crowded off (Codex r2 medium 2).
+            movedRecently: !(current.stuckMoveMinutes > 0) || movedRecently(projectId, now),
+          }
+        : {}),
+      // On the account the project moved to only (code-reviewer r3).
+      justMovedHere:
+        crowdedMoves.get(projectId)?.to === fromName &&
+        now - crowdedMoves.get(projectId)!.at <=
+          current.stuckMoveMinutes * 60_000,
+    };
+    let decision = decidePlacement(input);
+    // No account with seats for all: a seat for the thread alone, at once.
+    if (busy?.kind === "crowded" && decision.kind === "keep") {
+      busy = { ...busy, kind: "stuck" };
+      const { seatsWanted: _w, seatsWantedOnly: _o, ...alone } = input;
+      decision = decidePlacement(alone);
+    }
+    if (decision.kind === "keep") {
+      // The turn runs where the project is (refused at the checkpoint only
+      // when that is the default account and it has no login), unless it
+      // would spend the reserve's weekly there: then it waits for an
+      // account that spares it (Aitor 2026-11-03, «Esperar siempre»).
+      // So when the account has no login and only accounts that keep the
+      // reserve could take the turn (Codex OPUS-001). Not Haiku (see
+      // holdsForReserve).
+      const loggedOutHere = input.currentLoggedOut === true;
+      if (
+        holdsForReserve({ preferredModel: model, ...reserveOf() }) &&
+        (decision.why === "current-reserved" || loggedOutHere)
+      )
+        turn.held = reserveHold(
+          input,
+          model,
+          now,
+          loggedOutHere
+            ? `${fromName} has no login`
+            : `${fromName} keeps its weekly for ${current.preferredModel}`,
+        );
+      // Kept where it cannot run because no other has a free seat: it waits
+      // in the queue of one that can run it instead of taking a seat here
+      // to fail. With none able to run it, it starts: the failure is what
+      // tells the user and applies the longest wait (revisión 2026-11-04).
+      else if (decision.why === "current-blocked") {
+        const other = otherThatRuns(fromName, model, projectId);
+        if (other !== null)
+          turn.held = {
+            sendAt: now + SEAT_RECHECK_MS,
+            reason: `Waiting for a free seat for ${model} on ${other}: ${fromName} ${whyOut(fromName, model, projectId)}`,
+            seatOn: other,
+            seatWhy: `${model}: ${fromName} ${whyOut(fromName, model, projectId)}`,
+          };
+      }
+      return { account: fromName, byDefault: !from.owned, writes };
+    }
+    if (turn.tick === true && decision.account !== fromName) {
+      turn.refused = `it would move its project from ${fromName} to ${decision.account}`;
+      return { account: fromName, byDefault: !from.owned, writes };
+    }
+    if (turn.abandoned) return null;
+    // Its move would carry along a sibling about to start: asked again soon.
+    const admitted =
+      decision.account === fromName
+        ? null
+        : siblingAdmitted(projectId, thread.id);
+    if (admitted !== null) {
+      turn.held = {
+        sendAt: now + SEAT_RECHECK_MS,
+        reason: `Waiting to move to ${decision.account}: thread ${admitted} of this project is about to start on ${fromName}`,
+      };
+      return { account: fromName, byDefault: !from.owned, writes };
+    }
+    // A move of any kind while another automatic move of the project is
+    // written and recorded (a sibling that decided on the same read, or Team
+    // first sending it back): a second move in a row. Held, and placed again
+    // on a fresh read (Codex/Astra ASIENTOS-R3-001/R3-002/R4-001/R5-001;
+    // every move of placeTurn since Astra r3 medium 4).
+    // The failure's judgment, the refresh's rescue, moveUpWait and moveAhead
+    // look at it too (Astra r8 medium 2; moveAhead since 0.2.49), and so does
+    // placeProject (Astra r9 medium).
+    // ponytail: rebalance does not look at it (Astra ASIENTOS-R6-001; it is
+    // run by hand and skips projects with threads working); the way up is
+    // to check it where every automatic move is written.
+    if (decision.account !== fromName && moving(projectId)) {
+      heldForMove.add(projectId);
+      turn.held = {
+        sendAt: now + SEAT_RECHECK_MS,
+        reason: "Waiting: this project is being moved to another account",
+      };
+      return { account: fromName, byDefault: !from.owned, writes };
+    }
+    // Read before the move: what the seats were as it was decided.
+    const fullHere = seats.snapshot([seatKey(fromName)])[seatKey(fromName)]!;
+    const roomThere = seatRoom(decision.account);
+    // Moved for a seat: the seat is its own from now, before anything is
+    // awaited, so a turn decided meanwhile does not choose it too (Codex
+    // PLAZAS-R3-001). A move that fails leaves it as the message asks for
+    // a seat where the project is (a seat elsewhere is given up); one
+    // whose turn never starts is freed as any reservation is (SEAT_TTL_MS).
+    // A move for room claims its seat and holds the project's other moves
+    // the same way (Codex r1 medium 2): a sibling deciding on the same read
+    // would write another destination meanwhile.
+    const claim =
+      decision.why === "current-full" || decision.why === "fable-room"
+        ? seatKey(decision.account)
+        : null;
+    // Every automatic move here holds the project's others while it is
+    // written, whatever its reason: an Opus turn's move to a Team seat crossed
+    // a Fable sibling's move for room (Astra r3 medium 4).
+    const seatMove = decision.account !== fromName;
+    // Before a turn the hold lasts till the dispatch ends (see heldMoves):
+    // its thread is told to start by then, and siblingAdmitted takes over.
+    const handedOver = seatMove && when === "before";
+    const hold = { since: now };
+    if (seatMove) seatMoving.set(projectId, hold);
+    const held = { projectId, hold, written: Promise.resolve() as Promise<unknown> };
+    if (handedOver) heldMoves.set(thread.id, held);
+    const to = accountOrDefault(decision.account);
+    try {
+      if (claim !== null) {
+        seatProjects.set(thread.id, projectId);
+        reserveSeat(thread.id, claim, now);
+      }
+      // The sessions are not waited for: see applyAccount (Fable, 2026-10-29).
+      held.written = applyAccount(projectId, to, from, {
+        share: false,
+        forThread: thread.id,
+        keepPin: otherModel(model),
+      });
+      await held.written;
+      await markHandled(projectId);
+      // A move for a crowded seat is a new home, not an excursion: a turn in
+      // the preferred model going back would take the project to the full
+      // account again, where the threads of another model would queue anew.
+      // An excursion that left another account (Fable's home) is kept: only
+      // the way back to the full account goes (code-reviewer r1 H2).
+      if (busy !== null && decision.why === "current-full") {
+        if (excursions.get(projectId)?.from === fromName) excursions.delete(projectId);
+        crowdedMoves.set(projectId, { at: now, to: decision.account });
+      } else noteMove(projectId, fromName, decision.account, model, before);
+      if (decision.why === "fable-room") roomMoves.set(projectId, now);
+      const reason =
+        busy !== null && decision.why === "current-full"
+          ? busyReason(busy, fromName, decision.account, roomThere, fullHere, model, input.pinned === true)
+          : decision.why === "fable-room"
+          ? roomReason(fromName, decision.account, model)
+          : decision.why === "back-from-excursion"
+          ? `Moved back to account ${decision.account} before the turn: ${fromName} was an excursion for ${excursion?.model ?? "another model"}`
+          : decision.why === "current-reserved" &&
+              when === "before" &&
+              measuredAccounts(model).some((a) => a.name === fromName && a.unknown !== true) &&
+              !reservedFor(fromName, model, undefined, projectId)
+            ? // Kept for Fable only by «Team primero», not out of its margin.
+              `Movido a ${decision.account} antes del turno: ${fromName} guarda la semanal de ${current.preferredModel} y ${decision.account} es una Team con plaza (Team primero)`
+          : decision.why === "current-full"
+            ? `Moved to account ${decision.account} before the turn: ${fromName} seats full (${fullHere.running + fullHere.reserved + (fullHere.external?.length ?? 0)}/${fullHere.capacity}), ${decision.account} had ${Number.isFinite(roomThere) ? roomThere : "unlimited"} free`
+            : `Moved to account ${decision.account} ${when === "after" ? `after a turn in ${model}` : "before the turn"}: ${fromName} ${whyOut(fromName, model, projectId)}`;
+      bb.log.info(`thread ${thread.id}: ${reason}`);
+      await recordMove(
+        {
+          at: now,
+          threadId: thread.id,
+          projectId,
+          from: fromName,
+          to: decision.account,
+          reason,
+        },
+        // Its turn has not started: it runs on the new account.
+        thread.id,
+      );
+    } finally {
+      if (seatMove && !handedOver) releaseMove(projectId, hold);
+    }
+    return {
+      account: decision.account,
+      byDefault: to === null,
+      // Its own write (counted as it starts and once it is over) and no
+      // other.
+      writes: writes + (decision.account === fromName ? 0 : 2),
+    };
+  }
+
+  /** What the history says of a move for room (see roomMove), in plain Spanish. */
+  function roomReason(from: string, to: string, model: string): string {
+    const now = deps.now();
+    const measured = measuredAccounts(model);
+    const room = (name: string) => {
+      const a = measured.find((m) => m.name === name);
+      const r = a === undefined ? null : opusRoom(settle(a, now), current.preferredModel, current.reserveShare);
+      return r === null ? "?" : String(Math.round(r * 10) / 10).replace(".", ",");
+    };
+    return `Movido a ${to} antes del turno: ${from} se queda sin semanal antes de gastar su ${current.preferredModel} (hueco ${room(from)}) y ${to} tiene hueco ${room(to)} (hueco = semanal libre − ${String(current.reserveShare).replace(".", ",")} × ${current.preferredModel} libre)`;
+  }
+  /** What the history says of a move for a crowded seat (see crowded), in plain Spanish for whoever reads it. */
+  function busyReason(
+    busy: NonNullable<ReturnType<typeof crowded>>,
+    fromName: string,
+    to: string,
+    roomThere: number,
+    fullHere: { running: number; reserved: number; capacity: number; external?: readonly unknown[] },
+    model: string,
+    pinned: boolean,
+  ): string {
+    const taken = fullHere.running + fullHere.reserved + (fullHere.external?.length ?? 0);
+    const room = Number.isFinite(roomThere) ? String(roomThere) : "sin límite de";
+    const libres = roomThere === 1 ? "libre" : "libres";
+    const why =
+      busy.kind === "stuck"
+        ? `${busy.minutes === 0 ? `el hilo iba a esperar plaza en ${fromName}` : `el hilo llevaba ${busy.minutes} min esperando plaza, ahora en ${fromName}`} (${taken}/${busy.capacity} ocupadas), con otro hilo de su proyecto ${busy.working ? "trabajando" : "a punto de arrancar"}`
+        : `el proyecto pide ${busy.wanted} plazas a la vez y ${fromName} tiene ${busy.capacity}`;
+    const options = { preferredModel: model, ...reserveOf() };
+    const there = measuredAccounts(model).find((a) => a.name === to);
+    const spare =
+      there === undefined
+        ? null
+        : (() => {
+            const settled = settle(there, deps.now());
+            // The margin is a reason for another model only (B4, 0.2.48).
+            return reserving(options) &&
+              settled.team !== true &&
+              canRunModel(settled, current.preferredModel) &&
+              reserveToSpare(settled, options)
+              ? settled
+              : null;
+          })();
+    const margin =
+      spare === null
+        ? ""
+        : ` y le queda margen de ${current.preferredModel} (semanal ${Math.round(spare.weekly.usedPercent)} %, ${current.preferredModel} ${Math.round(modelWindow(spare, current.preferredModel)?.usedPercent ?? 0)} %, tope ${current.otherModelUpTo} %)`;
+    const pick = pinned ? `; deja de valer el \`use\` a mano a ${fromName}` : "";
+    return `Movido a ${to} antes del turno: ${why}; ${to} tenía ${room} ${libres}${margin}${pick}`;
+  }
+
+  // bb holds every message it asks about on this answer and fails the
+  // attempt when a handler throws or takes 10 s: it decides on the
+  // measurements already there and stays out of the project's queue (a
+  // retry sent from that queue passes through here). A placement that has
+  // not finished after DISPATCH_LIMIT_MS is given up. Two exceptions
+  // (E44): a new project's first placement, which its message waits for;
+  // and a turn that would start on a default account without a login,
+  // which waits while anything that could give the project an account is
+  // under way or failed (a placement, a write, a measure of the accounts),
+  // and is refused, with the command that fixes it, when nothing can.
+  /** Waits asked per thread before its turn could start (see MAX_START_WAITS). */
+  const startWaits = new Map<string, number>();
+  /** A measure of every account started for a waiting turn, shared while it runs. */
+  let measuring: Promise<void> | null = null;
+  function measureForStart(): Promise<void> {
+    measuring ??= refreshAll()
+      .catch((error: unknown) =>
+        bb.log.warn(
+          `the accounts not measured for a waiting turn: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      )
+      .finally(() => {
+        measuring = null;
+      });
+    return measuring;
+  }
+  /**
+   * The thread's message waits until FIRST_PLACEMENT_WAIT_MS from now, and
+   * bb is asked again as soon as `pending` ends, when there is one. Null
+   * once the thread has waited MAX_START_WAITS times.
+   */
+  function startWait(
+    threadId: string,
+    pending: Promise<unknown> | null,
+    reason: string,
+  ): MessageDispatchHookDecision | null {
+    const waited = startWaits.get(threadId) ?? 0;
+    if (waited >= MAX_START_WAITS) return null;
+    startWaits.set(threadId, waited + 1);
+    if (pending !== null)
+      void pending
+        .then(
+          () => undefined,
+          () => undefined,
+        )
+        .then(() => bb.experimental_hooks.recheck("message.dispatch"))
+        .catch((error: unknown) =>
+          bb.log.warn(
+            `thread ${threadId}: bb not asked again after what its message waits for: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        );
+    bb.log.info(`thread ${threadId}: its message waits (${reason})`);
+    return {
+      action: "wait",
+      reason,
+      sendAt: deps.now() + FIRST_PLACEMENT_WAIT_MS,
+    };
+  }
+  /** `work` within `ms`: its value, "late" (after `onLate`), or "failed" (logged as `what`). */
+  async function within<T>(
+    work: Promise<T>,
+    ms: number,
+    what: string,
+    onLate?: () => void,
+  ): Promise<{ value: T } | "late" | "failed"> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        work.then((value) => ({ value })),
+        new Promise<"late">((resolve) => {
+          timer = setTimeout(() => {
+            onLate?.();
+            resolve("late");
+          }, ms);
+        }),
+      ]);
+    } catch (error) {
+      bb.log.warn(
+        `${what}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return "failed";
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * One dispatch's DISPATCH_BUDGET_MS, from the moment bb asks: each read
+   * is given what is left, at most DISPATCH_LIMIT_MS, so the reads in a row
+   * never add up to bb's 10 s (Astra SEATS-R4-002).
+   */
+  type Budget = { limit: () => number; spent: () => boolean };
+  function dispatchBudget(): Budget {
+    const by = deps.now() + DISPATCH_BUDGET_MS;
+    return {
+      limit: () => Math.max(0, Math.min(DISPATCH_LIMIT_MS, by - deps.now())),
+      spent: () => by - deps.now() < DISPATCH_MIN_MS,
+    };
+  }
+
+  /**
+   * Before a turn starts, with the automatic choice on: what bb should do
+   * with the message; null = send it.
+   */
+  async function beforeStart(
+    thread: ThreadResponse,
+    model: string | null,
+    /** Set to where the turn was placed, when the placement said. */
+    turnAt: { at?: TurnPlace },
+    budget: Budget,
+    /** A Calor tick in its first attempt: refused rather than moved or held. */
+    tick: boolean,
+  ): Promise<MessageDispatchHookDecision | null> {
+    // A project left unplaced is placed by its next real message, not by this.
+    const first = tick ? null : placeNewProject(thread);
+    const placed =
+      first === null
+        ? null
+        : await within(
+            first,
+            budget.limit(),
+            `thread ${thread.id}: its new project not placed before its first turn`,
+          );
+    if (first !== null && placed === "late") {
+      const wait = startWait(
+        thread.id,
+        first,
+        "Choosing a Claude account for this new project",
+      );
+      if (wait !== null) return wait;
+    }
+    // A message whose model bb does not name as a Claude model is placed
+    // for the preferred one when the default has no login: it must run
+    // somewhere else whatever its model (Astra E44-R1).
+    const turnModel =
+      model ??
+      (unconfirmed(current.defaultAccountName) ? current.preferredModel : null);
+    const turn: Parameters<typeof placeTurn>[2] = { abandoned: false, tick };
+    const turnPlaced =
+      turnModel === null
+        ? null
+        : within(
+            placeTurn(thread, turnModel, turn),
+            budget.limit(),
+            `thread ${thread.id}: not placed before its turn`,
+            () => {
+              turn.abandoned = true;
+            },
+          );
+    // Never measured (the plugin has just loaded): the default's login is
+    // looked at meanwhile, within the same time, so no turn is sent where
+    // it has none (Astra E44-R3); found missing, the placement above may not
+    // have known it: the message waits below and is placed again. With no
+    // login no network is asked: the look is local.
+    // The default is `~/.claude` whatever the accounts directory holds: it
+    // is looked at without reading that directory, which may fail.
+    let look: Promise<unknown> | null = null;
+    if (defaultLogin() === "unknown") {
+      look = collector.collect(
+        accounts.find((a) => a.name === current.defaultAccountName) ?? {
+          name: current.defaultAccountName,
+          configDir: null,
+          email: null,
+          accountUuid: null,
+        },
+      );
+      await within(
+        look,
+        budget.limit(),
+        `thread ${thread.id}: the default account's login not looked at`,
+      );
+    }
+    const done = turnPlaced === null ? null : await turnPlaced;
+    if (tick && (turn.refused !== undefined || turn.held !== undefined)) {
+      const why = turn.refused ?? turn.held!.reason;
+      bb.log.info(`thread ${thread.id}: Calor's tick refused: ${why}`);
+      return { action: "reject", message: `Claude Switcher: a Calor tick stays where its cache is: ${why}` };
+    }
+    if (turn.held !== undefined) {
+      const { seatOn, seatWhy, ...held } = turn.held;
+      if (seatOn !== undefined) {
+        // In that account's seat queue, first come first served, so later
+        // arrivals there do not overtake it (Codex OPUS-R4-002); admitted,
+        // its own seat lets the placement move the project there.
+        seatGenerations.set(thread.id, (seatGenerations.get(thread.id) ?? 0) + 1);
+        const queued = seatWait(thread, seatOn, seatWhy);
+        if (queued !== null) return queued;
+        return {
+          action: "wait",
+          reason: `Placing ${turnModel} on ${seatOn}: a seat there is its own`,
+          sendAt: deps.now(),
+        };
+      }
+      bb.log.info(`thread ${thread.id}: its message waits (${held.reason})`);
+      return { action: "wait", ...held };
+    }
+    const where: TurnPlace | null =
+      typeof done === "object" && done !== null ? done.value : null;
+    if (where !== null) turnAt.at = where;
+    const login = defaultLogin();
+    if (login === "yes") return null;
+    if (
+      where === "external" ||
+      where === "unknown" ||
+      (where !== null && !where.byDefault)
+    )
+      return null;
+    // Not known where because the placement failed or was not tried (a
+    // model bb does not name): a project with a variable of its own, or one
+    // set outside this plugin, runs on it whatever the accounts directory
+    // says; bb passes the value it holds (Astra E44-R3-02). Read apart from
+    // the placement, which needs that directory and a model. Not when the
+    // placement took too long: bb is slow, and the wait below covers it; nor
+    // with too little of the dispatch's time left (Astra SEATS-R4-002).
+    if (where === null && done !== "late" && !budget.spent()) {
+      const own = await within(
+        projectAccount(thread.projectId),
+        budget.limit(),
+        `thread ${thread.id}: the project's account not read before its turn`,
+      );
+      if (typeof own === "object" && (own.value.owned || own.value.external)) {
+        bb.log.warn(
+          `thread ${thread.id}: not placed before its turn; it runs on the project's own CLAUDE_CONFIG_DIR`,
+        );
+        return null;
+      }
+    }
+    // On the default account without a login, or not known where (a write
+    // or a read failed or took too long: Astra E44-R2). What is under way
+    // and could give the project an account is waited for; failed, it is
+    // tried again on the next attempt.
+    // Nothing is started for a message that can no longer wait (R2-04).
+    const canWait = (startWaits.get(thread.id) ?? 0) < MAX_START_WAITS;
+    const pending =
+      placing.get(thread.projectId) ??
+      (login === "unknown" ? look : null) ??
+      (canWait && unreadAccounts().length > 0 ? measureForStart() : null);
+    if (pending !== null || where === null || login === "unknown") {
+      const wait = startWait(
+        thread.id,
+        pending,
+        "Looking for a Claude account with a login for this project",
+      );
+      if (wait !== null) return wait;
+    }
+    const why =
+      login === "no"
+        ? "has no login"
+        : "has a login that could not be checked";
+    bb.log.warn(
+      `thread ${thread.id}: refused: no account for project ${thread.projectId} and ${current.defaultAccountName} ${why}`,
+    );
+    return {
+      action: "reject",
+      message: `Claude Switcher: no account assigned to this project and the default account (${current.defaultAccountName}) ${why}. Assign one with: bb claude-switcher use ${thread.projectId} <account>`,
+    };
+  }
+
+  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+    let decision: Awaited<ReturnType<typeof dispatchDecision>>;
+    try {
+      decision = await dispatchDecision(ctx);
+    } finally {
+      // The move this dispatch made stops holding its project once its
+      // write has ended too (see heldMoves).
+      const held = heldMoves.get(ctx.thread.id);
+      if (held !== undefined) {
+        heldMoves.delete(ctx.thread.id);
+        const release = () => releaseMove(held.projectId, held.hold);
+        void held.written.then(release, release);
+      }
+    }
+    if (decision.action === "wait") {
+      const now = deps.now();
+      if (!waitSince.has(ctx.thread.id)) waitSince.set(ctx.thread.id, now);
+      waitAsked.set(ctx.thread.id, now);
+      toldToStart.delete(ctx.thread.id);
+    } else if (ctx.attempt === "start-turn") {
+      if (decision.action === "proceed" && overdue(ctx.thread.id, deps.now()))
+        overdueTold.add(ctx.thread.id);
+      forgetWait(ctx.thread.id);
+      if (decision.action !== "proceed") toldToStart.delete(ctx.thread.id);
+    }
+    return decision;
+  });
+  /**
+   * The threads held long with another account free, as bb's queue stands;
+   * null when anything of it could not be read, within STUCK_READ_LIMIT_MS:
+   * «nothing stuck» is never said unread.
+   */
+  async function atascos(
+    rows?: readonly HeldRow[],
+  ): Promise<Atasco[] | null> {
+    const read = await within(
+      readAtascos(rows),
+      STUCK_READ_LIMIT_MS,
+      "the stuck threads could not be read",
+    );
+    return typeof read === "object" ? read.value : null;
+  }
+  /**
+   * The Opus and Sonnet turns held for a Team seat (see waitingForTeam), as
+   * bb's queue stands; null when it could not be read in time.
+   */
+  async function esperandoTeam(): Promise<EsperaTeam[] | null> {
+    const read = await within(
+      bb.sdk.threads.queue.list(),
+      STUCK_READ_LIMIT_MS,
+      "the threads waiting for a Team seat could not be read",
+    );
+    if (typeof read !== "object") return null;
+    return waitingForTeam(read.value, PLUGIN_ID, waitSince, deps.now(), (model) => {
+      const family = modelFamily(model) ?? current.preferredModel;
+      return holdsForReserve({ preferredModel: family, ...reserveOf() }) ? family : null;
+    });
+  }
+  async function readAtascos(rows?: readonly HeldRow[]): Promise<Atasco[]> {
+    const all = rows ?? (await bb.sdk.threads.queue.list());
+    const out: Atasco[] = [];
+    const now = deps.now();
+    for (const held of heldLong(all, PLUGIN_ID, waitSince, now)) {
+      const queued = seats.position(held.threadId)?.account;
+      const known = await bb.sdk.threads.get({ threadId: held.threadId });
+      let account: string;
+      if (queued !== undefined) account = seatName(queued);
+      else {
+        const read = await projectAccount(known.projectId);
+        if (read.external) continue;
+        account = read.account ?? current.defaultAccountName;
+      }
+      const modelo = modelFamily(held.model) ?? current.preferredModel;
+      const free = freeElsewhere(account, modelo, known.projectId);
+      if (free.length === 0) continue;
+      // Not one a usage limit's mark keeps from the model, nor a session
+      // lost on one of the project's machines (limitedUntil has both): the
+      // plugin would not use it, and the line said it was free (culpa tras
+      // recarga, 2026-11-11). With none left, the line says so, and until
+      // when.
+      const ends = free.map((name) => limitedUntil(name, modelo, known.projectId));
+      const libres = free.filter((_, i) => ends[i] === null);
+      const marked = ends.filter((end): end is number => end !== null);
+      out.push({
+        hilo: held.threadId,
+        cuenta: account,
+        modelo,
+        minutos: Math.floor((now - held.since) / 60_000),
+        libres,
+        ...(libres.length === 0 ? { vuelve: isoInZone(Math.min(...marked)) } : {}),
+        proyectoOcupado: projectSeated(known.projectId, held.threadId),
+      });
+    }
+    return out;
+  }
+  /** Says each stuck thread once per STUCK_WAIT_MS, and forgets the threads bb no longer holds. */
+  async function sayStuck(
+    rows: readonly HeldRow[],
+    readAt: number,
+  ): Promise<void> {
+    for (const [threadId, asked] of waitAsked)
+      if (
+        readAt - asked > WAIT_FORGOTTEN_MS &&
+        !rows.some((row) => row.threadId === threadId && heldBy(row, PLUGIN_ID))
+      ) {
+        forgetWait(threadId);
+      }
+    const stuck = (await atascos(rows)) ?? [];
+    const now = deps.now();
+    for (const a of stuck) {
+      if (now - (stuckSaid.get(a.hilo) ?? -Infinity) < STUCK_WAIT_MS) continue;
+      stuckSaid.set(a.hilo, now);
+      const line = atascoLine(a);
+      bb.log.warn(line);
+      toHistorial(`thread ${a.hilo} stuck`, (db) =>
+        addStuck(db, {
+          at: now,
+          thread: a.hilo,
+          account: a.cuenta,
+          model: a.modelo,
+          minutes: a.minutos,
+          free: a.libres,
+          projectBusy: a.proyectoOcupado,
+          line,
+        }),
+      );
+    }
+    for (const threadId of stuckSaid.keys())
+      if (!waitSince.has(threadId)) stuckSaid.delete(threadId);
+  }
+  async function dispatchDecision(
+    ctx: MessageDispatchHookContext,
+  ): Promise<MessageDispatchHookDecision> {
+    const { thread } = ctx;
+    if (
+      // Queued behind a turn: bb asks again when it sends the message.
+      TURN_UNDER_WAY.has(thread.status) ||
+      thread.providerId !== CLAUDE_CODE_PROVIDER ||
+      notTheUsersThread(thread) !== null
+    )
+      return { action: "proceed" };
+    const budget = dispatchBudget();
+    // Seats not yet counted after a load: no turn is let in against an
+    // empty count (Astra SEATS-R02). Not waited for here: bb is asked again
+    // once they are counted (Astra SEATS-R4-002).
+    if (ctx.attempt === "start-turn" && !seatsReady) {
+      seatsAwaited = true;
+      bb.log.info(`thread ${thread.id}: its message waits (seats are being counted)`);
+      return {
+        action: "wait",
+        reason: "Claude Switcher: seats are being counted after a reload",
+        sendAt: deps.now() + SEATS_COUNTING_WAIT_MS,
+      };
+    }
+    const model = modelFamily(ctx.requestedExecution.model);
+    // A tick that may be refused: refused, it never happened, and its model
+    // is not the project's for what is decided later (Astra T-001).
+    const tick = ctx.queuedMessages.length === 0 && isCalorTick(ctx.input.text);
+    const noteTurn = () => {
+      const seen = noteActivity(thread.projectId);
+      if (model !== null) {
+        threadModel.set(thread.id, model);
+        noteProjectModel(thread.projectId, model, seen);
+      }
+    };
+    if (!tick) noteTurn();
+    const placed: { at?: TurnPlace } = {};
+    if (current.autoSwitch && ctx.attempt === "start-turn") {
+      // A message sent now, not a queued one asked again: its own waits
+      // (Astra E44-R2-03).
+      if (ctx.queuedMessages.length === 0) startWaits.delete(thread.id);
+      const decision = await beforeStart(thread, model, placed, budget, tick);
+      if (tick && decision?.action !== "reject") noteTurn();
+      if (decision !== null) {
+        if (decision.action === "reject") startWaits.delete(thread.id);
+        return decision;
+      }
+      startWaits.delete(thread.id);
+    } else if (tick) noteTurn();
+    // A seat on the account the turn starts on, last: placed, the project
+    // stays where it is, and a full account makes the thread wait there.
+    // Not a turn under way joined, nor an account set outside this plugin.
+    if (ctx.attempt === "start-turn") {
+      // A message sent now, not a queued one asked again: its own waits
+      // (Astra SEATS-R2-005).
+      if (ctx.queuedMessages.length === 0) seatReadWaits.delete(thread.id);
+      const move = movesOf(thread.projectId);
+      /**
+       * The project's account not written since `writes`, nor being
+       * written: a move still sharing its sessions has not changed it yet.
+       */
+      const still = (writes: number) =>
+        move.envWriting === 0 && move.envWrites === writes;
+      // Where the turn starts, and the project's moves it holds for (null:
+      // an account set outside this plugin, which has no seats).
+      let at: { account: string | null; writes: number } | null = null;
+      // Placed, and the project not moved since: where the placement left
+      // it. Moved meanwhile (a pick, a rescue, while the placement recorded
+      // its move), it is read again (Astra SEATS-R3-002).
+      if (placed.at === "external")
+        at = { account: null, writes: move.envWrites };
+      else if (
+        placed.at !== undefined &&
+        placed.at !== "unknown" &&
+        still(placed.at.writes)
+      )
+        at = { account: placed.at.account, writes: placed.at.writes };
+      else if (budget.spent())
+        // Too little of the dispatch's time left to read it: the message
+        // waits, as for an account not read (Astra SEATS-R4-002).
+        bb.log.info(
+          `thread ${thread.id}: its project's account not read for its seat: the dispatch is out of time`,
+        );
+      else {
+        // Not placed (the automatic choice off, a model bb does not name, a
+        // placement that failed or took too long), placed on an account not
+        // found, or moved since: the account is the project's, read apart
+        // from the model (Astra SEATS-R01). One it names that is not among
+        // the accounts found (none are, after the directory or the default
+        // is renamed) is looked for again; still not found, it is not read,
+        // never the default's (Astra SEATS-R2-003, SEATS-R3-001). A read a
+        // move crossed is made again, once (Astra SEATS-R3-002).
+        const seatAccount = async (): Promise<{
+          account: string | null;
+          writes: number;
+        }> => {
+          for (let tries = 0; ; tries += 1) {
+            let writes = move.envWrites;
+            let read = await projectAccount(thread.projectId);
+            if (seatFor(read) === UNKNOWN_SEAT && accounts.length === 0) {
+              await discover();
+              writes = move.envWrites;
+              read = await projectAccount(thread.projectId);
+            }
+            const seat = seatFor(read);
+            if (seat === UNKNOWN_SEAT)
+              throw new Error(
+                "the account it names is not among the accounts found",
+              );
+            if (still(writes)) return { account: seat, writes };
+            if (tries >= 1) throw new Error("the project moved while it was read");
+          }
+        };
+        const read = await within(
+          seatAccount(),
+          budget.limit(),
+          `thread ${thread.id}: the project's account not read for its seat`,
+        );
+        if (typeof read === "object") at = read.value;
+      }
+      // Checked last, with nothing awaited till the seat is reserved: the
+      // project moved after it was read is read again (Astra SEATS-R3-002).
+      if (at !== null && at.account !== null && !still(at.writes)) at = null;
+      // The account the turn starts on may be one no placement put it on:
+      // read again when a move crossed its placement (Codex OPUS-003), or
+      // read alone when the placement failed or took too long (Codex
+      // OPUS-R3-001). A turn held off the reserve does not start there: it
+      // waits and is placed again.
+      if (
+        current.autoSwitch &&
+        model !== null &&
+        at !== null &&
+        at.account !== null &&
+        heldOff(at.account, model, thread.projectId, thread.id)
+      ) {
+        const reason = `Waiting to place ${model} again: the project is on ${at.account}, which keeps its weekly for ${current.preferredModel}`;
+        bb.log.info(`thread ${thread.id}: its message waits (${reason})`);
+        return { action: "wait", reason, sendAt: deps.now() + SEAT_RECHECK_MS };
+      }
+      // A Team seat out for a model held off the reserve: the turn waits
+      // there, rather than start to fail, until a Team seat can take it
+      // (Aitor 2026-11-06, «sin excepciones»; Codex r2 medium 2).
+      if (
+        current.autoSwitch &&
+        model !== null &&
+        at !== null &&
+        at.account !== null &&
+        teamOut(at.account, model, thread.projectId)
+      ) {
+        const reason = `Waiting for a Team seat that can run ${model}: the project is on ${at.account}, which ${whyOut(at.account, model, thread.projectId)}`;
+        bb.log.info(`thread ${thread.id}: its message waits (${reason})`);
+        return { action: "wait", reason, sendAt: deps.now() + SEAT_RECHECK_MS };
+      }
+      if (
+        current.autoSwitch &&
+        model !== null &&
+        at !== null &&
+        at.account !== null &&
+        blockedOff(at.account, model, thread.projectId)
+      ) {
+        const waited = blockedWaits.get(thread.id) ?? 0;
+        if (waited < BLOCKED_WAITS) {
+          blockedWaits.set(thread.id, waited + 1);
+          const reason = `Waiting to place ${model} again: the project is on ${at.account}, which ${whyOut(at.account, model, thread.projectId)}`;
+          bb.log.info(`thread ${thread.id}: its message waits (${reason})`);
+          return { action: "wait", reason, sendAt: deps.now() + SEAT_RECHECK_MS };
+        }
+        bb.log.warn(
+          `thread ${thread.id}: starts on ${at.account}, which ${whyOut(at.account, model, thread.projectId)}: its project could not be moved in ${BLOCKED_WAITS} tries`,
+        );
+      }
+      if (at === null) {
+        // Unknown where it starts: it waits, and is asked again, a few
+        // times; then it goes, as every wait of this plugin does, for bb
+        // is never left holding a message (see MAX_START_WAITS). Out of
+        // the dispatch's time, soon (Astra SEATS-R4-002).
+        const waited = seatReadWaits.get(thread.id) ?? 0;
+        // A turn held off the reserve keeps waiting while any account it
+        // could start on would spend the reserve: going on unread could
+        // start it on one (Codex OPUS-R5-001).
+        const mayBeHeld =
+          current.autoSwitch &&
+          model !== null &&
+          [...measuredAccounts(model), ...accounts].some((a) =>
+            heldOff(a.name, model, thread.projectId),
+          );
+        if (waited < SEAT_READ_WAITS || mayBeHeld) {
+          seatReadWaits.set(thread.id, waited + 1);
+          return {
+            action: "wait",
+            reason:
+              "Claude Switcher: the project's account could not be read for its seat; trying again",
+            sendAt:
+              deps.now() +
+              (budget.spent() ? OUT_OF_TIME_WAIT_MS : SEAT_RECHECK_MS),
+          };
+        }
+        bb.log.warn(
+          `thread ${thread.id}: proceeds without a seat: its project's account could not be read ${waited + 1} times`,
+        );
+      }
+      seatReadWaits.delete(thread.id);
+      if (at !== null && at.account !== null) {
+        // A cancellation of an earlier message that is still looking at the
+        // queue leaves this one's place alone (Astra SEATS-R4-003).
+        seatGenerations.set(thread.id, (seatGenerations.get(thread.id) ?? 0) + 1);
+        const wait = seatWait(thread, at.account);
+        if (wait !== null) return wait;
+      }
+    }
+    // Where the project stands as the turn is sent, for `thread.active`.
+    dispatchEpoch.set(thread.id, movesOf(thread.projectId).epoch);
+    // With its seat, nothing awaited in between: a sibling's move cannot land
+    // between the two (Astra FINAL-R8-001). A message queued behind a running
+    // turn does not get here: that turn comes later, and is asked about again
+    // (code-reviewer r7).
+    if (ctx.attempt === "start-turn") {
+      const at = deps.now();
+      toldToStart.set(thread.id, {
+        first: toldToStart.get(thread.id)?.first ?? at,
+        last: at,
+      });
+    }
+    return { action: "proceed" };
+  }
+
+  // ---- Automatic switch on subscription limit ---------------------------
+  /** `name` refused a turn (no login): chosen for nothing for a while. */
+  function markRefused(
+    name: string,
+    now: number,
+    event: PluginTurnFailedEvent,
+    model = "",
+  ): boolean {
+    // A session lost is the account's on the thread's machine only.
+    if (isSessionLost(event)) {
+      const host = failedHost.get(event.threadId) ?? "";
+      const marks = sessionLostAt.get(name) ?? new Map<string, number>();
+      marks.set(host, now);
+      sessionLostAt.set(name, marks);
+      void readAllHosts();
+      const line = `STUCK: ${name} sin sesión en ${hostLabel(host)}: thread ${event.threadId}${model === "" ? "" : ` (${model})`} failed for want of a login there; ${name} is kept from the projects with threads there for ${SESSION_LOST_MS / 3_600_000} h, or until a turn ends well on it there or it is picked by hand`;
+      bb.log.warn(line);
+      toHistorial(`thread ${event.threadId} stuck`, (db) =>
+        addStuck(db, {
+          at: now,
+          thread: event.threadId,
+          account: name,
+          model,
+          minutes: 0,
+          free: [],
+          projectBusy: false,
+          line,
+        }),
+      );
+      return true;
+    }
+    // A run of refusals on one machine is the machine's (see stormFrom); one
+    // opened while this failure was judged (its reads wait) holds it too
+    // (VETO-001). A machine unknown ("") is no machine: refusals there
+    // neither count nor open a run (VETO-004).
+    const seen = refusalSeen.get(event.threadId);
+    const host = seen?.host ?? "";
+    if (seen?.counts !== false && host !== "") {
+      if (stormOpen(host, now)) {
+        storms.get(host)!.last = now;
+        return false;
+      }
+      if (stormFrom(name, host, now, event, model)) return false;
+    }
+    refusedAt.set(name, now);
+    refusedHttp.set(name, event.errorInfo?.httpStatusCode ?? null);
+    bb.log.warn(
+      `account ${name} refused a turn (HTTP ${event.errorInfo?.httpStatusCode ?? "?"}): chosen for nothing for ${REFUSAL_MS / 3_600_000} h`,
+    );
+    return true;
+  }
+
+  /**
+   * bb asks again now for what waits (a dispatch held, a seat queued): an
+   * account just back is a destination at once, not at the next refresh.
+   */
+  function askWaitingAgain(why: string): void {
+    admitWaiting(true);
+    void bb.experimental_hooks
+      .recheck("message.dispatch")
+      .catch((error: unknown) =>
+        bb.log.warn(
+          `bb not asked again after ${why}: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
+  }
+  /** The thread's failure, with its line, among the stuck threads of history. */
+  function stuckLine(event: PluginTurnFailedEvent, now: number, account: string, model: string, line: string): void {
+    bb.log.warn(line);
+    toHistorial(`thread ${event.threadId} stuck`, (db) =>
+      addStuck(db, {
+        at: now,
+        thread: event.threadId,
+        account,
+        model,
+        minutes: 0,
+        free: [],
+        projectBusy: false,
+        line,
+      }),
+    );
+  }
+  /** What `unblock` lifted from an account. */
+  interface Unblocked {
+    account: string;
+    refusal: boolean;
+    limits: number;
+    sessionsLost: number;
+  }
+  function unblockedText(u: Unblocked): string {
+    return [
+      ...(u.refusal ? ["its refusal's veto"] : []),
+      ...(u.limits > 0 ? [`${u.limits} usage limit's mark${u.limits === 1 ? "" : "s"}`] : []),
+      ...(u.sessionsLost > 0 ? [`its session lost on ${u.sessionsLost} machine${u.sessionsLost === 1 ? "" : "s"}`] : []),
+    ].join(", ") + " lifted";
+  }
+  /**
+   * `bb claude-switcher unblock`: the account is taken as back now (Aitor
+   * 2026-11-13: «podemos pasar hilos fallidos a otras cuentas ultra con
+   * cuota»): its refusal's veto, its usage limits' marks (every scope) and
+   * its sessions lost (every machine) go, in the log and the history, and
+   * bb asks again at once for what waits. A new refusal or failure marks it
+   * again.
+   */
+  function unblock(name: string): Unblocked {
+    const now = deps.now();
+    const refusal = refusing(name);
+    refusedAt.delete(name);
+    refusedHttp.delete(name);
+    const limits = [...(limitedAt.get(name) ?? [])].filter(([, until]) => now < until).length;
+    limitedAt.delete(name);
+    const sessionsLost = [...(sessionLostAt.get(name) ?? [])].filter(([, at]) => now < at + SESSION_LOST_MS).length;
+    sessionLostAt.delete(name);
+    // Nor one of a run's accounts any more (R2-003).
+    for (const [host, recent] of refusalsOn) {
+      const kept = recent.filter((r) => r.account !== name);
+      if (kept.length === 0) refusalsOn.delete(host);
+      else refusalsOn.set(host, kept);
+    }
+    const out = { account: name, refusal, limits, sessionsLost };
+    if (!refusal && limits === 0 && sessionsLost === 0) return out;
+    const line = `account ${name} unblocked by hand: ${unblockedText(out)}`;
+    bb.log.info(line);
+    toHistorial(`account ${name} unblocked`, (db) =>
+      addStuck(db, {
+        at: now,
+        thread: "",
+        account: name,
+        model: "",
+        minutes: 0,
+        free: [],
+        projectBusy: false,
+        line: `unblock: ${name} by hand: ${unblockedText(out)}`,
+      }),
+    );
+    askWaitingAgain(`${name} was unblocked`);
+    return out;
+  }
+  /** The machines' runs still open (see blockRuns and storms), for health. */
+  function networkRuns(now: number): Array<{ host: string; hostName: string; since: number; until: number; why: string }> {
+    const runs: Array<{ host: string; hostName: string; since: number; until: number; why: string }> = [];
+    for (const [host, run] of blockRuns)
+      if (now - run.last < NETWORK_STREAK_MS)
+        runs.push({ host, hostName: hostLabel(host), since: run.since, until: run.last + NETWORK_STREAK_MS, why: "bloqueo de red" });
+    for (const [host, storm] of storms)
+      if (stormOpen(host, now))
+        runs.push({
+          host,
+          hostName: hostLabel(host),
+          since: storm.since,
+          until: Math.min(storm.last + REFUSAL_STORM_MS, storm.since + REFUSAL_STORM_MAX_MS),
+          why: "cortacircuitos",
+        });
+    return runs;
+  }
+  /**
+   * A turn started `since` ended well on `host` ("" unknown): the network
+   * there works, and a run of refusals opened before it started was no
+   * block of it (three accounts refusing for real with a text unread would
+   * keep it open for good, its own retries every 2 min). From here, a
+   * refusal there is its account's again.
+   */
+  function stormBack(host: string, since: number): void {
+    const storm = storms.get(host);
+    if (storm === undefined || since <= storm.opened) return;
+    storms.delete(host);
+    bb.log.info(
+      `${hostLabel(host)}: a turn started after its run of refusals opened ended well; the run is closed, a refusal there is its account's again`,
+    );
+  }
+  /** A machine's run of refusals taken as its own is open (see storms). */
+  function stormOpen(host: string, now: number): boolean {
+    const storm = storms.get(host);
+    if (storm === undefined) return false;
+    if (now - storm.last <= REFUSAL_STORM_MS && now - storm.since <= REFUSAL_STORM_MAX_MS) return true;
+    storms.delete(host);
+    return false;
+  }
+  /**
+   * `name` refused on `host` at `now`: with REFUSAL_STORM_ACCOUNTS accounts
+   * refusing there within REFUSAL_STORM_MS, it is the machine or its
+   * network, not the accounts (2026-11-13: five accounts set aside for 6 h
+   * in 2 min 47 s by one machine's blocked network). Then the vetoes set in
+   * that run are lifted, one STUCK line says it, the run opens (see storms)
+   * and true: this refusal sets nothing aside either.
+   */
+  function stormFrom(name: string, host: string, now: number, event: PluginTurnFailedEvent, model: string): boolean {
+    const recent = (refusalsOn.get(host) ?? []).filter((r) => now - r.at <= REFUSAL_STORM_MS);
+    recent.push({ account: name, at: now });
+    const names = [...new Set(recent.map((r) => r.account))];
+    if (names.length < REFUSAL_STORM_ACCOUNTS) {
+      refusalsOn.set(host, recent);
+      return false;
+    }
+    refusalsOn.delete(host);
+    storms.set(host, { since: recent[0]!.at, opened: now, last: now });
+    const lifted: string[] = [];
+    for (const r of recent) {
+      if (refusedAt.get(r.account) !== r.at) continue;
+      refusedAt.delete(r.account);
+      lifted.push(r.account);
+    }
+    stuckLine(
+      event,
+      now,
+      name,
+      model,
+      `STUCK: ${hostLabel(host)}: ${names.length} accounts refused turns there within ${REFUSAL_STORM_MS / 60_000} min (${names.join(", ")}): taken as the machine or its network, not the accounts; ${lifted.length === 0 ? "no account was set aside" : `${lifted.join(", ")} no longer set aside`}; until ${REFUSAL_STORM_MS / 60_000} min without a refusal there, ${REFUSAL_STORM_MAX_MS / 60_000} min at most, or until a turn started later ends well there, a refusal there sets no account aside and its turn runs again where it is`,
+    );
+    if (lifted.length > 0) askWaitingAgain(`the vetoes of ${lifted.join(", ")} were lifted`);
+    return true;
+  }
+  /**
+   * A block of `host`'s network: one STUCK line per run of them there, a run
+   * ending NETWORK_STREAK_MS without one (2026-11-13: 1,194 lines «refused a
+   * turn» in half an hour).
+   */
+  function noteBlock(host: string, event: PluginTurnFailedEvent, now: number): void {
+    const run = blockRuns.get(host);
+    if (run !== undefined && now - run.last < NETWORK_STREAK_MS) {
+      run.last = now;
+      return;
+    }
+    blockRuns.set(host, { since: now, last: now });
+    stuckLine(
+      event,
+      now,
+      "",
+      "",
+      `STUCK: ${hostLabel(host)}: its network refuses the turns (thread ${event.threadId}: Cloudflare's block page, not the API's answer); no account is set aside for it and each turn runs again where it is in ${NETWORK_BLOCK_RETRY_MS / 60_000} min; one line per run (until ${NETWORK_STREAK_MS / 60_000} min without one there)`,
+    );
+  }
+  /**
+   * A turn the network refused (see isNetworkBlock): no account is marked
+   * and the project stays, the turn is retried where it is in
+   * NETWORK_BLOCK_RETRY_MS while attempts are left, then left in error for
+   * the rescue (2026-11-13). `storm`: the machine whose run of refusals is
+   * taken as its own (see stormFrom), its text no block page.
+   */
+  async function networkBlocked(event: PluginTurnFailedEvent, projectId: string, storm?: string): Promise<void> {
+    const prefix =
+      storm === undefined
+        ? `network refused a turn of thread ${event.threadId} (HTTP ${event.errorInfo?.httpStatusCode ?? "?"}, Cloudflare): no account marked`
+        : `refusal of a turn of thread ${event.threadId} (HTTP ${event.errorInfo?.httpStatusCode ?? "?"}) taken as ${hostLabel(storm)}'s, several accounts refused there: no account marked`;
+    if (event.attemptNumber >= MAX_ATTEMPTS) {
+      bb.log.warn(`${prefix}; every retry spent, left in error for the rescue`);
+      return;
+    }
+    const on = (await projectAccount(projectId)).account ?? current.defaultAccountName;
+    const sendAt = deps.now() + NETWORK_BLOCK_RETRY_MS;
+    await retryTurn(
+      event,
+      storm === undefined
+        ? `Retrying on account ${on}: the network refused the turn (Cloudflare's block page)`
+        : `Retrying on account ${on}: several accounts refused turns on ${hostLabel(storm)} within ${REFUSAL_STORM_MS / 60_000} min, taken as its network's`,
+      sendAt,
+    );
+    bb.log.warn(`${prefix}; retried on ${on} at ${new Date(sendAt).toISOString()}`);
+  }
+
+  /**
+   * `started`: the account the failed turn started on; null when unknown
+   * (see `startedOn`), undefined when no start was recorded.
+   */
+  async function handleFailure(
+    event: PluginTurnFailedEvent,
+    projectId: string,
+    started: string | null | undefined,
+    /** The thread's generation as its failure came (see generation). */
+    judgedIn: number,
+    /** The thread is background work (see isBackground). */
+    background: boolean,
+  ): Promise<void> {
+    // Before any shortcut below marks or moves: every refusal judged on its
+    // failure comes through here, and a network block is nobody's
+    // (2026-11-13). Its text unread: judged as a refusal, as before.
+    if (isRefusal(event) && !isSessionLost(event)) {
+      const text = await failureText(event.threadId, event.requestId);
+      const seen = refusalSeen.get(event.threadId);
+      const host = seen?.host ?? "";
+      // The API's own error body is Anthropic's answer about that
+      // credential, and a session lost is the account's login there: never
+      // the machine's (see stormFrom; R2-001).
+      const counts = !isApiErrorBody(text) && !(text !== null && isSessionLoss(text));
+      if (seen !== undefined) seen.counts = counts;
+      if (text !== null && isNetworkBlock(text)) {
+        noteBlock(host, event, deps.now());
+        await networkBlocked(event, projectId);
+        return;
+      }
+      // A machine whose refusals are taken as its own (see stormFrom).
+      const at = deps.now();
+      if (counts && stormOpen(host, at)) {
+        storms.get(host)!.last = at;
+        await networkBlocked(event, projectId, host);
+        return;
+      }
+    }
+    const now = deps.now();
+    // The log first, for the turn that failed: a Send now or an edited
+    // message skips the checkpoint and the cache still names the model of
+    // the message before it (code-reviewer r2, same hole as thread.idle).
+    // Read before the shortcuts below: a leftover is not retried on an
+    // account reserved for the preferred model (Codex BM-R1-001).
+    // With its retry chain, for the Opus advice, in the same read: before
+    // anything below is checked or marked, so no read waits between those
+    // checks and a move (Sol B2-R3-005; code-reviewer r4, L3).
+    const logged = await loggedTurn(event.threadId, event);
+    const model =
+      logged.model ?? threadModel.get(event.threadId) ?? current.preferredModel;
+    const turn = { requestId: event.requestId, chain: logged.chain };
+    const recent = recentSwitches.get(projectId);
+    // Where the project is now: a leftover follows the recorded move only
+    // while the project still sits where that move put it and no move is
+    // under way. placeTurn runs outside the project's queue: a move landed
+    // but not yet recorded would have the turn retried "on" an account the
+    // variable no longer names (Codex BM-INSPECT-002).
+    const at = await projectAccount(projectId);
+    const currentName = at.account ?? current.defaultAccountName;
+    const settled = !at.external && movesOf(projectId).inFlight === 0;
+    if (
+      recent !== undefined &&
+      settled &&
+      currentName === recent.to &&
+      now - recent.at <= SWITCH_GRACE_MS &&
+      recent.threadId !== event.threadId &&
+      !recent.graced.has(event.threadId) &&
+      // Started on the account the project moved to: no leftover, that
+      // account's failure, judged below (code-reviewer r14). Started on an
+      // account unknown: judged below too, on the measurements (IR15-004).
+      started !== null &&
+      // Unless the move was a wait: the account is out until its reset,
+      // whatever the leftover's turn ran on (code-reviewer r15).
+      (started !== recent.to || recent.sendAt !== undefined) &&
+      // Measured since as unable to run a turn (a wait keeps its grace:
+      // the account is out by definition until its reset): judged below.
+      (recent.sendAt !== undefined || !cannotRun(recent.to)) &&
+      // Or keeping the preferred model's weekly, which this turn's model
+      // would spend when the retry is sent: judged below, where the rule
+      // applies.
+      !reservedFor(recent.to, model, recent.sendAt ?? now, projectId)
+    ) {
+      // Another thread of the project, still running on the old account
+      // (whatever its attempt: a leftover can be a retry too): the project
+      // has already moved, so its turn only needs to run again, or to wait
+      // for the same reset. Once per thread: a second failure in the window
+      // means the new account fails as well, and is judged below.
+      recent.graced.add(event.threadId);
+      if (typeof started === "string" && isRefusal(event))
+        markRefused(started, now, event, model);
+      const told = followsAdvice(recent, model, now, event, started, projectId, background);
+      const reason = `Retrying on account ${recent.to}${told === null ? "" : `. ${told}`}`;
+      bb.log.info(
+        `thread ${event.threadId}: ${reason} (switched ${now - recent.at} ms ago)`,
+      );
+      if (told !== null)
+        await noteAdvice(event.threadId, projectId, recent.to, reason, turn, now, judgedIn);
+      // Its queued retry says it now, or nothing is to be said.
+      judgedAdvice(event.threadId, null, judgedIn, null);
+      // The advice too only while the judgment's generation holds, as its
+      // row (code-reviewer r5, nit 1), asked as the retry is queued, after
+      // the waits on the queue (Sol B2-R6-004).
+      await retryTurn(
+        event,
+        () =>
+          judgedIn === generation(event.threadId)
+            ? reason
+            : `Retrying on account ${recent.to}`,
+        recent.sendAt,
+      );
+      return;
+    }
+    if (typeof started === "string") {
+      const sendAt =
+        recent !== undefined &&
+        recent.to === currentName &&
+        recent.sendAt !== undefined &&
+        recent.sendAt > now
+          ? recent.sendAt
+          : undefined;
+      if (
+        !at.external &&
+        started !== currentName &&
+        !cannotRun(currentName) &&
+        !reservedFor(currentName, model, sendAt ?? now, projectId)
+      ) {
+        // Started on the old account before the project moved: a leftover
+        // (a long tool call can outlast the grace window), not a failure of
+        // the project's account. It runs again there, or waits for the same
+        // reset when the project's latest move was a wait on that account.
+        // Unless the project's account cannot run it either (a hand pick of
+        // an account without a login, or out), or keeps the preferred
+        // model's weekly for this turn's model: then it is judged below.
+        // Its refusal is the old account's, wherever it runs again.
+        if (isRefusal(event)) markRefused(started, now, event, model);
+        const told =
+          sendAt === undefined || recent === undefined
+            ? null
+            : followsAdvice(recent, model, now, event, started, projectId, background);
+        const reason = `Retrying on account ${currentName}${told === null ? "" : `. ${told}`}`;
+        bb.log.info(
+          `thread ${event.threadId}: ${reason} (its turn started on ${started})`,
+        );
+        if (told !== null)
+          await noteAdvice(event.threadId, projectId, currentName, reason, turn, now, judgedIn);
+        judgedAdvice(event.threadId, null, judgedIn, null);
+        await retryTurn(
+          event,
+          () =>
+            judgedIn === generation(event.threadId)
+              ? reason
+              : `Retrying on account ${currentName}`,
+          sendAt,
+        );
+        return;
+      }
+    }
+    await refreshAll();
+    const before = moveMark(projectId);
+    const from = await projectAccount(projectId);
+    if (from.external) {
+      bb.log.info(
+        `thread ${event.threadId}: no switch (${ENV_VAR} on project ${projectId} was set outside this plugin)`,
+      );
+      return;
+    }
+    // On the clock after those reads: a window that reset meanwhile has
+    // reset (Codex BM-INSPECT-003).
+    await judge(
+      event,
+      projectId,
+      from,
+      model,
+      deps.now(),
+      false,
+      before,
+      judgedIn,
+      turn.chain,
+      background,
+      started,
+    );
+  }
+
+  /**
+   * Retries the user cancelled by hand (from bb's queued card or `bb thread
+   * queue`), per thread: the thread's latest turn at the time (a turn the
+   * user then retries by hand, and fails, is a new one: judged). bb's only
+   * word of that removal is `message.cancelled`, which this plugin's own
+   * deletions fire too (`ownDeletes` tells them apart). The rescue leaves
+   * such a thread alone until a new turn of it (Codex r7, IR7-004). Kept
+   * in storage: a restart must not turn a cancellation into an abandoned
+   * thread.
+   */
+  bb.events.on("message.cancelled", async ({ entry }) => {
+    // The message that waited for its account to be read is gone: the
+    // next one waits on its own count (Astra SEATS-R2-005).
+    seatReadWaits.delete(entry.threadId);
+    const own = ownDeletes.get(entry.id);
+    if (own !== undefined) {
+      if (own.done) ownDeletes.delete(entry.id);
+      else own.held = entry;
+      return;
+    }
+    await leaveSeatQueue(entry.threadId);
+    await forgetCancelledWait(entry.threadId);
+    await cancelledByHand(entry);
+  });
+
+  /**
+   * The user cancelled the thread's last held message: the next one's wait
+   * counts from zero, not from this one's (Codex IR-002). Unread, or with
+   * another of it held or asked for meanwhile, the wait stands.
+   */
+  async function forgetCancelledWait(threadId: string): Promise<void> {
+    const asked = waitAsked.get(threadId);
+    // A message let out by maximumWaitHours and cancelled before it started
+    // leaves no way out to the next one (Astra r4 medium 4).
+    if (asked === undefined && !overdueTold.has(threadId)) return;
+    const rows = await within(
+      bb.sdk.threads.queuedMessages.list({ threadId }),
+      DISPATCH_LIMIT_MS,
+      `thread ${threadId}: its queued messages not read after a cancellation`,
+    );
+    if (typeof rows !== "object" || rows.value.length > 0) return;
+    if (waitAsked.get(threadId) !== asked) return;
+    forgetWait(threadId);
+    overdueTold.delete(threadId);
+  }
+
+  /**
+   * The user cancelled the thread's last message waiting for a seat: its
+   * place in the queue, or the seat reserved for it, goes to the next in
+   * line (Astra SEATS-R3-004). Not while another message of it is queued,
+   * nor a seat whose turn runs; unread, the reservation expires on its own.
+   */
+  async function leaveSeatQueue(threadId: string): Promise<void> {
+    const seat = seats.seatOf(threadId);
+    if (seat?.state === "running") return;
+    if (seat === null && seats.position(threadId) === null) return;
+    const generation = seatGenerations.get(threadId);
+    const rows = await within(
+      bb.sdk.threads.queuedMessages.list({ threadId }),
+      DISPATCH_LIMIT_MS,
+      `thread ${threadId}: its queued messages not read after a cancellation`,
+    );
+    if (typeof rows !== "object" || rows.value.length > 0) return;
+    // A turn of it started meanwhile keeps its seat, and so does a message
+    // of it sent meanwhile (Astra SEATS-R4-003).
+    if (seats.seatOf(threadId)?.state === "running") return;
+    if (seatGenerations.get(threadId) !== generation) return;
+    releaseSeat(threadId, "its waiting message was cancelled");
+  }
+
+  async function cancelledByHand(entry: CancelledEntry): Promise<void> {
+    if (entry.payload.kind !== "retry") return;
+    let turn: Awaited<ReturnType<typeof latestTurn>>;
+    let archived: boolean;
+    try {
+      turn = await latestTurn(entry.threadId);
+      archived =
+        (await bb.sdk.threads.get({ threadId: entry.threadId })).archivedAt !==
+        null;
+    } catch (error) {
+      // Without the turn, the mark cannot be keyed: the thread is judged
+      // again (the user can cancel again) rather than left for dead.
+      bb.log.warn(
+        `thread ${entry.threadId}: its queued retry was cancelled by hand, but its latest turn could not be read (${error instanceof Error ? error.message : String(error)}); judged again on the next refresh`,
+      );
+      return;
+    }
+    // Of an earlier turn's chain (a message sent by hand since made a new
+    // turn, which the rescue judges on its own), or of a thread archived
+    // meanwhile (its mark would outlive it in storage): nothing to mark.
+    if (
+      turn === null ||
+      turn.original !== entry.payload.retryOfTurnRequestId ||
+      archived
+    )
+      return;
+    cancelled.set(entry.threadId, turn.requestId);
+    bb.log.info(
+      `thread ${entry.threadId}: its queued retry was cancelled by hand; not judged again until a new turn of it`,
+    );
+    await storeCancelled(entry.threadId);
+  }
+
+  /**
+   * Removes a queued row of this plugin's own; throws as bb's delete does.
+   * bb's cancellation for it is this plugin's own, whenever it comes,
+   * unless the removal fails: the row was gone before, so a cancellation
+   * come meanwhile was the user's.
+   */
+  async function deleteOwn(threadId: string, id: string): Promise<void> {
+    const own = { done: false, held: null as CancelledEntry | null };
+    ownDeletes.set(id, own);
+    try {
+      await bb.sdk.threads.queuedMessages.delete({
+        threadId,
+        queuedMessageId: id,
+      });
+    } catch (error) {
+      ownDeletes.delete(id);
+      if (own.held !== null) await cancelledByHand(own.held);
+      throw error;
+    }
+    if (own.held !== null) ownDeletes.delete(id);
+    else own.done = true;
+  }
+
+  /** The cancellations by hand, to storage; a failure is logged, not thrown. */
+  async function storeCancelled(threadId: string): Promise<void> {
+    try {
+      await bb.storage.kv.set(KV_CANCELLED, Object.fromEntries(cancelled));
+    } catch (error) {
+      bb.log.warn(
+        `thread ${threadId}: the cancellations by hand could not be stored (a restart would read the list as it was): ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Where the failed turn runs again: the project moves there and the retry
+   * is queued. `stuck`: judged on a refresh for a thread left in error (see
+   * `rescueStuck`), not on its failure. `ranOn`: the account the turn ran
+   * on when it is not the project's (a leftover the project's account cannot
+   * run either): the failure, its report and a refusal are that account's.
+   * Null: unknown (see `startedOn`): the report is nobody's, no account is
+   * marked and the measurements decide.
+   */
+  async function judge(
+    event: PluginTurnFailedEvent,
+    projectId: string,
+    from: ProjectAccount,
+    model: string,
+    now: number,
+    stuck: boolean,
+    /** The project's moves and picks before `from` was read (see noteMove). */
+    before: MoveMark,
+    /** The thread's generation as the judgment began (see generation). */
+    judgedIn: number,
+    /** The turn's retry chain (see loggedTurn), read before the judgment began. */
+    chain: string | null,
+    /** The thread is background work (see isBackground): the switch goes behind the accounts saved for the user. */
+    background: boolean,
+    ranOn?: string | null,
+  ): Promise<void> {
+    const turn = { requestId: event.requestId, chain };
+    const fromName = from.account ?? current.defaultAccountName;
+    const failedOn = ranOn === undefined ? fromName : ranOn;
+    const refusal = isRefusal(event);
+    if (refusal && !stuck && failedOn !== null) {
+      // The machine's, not the account's: retried where it is, nothing moved.
+      if (!markRefused(failedOn, now, event, model)) {
+        await networkBlocked(event, projectId, refusalSeen.get(event.threadId)?.host ?? "");
+        return;
+      }
+    } else if (refusal && !stuck) {
+      bb.log.info(
+        `thread ${event.threadId}: refused by an account unknown (where its turn started could not be read); none marked`,
+      );
+      // No account marked, the retry may be refused the same way: this
+      // failure gets MAX_ATTEMPTS like any other, then the thread is left
+      // in error for the rescue to judge (Codex IR16-002).
+      if (event.attemptNumber >= MAX_ATTEMPTS) {
+        bb.log.info(
+          `thread ${event.threadId}: no switch (every retry spent on refusals by an account unknown; judged again on the next refresh)`,
+        );
+        return;
+      }
+    } else if (refusal) {
+      // Found in the log on a rescue: bb masks the account in its log and
+      // this plugin's history of moves cannot date a turn against a move
+      // (Codex r8, IR8-001, IR8-005), so no account is marked for it. The
+      // thread is judged on the measurements; if the account refuses again,
+      // that failure marks it, and so two accounts without a login are
+      // marked one after the other, not bounced between.
+      bb.log.info(
+        `thread ${event.threadId}: left in error by a refusal; no account marked for it (the one that refuses again marks itself)`,
+      );
+    }
+    const input = {
+      failure: event,
+      currentAccount: fromName,
+      failedAccount: failedOn,
+      // An account a session lost keeps from the project runs nothing of it,
+      // also judged from the log (stuck), where no mark applies (sin-login
+      // 2026-11-10).
+      accounts: sessionBlocked(measuredAccounts(model), projectId),
+      preferredModel: model,
+      ...reserveOf(),
+      noTeamTakes: (m: string, ruledOut: string | null) => noTeamTakes(m, undefined, ruledOut, projectId),
+      // A Team seat marked by an earlier failure is no destination either
+      // (Astra r3 high 1), for a turn held off the reserve: one in Fable is
+      // judged on the numbers, as before 0.2.48.
+      ...(heldModel(model) ? { limitedUntil: (name: string) => limitedUntil(name, model, projectId) } : {}),
+      maximumWaitMs:
+        current.maximumWaitHours > 0
+          ? current.maximumWaitHours * 3_600_000
+          : null,
+      now,
+      random: deps.random(),
+      stuck,
+      pinned: pins.get(projectId) === fromName,
+      freeSeats,
+      ...paceFilter(background),
+    };
+    const decision = decideSwitch(input);
+    // The provider's word on the account the turn failed on stands past
+    // this judgment: the retry's own placement reads it (see limitedAt).
+    // Judged on its failure, the event is a limit or a refusal (handleFailure
+    // ignores the rest); left in error, it may be hours old: no mark. A
+    // session lost is marked on its machine only (see markRefused): a mark
+    // of the whole account here would keep it from every machine. Nor a
+    // refusal: refusedAt keeps it out, and a turn that ends well there lifts
+    // that (refusalBack), which a limit's mark would outlast (Codex Astra r1
+    // NET-001).
+    if (!stuck && failedOn !== null && !refusal) {
+      const blamed = input.accounts.find((a) => a.name === failedOn);
+      const scope = limitScope(blamed, model, now)?.toLowerCase() ?? "";
+      let until = reportedFreeAt(event);
+      // A reset that is none of the account's windows as read is no proof
+      // the account is out till then: a failure judged on the wrong account
+      // kept it from every model for days (culpa tras recarga, 2026-11-11).
+      // Unread, the report stands as before. Nor is a second 429 with the
+      // same reset: two threads of a project fail alike (code-reviewer r2,
+      // medium 1).
+      // ponytail: an account truly out whose read lacks the window its 429
+      // reports gets a 30-min mark and one failed turn every 30 min, each
+      // with this warning; a reading with that window would close it.
+      // Only a reset still ahead: one that passed while the accounts were
+      // read is the account back, and marks it no further (a mark ending in
+      // the past keeps nothing out; a longer one stands; Codex Astra r2
+      // RESET-001). Checked on the account's cached read, a destination or
+      // not: one left out of the destinations (its read failing, a full
+      // window reset since) still has the windows that tell (Codex Astra r3
+      // RESET-003).
+      const cached = collector.get(failedOn);
+      const read = cached?.usage == null ? undefined : { name: failedOn, ...cached.usage };
+      if (
+        until !== null &&
+        until > now &&
+        read !== undefined &&
+        read.unknown !== true &&
+        !resetOfAccount(read, until, now, cached?.observedAt ?? undefined)
+      ) {
+        bb.log.warn(
+          `account ${failedOn}: the reset its 429 reported (${isoInZone(until)}) matches none of its windows as read; marked for ${LIMIT_NO_RESET_MS / 60_000} min only`,
+        );
+        until = null;
+      }
+      markLimited(failedOn, scope, until ?? now + LIMIT_NO_RESET_MS);
+    }
+    // No Fable on any account, and an account with Opus: the thread is told
+    // to switch (D3), whatever the decision's reason, naming where the
+    // dispatch would run its Opus turn (Sol B2-002: the same placement).
+    const opusOn = opusInstead(
+      decision,
+      input,
+      unreadAccounts(),
+      placementOf(projectId, FALLBACK_MODEL, now, background),
+    );
+    const advice = opusOn === null ? null : opusInsteadText(model, opusOn);
+    const carried = advice === null ? undefined : { model };
+    const how = stuck ? "left in error: " : "";
+    // The thread shows the advice where nothing queued carries it: a
+    // decline (Sol B2-004), asked again after every refresh (Sol
+    // B2-R4-001). Any other judgment takes it away. Unless a turn of it
+    // started, it was archived or the automatic choice was switched off
+    // while this one read (Sol B2-R2-003).
+    // A basis only for a decline that can tell it (Sol B2-R5-003).
+    judgedAdvice(
+      event.threadId,
+      decision.kind === "decline" ? advice : null,
+      judgedIn,
+      decision.kind === "decline" &&
+        mayAdviseOpus(decision, model, current.preferredModel)
+        ? {
+            projectId,
+            model,
+            decision,
+            requestId: event.requestId,
+            chain,
+            at: now,
+          }
+        : null,
+    );
+    if (decision.kind === "decline") {
+      // The account the project sits on is no good either: a leftover
+      // thread must be judged too, not retried there at once.
+      recentSwitches.delete(projectId);
+      bb.log.info(
+        `thread ${event.threadId}: ${how}no switch (${decision.reason})${advice === null ? "" : `; ${advice}`}`,
+      );
+      // No retry of ours carries it (bb's provider-retry row, if any, is
+      // left as it is; a rescue queues none): the history and the log say it.
+      // Switched off meanwhile, noteAdvice writes nothing: the judgment's
+      // generation ended (code-reviewer r4, N2).
+      if (advice !== null)
+        await noteAdvice(event.threadId, projectId, fromName, advice, turn, now, judgedIn);
+      return;
+    }
+    const reason =
+      decision.kind === "switch"
+        ? `Switched to account ${decision.account}${decision.model === null ? "" : ` (${decision.model})`}${refusal && failedOn !== null ? (isSessionLost(event) ? `: ${failedOn} ${whyOut(failedOn, model, projectId)}` : `: ${failedOn} refused the turn`) : ""}`
+        : decision.kind === "retry"
+          ? `Retrying on account ${decision.account}${decision.model === null ? "" : ` (${decision.model})`}: it has room now`
+          : advice === null
+            ? decision.reason
+            : `${decision.reason}. ${advice}`;
+    const sendAt = decision.kind === "wait" ? decision.sendAt : undefined;
+    // A rescue runs between reads: switched off meanwhile, it stops before
+    // moving and before retrying (Codex r6, IR6-006).
+    if (stuck && !current.autoSwitch) return;
+    // Another automatic move of the project under way (a dispatch's, its
+    // write or its history still pending): no second write over it. The
+    // turn is retried at once; its dispatch waits for that move to be
+    // recorded and places it then (Astra r8 medium 2).
+    if (decision.account !== fromName && moving(projectId)) {
+      bb.log.info(
+        `thread ${event.threadId}: ${how}not moved to ${decision.account}: another move of the project is under way; retried, and placed once it is recorded`,
+      );
+      await retryTurn(event, "Retrying: the project is being moved to another account", undefined, stuck);
+      return;
+    }
+    if (decision.account !== fromName) {
+      if (
+        !(await applyAccount(projectId, accountOrDefault(decision.account), from, {
+          forThread: event.threadId,
+          keepPin: otherModel(model),
+        }))
+      ) {
+        // Moved by a placement before a turn while the sessions were shared:
+        // that move, decided later, stands. Nothing is recorded; the turn is
+        // retried at once where the project is now (it is judged again if
+        // it fails there).
+        bb.log.info(
+          `thread ${event.threadId}: ${how}not moved to ${decision.account} (the project's account changed meanwhile); retried where the project is now`,
+        );
+        await retryTurn(
+          event,
+          "Retrying: the project stays on its account for now",
+          undefined,
+          stuck,
+        );
+        return;
+      }
+      noteMove(projectId, fromName, decision.account, model, before);
+      await recordMove(
+        {
+          at: now,
+          threadId: event.threadId,
+          projectId,
+          from: fromName,
+          to: decision.account,
+          // The move's own reason: a wait's without the advice.
+          reason: decision.kind === "wait" ? decision.reason : reason,
+        },
+        event.threadId,
+        sendAt,
+        carried,
+        // Its history row tells the turn once per chain (Sol B2-003: a
+        // retry of a turn told already records its move alone), and only in
+        // the thread's generation the judgment began in, as noteAdvice:
+        // asked once the move and its store are over (Sol B2-R4-002).
+        // Switched off meanwhile, a turn of the thread started or the thread
+        // archived, the row records the move alone and the chain is not
+        // taken for told.
+        advice === null
+          ? undefined
+          : () =>
+              judgedIn === generation(event.threadId) &&
+              tellOnce(event.threadId, chain, event.requestId)
+                ? reason
+                : null,
+      );
+    } else if (decision.kind !== "retry") {
+      // A wait on this same account is still the project's latest move: a
+      // leftover thread follows it (waits for the same reset) instead of
+      // being retried at once on an account just found blocked. A retry on
+      // the project's own account is no move at all: the latest move stands,
+      // with its cause, time and graced threads (Codex r7, IR7-002).
+      recentSwitches.set(projectId, {
+        at: now,
+        to: decision.account,
+        threadId: event.threadId,
+        sendAt,
+        advice: carried,
+        graced: new Set(),
+      });
+      if (advice !== null)
+        await noteAdvice(event.threadId, projectId, fromName, reason, turn, now, judgedIn);
+    } else {
+      // Retried on the project's own account: it runs there from here, so
+      // a failure of it within the grace of the project's latest move is
+      // that account's, judged afresh, not retried at once as a leftover
+      // of the account its turn started on (Codex r8, IR8-003).
+      recentSwitches.get(projectId)?.graced.add(event.threadId);
+      forgetStart(event.threadId);
+    }
+    if (stuck && !current.autoSwitch) return;
+    if (decision.kind === "wait") {
+      bb.log.info(
+        `thread ${event.threadId}: ${how}${reason} until ${new Date(decision.sendAt).toISOString()}`,
+      );
+      // The advice only while the judgment's generation holds, as its rows
+      // (code-reviewer r5, nit 1): otherwise the wait alone. Asked as the
+      // retry is queued, after the waits on the queue (Sol B2-R6-004).
+      const waited = decision.reason;
+      await retryTurn(
+        event,
+        () => (judgedIn === generation(event.threadId) ? reason : waited),
+        decision.sendAt,
+        stuck,
+      );
+      return;
+    }
+    bb.log.info(`thread ${event.threadId}: ${how}${reason}`);
+    await retryTurn(event, reason, undefined, stuck);
+  }
+
+  bb.events.on("turn.failed", async (event) => {
+    // Where its turn started, read now and forgotten whatever comes of the
+    // failure: a failure declined below ends the turn as well, with no
+    // `thread.idle` (Codex IR13-001, code-reviewer r13).
+    let started = startedOn.get(event.threadId);
+    // Its judgment's generation, taken before any read (see generation).
+    const judgedIn = generation(event.threadId);
+    // The seat its dispatch reserved, before it is released: where the turn
+    // runs while its start is still read (Astra SEATS-R04).
+    const seatHeld = seats.seatOf(event.threadId)?.account;
+    // Read before anything is awaited: a dispatch meanwhile is a new turn's.
+    const beforeLoad = startedBeforeLoad(event.threadId);
+    underWayAtLoad.delete(event.threadId);
+    forgetStart(event.threadId);
+    turnsUnderWay.delete(event.threadId);
+    releaseSeat(event.threadId, "its turn failed");
+    if (!current.autoSwitch) return;
+    // Pure guards first: another provider's limit must not query every account.
+    const declined = declineReason(event);
+    // bb announces a turn refused for want of a session with no errorInfo:
+    // its text in bb's log tells (sin-login 2026-11-10). Whatever the
+    // attempt, as a refusal (see declineReason): its retries in the same
+    // place spend them all, and the mark must be set (code-reviewer r1, high).
+    const mayBeLost =
+      (declined === "not-rate-limit" || declined === "attempts-exhausted") &&
+      (event.errorInfo === null || event.errorInfo.category === "unknown");
+    if (declined !== null && !mayBeLost) {
+      bb.log.debug(`thread ${event.threadId}: ignored (${declined})`);
+      return;
+    }
+    const thread = await bb.sdk.threads.get({ threadId: event.threadId });
+    const skipped =
+      notTheUsersThread(thread) ??
+      // A limit names its provider; a refusal only has the thread's.
+      ((isRefusal(event) || mayBeLost) && thread.providerId !== CLAUDE_CODE_PROVIDER
+        ? `refusal of provider ${thread.providerId}`
+        : null);
+    if (skipped !== null) {
+      bb.log.debug(`thread ${event.threadId}: ignored (${skipped})`);
+      return;
+    }
+    let failed = event;
+    if (mayBeLost) {
+      const text = await failureText(event.threadId, event.requestId);
+      if (text === null || !isSessionLoss(text)) {
+        bb.log.debug(`thread ${event.threadId}: ignored (${declined})`);
+        return;
+      }
+      failed = sessionLost(event);
+      // «Not logged in» comes at once, often while thread.active still reads
+      // the project's account: the seat says where it ran, or the retry goes
+      // back there on every rescue (code-reviewer r2, low 1).
+      if (started === null && seatHeld !== undefined) started = seatName(seatHeld);
+      // Once more before a mark on a machine unknown, which keeps the
+      // account from every project (code-reviewer r1, low 1).
+      let host = await threadHost(thread);
+      if (host === "" && thread.environmentId !== null) host = await threadHost(thread);
+      failedHost.set(event.threadId, host);
+      await nameHost(host);
+    }
+    // A turn of before this load: where it ran is unknown, its failure
+    // nobody's (see underWayAtLoad). After the session lost's own look at
+    // its seat, which stays as it was.
+    if (started === undefined && beforeLoad) started = null;
+    // A refusal's machine, for a run of refusals there (see stormFrom).
+    // Its own entry: a later failure of the thread, queued behind this one,
+    // sets its own, which this one's end must not take (VETO-003).
+    let seen: { host: string; counts: boolean } | undefined;
+    if (isRefusal(failed) && !isSessionLost(failed)) {
+      const host = await threadHost(thread);
+      await nameHost(host);
+      seen = { host, counts: true };
+      refusalSeen.set(event.threadId, seen);
+    }
+    try {
+      await inProjectQueue(thread.projectId, () =>
+        handleFailure(
+          failed,
+          thread.projectId,
+          started,
+          judgedIn,
+          isBackground(thread),
+        ),
+      );
+    } catch (error) {
+      // A retry of the turn is already on its way (queued by another plugin,
+      // or being sent): nothing to add.
+      if (!bbHasTheTurn(error)) throw error;
+      bb.log.info(
+        `thread ${event.threadId}: bb already has a retry of the turn (${error instanceof Error ? error.message : String(error)})`,
+      );
+    } finally {
+      if (seen !== undefined && refusalSeen.get(event.threadId) === seen) refusalSeen.delete(event.threadId);
+    }
+  });
+
+  // ---- A wait another account can end sooner -----------------------------
+  /**
+   * Waits due within this are left alone: they run soon anyway, and every
+   * backoff bb's provider-retry plugin queues for an overloaded provider is
+   * shorter (5 s × 2^(n − 1) plus up to as much jitter: 80 s at its 4th and
+   * last), so no backoff is cut short.
+   */
+  const SHORT_WAIT_MS = 2 * 60_000;
+  /**
+   * A timed retry waits for the reset of the account its project was on when
+   * the turn failed; an account that could not be measured then may have
+   * room now (2026-10-04: a thread waited three hours for a session while
+   * another account was free). After each refresh, a project whose account
+   * is MEASURED unable to run a waiting retry's model moves to an account
+   * that can, and the wait is replaced by a retry bb dispatches at once; so
+   * is a wait queued before its project last changed account, on an account
+   * that can run it. Left as they are: a wait due within two minutes, one
+   * another plugin holds, a retry of an earlier turn, one of an archived
+   * thread, and one whose account may still run (it waits for something
+   * else, such as a backoff).
+   */
+  async function revisitWaits(): Promise<void> {
+    if (!current.autoSwitch) return;
+    // Marks made while bb reads are kept: its snapshot may predate them
+    // (Codex Sol 0.2.18 r1, R0218-CODEX-002).
+    const marksBefore = putBackMarks;
+    const readAt = deps.now();
+    const all = await bb.sdk.threads.queue.list();
+    // Beside the pass, not before it: a slow read of a thread that may be
+    // stuck does not hold a retry back (Codex R1-002).
+    const looked = sayStuck(all, readAt).catch((error: unknown) =>
+      bb.log.warn(
+        `the stuck threads were not looked for: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
+    for (const [key, mark] of putBack)
+      if (
+        mark <= marksBefore &&
+        !all.some(
+          (row) =>
+            row.payload.kind === "retry" &&
+            retryKey(
+              row.threadId,
+              row.payload.retryOfTurnRequestId,
+              row.payload.attempt,
+            ) === key,
+        )
+      )
+        putBack.delete(key);
+    const rows = all.filter((row) => longWait(row, deps.now()));
+    for (const row of rows) {
+      // Switched off meanwhile: the rest of the pass stops too.
+      if (!current.autoSwitch) return;
+      try {
+        const thread = await bb.sdk.threads.get({ threadId: row.threadId });
+        if (!waitingThread(thread)) continue;
+        await inProjectQueue(thread.projectId, () =>
+          moveUpWait(row.threadId, row.id),
+        );
+      } catch (error) {
+        bb.log.warn(
+          `thread ${row.threadId}: its wait was not looked at again: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+    await rescueStuck(all);
+    await looked;
+  }
+
+  /**
+   * Threads in error with nothing queued, as the queue stood when the pass
+   * began (a queued message of any kind runs when its time comes and takes
+   * the thread out of error): bb's provider-retry gives up after five
+   * attempts and so does the failure handler, so nothing would look at them
+   * again. Each is judged from bb's log on every refresh, until something is
+   * queued for it.
+   */
+  async function rescueStuck(
+    queue: Array<{ threadId: string; payload: { kind: string } }>,
+  ): Promise<void> {
+    const queuedFor = new Set(queue.map((row) => row.threadId));
+    for (const thread of await errorThreads()) {
+      if (!current.autoSwitch) return;
+      if (queuedFor.has(thread.id)) continue;
+      try {
+        await inProjectQueue(thread.projectId, () => rescueThread(thread));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (bbHasTheTurn(error))
+          bb.log.info(
+            `thread ${thread.id}: bb already has a retry of the turn (${message})`,
+          );
+        else bb.log.warn(`thread ${thread.id}: not judged again: ${message}`);
+      }
+    }
+  }
+
+  type ListedThread = Awaited<ReturnType<typeof bb.sdk.threads.list>>[number];
+  /** The user's Claude Code threads in error, not archived. */
+  async function errorThreads(): Promise<ListedThread[]> {
+    const PAGE = 200;
+    const found: ListedThread[] = [];
+    for (let offset = 0; ; offset += PAGE) {
+      const page = await bb.sdk.threads.list({
+        archived: false,
+        limit: PAGE,
+        offset,
+      });
+      found.push(...page.filter(waitingThread));
+      if (page.length < PAGE) return found;
+    }
+  }
+
+  /** The thread's failure as bb logged it, judged as a failure would be. */
+  async function rescueThread(thread: ListedThread): Promise<void> {
+    const threadId = thread.id;
+    // Taken before any read (see generation).
+    const judgedIn = generation(threadId);
+    // Read again in the project's queue: archived, running again, moved or
+    // retried meanwhile (Codex r6, IR6-005).
+    if (!current.autoSwitch) return;
+    const live = await bb.sdk.threads.get({ threadId });
+    if (!waitingThread(live) || live.projectId !== thread.projectId) return;
+    if ((await bb.sdk.threads.queuedMessages.list({ threadId })).length > 0)
+      return;
+    const turn = await latestTurn(threadId);
+    if (turn === null) return;
+    if (cancelled.get(threadId) === turn.requestId) {
+      bb.log.debug(
+        `thread ${threadId}: left in error (its retry was cancelled by hand)`,
+      );
+      return;
+    }
+    const failure = await loggedFailure(threadId, turn);
+    if (failure === null) return;
+    const declined = declineReason(failure, true);
+    if (declined !== null) {
+      bb.log.debug(`thread ${threadId}: left in error (${declined})`);
+      return;
+    }
+    const before = moveMark(thread.projectId);
+    const from = await projectAccount(thread.projectId);
+    if (from.external) return;
+    await judge(
+      failure,
+      thread.projectId,
+      from,
+      turn.model ?? current.preferredModel,
+      deps.now(),
+      true,
+      before,
+      judgedIn,
+      // Its chain, as the log named it above.
+      turn.original,
+      isBackground(live),
+    );
+  }
+  /**
+   * The failure of the thread's turn as bb logged it, as a failure event
+   * reports it (the rescue judges it; a basis read back after a restart is
+   * checked against it): null when the log holds none after the turn.
+   */
+  async function loggedFailure(
+    threadId: string,
+    turn: { seq: number; requestId: string; attempt: number },
+  ): Promise<PluginTurnFailedEvent | null> {
+    // The failure of that turn, not an older one's (a turn sent by hand
+    // after a limit fails on its own account): bb reads it the same way.
+    // A turn bb refused at the door leaves no provider error, only the
+    // reason it was rejected for, as bb's own failure event translates it.
+    const [failed] = await bb.sdk.threads.events.list({
+      threadId,
+      types: ["provider/error", "client/turn/rejected"],
+      order: "desc",
+      limit: "1",
+      afterSeq: String(turn.seq),
+    });
+    let errorInfo =
+      failed?.type === "provider/error"
+        ? (failed.data.errorInfo ?? null)
+        : failed?.type === "client/turn/rejected"
+          ? rejectedErrorInfo(failed.data.reason)
+          : undefined;
+    if (errorInfo === undefined) return null;
+    // No errorInfo, and a text that says the account has no session on the
+    // thread's machine: the refusal it is, as the failure's handler reads it
+    // (sin-login 2026-11-10: a thread sat in error two days with it).
+    if (
+      failed?.type === "provider/error" &&
+      (errorInfo === null || errorInfo.category === "unknown") &&
+      isSessionLoss(`${failed.data.message} ${failed.data.detail ?? ""}`)
+    )
+      errorInfo = SESSION_LOST_INFO;
+    const [reported] = await bb.sdk.threads.events.list({
+      threadId,
+      types: ["provider/rateLimits/updated"],
+      order: "desc",
+      limit: "1",
+    });
+    return {
+      threadId,
+      requestId: turn.requestId,
+      turnId: null,
+      errorInfo,
+      inputAccepted: failed.type === "provider/error",
+      rateLimits:
+        reported?.type === "provider/rateLimits/updated"
+          ? reported.data.rateLimits
+          : null,
+      attemptNumber: turn.attempt,
+    };
+  }
+  /** What bb's failure event says of a turn rejected at the door (bb 0.45, `doorRejectionErrorInfo`). */
+  function rejectedErrorInfo(
+    reason: string,
+  ): PluginTurnFailedEvent["errorInfo"] {
+    switch (reason) {
+      case "rate_limited":
+        return {
+          category: "rate-limit",
+          providerCode: null,
+          httpStatusCode: null,
+        };
+      case "auth_required":
+        return {
+          category: "unauthorized",
+          providerCode: null,
+          httpStatusCode: null,
+        };
+      default:
+        return null;
+    }
+  }
+
+  /** A timed retry not due soon, that no other plugin holds. */
+  function longWait(
+    row: {
+      payload: { kind: string };
+      sendAt: number | null;
+      waitingOn: { kind: string } | null;
+    },
+    now: number,
+  ): boolean {
+    return (
+      row.payload.kind === "retry" &&
+      row.sendAt !== null &&
+      row.sendAt - now > SHORT_WAIT_MS &&
+      (row.waitingOn === null || row.waitingOn.kind === "time")
+    );
+  }
+
+  /**
+   * The user's Claude Code thread with a failed turn bb can retry: not
+   * archived or deleted (bb refuses those, and the wait would be lost).
+   */
+  function waitingThread(
+    thread: Pick<
+      ThreadResponse,
+      | "providerId"
+      | "visibility"
+      | "originPluginId"
+      | "status"
+      | "archivedAt"
+      | "deletedAt"
+    >,
+  ): boolean {
+    return (
+      thread.providerId === CLAUDE_CODE_PROVIDER &&
+      notTheUsersThread(thread) === null &&
+      thread.status === "error" &&
+      thread.archivedAt === null &&
+      thread.deletedAt === null
+    );
+  }
+
+  /** The thread's latest turn in bb's log: the one bb retries. */
+  async function latestTurn(threadId: string) {
+    const [row] = await bb.sdk.threads.events.list({
+      threadId,
+      types: ["client/turn/requested"],
+      order: "desc",
+      limit: "1",
+    });
+    if (row?.type !== "client/turn/requested") return null;
+    return {
+      seq: row.seq,
+      requestId: row.data.requestId,
+      // bb keys a retry by the first request of its chain, and counts from 1.
+      original: row.data.retryOfRequestId ?? row.data.requestId,
+      attempt: row.data.retryAttempt ?? 1,
+      model: modelFamily(row.data.execution?.model ?? null),
+    };
+  }
+
+  async function moveUpWait(threadId: string, rowId: string): Promise<void> {
+    // Read again in the project's queue: archived, sent, replaced or held
+    // meanwhile.
+    const thread = await bb.sdk.threads.get({ threadId });
+    if (!waitingThread(thread)) return;
+    const projectId = thread.projectId;
+    const row = (await bb.sdk.threads.queuedMessages.list({ threadId })).find(
+      (r) => r.id === rowId,
+    );
+    if (row?.payload.kind !== "retry" || !longWait(row, deps.now())) return;
+    const wait = {
+      id: row.id,
+      reason: row.payload.reason,
+      sendAt: row.sendAt,
+      key: retryKey(
+        threadId,
+        row.payload.retryOfTurnRequestId,
+        row.payload.attempt,
+      ),
+    };
+    const turn = await latestTurn(threadId);
+    if (
+      turn === null ||
+      turn.original !== row.payload.retryOfTurnRequestId ||
+      turn.attempt + 1 !== row.payload.attempt
+    )
+      return;
+    // The model the retry runs with: bb copies the failed turn's.
+    const model =
+      modelFamily(row.model) ?? turn.model ?? current.preferredModel;
+    // Read last: nothing is awaited between this read and the move below.
+    const before = moveMark(projectId);
+    const from = await projectAccount(projectId);
+    if (from.external || !current.autoSwitch) return;
+    const fromName = from.account ?? current.defaultAccountName;
+    const now = deps.now();
+    const measured = measuredAccounts(model);
+    const here = measured.find((a) => a.name === fromName);
+    // Known unable to run anything, measured or not: no login, or a refusal
+    // within its veto.
+    const noLogin =
+      collector.get(fromName)?.problem?.kind === "unauthenticated";
+    if (
+      !noLogin &&
+      !refusing(fromName) &&
+      // Its read lags the 429 it marked: no account to keep the wait on by
+      // that read (Astra r6 high 1).
+      limitedUntil(fromName, model, projectId) === null &&
+      (((here === undefined || here.unknown === true) &&
+        // Unread, and it may spend the reserve: a Team seat that can take
+        // the turn is looked for below (Codex r3 medium 3).
+        !heldOff(fromName, model)) ||
+      (here !== undefined &&
+        here.unknown !== true &&
+        // With the reserve: a Max account that keeps the preferred model
+        // never gets an Opus retry released on it (Codex BM-R1-005).
+        // A pick by hand holds while the account runs the model (code-reviewer r1 M1),
+        // never for a model held off the reserve (Aitor 2026-11-06, «sí o sí»).
+        (pins.get(projectId) === fromName &&
+        !holdsForReserve({ preferredModel: model, ...reserveOf() })
+          ? bestAccount([here], model, now)
+          : // With every choice option, B5 included: an Opus retry on an
+            // Ultra with room and no Team able runs there (Codex r1 high 1).
+            chooseAccount([settle(here, now)], {
+              preferredModel: model,
+              ...reserveFor(threadId, now, projectId),
+            })?.account) === fromName))
+    ) {
+      // It waited on the account the project was on before.
+      const changed = accountChangedAt.get(projectId);
+      if (
+        (changed !== undefined && row.createdAt < changed) ||
+        // A row put back is released only on an account MEASURED able to
+        // run it: it may be waiting for this account's own reset (Codex
+        // Sol 0.2.18 r2, R0218-R2-001).
+        (putBack.has(wait.key) && here !== undefined && here.unknown !== true)
+      )
+        await releaseWait(
+          threadId,
+          projectId,
+          wait,
+          turn.requestId,
+          `Retrying on account ${fromName}, where the project is now`,
+        );
+      return;
+    }
+    // The choice of any move, B5 included (Codex r1 high 1); never an
+    // account whose mark stands for the model (Astra r5 medium 1).
+    const to =
+      chooseAccount(
+        measured
+          .filter((a) => a.name !== fromName && limitedUntil(a.name, model, projectId) === null)
+          .map((a) => settle(a, now)),
+        {
+          preferredModel: model,
+          ...reserveFor(threadId, now, projectId),
+          freeSeats,
+          savedForUser: paceFilter(isBackground(thread)).savedForUser,
+        },
+      )?.account ?? null;
+    if (to === null) {
+      // Nothing to release it on; the wait fires on its own at sendAt and
+      // is placed then (code-reviewer r2, CR2-05).
+      bb.log.debug(
+        `thread ${threadId}: its wait stays on ${fromName}: no other account can run ${model}${reservedFor(fromName, model, now, projectId) ? " and this one keeps " + current.preferredModel : ""}`,
+      );
+      return;
+    }
+    // Nor over another automatic move of the project under way (a
+    // dispatch's, its variable still being written): this read predates it.
+    // The next pass over the waits looks again (Astra r8 medium 2, the same
+    // guard as the failure's judgment).
+    if (moving(projectId)) {
+      bb.log.info(
+        `thread ${threadId}: its wait stays on ${fromName}: another move of the project is under way; looked at again at the next pass`,
+      );
+      return;
+    }
+    // Moved by something else while the sessions were shared: the wait
+    // stays as it is, and fires on its own.
+    if (
+      !(await applyAccount(projectId, accountOrDefault(to), from, {
+        forThread: threadId,
+        keepPin: otherModel(model),
+      }))
+    )
+      return;
+    await markHandled(projectId);
+    noteMove(projectId, fromName, to, model, before);
+    const reason = `Moved to account ${to}, which can run the waiting turn now: ${fromName} ${noLogin ? "is not logged in" : whyOut(fromName, model, projectId)}`;
+    bb.log.info(`thread ${threadId}: ${reason}`);
+    await recordMove(
+      { at: now, threadId, projectId, from: fromName, to, reason },
+      threadId,
+    );
+    if (!current.autoSwitch) return;
+    await releaseWait(threadId, projectId, wait, turn.requestId, reason);
+  }
+
+  /**
+   * Replace a timed retry with one bb dispatches now, through every plugin's
+   * checkpoint: sending the queued row would be an explicit send, which
+   * skips them. If bb does not take it, the timed one is queued again as it
+   * was, unless bb already has a retry of the turn or the turn is no longer
+   * the failed one. bb keeps one queued retry per turn: a retry it refuses
+   * for that never doubles a wait.
+   */
+  async function releaseWait(
+    threadId: string,
+    projectId: string,
+    wait: { id: string; reason: string; sendAt: number | null; key: string },
+    turnRequestId: string,
+    reason: string,
+  ): Promise<void> {
+    // It runs on the project's account from here: its failure is not a
+    // leftover of the account its turn started on.
+    forgetStart(threadId);
+    try {
+      await deleteOwn(threadId, wait.id);
+    } catch (error) {
+      if (alreadyOnItsWay(error)) {
+        bb.log.info(
+          `thread ${threadId}: its waiting retry is already on its way`,
+        );
+        return;
+      }
+      // bb may have removed it and lost only its answer: without the retry
+      // below, the wait would be gone. Still queued, bb refuses the retry.
+      bb.log.warn(
+        `thread ${threadId}: could not remove its wait (${error instanceof Error ? error.message : String(error)}); retrying the turn anyway`,
+      );
+    }
+    // It runs on the project's account now: a failure of it within the
+    // grace window is that account's, judged afresh.
+    recentSwitches.get(projectId)?.graced.add(threadId);
+    try {
+      await bb.sdk.threads.retry({ threadId, turnRequestId, reason });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (bbHasTheTurn(error)) {
+        bb.log.info(
+          `thread ${threadId}: bb did not take the retry (${message}); nothing is queued again`,
+        );
+        return;
+      }
+      bb.log.warn(
+        `thread ${threadId}: could not retry the turn now (${message}); its wait is queued again`,
+      );
+      try {
+        const back = await bb.sdk.threads.retry({
+          threadId,
+          turnRequestId,
+          reason: wait.reason,
+          ...(wait.sendAt === null ? {} : { sendAt: wait.sendAt }),
+        });
+        if (back.delivery === "queued") markPutBack(wait.key);
+      } catch (restoreError) {
+        const restore =
+          restoreError instanceof Error
+            ? restoreError.message
+            : String(restoreError);
+        // The first retry landed and only its answer was lost.
+        if (bbHasTheTurn(restoreError)) {
+          bb.log.info(
+            `thread ${threadId}: its wait is not queued again: bb has the turn (${restore})`,
+          );
+          return;
+        }
+        // bb may have queued it and lost only its answer: looked at again in
+        // the next pass if it is there (marked only when found, CR2-01).
+        if (await rowQueued(threadId, wait.key)) {
+          markPutBack(wait.key);
+          bb.log.info(
+            `thread ${threadId}: its wait is queued again (only bb's answer was lost: ${restore})`,
+          );
+          return;
+        }
+        bb.log.error(
+          `thread ${threadId}: its wait is lost (${message}; queuing it again failed too: ${restore}); retry the turn by hand`,
+        );
+      }
+    }
+  }
+
+  /** bb's 409s on a retry: it already has one of the turn, or the turn is no longer the failed one. */
+  function bbHasTheTurn(error: unknown): boolean {
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? error.code
+        : undefined;
+    return code === "retry_already_queued" || code === "no_failed_turn";
+  }
+
+  // A login must not outlive the plugin that runs it (reload, disable, shutdown).
+  bb.onDispose(() => login.cancel());
+
+  // ---- Periodic refresh -------------------------------------------------
+  bb.background.service("usage-refresh", {
+    async start(signal) {
+      while (!signal.aborted) {
+        try {
+          await refreshAll();
+        } catch (error) {
+          bb.log.warn(
+            `usage refresh failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        try {
+          await countUnseated();
+        } catch (error) {
+          bb.log.warn(
+            `the turns not counted as they started were not counted: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        try {
+          await revisitWaits();
+        } catch (error) {
+          bb.log.warn(
+            `the waiting turns were not looked at again: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        // After the waits: a project they move has its turns retried there;
+        // this moves only the projects left where no turn can run.
+        try {
+          await rescueStranded();
+        } catch (error) {
+          bb.log.warn(
+            `the projects on an account that cannot run were not looked at: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        await sleep(Math.max(1, current.refreshMinutes) * 60_000, signal);
+      }
+    },
+  });
+
+  // ---- CLI --------------------------------------------------------------
+  /**
+   * One pass that spreads the projects without a thread at work over the
+   * usable Ultra accounts by their weekly (see src/rebalance.ts; Aitor
+   * 2026-11-03: siloeads held 25 projects for its 4 seats). A project is at
+   * work while a Claude Code thread of it runs or starts a turn, waits (a
+   * queued message, a retry, an error), holds or waits for a seat, or did
+   * anything within REBALANCE_QUIET_MS: moving it would cut a turn or lose
+   * its prompt cache. Applied only with `apply`; each move in the history.
+   */
+  async function rebalance(apply: boolean) {
+    await discover();
+    const now = deps.now();
+    const report = await health();
+    const preferred = current.preferredModel.toLowerCase();
+    const ultra = report.cuentas
+      .filter((c) => c.plan === "ultra" && c.usable)
+      .map((c) => {
+        const model = Object.entries(c.modelos).find(
+          ([name]) => name.toLowerCase() === preferred,
+        )?.[1];
+        return {
+          name: c.nombre,
+          load: Math.max(c.semana?.pct ?? 0, model?.pct ?? 0),
+        };
+      });
+    const s = await state();
+    // Every Claude Code thread, hidden ones too (they run on the project's
+    // account all the same), of one project or of all.
+    const claudeThreads = async (projectId?: string) => {
+      const found: ListedThread[] = [];
+      const PAGE = 200;
+      for (let offset = 0; ; offset += PAGE) {
+        const page = await bb.sdk.threads.list({
+          archived: false,
+          includeHidden: true,
+          ...(projectId === undefined ? {} : { projectId }),
+          limit: PAGE,
+          offset,
+        });
+        found.push(
+          ...page.filter(
+            (t) =>
+              t.providerId === CLAUDE_CODE_PROVIDER &&
+              (projectId === undefined || t.projectId === projectId),
+          ),
+        );
+        if (page.length < PAGE) return found;
+      }
+    };
+    const atWork = (t: ListedThread, at: number) =>
+      TURN_UNDER_WAY.has(t.status) ||
+      t.status === "error" ||
+      t.queuedWork === "waiting" ||
+      t.queuedWork === "failed" ||
+      at - t.updatedAt < REBALANCE_QUIET_MS;
+    const busy = new Set<string>();
+    const lastActive = new Map<string, number>();
+    // Each project's activity as the threads are read: a message or a turn
+    // since stops its move (Codex PLAZAS-004).
+    const seen = new Map(s.projects.map((p) => [p.id, activity.get(p.id) ?? 0]));
+    const started = new Map(s.projects.map((p) => [p.id, turnsStarted.get(p.id) ?? 0]));
+    for (const t of await claudeThreads()) {
+      lastActive.set(
+        t.projectId,
+        Math.max(lastActive.get(t.projectId) ?? 0, t.updatedAt),
+      );
+      if (atWork(t, now)) busy.add(t.projectId);
+    }
+    // A hidden thread's turn too, running or over since (Codex
+    // PLAZAS-R3-002).
+    const quiet = (projectId: string) =>
+      !projectAtSeats(projectId) &&
+      !projectSeated(projectId, "") &&
+      (activity.get(projectId) ?? 0) === seen.get(projectId) &&
+      (turnsStarted.get(projectId) ?? 0) === started.get(projectId);
+    const projects: RebalanceProject[] = s.projects
+      // Not one whose variable names an account that is gone.
+      .filter((p) => !p.external && !(p.owned && p.account === null))
+      .map((p) => ({
+        id: p.id,
+        account: p.account ?? current.defaultAccountName,
+        movable: !busy.has(p.id) && quiet(p.id),
+        lastActive: lastActive.get(p.id) ?? 0,
+      }));
+    const names = new Set(ultra.map((a) => a.name));
+    const countOf = (list: { account: string }[]) =>
+      Object.fromEntries(
+        ultra.map((a) => [a.name, list.filter((p) => p.account === a.name).length]),
+      );
+    const before = countOf(projects);
+    const plan = planRebalance(ultra, projects, REBALANCE_SPREAD);
+    const load = new Map(ultra.map((a) => [a.name, a.load]));
+    const nameOf = new Map(s.projects.map((p) => [p.id, p.name]));
+    const moves: {
+      projectId: string;
+      name: string;
+      from: string;
+      to: string;
+      done: boolean | null;
+      why?: string;
+    }[] = [];
+    for (const m of plan) {
+      const row = {
+        ...m,
+        name: nameOf.get(m.projectId) ?? m.projectId,
+        done: null as boolean | null,
+        why: undefined as string | undefined,
+      };
+      moves.push(row);
+      if (!apply) continue;
+      try {
+        await inProjectQueue(m.projectId, async () => {
+          const mark = moveMark(m.projectId);
+          const from = await projectAccount(m.projectId);
+          if (from.external || (from.account ?? current.defaultAccountName) !== m.from) {
+            row.done = false;
+            row.why = "moved meanwhile";
+            return;
+          }
+          // Read again just before the move: a thread of it may have
+          // worked since the first read (Codex PLAZAS-004).
+          const live = await claudeThreads(m.projectId);
+          if (!quiet(m.projectId) || live.some((t) => atWork(t, deps.now()))) {
+            row.done = false;
+            row.why = "a thread of it is at work now";
+            return;
+          }
+          const moved = await applyAccount(
+            m.projectId,
+            accountOrDefault(m.to),
+            from,
+            { share: false, stillValid: () => quiet(m.projectId) },
+          );
+          if (!moved) {
+            row.done = false;
+            row.why = "moved or started meanwhile";
+            return;
+          }
+          await markHandled(m.projectId);
+          noteMove(m.projectId, m.from, m.to, current.preferredModel, mark);
+          const reason = `Rebalanced: ${m.from} had ${before[m.from]} projects (weekly ${load.get(m.from)} %), ${m.to} ${before[m.to]} (weekly ${load.get(m.to)} %)`;
+          bb.log.info(`project ${m.projectId}: ${reason}`);
+          await addHistory({
+            at: now,
+            threadId: "",
+            projectId: m.projectId,
+            from: m.from,
+            to: m.to,
+            reason,
+          });
+          row.done = true;
+        });
+      } catch (error) {
+        row.done = false;
+        row.why = error instanceof Error ? error.message : String(error);
+      }
+    }
+    if (apply && moves.some((m) => m.done === true))
+      bb.realtime.publish(CHANGED, { at: deps.now() });
+    const landed = projects.map((p) => {
+      const m = moves.find((x) => x.projectId === p.id);
+      return m !== undefined && (m.done ?? true) ? { account: m.to } : p;
+    });
+    const after = countOf(landed);
+    const counts = Object.values(after);
+    return {
+      applied: apply,
+      /** The most projects above the account with fewest, after the pass: above REBALANCE_SPREAD only when projects at work hold it there. */
+      spread: counts.length === 0 ? 0 : Math.max(...counts) - Math.min(...counts),
+      accounts: ultra.map((a) => ({
+        name: a.name,
+        load: a.load,
+        before: before[a.name]!,
+        after: after[a.name]!,
+        atWork: projects.filter((p) => p.account === a.name && !p.movable).length,
+      })),
+      moves,
+      leftOut: projects.filter((p) => !names.has(p.account)).length,
+    };
+  }
+  const JSON_OPTION = {
+    type: "boolean",
+    description: "Emit machine-readable JSON",
+  } as const;
+  function textState(s: State): string {
+    return listText(s, deps.now());
+  }
+  /** `health`: every account as SPEC 2026-10-30 §4 has it (version 1). */
+  async function health(): Promise<HealthReport> {
+    if (accounts.length === 0) await discover();
+    const now = deps.now();
+    const taken = seatsState();
+    // What the policy may choose, whatever the model (Codex ULTRA-R06): a
+    // read it no longer trusts is no usable account here either.
+    const trusted = new Set(collector.usable(maxReadAgeMs()).map((a) => a.name));
+    const observed = accounts
+      .map((a) => collector.get(a.name)?.observedAt ?? null)
+      .filter((at): at is number => at !== null);
+    return healthReport({
+      atascos: await atascos(),
+      esperandoTeam: await esperandoTeam(),
+      sinSesion: sessionMarks(),
+      limites: limitMarks(),
+      rechazos: [...refusedAt]
+        .filter(([name]) => refusing(name))
+        .map(([account, at]) => ({ account, http: refusedHttp.get(account) ?? null, until: at + REFUSAL_MS })),
+      red: networkRuns(now),
+      // huecoOpus and fablePerdida per Max or Ultra account (0.2.48).
+      ...(current.preferredModel === ""
+        ? {}
+        : { reserve: { model: current.preferredModel, share: current.reserveShare } }),
+      measured: observed.length === 0 ? now : Math.max(...observed),
+      dayStartHour: dayHour(),
+      holdsBackground: current.paceHoldsBackground === true,
+      accounts: accounts.map((account) => {
+        const m = collector.get(account.name);
+        const usage =
+          m?.usage === null || m?.usage === undefined
+            ? null
+            : settle(
+                {
+                  ...m.usage,
+                  name: account.name,
+                  // huecoOpus only from a fresh read (Codex r1 medium 4).
+                  ...(readStale(account.name) ? { stale: true as const } : {}),
+                },
+                now,
+              );
+        const unconfirmed =
+          usage !== null && !trusted.has(account.name) && m?.observedAt != null;
+        // The same per model: a window out at the last good read, its reset
+        // past, with the queries failing since (Codex R1-003).
+        const unconfirmedModels =
+          usage === null || m?.observedAt == null
+            ? []
+            : Object.keys(usage.models).filter(
+                (model) =>
+                  !collector
+                    .usable(maxReadAgeMs(), model)
+                    .some((a) => a.name === account.name),
+              );
+        return {
+          name: account.name,
+          plan: planOf(account, m?.usage ?? null),
+          usage,
+          problem: m?.problem ?? null,
+          pace: paceFor(account.name),
+          seats:
+            taken[account.name] === undefined
+              ? undefined
+              : {
+                  ...taken[account.name]!,
+                  external: taken[account.name]!.external ?? [],
+                },
+          ...(unconfirmed ? { unconfirmedSince: m!.observedAt! } : {}),
+          ...(unconfirmedModels.length > 0 ? { unconfirmedModels } : {}),
+          usable:
+            usage !== null &&
+            !unconfirmed &&
+            usage.unknown !== true &&
+            !loggedOut(account.name) &&
+            !refusing(account.name) &&
+            isUsable(usage),
+        };
+      }),
+    });
+  }
+  bb.cli.register(
+    defineCli({
+      name: "claude-switcher",
+      summary:
+        "Claude Code accounts: usage windows and which account each project uses",
+      commands: {
+        list: cliCommand({
+          summary: "Show every account's windows and each project's account",
+          options: { json: JSON_OPTION },
+          async run({ options }) {
+            const s = await state();
+            return {
+              exitCode: 0,
+              stdout: options.json
+                ? `${JSON.stringify(s, null, 2)}\n`
+                : textState(s),
+            };
+          },
+        }),
+        health: cliCommand({
+          summary:
+            "A stable read of every account for other threads and scripts: plan, 5-hour window, weekly, models, the day's pace, seats, usable and why not (version 1)",
+          options: { json: JSON_OPTION },
+          async run({ options }) {
+            const report = await health();
+            return {
+              exitCode: 0,
+              stdout: options.json
+                ? `${JSON.stringify(report, null, 2)}\n`
+                : healthText(report),
+            };
+          },
+        }),
+        reserve: cliCommand({
+          summary:
+            "Hold a seat of an account for a run outside bb (claude -p with its CLAUDE_CONFIG_DIR) until a time, at most 12 h; fails when the account has no free seat. The same id renews it",
+          positionals: [
+            { name: "account", description: "Account name", required: true },
+          ] as const,
+          options: {
+            id: {
+              type: "string",
+              required: true,
+              description: "Who holds it: the same id renews the hold, unreserve ends it",
+            },
+            until: {
+              type: "string",
+              required: true,
+              description: "ISO 8601 with a zone (2026-10-31T07:00:00+01:00); never more than 12 h ahead",
+            },
+            json: JSON_OPTION,
+          },
+          async run({ positionals, options }) {
+            if (
+              !/(?:Z|[+-]\d{2}:\d{2})$/u.test(options.until) ||
+              Number.isNaN(Date.parse(options.until))
+            )
+              throw new PluginCliError(
+                `--until "${options.until}" is not an ISO 8601 time with a zone.`,
+                { code: "bad_until" },
+              );
+            await discover();
+            const name = positionals.account;
+            if (!accounts.some((a) => a.name === name))
+              throw new PluginCliError(
+                `Unknown account "${name}"; known: ${accounts.map((a) => a.name).join(", ") || "none"}`,
+                { code: "unknown_account" },
+              );
+            // Never against the empty count of a load: the threads already
+            // running are counted first (Codex ULTRA-R02).
+            if (!seatsReady) {
+              bb.log.info(
+                `reserve ${name} for ${options.id} waits for the seats to be counted after loading`,
+              );
+              await within(
+                seatsCounted,
+                RESERVE_COUNT_WAIT_MS,
+                "the seats were not counted for reserve",
+              );
+              if (!seatsReady)
+                throw new PluginCliError(
+                  "The seats are still being counted after a reload; nothing held. Try again in a few seconds.",
+                  { code: "seats_counting", exitCode: EXIT_TEMPFAIL },
+                );
+            }
+            // A count that left running threads unread is no count to grant
+            // on: they are counted again (Codex ULTRA-R2-003).
+            if (!seatsComplete) {
+              countSeats();
+              throw new PluginCliError(
+                "Some running threads could not be counted after a reload; counting them again, nothing held. Try again in a few seconds.",
+                { code: "seats_counting", exitCode: EXIT_TEMPFAIL },
+              );
+            }
+            const key = seatKey(name);
+            // Expired reservations and holds go first; then the check and
+            // the hold in one synchronous step (see Seats.holdExternal).
+            admitWaiting();
+            const now = deps.now();
+            const before = holdOf(options.id);
+            const result = seats.holdExternal(
+              options.id,
+              key,
+              Date.parse(options.until),
+              now,
+            );
+            if (!result.ok) {
+              throw new PluginCliError(
+                result.reason === "past"
+                  ? `--until ${options.until} is not ahead of now.`
+                  : `No free seat on ${name}: ${occupancy(key)}.`,
+                {
+                  code: result.reason === "past" ? "until_past" : "no_free_seat",
+                  exitCode: 1,
+                },
+              );
+            }
+            // Granted only once stored: a hold a reload would forget lets bb
+            // fill the seat under the run (Codex ULTRA-R2-004). Not stored,
+            // it is undone, unless another reserve or unreserve of the id
+            // changed it meanwhile: that one stands.
+            const mine = holdOf(options.id);
+            if (!(await storeHolds())) {
+              const now2 = holdOf(options.id);
+              if (
+                mine !== undefined &&
+                now2 !== undefined &&
+                now2.account === mine.account &&
+                now2.until === mine.until &&
+                now2.at === mine.at
+              ) {
+                seats.releaseExternal(options.id);
+                if (before !== undefined) seats.restoreHolds([before], deps.now());
+                void storeHolds();
+                admitWaiting(true);
+              }
+              throw new PluginCliError(
+                `The seat on ${name} could not be stored (a reload would forget it); nothing held${before === undefined ? "" : ", the hold stays as it was"}.`,
+                { code: "not_stored", exitCode: 1 },
+              );
+            }
+            // Moved from another account: its seat there is free now (Codex
+            // ASIENTOS-001).
+            if (before !== undefined && before.account !== key) admitWaiting(true);
+            bb.log.info(
+              `seat on ${name} held from outside bb by ${options.id} until ${isoInZone(result.until)}${result.renewed ? " (renewed)" : ""}; ${occupancy(key)}`,
+            );
+            const out = {
+              id: options.id,
+              account: name,
+              until: isoInZone(result.until),
+              renewed: result.renewed,
+            };
+            return {
+              exitCode: 0,
+              stdout: options.json
+                ? `${JSON.stringify(out, null, 2)}\n`
+                : `${name}: seat held by ${out.id} until ${out.until}${out.renewed ? " (renewed)" : ""}\n`,
+            };
+          },
+        }),
+        unreserve: cliCommand({
+          summary: "End a seat held with reserve; an id not held is no error",
+          options: {
+            id: {
+              type: "string",
+              required: true,
+              description: "The id the seat was held with",
+            },
+            json: JSON_OPTION,
+          },
+          async run({ options }) {
+            // Stored first, without it: not stored, the hold stays, in
+            // memory as in storage (Codex ULTRA-R2-004).
+            if (holdOf(options.id) !== undefined) {
+              const without = seats.holds().filter((h) => h.id !== options.id);
+              if (!(await storeHolds(without)))
+                throw new PluginCliError(
+                  `The end of the seat held by ${options.id} could not be stored; it stays held.`,
+                  { code: "not_stored", exitCode: 1 },
+                );
+            }
+            const key = seats.releaseExternal(options.id);
+            if (key !== null) {
+              // What changed meanwhile, stored after the write above.
+              void storeHolds();
+              bb.log.info(
+                `seat on ${seatName(key)} held from outside bb by ${options.id} released; ${occupancy(key)}`,
+              );
+              admitWaiting(true);
+            }
+            const out =
+              key === null
+                ? { id: options.id, released: false }
+                : { id: options.id, released: true, account: seatName(key) };
+            return {
+              exitCode: 0,
+              stdout: options.json
+                ? `${JSON.stringify(out, null, 2)}\n`
+                : key === null
+                  ? `not held: ${options.id} (nothing to release)\n`
+                  : `${out.account}: seat held by ${options.id} released\n`,
+            };
+          },
+        }),
+        unblock: cliCommand({
+          summary:
+            "Take an account as back now: lifts its refusal's veto, every usage limit's mark and every session lost of it on any machine, and asks again for what waits. If it refuses or fails again, it is set aside again",
+          positionals: [
+            { name: "account", description: "Account name", required: true },
+          ] as const,
+          options: { json: JSON_OPTION },
+          async run({ positionals, options }) {
+            await discover();
+            const name = positionals.account;
+            if (!accounts.some((a) => a.name === name))
+              throw new PluginCliError(
+                `Unknown account "${name}"; known: ${accounts.map((a) => a.name).join(", ") || "none"}`,
+                { code: "unknown_account" },
+              );
+            const out = unblock(name);
+            return {
+              exitCode: 0,
+              stdout: options.json
+                ? `${JSON.stringify(out, null, 2)}\n`
+                : out.refusal || out.limits > 0 || out.sessionsLost > 0
+                  ? `${name}: ${unblockedText(out)}\n`
+                  : `${name}: nothing set aside\n`,
+            };
+          },
+        }),
+        refresh: cliCommand({
+          summary: "Query the usage of every account now",
+          options: { json: JSON_OPTION },
+          async run({ options }) {
+            await refreshByHand();
+            const s = await state();
+            return {
+              exitCode: 0,
+              stdout: options.json
+                ? `${JSON.stringify(s, null, 2)}\n`
+                : textState(s),
+            };
+          },
+        }),
+        history: cliCommand({
+          summary:
+            "Show every move of a project to another account and every thread told to switch to Opus, latest first, and why; with --dias N, also the seats hour by hour and the stuck threads of the last N days (at most 7)",
+          options: {
+            json: JSON_OPTION,
+            dias: {
+              type: "string",
+              description:
+                "Also the seats taken and waiting per hour and account, and every stuck thread with its why, of the last N days (1 to 7)",
+            },
+          },
+          async run({ options }) {
+            const s = await state();
+            if (options.dias !== undefined) {
+              const dias = Number(options.dias);
+              if (!Number.isInteger(dias) || dias < 1 || dias > HISTORIAL_DIAS)
+                return {
+                  exitCode: 2,
+                  stderr: `--dias takes a whole number from 1 to ${HISTORIAL_DIAS}\n`,
+                };
+              const now = deps.now();
+              const since = now - dias * 24 * 60 * 60_000;
+              if (historial === null)
+                return {
+                  exitCode: 1,
+                  stderr: "the seat history could not be opened (see the plugin's log)\n",
+                };
+              const samples = readSamples(historial, since);
+              const stuck = readStuck(historial, since);
+              const moves = s.history.filter((r) => r.at >= since);
+              // A row with no thread is a note, no stuck thread (VETO-005).
+              if (options.json)
+                return {
+                  exitCode: 0,
+                  stdout: `${JSON.stringify(
+                    {
+                      dias,
+                      moves,
+                      stuck: stuck.filter((r) => r.thread !== ""),
+                      notes: stuck.filter((r) => r.thread === ""),
+                      samples,
+                    },
+                    null,
+                    2,
+                  )}\n`,
+                };
+              const moved = moves.map(
+                (r) =>
+                  `${new Date(r.at).toISOString()}\t${projectName(s.projects, r.projectId)}\t${r.from} → ${r.to}\t${r.reason}`,
+              );
+              return {
+                exitCode: 0,
+                stdout: `${historyText({ samples, stuck, dias, now })}\nMoves: ${moved.length}${moved.length === 0 ? "" : `\n${moved.join("\n")}`}\n`,
+              };
+            }
+            if (options.json) {
+              return {
+                exitCode: 0,
+                stdout: `${JSON.stringify(s.history, null, 2)}\n`,
+              };
+            }
+            const lines = s.history.map(
+              (r) =>
+                `${new Date(r.at).toISOString()}\t${projectName(s.projects, r.projectId)}\t${r.from} → ${r.to}\t${r.reason}`,
+            );
+            return {
+              exitCode: 0,
+              stdout:
+                (lines.length === 0 ? "no moves yet" : lines.join("\n")) + "\n",
+            };
+          },
+        }),
+        seats: cliCommand({
+          summary:
+            "Show the seats of every account and who waits, then each usage sample with the seats taken as it was measured",
+          options: { json: JSON_OPTION },
+          async run({ options }) {
+            const taken = seatsState();
+            const stuck = await atascos();
+            pruneSeatSamples();
+            if (options.json)
+              return {
+                exitCode: 0,
+                stdout: `${JSON.stringify({ seats: taken, atascos: stuck, samples: seatSamples }, null, 2)}\n`,
+              };
+            const lines: string[] = [];
+            for (const [name, a] of Object.entries(taken))
+              lines.push(
+                `${name}\tseats ${a.running + a.reserved + (a.external?.length ?? 0)}/${a.capacity === 0 ? "no limit" : a.capacity} (${a.running} running, ${a.reserved} reserved${a.external === undefined ? "" : `, ${a.external.length} held outside bb: ${a.external.map((e) => `${e.id} until ${isoInZone(e.until)}`).join(", ")}`})\t${a.queued.length} waiting`,
+              );
+            if (stuck === null)
+              lines.push("", "The queue could not be read: stuck threads unknown.");
+            else if (stuck.length > 0)
+              lines.push("", ...stuck.map((a) => atascoLine(a)));
+            const time = (at: number | null) =>
+              at === null ? "" : new Date(at).toISOString();
+            lines.push(
+              "",
+              "time\taccount\trunning\treserved\tsession %\tweekly %\tsession resets\tweekly resets\tsession % per hour and seat",
+            );
+            const spend: string[] = [];
+            // The text, the last day: the week is in `history --dias N`.
+            const dayAgo = deps.now() - 24 * 60 * 60_000;
+            for (const [name, all] of Object.entries(seatSamples)) {
+              const samples = all.filter(([at]) => at >= dayAgo);
+              // The 5-hour window's share an hour of one seat spent, between
+              // samples of the same window: Δ% ÷ hours ÷ the seats running
+              // on average. None across a reset.
+              let used = 0;
+              let seatHours = 0;
+              samples.forEach((sample, i) => {
+                const [at, running, reserved, session, weekly, resets, weeklyResets] = sample;
+                const before = samples[i - 1];
+                let rate = "—";
+                if (
+                  before !== undefined &&
+                  resets !== null &&
+                  before[5] === resets &&
+                  at > before[0]
+                ) {
+                  const hours = ((at - before[0]) / 3_600_000) * ((running + before[1]) / 2);
+                  if (hours > 0) {
+                    used += session - before[3];
+                    seatHours += hours;
+                    rate = ((session - before[3]) / hours).toFixed(1);
+                  }
+                }
+                lines.push(
+                  `${time(at)}\t${name}\t${running}\t${reserved}\t${session}\t${weekly ?? ""}\t${time(resets)}\t${time(weeklyResets)}\t${rate}`,
+                );
+              });
+              spend.push(
+                `${name}\t${seatHours > 0 ? `${(used / seatHours).toFixed(1)} %` : "—"} of the 5-hour window per hour and seat`,
+              );
+            }
+            lines.push("", ...spend, "", "Older samples, a week of them: bb claude-switcher history --dias N");
+            return { exitCode: 0, stdout: `${lines.join("\n")}\n` };
+          },
+        }),
+        use: cliCommand({
+          summary: "Pin a project to an account (or `default` to unpin)",
+          positionals: [
+            {
+              name: "project",
+              description:
+                "Project id, or its name when only one project has it",
+              required: true,
+            },
+            {
+              name: "account",
+              description: "Account name, or `default`",
+              required: true,
+            },
+          ] as const,
+          async run({ positionals }) {
+            await discover();
+            const s = await state();
+            const matches = s.projects.filter(
+              (p) =>
+                p.id === positionals.project || p.name === positionals.project,
+            );
+            if (matches.length === 0) {
+              throw new PluginCliError(
+                `Unknown project "${positionals.project}".`,
+                { code: "unknown_project" },
+              );
+            }
+            if (matches.length > 1) {
+              throw new PluginCliError(
+                `"${positionals.project}" names ${matches.length} projects; use an id: ${matches.map((p) => p.id).join(", ")}`,
+                { code: "ambiguous_project" },
+              );
+            }
+            const project = matches[0]!;
+            const name = positionals.account;
+            await pickAccount(project.id, () => accountOrDefault(name));
+            return { exitCode: 0, stdout: `${project.name} → ${name}\n` };
+          },
+        }),
+        rebalance: cliCommand({
+          summary:
+            "Spread the projects with no thread at work over the usable Ultra accounts by their weekly, none more than 10 projects above the one with fewest; prints the plan, moves only with --apply",
+          options: {
+            apply: { type: "boolean", description: "Move the projects (without it, only the plan)" },
+            json: JSON_OPTION,
+          },
+          async run({ options }) {
+            const r = await rebalance(options.apply === true);
+            // A move not made fails the command in both formats (Codex
+            // PLAZAS-005).
+            const exitCode = r.moves.some((m) => m.done === false) ? 1 : 0;
+            if (options.json)
+              return { exitCode, stdout: `${JSON.stringify(r, null, 2)}\n` };
+            const lines = [
+              "account\tweekly\tbefore\tafter\tat work",
+              ...r.accounts.map(
+                (a) => `${a.name}\t${a.load} %\t${a.before}\t${a.after}\t${a.atWork}`,
+              ),
+              "",
+              ...(r.moves.length === 0
+                ? ["nothing to move"]
+                : r.moves.map(
+                    (m) =>
+                      `${m.name}\t${m.from} → ${m.to}${m.done === null ? "" : m.done ? "\tmoved" : `\tNOT moved: ${m.why}`}`,
+                  )),
+              ...(r.spread > REBALANCE_SPREAD
+                ? [
+                    "",
+                    `The projects at work keep one account ${r.spread} projects above the one with fewest; run it again once they are done.`,
+                  ]
+                : []),
+              ...(r.applied ? [] : ["", "Plan only: run with --apply to move them."]),
+            ];
+            return { exitCode, stdout: `${lines.join("\n")}\n` };
+          },
+        }),
+        release: cliCommand({
+          summary:
+            "Remove every CLAUDE_CONFIG_DIR this plugin set (run before uninstalling)",
+          async run() {
+            const s = await state();
+            const lines: string[] = [];
+            let failed = 0;
+            for (const p of s.projects) {
+              if (p.external) {
+                lines.push(
+                  `${p.name}\tleft alone (external CLAUDE_CONFIG_DIR)`,
+                );
+              } else if (p.owned) {
+                try {
+                  await inProjectQueue(p.id, async () => {
+                    await applyAccount(p.id, null, await projectAccount(p.id), {
+                      byHand: true,
+                    });
+                    recentSwitches.delete(p.id);
+                    excursions.delete(p.id);
+                    if (pins.delete(p.id)) storePins();
+                    movesOf(p.id).picks += 1;
+                  });
+                  lines.push(
+                    `${p.name}\treleased (was ${p.account ?? "a vanished account"})`,
+                  );
+                } catch (error) {
+                  failed += 1;
+                  lines.push(
+                    `${p.name}\tNOT released: ${error instanceof Error ? error.message : String(error)}`,
+                  );
+                }
+              } else {
+                // On the default account with no variable of its own (an
+                // excursion to it deleted the variable): nothing to remove,
+                // but nothing to come back from either (Codex
+                // BM-INSPECT-005).
+                excursions.delete(p.id);
+                if (pins.delete(p.id)) storePins();
+                movesOf(p.id).picks += 1;
+              }
+            }
+            return {
+              exitCode: failed === 0 ? 0 : 1,
+              stdout:
+                (lines.length === 0 ? "nothing to release" : lines.join("\n")) +
+                "\n",
+            };
+          },
+        }),
+      },
+    }),
+  );
+
+  /**
+   * `read`, tried SEAT_COUNT_TRIES times SEAT_COUNT_RETRY_MS apart, each try
+   * within DISPATCH_LIMIT_MS (one that never answers is a failed try: Astra
+   * SEATS-R2-001); the last failure is thrown.
+   */
+  async function countTries<T>(what: string, read: () => Promise<T>): Promise<T> {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        const got = await within(
+          read(),
+          DISPATCH_LIMIT_MS,
+          `${what} not read to count the seats`,
+        );
+        if (typeof got !== "object")
+          throw new Error(got === "late" ? "no answer in time" : "the read failed");
+        return got.value;
+      } catch (error) {
+        if (attempt >= SEAT_COUNT_TRIES) throw error;
+        bb.log.warn(
+          `${what} not read to count the seats (try ${attempt}): ${error instanceof Error ? error.message : String(error)}; trying again`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, SEAT_COUNT_RETRY_MS));
+      }
+    }
+  }
+  /**
+   * After a load the seats are empty: the threads bb says run count as
+   * running, each on its project's account (a thread on an account set
+   * outside this plugin has none). Turns wait for it (Astra SEATS-R02); a
+   * read that fails is tried again, and one that still fails leaves its
+   * threads uncounted (they count as they start again): fail open, said.
+   */
+  /** Counts the seats (see rebuildSeats), unless a count is under way. */
+  function countSeats(): void {
+    if (seatsCounting) return;
+    seatsCounted = rebuildSeats().catch((error: unknown) =>
+      bb.log.warn(
+        `the running threads were not counted after loading (they count as they start): ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
+  }
+  async function rebuildSeats(): Promise<void> {
+    const ended = new Set<string>();
+    endedWhileCounting = ended;
+    seatsCounting = true;
+    seatsComplete = false;
+    // Every running thread read: set at the end of the count, unless a
+    // read failed on the way.
+    let complete = false;
+    let unread = false;
+    try {
+      if (accounts.length === 0) await countTries("the accounts", discover);
+      const running: { id: string; projectId: string }[] = [];
+      // Hidden ones too: they take no seat, but keep their project where it
+      // is (Codex PLAZAS-R2-003).
+      const underWay: { id: string; projectId: string }[] = [];
+      // Each project's latest thread of the user, for its model (see
+      // seedProjectModels; the archived ones are listed there).
+      const latest = new Map<string, { id: string; updatedAt: number }>();
+      const PAGE = 200;
+      for (let offset = 0; ; offset += PAGE) {
+        const page = await countTries("the threads", () =>
+          bb.sdk.threads.list({
+            archived: false,
+            includeHidden: true,
+            limit: PAGE,
+            offset,
+          }),
+        );
+        const claude = page.filter(
+          (t) =>
+            t.providerId === CLAUDE_CODE_PROVIDER &&
+            TURN_UNDER_WAY.has(t.status),
+        );
+        underWay.push(...claude);
+        running.push(...claude.filter((t) => notTheUsersThread(t) === null));
+        for (const t of page) noteLatestThread(latest, t);
+        if (page.length < PAGE) break;
+      }
+      seedProjectModels(latest);
+      // Started before this load (see underWayAtLoad); a later count adds
+      // nothing to it.
+      if (!underWayListed)
+        for (const t of running)
+          if (!ended.has(t.id) && !startedUnlisted.has(t.id)) underWayAtLoad.add(t.id);
+      underWayListed = true;
+      startedUnlisted.clear();
+      const listedAt = deps.now();
+      // Under way as bb lists them, whatever their seat's read says (Codex
+      // PLAZAS-002); not one that ended meanwhile.
+      for (const t of underWay)
+        if (!ended.has(t.id)) turnsUnderWay.set(t.id, t.projectId);
+      // Each project's account read once, all at once.
+      const reads = new Map<string, Promise<ProjectAccount | null>>();
+      for (const t of running)
+        if (!reads.has(t.projectId))
+          reads.set(
+            t.projectId,
+            countTries(`the account of project ${t.projectId}`, () =>
+              projectAccount(t.projectId),
+            ).catch((error: unknown) => {
+              unread = true;
+              bb.log.warn(
+                `the threads of project ${t.projectId} not counted after loading (they count as they start): ${error instanceof Error ? error.message : String(error)}`,
+              );
+              return null;
+            }),
+          );
+      // Each thread looked at apart, all at once: one whose reads hang
+      // holds up no other (Astra SEATS-R2-001).
+      await Promise.all(
+        running.map(async (t) => {
+          const at = await reads.get(t.projectId)!;
+          // Where its turn started, when stored and still an account found:
+          // its project may have moved since (limpieza 2026-11-06, n.º 86).
+          // Stored by name before its login was known: the name's key now
+          // (Codex RS-001).
+          // ponytail: the entry names the thread, not the turn: a turn that
+          // ended and another that started while the plugin was off count
+          // where the first started (Codex RS-005; bb gives no turn id).
+          // Rare (a reload takes seconds); a turn id from bb would close it.
+          const storedKey = () => {
+            const stored = startedBefore.get(t.id);
+            return stored === undefined
+              ? undefined
+              : accounts.some((a) => seatKey(a.name) === stored)
+                ? stored
+                : accounts.some((a) => a.name === stored)
+                  ? seatKey(stored)
+                  : undefined;
+          };
+          let seat: string | null = null;
+          if (storedKey() === undefined) {
+            if (at === null) return;
+            // On an account set outside this plugin: no seats. On one not
+            // among the accounts found: nobody's, never the default's (Astra
+            // SEATS-R3-001).
+            const found = seatFor(at);
+            if (found === null) return;
+            if (found === UNKNOWN_SEAT) {
+              bb.log.debug(
+                `thread ${t.id} not counted after loading: its project's account is not among the accounts found`,
+              );
+              return;
+            }
+            seat = found;
+          }
+          // A read that took long: is the turn still under way? Unknown is
+          // not counted, for a seat counted running is never freed but by
+          // the thread (Astra SEATS-R03).
+          if (deps.now() - listedAt >= SEAT_COUNT_RETRY_MS) {
+            const live = await countTries(`thread ${t.id}`, () =>
+              bb.sdk.threads.get({ threadId: t.id }),
+            ).catch((error: unknown) => {
+              unread = true;
+              bb.log.warn(
+                `thread ${t.id} not counted after loading (it counts as it starts): ${error instanceof Error ? error.message : String(error)}`,
+              );
+              return null;
+            });
+            if (live === null || !TURN_UNDER_WAY.has(live.status)) return;
+          }
+          // Ended while counted (Astra SEATS-R03), or announced or reserved
+          // meanwhile (it counted itself).
+          if (ended.has(t.id) || seats.seatOf(t.id) !== null) return;
+          // The key as it is now, after the reads: a login found meanwhile
+          // renames it (Codex RS-006).
+          const key = storedKey() ?? (seat === null ? undefined : seatKey(seat));
+          if (key === undefined) return;
+          seats.confirm(t.id, key, deps.now());
+          // Unread stored starts: an account inferred from the project is
+          // not stored over them (Astra RS-007).
+          if (!runningUnread) runningSeats.set(t.id, key);
+          seatProjects.set(t.id, t.projectId);
+        }),
+      );
+      complete = !unread;
+    } finally {
+      // The threads not listed: said, and judged as before.
+      seedProjectModels(null);
+      // A count that read every thread keeps only the turns it counted; one
+      // that could not keeps what it could not confirm (Codex RS-002).
+      if (complete) startedBefore = new Map();
+      storeRunning();
+      endedWhileCounting = null;
+      seatsReady = true;
+      seatsComplete = complete;
+      seatsCounting = false;
+      const taken = Object.entries(seats.snapshot())
+        .map(([key, s]) => `${seatName(key)} ${s.running} running`)
+        .join(", ");
+      bb.log.info(`seats counted after loading: ${taken === "" ? "none taken" : taken}`);
+      if (seatsAwaited)
+        void bb.experimental_hooks
+          .recheck("message.dispatch")
+          .catch((error: unknown) =>
+            bb.log.warn(
+              `bb not asked again after the seats were counted: ${error instanceof Error ? error.message : String(error)}`,
+            ),
+          );
+    }
+  }
+  countSeats();
+
+  bb.log.info("loaded");
+}
+
+export default function plugin(bb: BbPluginApi) {
+  return createPlugin(bb, {
+    credentialIo: nodeCredentialIo(),
+    accountsIo: nodeAccountsIo(),
+    loginIo: nodeLoginIo(),
+    sessionsIo: nodeSessionsIo(),
+    loginHelper: loginHelperPath(import.meta.url),
+    env: process.env,
+    now: Date.now,
+    random: Math.random,
+  });
+}

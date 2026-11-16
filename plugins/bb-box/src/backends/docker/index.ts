@@ -1,0 +1,25 @@
+import type { BackendDriver } from "../types.ts";
+import { DockerBackend } from "./backend.ts";
+import { DOCKER_FIELDS, DOCKER_KINDS, parseDockerPart, type DockerConfig } from "./config.ts";
+import { PRODUCT } from "../../brand.ts";
+
+export const dockerDriver: BackendDriver<DockerConfig> = {
+  type: "docker",
+  label: "Docker",
+  description: "Linux boxes, with or without a desktop, as containers on a Docker host. It needs only Docker.",
+  nature: "virtual",
+  form: "Docker",
+  kinds: DOCKER_KINDS,
+  fields: DOCKER_FIELDS,
+  retiredFields: ["voxl"],
+  offWhenEmpty: ["linux-image", "desktop-image", "wayland-desktop-image"],
+  setup: {
+    guide: "setup/docker/README.md",
+    scripts: ["setup/docker/build.sh"],
+    needs: `Docker Engine on Linux, or Docker Desktop, on BB's server or a host ${PRODUCT} reaches over SSH.`,
+  },
+  parse: parseDockerPart,
+  // One per Docker host: a BB machine's (042), a socket or ssh://, or the CLI's default.
+  several: (fields) => (typeof fields.host === "string" ? fields.host.trim() : ""),
+  create: (config, context) => new DockerBackend(config, context),
+};

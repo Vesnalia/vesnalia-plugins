@@ -1,0 +1,95 @@
+/**
+ * Xcode activity tracker — frontend entry.
+ *
+ * Two surfaces:
+ *
+ *  - the left-sidebar nav panel (machine-wide history and trends);
+ *  - a composer banner showing this thread's *live* builds as compact rows,
+ *    in bb's own activity-row language. The host mounts it, so a build shows
+ *    up whether or not the agent ever mentions it — see ActivityBanner.tsx for
+ *    why that matters.
+ *
+ * Nothing is ever rendered into the conversation. An earlier design asked the
+ * agent to echo a `::xcode{…}` directive so a card would appear in the
+ * transcript; that surface is gone, and with it the entire class of bugs it
+ * created — cards that never appeared, appeared three times, or appeared for a
+ * 0ms `xcodebuild -find` lookup. Build status is host-owned chrome now.
+ *
+ * Per-thread header chrome stays deliberately absent too: a chip on every
+ * thread was noise. The banner is not that — it appears only while something
+ * is actually building, and disappears the moment nothing is.
+ */
+
+import { definePluginApp } from "@get-bb/plugin-sdk/app";
+
+import "./app.css";
+
+import { XcodeActivityBanner } from "./app/ActivityBanner";
+import { PanelHeader, PanelRoot } from "./app/PanelRoot";
+
+import { StillsDirective } from "./app/sim/StillsDirective";
+import { ActivityBanner as SimulatorBanner } from "./app/sim/ActivityBanner";
+import { ServerConfirm } from "./app/sim/ServerConfirm";
+import { ThreadSimulator } from "./app/sim/ThreadSimulator";
+import { PANEL_PATH } from "./app/sim/route";
+
+export default definePluginApp((app) => {
+  /**
+   * One sidebar entry for the whole plugin. Builds, Live and Stills are tabs
+   * inside it — the tab is the `subPath`, so deep links and browser history
+   * keep working. Two panels was one panel too many: they answered the same
+   * question ("what is my Xcode work doing") from two doors.
+   */
+  app.slots.navPanel({
+    id: "xcode",
+    title: "Xcode",
+    icon: "Toolbox",
+    path: PANEL_PATH,
+    component: PanelRoot,
+    headerContent: PanelHeader,
+  });
+
+  /**
+   * A simulator in the thread's own side panel.
+   *
+   * The nav panel is machine-wide and one-at-a-time; this is per thread, opens
+   * beside the conversation, and picks its device from what the thread has
+   * actually been doing — see `pickSimulator` in `src/sim/pick.ts`. `flush`
+   * because the frame manages its own layout and must not be wrapped in the
+   * host's padded scroll container.
+   */
+  app.slots.experimental_tab({
+    context: { kind: "thread" },
+    availability: "action",
+    id: "simulator",
+    title: "Open simulator",
+    icon: "Smartphone",
+    layout: "flush",
+    component: ThreadSimulator,
+  });
+
+  // `::xcode-simulators{look="lk_…"}` — a deliberate record with no dismiss
+  // control, which is why it needs states for a subject that is gone.
+  app.slots.messageDirective({ id: "xcode-simulators", component: StillsDirective });
+
+  app.slots.pendingInteraction({ id: "server-confirm", component: ServerConfirm });
+
+  app.composer.customize({
+    id: "simulators",
+    banners: [{ id: "sim-activity", component: SimulatorBanner, chrome: "bare" }],
+  });
+
+  app.composer.customize({
+    id: "xcode-activity",
+    scopes: ["thread"],
+    // `bare`, and for one measured reason: the host's `chrome: "card"` gives
+    // the right frame but mounts it under a `display: contents` wrapper, and
+    // the stack spaces itself with `space-y-2` — a margin rule that a
+    // contents box silently drops. The banner therefore owns its own frame
+    // (`.bbx-stack-card`, a faithful copy of PromptStackCard driven by the
+    // host's own CSS variables) so it can also own the 8px gap.
+    banners: [
+      { id: "live-runs", chrome: "bare", component: XcodeActivityBanner },
+    ],
+  });
+});

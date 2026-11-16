@@ -1,0 +1,73 @@
+{
+  "name": "bb-plugin-zcode",
+  "version": "0.14.1",
+  "private": true,
+  "license": "MIT",
+  "author": "Dmitry Polishuk (https://github.com/dpolishuk)",
+  "homepage": "https://github.com/dpolishuk/bb-zcode#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dpolishuk/bb-zcode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dpolishuk/bb-zcode/issues"
+  },
+  "type": "module",
+  "description": "Run ZCode coding sessions inside bb.",
+  "engines": {
+    "node": ">=22",
+    "bb": ">=0.46",
+    "bbPluginSdk": ">=0.6.49 <0.7"
+  },
+  "bb": {
+    "name": "ZCode",
+    "description": "Run local ZCode sessions with streaming replies, tool activity, approvals, and resume.",
+    "branding": {
+      "icon": "icons/zai-badge.svg"
+    },
+    "server": "./server.ts",
+    "host": "./src/host.ts",
+    "skills": [
+      "skills"
+    ],
+    "experimental_providers": [
+      {
+        "kind": "agent",
+        "id": "zcode",
+        "displayName": "ZCode"
+      }
+    ],
+    "app": "./app.tsx"
+  },
+  "keywords": [
+    "bb-plugin",
+    "zcode"
+  ],
+  "scripts": {
+    "build": "node scripts/bb.mjs plugin build .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:live": "tsx scripts/smoke-live.ts",
+    "marketplace:build": "node scripts/marketplace.mjs",
+    "marketplace:check": "node scripts/marketplace.mjs --check",
+    "check": "npm run marketplace:check && npm run typecheck && npm test && npm run build",
+    "format": "prettier --write server.ts app.tsx src tests scripts docs skills knowledge AGENTS.md README.md CONTRIBUTING.md PLUGIN_OVERVIEW.md marketplace.json package.json tsconfig.json .github",
+    "format:check": "prettier --check server.ts app.tsx src tests scripts docs skills knowledge AGENTS.md README.md CONTRIBUTING.md PLUGIN_OVERVIEW.md marketplace.json package.json tsconfig.json .github"
+  },
+  "dependencies": {
+    "@get-bb/plugin-sdk": "0.6.49",
+    "cron-parser": "^5.5.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "better-sqlite3": "^12.10.0",
+    "hono": "^4.13.13",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.1",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0"
+  }
+}

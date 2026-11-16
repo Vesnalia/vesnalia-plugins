@@ -1,0 +1,977 @@
+// Typed repository over the plugin database. Every project, spec, ticket, repo
+// and post change appends an event in the same transaction.
+import type Database from "better-sqlite3";
+import type { Finding } from "../review";
+import type { EnvironmentSpec, Spec } from "../spec";
+import { LOOM_ACTOR, canMoveProject, canMoveTicket, type AuthorKind, type PostKind, type ProjectState, type Role, type ReviewVerdict, type ThreadState, type TicketState } from "../states";
+
+export interface ProjectRow {
+  id: number;
+  slug: string;
+  name: string;
+  key: string;
+  bb_project_id: string;
+  host_id: string | null;
+  state: ProjectState;
+  approved_version: number | null;
+  pending_version: number | null;
+  section_id: string | null;
+  planner_thread_id: string | null;
+  system_reason: string | null;
+  hold_until: number | null;
+  triage_pending: number;
+  triage_round: number;
+  triage_sent_at: number | null;
+  pr_url: string | null;
+  /** The newest event whose hooks Loom queued; it reads the project's later events for its [[hook]] tables. */
+  hook_event_id: number;
+  created_at: number;
+  updated_at: number;
+}
+
+/** One [[repo]] of a multi-repo integration project, from its first land on. A single-repo project keeps its pull request in projects.pr_url. */
+export interface ProjectRepoRow {
+  project_id: number;
+  name: string;
+  pr_url: string | null;
+  landed_sha: string | null;
+  landed_at: number | null;
+}
+
+export type ProjectRepoPatch = Partial<Pick<ProjectRepoRow, "pr_url" | "landed_sha" | "landed_at">>;
+
+export type NewProject = Pick<ProjectRow, "slug" | "name" | "key" | "bb_project_id"> & Partial<Pick<ProjectRow, "host_id" | "section_id" | "planner_thread_id">>;
+
+export interface SpecVersionRow {
+  project_id: number;
+  version: number;
+  toml: string;
+  spec_json: string;
+  hash: string;
+  proposed_by: string;
+  created_at: number;
+}
+
+export interface TicketRow {
+  id: number;
+  project_id: number;
+  seq: number;
+  key: string;
+  ref: string;
+  title: string;
+  body: string;
+  acceptance_json: string;
+  verify_json: string;
+  scope_json: string;
+  deps_json: string;
+  priority: number;
+  state: TicketState;
+  attempt: number;
+  failures: number;
+  check_failures: number;
+  review_round: number;
+  branch: string | null;
+  environment_id: string | null;
+  worker_thread_id: string | null;
+  head_sha: string | null;
+  merge_before: string | null;
+  pr_url: string | null;
+  pr_checked_at: number | null;
+  blocked_reason: string | null;
+  /** The ticket's [[repo]] name; null for the Loom project's own repository, as in every row from before repos existed. */
+  repo: string | null;
+  /** The remote branch of the ticket's pull request, kept when a later worker works on a branch of its own. */
+  pr_branch: string | null;
+  /** pr_branch's tip Loom accounts for, and when it did: its own last push, or commits someone else pushed that Loom merged into the ticket's work. */
+  pushed_sha: string | null;
+  pushed_at: number | null;
+  /** PrAsk: Loom asked the worker to write the pull request for head_sha. */
+  pr_ask_json: string | null;
+  /** PrText: what the worker wrote for a head, or that Loom's template stands in. */
+  pr_text_json: string | null;
+  /** The ids of the pull request's checks, reviews and comments already sent to a worker. */
+  pr_seen_json: string;
+  /** Fix rounds the pull request's feedback started. */
+  pr_rounds: number;
+  /** PrStatus: the pull request's checks when Loom last read them. */
+  pr_status_json: string | null;
+  /** HandBack: work going back to the ticket's worker that bb has not taken yet, waiting for a worker slot or sent again by the tick. */
+  handback_json: string | null;
+  /** Stack: what the ticket's branch is built on when its project stacks pull requests; null before its first worker started. */
+  stack_json: string | null;
+  /** The branch its pull request was opened on, or last retargeted to; null for the repo's base, as in every row from before stacking. */
+  pr_base: string | null;
+  /** StartWait: the ticket waits to start its worker or a reviewer again after a failed start. */
+  start_wait_json: string | null;
+  /** The ticket's merge patch over its repo's environment inputs, from its spec's `environment.inputs`; null for none. */
+  environment_json: string | null;
+  /** PollWait: the pull request's reads failed with GitHub server errors in a row, so the next one waits longer; null once one succeeds. */
+  pr_poll_json: string | null;
+  /** The keys of the tickets whose pull requests merge before this one's; unlike deps_json, they hold neither its start nor its stacking. */
+  merge_after_json: string;
+  /** PrMeta: the pull request's draft flag, review decision and base branch when Loom last read them; null before the first read. */
+  pr_meta_json: string | null;
+  /** The tree of head_sha; null in rows from before Loom kept it and after a merge Loom made on the project's machine, until a reviewer's verdict reads it. */
+  head_tree: string | null;
+  /** TicketRolloutSpec: the ticket's place in the deploy order, with ticket keys in requires_live; null for none. */
+  rollout_json: string | null;
+  /** MergeWait: the merge failed in a way worth waiting out, so the ticket stays in merging and the queue waits until it runs again; null otherwise. */
+  merge_wait_json: string | null;
+  /** MergeStep: a merge Loom put in the worker's worktree whose checks have not passed yet, which the next run of the merge finishes instead of merging again; null otherwise. */
+  merge_step_json: string | null;
+  /** PrProposal: the pull request's title and description as the worker proposed them with loom_submit, for the reviewers to judge; null for none. */
+  pr_proposal_json: string | null;
+  /** PrApplied: the title and description Loom last set on the open pull request, and an edit still to make; null before it opened one, and for one opened before Loom kept it. */
+  pr_applied_json: string | null;
+  created_by: string;
+  created_at: number;
+  updated_at: number;
+  state_at: number;
+}
+
+export type NewTicket = Pick<TicketRow, "project_id" | "seq" | "key" | "ref" | "title" | "body" | "acceptance_json" | "verify_json" | "scope_json" | "deps_json" | "priority"> &
+  Partial<Pick<TicketRow, "repo" | "environment_json" | "merge_after_json" | "rollout_json">>;
+
+export interface PostRow {
+  id: number;
+  project_id: number;
+  ticket_id: number;
+  parent_id: number | null;
+  author_kind: AuthorKind;
+  author_thread_id: string | null;
+  kind: PostKind;
+  body: string;
+  data_json: string;
+  at: number;
+}
+
+export type NewPost = Pick<PostRow, "project_id" | "ticket_id" | "parent_id" | "author_kind" | "author_thread_id" | "kind" | "body"> & Partial<Pick<PostRow, "data_json">>;
+
+export interface ThreadRow {
+  id: number;
+  thread_id: string | null;
+  spawn_token: string | null;
+  project_id: number;
+  ticket_id: number | null;
+  role: Role;
+  state: ThreadState;
+  environment_id: string | null;
+  idle_count: number;
+  rate_limit_retries: number;
+  tokens: number | null;
+  tokens_at: number | null;
+  review_round: number;
+  /** The worker's attempt; null for a reviewer and for rows from before Loom recorded it. */
+  attempt: number | null;
+  started_at: number;
+  clock_at: number | null;
+  ended_at: number | null;
+  end_reason: string | null;
+  /** When Loom archived this idle worker of an open pull request to free its environment; kept until the thread has an environment again. */
+  released_at: number | null;
+  /** Resume: the earlier work this worker, on a machine of its own, carries in with loom_resume; null for none. */
+  resume_json: string | null;
+  /** The seq of the newest machine_maintenance event whose idle Loom did not count. */
+  maintenance_seq: number;
+}
+
+export type NewThread = Pick<ThreadRow, "project_id" | "role" | "state"> & Partial<Pick<ThreadRow, "thread_id" | "spawn_token" | "ticket_id" | "environment_id">>;
+
+export interface ReviewRow {
+  id: number;
+  ticket_id: number;
+  round: number;
+  thread_row_id: number | null;
+  verdict: ReviewVerdict;
+  summary: string | null;
+  findings_json: string;
+  at: number;
+}
+
+export type NewReview = Pick<ReviewRow, "ticket_id" | "round" | "thread_row_id">;
+
+export interface EventRow {
+  id: number;
+  project_id: number;
+  ticket_id: number | null;
+  at: number;
+  kind: string;
+  actor: string;
+  data_json: string;
+}
+
+/** A planning conversation started from the Loom page, before or after its thread proposed a spec. */
+export interface PlanningRow {
+  id: number;
+  thread_id: string;
+  bb_project_id: string;
+  title: string;
+  started_at: number;
+  ended_at: number | null;
+  end_reason: string | null;
+}
+
+/** A message in a planner's conversation that Loom keeps for the Planner page: the planner's last words in a turn, or the human's message from the page. */
+export interface PlannerLogRow {
+  id: number;
+  thread_id: string;
+  at: number;
+  author: "planner" | "human";
+  text: string;
+}
+
+/** One call Loom made to the machine for a ticket's checks or merge. `output_chars` measures the output, which `runs` leaves out. */
+export interface RunRow {
+  id: number;
+  project_id: number;
+  ticket_id: number;
+  stage: "check" | "merge";
+  kind: "command" | "git";
+  label: string;
+  started_at: number;
+  ended_at: number | null;
+  duration_ms: number | null;
+  ok: number | null;
+  exit_code: number | null;
+  timed_out: number;
+  output_chars: number;
+}
+
+export type RecordState = "pending" | "summarizing" | "sending" | "sent" | "failed" | "skipped";
+
+/** Whether a finished project's record reached the done hook; one row per project. */
+export interface RecordRow {
+  id: number;
+  project_id: number;
+  state: RecordState;
+  /** The summary agent's thread, once bb started it. */
+  thread_id: string | null;
+  /** When the summary agent was first asked for, for its time limit. */
+  started_at: number | null;
+  /** When Loom tries to start the summary agent again after a failed start. */
+  retry_at: number | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export type HookFiringState = "pending" | "running" | "done" | "failed" | "skipped";
+
+/** One [[hook]] table's tell or run for one event, queued once; `text` is the hook's tell or run as the spec said it then. */
+export interface HookFiringRow {
+  id: number;
+  project_id: number;
+  event_id: number;
+  /** The hook's index in the spec's [[hook]] list. */
+  hook: number;
+  hook_on: string;
+  kind: "tell" | "run";
+  ticket_id: number | null;
+  text: string;
+  /** HookFacts: what happened, for the planner's message and the command's variables. */
+  facts_json: string;
+  state: HookFiringState;
+  reason: string | null;
+  /** Sends of a tell that failed so far. */
+  tries: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export type SpecReviewState = "reviewing" | "approved" | "changes_requested" | "failed" | "superseded" | "skipped";
+
+/** SpecReviewSkip: why a version skipped its review, the version it was compared with and the operational paths it changed. */
+export interface SpecReviewSkip {
+  against: number;
+  paths: string[];
+}
+
+/** One automatic review of one draft spec version; a version reviewed again after a failure has several rows. */
+export interface SpecReviewRow {
+  id: number;
+  project_id: number;
+  version: number;
+  /** The changes-requested reviews of the project before this one, plus one. */
+  round: number;
+  state: SpecReviewState;
+  spawn_token: string;
+  /** The reviewer's thread, once bb started it. */
+  thread_id: string | null;
+  idle_count: number;
+  summary: string | null;
+  findings_json: string;
+  /** Why a failed or superseded review ended. */
+  reason: string | null;
+  /** SpecReviewWait: the reviewer did not start and Loom tries again; null once a reviewer thread runs. */
+  wait_json: string | null;
+  /** SpecReviewSkip of a skipped review; null for any other. */
+  skip_json: string | null;
+  started_at: number;
+  ended_at: number | null;
+}
+
+export type LiveBy = "merge" | "verify" | "check" | "human";
+
+/** Whether one ticket key or milestone ref of a project's rollout is live, kept apart from the ticket's state. */
+export interface RolloutMarkRow {
+  project_id: number;
+  /** A ticket key or a [[rollout.milestone]] ref. */
+  target: string;
+  /** When it went live; null while it is not live. */
+  live_at: number | null;
+  live_by: LiveBy | null;
+  /** The tail of the output of the command that marked it live, or the human's note. */
+  evidence: string | null;
+  /** When the human last undid its live mark: a merge does not mark it live again after that. */
+  undone_at: number | null;
+  /** The last run of its verify or check command; check_exit is null when it did not exit: it timed out, or Loom could not run it. */
+  checked_at: number | null;
+  check_exit: number | null;
+  check_output: string | null;
+  /** The run of its command going now, and when it started; null when none is. */
+  run_token: string | null;
+  run_at: number | null;
+}
+
+export class StoreError extends Error {}
+
+export class Store {
+  private onEvent: ((projectId: number | null) => void) | null = null;
+  private txDepth = 0;
+  private queued: Array<number | null> = [];
+
+  constructor(
+    private readonly db: Database.Database,
+    private readonly now: () => number,
+  ) {}
+
+  /** Calls `fn` with the project id (null for a change outside any project) after each event row is committed and after each `changed` call; inside a transaction it waits for the outermost commit and is dropped when the transaction that made it rolls back. */
+  setOnEvent(fn: ((projectId: number | null) => void) | null): void {
+    this.onEvent = fn;
+  }
+
+  tx<T>(fn: () => T): T {
+    this.txDepth += 1;
+    const queuedOnEntry = this.queued.length;
+    let result: T;
+    try {
+      result = this.db.transaction(fn)();
+    } catch (error) {
+      this.txDepth -= 1;
+      this.queued.length = queuedOnEntry;
+      throw error;
+    }
+    this.txDepth -= 1;
+    if (this.txDepth === 0) {
+      const committed = this.queued;
+      this.queued = [];
+      for (const projectId of committed) this.onEvent?.(projectId);
+    }
+    return result;
+  }
+
+  event(projectId: number, ticketId: number | null, kind: string, actor: string, data: object = {}): void {
+    this.db.prepare("INSERT INTO events (project_id, ticket_id, at, kind, actor, data_json) VALUES (?, ?, ?, ?, ?, ?)").run(projectId, ticketId, this.now(), kind, actor, JSON.stringify(data));
+    this.changed(projectId);
+  }
+
+  /** Tells the hook that something the page shows changed in the project, for changes that write no event row, such as binding a worker's thread. */
+  /** `null` is a change outside any project, such as a planning conversation. */
+  changed(projectId: number | null): void {
+    if (this.txDepth > 0) this.queued.push(projectId);
+    else this.onEvent?.(projectId);
+  }
+
+  events(projectId: number, afterId = 0, limit = 200): EventRow[] {
+    return this.db.prepare("SELECT * FROM events WHERE project_id = ? AND id > ? ORDER BY id LIMIT ?").all(projectId, afterId, limit) as EventRow[];
+  }
+
+  /** Every event of the project, oldest first. The metrics replay all of them. */
+  projectEvents(projectId: number): EventRow[] {
+    return this.db.prepare("SELECT * FROM events WHERE project_id = ? ORDER BY id").all(projectId) as EventRow[];
+  }
+
+  /** The project's newest event of one kind at or before an event id, or null. */
+  lastEventOfKind(projectId: number, kind: string, atOrBefore: number): EventRow | null {
+    return (this.db.prepare("SELECT * FROM events WHERE project_id = ? AND kind = ? AND id <= ? ORDER BY id DESC LIMIT 1").get(projectId, kind, atOrBefore) as EventRow | undefined) ?? null;
+  }
+
+  /** A project's events of one kind, oldest first. */
+  eventsOfKind(projectId: number, kind: string): EventRow[] {
+    return this.db.prepare("SELECT * FROM events WHERE project_id = ? AND kind = ? ORDER BY id").all(projectId, kind) as EventRow[];
+  }
+
+  /** The newest events first, optionally only those before an event id. */
+  eventsNewest(projectId: number, limit: number, beforeId?: number): EventRow[] {
+    if (beforeId === undefined) return this.db.prepare("SELECT * FROM events WHERE project_id = ? ORDER BY id DESC LIMIT ?").all(projectId, limit) as EventRow[];
+    return this.db.prepare("SELECT * FROM events WHERE project_id = ? AND id < ? ORDER BY id DESC LIMIT ?").all(projectId, beforeId, limit) as EventRow[];
+  }
+
+  // ---- projects
+
+  createProject(row: NewProject, actor: string): ProjectRow {
+    return this.tx(() => {
+      const now = this.now();
+      const result = this.db
+        .prepare("INSERT INTO projects (slug, name, key, bb_project_id, host_id, section_id, planner_thread_id, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)")
+        .run(row.slug, row.name, row.key, row.bb_project_id, row.host_id ?? null, row.section_id ?? null, row.planner_thread_id ?? null, now, now);
+      const project = this.requireProject(Number(result.lastInsertRowid));
+      this.event(project.id, null, "project.created", actor, { slug: project.slug, key: project.key, planner: project.planner_thread_id });
+      return project;
+    });
+  }
+
+  project(id: number): ProjectRow | null {
+    return (this.db.prepare("SELECT * FROM projects WHERE id = ?").get(id) as ProjectRow | undefined) ?? null;
+  }
+
+  projectBySlug(slug: string): ProjectRow | null {
+    return (this.db.prepare("SELECT * FROM projects WHERE slug = ?").get(slug) as ProjectRow | undefined) ?? null;
+  }
+
+  projectByKey(key: string): ProjectRow | null {
+    return (this.db.prepare("SELECT * FROM projects WHERE key = ?").get(key) as ProjectRow | undefined) ?? null;
+  }
+
+  projects(): ProjectRow[] {
+    return this.db.prepare("SELECT * FROM projects ORDER BY id").all() as ProjectRow[];
+  }
+
+  setProjectState(id: number, to: ProjectState, actor: string, reason?: string): ProjectRow {
+    return this.tx(() => {
+      const before = this.requireProject(id);
+      if (!canMoveProject(before.state, to)) throw new StoreError(`Project ${before.slug} is ${before.state}; it cannot move to ${to}.`);
+      this.updateProject(id, { state: to, system_reason: reason ?? null });
+      this.event(id, null, "project.state", actor, { from: before.state, to, ...(reason === undefined ? {} : { reason }) });
+      return this.requireProject(id);
+    });
+  }
+
+  updateProject(id: number, patch: Partial<Omit<ProjectRow, "id">>): void {
+    this.patch("projects", id, patch);
+  }
+
+  // ---- a multi-repo project's repos
+
+  /** The project's repo rows by name; a repo that never landed has none. */
+  projectRepos(projectId: number): ProjectRepoRow[] {
+    return this.db.prepare("SELECT * FROM project_repos WHERE project_id = ? ORDER BY name").all(projectId) as ProjectRepoRow[];
+  }
+
+  projectRepo(projectId: number, name: string): ProjectRepoRow | null {
+    return (this.db.prepare("SELECT * FROM project_repos WHERE project_id = ? AND name = ?").get(projectId, name) as ProjectRepoRow | undefined) ?? null;
+  }
+
+  /** Creates or patches one repo's row with a project.landed event naming the repo, in one transaction: a land is the only change to a repo's row. */
+  updateProjectRepo(projectId: number, name: string, patch: ProjectRepoPatch, actor: string, data: object = {}): ProjectRepoRow {
+    return this.tx(() => {
+      this.db.prepare("INSERT INTO project_repos (project_id, name) VALUES (?, ?) ON CONFLICT (project_id, name) DO NOTHING").run(projectId, name);
+      const entries = Object.entries(patch).filter(([, value]) => value !== undefined);
+      if (entries.length > 0) {
+        const sets = entries.map(([column]) => `${column} = ?`).join(", ");
+        this.db.prepare(`UPDATE project_repos SET ${sets} WHERE project_id = ? AND name = ?`).run(...entries.map(([, value]) => value), projectId, name);
+      }
+      this.event(projectId, null, "project.landed", actor, { repo: name, ...data });
+      return this.projectRepo(projectId, name)!;
+    });
+  }
+
+  // ---- spec versions
+
+  addSpecVersion(projectId: number, toml: string, specJson: string, hash: string, proposedBy: string): number {
+    return this.tx(() => {
+      const last = this.db.prepare("SELECT MAX(version) AS version FROM spec_versions WHERE project_id = ?").get(projectId) as { version: number | null };
+      const version = (last.version ?? 0) + 1;
+      this.db.prepare("INSERT INTO spec_versions (project_id, version, toml, spec_json, hash, proposed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(projectId, version, toml, specJson, hash, proposedBy, this.now());
+      this.event(projectId, null, "spec.proposed", proposedBy, { version, hash });
+      return version;
+    });
+  }
+
+  specVersion(projectId: number, version: number): SpecVersionRow | null {
+    return (this.db.prepare("SELECT * FROM spec_versions WHERE project_id = ? AND version = ?").get(projectId, version) as SpecVersionRow | undefined) ?? null;
+  }
+
+  latestSpecVersion(projectId: number): SpecVersionRow | null {
+    return (this.db.prepare("SELECT * FROM spec_versions WHERE project_id = ? ORDER BY version DESC LIMIT 1").get(projectId) as SpecVersionRow | undefined) ?? null;
+  }
+
+  /** The environment each project's approved spec gives each of its repos that has one, with the repo's bb project, the newest approved spec first. */
+  pastEnvironments(): Array<{ slug: string; bbProjectId: string; environment: EnvironmentSpec }> {
+    const rows = this.db
+      .prepare("SELECT p.slug, p.bb_project_id, v.spec_json FROM projects p JOIN spec_versions v ON v.project_id = p.id AND v.version = p.approved_version ORDER BY v.created_at DESC, p.id DESC")
+      .all() as Array<{ slug: string; bb_project_id: string; spec_json: string }>;
+    return rows.flatMap((row) => {
+      const spec = JSON.parse(row.spec_json) as Spec;
+      const repos = (spec.repo ?? []).length === 0 ? [{ bbProjectId: row.bb_project_id, environment: spec.environment }] : spec.repo!.map((repo) => ({ bbProjectId: repo.project, environment: repo.environment ?? spec.environment }));
+      return repos.flatMap(({ bbProjectId, environment }) => (environment === undefined ? [] : [{ slug: row.slug, bbProjectId, environment }]));
+    });
+  }
+
+  // ---- tickets
+
+  createTicket(row: NewTicket, actor: string): TicketRow {
+    return this.tx(() => {
+      const now = this.now();
+      const result = this.db
+        .prepare(
+          `INSERT INTO tickets (project_id, seq, key, ref, title, body, acceptance_json, verify_json, scope_json, deps_json, priority, repo, environment_json, merge_after_json, rollout_json, state, created_by, created_at, updated_at, state_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?)`,
+        )
+        .run(row.project_id, row.seq, row.key, row.ref, row.title, row.body, row.acceptance_json, row.verify_json, row.scope_json, row.deps_json, row.priority, row.repo ?? null, row.environment_json ?? null, row.merge_after_json ?? "[]", row.rollout_json ?? null, actor, now, now, now);
+      const ticket = this.requireTicket(Number(result.lastInsertRowid));
+      this.event(ticket.project_id, ticket.id, "ticket.created", actor, { key: ticket.key, ref: ticket.ref });
+      return ticket;
+    });
+  }
+
+  ticket(id: number): TicketRow | null {
+    return (this.db.prepare("SELECT * FROM tickets WHERE id = ?").get(id) as TicketRow | undefined) ?? null;
+  }
+
+  ticketByKey(key: string): TicketRow | null {
+    return (this.db.prepare("SELECT * FROM tickets WHERE key = ?").get(key) as TicketRow | undefined) ?? null;
+  }
+
+  tickets(projectId: number, states?: readonly TicketState[]): TicketRow[] {
+    if (states === undefined) return this.db.prepare("SELECT * FROM tickets WHERE project_id = ? ORDER BY seq").all(projectId) as TicketRow[];
+    const marks = states.map(() => "?").join(", ");
+    return this.db.prepare(`SELECT * FROM tickets WHERE project_id = ? AND state IN (${marks}) ORDER BY seq`).all(projectId, ...states) as TicketRow[];
+  }
+
+  setTicketState(id: number, to: TicketState, actor: string, data: object = {}): TicketRow {
+    return this.tx(() => {
+      const before = this.requireTicket(id);
+      if (!canMoveTicket(before.state, to)) throw new StoreError(`Ticket ${before.key} is ${before.state}; it cannot move to ${to}.`);
+      const now = this.now();
+      this.updateTicket(id, { state: to, state_at: now });
+      this.event(before.project_id, id, "ticket.state", actor, { from: before.state, to, ...data });
+      return this.requireTicket(id);
+    });
+  }
+
+  updateTicket(id: number, patch: Partial<Omit<TicketRow, "id">>): void {
+    this.patch("tickets", id, patch);
+  }
+
+  // ---- posts
+
+  addPost(row: NewPost): PostRow {
+    return this.tx(() => {
+      if (row.parent_id !== null) {
+        const parent = this.db.prepare("SELECT ticket_id FROM posts WHERE id = ?").get(row.parent_id) as { ticket_id: number } | undefined;
+        if (parent?.ticket_id !== row.ticket_id) throw new StoreError(`Post #${row.parent_id} is on another ticket or does not exist; a reply must answer a post on the same ticket.`);
+      }
+      const result = this.db
+        .prepare("INSERT INTO posts (project_id, ticket_id, parent_id, author_kind, author_thread_id, kind, body, data_json, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .run(row.project_id, row.ticket_id, row.parent_id, row.author_kind, row.author_thread_id, row.kind, row.body, row.data_json ?? "{}", this.now());
+      const post = this.db.prepare("SELECT * FROM posts WHERE id = ?").get(Number(result.lastInsertRowid)) as PostRow;
+      this.event(post.project_id, post.ticket_id, "post.added", post.author_thread_id ?? post.author_kind, { post: post.id, kind: post.kind, author: post.author_kind, parent: post.parent_id });
+      return post;
+    });
+  }
+
+  posts(ticketId: number): PostRow[] {
+    return this.db.prepare("SELECT * FROM posts WHERE ticket_id = ? ORDER BY id").all(ticketId) as PostRow[];
+  }
+
+  postsForProject(projectId: number): PostRow[] {
+    return this.db.prepare("SELECT * FROM posts WHERE project_id = ? ORDER BY id").all(projectId) as PostRow[];
+  }
+
+  // ---- threads
+
+  addThread(row: NewThread): ThreadRow {
+    const result = this.db
+      .prepare("INSERT INTO threads (thread_id, spawn_token, project_id, ticket_id, role, state, environment_id, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(row.thread_id ?? null, row.spawn_token ?? null, row.project_id, row.ticket_id ?? null, row.role, row.state, row.environment_id ?? null, this.now());
+    return this.db.prepare("SELECT * FROM threads WHERE id = ?").get(Number(result.lastInsertRowid)) as ThreadRow;
+  }
+
+  thread(id: number): ThreadRow | null {
+    return (this.db.prepare("SELECT * FROM threads WHERE id = ?").get(id) as ThreadRow | undefined) ?? null;
+  }
+
+  threads(q: { projectId?: number; ticketId?: number; role?: Role; states?: readonly ThreadState[] } = {}): ThreadRow[] {
+    const filters: Array<[string, Array<number | string>]> = [];
+    if (q.projectId !== undefined) filters.push(["project_id = ?", [q.projectId]]);
+    if (q.ticketId !== undefined) filters.push(["ticket_id = ?", [q.ticketId]]);
+    if (q.role !== undefined) filters.push(["role = ?", [q.role]]);
+    if (q.states !== undefined) filters.push([`state IN (${q.states.map(() => "?").join(", ")})`, [...q.states]]);
+    const where = filters.length > 0 ? ` WHERE ${filters.map(([clause]) => clause).join(" AND ")}` : "";
+    return this.db.prepare(`SELECT * FROM threads${where} ORDER BY id`).all(...filters.flatMap(([, values]) => values)) as ThreadRow[];
+  }
+
+  threadsForProject(projectId: number): ThreadRow[] {
+    return this.threads({ projectId });
+  }
+
+  threadsForTicket(ticketId: number): ThreadRow[] {
+    return this.threads({ ticketId });
+  }
+
+  // ---- reviews
+
+  addReview(row: NewReview): ReviewRow {
+    const result = this.db.prepare("INSERT INTO reviews (ticket_id, round, thread_row_id, verdict, at) VALUES (?, ?, ?, 'pending', ?)").run(row.ticket_id, row.round, row.thread_row_id, this.now());
+    return this.review(Number(result.lastInsertRowid))!;
+  }
+
+  review(id: number): ReviewRow | null {
+    return (this.db.prepare("SELECT * FROM reviews WHERE id = ?").get(id) as ReviewRow | undefined) ?? null;
+  }
+
+  reviews(ticketId: number, round?: number): ReviewRow[] {
+    if (round === undefined) return this.db.prepare("SELECT * FROM reviews WHERE ticket_id = ? ORDER BY id").all(ticketId) as ReviewRow[];
+    return this.db.prepare("SELECT * FROM reviews WHERE ticket_id = ? AND round = ? ORDER BY id").all(ticketId, round) as ReviewRow[];
+  }
+
+  reviewsForProject(projectId: number): ReviewRow[] {
+    return this.db.prepare("SELECT reviews.* FROM reviews JOIN tickets ON tickets.id = reviews.ticket_id WHERE tickets.project_id = ? ORDER BY reviews.id").all(projectId) as ReviewRow[];
+  }
+
+  /** Stores a verdict on a pending review, with an event the round limit counts. Throws when the review is not pending. */
+  setVerdict(reviewId: number, verdict: "approved" | "changes_requested", summary: string, findings: Finding[]): ReviewRow {
+    return this.tx(() => {
+      const before = this.review(reviewId);
+      if (before === null) throw new StoreError(`Review ${reviewId} does not exist.`);
+      const result = this.db.prepare("UPDATE reviews SET verdict = ?, summary = ?, findings_json = ? WHERE id = ? AND verdict = 'pending'").run(verdict, summary, JSON.stringify(findings), reviewId);
+      if (result.changes === 0) throw new StoreError(`Review ${reviewId} is not pending; it already has a verdict.`);
+      const ticket = this.requireTicket(before.ticket_id);
+      this.event(ticket.project_id, ticket.id, "review.verdict", "reviewer", { review: reviewId, round: before.round, verdict });
+      return this.review(reviewId)!;
+    });
+  }
+
+  /** Every event of these kinds across all projects, oldest first. */
+  eventsByKinds(kinds: readonly string[]): EventRow[] {
+    const marks = kinds.map(() => "?").join(", ");
+    return this.db.prepare(`SELECT * FROM events WHERE kind IN (${marks}) ORDER BY id`).all(...kinds) as EventRow[];
+  }
+
+  eventById(id: number): EventRow | null {
+    return (this.db.prepare("SELECT * FROM events WHERE id = ?").get(id) as EventRow | undefined) ?? null;
+  }
+
+  /** The newest event of `kind` whose data has `key` set to the string `value`, as the final reviewer's tools find their review. */
+  eventByData(kind: string, key: string, value: string): EventRow | null {
+    const needle = JSON.stringify({ [key]: value }).slice(1, -1);
+    return (this.db.prepare("SELECT * FROM events WHERE kind = ? AND instr(data_json, ?) > 0 ORDER BY id DESC LIMIT 1").get(kind, needle) as EventRow | undefined) ?? null;
+  }
+
+  /** A ticket's events in order, optionally only some kinds. */
+  ticketEvents(ticketId: number, kinds?: readonly string[]): EventRow[] {
+    if (kinds === undefined) return this.db.prepare("SELECT * FROM events WHERE ticket_id = ? ORDER BY id").all(ticketId) as EventRow[];
+    const marks = kinds.map(() => "?").join(", ");
+    return this.db.prepare(`SELECT * FROM events WHERE ticket_id = ? AND kind IN (${marks}) ORDER BY id`).all(ticketId, ...kinds) as EventRow[];
+  }
+
+  /** The compare-and-set that gives one path the right to end a row. ended_at marks when the end began; finishing sets it again. */
+  claimThread(id: number, endReason: string): boolean {
+    const result = this.db.prepare("UPDATE threads SET state = 'ending', end_reason = ?, ended_at = ? WHERE id = ? AND state = 'active'").run(endReason, this.now(), id);
+    return result.changes === 1;
+  }
+
+  threadByThreadId(threadId: string): ThreadRow | null {
+    return (this.db.prepare("SELECT * FROM threads WHERE thread_id = ?").get(threadId) as ThreadRow | undefined) ?? null;
+  }
+
+  threadBySpawnToken(token: string): ThreadRow | null {
+    return (this.db.prepare("SELECT * FROM threads WHERE spawn_token = ?").get(token) as ThreadRow | undefined) ?? null;
+  }
+
+  updateThread(id: number, patch: Partial<Omit<ThreadRow, "id">>): void {
+    this.patch("threads", id, patch, false);
+  }
+
+  // ---- planning conversations
+
+  addPlanning(row: Pick<PlanningRow, "thread_id" | "bb_project_id" | "title">): PlanningRow {
+    const result = this.db.prepare("INSERT INTO planning (thread_id, bb_project_id, title, started_at) VALUES (?, ?, ?, ?)").run(row.thread_id, row.bb_project_id, row.title, this.now());
+    const added = this.db.prepare("SELECT * FROM planning WHERE id = ?").get(Number(result.lastInsertRowid)) as PlanningRow;
+    this.changed(null);
+    return added;
+  }
+
+  planning(threadId: string): PlanningRow | null {
+    return (this.db.prepare("SELECT * FROM planning WHERE thread_id = ?").get(threadId) as PlanningRow | undefined) ?? null;
+  }
+
+  openPlanning(): PlanningRow[] {
+    return this.db.prepare("SELECT * FROM planning WHERE ended_at IS NULL ORDER BY id DESC").all() as PlanningRow[];
+  }
+
+  /** True when this call ended the session; false when it had already ended or never existed. */
+  endPlanning(threadId: string, reason: string): boolean {
+    const result = this.db.prepare("UPDATE planning SET ended_at = ?, end_reason = ? WHERE thread_id = ? AND ended_at IS NULL").run(this.now(), reason, threadId);
+    if (result.changes === 0) return false;
+    this.changed(null);
+    return true;
+  }
+
+  // ---- the planner's conversation, as the Planner page tells it
+
+  addPlannerLog(row: Pick<PlannerLogRow, "thread_id" | "author" | "text">, projectId: number | null): void {
+    this.db.prepare("INSERT INTO planner_log (thread_id, at, author, text) VALUES (?, ?, ?, ?)").run(row.thread_id, this.now(), row.author, row.text);
+    this.changed(projectId);
+  }
+
+  plannerLog(threadId: string): PlannerLogRow[] {
+    return this.db.prepare("SELECT * FROM planner_log WHERE thread_id = ? ORDER BY id").all(threadId) as PlannerLogRow[];
+  }
+
+  // ---- runs
+
+  startRun(row: Pick<RunRow, "project_id" | "ticket_id" | "stage" | "kind" | "label">): number {
+    const result = this.db.prepare("INSERT INTO runs (project_id, ticket_id, stage, kind, label, started_at) VALUES (?, ?, ?, ?, ?, ?)").run(row.project_id, row.ticket_id, row.stage, row.kind, row.label, this.now());
+    this.changed(row.project_id);
+    return Number(result.lastInsertRowid);
+  }
+
+  /** `durationMs` defaults to the time since the run started. */
+  finishRun(id: number, r: { ok: boolean; output: string; exitCode?: number | null; timedOut?: boolean; durationMs?: number }): void {
+    const ended = this.now();
+    const row = this.db
+      .prepare("UPDATE runs SET ended_at = ?, duration_ms = COALESCE(?, ? - started_at), ok = ?, exit_code = ?, timed_out = ?, output = ? WHERE id = ? RETURNING project_id")
+      .get(ended, r.durationMs ?? null, ended, r.ok ? 1 : 0, r.exitCode ?? null, r.timedOut === true ? 1 : 0, r.output, id) as { project_id: number } | undefined;
+    if (row !== undefined) this.changed(row.project_id);
+  }
+
+  runs(ticketId: number): RunRow[] {
+    return this.db
+      .prepare("SELECT id, project_id, ticket_id, stage, kind, label, started_at, ended_at, duration_ms, ok, exit_code, timed_out, length(output) AS output_chars FROM runs WHERE ticket_id = ? ORDER BY id")
+      .all(ticketId) as RunRow[];
+  }
+
+  runOutput(id: number): string | null {
+    return (this.db.prepare("SELECT output FROM runs WHERE id = ?").get(id) as { output: string } | undefined)?.output ?? null;
+  }
+
+  /** Ends every run that has not ended, with `note` as its output and no result; returns how many it ended. */
+  endOpenRuns(note: string): number {
+    return this.db.prepare("UPDATE runs SET ended_at = ?, output = ? WHERE ended_at IS NULL").run(this.now(), note).changes;
+  }
+
+  // ---- how long checks took
+
+  /** Keeps each passed check run once, and the newest `keep` runs of each check name. */
+  addCheckDurations(repoKey: string, runs: ReadonlyArray<{ name: string; key: string; durationMs: number; at: number }>, keep = 20): void {
+    if (runs.length === 0) return;
+    this.tx(() => {
+      const insert = this.db.prepare("INSERT INTO check_durations (repo_key, name, check_key, duration_ms, at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (repo_key, check_key) DO NOTHING");
+      for (const run of runs) insert.run(repoKey, run.name, run.key, run.durationMs, run.at);
+      const prune = this.db.prepare("DELETE FROM check_durations WHERE repo_key = ? AND name = ? AND check_key NOT IN (SELECT check_key FROM check_durations WHERE repo_key = ? AND name = ? ORDER BY at DESC LIMIT ?)");
+      for (const name of new Set(runs.map((run) => run.name))) prune.run(repoKey, name, repoKey, name, keep);
+    });
+  }
+
+  /** The newest `limit` durations of each named check, newest first. */
+  checkDurations(repoKey: string, names: readonly string[], limit: number): Map<string, number[]> {
+    const found = new Map<string, number[]>();
+    const select = this.db.prepare("SELECT duration_ms FROM check_durations WHERE repo_key = ? AND name = ? ORDER BY at DESC LIMIT ?");
+    for (const name of new Set(names)) {
+      const rows = select.all(repoKey, name, limit) as Array<{ duration_ms: number }>;
+      if (rows.length > 0) found.set(name, rows.map((row) => row.duration_ms));
+    }
+    return found;
+  }
+
+  // ---- records
+
+  /** Queues the project's record for the done hook, replacing an earlier row. */
+  queueRecord(projectId: number): void {
+    const now = this.now();
+    this.db
+      .prepare(
+        "INSERT INTO records (project_id, state, created_at, updated_at) VALUES (?, 'pending', ?, ?) ON CONFLICT (project_id) DO UPDATE SET state = 'pending', thread_id = NULL, started_at = NULL, retry_at = NULL, updated_at = excluded.updated_at",
+      )
+      .run(projectId, now, now);
+    this.changed(projectId);
+  }
+
+  record(projectId: number): RecordRow | null {
+    return (this.db.prepare("SELECT * FROM records WHERE project_id = ?").get(projectId) as RecordRow | undefined) ?? null;
+  }
+
+  /** Rows still on their way (pending, summarizing, sending), oldest first. */
+  openRecords(): RecordRow[] {
+    return this.db.prepare("SELECT * FROM records WHERE state IN ('pending', 'summarizing', 'sending') ORDER BY id").all() as RecordRow[];
+  }
+
+  updateRecord(id: number, patch: Partial<Pick<RecordRow, "state" | "thread_id" | "started_at" | "retry_at">>): void {
+    this.patch("records", id, patch);
+  }
+
+  // ---- hook firings
+
+  /** Queues a hook's tell or run for an event; a second queue of the same one changes nothing. */
+  addHookFiring(row: Pick<HookFiringRow, "project_id" | "event_id" | "hook" | "hook_on" | "kind" | "ticket_id" | "text" | "facts_json">): void {
+    const now = this.now();
+    this.db
+      .prepare("INSERT INTO hook_firings (project_id, event_id, hook, hook_on, kind, ticket_id, text, facts_json, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?) ON CONFLICT (event_id, hook, kind) DO NOTHING")
+      .run(row.project_id, row.event_id, row.hook, row.hook_on, row.kind, row.ticket_id, row.text, row.facts_json, now, now);
+    this.changed(row.project_id);
+  }
+
+  /** Moves the project's hook cursor past an event; it leaves updated_at alone, since nothing the human sees changed. */
+  setHookCursor(projectId: number, eventId: number): void {
+    this.db.prepare("UPDATE projects SET hook_event_id = ? WHERE id = ? AND hook_event_id < ?").run(eventId, projectId, eventId);
+  }
+
+  /** The project's firings in these states, oldest first; every project's when `projectId` is null. */
+  hookFirings(projectId: number | null, states: readonly HookFiringState[], kind?: HookFiringRow["kind"]): HookFiringRow[] {
+    const marks = states.map(() => "?").join(", ");
+    const where = [`state IN (${marks})`, ...(projectId === null ? [] : ["project_id = ?"]), ...(kind === undefined ? [] : ["kind = ?"])].join(" AND ");
+    const args = [...states, ...(projectId === null ? [] : [projectId]), ...(kind === undefined ? [] : [kind])];
+    return this.db.prepare(`SELECT * FROM hook_firings WHERE ${where} ORDER BY id`).all(...args) as HookFiringRow[];
+  }
+
+  /** The compare-and-set that moves a firing on from `from`; false when it is no longer there. */
+  moveHookFiring(id: number, from: HookFiringState, patch: { state: HookFiringState; reason?: string | null; tries?: number }): boolean {
+    const result = this.db
+      .prepare("UPDATE hook_firings SET state = ?, reason = COALESCE(?, reason), tries = COALESCE(?, tries), updated_at = ? WHERE id = ? AND state = ?")
+      .run(patch.state, patch.reason ?? null, patch.tries ?? null, this.now(), id, from);
+    return result.changes === 1;
+  }
+
+  // ---- spec reviews
+
+  addSpecReview(row: Pick<SpecReviewRow, "project_id" | "version" | "round" | "spawn_token">): SpecReviewRow {
+    return this.tx(() => {
+      const result = this.db
+        .prepare("INSERT INTO spec_reviews (project_id, version, round, state, spawn_token, started_at) VALUES (?, ?, ?, 'reviewing', ?, ?)")
+        .run(row.project_id, row.version, row.round, row.spawn_token, this.now());
+      this.event(row.project_id, null, "spec.review.started", LOOM_ACTOR, { version: row.version, round: row.round });
+      return this.db.prepare("SELECT * FROM spec_reviews WHERE id = ?").get(Number(result.lastInsertRowid)) as SpecReviewRow;
+    });
+  }
+
+  /** A version that skips its review: an ended row with no reviewer, and its spec.review.skipped event. */
+  skipSpecReview(row: Pick<SpecReviewRow, "project_id" | "version" | "round" | "spawn_token" | "summary"> & { skip: SpecReviewSkip }): SpecReviewRow {
+    return this.tx(() => {
+      const now = this.now();
+      const result = this.db
+        .prepare("INSERT INTO spec_reviews (project_id, version, round, state, spawn_token, summary, skip_json, started_at, ended_at) VALUES (?, ?, ?, 'skipped', ?, ?, ?, ?, ?)")
+        .run(row.project_id, row.version, row.round, row.spawn_token, row.summary, JSON.stringify(row.skip), now, now);
+      this.event(row.project_id, null, "spec.review.skipped", LOOM_ACTOR, { version: row.version, round: row.round, ...row.skip });
+      return this.db.prepare("SELECT * FROM spec_reviews WHERE id = ?").get(Number(result.lastInsertRowid)) as SpecReviewRow;
+    });
+  }
+
+  specReviews(projectId: number): SpecReviewRow[] {
+    return this.db.prepare("SELECT * FROM spec_reviews WHERE project_id = ? ORDER BY id").all(projectId) as SpecReviewRow[];
+  }
+
+  /** Reviews still running, in every project, oldest first. */
+  openSpecReviews(): SpecReviewRow[] {
+    return this.db.prepare("SELECT * FROM spec_reviews WHERE state = 'reviewing' ORDER BY id").all() as SpecReviewRow[];
+  }
+
+  specReview(id: number): SpecReviewRow | null {
+    return (this.db.prepare("SELECT * FROM spec_reviews WHERE id = ?").get(id) as SpecReviewRow | undefined) ?? null;
+  }
+
+  specReviewByThreadId(threadId: string): SpecReviewRow | null {
+    return (this.db.prepare("SELECT * FROM spec_reviews WHERE thread_id = ?").get(threadId) as SpecReviewRow | undefined) ?? null;
+  }
+
+  specReviewBySpawnToken(token: string): SpecReviewRow | null {
+    return (this.db.prepare("SELECT * FROM spec_reviews WHERE spawn_token = ?").get(token) as SpecReviewRow | undefined) ?? null;
+  }
+
+  updateSpecReview(id: number, patch: Partial<Pick<SpecReviewRow, "thread_id" | "idle_count" | "wait_json" | "spawn_token">>): void {
+    // The table has no updated_at column.
+    this.patch("spec_reviews", id, patch, false);
+  }
+
+  /** Ends a review that is still running, with its spec.review.ended event; false when it had already ended. */
+  endSpecReview(id: number, state: Exclude<SpecReviewState, "reviewing" | "skipped">, data: { summary?: string; findings?: readonly unknown[]; reason?: string } = {}): boolean {
+    return this.tx(() => {
+      const findings = data.findings ?? [];
+      const changed = this.db
+        .prepare("UPDATE spec_reviews SET state = ?, summary = ?, findings_json = ?, reason = ?, ended_at = ? WHERE id = ? AND state = 'reviewing'")
+        .run(state, data.summary ?? null, JSON.stringify(findings), data.reason ?? null, this.now(), id).changes;
+      if (changed === 0) return false;
+      const row = this.specReview(id)!;
+      this.event(row.project_id, null, "spec.review.ended", LOOM_ACTOR, { version: row.version, round: row.round, state, findings: findings.length, ...(data.reason === undefined ? {} : { reason: data.reason }) });
+      return true;
+    });
+  }
+
+  // ---- rollout marks
+
+  rolloutMarks(projectId: number): RolloutMarkRow[] {
+    return this.db.prepare("SELECT * FROM rollout_marks WHERE project_id = ? ORDER BY target").all(projectId) as RolloutMarkRow[];
+  }
+
+  rolloutMark(projectId: number, target: string): RolloutMarkRow | null {
+    return (this.db.prepare("SELECT * FROM rollout_marks WHERE project_id = ? AND target = ?").get(projectId, target) as RolloutMarkRow | undefined) ?? null;
+  }
+
+  /** Marks a ticket key or milestone ref live with a rollout.live event, in one transaction; `ticketId` puts the event on a ticket's history. */
+  markLive(projectId: number, ticketId: number | null, target: string, mark: { by: LiveBy; at?: number; evidence?: string | null }, actor: string): RolloutMarkRow {
+    return this.tx(() => {
+      const at = mark.at ?? this.now();
+      this.db
+        .prepare("INSERT INTO rollout_marks (project_id, target, live_at, live_by, evidence) VALUES (?, ?, ?, ?, ?) ON CONFLICT (project_id, target) DO UPDATE SET live_at = excluded.live_at, live_by = excluded.live_by, evidence = excluded.evidence")
+        .run(projectId, target, at, mark.by, mark.evidence ?? null);
+      this.event(projectId, ticketId, "rollout.live", actor, { target, by: mark.by, ...(mark.at === undefined ? {} : { liveAt: at }), ...(mark.evidence == null ? {} : { evidence: mark.evidence }) });
+      return this.rolloutMark(projectId, target)!;
+    });
+  }
+
+  /** The human's undo of a live mark, with a rollout.unlive event. */
+  markNotLive(projectId: number, ticketId: number | null, target: string, actor: string, note: string | null = null): void {
+    this.tx(() => {
+      this.db.prepare("UPDATE rollout_marks SET live_at = NULL, live_by = NULL, evidence = NULL, undone_at = ? WHERE project_id = ? AND target = ?").run(this.now(), projectId, target);
+      this.event(projectId, ticketId, "rollout.unlive", actor, { target, ...(note === null ? {} : { note }) });
+    });
+  }
+
+  /** Claims the run of a target's verify or check command; false while another run's claim, made before `expiredBefore`'s time or after it, is younger. */
+  claimRolloutRun(projectId: number, target: string, token: string, expiredBefore: number): boolean {
+    return (
+      this.db
+        .prepare("INSERT INTO rollout_marks (project_id, target, run_token, run_at) VALUES (?, ?, ?, ?) ON CONFLICT (project_id, target) DO UPDATE SET run_token = excluded.run_token, run_at = excluded.run_at WHERE run_token IS NULL OR run_at < ?")
+        .run(projectId, target, token, this.now(), expiredBefore).changes === 1
+    );
+  }
+
+  /** Lets go of a run's claim with no result, as when its command changed while it ran. */
+  releaseRolloutRun(projectId: number, target: string, token: string): void {
+    this.db.prepare("UPDATE rollout_marks SET run_token = NULL, run_at = NULL WHERE project_id = ? AND target = ? AND run_token = ?").run(projectId, target, token);
+  }
+
+  /**
+   * The result of one run of a verify or check command, which ends its claim. False, writing nothing, when the claim is
+   * no longer the run's. A run writes no event: only going live does.
+   */
+  finishRolloutRun(projectId: number, target: string, token: string, run: { exitCode: number | null; output: string }): boolean {
+    const changes = this.db
+      .prepare("UPDATE rollout_marks SET checked_at = ?, check_exit = ?, check_output = ?, run_token = NULL, run_at = NULL WHERE project_id = ? AND target = ? AND run_token = ?")
+      .run(this.now(), run.exitCode, run.output, projectId, target, token).changes;
+    if (changes === 1) this.changed(projectId);
+    return changes === 1;
+  }
+
+  // ----
+
+  private requireProject(id: number): ProjectRow {
+    const project = this.project(id);
+    if (project === null) throw new StoreError(`Project ${id} does not exist.`);
+    return project;
+  }
+
+  private requireTicket(id: number): TicketRow {
+    const ticket = this.ticket(id);
+    if (ticket === null) throw new StoreError(`Ticket ${id} does not exist.`);
+    return ticket;
+  }
+
+  private patch(table: "projects" | "tickets" | "threads" | "records" | "spec_reviews", id: number, patch: Record<string, unknown>, touch = true): void {
+    const entries = Object.entries(patch).filter(([, value]) => value !== undefined);
+    if (touch) entries.push(["updated_at", this.now()]);
+    if (entries.length === 0) return;
+    const sets = entries.map(([column]) => `${column} = ?`).join(", ");
+    this.db.prepare(`UPDATE ${table} SET ${sets} WHERE id = ?`).run(...entries.map(([, value]) => value), id);
+  }
+}

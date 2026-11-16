@@ -1,0 +1,245 @@
+// The RPC contract between server.ts and the page. app.tsx imports types only.
+import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import {
+  learnResultSchema,
+  memoryKinds,
+  projectMemoryViewSchema,
+  pinInputSchema,
+  projectMemorySchema,
+  rememberResultSchema,
+  savedRecordSchema,
+  threadMemorySchema,
+} from "./memory-contract";
+
+const contextSchema = z.object({
+  name: z.string(),
+  origin: z.string(),
+  /** Lobu Cloud, Lobu on this machine, or another Lobu, by origin like the Mac app. */
+  kind: z.enum(["cloud", "local", "other"]),
+  loggedIn: z.boolean(),
+  current: z.boolean(),
+});
+
+const setupStatusSchema = z.object({
+  cli: z.discriminatedUnion("state", [
+    z.object({ state: z.literal("missing") }),
+    z.object({ state: z.literal("broken"), detail: z.string() }),
+    z.object({ state: z.literal("outdated"), version: z.string() }),
+    z.object({ state: z.literal("ready"), version: z.string() }),
+  ]),
+  /** Install the Lobu CLI button command; null when neither bun nor npm is found. */
+  installCommand: z.string().nullable(),
+  /** The command to show when the button cannot run or fails. */
+  manualCommand: z.string(),
+  /** The login bb saves and searches through; null until the CLI runs. */
+  login: z
+    .object({
+      context: z.string().nullable(),
+      /** Lobu Cloud, Lobu on this machine, or another Lobu, by origin like the Mac app. */
+      kind: z.enum(["cloud", "local", "other"]),
+      origin: z.string(),
+      /** Who it is signed in as; null when it is not signed in. */
+      account: z.string().nullable(),
+      personal: z.string().nullable(),
+      problem: z.string().nullable(),
+      /** True when the local Lobu here belongs to the Mac app (open it to start); null unless kind is local. */
+      localBelongsToMacApp: z.boolean().nullable(),
+    })
+    .nullable(),
+  /** Every CLI context, the active one first; empty when the CLI cannot list them. */
+  contexts: z.array(contextSchema),
+  /** bb started Lobu on this machine and it has not stopped. */
+  starting: z.boolean(),
+});
+export type SetupStatus = z.infer<typeof setupStatusSchema>;
+
+const approvalSchema = z.object({ approvalUrl: z.string().nullable() });
+
+/** One memory in the Lobu page's list: the newest, or a search match. */
+const panelMemorySchema = z.object({
+  eventId: z.number(),
+  workspace: z.string(),
+  title: z.string(),
+  content: z.string(),
+  url: z.string().nullable(),
+  occurredAt: z.string().nullable(),
+  /** How well it matches the search; null for the newest-first list. */
+  similarity: z.number().nullable(),
+});
+
+/** A paired device as the Lobu page shows it. */
+const panelDeviceSchema = z.object({
+  id: z.string(),
+  label: z.string().nullable(),
+  platform: z.string().nullable(),
+  online: z.boolean(),
+  lastSeenAt: z.string().nullable(),
+});
+
+/** A connection in the login's personal workspace. */
+const panelConnectionSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  connectorName: z.string().nullable(),
+  account: z.string().nullable(),
+  deviceLabel: z.string().nullable(),
+  status: z.string(),
+  errorMessage: z.string().nullable(),
+});
+export type PanelMemory = z.infer<typeof panelMemorySchema>;
+export type PanelDevice = z.infer<typeof panelDeviceSchema>;
+export type PanelConnection = z.infer<typeof panelConnectionSchema>;
+
+export const rpcContract = defineRpcContract({
+  /** Whether bb can reach Lobu: the CLI and the login bb uses. */
+  setupStatus: {
+    input: z.object({}),
+    output: setupStatusSchema,
+  },
+  /** Installs or updates the CLI with bun or npm. `error` is the installer's last line when it fails. */
+  installCli: {
+    input: z.object({}),
+    output: z.object({ error: z.string().nullable() }),
+  },
+  /** Uses Lobu Cloud, reusing a signed-in Cloud context when one exists. Starts its `lobu login` otherwise; the page waits for `setupStatus` to show it signed in. */
+  useCloud: {
+    input: z.object({}),
+    output: approvalSchema,
+  },
+  /** Switches bb to an existing CLI context, signing it in when needed. Reuses rather than duplicates. */
+  useLogin: {
+    input: z.object({ name: z.string().trim().min(1).max(64) }),
+    output: approvalSchema,
+  },
+  /** Uses Lobu on this machine, starting it when it is not running. `error` says why it cannot start. */
+  useLocal: {
+    input: z.object({}),
+    output: z.object({ error: z.string().nullable() }),
+  },
+  /** Adds a CLI context, makes it the login bb uses, and starts its sign-in. */
+  addLogin: {
+    input: z.object({ name: z.string().trim().min(1).max(64), url: z.string().trim().min(1) }),
+    output: approvalSchema,
+  },
+  /** Lobu's events page filtered to what bb saved through the login it uses (null when nothing is saved there), and how many memories bb saved there. */
+  savedLink: {
+    input: z.object({}),
+    output: z.object({ url: z.string().nullable(), count: z.number() }),
+  },
+  /** Newest inbox notifications in the login's personal workspace, with the unread count and a link to all of them in Lobu. */
+  inbox: {
+    input: z.object({ cursor: z.number().int().min(0).nullable().optional() }),
+    output: z.object({
+      workspace: z.string(),
+      unreadCount: z.number(),
+      notifications: z.array(
+        z.object({
+          id: z.number(),
+          type: z.string(),
+          title: z.string(),
+          body: z.string().nullable(),
+          resourceUrl: z.string().nullable(),
+          isRead: z.boolean(),
+          createdAt: z.string(),
+        }),
+      ),
+      nextCursor: z.number().nullable(),
+      url: z.string().nullable(),
+    }),
+  },
+  /** Marks one inbox notification read in its workspace. */
+  markNotificationRead: {
+    input: z.object({ notificationId: z.number().int().min(1), workspace: z.string().min(1) }),
+    output: z.object({ read: z.boolean() }),
+  },
+  /**
+   * Memories across every workspace the login reaches: the newest first when
+   * there is no query, otherwise the best matches. One workspace failing only
+   * drops its rows.
+   */
+  memories: {
+    input: z.object({
+      query: z.string().trim().max(200).nullable().optional(),
+      limit: z.number().int().min(1).max(100).optional(),
+      /** One workspace slug, or null for every workspace the login reaches. */
+      workspace: z.string().min(1).nullable().optional(),
+      /** Memory kinds to include; empty means all five. */
+      kinds: z.array(z.enum(memoryKinds)).max(5).optional(),
+      /** Relative window: the last day, week, or 30 days. */
+      since: z.enum(["1d", "7d", "30d"]).nullable().optional(),
+    }),
+    output: z.object({
+      hits: z.array(panelMemorySchema),
+      /** Workspaces whose read failed; the rest of the list still stands. */
+      failed: z.array(z.string()),
+      /** Every workspace the login reaches, for the filter. */
+      workspaces: z.array(z.object({ slug: z.string(), name: z.string() })),
+    }),
+  },
+  /** What bb saved, newest first, with the project it was learned in. */
+  savedMemories: {
+    input: z.object({}),
+    output: z.object({
+      records: z.array(savedRecordSchema.extend({ projectName: z.string().nullable() })),
+    }),
+  },
+  /** Paired devices and the personal workspace's connections, for the Lobu page's status section. */
+  connections: {
+    input: z.object({}),
+    output: z.object({
+      devices: z.array(panelDeviceSchema),
+      connections: z.array(panelConnectionSchema),
+      /** True when Lobu did not answer; the empty lists are not "none". */
+      failed: z.boolean(),
+    }),
+  },
+  /** Opens the review form in a thread with text the user picked. */
+  remember: {
+    input: z.object({ threadId: z.string(), text: z.string().min(1) }),
+    output: rememberResultSchema,
+  },
+  /** Asks the thread's agent to propose learnings through lobu_remember. */
+  learn: {
+    input: z.object({ threadId: z.string() }),
+    output: learnResultSchema,
+  },
+  /** A project's Lobu memory: what a new thread there starts with, and the workspaces it can link. */
+  projectMemory: {
+    input: z.object({ projectId: z.string() }),
+    output: projectMemoryViewSchema,
+  },
+  /** What one thread was given at its start, searched for, and saved. */
+  threadMemory: {
+    input: z.object({ threadId: z.string() }),
+    output: threadMemorySchema,
+  },
+  /** Hides a saved memory in Lobu (recoverable there) and drops it from the plugin's list and pins. */
+  undoMemory: {
+    input: z.object({ eventId: z.number() }),
+    output: z.object({ removed: z.boolean() }),
+  },
+  /** Copies a saved memory into another reachable workspace, such as a project's linked team workspace. */
+  shareMemory: {
+    input: z.object({ eventId: z.number(), workspace: z.string().min(1) }),
+    output: z.object({ eventId: z.number(), workspace: z.string(), url: z.string().nullable() }),
+  },
+  pinMemory: {
+    input: z.object({ projectId: z.string(), item: pinInputSchema }),
+    output: projectMemorySchema,
+  },
+  unpinMemory: {
+    input: z.object({ projectId: z.string(), pinnedAt: z.number() }),
+    output: projectMemorySchema,
+  },
+  /** Saves a note to the personal workspace and pins it to the project. */
+  addNote: {
+    input: z.object({ projectId: z.string(), text: z.string().trim().min(1).max(2000) }),
+    output: projectMemorySchema,
+  },
+  /** Links a bb project to a Lobu workspace, or unlinks it with null. */
+  linkProject: {
+    input: z.object({ projectId: z.string(), workspace: z.string().min(1).nullable() }),
+    output: projectMemorySchema,
+  },
+});

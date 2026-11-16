@@ -1,0 +1,189 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { asksUser, handBack, promisesFollowUp, waitsOnOthers } from "./awaiting.ts";
+
+test("hands-off messages count as your move", () => {
+  assert.ok(asksUser("I've reopened the decision board. Use \"Copy this instead\" and paste the text here."));
+  assert.ok(asksUser("Both are ready. Reply **go** for all, or **go 1,3**."));
+  assert.ok(asksUser("Want me to open the PR?"));
+  assert.ok(asksUser("Complete any password prompts. Tell me whether the second command succeeds."));
+  assert.ok(asksUser("Please name the exact Slack channel for the alerts."));
+  assert.ok(asksUser("If you want, I can snooze this thread for 3 days."));
+  assert.ok(asksUser('Once Chris confirms, say "go" and I\'ll switch the setup.'));
+  assert.ok(asksUser("Draft created in the Amesto thread. It remains unsent."));
+  assert.ok(asksUser("Merging doesn't ship anything yet.\n\n1. Merge the three PRs now (recommended)\n2. Hold the merge\n3. You review first"));
+  assert.ok(asksUser("Two things:\n> 1. **Check** the starts after login.\n> 2. **Clean up:** remove this worktree.\n\n*2026-10-04*"));
+});
+
+test("wrapped-up messages don't", () => {
+  assert.ok(!asksUser("Merged #9995 into dev and closed T-10600. Everything in this thread is done."));
+  assert.ok(!asksUser("All 16 checks passed and the PR is merged."));
+  assert.ok(!asksUser("I'm waiting on the fresh review I requested, and will pick it up when it arrives."));
+  assert.ok(!asksUser("**Blocked:** Waiting for release (last: v6.100.0)."));
+  assert.ok(!asksUser("The open item is whether they need an AI block. If they say yes, that's new development."));
+  assert.ok(!asksUser("The prod apply is running in the background. I'll report when it finishes."));
+  assert.ok(!asksUser("Shipped in v0.2.15. If switching shows on v0.2.15 still misbehaves, tell me what you did and what went wrong."));
+  assert.ok(!asksUser("Main's CI is blocked until #1113 merges.\n\nWhen #1113 is green, I'll:\n1. Merge it.\n2. Bring #1110 up to date and merge it.\n3. Run the first release train."));
+  assert.ok(asksUser("If you place one on dev with a throwaway password, I'll check the admin side."));
+});
+
+test("follow-up promises are detected, asks win", () => {
+  assert.ok(promisesFollowUp("The prod apply is running in the background: 51,600 documents. I'll report when it finishes."));
+  assert.ok(promisesFollowUp("Firebase is still issuing its certificate. I'm checking every 30 seconds for up to 30 minutes and will tell you when it's live."));
+  assert.ok(promisesFollowUp("Still waiting on that CI result; will report when it lands."));
+  assert.ok(!promisesFollowUp("I'll report when it finishes. Should I also merge #12?"));
+  assert.ok(!promisesFollowUp("Merged and deployed. Nothing left to do."));
+});
+
+test("waiting on someone else", () => {
+  assert.ok(waitsOnOthers("On #1136 and #1137, Alex is now the only pending reviewer. Their approvals are on older commits."));
+  assert.ok(waitsOnOthers("The old order stays cancelled.\n\nOnce he sends the invoices, I can check that accounting numbered them."));
+  assert.ok(waitsOnOthers("Everything planned for the pilot is done. The next step depends on Sam: which tenant users get access."));
+  assert.ok(waitsOnOthers("CI passed. I'm waiting on the fresh review I requested, and will pick it up when it arrives."));
+  assert.ok(waitsOnOthers("The two invoices now show as drafts in billing. Chris can push them to accounting from there."));
+  assert.ok(waitsOnOthers("I've snoozed this thread until Thursday. When it wakes, I'll check the \"Re: documents\" thread for Sam's reply on two points."));
+  assert.ok(waitsOnOthers("When the thread wakes on 12 Oct I'll check for a reply. If Jamie still hasn't answered, I'll draft a nudge for you to review."));
+  assert.ok(waitsOnOthers("When the thread wakes, I'll check whether he replied and whether the invoice has been sent."));
+  assert.ok(waitsOnOthers("When it wakes, I'll look for Taylor's reply in the thread."));
+  assert.ok(waitsOnOthers("Sent the reminder to Morgan on Friday; still no reply from him."));
+  assert.ok(!waitsOnOthers("Waiting for CI on #1191; I'll merge when it's green."));
+  assert.ok(waitsOnOthers("Once Chris confirms, say \"go\" and I'll switch the setup."), "relaying his answer is waiting on him");
+  assert.ok(waitsOnOthers("4. I apply the remaining eight pairs.\n\nTell me when he replies, or paste his answer here."));
+  assert.ok(waitsOnOthers("> 1. Rebase the contract.\n> 2. Cancel 11506 if he agrees.\n>\n> Reply **go** with his answer and I'll do both."));
+  assert.ok(!waitsOnOthers("Should I merge #12 now?"), "a real ask to you");
+  assert.ok(!waitsOnOthers("Merged and deployed. Nothing left to do."));
+  assert.ok(!waitsOnOthers("The job is scheduled. It will check the numbers every night."));
+});
+
+test("sign-offs, summaries and other people's steps aren't asks", () => {
+  assert.ok(!asksUser("Done. PR #42 is merged and deployed. Let me know if you need anything else."));
+  assert.ok(!asksUser("Fixed. Please note the migration takes ~3 minutes on prod."));
+  assert.ok(!asksUser("Shipped in v1.4.2. I couldn't decide between two names so I kept the old one."));
+  assert.ok(!asksUser("Summary of changes:\n\n1. Renamed the config loader\n2. Added tests for it\n3. Updated the README"));
+  assert.ok(asksUser("Let me know which name you prefer."));
+  assert.ok(waitsOnOthers("The PR is up. Sam needs to approve it before I can merge."));
+  assert.ok(!waitsOnOthers("Pushed the fix. Waiting for the pipeline to go green."));
+  assert.ok(!waitsOnOthers("Waiting for the tests to finish before merging."));
+  assert.ok(promisesFollowUp("I’ll report back when the build finishes."));
+});
+
+test("'write go' is an ask", () => {
+  assert.ok(asksUser("> **Recommended:** remove the endpoint.\n>\n> Write **go** and I'll make that change."));
+});
+
+const report = (fields: { next?: string; blocked?: string; after?: string; before?: string } = {}) =>
+  [
+    ...(fields.before ? [fields.before, ""] : []),
+    "**Goal:** Fix the invoice export.",
+    "**Done:** Merged the fix.",
+    ...(fields.next ? [`**Next:** ${fields.next}`] : []),
+    ...(fields.blocked ? [`**Blocked:** ${fields.blocked}`] : []),
+    "",
+    "### Stack",
+    "`✅ [#12 Fix invoices](https://github.com/acme/web-app/pull/12) · merged`",
+    ...(fields.after ? ["", fields.after] : []),
+    "",
+    "_2026-03-02 09:00 UTC_",
+  ].join("\n");
+
+const decision = [
+  "### Next steps",
+  "> [!TIP]",
+  "> **Decision needed:** Which export format?",
+  "> 1. CSV · simple (recommended)",
+  "> 2. XLSX · richer",
+  ">",
+  "> Reply with the number.",
+].join("\n");
+
+const goList = [
+  "### Next steps",
+  "> [!TIP]",
+  "> **Path forward:** Clean up, then close the ticket.",
+  "> 1. Delete the branch · tidy",
+  "> 2. Close the ticket · done",
+  ">",
+  "> Reply **go** for all, or **go 1,3**.",
+].join("\n");
+
+test("a report's Decision needed callout is your move", () => {
+  assert.equal(handBack(report({ next: "Pick a format.", after: decision })), "asks");
+  assert.ok(asksUser(report({ after: decision })));
+  // Several picks: still your move, even without the Decision needed label.
+  const several = decision.replace("**Decision needed:** ", "").replace("Reply with the number.", "Reply with one or more numbers, e.g. 1,2.");
+  assert.equal(handBack(report({ next: "Clean up.", after: several })), "asks");
+});
+
+test("a report's go-list is ready, not your move", () => {
+  const reply = report({ next: "Clean up.", after: goList });
+  assert.equal(handBack(reply), "ready");
+  assert.ok(!asksUser(reply));
+  assert.ok(!waitsOnOthers(reply));
+});
+
+test("a report saying nothing is needed isn't your move", () => {
+  assert.equal(handBack(report({ next: "No decision needed from you. Output accuracy remains unverified." })), "none");
+  assert.equal(handBack(report({ next: "Nothing pending." })), "none");
+  assert.equal(handBack(report({ next: "Nothing required from you." })), "none");
+});
+
+test("wording in a report's Stack or Progress isn't an ask", () => {
+  const stack = "`👀 [#13 Please review the export](https://github.com/acme/web-app/pull/13) · can you see it?`";
+  assert.equal(handBack(report({ next: "Nothing pending.", after: stack })), "none");
+});
+
+test("a report blocked on someone else waits on them", () => {
+  const reply = report({ blocked: "Waiting on Alex's review." });
+  assert.equal(handBack(reply), "waiting");
+  assert.ok(waitsOnOthers(reply));
+  assert.ok(!asksUser(reply));
+  assert.equal(handBack(report({ blocked: "Waiting for release (last: v1.2.3, 2026-03-01)." })), "waiting");
+});
+
+test("a report blocked on you is your move", () => {
+  assert.equal(handBack(report({ blocked: "Waiting for your PC to run the hardware checks." })), "asks");
+  assert.equal(handBack(report({ blocked: "Needs you to approve the plan." })), "asks");
+});
+
+test("a Blocked line that says it isn't blocked doesn't count", () => {
+  assert.equal(handBack(report({ blocked: "Nothing.", next: "Nothing pending." })), "none");
+  assert.equal(handBack(report({ blocked: "None" })), "none");
+});
+
+test("blocked beats a go-list, but a decision beats blocked", () => {
+  assert.equal(handBack(report({ blocked: "Waiting on Alex.", after: goList })), "waiting");
+  assert.equal(handBack(report({ blocked: "Waiting on Alex.", after: decision })), "asks");
+});
+
+test("a question above the report is still your move", () => {
+  assert.equal(handBack(report({ before: "Should I also migrate the old exports?", after: goList })), "asks");
+});
+
+test("a report's Next can ask you", () => {
+  assert.equal(handBack(report({ next: "Your call on the rollout date." })), "asks");
+});
+
+test("replies without a report keep the keyword rules", () => {
+  assert.equal(handBack("Both are ready. Reply **go** for all, or **go 1,3**."), "asks");
+  assert.equal(handBack("Want me to open the PR?"), "asks");
+  assert.equal(handBack("All 16 checks passed and the PR is merged."), "none");
+  assert.equal(handBack("Alex is the only pending reviewer."), "waiting");
+  assert.equal(handBack('Once Chris replies, tell me and I\'ll switch the setup.'), "waiting");
+  assert.equal(handBack("No decision needed from you. Everything is merged."), "none");
+});
+
+test("work left to you stays your move, even with a go-list or a blocker", () => {
+  const sendFirst = "> [!TIP]\n> **Path forward:** Turn on SSO.\n> 1. Turn it on · ready\n> 2. Test sign-in · confirm\n>\n> Reply **go** once you've sent it.";
+  assert.equal(handBack(report({ next: "You send the draft; I turn on SSO after that.", blocked: "SSO waits on the test sign-ins.", after: sendFirst })), "asks");
+  assert.equal(handBack(report({ next: "Run the dry run.", blocked: "It needs the production connector.", after: goList.replace("Reply **go** for all, or **go 1,3**.", "Reply **go** for step 1; step 2 is yours.") })), "asks");
+});
+
+test("nothing left for the agent doesn't mean nothing left for you", () => {
+  assert.equal(handBack(report({ next: "Nothing is left on the cron move; two small follow-ups remain and they're your call." })), "asks");
+  assert.equal(handBack(report({ next: "Nothing pending on my side; only the look at the archive view above remains." })), "asks");
+  assert.equal(handBack(report({ next: "Nothing pending on my side." })), "none");
+});
+
+test("your call on an offered go-list is still ready", () => {
+  assert.equal(handBack(report({ next: "Your call on the follow-up analysis below.", after: goList })), "ready");
+});

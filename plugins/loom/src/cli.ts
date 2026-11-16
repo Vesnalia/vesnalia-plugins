@@ -1,0 +1,525 @@
+import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration, type PluginCliResult } from "@get-bb/plugin-sdk";
+import type { Store } from "./db/store";
+import type { Approved, Engine } from "./engine";
+import { setAutoMerge } from "./auto-merge";
+import { forgeCheck, formatForgeCheck } from "./forge-check";
+import { formatDuration, isMultiRepoProject, its, noTokenUsage, plural, readyToLand, reposHave } from "./format";
+import type { ProjectMetrics } from "./metrics";
+import { LoomError, type ProjectOverview, type Projects, type RepoOverview, type SpecView, type TicketSummary, type TicketView } from "./projects";
+import type { LandResult } from "./merge";
+import { projectRecord } from "./record";
+import { projectFeed, projectMetrics } from "./reports";
+import { rolloutLines } from "./rollout";
+import { projectRollout } from "./rollout-live";
+import { HUMAN_ACTOR, TICKET_STATES } from "./states";
+
+const json = { type: "boolean", description: "Print machine-readable JSON." } as const;
+const version = { type: "integer", min: 1, max: 1_000_000, description: "A spec version number." } as const;
+const toJson = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+const minute = (at: number) => `${new Date(at).toISOString().slice(0, 16)}Z`;
+
+const SLUG = { name: "slug", description: "The project's slug, from `bb loom list`.", required: true } as const;
+const KEY = { name: "key", description: "A ticket key such as CSV-1.", required: true } as const;
+
+type HumanActionData = { slug?: string; key?: string; [extra: string]: unknown };
+
+/** Refuses a command from a Loom planner, worker, reviewer or spec reviewer thread: Loom's controls are the human's. */
+export function refuseAgents(deps: { projects: Projects; store: Store }, ctx: { threadId?: string }, action: string): void {
+  // A spec reviewer has no threads row, so roleOf cannot see it.
+  if (ctx.threadId !== undefined && (deps.projects.roleOf(ctx.threadId) !== null || deps.store.specReviewByThreadId(ctx.threadId) !== null)) {
+    throw new PluginCliError(`"${action}" is for the human: Loom planner, worker and reviewer threads cannot run it.`, {
+      code: "loom_human_only",
+      hint: "Tell the human what you need and let them run the command.",
+    });
+  }
+}
+
+// Every command that changes state runs through here, so the human-only rule and the intervention record live in one place.
+export async function humanAction<T>(
+  deps: { projects: Projects; store: Store },
+  ctx: { threadId?: string },
+  action: string,
+  data: HumanActionData,
+  fn: () => Promise<T> | T,
+): Promise<T> {
+  refuseAgents(deps, ctx, action);
+  const result = await fn();
+  const ticket = data.key === undefined ? null : deps.store.ticketByKey(data.key);
+  const project = data.slug !== undefined ? deps.store.projectBySlug(data.slug) : ticket === null ? null : deps.store.project(ticket.project_id);
+  if (project !== null) deps.store.event(project.id, ticket?.id ?? null, "human.action", HUMAN_ACTOR, { action, ...data, slug: project.slug });
+  return result;
+}
+
+async function guarded(fn: () => Promise<PluginCliResult> | PluginCliResult): Promise<PluginCliResult> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (error instanceof LoomError) throw new PluginCliError(error.message, { code: error.code, hint: error.hint });
+    throw error;
+  }
+}
+
+const out = (stdout: string): PluginCliResult => ({ exitCode: 0, stdout });
+
+function landStep(project: ProjectOverview): string {
+  const { slug } = project;
+  if (!isMultiRepoProject(project)) return `Every ticket is finished. Land it with \`bb loom land ${slug}\`, which pushes the integration branch and opens one pull request.`;
+  const toLand = project.repos.flatMap((repo) => (repo.toLand ? [repo.name!] : []));
+  if (toLand.length === 0) return `Every ticket is finished, and every repo with merged work is landed. Run \`bb loom land ${slug}\` to finish the project.`;
+  return `Every ticket is finished, and ${reposHave(toLand)} merged work that is not landed yet. Land ${toLand.length === 1 ? "it" : "them"} with \`bb loom land ${slug}\`, which pushes each repo's integration branch and opens its pull request.`;
+}
+
+function nextStep(project: ProjectOverview): string {
+  const { slug } = project;
+  if (readyToLand(project)) return landStep(project);
+  switch (project.state) {
+    case "draft":
+      return `Read the spec with \`bb loom spec ${slug}\`, then approve it with \`bb loom approve ${slug}\`.`;
+    case "ready":
+      return `Start it with \`bb loom start ${slug}\`.`;
+    case "running":
+      return `Pause it with \`bb loom pause ${slug}\`.`;
+    case "paused":
+      return `Resume it with \`bb loom resume ${slug}\`.`;
+    default:
+      return "";
+  }
+}
+
+function formatList(projects: ProjectOverview[]): string {
+  if (projects.length === 0) return "No Loom projects yet. Open Loom in bb's left navigation and press New project, or ask a thread to plan one.\n";
+  const width = Math.max(...projects.map((project) => project.slug.length));
+  const rows = projects.map((project) => `${project.slug.padEnd(width)}  ${project.state.padEnd(8)}  ${project.key.padEnd(8)}  ${String(project.ticketCount).padStart(3)} ${project.ticketCount === 1 ? "ticket " : "tickets"}  ${project.name}`);
+  return `${rows.join("\n")}\n`;
+}
+
+const bbProjectOf = (repo: RepoOverview) => (repo.bbProjectName === null ? repo.bbProjectId : `${repo.bbProjectName} (${repo.bbProjectId})`);
+
+function repoLine(repo: RepoOverview): string {
+  const parts = [repo.name!, `bb project ${bbProjectOf(repo)}`, `base ${repo.base}`];
+  if (repo.branch !== null) {
+    parts.push(`integration branch ${repo.branch}`);
+    if (repo.prUrl !== null) parts.push(`pull request ${repo.prUrl}`);
+    parts.push(repo.landedAt === null ? "not landed yet" : `landed ${minute(repo.landedAt)}`);
+    if (repo.toLand) parts.push("merged work to land");
+  }
+  return `  ${parts.join(" · ")}`;
+}
+
+function formatShow(project: ProjectOverview): string {
+  const merge = project.strategy === "integration" ? `integration branch ${project.branch}` : "one pull request per ticket";
+  const counts = Object.entries(project.ticketCounts).map(([state, count]) => `${state} ${count}`);
+  const specLine =
+    project.approvedVersion === null
+      ? "Spec: not approved yet."
+      : `Spec: approved v${project.approvedVersion}${project.pendingVersion === null ? "" : `, pending v${project.pendingVersion} (read it with \`bb loom spec ${project.slug} --version ${project.pendingVersion}\`)`}.`;
+  const lines = [
+    `${project.name} (${project.slug}) · ${project.state}`,
+    `Goal: ${project.goal}`,
+    `Key ${project.key} · base ${project.base} · ${merge}`,
+    ...(isMultiRepoProject(project) ? ["Repos:", ...project.repos.map(repoLine)] : []),
+    specLine,
+    `Tickets: ${project.ticketCount}${counts.length > 0 ? ` (${counts.join(", ")})` : ""}`,
+  ];
+  if (project.plannerThreadId !== null) lines.push(`Planner thread: ${project.plannerThreadId}`);
+  if (project.reason !== null) lines.push(`Reason: ${project.reason}`);
+  const next = nextStep(project);
+  if (next !== "") lines.push(`Next: ${next}`);
+  return `${lines.join("\n")}\n`;
+}
+
+function formatSpec(spec: SpecView): string {
+  return `# ${spec.slug} · spec v${spec.version} (${spec.status}) · proposed by ${spec.proposedBy} · ${minute(spec.createdAt)}\n${spec.toml}${spec.toml.endsWith("\n") ? "" : "\n"}`;
+}
+
+function formatTickets(tickets: TicketSummary[]): string {
+  if (tickets.length === 0) return "No tickets.\n";
+  // Only a multi-repo project's tickets name a repo, so a single-repo list has no repo column.
+  const width = Math.max(...tickets.map((ticket) => ticket.repo?.length ?? 0));
+  const rows = tickets.map((ticket) => {
+    const after = ticket.deps.length > 0 ? `  (after ${ticket.deps.join(", ")})` : "";
+    const repo = width === 0 ? "" : `${(ticket.repo ?? "").padEnd(width)}  `;
+    return `${ticket.key}  ${ticket.state.padEnd(9)}  ${repo}P${ticket.priority}  ${ticket.title}${after}`;
+  });
+  return `${rows.join("\n")}\n`;
+}
+
+export function formatTicket(ticket: TicketView): string {
+  const lines = [`${ticket.key} · ${ticket.state} · ${ticket.title}`];
+  if (ticket.repo !== null) lines.push(`Repo: ${ticket.repo}`);
+  if (ticket.blockedReason !== null) lines.push(`Blocked: ${ticket.blockedReason}`);
+  for (const post of ticket.posts) {
+    const indent = "  ".repeat(post.depth);
+    lines.push("", `${indent}#${post.id} ${post.author_kind} ${post.kind} ${minute(post.at)}`, ...post.body.split("\n").map((line) => (line === "" ? "" : `${indent}${line}`)));
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+const percent = (fraction: number) => `${Math.round(fraction * 100)}%`;
+
+export function formatMetrics(m: ProjectMetrics): string {
+  const counts = TICKET_STATES.filter((state) => m.counts[state] > 0).map((state) => `${state} ${m.counts[state]}`);
+  const done = m.throughput.reduce((sum, day) => sum + day.done, 0);
+  const pair = (label: string, pct: ProjectMetrics["cycleTime"]) =>
+    pct.n === 0 ? `${label} none yet` : `${label} p50 ${formatDuration(pct.p50!)}, p85 ${formatDuration(pct.p85!)} (${plural(pct.n, "ticket")})`;
+  const oldest = m.wipAge[0];
+  const { tokens } = m;
+  return `${[
+    `tickets ${counts.length === 0 ? "none" : counts.join(", ")}`,
+    `work in progress ${m.wip}`,
+    `throughput ${done} done in the last ${plural(m.throughput.length, "day")}, ${(done / Math.max(1, m.throughput.length)).toFixed(1)} per day`,
+    pair("cycle time", m.cycleTime),
+    pair("lead time", m.leadTime),
+    oldest === undefined ? "work item age none in flight" : `work item age oldest ${oldest.key} (${oldest.state}) ${formatDuration(oldest.ageMs)}, ${m.wip} in flight`,
+    m.firstPassApproval.rate === null
+      ? "first-pass approval none yet"
+      : `first-pass approval ${percent(m.firstPassApproval.rate)} (${Math.round(m.firstPassApproval.rate * m.firstPassApproval.n)} of ${plural(m.firstPassApproval.n, "ticket")} with a verdict)`,
+    m.reviewRounds.mean === null ? "review rounds none yet" : `review rounds ${m.reviewRounds.mean.toFixed(1)} per done ticket (${m.reviewRounds.n} done)`,
+    m.checks.total === 0 ? "checks none run" : `checks ${m.checks.total} run, ${m.checks.failed} failed (${percent(m.checks.failed / m.checks.total)})`,
+    `blocks ${m.blocks}`,
+    `human interventions ${m.humanInterventions}`,
+    `tokens (sampled) ${tokens.total} in all${tokens.perDoneTicket === null ? "" : `, ${Math.round(tokens.perDoneTicket)} per done ticket`}; planner ${tokens.byRole.planner}, worker ${tokens.byRole.worker}, reviewer ${tokens.byRole.reviewer}${tokens.unreported === 0 ? "" : `; ${noTokenUsage(tokens.unreported)}`}`,
+    `active time ${formatDuration(m.activeMs)}`,
+    ...newMetricLines(m),
+  ].join("\n")}\n`;
+}
+
+function newMetricLines(m: ProjectMetrics): string[] {
+  const { timeInState: time, findings, reliability } = m;
+  const total = TICKET_STATES.reduce((sum, state) => sum + time.ms[state], 0);
+  const shares = TICKET_STATES.filter((state) => time.ms[state] > 0).map((state) => `${state.replace("_", " ")} ${percent(time.ms[state] / total)}`);
+  const checks = m.checksByCommand.map((check) => `${check.command} ${plural(check.runs, "run")}, ${check.failed} failed, p50 ${check.p50Ms === null ? "none" : formatDuration(check.p50Ms)}`);
+  return [
+    time.n === 0 || time.flowEfficiency === null ? "time in state none yet" : `time in state (${plural(time.n, "done ticket")}) ${shares.join(", ")}; flow efficiency ${percent(time.flowEfficiency)}`,
+    `checks by command ${checks.length === 0 ? "none yet" : checks.join("; ")}`,
+    `scope flags ${m.scopeFlags.outside} outside scope, ${m.scopeFlags.protectedHits} on protected paths`,
+    findings.rounds === 0
+      ? "review findings none yet"
+      : `review findings ${findings.total} in ${plural(findings.rounds, "round")} (${findings.blocking} blocking, ${findings.shouldFix} should-fix), changes requested in ${findings.changesRequested}`,
+    `tokens by ticket ${m.tokensByTicket.length === 0 ? "none yet" : m.tokensByTicket.map((entry) => `${entry.key} ${entry.tokens}`).join(", ")}`,
+    `reliability ${plural(reliability.failedAttempts, "failed attempt")}, ${reliability.rateLimitRetries} rate-limit ${reliability.rateLimitRetries === 1 ? "retry" : "retries"}, ${plural(reliability.timeouts, "timeout")}, ${plural(reliability.mergesSentBack, "merge")} sent back`,
+    ...(m.finalReviews.runs === 0 ? [] : [`final reviews ${m.finalReviews.runs} run, ${m.finalReviews.passed} passed, ${m.finalReviews.failed} failed, ${m.finalReviews.unfinished} unfinished, ${m.finalReviews.tokens.toLocaleString("en-US")} tokens`]),
+  ];
+}
+
+// One line per repo landed, then what is left.
+function formatRepoLand(slug: string, result: Extract<LandResult, { repos: unknown }>, direct: boolean): string {
+  const again = `bb loom land ${slug}${direct ? " --direct" : ""}`;
+  const lines = result.repos.map((entry) => (entry.url === null ? `Landed the repo "${entry.repo}" on ${entry.pushed} at ${entry.sha.slice(0, 12)}.` : `Landed the repo "${entry.repo}": ${entry.url}`));
+  const { unlanded } = result;
+  if (result.done) lines.push("Every ticket is done or cancelled and every repo with merged work is landed, so the project is done.");
+  else if (unlanded.length > 0) lines.push(`Still to land: ${reposHave(unlanded)} merged work that is not landed yet. Run \`${again}\` to land every repo with merged work.`);
+  else lines.push(`Run \`${again}\` again after more tickets merge to push them too.`);
+  return `${lines.join("\n")}\n`;
+}
+
+function formatApprove(result: Approved): string {
+  const requeued = result.requeued.length === 0 ? "" : `Queued again, because bb never started ${its(result.requeued.length, "worker")}: ${result.requeued.join(", ")}.\n`;
+  const reviewed = result.backToReview.length === 0 ? "" : `Back in review, because bb refused to start ${its(result.backToReview.length, "reviewer")}: ${result.backToReview.join(", ")}.\n`;
+  if (result.applied === "pending") return `Applied spec v${result.version} to ${result.slug}. Its tickets are unchanged.\n${requeued}${reviewed}`;
+  const keys = result.tickets.length <= 8 ? result.tickets.join(", ") : `${result.tickets[0]} to ${result.tickets.at(-1)}`;
+  return `Approved ${result.slug}. It is ready with ${result.tickets.length} ${result.tickets.length === 1 ? "ticket" : "tickets"}: ${keys}.\nStart it with \`bb loom start ${result.slug}\`.\n`;
+}
+
+export function createCli(projects: Projects, engine: Engine, store: Store, now: () => number): PluginCliRegistration {
+  const deps = { projects, store };
+  const lifecycle = (summary: string, run: (slug: string, actor: string) => Promise<unknown>, action: string, say: (slug: string) => string) =>
+    cliCommand({
+      summary,
+      positionals: [SLUG],
+      options: { json },
+      run: ({ options, positionals }, ctx) =>
+        guarded(async () => {
+          await humanAction(deps, ctx, action, { slug: positionals.slug }, () => run(positionals.slug, HUMAN_ACTOR));
+          return out(options.json ? toJson(await projects.namedOverview(positionals.slug)) : `${say(positionals.slug)}\n`);
+        }),
+    });
+
+  return defineCli({
+    name: "loom",
+    summary: "Run a software project with agents (Loom): specs, a ticket board, and the human's controls",
+    commands: {
+      list: cliCommand({
+        summary: "List Loom projects with their state and ticket count",
+        options: { json },
+        run: ({ options }) => guarded(async () => out(options.json ? toJson(await projects.namedList()) : formatList(projects.list()))),
+      }),
+      show: cliCommand({
+        summary: "Show a project: state, goal, merge setup, spec versions, ticket counts and the next step",
+        positionals: [SLUG],
+        options: { json },
+        run: ({ options, positionals }) =>
+          guarded(async () => {
+            const project = await projects.namedOverview(positionals.slug);
+            return out(options.json ? toJson(project) : formatShow(project));
+          }),
+      }),
+      spec: cliCommand({
+        summary: "Print a project's spec as TOML (the approved version, or the draft)",
+        positionals: [SLUG],
+        options: { version: { ...version, description: "A spec version; `bb loom show` names the pending one." }, json },
+        run: ({ options, positionals }) =>
+          guarded(() => {
+            const spec = projects.spec(positionals.slug, options.version);
+            return out(options.json ? toJson(spec) : formatSpec(spec));
+          }),
+      }),
+      tickets: cliCommand({
+        summary: "List a project's tickets, optionally only those in some states",
+        positionals: [SLUG],
+        options: {
+          state: { type: "enum", values: TICKET_STATES, repeatable: true, split: ",", description: "Only tickets in these states, comma-separated." },
+          json,
+        },
+        run: ({ options, positionals }) =>
+          guarded(() => {
+            const tickets = projects.tickets(positionals.slug, options.state.length > 0 ? options.state : undefined);
+            return out(options.json ? toJson(tickets) : formatTickets(tickets));
+          }),
+      }),
+      ticket: cliCommand({
+        summary: "Show a ticket and its reply thread, indented by reply depth",
+        positionals: [KEY],
+        options: { json },
+        run: ({ options, positionals }) =>
+          guarded(() => {
+            const ticket = projects.ticketView(positionals.key);
+            return out(options.json ? toJson(ticket) : formatTicket(ticket));
+          }),
+      }),
+      metrics: cliCommand({
+        summary: "Print a project's flow and agent metrics, computed from its event log",
+        positionals: [SLUG],
+        options: { days: { type: "integer", min: 1, max: 90, description: "The window for throughput and cumulative flow, in days (default 14)." }, json },
+        run: ({ options, positionals }) =>
+          guarded(() => {
+            const metrics = projectMetrics(store, projects.require(positionals.slug), now(), options.days);
+            return out(options.json ? toJson(metrics) : formatMetrics(metrics));
+          }),
+      }),
+      feed: cliCommand({
+        summary: "Print a project's newest events as one sentence each, oldest first",
+        positionals: [SLUG],
+        options: { after: { type: "integer", min: 0, max: 2_000_000_000, description: "Only events after this event id; `--json` prints the last id as lastId." }, json },
+        run: ({ options, positionals }) =>
+          guarded(() => {
+            const feed = projectFeed(store, projects.require(positionals.slug), options.after);
+            if (options.json) return out(toJson(feed));
+            return out(feed.rows.length === 0 ? "No events.\n" : `${feed.rows.map((row) => `${minute(row.at)}  ${row.text}`).join("\n")}\n`);
+          }),
+      }),
+      "forge check": cliCommand({
+        summary:
+          "Read a live pull request through a repo's forge on the project's machine, as a poll would, and print what Loom reads: state, draft, review, base, checks and items. It runs the repo's own forge commands (gh, or the spec's feedback or state command) and changes nothing in Loom",
+        positionals: [SLUG, { name: "target", description: "A ticket key such as CSV-1, for its pull request, or a pull request URL.", required: true }],
+        options: {
+          repo: { type: "string", description: "On a multi-repo project, the repo whose forge reads a pull request URL: one of the spec's [[repo]] names." },
+          version: { ...version, description: "Use this spec version's forge, such as a pending version's, instead of the version in force." },
+          json,
+        },
+        run: ({ options, positionals }) =>
+          guarded(async () => {
+            const check = await forgeCheck(engine.ctx, { slug: positionals.slug, target: positionals.target, ...(options.repo === undefined ? {} : { repo: options.repo }), ...(options.version === undefined ? {} : { version: options.version }) });
+            return { exitCode: check.failure === null ? 0 : 1, stdout: options.json ? toJson(check) : formatForgeCheck(check) };
+          }),
+      }),
+      rollout: cliCommand({
+        summary: "Print a project's deploy order as sentences: the next safe step, warnings, each stage's steps with how they deploy and whether they are live, milestones and windows. Advice only: Loom holds nothing back for it",
+        positionals: [SLUG],
+        options: { json },
+        run: ({ options, positionals }) =>
+          guarded(() => {
+            const view = projectRollout(store, projects.require(positionals.slug), now());
+            if (options.json) return out(toJson(view));
+            return out(view === null ? `${positionals.slug} has no rollout: its spec has no [rollout] table, no repo deploy and no ticket rollout.\n` : `${rolloutLines(view).join("\n")}\n`);
+          }),
+      }),
+      report: cliCommand({
+        summary: "Print a project's record as Markdown: goal, outcome, and each ticket's submits, reviews, merges, blocks and replies; --send runs Loom's done hook with it again (human only)",
+        positionals: [SLUG],
+        options: { send: { type: "boolean", description: "Queue a finished project's record for the done hook in Loom's settings, as when it finished." }, json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const { slug } = positionals;
+            if (options.send !== true) {
+              const markdown = projectRecord(store, projects.require(slug));
+              return out(options.json ? toJson({ slug, markdown }) : markdown);
+            }
+            await humanAction(deps, ctx, "report", { slug, send: true }, () => engine.sendRecord(slug));
+            return out(options.json ? toJson({ slug, queued: true }) : `Queued the record of ${slug} for the done hook. The feed says when it is sent.\n`);
+          }),
+      }),
+      post: cliCommand({
+        summary: "Add your reply to a ticket's thread; a worker that holds the ticket gets it as a message (human only)",
+        positionals: [KEY, { name: "text", description: "What to say.", required: true, variadic: true }],
+        options: { "reply-to": { type: "integer", min: 1, max: 2_147_483_647, description: "Answer this post (its #id from `bb loom ticket`). Without it the post starts a new top-level post." }, json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const post = await humanAction(deps, ctx, "post", { key: positionals.key }, () =>
+              engine.humanPost(positionals.key, positionals.text.join(" "), options["reply-to"]),
+            );
+            return out(options.json ? toJson(post) : `Posted #${post.id} on ${positionals.key}.\n`);
+          }),
+      }),
+      block: cliCommand({
+        summary: "Block a ticket with a reason; a worker that holds it is stopped and the planner sees it at the next triage round (human only)",
+        positionals: [KEY, { name: "reason", description: "Why the ticket is blocked.", required: true, variadic: true }],
+        options: { json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const reason = positionals.reason.join(" ");
+            const ticket = await humanAction(deps, ctx, "block", { key: positionals.key }, () => engine.block(positionals.key, reason, HUMAN_ACTOR));
+            return out(options.json ? toJson(projects.ticketView(ticket.key)) : `${ticket.key} is blocked: ${reason}\n`);
+          }),
+      }),
+      requeue: cliCommand({
+        summary: "Send a blocked ticket back to the queue, with an optional note for the next worker; --review sends it back as it is, with no new worker (human only)",
+        positionals: [KEY],
+        options: {
+          note: { type: "string", description: "Your answer or instruction; it is added to the ticket's thread and the next worker reads it." },
+          review: {
+            type: "boolean",
+            description: "Review again as is: back to review for the commit whose checks passed last, or back to its open pull request when the ticket's branch has nothing the pull request lacks. Refused when the branch changed since.",
+          },
+          json,
+        },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const review = options.review === true;
+            const data = { key: positionals.key, ...(review ? { review: true } : {}) };
+            const ticket = await humanAction(deps, ctx, "requeue", data, () => engine.requeue(positionals.key, options.note ?? "", HUMAN_ACTOR, { review }));
+            if (options.json) return out(toJson(projects.ticketView(ticket.key)));
+            if (ticket.state === "review") return out(`${ticket.key} is back in review as it is: new reviewers judge the commit whose checks passed last, in round ${ticket.review_round}.\n`);
+            if (ticket.state === "pr_open") return out(`${ticket.key} is back on its pull request as it is. Loom pushed nothing and follows the pull request again.\n`);
+            return out(`${ticket.key} is queued again. A new worker starts from its branch when a slot is free.\n`);
+          }),
+      }),
+      cancel: cliCommand({
+        summary: "Cancel a ticket: a worker that holds it is stopped (human only)",
+        positionals: [KEY, { name: "reason", description: "Why the ticket is cancelled.", required: true, variadic: true }],
+        options: { json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const reason = positionals.reason.join(" ");
+            const ticket = await humanAction(deps, ctx, "cancel", { key: positionals.key }, () => engine.cancel(positionals.key, reason, HUMAN_ACTOR));
+            return out(options.json ? toJson(projects.ticketView(ticket.key)) : `${ticket.key} is cancelled: ${reason}\n`);
+          }),
+      }),
+      live: cliCommand({
+        summary: "Mark a rollout step (a ticket key) or a milestone live, for one Loom has no command to check; --undo takes the mark back. It moves no ticket (human only)",
+        positionals: [SLUG, { name: "target", description: "A ticket key such as CSV-1, or a milestone's ref from the spec's [[rollout.milestone]] tables.", required: true }],
+        options: { note: { type: "string", description: "How you know, such as a dashboard or a deploy link; it is kept as the evidence." }, undo: { type: "boolean", description: "Take back a live mark, for example one made by mistake." }, json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const { slug, target } = positionals;
+            const undo = options.undo === true;
+            const project = projects.require(slug);
+            const which = store.ticketByKey(target)?.project_id === project.id ? { key: target } : { milestone: target };
+            const data = { slug, ...which, ...(options.note === undefined ? {} : { note: options.note }) };
+            const mark = await humanAction(deps, ctx, undo ? "unlive" : "live", data, () => engine.markLive(slug, target, { note: options.note, undo }, HUMAN_ACTOR));
+            return out(options.json ? toJson(mark) : undo ? `${target} is no longer marked live.\n` : `${target} is live.\n`);
+          }),
+      }),
+      "auto-merge": cliCommand({
+        summary:
+          "Turn Loom's merging of ready pull requests off or on again, for a project or one ticket with --ticket, on repos whose forge sets auto_merge; retry clears a ticket's merge attempt in flight, or a held final review, so Loom asks again; accept lets a ticket merge on a final review that passed on an incomplete brief; confirm lets Loom merge a ticket's pull request at its pushed commit on a repo whose auto_merge.mode is manual. On for a ticket counts its attempts afresh (human only)",
+        positionals: [SLUG, { name: "action", description: "off, on, retry, accept or confirm.", required: true }],
+        options: { ticket: { type: "string", description: "Only this ticket, such as CSV-1; retry, accept and confirm need it." }, pr: { type: "string", description: "confirm: the URL of the pull request you saw; with --sha, required." }, sha: { type: "string", description: "confirm: the full commit hash you saw; without --pr and --sha, confirm prints the pull request and commit it would confirm." }, json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const { slug, action } = positionals;
+            if (action !== "on" && action !== "off" && action !== "retry" && action !== "accept" && action !== "confirm") throw new LoomError("loom_invalid_input", `"${action}" is not an auto-merge action.`, "Use off, on, retry, accept or confirm.");
+            const project = projects.require(slug);
+            const ticket = options.ticket === undefined ? null : store.ticketByKey(options.ticket);
+            if (options.ticket !== undefined && ticket?.project_id !== project.id) throw new LoomError("loom_not_found", `${slug} has no ticket ${options.ticket}.`);
+            if ((action === "retry" || action === "accept" || action === "confirm") && ticket === null) throw new LoomError("loom_invalid_input", `${action} acts on one ticket, so it needs --ticket.`);
+            if (action === "confirm") {
+              refuseAgents(deps, ctx, "auto-merge confirm");
+              // The human names the exact pull request and commit they saw; without both, Loom shows the ones it would
+              // confirm and confirms nothing. Neither comes from the ticket's state, so a move to another pull request or commit is refused.
+              if (options.pr === undefined || options.sha === undefined) {
+                if (ticket!.pr_url === null || ticket!.pushed_sha === null) throw new LoomError("loom_invalid_state", `${ticket!.key} has no open pull request on a commit Loom pushed, so there is no merge to confirm.`);
+                throw new LoomError("loom_invalid_input", `${ticket!.key}'s pull request ${ticket!.pr_url} is at ${ticket!.pushed_sha}. Look at that pull request and commit, then confirm them with --pr ${ticket!.pr_url} --sha ${ticket!.pushed_sha}.`);
+              }
+              const seen = { prUrl: options.pr, sha: options.sha };
+              const said = await humanAction(deps, ctx, "auto-merge confirm", { slug, action, key: ticket!.key, pr: options.pr, sha: options.sha }, () => engine.confirmMerge(ticket!.key, seen));
+              return out(options.json ? toJson({ slug, action, ticket: ticket!.key, message: said }) : `${said}\n`);
+            }
+            const data = { slug, action, ...(ticket === null ? {} : { key: ticket.key }) };
+            const said = await humanAction(deps, ctx, `auto-merge ${action}`, data, () => setAutoMerge(store, project, action, ticket));
+            if (action !== "off") engine.kick();
+            return out(options.json ? toJson({ slug, action, ticket: ticket?.key ?? null, message: said }) : `${said}\n`);
+          }),
+      }),
+      sync: cliCommand({
+        summary:
+          "Read a project's open pull requests now instead of at their next poll, and act on what they say: merged, closed, or feedback for a fix round. It goes past the wait after failed reads, but not past a rate limit (human only)",
+        positionals: [SLUG],
+        options: { ticket: { type: "string", description: "Read only this ticket's pull request, such as CSV-1." }, json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            // A read changes nothing the human decides, so it writes no human.action event.
+            refuseAgents(deps, ctx, "sync");
+            const result = await engine.syncPullRequests(positionals.slug, options.ticket === undefined ? {} : { key: options.ticket });
+            return out(options.json ? toJson(result) : `${result.message}\n`);
+          }),
+      }),
+      land: cliCommand({
+        summary:
+          "Land the integration branch: push it and open one pull request to the base branch, or push the new commits to the open one; --direct pushes it to the base branch instead. A multi-repo project lands every repo with merged work, each with its own pull request, or only --repo (human only)",
+        positionals: [SLUG],
+        options: {
+          title: { type: "string", description: "The pull request's title; the project's name by default. Used when the pull request is opened." },
+          ready: { type: "boolean", description: "Open a ready pull request instead of a draft. Used when the pull request is opened." },
+          direct: { type: "boolean", description: "Push to the base branch on the merge remote with no pull request: merges the remote's base branch in when it moved, and runs the after_merge checks on the result first." },
+          repo: { type: "string", description: "On a multi-repo project, land only this repo: one of the spec's [[repo]] names." },
+          json,
+        },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const direct = options.direct === true;
+            if (direct && (options.title !== undefined || options.ready === true)) throw new LoomError("loom_invalid_input", "--title and --ready shape the pull request, so they do not go with --direct.", "Leave them out, or land without --direct.");
+            const data = { slug: positionals.slug, ...(options.repo === undefined ? {} : { repo: options.repo }), ...(options.ready ? { ready: true } : {}), ...(direct ? { direct: true } : {}) };
+            const result = await humanAction(deps, ctx, "land", data, () => engine.land(positionals.slug, HUMAN_ACTOR, { title: options.title, ready: options.ready === true, direct, repo: options.repo }));
+            const finished = "Every ticket is done or cancelled, so the project is done.\n";
+            if (options.json) return out(toJson(result));
+            if ("repos" in result) return out(formatRepoLand(positionals.slug, result, direct));
+            if (result.url === null) return out(`Landed ${positionals.slug} on ${result.pushed} at ${result.sha.slice(0, 12)}.\n${result.done ? finished : `Run \`bb loom land${direct ? " --direct" : ""}\` again after more tickets merge to push them too.\n`}`);
+            return out(`Landed ${positionals.slug}: ${result.url}\n${result.done ? finished : "Run `bb loom land` again after more tickets merge to push them to the same pull request.\n"}`);
+          }),
+      }),
+      approve: cliCommand({
+        summary: "Approve a draft (creates its tickets), or apply a pending spec version (human only)",
+        positionals: [SLUG],
+        options: {
+          version: { ...version, description: "The version to approve; it must be the one waiting for approval." },
+          "skip-review": { type: "boolean", description: "Approve a draft or pending version whose automatic spec review has not passed: still running, with open findings, or not finished." },
+          json,
+        },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const project = deps.store.projectBySlug(positionals.slug);
+            const pending = project !== null && project.state !== "draft" && project.pending_version !== null;
+            const skipReview = options["skip-review"] === true;
+            const data = { slug: positionals.slug, pending, ...(skipReview ? { skipReview: true } : {}) };
+            const result = await humanAction(deps, ctx, "approve", data, () => engine.approve(positionals.slug, HUMAN_ACTOR, options.version, { skipReview }));
+            return out(options.json ? toJson(result) : formatApprove(result));
+          }),
+      }),
+      start: lifecycle("Start an approved project: workers pick up its ready tickets by themselves (human only)", (slug, actor) => engine.start(slug, actor), "start", (slug) => `${slug} is running. Workers start by themselves; follow them with \`bb loom tickets ${slug}\`.`),
+      pause: cliCommand({
+        summary: "Pause a running project (human only)",
+        positionals: [SLUG],
+        options: { now: { type: "boolean", description: "Also stop every worker thread right away; resume continues them." }, json },
+        run: ({ options, positionals }, ctx) =>
+          guarded(async () => {
+            const data = options.now ? { slug: positionals.slug, now: true } : { slug: positionals.slug };
+            await humanAction(deps, ctx, "pause", data, () => engine.pause(positionals.slug, HUMAN_ACTOR, options.now === true));
+            return out(options.json ? toJson(await projects.namedOverview(positionals.slug)) : `${positionals.slug} is paused.\n`);
+          }),
+      }),
+      resume: lifecycle("Resume a paused project and continue its stopped workers (human only)", (slug, actor) => engine.resume(slug, actor), "resume", (slug) => `${slug} is running.`),
+      archive: lifecycle("Archive a project: stop its workers, cancel its open tickets and remove its sidebar section (human only)", (slug, actor) => engine.archive(slug, actor), "archive", (slug) => `${slug} is archived: its open tickets are cancelled and its sidebar section is removed.`),
+    },
+  });
+}

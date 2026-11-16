@@ -1,0 +1,1224 @@
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
+import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+import { ThreadCard } from "./thread-card";
+import { ThreadCardMenu } from "./thread-card-menu";
+import { useCardSpotlightStyles } from "./card-spotlight";
+import { useAttentionPulseGate } from "./attention-pulse-gate";
+import { useDotPulseStyles } from "./dot-pulse";
+import type { ThreadLink } from "../lib/link-metadata";
+import type { CardMenuAction } from "./thread-card-menu";
+import { EmptyState } from "./empty-state";
+import { threadState } from "./grouping";
+import { SweepButton, SweepCancelButton } from "./sweep-button";
+import { SweepNoticeBanner, SweepRefusalBanner, SWEEP_BANNER_DISMISS_MS } from "./sweep-banners";
+import {
+  sweepColumnKind,
+  sweepDestination,
+  sweepRangeIds,
+  sweepRemovesThreads,
+  type ArmedSweep,
+  type SweepDestination,
+  type SweepNotice,
+  type SweepRunView,
+} from "../lib/sweep";
+import {
+  laneRowThreads,
+  sectionParentLanes,
+  type ParentLane,
+  type ParentLaneSection,
+} from "./parent-lanes";
+import {
+  MINI,
+  RAIL_TO_LANE_GAP,
+  RAIL_W_DEFAULT,
+  RULER,
+  computeParentLaneLayout,
+  laneOverflowsViewport,
+  predictedStart,
+  lockIndexFor,
+  pinIsInstant,
+  wallTrim,
+} from "./parent-lane-layout";
+import type { ParentLaneOrder } from "./preferences";
+
+interface ParentLaneBoardProps {
+  lanes: readonly ParentLane[];
+  activeThreadId: string | null;
+  doneIds: ReadonlySet<string>;
+  /** Clear-error acknowledgment ids (issue #157): acked error dots sit quiet. */
+  errorAckIds?: ReadonlySet<string>;
+  /** Members of kept families that did not match the filters/search. */
+  dimmedIds: ReadonlySet<string>;
+  /** Raw parent → children map, used for the level-1 child +N chip. */
+  childrenByParent: ReadonlyMap<string, readonly PluginSidebarThread[]>;
+  projectNameFor: (projectId: string) => string;
+  repoBaseFor: (projectId: string) => string | null;
+  statusFor?: (repo: string | null, number: number | undefined) =>
+    | { kind: string; state: string }
+    | undefined;
+  /** The board's own GitHub links per thread id (metadata "linkedIssues"). */
+  linkedIssuesFor?: (threadId: string) => ThreadLink[] | undefined;
+  /** Hrefs tracker_validate confirmed; text refs chip only for these. */
+  validatedHrefs?: ReadonlySet<string>;
+  parentLaneOrder: ParentLaneOrder;
+  onParentLaneOrderChange: (value: ParentLaneOrder) => void;
+  onOpenThread: (threadId: string) => void;
+  /** Close the open thread pane when the operator clicks empty board area. */
+  onClosePane?: () => void;
+  onNewTask: () => void;
+  menuActionsFor: (thread: PluginSidebarThread) => readonly CardMenuAction[];
+  /**
+   * Snooze wake lookup (lib/snooze): the wake epoch-ms for a snoozed thread,
+   * null otherwise. Wired through to lane cards — dim in place and the wake
+   * chip (lane minis show the clock alone).
+   */
+  snoozeFor?: (threadId: string) => number | null;
+  /**
+   * Token burn rate lookup in tokens per second (issue #279), from
+   * `usePulseRates`. It paces the pulse of a lane card's collapsed-strip
+   * `working` dots. An absent id is the honest unmeasured state and holds the
+   * base period.
+   */
+  pulseRateFor?: (threadId: string) => number | undefined;
+  /**
+   * Attention reporting (components/attention-freeze): the card a pointer
+   * enters, and the card it leaves. The caller pins each entered card's
+   * LANE ORDER slot and row placement — the parent view's lane order is
+   * recency-derived, so this is what keeps an attended lane from sliding.
+   */
+  onAttentionEnter?: (threadId: string) => void;
+  onAttentionLeave?: (threadId: string) => void;
+  /**
+   * Sweep wiring, the same contract the Focus view's columns use: the sweep
+   * pill rides each sweepable row's rail cell, arming pre-selects the
+   * past-threshold cards (that row's own candidates), card clicks toggle
+   * membership, and confirm applies the row's destination to the frozen
+   * selection. Eligibility is computed by the caller over this row's cards
+   * across every lane (`laneRowThreads`), through the same lib/sweep
+   * predicates the Focus view runs.
+   */
+  sweepCandidatesFor?: (rowId: string) => readonly string[];
+  armedSweep?: ArmedSweep | null;
+  /** A confirmed sweep in progress; the active card carries the throbber. */
+  sweepRun?: SweepRunView | null;
+  /** A finished sweep's summary; null hides the banner. */
+  sweepNotice?: SweepNotice | null;
+  onDismissSweepNotice?: () => void;
+  onSweepUndo?: (
+    threadIds: readonly string[],
+    destination: SweepDestination,
+  ) => void;
+  onSweepToggle?: (threadId: string) => void;
+  onSweepRangeSelect?: (threadIds: readonly string[]) => void;
+  /** Threads that may never join a sweep (live-child parents). */
+  sweepBlockedIds?: ReadonlySet<string>;
+  onSweepArm?: (rowId: string) => void;
+  onSweepConfirm?: (rowId: string) => void;
+  onSweepCancel?: () => void;
+}
+
+/** Ruler+wrap board chrome measurements (shared with parent-lane-layout.ts).
+ *  The rail width derives from the layout module's RAIL_W_DEFAULT, so lane
+ *  geometry and render share one source of truth. */
+const RAIL_W = RAIL_W_DEFAULT;
+const HEADER_H = 88;
+
+const DOT_CLASS: Record<string, string> = {
+  working: "bg-blue-500",
+  attention: "bg-amber-500",
+  unread: "bg-emerald-500",
+  idle: "bg-muted-foreground/30",
+};
+
+function LaneStateDot({
+  thread,
+  errorAcks = new Set<string>(),
+}: {
+  thread: PluginSidebarThread;
+  /** Clear-error acknowledgment ids (issue #157): an acked error dot sits quiet. */
+  errorAcks?: ReadonlySet<string>;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-block size-1.5 shrink-0 rounded-full",
+        DOT_CLASS[threadState(thread, errorAcks)] ?? "bg-muted-foreground/30",
+      )}
+      aria-hidden
+    />
+  );
+}
+
+/**
+ * Vertical bring-into-view correction for the active card, relative to the
+ * board's scroll viewport. Accounts for the sticky header band (cards can
+ * hide under it) and leaves a small breathing margin at the edges. Returns
+ * the scroll delta to apply; 0 means the card is fully visible.
+ */
+export function verticalCardCorrection(
+  el: HTMLElement,
+  card: HTMLElement,
+  headerH: number,
+): number {
+  const boardRect = el.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const visibleTop = boardRect.top + headerH;
+  if (cardRect.top < visibleTop) return -(visibleTop - cardRect.top) - 8;
+  if (cardRect.bottom > boardRect.bottom) return cardRect.bottom - boardRect.bottom + 8;
+  return 0;
+}
+
+function LaneHeader({
+  lane,
+  locked,
+  doneIds,
+  errorAcks = new Set<string>(),
+  sectionLabel,
+  onOpenThread,
+  onLock,
+  menuActions,
+  onAttentionEnter,
+  onAttentionLeave,
+}: {
+  lane: ParentLane;
+  locked: boolean;
+  doneIds: ReadonlySet<string>;
+  errorAcks?: ReadonlySet<string>;
+  sectionLabel: string | null;
+  onOpenThread: (threadId: string) => void;
+  onLock: () => void;
+  /** Right-click menu actions for the lane parent (issue #226): the header
+   *  is the parent's card, so it carries the card menu's surface. */
+  menuActions?: readonly CardMenuAction[];
+  /**
+   * Attention reporting for the menu itself (components/attention-freeze):
+   * the open/close reports pin and release the lane, the same contract the
+   * cards' menus ride. The header reports no hover pin of its own — only
+   * the menu's life.
+   */
+  onAttentionEnter?: (threadId: string) => void;
+  onAttentionLeave?: (threadId: string) => void;
+}) {
+  const parent = lane.parent;
+  const isDone = doneIds.has(parent.id);
+  const header = (
+    <button
+      type="button"
+      onClick={() => {
+        onLock();
+        onOpenThread(parent.id);
+      }}
+      aria-label={`Open ${lane.label}`}
+      className={cn(
+        "flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1 text-left",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        isDone && "opacity-50 saturate-50",
+      )}
+    >
+      <span className="flex w-full items-center gap-1.5">
+        {sectionLabel !== null ? (
+          <span className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {sectionLabel} ·
+          </span>
+        ) : null}
+        <LaneStateDot thread={parent} errorAcks={errorAcks} />
+        {lane.childCount > 0 ? (
+          <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 text-[10px] tabular-nums text-muted-foreground">
+            {lane.childCount}
+          </span>
+        ) : null}
+      </span>
+      <span
+        className={cn(
+          "line-clamp-2 w-full text-[13px] font-medium leading-snug [overflow-wrap:anywhere]",
+          locked && "text-foreground",
+        )}
+      >
+        {lane.label}
+      </span>
+    </button>
+  );
+  if (menuActions === undefined) return header;
+  return (
+    <ThreadCardMenu
+      anchor={header}
+      actions={menuActions}
+      href={parent.href}
+      onOpen={() => onOpenThread(parent.id)}
+      title={parent.displayTitle}
+      onOpenChange={(open) =>
+        open ? onAttentionEnter?.(parent.id) : onAttentionLeave?.(parent.id)
+      }
+    />
+  );
+}
+
+function LaneOrderToggle({
+  value,
+  onChange,
+}: {
+  value: ParentLaneOrder;
+  onChange: (value: ParentLaneOrder) => void;
+}) {
+  const option = (id: ParentLaneOrder, label: string) => (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={value === id}
+      onClick={() => onChange(id)}
+      className={cn(
+        "flex items-center gap-1.5 rounded px-1.5 py-0.5 text-left w-full transition-colors",
+        value === id
+          ? "bg-primary/15 text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "block size-1.5 rounded-full shrink-0",
+          value === id ? "bg-primary" : "bg-muted-foreground/40",
+        )}
+      />
+      {label}
+    </button>
+  );
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Lane order"
+      className="flex flex-col gap-0.5 text-[11px] font-medium"
+    >
+      {option("recency", "Recency")}
+      {option("project", "By project")}
+    </div>
+  );
+}
+
+/** Capture every placed card's rect keyed by thread id, for the recut FLIP. */
+function captureCardRects(root: HTMLElement): Map<string, DOMRect> {
+  const rects = new Map<string, DOMRect>();
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-cell]"))) {
+    const key = el.getAttribute("data-key");
+    if (key !== null) rects.set(key, el.getBoundingClientRect());
+  }
+  return rects;
+}
+
+function ParentLaneBoardBase({
+  lanes,
+  activeThreadId,
+  doneIds,
+  errorAckIds,
+  dimmedIds,
+  childrenByParent,
+  projectNameFor,
+  repoBaseFor,
+  statusFor,
+  linkedIssuesFor,
+  validatedHrefs,
+  parentLaneOrder,
+  onParentLaneOrderChange,
+  onOpenThread,
+  onClosePane,
+  onNewTask,
+  menuActionsFor,
+  snoozeFor,
+  pulseRateFor,
+  onAttentionEnter,
+  onAttentionLeave,
+  sweepCandidatesFor,
+  armedSweep = null,
+  sweepRun = null,
+  sweepNotice = null,
+  onDismissSweepNotice,
+  onSweepUndo,
+  onSweepToggle,
+  onSweepRangeSelect,
+  sweepBlockedIds,
+  onSweepArm,
+  onSweepConfirm,
+  onSweepCancel,
+}: ParentLaneBoardProps) {
+  // The spotlight rule (components/card-spotlight.ts) is document-global CSS;
+  // each board mounts it idempotently, so whichever board renders first wins.
+  useCardSpotlightStyles();
+  useAttentionPulseGate();
+  useDotPulseStyles();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const spacerRef = useRef<HTMLDivElement | null>(null);
+  const [geoIdx, setGeoIdx] = useState(0);
+  const [released, setReleased] = useState(false);
+  const [viewportW, setViewportW] = useState(RAIL_W + 900);
+  /** The row id whose whole swimlane (all lanes' shared y-range) shades on
+   *  hover. Updated only when the row changes, so pans never re-render. */
+  const [bandHover, setBandHover] = useState<string | null>(null);
+  const bandHoverRef = useRef<string | null>(null);
+  /** An armed row's refusal (a live-child parent clicked into the sweep),
+   *  said on screen the same way the Focus board says it. */
+  const [sweepRefusal, setSweepRefusal] = useState<string | null>(null);
+  // The shift-click anchor, exactly as the Focus board keeps it: the last
+  // card clicked without Shift in the armed row. Reset whenever the armed
+  // row changes or sweep mode ends, so a re-arm never inherits an old anchor.
+  const sweepAnchorRef = useRef<{ rowId: string; threadId: string } | null>(null);
+  const armedRowId = armedSweep?.columnId ?? null;
+  useEffect(() => {
+    sweepAnchorRef.current = null;
+  }, [armedRowId]);
+  useEffect(() => {
+    if (sweepRefusal === null) return;
+    const timer = setTimeout(() => setSweepRefusal(null), SWEEP_BANNER_DISMISS_MS);
+    return () => clearTimeout(timer);
+  }, [sweepRefusal]);
+  /** The viewport is too narrow for lane snapping (a lane overflows, or a
+   *  phone-width scrollport fits fewer than two context columns): snap-to on
+   *  scroll is disabled, header clicks select lanes. */
+  const snapBlockedRef = useRef(false);
+
+  // Latest-value refs the imperative scroll manager reads without re-binding.
+  const geoIdxRef = useRef(0);
+  const releasedRef = useRef(false);
+  const glidingRef = useRef(false);
+  const pendingLockRef = useRef<number | null>(null);
+  const glideLaneRef = useRef<number | null>(null);
+  const glideTargetRef = useRef<number | null>(null);
+  /** True while a post-recut correction is self-scrolling, so the scroll
+   *  listener does not mistake its own events for a user pan. */
+  const postPinRef = useRef(false);
+  const flatRef = useRef<{ lane: ParentLane; sectionLabel: string | null }[]>([]);
+  const layoutRef = useRef<ReturnType<typeof computeParentLaneLayout> | null>(null);
+  const viewportRef = useRef(0);
+  const activeThreadIdRef = useRef<string | null>(null);
+  const prevRectsRef = useRef<Map<string, DOMRect> | null>(null);
+  const lockToRef = useRef<(index: number) => void>(() => {});
+
+  // Flat lane list with project-section labeling (R5). "By project" keeps
+  // sections contiguous and marks each section's first lane with its label,
+  // so the row-major geometry stays one flat ruler+wrap grid.
+  const flat = useMemo(() => {
+    if (parentLaneOrder === "project") {
+      const sections: ParentLaneSection[] = sectionParentLanes(lanes, projectNameFor);
+      const out: { lane: ParentLane; sectionLabel: string | null }[] = [];
+      for (const section of sections) {
+        section.lanes.forEach((lane, index) => {
+          out.push({ lane, sectionLabel: index === 0 ? section.label : null });
+        });
+      }
+      return out;
+    }
+    return lanes.map((lane) => ({ lane, sectionLabel: null }));
+  }, [lanes, parentLaneOrder, projectNameFor]);
+
+  const lockedIndex = flat.length > 0 ? Math.min(geoIdx, flat.length - 1) : null;
+  const layout = useMemo(
+    () =>
+      computeParentLaneLayout(
+        flat.map((entry) => entry.lane),
+        lockedIndex,
+        viewportW,
+        RAIL_W,
+      ),
+    [flat, lockedIndex, viewportW],
+  );
+
+  // Publish the latest render values to the scroll manager's refs.
+  geoIdxRef.current = lockedIndex ?? 0;
+  releasedRef.current = released;
+  flatRef.current = flat;
+  layoutRef.current = layout;
+  viewportRef.current = viewportW;
+  activeThreadIdRef.current = activeThreadId;
+  snapBlockedRef.current = laneOverflowsViewport(viewportW, RAIL_W);
+
+  // Measure the scrollport for the context-column cap.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el === null) return;
+    const measure = () => {
+      // jsdom reports 0 — keep the initial estimate rather than collapsing
+      // the context cap to nothing in tests.
+      if (el.clientWidth > 0) setViewportW(el.clientWidth);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return; // jsdom
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // The scroll manager: a pan releases the lock (geometry frozen); when the
+  // scroll rests, the pending (clicked) or nearest lane is pinned first — a
+  // smooth glide to its predicted post-recut flush position — and only then
+  // re-cut (state flip). Recut waits for the pin.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el === null || lanes.length === 0) return;
+    let lastLeft = el.scrollLeft;
+    let settleTimer = 0;
+    let glideTimer = 0;
+    let postPinTimer = 0;
+
+    /** DOM-measured corrections, shared by the post-pin timer and the
+     *  same-lane fast path: re-pin the locked lane's flush edge and bring
+     *  the active card into vertical view (instant on the fast path — no
+     *  glide is pending there, so nothing races). */
+    const runCorrections = () => {
+      const locked = el.querySelector("section[data-locked]");
+      if (locked instanceof HTMLElement) {
+        const rail = el.querySelector("[data-rail]");
+        const flushLeft = rail
+          ? rail.getBoundingClientRect().right + RAIL_TO_LANE_GAP
+          : el.getBoundingClientRect().left + RAIL_W + RAIL_TO_LANE_GAP;
+        const drift = locked.getBoundingClientRect().left - flushLeft;
+        if (Math.abs(drift) > 2) el.scrollLeft += drift;
+      }
+      const id = activeThreadIdRef.current;
+      if (id !== null) {
+        const card = el.querySelector(`[data-thread-card="${CSS.escape(id)}"]`);
+        if (card instanceof HTMLElement) {
+          const delta = verticalCardCorrection(el, card, HEADER_H);
+          if (delta !== 0) el.scrollTop += delta;
+        }
+      }
+      // Cap the scroll wall at the last lane's flush point: without this
+      // the trailing spacer leaves maxScroll far past every pin target, so
+      // a hard fling right overshoots and settle snaps back a long way.
+      // Chrome clamps scrollLeft during the user's own fling movement, so
+      // the residual backward move stays bounded by the lane-width delta.
+      const laneList = flatRef.current.map((entry) => entry.lane);
+      if (laneList.length > 0) {
+        const layout = computeParentLaneLayout(
+          laneList,
+          geoIdxRef.current,
+          viewportRef.current,
+          RAIL_W,
+        );
+        const wallSl = Math.max(
+          0,
+          toScrollSpace(predictedStart(laneList.length - 1, layout.laneWidths, RAIL_W)),
+        );
+        const maxSl = el.scrollWidth - el.clientWidth;
+        const spacer = spacerRef.current;
+        if (spacer && maxSl > wallSl) {
+          const width = parseFloat(spacer.style.width || "0");
+          spacer.style.width = `${wallTrim(maxSl, wallSl, width)}px`;
+        }
+      }
+    };
+
+    /** After a recut's transitions settle: re-measure the pinned lane's
+     *  flush against the DOM (correcting prediction drift or transition
+     *  clamping) and bring the active card back into vertical view — the
+     *  recut resizes bands above it, which can push it off-screen. */
+    const schedulePostPin = () => {
+      window.clearTimeout(postPinTimer);
+      postPinRef.current = true;
+      postPinTimer = window.setTimeout(() => {
+        if (releasedRef.current || glidingRef.current) {
+          postPinRef.current = false;
+          return;
+        }
+        runCorrections();
+        // Keep the guard up through the corrections' own scroll events, so
+        // the drift jump and the smooth glide are not misread as a user pan.
+        window.clearTimeout(postPinTimer);
+        postPinTimer = window.setTimeout(() => {
+          postPinRef.current = false;
+        }, 250);
+      }, 300);
+    };
+
+    /** The scroller's own horizontal padding (px-3) is not part of the
+     *  layout model's content space: every content→scroll conversion must
+     *  subtract it or the pin lands 12px off the true flush. */
+    const scrollPadLeft = () => {
+      const pad = window.getComputedStyle(el).paddingLeft;
+      const parsed = Number.parseFloat(pad);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+    const toScrollSpace = (contentX: number) => contentX - (RAIL_W + RAIL_TO_LANE_GAP) - scrollPadLeft();
+
+    const nearestLane = () => {
+      const widths = layoutRef.current?.laneWidths ?? [];
+      // Scroll-space flush targets: the glide path uses the same
+      // `predictedStart - (rail + gap)` form; the threshold rule is
+      // offset-sensitive, unlike the old argmin it replaced.
+      const flush = widths.map(
+        (_, i) => toScrollSpace(predictedStart(i, widths, RAIL_W)),
+      );
+      // Padded grab range: a lane grabs a little before its flush point, so
+      // a stop with the previous lane's right sliver at the lock point still
+      // locks it (operator: "a wider grab range for the left-most column").
+      return lockIndexFor(el.scrollLeft, flush);
+    };
+
+    const assign = (laneIndex: number) => {
+      glidingRef.current = false;
+      glideLaneRef.current = null;
+      glideTargetRef.current = null;
+      pendingLockRef.current = null;
+      if (laneIndex !== geoIdxRef.current) {
+        prevRectsRef.current = captureCardRects(el);
+        geoIdxRef.current = laneIndex;
+        setGeoIdx(laneIndex);
+      }
+      // Both paths: a recut needs the drift/vertical corrections after its
+      // transitions; a same-lane re-lock still owes the active card a
+      // vertical bring-into-view.
+      schedulePostPin();
+      releasedRef.current = false;
+      setReleased(false);
+    };
+
+    let glideDeadline = 0;
+
+    const glideCheck = () => {
+      if (
+        !glidingRef.current ||
+        glideLaneRef.current === null ||
+        glideTargetRef.current === null
+      ) {
+        return;
+      }
+      // Converged to the predicted flush, or the glide stalled (another
+      // scroll claimed the element): assign the intended lane either way.
+      if (
+        Math.abs(el.scrollLeft - glideTargetRef.current) <= 3 ||
+        performance.now() > glideDeadline
+      ) {
+        assign(glideLaneRef.current);
+        return;
+      }
+      glideTimer = window.setTimeout(glideCheck, 150);
+    };
+
+    const ensureReachable = (target: number) => {
+      const spacer = spacerRef.current;
+      const needed = target + el.clientWidth - RAIL_W + 4;
+      if (el.scrollWidth < needed && spacer !== null) {
+        // The spacer absorbs exactly the deficit on the frozen board.
+        const grow = needed - el.scrollWidth + 4;
+        spacer.style.width = `${Math.max(0, spacer.getBoundingClientRect().width + grow)}px`;
+      }
+    };
+
+    const beginGlide = (laneIndex: number) => {
+      const laneList = flatRef.current.map((entry) => entry.lane);
+      const predicted = computeParentLaneLayout(
+        laneList,
+        laneIndex,
+        viewportRef.current,
+        RAIL_W,
+      );
+      const target = Math.max(
+        0,
+        toScrollSpace(predictedStart(laneIndex, predicted.laneWidths, RAIL_W)),
+      );
+      ensureReachable(target);
+      glidingRef.current = true;
+      glideLaneRef.current = laneIndex;
+      glideTargetRef.current = target;
+      glideDeadline = performance.now() + 2500;
+      if (pinIsInstant(target, el.scrollLeft)) {
+        // Backward pin: momentum overshoot sits past the target; snap hard
+        // instead of sweeping visibly backwards across the lane gap.
+        el.scrollLeft = target;
+        glideTimer = window.setTimeout(glideCheck, 50);
+        return;
+      }
+      el.scrollTo({ left: target, behavior: "smooth" });
+      glideTimer = window.setTimeout(glideCheck, 400);
+    };
+
+    const settle = () => {
+      const pending = pendingLockRef.current;
+      const laneIndex = pending !== null ? pending : nearestLane();
+      pendingLockRef.current = null;
+      if (laneIndex === geoIdxRef.current) {
+        // Same lane, still locked: re-pin instead of gliding (momentum
+        // overshoot within this lane's grab window snaps back hard — the
+        // mock's instant-snap-back rule). Corrections run under the post-pin
+        // guard so the re-pin's own scroll event is not misread as a pan.
+        releasedRef.current = false;
+        setReleased(false);
+        schedulePostPin();
+        return;
+      }
+      beginGlide(laneIndex);
+    };
+
+    const lockTo = (laneIndex: number) => {
+      if (laneIndex === geoIdxRef.current && !releasedRef.current) {
+        // Same lane, still locked: no recut and no glide pending, so correct
+        // immediately (a delayed fix would show a deep-linked card below the
+        // fold), then re-check after any pane-driven relayout.
+        postPinRef.current = true;
+        runCorrections();
+        window.clearTimeout(postPinTimer);
+        postPinTimer = window.setTimeout(() => {
+          postPinRef.current = false;
+        }, 250);
+        return;
+      }
+      pendingLockRef.current = laneIndex;
+      releasedRef.current = true;
+      setReleased(true);
+      settle();
+    };
+    lockToRef.current = lockTo;
+
+    const onScroll = () => {
+      const dx = el.scrollLeft - lastLeft;
+      lastLeft = el.scrollLeft;
+      if (glidingRef.current || postPinRef.current) return; // managed scrolls poll their own timers
+      if (dx === 0) return; // vertical scroll never releases the lock
+      if (!releasedRef.current) {
+        releasedRef.current = true;
+        setReleased(true);
+      }
+      pendingLockRef.current = null;
+      window.clearTimeout(settleTimer);
+      // Overflowing lanes: snap-to on scroll is off — the pan rests where the
+      // operator leaves it; header clicks select lanes instead.
+      if (snapBlockedRef.current) return;
+      settleTimer = window.setTimeout(settle, 200);
+    };
+
+    el.addEventListener("scroll", onScroll);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.clearTimeout(settleTimer);
+      window.clearTimeout(glideTimer);
+      window.clearTimeout(postPinTimer);
+    };
+    // The manager binds once per lane-count change; live state flows
+    // through refs, so the handlers never go stale.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lanes.length]);
+
+  // Active thread: its lane becomes the locked (pinned) lane, and the card
+  // is brought into vertical view in the shared scroll.
+  const activeLaneId = useMemo(() => {
+    if (activeThreadId === null) return null;
+    for (const { lane } of flat) {
+      if (lane.id === activeThreadId) return lane.id;
+      for (const row of lane.rows) {
+        if (row.threads.some((t) => t.id === activeThreadId)) return lane.id;
+      }
+    }
+    return null;
+  }, [flat, activeThreadId]);
+
+  // Active thread: its lane becomes the locked (pinned) lane. The vertical
+  // card bring-into-view does NOT run here: a programmatic smooth scroll
+  // cancels Chrome's previous one, so it would kill the horizontal pin
+  // glide mid-flight and leave the board drifting. The correction rides the
+  // post-pin schedule instead (assign → 300ms post-transition).
+  //
+  // The refire gates like the column board's keep-in-view: only a real
+  // relocation re-asserts scroll. The selection changing (new active card,
+  // or its lane index moving) re-locks, and so does a viewport-width change
+  // (pane opening, drag resize — the board narrows and the glide target
+  // must be recomputed, like the column board's ResizeObserver refit). A
+  // mere lane-assembly rebuild — a hover capture joining `laneFreezes`, an
+  // ambient touch re-sorting cards inside the locked lane — changes none
+  // of those, and its new `flat` identity would otherwise re-run the
+  // same-lane correction on every render, yanking the operator's vertical
+  // scroll back to the selected card (issue #124).
+  const activeRelocationRef = useRef<{
+    threadId: string;
+    laneIndex: number;
+    viewportW: number;
+  } | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el === null || activeThreadId === null || activeLaneId === null) {
+      activeRelocationRef.current = null;
+      return;
+    }
+    const index = flat.findIndex((entry) => entry.lane.id === activeLaneId);
+    if (index < 0) {
+      // The active card left the lanes (a filter or grouping pass); arm the
+      // ref so its return re-locks — the column board refits on reappearance.
+      activeRelocationRef.current = null;
+      return;
+    }
+    const prev = activeRelocationRef.current;
+    activeRelocationRef.current = { threadId: activeThreadId, laneIndex: index, viewportW };
+    if (
+      prev !== null &&
+      prev.threadId === activeThreadId &&
+      prev.laneIndex === index &&
+      prev.viewportW === viewportW
+    ) {
+      return;
+    }
+    lockToRef.current(index);
+  }, [activeThreadId, activeLaneId, viewportW, flat]);
+
+  // FLIP: cards moved by a recut glide from their pre-recut rects into place.
+  useLayoutEffect(() => {
+    const prev = prevRectsRef.current;
+    prevRectsRef.current = null;
+    const el = scrollRef.current;
+    if (prev === null || el === null) return;
+    for (const node of Array.from(el.querySelectorAll<HTMLElement>("[data-cell]"))) {
+      const key = node.getAttribute("data-key");
+      const before = key === null ? undefined : prev.get(key);
+      if (before === undefined) continue;
+      const now = node.getBoundingClientRect();
+      const dx = before.left - now.left;
+      const dy = before.top - now.top;
+      const sx = now.width === 0 ? 1 : before.width / now.width;
+      const sy = now.height === 0 ? 1 : before.height / now.height;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.02) continue;
+      node.style.transformOrigin = "top left";
+      node.style.transition = "none";
+      node.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      requestAnimationFrame(() => {
+        node.style.transition = "transform 200ms ease";
+        node.style.transform = "";
+      });
+    }
+  }, [geoIdx]);
+
+  const handleBackgroundClick = (event: MouseEvent) => {
+    if (activeThreadId === null || onClosePane === undefined) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (
+      target.closest(
+        "[data-thread-card], [data-lane-header], button, a, input, textarea, select, [role='menu'], [role='menuitem']",
+      ) !== null
+    )
+      return;
+    onClosePane();
+  };
+
+  if (lanes.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+        <EmptyState>
+          No thread families to show yet. Loose (unparented) threads stay in the Focus
+          view — set a parent on a thread to start a lane here.
+        </EmptyState>
+      </div>
+    );
+  }
+
+  const rowIds = flat[0].lane.rows.map((row) => row.id);
+  const rowLabels = flat[0].lane.rows.map((row) => row.label);
+  const lockedLane = lockedIndex === null ? undefined : flat[lockedIndex].lane;
+  // Each row's cards in board display order (lane order, then the lane's own
+  // row order): the order a shift-click's range walks, and the order the
+  // caller's eligibility union was built in. A plain map, not a hook — it
+  // sits after the empty-board return.
+  const rowDisplayOrder = new Map<string, string[]>();
+  {
+    const laneList = flat.map((entry) => entry.lane);
+    for (const rowId of rowIds) {
+      rowDisplayOrder.set(rowId, laneRowThreads(laneList, rowId).map((t) => t.id));
+    }
+  }
+  // Trailing spacer: enough room for a full viewport past the last lane so
+  // it can reach the locked position. Constant per viewport — it never
+  // depends on the live scroll position, so it cannot wobble mid-pan
+  // (ensureReachable grows it only while a glide needs the reach).
+  const spacerW = Math.max(0, viewportW - RAIL_W - RAIL_TO_LANE_GAP);
+
+  // Track which swimlane y-range the pointer is in; shade that whole row
+  // across every lane. Only a row CHANGE re-renders.
+  const trackBandHover = (event: MouseEvent<HTMLDivElement>) => {
+    const board = scrollRef.current;
+    if (board === null) return;
+    const y = event.clientY;
+    let rowId: string | null = null;
+    for (const band of Array.from(board.querySelectorAll("[data-band]"))) {
+      const rect = band.getBoundingClientRect();
+      if (y >= rect.top && y < rect.bottom) {
+        rowId = band.getAttribute("data-band");
+        break;
+      }
+    }
+    if (rowId === bandHoverRef.current) return;
+    bandHoverRef.current = rowId;
+    setBandHover(rowId);
+  };
+  const clearBandHover = () => {
+    if (bandHoverRef.current === null) return;
+    bandHoverRef.current = null;
+    setBandHover(null);
+  };
+
+  // The sweep wiring, mirroring the Focus board's per-column block. Every
+  // row is a sweep scope in the same vocabulary the Focus view's columns
+  // use, so one state machine and one set of labels serve both boards.
+  const sweepActive = sweepCandidatesFor !== undefined && onSweepArm !== undefined;
+  const sweepStateFor = (rowId: string) => {
+    const kind = sweepColumnKind(rowId);
+    // Arm-scoped refusal law, exactly as in the Focus view: only the arms
+    // whose action removes the thread from the live board (Done → Archive,
+    // idle → Done) refuse live-child parents.
+    const blocked = sweepRemovesThreads(rowId) ? sweepBlockedIds : undefined;
+    const isArmed = armedSweep !== null && armedSweep.columnId === rowId;
+    const runHere = sweepRun !== null && sweepRun.columnId === rowId ? sweepRun : null;
+    const eligible = isArmed
+      ? (armedSweep?.threadIds ?? [])
+      : sweepActive && kind !== null
+        ? (sweepCandidatesFor?.(rowId) ?? [])
+        : [];
+    return {
+      kind,
+      blocked,
+      isArmed,
+      runHere,
+      eligible,
+      armedSet: isArmed ? new Set(eligible) : null,
+    };
+  };
+  /**
+   * The toggle a lane card reports in sweep mode, mirroring Board's: a card
+   * that may not join refuses loudly, shift extends from the anchor through
+   * this card in the row's display order, and a plain or cmd/ctrl click
+   * toggles one card and becomes the next shift-click's anchor.
+   *
+   * Unlike the Focus board there is no Done-projection carve-out: the Parent
+   * view's Done row holds real done children, never a family's projection
+   * card.
+   */
+  const sweepCardToggle = (
+    rowId: string,
+    blocked: ReadonlySet<string> | undefined,
+    displayOrder: readonly string[],
+    title: string,
+  ) => {
+    const mayJoin = (threadId: string) => !(blocked?.has(threadId) ?? false);
+    return (toggledId: string, gesture: { shiftKey: boolean }) => {
+      if (!mayJoin(toggledId)) {
+        setSweepRefusal(`"${title}" still has live children, so it cannot join a sweep.`);
+        return;
+      }
+      if (gesture.shiftKey) {
+        const anchor =
+          sweepAnchorRef.current?.rowId === rowId ? sweepAnchorRef.current.threadId : null;
+        onSweepRangeSelect?.(sweepRangeIds(displayOrder, anchor, toggledId, mayJoin));
+        return;
+      }
+      sweepAnchorRef.current = { rowId, threadId: toggledId };
+      onSweepToggle?.(toggledId);
+    };
+  };
+
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      {/* The sweep banners live above the horizontal scroll surface, exactly
+          as the Focus board's do: a banner inside the scroller would ride the
+          pan and be carried off the viewport's left edge. */}
+      <div data-banner-row className="shrink-0">
+        {sweepNotice !== null ? (
+          <SweepNoticeBanner
+            notice={sweepNotice}
+            onUndo={onSweepUndo}
+            onDismiss={onDismissSweepNotice}
+          />
+        ) : null}
+        {sweepRefusal !== null ? (
+          <SweepRefusalBanner
+            message={sweepRefusal}
+            onDismiss={() => setSweepRefusal(null)}
+          />
+        ) : null}
+      </div>
+      <div
+        ref={scrollRef}
+        onClick={handleBackgroundClick}
+        onMouseMove={trackBandHover}
+        onMouseLeave={clearBandHover}
+        data-parent-board
+        className={cn(
+          "min-h-0 flex-1 overflow-auto px-3 pb-3 pt-2",
+        )}
+      >
+      <div className="flex min-h-full w-max items-stretch">
+        {/* Row rail: pinned left; labels ride their band heights, so labels
+            and seams line up board-wide by construction. */}
+        <div
+          data-rail
+          className="sticky left-0 z-20 shrink-0 bg-background"
+          style={{ width: RAIL_W }}
+        >
+          <div style={{ height: HEADER_H }} className="flex flex-col justify-center gap-1 px-1.5">
+            <LaneOrderToggle value={parentLaneOrder} onChange={onParentLaneOrderChange} />
+            <button
+              type="button"
+              onClick={onNewTask}
+              className={cn(
+                "flex items-center gap-1 rounded-md border border-dashed border-border px-2 py-1",
+                "text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              )}
+            >
+              <Icon name="Plus" className="size-3" aria-hidden />
+              New Task
+            </button>
+          </div>
+          {rowLabels.map((label, index) => {
+            const rowId = rowIds[index];
+            const count =
+              released || lockedLane === undefined
+                ? null
+                : lockedLane.rows[index].threads.length;
+            // The row's sweep, in its rail cell: the rail is the only
+            // always-visible chrome a row owns board-wide (the row spans
+            // every family lane, so a pill inside one lane's band would
+            // either need one copy per lane or hide behind the next pan).
+            // Only sweepable rows get it — a Needs-you or Working row has no
+            // sweep, and shows no button at all.
+            const sweep = sweepStateFor(rowId);
+            return (
+              <div
+                key={rowId}
+                data-rail-row={rowId}
+                style={{ height: layout.bandHeights[index] }}
+                className={cn(
+                  "flex flex-col justify-center gap-0.5 border-b border-border/40 px-1.5",
+                  "transition-[height] duration-200",
+                )}
+              >
+                <span className="truncate text-[11px] font-medium text-muted-foreground">
+                  {label}
+                </span>
+                {released || count === null || count === 0 || lockedLane === undefined ? null : (
+                  <span
+                    data-rail-attribution
+                    className="truncate text-[10px] tabular-nums text-primary"
+                  >
+                    {count}
+                  </span>
+                )}
+                {sweepActive && sweep.kind !== null ? (
+                  <span className="flex min-w-0 items-center gap-0.5">
+                    <SweepButton
+                      eligibleCount={sweep.eligible.length}
+                      isArmed={sweep.isArmed}
+                      run={
+                        sweep.runHere === null
+                          ? null
+                          : { done: sweep.runHere.done, total: sweep.runHere.total }
+                      }
+                      destination={sweepDestination(rowId) ?? "archive"}
+                      scope="row"
+                      truncates
+                      onArm={() => onSweepArm?.(rowId)}
+                      onConfirm={() => onSweepConfirm?.(rowId)}
+                    />
+                    {sweep.isArmed || sweep.runHere !== null ? (
+                      <SweepCancelButton
+                        running={sweep.runHere !== null}
+                        onClick={() => onSweepCancel?.()}
+                      />
+                    ) : null}
+                  </span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <div className="w-4 shrink-0" aria-hidden />
+        {/* Lanes: one column per family; the locked lane renders rulers,
+            the rest minis, all sharing the same per-row band heights. From
+            lane 2 on, each section carries the 16px lane-gap margin that
+            predictedStart models (the w-4 div covers the rail → lane 1 gap). */}
+        {flat.map((entry, laneIndex) => {
+          const laneLayout = layout.lanes[laneIndex];
+          const lane = entry.lane;
+          const locked = laneIndex === lockedIndex && !released;
+          return (
+            <section
+              key={lane.id}
+              data-lane-id={lane.id}
+              aria-label={lane.label}
+              data-locked={locked ? "true" : undefined}
+              style={{
+                width: laneLayout.width,
+                marginLeft: laneIndex === 0 ? 0 : RAIL_TO_LANE_GAP,
+              }}
+              className={cn(
+                "shrink-0",
+                locked && "rounded-lg bg-primary/[0.02] shadow-[inset_0_0_0_1px] shadow-primary/20",
+              )}
+            >
+              <div
+                data-lane-header
+                style={{ height: HEADER_H }}
+                className={cn(
+                  "sticky top-0 z-10 space-y-1 overflow-hidden bg-background px-1",
+                  locked && "border-b border-primary/40",
+                )}
+              >
+                <LaneHeader
+                  lane={lane}
+                  locked={locked}
+                  doneIds={doneIds}
+                  errorAcks={errorAckIds}
+                  sectionLabel={entry.sectionLabel}
+                  onOpenThread={onOpenThread}
+                  onLock={() => lockToRef.current(laneIndex)}
+                  menuActions={menuActionsFor(lane.parent)}
+                  onAttentionEnter={onAttentionEnter}
+                  onAttentionLeave={onAttentionLeave}
+                />
+              </div>
+              {lane.rows.map((row, rowIndex) => {
+                const cells = laneLayout.cells.filter((cell) => cell.row === rowIndex);
+                const chip = laneLayout.chipFor[rowIndex];
+                // Every lane's band for this row wears the row's own id, so
+                // the click-away hook can spare a card inside the ARMED row
+                // wherever it sits across the lanes.
+                const sweep = sweepStateFor(row.id);
+                const order = rowDisplayOrder.get(row.id) ?? [];
+                return (
+                  <div
+                    key={row.id}
+                    data-band={row.id}
+                    data-sweep-row={row.id}
+                    data-band-hover={bandHover === row.id ? "true" : undefined}
+                    style={{ height: layout.bandHeights[rowIndex] }}
+                    className={cn(
+                      "flex flex-wrap content-start gap-2 overflow-hidden p-1",
+                      "border-b border-dashed border-border/40 last:border-b-0",
+                      "transition-[height] duration-200",
+                      // Swimlane hover: the whole row shades together across
+                      // every lane (the shared y-range), set by the board's
+                      // mouse tracker below.
+                      "data-[band-hover=true]:bg-primary/[0.09]",
+                      "transition-[height] duration-200",
+                      // Ruler bands left-pack so a lone card stays pinned to
+                      // the flush edge (visible even on narrow scrollports);
+                      // context bands center their minis.
+                      locked ? "" : "justify-center",
+                      locked && "bg-primary/[0.04]",
+                    )}
+                  >
+                    {cells.length === 0 && chip === undefined ? (
+                      <div data-slab className="rounded-md bg-muted/10 outline outline-1 outline-dashed outline-border/25 flex-1 min-w-4 h-full" aria-hidden />
+                    ) : null}
+                    {cells.map((cell) => {
+                      // A lone context card fills its band row instead of
+                      // leaving dead space on both sides; rulers stay
+                      // uniform and center.
+                      const fillRow =
+                        cell.variant === "mini" && cells.length === 1 && chip === undefined;
+                      return (
+                        <div
+                          key={cell.thread.id}
+                          data-key={cell.thread.id}
+                          data-cell
+                          data-variant={cell.variant}
+                          style={
+                            fillRow
+                              ? { height: MINI.h }
+                              : {
+                                  width: cell.variant === "ruler" ? RULER.w : MINI.w,
+                                  height: cell.variant === "ruler" ? RULER.h : MINI.h,
+                                }
+                          }
+                          className={cn(
+                            "shrink-0 overflow-hidden rounded-md",
+                            fillRow && "min-w-[136px] flex-1",
+                          )}
+                        >
+                        <ThreadCard
+                          thread={cell.thread}
+                          compact={cell.variant === "mini"}
+                          stateDot={<LaneStateDot thread={cell.thread} errorAcks={errorAckIds} />}
+                          isActive={cell.thread.id === activeThreadId}
+                          isDone={doneIds.has(cell.thread.id)}
+                          isSweepHighlighted={sweep.armedSet?.has(cell.thread.id) ?? false}
+                          isSweeping={sweep.runHere !== null && sweep.runHere.activeId === cell.thread.id}
+                          isSweepSelecting={sweep.isArmed}
+                          isSweepSelectable={
+                            sweep.isArmed &&
+                            !sweep.armedSet?.has(cell.thread.id) &&
+                            !(sweep.blocked?.has(cell.thread.id) ?? false)
+                          }
+                          onSweepToggle={sweepCardToggle(
+                            row.id,
+                            sweep.blocked,
+                            order,
+                            cell.thread.displayTitle,
+                          )}
+                          onAttentionEnter={onAttentionEnter}
+                          onAttentionLeave={onAttentionLeave}
+                          projectName={projectNameFor(cell.thread.projectId)}
+                          repoHrefBase={repoBaseFor(cell.thread.projectId) ?? undefined}
+                          statusFor={statusFor}
+                          linkedIssues={linkedIssuesFor?.(cell.thread.id)}
+                          childLinkedIssuesFor={linkedIssuesFor}
+                          validatedHrefs={validatedHrefs}
+                          menuActions={menuActionsFor(cell.thread)}
+                          snoozeFor={snoozeFor}
+                          pulseRateFor={pulseRateFor}
+                          activeThreadId={activeThreadId}
+                          // The family renders as sibling cells here, not
+                          // nested rows: when the lane holds the focused
+                          // thread, every cell of it wears the focus
+                          // spotlight's marker (surface stays with the
+                          // focused card itself — see ThreadCard).
+                          familySolid={activeLaneId === lane.id}
+                          dimmed={dimmedIds.has(cell.thread.id)}
+                          onOpen={() => onOpenThread(cell.thread.id)}
+                          onOpenThread={onOpenThread}
+                        />
+                        </div>
+                      );
+                    })}
+                    {chip === undefined ? null : (
+                      <div
+                        data-cell
+                        data-variant="mini"
+                        style={{ width: MINI.w, height: MINI.h }}
+                        className="flex shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-muted/30"
+                      >
+                        <span className="text-[11px] font-medium text-muted-foreground">
+                          +{chip} more
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </section>
+          );
+        })}
+        {/* Trailing spacer: enough room for a full viewport past the last
+            lane; grows when a pin target would otherwise clamp. */}
+        <div
+          ref={spacerRef}
+          aria-hidden
+          style={{ width: spacerW }}
+          className="shrink-0 transition-[width] duration-200"
+        />
+      </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The parent lane board is memoized for the same reason `Board` is (issue
+ * #406's covered-sheet quiet open): the caller keeps every prop's identity
+ * stable (hoisted handlers in app.tsx), so a covered open/close wakes
+ * nothing here either.
+ */
+export const ParentLaneBoard = memo(ParentLaneBoardBase);

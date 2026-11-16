@@ -1,0 +1,70 @@
+{
+  "name": "bb-plugin-ultragoal",
+  "version": "0.29.0",
+  "description": "Provider-neutral durable UltraGoals for Codex, Cursor, OpenCode, Claude Code, and Pi, with scheduled workers, verification, and defect remediation.",
+  "license": "MIT",
+  "author": "Braedon Saunders",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/braedonsaunders/bb-plugin-ultragoal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/braedonsaunders/bb-plugin-ultragoal/issues"
+  },
+  "homepage": "https://github.com/braedonsaunders/bb-plugin-ultragoal#readme",
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "ultragoal",
+    "agents",
+    "orchestration"
+  ],
+  "files": [
+    "app.tsx",
+    "server.ts",
+    "contract.ts",
+    "lib",
+    "skills",
+    "templates",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "host.ts",
+    "host-contract.ts"
+  ],
+  "engines": {
+    "bb": ">=0.39",
+    "bbPluginSdk": ">=0.4.8"
+  },
+  "bb": {
+    "name": "UltraGoal",
+    "description": "Provider-neutral durable UltraGoals for Codex, Cursor, OpenCode, Claude Code, and Pi, with scheduled workers, verification, and defect remediation.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ],
+    "host": "./host.ts"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "scripts": {
+    "test": "tsx --test lib/*.test.ts"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.8",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "better-sqlite3": "^13.0.3",
+    "cron-parser": "^5.10.0",
+    "hono": "^4.13.4",
+    "tsx": "^4.23.12",
+    "typescript": "^5.7.0"
+  }
+}

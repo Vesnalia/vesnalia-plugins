@@ -1,0 +1,7 @@
+{
+  "id": "copilot",
+  "displayName": "GitHub Copilot",
+  "command": "copilot",
+  "args": ["--acp"],
+  "env": {}
+}

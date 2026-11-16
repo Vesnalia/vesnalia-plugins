@@ -1,0 +1,586 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  definePluginApp,
+  experimental_useAppPanel,
+  useBbNavigate,
+  type ExperimentalThreadTabProps,
+  type PluginNewThreadPanelProps,
+} from "@get-bb/plugin-sdk/app";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+import { DiffTab } from "./ui/DiffTab";
+import { GitView } from "./ui/GitView";
+import { GraphView } from "./ui/GraphView";
+import { FolderPicker, type FolderOption } from "./ui/FolderPicker";
+import { NamesView } from "./ui/NamesView";
+import { TOOLTIP_ROOT_ATTRIBUTE, Tooltips } from "./ui/Tooltips";
+import { isDirty, useEditorStore } from "./ui/editorStore";
+import {
+  FileModeToggle,
+  FileTabBody,
+  TAB_SHORTCUTS,
+  SplitLayout,
+  describeFile,
+  useTabs,
+  visibleTabs,
+  type EmptyState,
+  type TabInfo,
+} from "./ui/FileTabs";
+import {
+  DIFF_TAB_REFERENCE,
+  CommitView,
+  DiffView,
+  commitTabTitle,
+  compareTabTitle,
+  diffParamsSchema,
+  diffTabTitle,
+  type CommitParams,
+  type CompareDiffParams,
+  type FileDiffParams,
+} from "./ui/DiffTab";
+import {
+  fileTarget,
+  indexBadges,
+  useLocation,
+  useRefreshSignal,
+  useTreehouseRpc,
+  useWatchLease,
+  useWorkspaceStatus,
+} from "./ui/data";
+
+type Mode = "files" | "diff" | "graph";
+
+const MODES: readonly Mode[] = ["files", "diff", "graph"];
+const MODE_LABELS: Record<Mode, string> = { files: "Files", diff: "Diff", graph: "Graph" };
+const MODE_TIPS: Record<Mode, string> = {
+  files: "Browse the workspace's files",
+  diff: "Review, stage and commit changes in every repository",
+  graph: "Commit history and branches",
+};
+const FILE_TAB = "file:";
+const DIFF_TAB = "diff:";
+const COMMIT_TAB = "commit:";
+const EMPTY_STATES: Record<Mode, EmptyState> = {
+  files: {
+    icon: "Folder",
+    title: "Open a file",
+    hint: "Pick a file in the tree to open it here. Several files open as tabs.",
+  },
+  diff: { icon: "FileDiff", title: "Open a diff", hint: "Pick a changed file on the right to see its diff." },
+  graph: { icon: "GitMerge", title: "Open a commit", hint: "Pick a commit in the graph to see its changes." },
+};
+const MODE_ICONS: Record<Mode, string> = { files: "Folder", diff: "FileDiff", graph: "GitMerge" };
+
+const modes = new Map<string, Mode>();
+const modeListeners = new Set<(mode: Mode) => void>();
+
+function requestMode(mode: Mode) {
+  if (modeListeners.size === 0) {
+    pendingMode = mode;
+    return;
+  }
+  for (const listener of modeListeners) listener(mode);
+}
+
+let pendingMode: Mode | null = null;
+const queries = new Map<string, string>();
+const fileBases = new Map<string, string>();
+const hiddenIgnored = new Map<string, boolean>();
+
+function parentOf(repo: string): string {
+  const slash = repo.lastIndexOf("/");
+  return slash === -1 ? "" : repo.slice(0, slash);
+}
+
+function baseName(rel: string): string {
+  return rel.slice(rel.lastIndexOf("/") + 1);
+}
+
+function TreehouseTab({ environment }: ExperimentalThreadTabProps) {
+  if (environment === null) {
+    return <p className="px-4 py-3 text-sm text-muted-foreground">This thread has no workspace.</p>;
+  }
+  return <Treehouse key={environment.id} environmentId={environment.id} />;
+}
+
+function NewThreadTreehouse({ projectId }: PluginNewThreadPanelProps) {
+  if (projectId === null) {
+    return (
+      <p className="px-4 py-3 text-sm text-muted-foreground">
+        Pick a project to browse its files. Threads without a project start in their own empty scratch folder.
+      </p>
+    );
+  }
+  return <Treehouse key={projectId} environmentId={projectId} />;
+}
+
+function Treehouse({ environmentId }: { environmentId: string }) {
+  const rpc = useTreehouseRpc();
+  useLocation(rpc, environmentId);
+  const [mode, setModeState] = useState<Mode>(() => {
+    const initial = pendingMode ?? modes.get(environmentId) ?? "files";
+    pendingMode = null;
+    return initial;
+  });
+  useEffect(() => {
+    const listener = (next: Mode) => {
+      pendingMode = null;
+      modes.set(environmentId, next);
+      setModeState(next);
+    };
+    modeListeners.add(listener);
+    return () => {
+      modeListeners.delete(listener);
+    };
+  }, [environmentId]);
+  const [query, setQueryState] = useState(() => queries.get(environmentId) ?? "");
+  const [manual, setManual] = useState(0);
+  const [collapse, setCollapse] = useState(0);
+  const watching = useWatchLease(rpc, environmentId);
+  const auto = useRefreshSignal(environmentId, { poll: watching === false });
+  const graphAuto = useRefreshSignal(environmentId, { poll: false });
+  const graphSignal = graphAuto + manual;
+  const signal = auto + manual;
+  const { workspace, error, reload } = useWorkspaceStatus(rpc, environmentId, signal);
+  const badges = useMemo(() => indexBadges(workspace), [workspace]);
+  const changeCount = useMemo(
+    () => (workspace?.repos ?? []).reduce((sum, r) => sum + (r.status.repo ? r.status.files.length : 0), 0),
+    [workspace],
+  );
+
+  const setMode = (next: Mode) => {
+    modes.set(environmentId, next);
+    setModeState(next);
+  };
+  const [baseChoice, setBaseChoice] = useState(() => fileBases.get(environmentId) ?? "");
+  const [hideIgnored, setHideIgnoredState] = useState(() => hiddenIgnored.get(environmentId) ?? false);
+  const setHideIgnored = (next: boolean) => {
+    hiddenIgnored.set(environmentId, next);
+    setHideIgnoredState(next);
+  };
+  const fileOptions = useMemo<FolderOption[]>(() => {
+    const repos = (workspace?.repos ?? []).flatMap((r) => (r.status.repo ? [{ repo: r.repo, status: r.status }] : []));
+    const byKey = new Map<string, FolderOption>();
+    byKey.set("", {
+      key: "",
+      title: workspace?.name ?? "workspace",
+      path: "workspace root",
+      repos: [],
+      changes: repos.reduce((sum, r) => sum + r.status.files.length, 0),
+      all: false,
+      icon: "Folder",
+      subtitle: "Whole workspace",
+    });
+    for (const r of repos) {
+      if (r.repo === "") continue;
+      const parent = parentOf(r.repo);
+      if (parent !== "") {
+        const group = byKey.get(parent);
+        if (group === undefined) {
+          byKey.set(parent, {
+            key: parent,
+            title: baseName(parent),
+            path: parent,
+            repos: [r.repo],
+            changes: r.status.files.length,
+            all: false,
+            icon: "Folder",
+          });
+        } else if (group.icon === "Folder" && group.subtitle === undefined) {
+          group.repos.push(r.repo);
+          group.changes += r.status.files.length;
+        }
+      }
+      byKey.set(r.repo, {
+        key: r.repo,
+        title: baseName(r.repo),
+        path: r.repo,
+        repos: [r.repo, r.status.branch ?? ""],
+        changes: r.status.files.length,
+        all: false,
+        icon: "FolderGit",
+        subtitle: `${r.status.branch ?? "detached"} · ${r.repo}`,
+      });
+    }
+    const [root, ...rest] = [...byKey.values()];
+    rest.sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+    return root === undefined ? rest : [root, ...rest];
+  }, [workspace]);
+  const base = fileOptions.some((o) => o.key === baseChoice) ? baseChoice : "";
+  const setBase = (next: string) => {
+    fileBases.set(environmentId, next);
+    setBaseChoice(next);
+  };
+
+  const navigate = useBbNavigate();
+  const confirmClose = useCallback(
+    (ids: string[]) => {
+      const unsaved = ids.flatMap((id) =>
+        id.startsWith(FILE_TAB) && isDirty(environmentId, id.slice(FILE_TAB.length)) ? [id.slice(FILE_TAB.length)] : [],
+      );
+      if (unsaved.length === 0) return true;
+      const what = unsaved.length === 1 ? baseName(unsaved[0] ?? "") : `${unsaved.length} files`;
+      return window.confirm(`${what} has unsaved changes. Close anyway and lose them?`);
+    },
+    [environmentId],
+  );
+  // One tab strip for the whole panel: files, diffs and commits, whichever view is showing.
+  const tabs = useTabs(environmentId, "all", confirmClose);
+  const editorVersion = useEditorStore();
+  const panel = experimental_useAppPanel();
+  const openFile = useCallback((path: string) => tabs.open(FILE_TAB + path), [tabs.open]);
+  const openDiff = useCallback(
+    (params: FileDiffParams | CompareDiffParams) => tabs.open(DIFF_TAB + JSON.stringify(params)),
+    [tabs.open],
+  );
+  const openCommit = useCallback((params: CommitParams) => tabs.open(COMMIT_TAB + JSON.stringify(params)), [tabs.open]);
+  const onEntryMoved = useCallback(
+    (from: string, to: string | null) => tabs.moved(FILE_TAB + from, to === null ? null : FILE_TAB + to),
+    [tabs.moved],
+  );
+  const active = tabs.active;
+  const activeFile = active?.startsWith(FILE_TAB) ? active.slice(FILE_TAB.length) : null;
+  const activeDiff = active?.startsWith(DIFF_TAB) ? active.slice(DIFF_TAB.length) : null;
+  const activeCommit = active?.startsWith(COMMIT_TAB) ? active.slice(COMMIT_TAB.length) : null;
+
+  const describeTab = useCallback(
+    (id: string): TabInfo => {
+      if (id.startsWith(FILE_TAB)) {
+        const path = id.slice(FILE_TAB.length);
+        return { ...describeFile(path), dirty: isDirty(environmentId, path) };
+      }
+      if (id.startsWith(DIFF_TAB)) return describeDiff(id.slice(DIFF_TAB.length));
+      if (id.startsWith(COMMIT_TAB)) return describeCommit(id.slice(COMMIT_TAB.length));
+      return { label: id, path: id };
+    },
+    // editorVersion re-creates this when a file's unsaved state changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [environmentId, editorVersion],
+  );
+  const renderTab = useCallback(
+    (id: string, isActive: boolean) => {
+      if (id.startsWith(FILE_TAB)) {
+        return <FileTabBody environmentId={environmentId} path={id.slice(FILE_TAB.length)} active={isActive} />;
+      }
+      if (id.startsWith(DIFF_TAB)) {
+        const params = parseDiffId(id.slice(DIFF_TAB.length));
+        if (params !== null) return <DiffView environmentId={environmentId} params={params} onOpenFile={openFile} />;
+      }
+      if (id.startsWith(COMMIT_TAB)) {
+        const params = parseCommitId(id.slice(COMMIT_TAB.length));
+        if (params !== null) return <CommitView environmentId={environmentId} params={params} />;
+      }
+      return <p className="px-4 py-3 text-sm text-muted-foreground">This tab can't be shown.</p>;
+    },
+    [environmentId, openFile],
+  );
+  const popOut = useCallback(
+    (id: string) => {
+      if (id.startsWith(FILE_TAB)) {
+        const target = fileTarget(environmentId, id.slice(FILE_TAB.length));
+        if (target !== null) navigate.experimental_openFilePreview({ target, location: null });
+        return;
+      }
+      if (id.startsWith(DIFF_TAB)) {
+        const params = parseDiffId(id.slice(DIFF_TAB.length));
+        if (params === null) return;
+        const title = params.kind === "compare" ? compareTabTitle(params) : diffTabTitle(params);
+        panel.openTab({ tab: DIFF_TAB_REFERENCE, params, title });
+        return;
+      }
+      const params = parseCommitId(id.slice(COMMIT_TAB.length));
+      if (params !== null) panel.openTab({ tab: DIFF_TAB_REFERENCE, params, title: commitTabTitle(params) });
+    },
+    [environmentId, navigate, panel],
+  );
+  const stripActions = useCallback(
+    (id: string) =>
+      id.startsWith(FILE_TAB) ? (
+        <FileModeToggle environmentId={environmentId} path={id.slice(FILE_TAB.length)} />
+      ) : null,
+    [environmentId],
+  );
+
+  const setQuery = (next: string) => {
+    queries.set(environmentId, next);
+    setQueryState(next);
+  };
+
+  const filesSidebar = (
+    <>
+      {fileOptions.length > 1 ? (
+        <FolderPicker
+          options={fileOptions}
+          value={base}
+          onChange={setBase}
+          placeholder="Search folders and repositories"
+        />
+      ) : null}
+      <div className={cn("flex items-center gap-1 px-2 pb-2", fileOptions.length > 1 ? "pt-0" : "pt-2")}>
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-input px-2">
+          <Icon name="Search" className="size-4 shrink-0 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setQuery("");
+            }}
+            placeholder="Find files"
+            aria-label="Find files"
+            className="h-8 min-w-0 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+          />
+          {query === "" ? null : (
+            <button
+              type="button"
+              title="Clear"
+              onClick={() => setQuery("")}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="CircleX" className="size-3.5" />
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          title={hideIgnored ? "Show ignored files" : "Hide ignored files"}
+          aria-pressed={hideIgnored}
+          onClick={() => setHideIgnored(!hideIgnored)}
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-md hover:bg-state-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            hideIgnored ? "bg-state-active text-foreground" : "text-muted-foreground",
+          )}
+        >
+          <Icon name={hideIgnored ? "EyeOff" : "Eye"} className="size-4" />
+        </button>
+        <button
+          type="button"
+          title="Collapse all folders"
+          onClick={() => setCollapse((n) => n + 1)}
+          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-state-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <Icon name="ChevronsUp" className="size-4" />
+        </button>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col border-t border-border">
+        <NamesView
+          key={base}
+          base={base}
+          hideIgnored={hideIgnored}
+          rootPath={workspace?.root ?? null}
+          rpc={rpc}
+          environmentId={environmentId}
+          badges={badges}
+          signal={signal}
+          query={query}
+          collapseSignal={collapse}
+          onOpenFile={openFile}
+          selectedPath={activeFile}
+          onEntryMoved={onEntryMoved}
+        />
+      </div>
+    </>
+  );
+
+  const viewSwitch = (
+    <>
+      <div
+        role="tablist"
+        aria-label="Treehouse view"
+        className="flex min-w-0 items-center gap-0.5 rounded-md border border-border p-0.5"
+      >
+        {MODES.map((value) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            title={MODE_TIPS[value]}
+            aria-selected={mode === value}
+            onClick={() => setMode(value)}
+            className={cn(
+              "flex h-6 min-w-0 items-center gap-1 rounded px-2 text-xs transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              mode === value ? "bg-state-active text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Icon name={MODE_ICONS[value]} className="size-3.5 shrink-0" />
+            <span className="truncate">{MODE_LABELS[value]}</span>
+            {value === "diff" && changeCount > 0 ? (
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[oklch(0.56_0.17_255/0.2)] px-1 text-[10px] tabular-nums leading-none text-[oklch(0.75_0.13_255)]">
+                {changeCount > 99 ? "99+" : changeCount}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        title="Refresh"
+        onClick={() => {
+          setManual((n) => n + 1);
+          reload({ rescan: true });
+        }}
+        className="ml-auto flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-state-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <Icon name="ArrowReloadHorizontal" className="size-4" />
+      </button>
+    </>
+  );
+
+  return (
+    <div
+      {...{ [TOOLTIP_ROOT_ATTRIBUTE]: "" }}
+      className="flex h-full min-h-0 flex-col [&_[role=button]]:cursor-pointer [&_[role=button]:focus]:outline-none [&_[role=button]:focus-visible]:ring-1 [&_[role=button]:focus-visible]:ring-inset [&_[role=button]:focus-visible]:ring-ring [&_[role=option]:focus]:outline-none [&_[role=option]]:cursor-pointer [&_[role=tab]]:cursor-pointer [&_button:disabled]:cursor-not-allowed [&_button]:cursor-pointer [&_select]:cursor-pointer"
+    >
+      <Tooltips />
+      <SplitLayout
+        tabs={tabs}
+        header={viewSwitch}
+        empty={EMPTY_STATES[mode]}
+        describe={describeTab}
+        renderTab={renderTab}
+        stripActions={stripActions}
+        onPopOut={popOut}
+        onPathDrop={openFile}
+        sidebar={
+          mode === "files" ? (
+            filesSidebar
+          ) : mode === "graph" ? (
+            <GraphView
+              rpc={rpc}
+              environmentId={environmentId}
+              workspace={workspace}
+              signal={graphSignal}
+              onOpenCommit={openCommit}
+              activeCommit={activeCommit}
+            />
+          ) : (
+            <GitView
+              rpc={rpc}
+              environmentId={environmentId}
+              workspace={workspace}
+              workspaceError={error}
+              reload={reload}
+              signal={signal}
+              onOpenDiff={openDiff}
+              onOpenFile={openFile}
+              activeDiff={activeDiff}
+            />
+          )
+        }
+      />
+    </div>
+  );
+}
+
+function parseCommitId(id: string): CommitParams | null {
+  try {
+    const parsed = diffParamsSchema.safeParse(JSON.parse(id));
+    return parsed.success && parsed.data.kind === "commit" ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function describeCommit(id: string): TabInfo {
+  const params = parseCommitId(id);
+  if (params === null) return { label: "commit", path: "commit", icon: "GitCommit" };
+  const subject = params.subject.length > 28 ? `${params.subject.slice(0, 27)}…` : params.subject;
+  return {
+    label: subject,
+    path: params.repo === "" ? params.sha : `${params.repo}/${params.sha}`,
+    badge: params.sha.slice(0, 7),
+    icon: "GitCommit",
+  };
+}
+
+function parseDiffId(id: string): FileDiffParams | CompareDiffParams | null {
+  try {
+    const parsed = diffParamsSchema.safeParse(JSON.parse(id));
+    return parsed.success && parsed.data.kind !== "commit" ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function describeDiff(id: string): TabInfo {
+  const params = parseDiffId(id);
+  if (params === null) return { label: "diff", path: "diff" };
+  const path = params.repo === "" ? params.path : `${params.repo}/${params.path}`;
+  const label = path.slice(path.lastIndexOf("/") + 1);
+  if (params.kind === "compare") return { label, path, badge: `vs ${params.base}` };
+  return { label, path, badge: params.untracked ? "U" : params.staged ? "staged" : undefined };
+}
+
+const TAB_REFERENCE = { id: "treehouse", context: { kind: "thread" }, availability: "fixed" } as const;
+
+export default definePluginApp((app) => {
+  app.slots.experimental_newThreadPanelAction({
+    id: "treehouse",
+    title: "Treehouse",
+    icon: "Folder02",
+    layout: "flush",
+    component: NewThreadTreehouse,
+  });
+  const tabCommands = [
+    { id: "next-tab", title: "Treehouse: next tab", shortcut: TAB_SHORTCUTS.next, run: () => visibleTabs()?.next() },
+    {
+      id: "previous-tab",
+      title: "Treehouse: previous tab",
+      shortcut: TAB_SHORTCUTS.previous,
+      run: () => visibleTabs()?.previous(),
+    },
+    {
+      id: "close-tab",
+      title: "Treehouse: close tab",
+      shortcut: TAB_SHORTCUTS.close,
+      run: () => visibleTabs()?.closeActive(),
+    },
+    {
+      id: "reopen-tab",
+      title: "Treehouse: reopen closed tab",
+      shortcut: TAB_SHORTCUTS.reopen,
+      run: () => visibleTabs()?.reopen(),
+    },
+  ];
+  for (const command of tabCommands) {
+    app.commands.register({
+      id: command.id,
+      title: command.title,
+      defaultShortcut: command.shortcut,
+      isAvailable: () => visibleTabs() !== null,
+      run: command.run,
+    });
+  }
+  app.commands.register({
+    id: "toggle-files",
+    title: "Treehouse: toggle files",
+    defaultShortcut: { key: "e", mod: true, shift: true },
+    isAvailable: (context) => context.threadId !== null,
+    run(context) {
+      context.experimental_panel.toggleTab({ tab: TAB_REFERENCE });
+    },
+  });
+  app.slots.experimental_tab({
+    context: { kind: "thread" },
+    availability: "action",
+    id: "diff",
+    title: "Treehouse diff",
+    tooltip: "Treehouse: open the Diff view",
+    icon: "FileDiff",
+    layout: "flush",
+    component: DiffTab,
+    run: ({ experimental_panel }) => {
+      requestMode("diff");
+      experimental_panel.openTab({ tab: TAB_REFERENCE });
+    },
+  });
+  app.slots.experimental_tab({
+    context: { kind: "thread" },
+    availability: "fixed",
+    id: "treehouse",
+    title: "Files",
+    tooltip: "Treehouse: files, diff and graph",
+    icon: "Folder02",
+    layout: "flush",
+    component: TreehouseTab,
+  });
+});

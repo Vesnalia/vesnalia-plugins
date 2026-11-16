@@ -1,0 +1,3258 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, DragEvent, ReactNode } from "react";
+import {
+  definePluginApp,
+  experimental_useSidebarThreadActions,
+  experimental_useSidebarThreads,
+  useRealtime,
+  useRpc,
+  useBbContext,
+  UrlLink,
+  ThreadChat,
+  Markdown,
+} from "@get-bb/plugin-sdk/app";
+import type {
+  rpcContract,
+  MapLayout,
+  Preference,
+  Snapshot,
+  MapTask,
+  TaskDetail,
+} from "./server";
+import {
+  buildMap,
+  arrangeMap,
+  activityLabel,
+  dueLabel,
+  isWorking,
+  localDay,
+  needsReview,
+  preferredSession,
+  selectVisible,
+  sessionItem,
+  snoozeLabel,
+  threadSignal,
+  unreadLabel,
+  type WorkItem,
+} from "./model";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Icon } from "./components/ui/icon";
+import {
+  keyMovesLayout,
+  useMapMotion,
+  useRevealChat,
+} from "./layout-motion";
+import { useMapZoom, ZoomControls } from "./map-zoom";
+import { extendOrbit, zoomDensity, zoomVisible } from "./zoom";
+import { SESSIONS_AREA, heatStats, type HeatArea } from "./heat";
+import { useHeatModel } from "./heat-memo";
+import { HeatMap } from "./heat-view";
+import { DateFixes } from "./date-fixes";
+import {
+  BarActs,
+  CommentBox,
+  CommentTimeline,
+  MoreMenu,
+  snoozeItem,
+  TaskAsk,
+  TaskDescription,
+  TaskFacts,
+  taskAsk,
+} from "./task-panel";
+import { useSessionLauncher } from "./session-launcher";
+import {
+  SettlementActions,
+  SettledToday,
+  type SnoozeRow,
+} from "./settlement-actions";
+import { AreaBulkActions, TileActions } from "./quick-actions";
+import {
+  ACTION_LABEL,
+  type ActionContext,
+  ORCHESTRATOR_LIMIT,
+  type QuickAction,
+  SNOOZE_DAYS,
+} from "./delegation";
+import type { Settlement } from "./settlement-contract";
+import {
+  AreaTools,
+  ProjectDot,
+  useAreaManager,
+  type AreaMenuItem,
+} from "./management-ui";
+import type { ManagementResult } from "./management-contract";
+import { previewExcerpt, type SessionPreview } from "./preview";
+import { fitOverview } from "./overview-layout";
+import { useOverviewSize } from "./overview-size";
+import "./app.css";
+import "./overview.css";
+
+type Filter = "all" | "focus" | "waiting" | "unread" | "working" | "inactive";
+const filters: [Filter, string][] = [
+  ["all", "All work"],
+  ["focus", "In focus"],
+  ["waiting", "Waiting for you"],
+  ["unread", "Ready to read"],
+  ["working", "Working"],
+  ["inactive", "Inactive"],
+];
+type Previews = Record<string, SessionPreview>;
+const EMPTY: Snapshot = {
+  projects: [],
+  tasks: [],
+  generatedAt: 0,
+  warnings: [],
+};
+function age(timestamp: number, now: number) {
+  const minutes = Math.max(0, Math.floor((now - timestamp) / 60000));
+  return minutes < 1
+    ? "just now"
+    : minutes < 60
+      ? `${minutes}m ago`
+      : minutes < 1440
+        ? `${Math.floor(minutes / 60)}h ago`
+        : `${Math.floor(minutes / 1440)}d ago`;
+}
+function Status({ item }: { item: WorkItem }) {
+  if (item.signal === "inactive" && item.reason === "Inactive") return null;
+  return (
+    <span
+      className={`wm-statuses ${item.kind === "project" ? "wm-project-summary" : ""}`}
+    >
+      <span
+        className={`wm-status wm-${item.signal}`}
+        data-attention={item.attention ?? undefined}
+      >
+        {item.signal === "unread" && item.kind !== "project" ? (
+          <Icon
+            name="MessageSquare"
+            className="wm-result-icon"
+            aria-hidden="true"
+          />
+        ) : (
+          <i aria-hidden="true" />
+        )}
+        {item.reason}
+      </span>
+      {needsReview(item) && item.attention !== "review" && (
+        <span className="wm-status wm-waiting" data-attention="review">
+          <i aria-hidden="true" />
+          Needs review
+        </span>
+      )}
+      {item.kind !== "project" &&
+        item.signal !== "unread" &&
+        item.unreadResults > 0 && (
+          <span className="wm-status wm-unread">
+            <Icon
+              name="MessageSquare"
+              className="wm-result-icon"
+              aria-hidden="true"
+            />
+            {unreadLabel(item.unreadResults)}
+          </span>
+        )}
+    </span>
+  );
+}
+function WorkMap() {
+  const rpc = useRpc<typeof rpcContract>();
+  const sidebar = experimental_useSidebarThreads();
+  const actions = experimental_useSidebarThreadActions();
+  const bbContext = useBbContext();
+  const threadsRef = useRef(sidebar.threads);
+  threadsRef.current = sidebar.threads;
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [preferences, setPreferences] = useState<Record<string, Preference>>(
+    {},
+  );
+  const [previews, setPreviews] = useState<Previews>({});
+  const [error, setError] = useState("");
+  const [refreshError, setRefreshError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  // Unknown until the stored choice arrives, so neither layout paints first.
+  const [layoutMode, setLayoutMode] = useState<MapLayout | null>(null);
+  const [heatFreeze, setHeatFreeze] = useState<WorkItem[] | null>(null);
+  const [uncollapsed, setUncollapsed] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const [selection, setSelection] = useState<WorkItem | null>(null);
+  const [expandedArea, setExpandedArea] = useState<WorkItem | null>(null);
+  const [previewMode, setPreviewMode] = useState<"inline" | "pane">("inline");
+  const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [chatTarget, setChatTarget] = useState<{
+    itemId: string;
+    threadId: string;
+  } | null>(null);
+  const chatToggleRef = useRef<HTMLButtonElement>(null);
+  const [chatFocusRequest, setChatFocusRequest] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const [rotation, setRotation] = useState(0);
+  const [rotate, setRotate] = useState(
+    () =>
+      typeof window.matchMedia !== "function" ||
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [settling, setSettling] = useState(false);
+  // Tidy mode: the slipped dates are the work. It lives only in this
+  // session and ends with Escape, the chip, or leaving Heat.
+  const [tidy, setTidy] = useState(false);
+  // The opened task's full description and timeline, read for that one task.
+  const [detail, setDetail] = useState<{
+    taskId: string;
+    data: TaskDetail | null;
+    error: string;
+    loading: boolean;
+  }>({ taskId: "", data: null, error: "", loading: false });
+  const [detailNonce, setDetailNonce] = useState(0);
+  // A comment being written on a task; it survives the task closing and
+  // reopening, and rides with Agent decides as part of the brief.
+  const [commentDraft, setCommentDraft] = useState<{
+    taskId: string;
+    text: string;
+  } | null>(null);
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState("");
+  const [settled, setSettled] = useState<Settlement[]>([]);
+  // Snoozes made here: they live in preferences, not in settlement records.
+  const [snoozes, setSnoozes] = useState<SnoozeRow[]>([]);
+  const [settledError, setSettledError] = useState("");
+  const [picked, setPicked] = useState<string[]>([]);
+  const [acting, setActing] = useState<{
+    id: string;
+    action: QuickAction;
+  } | null>(null);
+  const [bulk, setBulk] = useState<QuickAction | null>(null);
+  // A failed act belongs where it was clicked: on that card, or in the bulk bar
+  // that started the run. The settled strip is for what settled.
+  const [actError, setActError] = useState<{
+    scope: "item" | "bulk";
+    id: string;
+    message: string;
+  } | null>(null);
+  // Handovers this session made, by task id. Tasks needs a moment to show a
+  // new agent, and until it does this is the only thing that knows.
+  const [handedOver, setHandedOver] = useState<Record<string, number>>({});
+  const [preset, setPreset] = useState("wiz");
+  const [undoing, setUndoing] = useState<string | null>(null);
+  const undoLock = useRef(false);
+  const live = useRef(true);
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const returnItemId = useRef<string | null>(null);
+  const overviewScroll = useRef(0);
+  const panelRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLElement>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
+  const overviewRef = useRef<HTMLElement>(null);
+  const [inspectionLayout, setInspectionLayout] = useState<ReturnType<
+    typeof arrangeMap
+  > | null>(null);
+  const [browseLayout, setBrowseLayout] = useState<WorkItem[] | null>(null);
+  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
+  const [mapWidth, setMapWidth] = useState(1280);
+  useEffect(() => {
+    if (!canvasRef.current || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) =>
+      setMapWidth(entry.contentRect.width),
+    );
+    observer.observe(canvasRef.current);
+    return () => observer.disconnect();
+  }, []);
+  const report = useCallback((cause: unknown) => {
+    if (live.current)
+      setError(cause instanceof Error ? cause.message : String(cause));
+  }, []);
+  // Refreshes overlap: a slow older one must never replace a newer result.
+  const refreshStarted = useRef(0);
+  const refreshApplied = useRef(0);
+  const refresh = useCallback(
+    async (fresh = false) => {
+      const generation = ++refreshStarted.current;
+      // Activity still ages when a source refresh fails.
+      if (live.current) setNow(Date.now());
+      try {
+        const [data, prefs] = await Promise.all([
+          rpc.call("snapshot", fresh ? { fresh: true } : null),
+          rpc.call("preferences"),
+        ]);
+        if (generation < refreshApplied.current) return;
+        refreshApplied.current = generation;
+        if (live.current) {
+          setSnapshot(data);
+          setPreferences(prefs);
+          setRefreshError("");
+          if (!selectionRef.current) setInspectionLayout(null);
+        }
+      } catch (cause) {
+        if (live.current && generation >= refreshApplied.current)
+          setRefreshError(
+            cause instanceof Error ? cause.message : String(cause),
+          );
+      }
+    },
+    [rpc],
+  );
+  useEffect(() => {
+    // A missing or failed choice keeps the default view; it is never an error.
+    // A choice made while it loads wins over the stored one.
+    rpc.call("layout").then(
+      (result) => {
+        if (live.current) setLayoutMode((mode) => mode ?? result.layout);
+      },
+      () => {
+        if (live.current) setLayoutMode((mode) => mode ?? "overview");
+      },
+    );
+  }, [rpc]);
+  // On a phone Heat's legend rows sit behind one toggle; its state is kept
+  // with the layout choice, so a reload does not push the map down again.
+  const [legendOpen, setLegendOpen] = useState(false);
+  useEffect(() => {
+    rpc.call("legend").then(
+      (result) => {
+        if (live.current) setLegendOpen(result.open);
+      },
+      () => {
+        /* A missing choice keeps the legend shut; it is never an error. */
+      },
+    );
+  }, [rpc]);
+  const toggleLegend = () => {
+    const open = !legendOpen;
+    setLegendOpen(open);
+    rpc.call("setLegend", { open }).catch(report);
+  };
+  const chooseLayout = (next: MapLayout) => {
+    // Heat also acts as "show me the whole map again" from a filter or a search.
+    if (next === layoutMode && (next === "overview" || heatOn)) return;
+    captureLayout();
+    setLayoutMode(next);
+    setHeatFreeze(null);
+    setUncollapsed([]);
+    setSelection(null);
+    setExpandedArea(null);
+    setInspectionLayout(null);
+    setBrowseLayout(null);
+    if (next === "heat") {
+      // Heat arranges the whole map, so it returns from a filter or a search.
+      setFilter("all");
+      setQuery("");
+      setExpanded(false);
+    }
+    rpc.call("setLayout", { layout: next }).catch(report);
+  };
+  const launcher = useSessionLauncher(() => void refresh(true));
+  const loadSettled = useCallback(async () => {
+    try {
+      const rows = await rpc.call("settledToday");
+      if (live.current) {
+        setSettled(rows);
+        setSettledError("");
+      }
+    } catch (cause) {
+      if (live.current)
+        setSettledError(
+          `Could not load settled work: ${cause instanceof Error ? cause.message : String(cause)}`,
+        );
+    }
+  }, [rpc]);
+  useEffect(() => {
+    void loadSettled();
+    const timer = setInterval(() => {
+      if (!document.hidden) void loadSettled();
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [loadSettled]);
+  useRealtime("settlements-changed", () => {
+    void loadSettled();
+    void refresh(true);
+  });
+  const startSession = (item?: WorkItem) => {
+    setChatTarget(null);
+    if (manager.active) manager.close(false);
+    if (!item) {
+      setSelection(null);
+      setExpandedArea(null);
+      setActiveSession(null);
+      setBrowseLayout(null);
+      if (canvasRef.current) canvasRef.current.scrollTop = 0;
+    }
+    const project = snapshot?.projects.find(
+      (p) => p.id === (item?.task?.projectId ?? item?.id.slice(8)),
+    );
+    launcher.open({
+      id: item?.id ?? "global",
+      title: item
+        ? `${item.task?.key ? `${item.task.key} · ` : ""}${item.title}`
+        : "Work Map",
+      projectId:
+        (item ? project?.linkedBbProjectId : bbContext.projectId) ?? undefined,
+      taskId: item?.task?.id,
+      prompt: item
+        ? `${item.task ? `Task ${item.task.key}` : "Project"}: ${item.title}\n${item.summary}${item.nextAction ? `\nNext step: ${item.nextAction}` : ""}\n\n`
+        : undefined,
+    });
+  };
+  useEffect(() => {
+    live.current = true;
+    void refresh();
+    const timer = setInterval(() => {
+      if (!document.hidden) void refresh();
+    }, 60000);
+    const visibility = () => {
+      if (!document.hidden) void refresh();
+    };
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      live.current = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", visibility);
+    };
+  }, [refresh]);
+  useRealtime("preferences-changed", () => {
+    rpc.call("preferences").then((p) => {
+      if (live.current) setPreferences(p);
+    }, report);
+  });
+  useRealtime("projects-changed", () => void refresh(true));
+  const items = useMemo(
+    () =>
+      buildMap(
+        snapshot ?? EMPTY,
+        sidebar.threads,
+        preferences,
+        now,
+        selection?.task?.id,
+      ),
+    [snapshot, sidebar.threads, preferences, now, selection?.task?.id],
+  );
+  const leaves = useMemo(
+    () => items.flatMap((i) => (i.kind === "project" ? i.children : [i])),
+    [items],
+  );
+  const itemById = useMemo(
+    () => new Map([...items, ...leaves].map((item) => [item.id, item])),
+    [items, leaves],
+  );
+  const setAreaVisibility = async (projectId: string, hidden: boolean) => {
+    const id = `project:${projectId}`;
+    const preference = await rpc.call("setPreference", { id, hidden });
+    setPreferences((previous) => ({ ...previous, [id]: preference }));
+    setInspectionLayout(null);
+    setBrowseLayout(null);
+    if (
+      hidden &&
+      (selection?.id === id || selection?.task?.projectId === projectId)
+    ) {
+      setSelection(null);
+      setExpandedArea(null);
+    }
+  };
+  const manager = useAreaManager({
+    snapshot,
+    projectItems: items,
+    threads: sidebar.threads,
+    preferences,
+    workspaceId: bbContext.projectId,
+    blocked: settling || launcher.busy,
+    onResult: async (result: ManagementResult) => {
+      if (result.threadId) {
+        const linkedId = `thread:${result.threadId}`;
+        const keep = (item: WorkItem) => item.id !== linkedId;
+        setInspectionLayout(
+          (layout) =>
+            layout && {
+              anchor:
+                layout.anchor && keep(layout.anchor)
+                  ? layout.anchor
+                  : undefined,
+              near: layout.near.filter(keep),
+              west: layout.west.filter(keep),
+              east: layout.east.filter(keep),
+              north: layout.north.filter(keep),
+              south: layout.south.filter(keep),
+            },
+        );
+        setBrowseLayout((layout) => layout?.filter(keep) ?? null);
+      }
+      if (result.task) setCreatedItemId(`task:${result.task.id}`);
+      else if (result.project) setCreatedItemId(`project:${result.project.id}`);
+      await refresh(true);
+    },
+    onVisibility: setAreaVisibility,
+    onFocus: async (id) => {
+      const item = itemById.get(`project:${id}`);
+      if (item) await saveFocus(item, !item.focus);
+    },
+    onOpen: (id) => {
+      const item = itemById.get(`project:${id}`);
+      if (item) openPreview(item);
+    },
+  });
+  const tasksBySession = useMemo(() => {
+    const index = new Map<string, MapTask[]>();
+    for (const task of snapshot?.tasks ?? []) {
+      const sessionIds = new Set([
+        ...task.threadIds,
+        ...(task.commentSessions ?? []).map((session) => session.threadId),
+      ]);
+      for (const id of sessionIds)
+        index.set(id, [...(index.get(id) ?? []), task]);
+    }
+    return index;
+  }, [snapshot]);
+  const needle = query.trim().toLowerCase();
+  // The map, its counts and its layout toggle paint together, never one
+  // layout's chrome ahead of the stored choice.
+  const mapReady = !!snapshot && !!layoutMode;
+  // A treemap shows everything: the root budget that keeps the overview
+  // readable would hide areas that Heat has room for.
+  const heatOn =
+    layoutMode === "heat" && filter === "all" && !needle && !expanded;
+  const zoomDisabled = settling || launcher.busy || manager.busy || dragging;
+  // Heat already fits every area to the screen and its geometry ignores zoom,
+  // so the control and its gestures rest there rather than promise a change.
+  const zoomControl = useMapZoom(
+    canvasRef,
+    worldRef,
+    selection?.id ?? expandedArea?.id,
+    zoomDisabled || heatOn,
+  );
+  const { zoom } = zoomControl;
+  const density = zoomDensity(zoom, mapWidth);
+  const spatial = !expanded && !needle && filter === "all";
+  // Fitting the collapsed Overview to the viewport is that layout's own sizing.
+  // Heat fills the map itself and stacks into scrolling bands when narrow.
+  const fitRequested =
+    spatial &&
+    !heatOn &&
+    !selection &&
+    !launcher.context &&
+    !manager.inlineProjectId;
+  const viewport = useOverviewSize(overviewRef, fitRequested && !!snapshot);
+  const fitting = fitRequested && viewport.width > 0;
+  useEffect(() => {
+    if (fitting && canvasRef.current) canvasRef.current.scrollTop = 0;
+  }, [fitting]);
+  const matches = (item: WorkItem) =>
+    (!needle ||
+      `${item.title} ${item.kind === "project" ? "" : item.summary} ${item.task?.key ?? ""} ${item.scope}`
+        .toLowerCase()
+        .includes(needle)) &&
+    (filter === "all" ||
+      (filter === "focus"
+        ? item.focus
+        : filter === "working"
+          ? isWorking(item)
+          : filter === "unread"
+            ? item.unreadResults > 0
+            : item.signal === filter));
+  // Search includes every open task, including tasks outside the current map.
+  const candidates = (
+    needle
+      ? [...items.filter((i) => i.kind === "project"), ...leaves]
+      : filter === "all" || filter === "focus"
+        ? items
+        : leaves
+  )
+    .filter(matches)
+    .filter(
+      (item) =>
+        !(
+          filter === "all" &&
+          !needle &&
+          !expanded &&
+          preferences[item.id]?.hidden
+        ),
+    )
+    .filter(
+      (item) =>
+        !(
+          filter === "all" &&
+          !needle &&
+          !expanded &&
+          item.kind === "project" &&
+          !item.children.length &&
+          !item.focus
+        ),
+    )
+    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  const baseline = selectVisible(
+    candidates,
+    mapWidth >= 1100 ? 13 : 10,
+    rotation,
+  );
+  const browseCount =
+    filter === "all" && !needle
+      ? items.filter(matches).length
+      : candidates.length;
+  const visible =
+    expanded || needle || filter !== "all" || heatOn
+      ? candidates
+      : zoomVisible(
+          candidates,
+          baseline,
+          density.roots,
+          rotation,
+          zoom === 1 ? undefined : zoomControl.anchorId,
+        );
+  const fit = fitOverview(
+    candidates,
+    viewport.width,
+    viewport.height,
+    zoom,
+    rotation,
+    zoom === 1 ? undefined : zoomControl.anchorId,
+  );
+  // Keep every area in its original slot while it is being explored.
+  const currentItem = (item: WorkItem) => {
+    if (!itemById.has(item.id) && item.kind === "thread") {
+      const thread = sidebar.threads.find(
+        (thread) => thread.id === item.threads[0]?.id,
+      );
+      if (thread) return sessionItem(thread, now);
+    }
+    const latest = itemById.get(item.id) ?? item;
+    if (latest.kind !== "project") return latest;
+    const originalIds = new Set(item.children.map((child) => child.id));
+    return {
+      ...latest,
+      children: [
+        ...item.children
+          .map((child) =>
+            latest.children.find((current) => current.id === child.id),
+          )
+          .filter((child): child is WorkItem => !!child),
+        ...latest.children.filter((child) => !originalIds.has(child.id)),
+      ],
+    };
+  };
+  const selected = selection ? currentItem(selection) : null;
+  const area = expandedArea ? currentItem(expandedArea) : null;
+  const orbit =
+    spatial && inspectionLayout
+      ? {
+          anchor:
+            inspectionLayout.anchor && currentItem(inspectionLayout.anchor),
+          near: inspectionLayout.near.map(currentItem),
+          west: inspectionLayout.west.map(currentItem),
+          east: inspectionLayout.east.map(currentItem),
+          north: inspectionLayout.north.map(currentItem),
+          south: inspectionLayout.south.map(currentItem),
+        }
+      : fitting
+        ? fit.orbit
+        : extendOrbit(arrangeMap(baseline), visible);
+  // Frozen roots are remapped once per data change, not on every render, so
+  // the Heat model below can tell an unchanged map from a new one.
+  const frozenRoots = useMemo(
+    () => heatFreeze?.map(currentItem) ?? null,
+    // currentItem reads only the item index, the sidebar and the clock.
+    [heatFreeze, itemById, sidebar.threads, now],
+  );
+  const heatRoots = heatOn ? (frozenRoots ?? visible) : [];
+  const shown = heatOn
+    ? heatRoots
+    : spatial
+      ? [
+          orbit.anchor,
+          ...orbit.near,
+          ...orbit.west,
+          ...orbit.east,
+          ...orbit.north,
+          ...orbit.south,
+        ].filter((item): item is WorkItem => !!item)
+      : (browseLayout?.map(currentItem) ?? visible);
+  const heatAreaId = area
+    ? area.kind === "project"
+      ? area.id
+      : SESSIONS_AREA
+    : undefined;
+  // An expanded project reveals its quiet tasks, as the overview does. Opening
+  // one session is not a request to unpack every finished agent beside it.
+  // While an area is open its layout is held: facts update in place, and the
+  // tiles move only once it closes or its membership changes.
+  const heatAreas = useHeatModel(
+    heatRoots,
+    now,
+    area?.kind === "project" ? [...uncollapsed, area.id] : uncollapsed,
+    heatAreaId,
+    undefined,
+    tidy,
+  );
+  const heat = heatOn ? heatStats(heatAreas, now) : null;
+  useEffect(() => {
+    if (!heatOn || (heat && !heat.slipped)) setTidy(false);
+  }, [heatOn, heat?.slipped]);
+  const inspecting = !!area && !!selected && previewMode === "inline";
+  const expandedZone = inspecting
+    ? ((["west", "east", "north", "south"] as const).find((zone) =>
+        orbit[zone].some((item) => item.id === area.id),
+      ) ?? "core")
+    : "";
+  const captureLayout = useMapMotion(
+    canvasRef,
+    `${spatial}:${layoutMode}:${uncollapsed.join(",")}:${mapWidth}:${viewport.height}:${zoom}:${selected?.id ?? ""}:${previewMode}:${chatTarget?.threadId ?? ""}:${launcher.context?.id ?? ""}:${launcher.threadId ?? ""}:${shown.map((item) => `${item.id}:${item.signal}:${item.attention}:${item.unreadResults}:${item.focus}`).join("|")}`,
+    zoom,
+  );
+  useEffect(() => {
+    setInspectionLayout(null);
+    setBrowseLayout(null);
+    setHeatFreeze(null);
+    setUncollapsed([]);
+  }, [filter, query, expanded, rotation]);
+  const counts = {
+    focus: items.filter((i) => i.focus).length,
+    waiting: leaves.filter((i) => i.signal === "waiting").length,
+    unread: leaves.filter((i) => i.unreadResults > 0).length,
+    working: leaves.filter(isWorking).length,
+    inactive: leaves.filter((i) => i.signal === "inactive").length,
+  };
+  const hiddenImportant = items.filter(
+    (i) =>
+      !preferences[i.id]?.hidden &&
+      (i.focus || i.signal !== "inactive") &&
+      !shown.some((s) => s.id === i.id),
+  ).length;
+  const heatExcerptItems = heatOn
+    ? [
+        ...(selected ? [selected] : []),
+        // Bounded on purpose: an expanded area, not the whole treemap.
+        ...(area ? area.children.slice(0, 16) : []),
+      ]
+    : [];
+  const visibleThreads = (heatOn ? heatExcerptItems : shown)
+    .flatMap((i) => (i.kind === "thread" ? i.threads : []))
+    .map((t) => t.id)
+    .sort()
+    .join(",");
+  const detailExcerpts = useMemo(() => {
+    const limit = Math.round(700 + density.detail * 200);
+    return Object.fromEntries(
+      visibleThreads.split(",").flatMap((id) => {
+        const preview = previews[id];
+        return preview?.text && !preview.error
+          ? [[id, previewExcerpt(preview.text, limit)]]
+          : [];
+      }),
+    );
+  }, [density.detail, visibleThreads, previews]);
+  useEffect(() => {
+    if (!visibleThreads) return;
+    let canceled = false;
+    let inFlight = false;
+    const fetch = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      const ids = visibleThreads.split(",");
+      // Keep each request within the RPC limit, including zoomed-out and All views.
+      for (let offset = 0; offset < ids.length && !canceled; offset += 16) {
+        try {
+          const result = await rpc.call("previews", {
+            threadIds: ids.slice(offset, offset + 16),
+          });
+          if (!canceled) setPreviews((current) => ({ ...current, ...result }));
+        } catch (cause) {
+          if (!canceled) report(cause);
+        }
+      }
+      inFlight = false;
+    };
+    void fetch();
+    const timer = setInterval(() => {
+      if (!document.hidden) void fetch();
+    }, 30000);
+    return () => {
+      canceled = true;
+      clearInterval(timer);
+    };
+  }, [rpc, visibleThreads, report]);
+  useEffect(() => {
+    if (
+      !rotate ||
+      heatOn ||
+      zoom !== 1 ||
+      launcher.context ||
+      manager.active ||
+      hovered ||
+      selected ||
+      dragging ||
+      query ||
+      expanded ||
+      filter !== "all"
+    )
+      return;
+    const timer = setInterval(() => {
+      if (!document.hidden) setRotation((r) => r + 1);
+    }, 45000);
+    return () => clearInterval(timer);
+  }, [
+    rotate,
+    heatOn,
+    manager.active,
+    zoom,
+    hovered,
+    selected?.id,
+    dragging,
+    query,
+    expanded,
+    filter,
+    launcher.context,
+  ]);
+
+  const activeSessionConnected =
+    !selected?.task ||
+    !activeSession ||
+    selected.task.threadIds.includes(activeSession) ||
+    selected.task.commentSessions?.some(
+      (session) => session.threadId === activeSession,
+    );
+  useEffect(() => {
+    if (!activeSessionConnected && selected) {
+      setChatTarget(null);
+      setActiveSession(preferredSession(selected.threads, now)?.id ?? null);
+    }
+  }, [activeSessionConnected, selected, now]);
+  const previewId =
+    selected?.kind === "project"
+      ? null
+      : !activeSessionConnected
+        ? undefined
+        : (activeSession ?? selected?.threads[0]?.id);
+  const livePreviewThread = sidebar.threads.find((t) => t.id === previewId);
+  const previewThread =
+    livePreviewThread ?? selected?.threads.find((t) => t.id === previewId);
+  const canChat = !!livePreviewThread && !livePreviewThread.isArchived;
+  const chatOpen =
+    canChat &&
+    chatTarget?.itemId === selected?.id &&
+    chatTarget?.threadId === previewId;
+  useEffect(() => {
+    setChatTarget(null);
+  }, [selected?.id, previewId, canChat]);
+  useRevealChat(
+    chatOpen && previewId ? `chat-${previewId}` : null,
+    previewMode,
+  );
+  useEffect(() => {
+    // Change the nonce after mounting or moving the native chat, so focus does
+    // not depend on whether the host treats an initial prop as a request.
+    if (chatOpen) setChatFocusRequest((request) => request + 1);
+  }, [chatOpen, previewMode]);
+  // The native reply editor may take Escape for itself: closing its own menu
+  // keeps focus there, but leaving the editor drops focus on the page body,
+  // where the next Escape never reaches Work Map. Once the editor has had its
+  // turn, focus lost to nowhere goes to Back to summary, so Escape steps back.
+  const rescueChatEscape = () => {
+    window.setTimeout(() => {
+      const active = document.activeElement;
+      if (
+        (!active || active === document.body) &&
+        chatToggleRef.current?.isConnected
+      )
+        chatToggleRef.current.focus({ preventScroll: true });
+    }, 0);
+  };
+  const closeChat = () => {
+    setChatTarget(null);
+    requestAnimationFrame(() =>
+      chatToggleRef.current?.focus({ preventScroll: true }),
+    );
+  };
+  const relatedTasks = previewId ? (tasksBySession.get(previewId) ?? []) : [];
+  const linkedSessions = selected?.task
+    ? (selected.task.sessionLinks ??
+      selected.task.threadIds.map((threadId) => ({
+        threadId,
+        title:
+          sidebar.threads.find((t) => t.id === threadId)?.title ?? "Session",
+        attachedAt: "",
+        liveStatus: undefined,
+      })))
+    : [];
+  const commentingSessions =
+    selected?.task?.commentSessions?.filter(
+      (session) => !selected.task?.threadIds.includes(session.threadId),
+    ) ?? [];
+  const previewAttention = previewThread?.latestAttentionAt;
+  function sessionState(threadId: string, lastStatus?: string) {
+    const thread = sidebar.threads.find((item) => item.id === threadId);
+    if (thread?.isArchived) return "Archived";
+    if (thread) return sessionItem(thread, now).reason;
+    return lastStatus
+      ? `Last recorded: ${lastStatus} · Not in active sessions`
+      : "Not in active sessions";
+  }
+  const loadKey = `${selected?.id ?? ""}:${previewId ?? ""}:${previewAttention ?? ""}`;
+  const [loadedKey, setLoadedKey] = useState("");
+  const [previewFailure, setPreviewFailure] = useState<{
+    key: string;
+    message: string;
+  } | null>(null);
+  const [previewRetry, setPreviewRetry] = useState(0);
+  useEffect(() => {
+    // The native chat owns its loading and read tracking while it is visible.
+    if (!selected || selected.kind === "project" || chatOpen) return;
+    let canceled = false;
+    let responseLoaded = !previewId;
+    setPreviewFailure(null);
+    setLoadedKey("");
+    const viewed = selected;
+    const read = async () => {
+      try {
+        if (previewId) {
+          const result = await rpc.call("previews", {
+            threadIds: [previewId],
+            fresh: true,
+          });
+          if (canceled) return;
+          setPreviews((current) => ({ ...current, ...result }));
+          setLoadedKey(loadKey);
+          responseLoaded = true;
+          // Only the displayed, successfully loaded finished response is marked seen.
+          // Projects and sibling sessions are never bulk-acknowledged.
+          const thread = previewThread;
+          const latest = threadsRef.current.find((t) => t.id === previewId);
+          if (
+            result[previewId]?.text &&
+            !result[previewId].error &&
+            thread?.indicator === "unread-success" &&
+            latest?.indicator === "unread-success" &&
+            latest.latestAttentionAt === thread.latestAttentionAt
+          )
+            await actions.setRead(previewId, true);
+        }
+        if (!canceled && viewed.task && viewed.changed) {
+          const pref = await rpc.call("setPreference", {
+            id: viewed.id,
+            seenAt: Date.parse(viewed.task.updatedAt),
+          });
+          if (!canceled)
+            setPreferences((current) => ({ ...current, [viewed.id]: pref }));
+        }
+      } catch (cause) {
+        if (!canceled) {
+          if (!responseLoaded)
+            setPreviewFailure({
+              key: loadKey,
+              message:
+                "Session preview could not be loaded. Retry or open the full session.",
+            });
+          else report(cause);
+        }
+      }
+    };
+    void read();
+    return () => {
+      canceled = true;
+    };
+  }, [rpc, selected?.id, previewId, previewAttention, previewRetry, chatOpen]);
+  const openPreview = (item: WorkItem) => {
+    if (launcher.busy || manager.busy) return;
+    if (manager.active) manager.close(false);
+    if (launcher.context) launcher.close();
+    if (
+      previewMode === "inline" &&
+      (selected?.id === item.id ||
+        (item.kind === "project" && area?.id === item.id))
+    ) {
+      collapseDetails();
+      return;
+    }
+    if (!selectionRef.current) {
+      returnFocus.current = document.activeElement as HTMLElement;
+      overviewScroll.current = canvasRef.current?.scrollTop ?? 0;
+    }
+    returnItemId.current = item.id;
+    const parent = needle
+      ? undefined
+      : (spatial ? candidates : shown).find(
+          (candidate) =>
+            candidate.kind === "project" &&
+            candidate.children.some((child) => child.id === item.id),
+        );
+    if (heatOn) {
+      const base = heatFreeze ?? shown;
+      setHeatFreeze(
+        base.some((shownItem) => shownItem.id === (parent ?? item).id)
+          ? base
+          : [...base, parent ?? item],
+      );
+    } else if (spatial) {
+      const layout = inspectionLayout ?? orbit;
+      const root = parent ?? item;
+      // A connected task outside the overview joins the outer row without moving existing areas.
+      setInspectionLayout(
+        shown.some((shownItem) => shownItem.id === root.id)
+          ? layout
+          : { ...layout, south: [...layout.south, root] },
+      );
+    } else {
+      const root = parent ?? item;
+      setBrowseLayout(
+        shown.some((shownItem) => shownItem.id === root.id)
+          ? shown
+          : [...shown, root],
+      );
+    }
+    setExpandedArea(parent ?? item);
+    setPreviewMode("inline");
+    setSelection(item);
+    setActiveSession(
+      item.kind === "project"
+        ? null
+        : (preferredSession(item.threads, now)?.id ?? null),
+    );
+  };
+  useEffect(() => {
+    if (!createdItemId || manager.busy) return;
+    const item = itemById.get(createdItemId);
+    if (item) {
+      setCreatedItemId(null);
+      if (selected?.id === item.id) setSelection(item);
+      else if (area?.id !== item.id) openPreview(item);
+    }
+  }, [createdItemId, itemById, manager.busy]);
+  const manageArea = (
+    item: WorkItem,
+    action: Parameters<React.ComponentProps<typeof AreaTools>["onAction"]>[0],
+  ) => {
+    if (action === "focus") {
+      void saveFocus(item, !item.focus);
+      return;
+    }
+    if (action === "hide") {
+      void setAreaVisibility(
+        item.id.slice(8),
+        !preferences[item.id]?.hidden,
+      ).catch(report);
+      return;
+    }
+    if (action === "editProject") {
+      setPreviewMode("inline");
+      manager.open(action, item.id.slice(8));
+      return;
+    }
+    if (area?.id !== item.id || !selected || previewMode !== "inline")
+      openPreview(item);
+    if (action === "session") {
+      manager.close();
+      startSession(item);
+    } else manager.open(action, item.id.slice(8));
+  };
+  const close = () => {
+    if (launcher.busy || manager.busy) return;
+    if (manager.active) manager.close(false);
+    if (launcher.context) launcher.close();
+    const areaId = area?.id;
+    const index = shown.findIndex((item) => item.id === areaId);
+    const nextId =
+      [...shown.slice(index + 1), ...shown.slice(0, index).reverse()].find(
+        (item) => candidates.some((candidate) => candidate.id === item.id),
+      )?.id ?? candidates[0]?.id;
+    if (canvasRef.current) canvasRef.current.scrollTop = overviewScroll.current;
+    setSelection(null);
+    setExpandedArea(null);
+    setActiveSession(null);
+    setChatTarget(null);
+    setBrowseLayout(null);
+    setHeatFreeze(null);
+    requestAnimationFrame(() => {
+      const trigger = returnItemId.current
+        ? canvasRef.current?.querySelector<HTMLElement>(
+            `[data-work-id="${returnItemId.current}"]`,
+          )
+        : null;
+      const areaTrigger = areaId
+        ? canvasRef.current?.querySelector<HTMLElement>(
+            `[data-work-id="${areaId}"]`,
+          )
+        : null;
+      const nextTrigger = nextId
+        ? canvasRef.current?.querySelector<HTMLElement>(
+            `[data-work-id="${nextId}"]`,
+          )
+        : null;
+      const activeFilter = canvasRef.current
+        ?.closest(".wm-root")
+        ?.querySelector<HTMLElement>('.wm-filter[aria-pressed="true"]');
+      (
+        trigger ??
+        areaTrigger ??
+        nextTrigger ??
+        activeFilter ??
+        returnFocus.current
+      )?.focus({
+        preventScroll: true,
+      });
+    });
+  };
+  const collapseDetails = () => {
+    if (launcher.context) {
+      launcher.close();
+      return;
+    }
+    if (chatOpen) {
+      closeChat();
+      return;
+    }
+    if (
+      previewMode === "inline" &&
+      selected?.kind === "task" &&
+      area?.kind === "project"
+    ) {
+      setSelection(area);
+      setActiveSession(null);
+    } else close();
+  };
+  const actionContext: ActionContext = { now, handedOver };
+  const recordSettlement = (result: Settlement) => {
+    setSettled((rows) => [
+      result,
+      ...rows.filter((row) => row.id !== result.id),
+    ]);
+    setSettledError("");
+  };
+  const afterSettlement = (result: Settlement) => {
+    captureLayout();
+    recordSettlement(result);
+    close();
+    setInspectionLayout(null);
+    void refresh(true);
+  };
+  // One act on one piece of work. Done reuses the settlement service that the
+  // expanded details already use, so it lands in Settled today with the same
+  // Undo. Snooze writes only this plugin's own preference and never touches
+  // Tasks; its row sits in the same list. Delegate hands the task to an agent.
+  const runAction = async (
+    action: QuickAction,
+    item: WorkItem,
+    // A bulk run settles many in a row: collapsing the area and refreshing the
+    // map after each one would fight the run it is part of.
+    quiet = false,
+  ) => {
+    if (!item.task) return;
+    if (action === "delegate") {
+      const taskId = item.task.id;
+      const note =
+        commentDraft?.taskId === taskId ? commentDraft.text.trim() : "";
+      const result = await rpc.call("delegate", {
+        requestId: crypto.randomUUID(),
+        taskId,
+        expectedUpdatedAt: item.task.updatedAt,
+        ...(note ? { note } : {}),
+      });
+      if (note) setCommentDraft(null);
+      setHandedOver((current) => ({ ...current, [taskId]: Date.now() }));
+      return `${result.taskKey} handed to an agent on ${result.preset}${result.movedFrom ? ", out of review" : ""}.`;
+    }
+    if (action === "unsnooze") {
+      // No confirmation: it only gives the task its attention back.
+      const id = item.id;
+      const preference = await rpc.call("setPreference", {
+        id,
+        snoozedUntil: null,
+      });
+      captureLayout();
+      setPreferences((previous) => ({ ...previous, [id]: preference }));
+      setSnoozes((rows) => rows.filter((row) => row.itemId !== id));
+      if (!quiet) setNotice(`Snooze cleared on ${item.task.key}.`);
+      return null;
+    }
+    if (action === "snooze") {
+      const id = item.id;
+      const taskKey = item.task.key;
+      const at = Date.now();
+      const until = at + SNOOZE_DAYS * 86400000;
+      const preference = await rpc.call("setPreference", {
+        id,
+        snoozedUntil: until,
+      });
+      if (!quiet) captureLayout();
+      setPreferences((previous) => ({ ...previous, [id]: preference }));
+      setSnoozes((rows) => [
+        {
+          id: `snooze:${id}:${at}`,
+          action: "snooze",
+          at,
+          title: item.title,
+          itemId: id,
+          taskKey,
+          until: localDay(until),
+        },
+        ...rows.filter((row) => row.itemId !== id),
+      ]);
+      setSettledError("");
+      if (!quiet) {
+        close();
+        setInspectionLayout(null);
+      }
+      return null;
+    }
+    const result = await rpc.call("settle", {
+      id: `${Date.now()}-${crypto.randomUUID()}`,
+      action: action === "done" ? "done" : "pause",
+      taskId: item.task.id,
+      expectedUpdatedAt: item.task.updatedAt,
+      nextAction: action === "done" ? "" : item.task.nextAction,
+      reviewBy: "me",
+      reviewer: "",
+    });
+    if (quiet) recordSettlement(result);
+    else afterSettlement(result);
+    return null;
+  };
+  /**
+   * The words of a failure, without the transport's own prefix: "HTTP 500:"
+   * says nothing to the person who clicked, and the sentence after it does.
+   */
+  const failureText = (cause: unknown) =>
+    (cause instanceof Error ? cause.message : String(cause)).replace(
+      /^HTTP \d{3}:\s*/,
+      "",
+    );
+  const act = async (action: QuickAction, item: WorkItem) => {
+    if (acting || bulk || settling) return;
+    setActing({ id: item.id, action });
+    setActError(null);
+    try {
+      const note = await runAction(action, item);
+      if (note) {
+        setNotice(note);
+        await refresh(true);
+      }
+    } catch (cause) {
+      setActError({
+        scope: "item",
+        id: item.id,
+        message: failureText(cause),
+      });
+    } finally {
+      setActing(null);
+    }
+  };
+  /**
+   * A whole area goes to one orchestrator, not one agent per task: it reads the
+   * area together, finds what connects, and holds its own children to the
+   * concurrency limit. Done and Snooze stay the same act repeated in order.
+   */
+  const delegateArea = async (area: WorkItem, items: WorkItem[]) => {
+    const projectId = area.id.startsWith("project:") ? area.id.slice(8) : "";
+    const taskIds = items.flatMap((item) => (item.task ? [item.task.id] : []));
+    if (!projectId || !taskIds.length) return;
+    setBulk("delegate");
+    setActError(null);
+    // The map counts this work as taken from the click, so a second click
+    // cannot reach tasks whose agent Tasks has not published yet.
+    const at = Date.now();
+    setHandedOver((current) => ({
+      ...current,
+      ...Object.fromEntries(taskIds.map((id) => [id, at])),
+    }));
+    try {
+      const result = await rpc.call("delegateArea", {
+        requestId: crypto.randomUUID(),
+        projectId,
+        taskIds,
+      });
+      setPicked([]);
+      const covered = `${result.covered.length} ${result.covered.length === 1 ? "task" : "tasks"}`;
+      setNotice(
+        result.reused
+          ? `${result.title} is already running this area. Opened it instead of starting another.`
+          : `${result.title} started on ${result.preset} for ${covered}, at most ${ORCHESTRATOR_LIMIT} at a time. It leaves you one review task when it ends.${result.dropped.length ? ` Left out ${result.dropped.length}.` : ""}`,
+      );
+      if (result.reused) actions.open(result.threadId);
+    } catch (cause) {
+      // The handover never happened, so the tasks are free to click again.
+      setHandedOver((current) =>
+        Object.fromEntries(
+          Object.entries(current).filter(([id]) => !taskIds.includes(id)),
+        ),
+      );
+      setActError({
+        scope: "bulk",
+        id: area.id,
+        message: `${failureText(cause)} No agent was started; all ${taskIds.length} tasks are unchanged.`,
+      });
+    } finally {
+      // Refresh first, then release the bar: the act stays disabled until the
+      // map can show the state its own click created.
+      await refresh(true);
+      setBulk(null);
+    }
+  };
+  // A bulk act is the same act repeated in order, never a different code path.
+  // One failure stops the run so the rest stay exactly as they were.
+  const actAll = async (
+    action: QuickAction,
+    items: WorkItem[],
+    area?: WorkItem,
+  ) => {
+    if (acting || bulk || settling || !items.length) return;
+    if (action === "delegate") {
+      if (area) await delegateArea(area, items);
+      else
+        setActError({
+          scope: "bulk",
+          id: "bulk",
+          message:
+            "Work can only be handed over from its own area. Open the area and try again.",
+        });
+      return;
+    }
+    setBulk(action);
+    setActError(null);
+    let done = 0;
+    try {
+      for (const item of items) {
+        await runAction(action, item, true);
+        done += 1;
+      }
+      setNotice(
+        `${ACTION_LABEL[action]} · ${done} of ${items.length} ${items.length === 1 ? "task" : "tasks"}.`,
+      );
+      setPicked([]);
+    } catch (cause) {
+      setActError({
+        scope: "bulk",
+        id: area?.id ?? "bulk",
+        message: `${failureText(cause)} Stopped after ${done} of ${items.length}; the rest are unchanged.`,
+      });
+    } finally {
+      await refresh(true);
+      setBulk(null);
+    }
+  };
+  useEffect(() => {
+    let canceled = false;
+    rpc
+      .call("delegatePreset")
+      .then((result) => {
+        if (!canceled) setPreset(result.preset);
+      })
+      .catch(() => {
+        /* The confirmation falls back to the documented preset name. */
+      });
+    return () => {
+      canceled = true;
+    };
+  }, [rpc]);
+  const undoSettlement = async (id: string) => {
+    if (undoLock.current) return;
+    undoLock.current = true;
+    setUndoing(id);
+    setSettledError("");
+    const snooze = snoozes.find((row) => row.id === id);
+    try {
+      if (snooze) {
+        const preference = await rpc.call("setPreference", {
+          id: snooze.itemId,
+          snoozedUntil: null,
+        });
+        captureLayout();
+        setPreferences((previous) => ({
+          ...previous,
+          [snooze.itemId]: preference,
+        }));
+        setSnoozes((rows) => rows.filter((row) => row.id !== id));
+        setNotice("Undone. Snooze cleared.");
+        return;
+      }
+      const result = await rpc.call("undoSettlement", { id });
+      captureLayout();
+      setSettled((rows) => rows.filter((row) => row.id !== id));
+      setNotice(
+        result.warning ||
+          `Undone.${result.taskUpdated ? " Task fields restored." : ""}${result.archivedThreadIds.length ? " Session reopened; stopped agents remain stopped." : ""}`,
+      );
+      await refresh(true);
+    } catch (cause) {
+      setSettledError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      undoLock.current = false;
+      setUndoing(null);
+    }
+  };
+  function settleControls(
+    item?: WorkItem,
+    createdThreadId?: string,
+    bar?: { lead?: ReactNode; trail?: ReactNode },
+  ) {
+    const threadId =
+      createdThreadId ??
+      (item?.kind === "thread" ||
+      (previewId && item?.task?.threadIds.includes(previewId))
+        ? previewId
+        : undefined);
+    const thread = sidebar.threads.find((thread) => thread.id === threadId);
+    return (
+      <SettlementActions
+        key={item?.id ?? `created:${threadId}`}
+        task={item?.task}
+        thread={
+          threadId
+            ? {
+                id: threadId,
+                title:
+                  thread?.title ?? launcher.context?.title ?? "Viewed session",
+                running: thread ? threadSignal(thread) === "working" : true,
+                archived: thread?.isArchived ?? false,
+              }
+            : undefined
+        }
+        disabled={launcher.busy || undoing !== null}
+        bar={bar}
+        onBusy={setSettling}
+        onSettled={afterSettlement}
+      />
+    );
+  }
+  useEffect(() => {
+    if (selection) {
+      panelRef.current?.focus({ preventScroll: true });
+      if (previewMode === "pane")
+        panelRef.current?.scrollIntoView?.({ block: "nearest" });
+    }
+  }, [selection?.id, previewMode]);
+  const saveFocus = async (item: WorkItem, focus: boolean) => {
+    if (busy) return;
+    if (
+      !focus &&
+      item.kind === "project" &&
+      item.children.some((child) => child.focus)
+    ) {
+      setNotice(
+        "This project contains focused tasks. Open it and remove their focus first.",
+      );
+      return;
+    }
+    setNotice("");
+    setBusy(true);
+    try {
+      if (item.kind === "thread")
+        await actions.setPinned(item.threads[0].id, focus);
+      else {
+        if (!focus && item.kind === "task")
+          await Promise.all(
+            item.threads
+              .filter((t) => t.isPinned)
+              .map((t) => actions.setPinned(t.id, false)),
+          );
+        const pref = await rpc.call("setPreference", { id: item.id, focus });
+        setPreferences((current) => ({ ...current, [item.id]: pref }));
+        // A pinned child keeps its project in focus until that child is unpinned.
+      }
+    } catch (cause) {
+      report(cause);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const drop = (event: DragEvent, focus: boolean) => {
+    event.preventDefault();
+    captureLayout();
+    setDragging(false);
+    const id = event.dataTransfer.getData("application/x-bb-work-map");
+    const item = [...items, ...leaves].find((i) => i.id === id);
+    if (item) void saveFocus(item, focus);
+  };
+  function chooseFilter(value: Filter) {
+    if (manager.active) manager.close(false);
+    if (launcher.context) launcher.close();
+    setSelection(null);
+    setExpandedArea(null);
+    setFilter(value);
+    setExpanded(false);
+  }
+  function tile(item: WorkItem, small = false) {
+    const inspecting = selected?.id === item.id && previewMode === "inline";
+    const rich =
+      !small &&
+      !inspecting &&
+      (fitting
+        ? fit.placements[item.id]?.rich
+        : spatial &&
+          (item.focus ||
+            orbit.anchor?.id === item.id ||
+            orbit.near.some((near) => near.id === item.id)));
+    const showExcerpt = !small || zoom > 1;
+    const excerpt =
+      item.kind === "thread"
+        ? ((rich || zoom > 1) && detailExcerpts[item.threads[0]?.id]) ||
+          previews[item.threads[0]?.id]?.excerpt ||
+          ""
+        : item.nextAction || item.summary;
+    const due = item.snoozedUntil
+      ? snoozeLabel(item, now)
+      : item.task
+        ? dueLabel(item.task, now)
+        : "";
+    const zoomDetail =
+      item.kind !== "thread" && item.summary !== excerpt ? item.summary : "";
+    const relatedCount =
+      item.kind === "thread"
+        ? (tasksBySession.get(item.threads[0].id)?.length ?? 0)
+        : new Set([
+            ...(item.task?.threadIds ?? []),
+            ...(item.task?.commentSessions ?? []).map(
+              (session) => session.threadId,
+            ),
+          ]).size;
+    return (
+      <article
+        key={item.id}
+        className={`wm-item ${item.focus ? "wm-focused" : ""} ${inspecting ? "wm-item-expanded" : ""} ${rich ? "wm-rich-card" : ""}`}
+      >
+        <button
+          data-work-id={item.id}
+          aria-expanded={inspecting}
+          aria-controls={inspecting ? `detail-${item.id}` : undefined}
+          type="button"
+          className={`wm-tile wm-${item.signal} ${isWorking(item) ? "wm-has-working" : ""} ${item.focus ? "wm-focused" : ""} ${small ? "wm-small" : ""} ${selected?.id === item.id ? "wm-selected" : ""}`}
+          data-attention={item.attention ?? undefined}
+          data-kind={item.kind}
+          data-has-results={item.unreadResults > 0 || undefined}
+          onClick={() => openPreview(item)}
+          draggable
+          onDragStart={(event) => {
+            event.dataTransfer.setData("application/x-bb-work-map", item.id);
+            event.dataTransfer.effectAllowed = "move";
+            setDragging(true);
+          }}
+          onDragEnd={() => setDragging(false)}
+          aria-label={[
+            `Preview ${item.title}`,
+            item.reason,
+            needsReview(item) && item.attention !== "review"
+              ? "Needs review"
+              : "",
+            item.signal !== "unread" && item.unreadResults
+              ? unreadLabel(item.unreadResults)
+              : "",
+            item.focus ? "In focus" : "",
+            activityLabel(item, now),
+            item.task ? `${item.task.priority} priority` : "",
+            due,
+            item.changed ? "Updated" : "",
+            showExcerpt && !(inspecting && item.kind === "task") ? excerpt : "",
+            (zoom > 1 || rich) && !(inspecting && item.kind === "task")
+              ? zoomDetail
+              : "",
+          ]
+            .filter(Boolean)
+            .join(". ")}
+        >
+          <span className="wm-tile-meta">
+            <span>
+              {item.task?.key ?? item.scope}
+              {(!small || (zoom > 1 && !fitting)) &&
+              !(rich && item.kind === "thread") &&
+              relatedCount > 0
+                ? ` · ${relatedCount} ${item.kind === "thread" ? (relatedCount === 1 ? "related task" : "related tasks") : relatedCount === 1 ? "session" : "sessions"}`
+                : ""}
+              {zoom > 1 && item.task && (!fitting || (!small && !rich))
+                ? ` · ${item.task.priority} priority`
+                : ""}
+              {!small && activityLabel(item, now) && (
+                <span
+                  className="wm-activity-age"
+                  title={new Date(item.activityAt).toLocaleString()}
+                >
+                  {" · "}
+                  {activityLabel(item, now)}
+                </span>
+              )}
+            </span>
+            {item.focus && (
+              <span className="wm-pin">
+                <Icon name="Pin" /> Focus
+              </span>
+            )}
+            {item.changed && <span className="wm-changed">Updated</span>}
+          </span>
+          <strong>{item.title}</strong>
+          {showExcerpt && excerpt && !(inspecting && item.kind === "task") && (
+            <span className="wm-excerpt">
+              {rich && item.kind === "thread" && (
+                <span className="wm-detail-label">
+                  {isWorking(item)
+                    ? "Latest available response"
+                    : "Latest response"}
+                </span>
+              )}
+              {(zoom > 1 || rich) && item.nextAction && (
+                <span className="wm-detail-label">Next: </span>
+              )}
+              {excerpt}
+            </span>
+          )}
+          {(zoom > 1 || rich) &&
+            zoomDetail &&
+            !(inspecting && item.kind === "task") && (
+              <span className="wm-zoom-details">
+                <span className="wm-detail-label">Status</span> {zoomDetail}
+              </span>
+            )}
+          {rich && item.kind === "thread" && relatedCount > 0 && (
+            <span className="wm-card-links">
+              <span className="wm-detail-label">Linked work</span>{" "}
+              {tasksBySession
+                .get(item.threads[0].id)
+                ?.slice(0, 2)
+                .map((task) => `${task.key} · ${task.title}`)
+                .join(" / ")}
+              {relatedCount > 2 ? ` · +${relatedCount - 2} more` : ""}
+            </span>
+          )}
+          {rich && item.task && (
+            <span className="wm-card-facts">
+              {item.task.priority} priority
+              {item.threads.length
+                ? ` · ${item.threads.length} connected ${item.threads.length === 1 ? "session" : "sessions"}`
+                : ""}
+            </span>
+          )}
+          <span className="wm-tile-bottom">
+            <Status item={item} />
+            {item.signal !== "working" && isWorking(item) && (
+              <span className="wm-status wm-working">
+                <i />
+                Agent working
+              </span>
+            )}
+            {due && <span className="wm-due">{due}</span>}
+          </span>
+        </button>
+        {inspecting && details()}
+      </article>
+    );
+  }
+  function island(item: WorkItem) {
+    if (item.kind !== "project" || needle) return tile(item);
+    const hasWorking = isWorking(item);
+    const inspecting =
+      area?.id === item.id && previewMode === "inline" && !!selected;
+    const compact =
+      !!area && !!selected && previewMode === "inline" && !inspecting;
+    const taskLimit = fitting
+      ? (fit.placements[item.id]?.tasks ?? 0)
+      : compact
+        ? 2
+        : zoomDensity(zoom, mapWidth, item.focus).tasks;
+    const children =
+      inspecting &&
+      selected?.task?.projectId === item.id.slice(8) &&
+      !item.children.some((child) => child.id === selected.id)
+        ? [...item.children, selected]
+        : item.children;
+    return (
+      <article
+        key={item.id}
+        className={`wm-island wm-${item.signal} ${item.focus ? "wm-focused" : ""} ${hasWorking ? "wm-has-working" : ""} ${inspecting ? "wm-area-expanded" : ""} ${fitting && fit.placements[item.id]?.rich ? "wm-rich-card" : ""}`}
+        data-has-results={item.unreadResults > 0 || undefined}
+        data-kind="project"
+      >
+        <button
+          className="wm-island-heading"
+          data-work-id={item.id}
+          aria-expanded={inspecting}
+          aria-controls={inspecting ? `area-${item.id}` : undefined}
+          onClick={() => openPreview(item)}
+          aria-label={[
+            `Open project ${item.title}`,
+            item.reason,
+            item.focus ? "In focus" : "",
+            activityLabel(item, now),
+            item.summary,
+          ]
+            .filter(Boolean)
+            .join(". ")}
+          draggable
+          onDragStart={(event) => {
+            event.dataTransfer.setData("application/x-bb-work-map", item.id);
+            setDragging(true);
+          }}
+          onDragEnd={() => setDragging(false)}
+        >
+          <span className="wm-tile-meta">
+            <span>
+              <ProjectDot
+                color={
+                  snapshot?.projects.find(
+                    (project) => `project:${project.id}` === item.id,
+                  )?.color
+                }
+              />
+              {item.scope} · {item.children.length} tasks
+              {activityLabel(item, now) && (
+                <span
+                  className="wm-activity-age"
+                  title={`Latest task or attached session activity: ${new Date(item.activityAt).toLocaleString()}`}
+                >
+                  {" · "}
+                  {activityLabel(item, now)}
+                </span>
+              )}
+            </span>
+            {item.focus && (
+              <span className="wm-pin">
+                <Icon name="Pin" /> Focus
+              </span>
+            )}
+          </span>
+          <strong>{item.title}</strong>
+          <span className="wm-excerpt">{item.summary}</span>
+          <span className="wm-project-status">
+            <Status item={item} />
+          </span>
+        </button>
+        <AreaTools
+          title={item.title}
+          disabled={launcher.busy || manager.busy || settling}
+          focused={item.focus}
+          hidden={!!preferences[item.id]?.hidden}
+          onAction={(action) => manageArea(item, action)}
+        />
+        {inspecting ? (
+          <section
+            id={`area-${item.id}`}
+            className="wm-expanded-project"
+            aria-label={`Expanded: ${item.title}`}
+          >
+            <div
+              className="wm-area-actions"
+              ref={
+                selected?.id === item.id
+                  ? (panelRef as React.RefObject<HTMLDivElement>)
+                  : undefined
+              }
+              tabIndex={-1}
+            >
+              <Button
+                size="sm"
+                onClick={() => startSession(item)}
+                disabled={launcher.busy}
+              >
+                <Icon name="MessageCirclePlus" /> New session
+              </Button>
+              <Button size="sm" variant="outline" onClick={close}>
+                Collapse area
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setSelection(item);
+                  setPreviewMode("pane");
+                }}
+              >
+                Open in side pane
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={
+                  busy || (item.focus && children.some((child) => child.focus))
+                }
+                onClick={() => void saveFocus(item, !item.focus)}
+              >
+                {item.focus ? "Project in focus" : "Focus project"}
+              </Button>
+            </div>
+            {manager.inlineProjectId === item.id.slice(8) && manager.inline}
+            {launcher.context?.id === item.id && (
+              <>
+                {launcher.view}
+                {launcher.threadId &&
+                  settleControls(undefined, launcher.threadId)}
+              </>
+            )}
+            <div className="wm-island-tasks wm-expanded-tasks">
+              {children.map((child) => tile(child))}
+            </div>
+            {completedTasks(item)}
+          </section>
+        ) : (
+          <>
+            <div className="wm-island-tasks">
+              {zoomVisible(
+                item.children,
+                selectVisible(item.children, taskLimit),
+                taskLimit,
+                0,
+                zoom === 1 ? undefined : zoomControl.anchorWorkId,
+              ).map((child) => tile(child, true))}
+            </div>
+            <button
+              className="wm-project-more"
+              onClick={() => openPreview(item)}
+            >
+              {(compact || fitting) &&
+              taskLimit > 0 &&
+              item.children.length > taskLimit
+                ? `+${item.children.length - taskLimit} more tasks`
+                : `Explore ${item.children.length} tasks`}{" "}
+              <span aria-hidden="true">↗</span>
+            </button>
+          </>
+        )}
+      </article>
+    );
+  }
+  function heatAreaActions(heatArea: HeatArea) {
+    const root = heatArea.root;
+    if (!root) return null;
+    // Only the work the area actually shows can be acted on in bulk: a hidden
+    // or collapsed quiet task is not something you just agreed to close.
+    const actionable = heatArea.tiles
+      .map((tile) => tile.item)
+      .filter((item): item is WorkItem => !!item?.task);
+    // One row, so a small screen keeps its cards: the area's own buttons drop
+    // to their icons when the bar is too narrow for their words, names kept.
+    const lead = (
+      <>
+        <Button
+          size="sm"
+          // With acts in the bar, letting agents decide is the one primary.
+          variant={actionable.length ? "outline" : "default"}
+          className="wm-bar-lead"
+          aria-label="New session"
+          onClick={() => startSession(root)}
+          disabled={launcher.busy}
+        >
+          <Icon name="MessageCirclePlus" /> <span>New session</span>
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="wm-bar-lead"
+          aria-label="Collapse area"
+          onClick={close}
+        >
+          <Icon name="Minimize2" /> <span>Collapse area</span>
+        </Button>
+      </>
+    );
+    const tools = (extra: AreaMenuItem[]) => (
+      <AreaTools
+        title={root.title}
+        disabled={launcher.busy || manager.busy || settling}
+        focused={root.focus}
+        hidden={!!preferences[root.id]?.hidden}
+        extra={[
+          {
+            key: "pane",
+            label: "Open in side pane",
+            // A phone has no side pane to open into; the stylesheet drops it there.
+            className: "wm-heat-side-pane",
+            onSelect: () => {
+              setSelection(root);
+              setPreviewMode("pane");
+            },
+          },
+          ...extra,
+        ]}
+        onAction={(action) => manageArea(root, action)}
+      />
+    );
+    return (
+      <div
+        className="wm-area-actions wm-heat-actions"
+        ref={
+          selected?.id === root.id
+            ? (panelRef as React.RefObject<HTMLDivElement>)
+            : undefined
+        }
+        tabIndex={-1}
+      >
+        {actionable.length > 0 ? (
+          <AreaBulkActions
+            title={heatArea.title}
+            lead={lead}
+            tools={tools}
+            items={actionable}
+            selected={picked.filter((id) =>
+              actionable.some((item) => item.id === id),
+            )}
+            disabled={settling || launcher.busy || manager.busy || !!acting}
+            running={bulk}
+            preset={preset}
+            context={actionContext}
+            error={
+              actError?.scope === "bulk" && actError.id === root.id
+                ? actError.message
+                : undefined
+            }
+            onDismissError={() => setActError(null)}
+            onToggle={(id) =>
+              setPicked((current) =>
+                current.includes(id)
+                  ? current.filter((other) => other !== id)
+                  : [...current, id],
+              )
+            }
+            onClearSelection={() => setPicked([])}
+            onRun={(action, items) => void actAll(action, items, root)}
+          />
+        ) : (
+          <div className="wm-bulk-row">
+            {lead}
+            {tools([])}
+          </div>
+        )}
+        {(manager.inlineProjectId === root.id.slice(8) ||
+          launcher.context?.id === root.id) && (
+          <div className="wm-heat-actions-scroll">
+            {manager.inlineProjectId === root.id.slice(8) && manager.inline}
+            {launcher.context?.id === root.id && (
+              <>
+                {launcher.view}
+                {launcher.threadId &&
+                  settleControls(undefined, launcher.threadId)}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+  function mapArea(item: WorkItem) {
+    const expandedHere = inspecting && area?.id === item.id;
+    const placement = fitting ? fit.placements[item.id] : undefined;
+    return (
+      <div
+        key={item.id}
+        data-layout-id={item.id}
+        data-task-columns={
+          placement ? (placement.width >= 350 ? 2 : 1) : undefined
+        }
+        data-card-size={
+          placement
+            ? placement.height < (item.kind === "project" ? 195 : 150)
+              ? "brief"
+              : placement.height < 290
+                ? "medium"
+                : "full"
+            : undefined
+        }
+        style={
+          placement
+            ? {
+                position: "absolute",
+                left: placement.x,
+                top: placement.y,
+                width: placement.width,
+                height: placement.height,
+              }
+            : undefined
+        }
+        className={`wm-map-area ${expandedHere ? "wm-map-area-expanded" : inspecting ? "wm-map-area-compact" : ""}`}
+      >
+        {island(item)}
+      </div>
+    );
+  }
+  const focusedProject =
+    selected?.kind === "project" && selected.children.some((c) => c.focus);
+  function completedTasks(project: WorkItem) {
+    const completed =
+      snapshot?.tasks.filter(
+        (t) =>
+          `project:${t.projectId}` === project.id &&
+          !project.children.some((child) => child.task?.id === t.id),
+      ) ?? [];
+    return completed.length ? (
+      <details className="wm-completed">
+        <summary>{completed.length} completed or canceled tasks</summary>
+        {completed.map((t) => (
+          <UrlLink key={t.id} href={`/plugins/tasks/tasks/task/${t.key}`}>
+            <span>
+              {t.key} · {t.status}
+            </span>
+            {t.title}
+          </UrlLink>
+        ))}
+      </details>
+    ) : null;
+  }
+  const preview = previewId ? previews[previewId] : null;
+  const openTaskId = selected?.task?.id ?? "";
+  useEffect(() => {
+    if (!openTaskId) return;
+    let live = true;
+    setDetail((current) =>
+      current.taskId === openTaskId
+        ? { ...current, loading: true, error: "" }
+        : { taskId: openTaskId, data: null, error: "", loading: true },
+    );
+    rpc
+      .call("taskDetail", { taskId: openTaskId, fresh: detailNonce > 0 })
+      .then((data) => {
+        if (live)
+          setDetail({ taskId: openTaskId, data, error: "", loading: false });
+      })
+      .catch((cause: unknown) => {
+        if (live)
+          setDetail((current) => ({
+            taskId: openTaskId,
+            data: current.taskId === openTaskId ? current.data : null,
+            error: failureText(cause),
+            loading: false,
+          }));
+      });
+    return () => {
+      live = false;
+    };
+  }, [openTaskId, detailNonce, snapshot?.generatedAt]);
+  const postComment = async () => {
+    const task = selected?.task;
+    const text =
+      task && commentDraft?.taskId === task.id ? commentDraft.text.trim() : "";
+    if (!task || !text || posting) return;
+    setPosting(true);
+    setPostError("");
+    try {
+      const { comment } = await rpc.call("postComment", {
+        taskId: task.id,
+        body: text,
+      });
+      // The posted comment shows at once; the re-read confirms it.
+      setDetail((current) =>
+        current.taskId === task.id && current.data
+          ? {
+              ...current,
+              data: {
+                ...current.data,
+                comments: [...current.data.comments, comment],
+              },
+            }
+          : current,
+      );
+      setCommentDraft(null);
+      setDetailNonce((nonce) => nonce + 1);
+      void refresh(true);
+    } catch (cause) {
+      setPostError(failureText(cause));
+    } finally {
+      setPosting(false);
+    }
+  };
+  function details(pane = false) {
+    if (!selected) return null;
+    const Element = pane ? "aside" : "section";
+    return (
+      <Element
+        className={`${pane ? "wm-preview" : "wm-inline-detail"} ${selected.task ? "wm-task-detail" : ""}`}
+        id={`detail-${selected.id}`}
+        ref={panelRef}
+        tabIndex={-1}
+        aria-label={`${pane ? "Preview" : "Expanded"}: ${selected.title}`}
+      >
+        <div className="wm-preview-top">
+          <button
+            onClick={collapseDetails}
+            aria-label={pane ? "Close preview" : "Collapse details"}
+          >
+            <Icon name="ArrowLeft" />{" "}
+            {pane ? "Back to map" : "Collapse details"}
+          </button>
+          <span>
+            {selected.kind === "project"
+              ? "PROJECT"
+              : (selected.task?.key ?? "SESSION")}
+          </span>
+        </div>
+        {pane && (
+          <>
+            <Status item={selected} />
+            <h2>{selected.title}</h2>
+          </>
+        )}
+        {selected.task ? (
+          <>
+            {settleControls(
+              selected,
+              launcher.context?.id === selected.id
+                ? (launcher.threadId ?? undefined)
+                : undefined,
+              {
+                lead: (
+                  <BarActs
+                    item={selected}
+                    disabled={settling || launcher.busy || !!bulk}
+                    busy={acting?.id === selected.id ? acting.action : null}
+                    context={actionContext}
+                    onAct={(action, target) => void act(action, target)}
+                  />
+                ),
+                trail: (
+                  <>
+                    <MoreMenu
+                      label={`More on ${selected.task.key}`}
+                      items={[
+                        ...(() => {
+                          const snooze = snoozeItem(
+                            selected,
+                            actionContext,
+                            settling || launcher.busy || !!bulk || !!acting,
+                            (action, target) => void act(action, target),
+                          );
+                          return snooze ? [snooze] : [];
+                        })(),
+                        {
+                          key: "focus",
+                          label: selected.focus
+                            ? "Remove focus"
+                            : "Bring into focus",
+                          disabled: busy || !!focusedProject,
+                          onSelect: () =>
+                            void saveFocus(selected, !selected.focus),
+                        },
+                        {
+                          key: "pane",
+                          label: pane ? "Expand in map" : "Open in side pane",
+                          onSelect: () =>
+                            setPreviewMode(pane ? "inline" : "pane"),
+                        },
+                        {
+                          key: "open",
+                          label: "Open in Tasks ↗",
+                          href: `/plugins/tasks/tasks/task/${selected.task.key}`,
+                        },
+                      ]}
+                    />
+                  </>
+                ),
+              },
+            )}
+            {actError?.scope === "item" && actError.id === selected.id && (
+              <p className="wm-settle-error wm-bar-error" role="alert">
+                <span>{actError.message}</span>{" "}
+                <button
+                  type="button"
+                  className="wm-inline-link"
+                  onClick={() => setActError(null)}
+                >
+                  Dismiss
+                </button>
+              </p>
+            )}
+          </>
+        ) : (
+        <div className="wm-preview-actions">
+          {selected.kind === "project" && (
+            <AreaTools
+              title={selected.title}
+              disabled={launcher.busy || manager.busy || settling}
+              focused={selected.focus}
+              hidden={!!preferences[selected.id]?.hidden}
+              onAction={(action) => manageArea(selected, action)}
+            />
+          )}
+          {selected.kind === "project" && (
+            <Button
+              size="sm"
+              disabled={launcher.busy}
+              onClick={() => startSession(selected)}
+            >
+              <Icon name="MessageCirclePlus" /> New session
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant={selected.task ? "ghost" : "outline"}
+            onClick={() => setPreviewMode(pane ? "inline" : "pane")}
+          >
+            {pane ? "Expand in map" : "Open in side pane"}
+          </Button>
+          <Button
+            size="sm"
+            variant={
+              selected.focus ? "secondary" : selected.task ? "ghost" : "outline"
+            }
+            disabled={busy || !!focusedProject}
+            onClick={() => void saveFocus(selected, !selected.focus)}
+          >
+            <Icon name="Pin" />
+            {selected.focus ? "In focus" : "Bring into focus"}
+          </Button>
+        </div>
+        )}
+        {selected.kind === "project" &&
+          manager.inlineProjectId === selected.id.slice(8) &&
+          manager.inline}
+        {launcher.context?.id === selected.id && launcher.view}
+        {selected.kind === "project" &&
+          launcher.context?.id === selected.id &&
+          launcher.threadId &&
+          settleControls(undefined, launcher.threadId)}
+        {selected.kind === "thread" &&
+          settleControls(
+            selected,
+            launcher.context?.id === selected.id
+              ? (launcher.threadId ?? undefined)
+              : undefined,
+          )}
+        {focusedProject && (
+          <p className="wm-preview-description">
+            A focused task keeps this project in focus. Change that task's focus
+            to move the project out.
+          </p>
+        )}
+        {selected.kind === "task" &&
+          selected.threads.some((t) => t.isPinned) && (
+            <p className="wm-preview-description">
+              This task inherits focus from pinned sessions. Removing focus also
+              unpins those sessions in BB.
+            </p>
+          )}
+        {selected.kind === "project" ? (
+          <>
+            <p className="wm-preview-description">
+              {selected.children.length} open or unreviewed tasks. Activity and
+              focus roll up from the tasks below.
+            </p>
+            <div className="wm-project-list">
+              {selected.children.map((child) => tile(child))}
+            </div>
+            {completedTasks(selected)}
+          </>
+        ) : (
+          <>
+            {selected.task &&
+              (() => {
+                const task = selected.task;
+                const ask = taskAsk(task);
+                const data = detail.taskId === task.id ? detail.data : null;
+                const loading = detail.taskId === task.id && detail.loading;
+                const draft =
+                  commentDraft?.taskId === task.id ? commentDraft.text : "";
+                return (
+                  <div
+                    className={`wm-task-body ${chatOpen ? "wm-task-body-chat" : ""}`}
+                  >
+                    <div className="wm-task-main">
+                      {ask && ask.from !== "summary" && (
+                        <TaskAsk ask={ask.ask} from={ask.from} />
+                      )}
+                      {!chatOpen && (
+                        <>
+                          <TaskDescription
+                            text={data?.description ?? ""}
+                            lead={ask?.from === "summary"}
+                            loading={!data && loading}
+                          />
+                          <CommentTimeline
+                            comments={data?.comments ?? []}
+                            now={now}
+                            loading={loading}
+                            error={detail.taskId === task.id ? detail.error : ""}
+                            onRetry={() => setDetailNonce((nonce) => nonce + 1)}
+                          >
+                            <CommentBox
+                              taskKey={task.key}
+                              draft={draft}
+                              busy={posting}
+                              error={postError}
+                              onDraft={(text) => {
+                                setPostError("");
+                                setCommentDraft({ taskId: task.id, text });
+                              }}
+                              onPost={() => void postComment()}
+                            />
+                          </CommentTimeline>
+                        </>
+                      )}
+                    </div>
+                    <aside className="wm-task-side">
+                      {!chatOpen && (
+                        <TaskFacts
+                          item={selected}
+                          task={task}
+                          detail={data}
+                          scope={selected.scope}
+                          now={now}
+                          dateFixes={
+                            <DateFixes
+                              task={task}
+                              now={now}
+                              disabled={settling || launcher.busy || !!bulk}
+                              onBusy={setSettling}
+                              onSettled={(result) => {
+                                captureLayout();
+                                recordSettlement(result);
+                                setNotice(
+                                  `${result.taskKey ?? "Task"}: ${result.dueDate ? `date moved to ${result.dueDate}` : "date cleared"}.`,
+                                );
+                                void refresh(true);
+                              }}
+                            />
+                          }
+                        />
+                      )}
+              <section
+                className="wm-detail-section wm-connections wm-task-sessions"
+                aria-label="Connected sessions"
+              >
+                <div className="wm-section-heading">
+                  <h3>
+                    Sessions{" "}
+                    <span>
+                      {linkedSessions.length + commentingSessions.length}
+                    </span>
+                  </h3>
+                  <Button
+                    size="sm"
+                    variant={canChat ? "ghost" : "default"}
+                    disabled={launcher.busy}
+                    onClick={() => startSession(selected)}
+                  >
+                    <Icon name="MessageCirclePlus" /> New session
+                  </Button>
+                </div>
+                <div className="wm-session-options">
+                  {linkedSessions.map((session) => (
+                    <button
+                      key={session.threadId}
+                      aria-pressed={previewId === session.threadId}
+                      title={`Attached to task · ${sessionState(session.threadId, session.liveStatus)}${session.attachedAt ? ` · ${session.attachedAt.slice(0, 10)}` : ""}`}
+                      onClick={() => setActiveSession(session.threadId)}
+                    >
+                      <strong>
+                        {sidebar.threads.find((t) => t.id === session.threadId)
+                          ?.title ?? session.title}
+                      </strong>
+                      <span>
+                        {sidebar.threads.some((t) => t.id === session.threadId)
+                          ? sessionState(session.threadId)
+                          : "Not in active sessions"}{" "}
+                        · Attached
+                      </span>
+                    </button>
+                  ))}
+                  {commentingSessions.map((session) => (
+                    <button
+                      key={session.threadId}
+                      aria-pressed={previewId === session.threadId}
+                      title={`Commented on task · ${sessionState(session.threadId)} · ${session.at.slice(0, 10)}`}
+                      onClick={() => setActiveSession(session.threadId)}
+                    >
+                      <strong>
+                        {sidebar.threads.find((t) => t.id === session.threadId)
+                          ?.title ??
+                          session.title ??
+                          session.threadId}
+                      </strong>
+                      <span>
+                        {sidebar.threads.some((t) => t.id === session.threadId)
+                          ? sessionState(session.threadId)
+                          : "Not in active sessions"}{" "}
+                        · Contributed
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {!previewId && (
+                  <p className="wm-session-hint">
+                    {linkedSessions.length || commentingSessions.length
+                      ? "Choose a session to read or continue it."
+                      : "Start a session to work on this task."}
+                  </p>
+                )}
+              </section>
+                    </aside>
+                  </div>
+                );
+              })()}
+            {previewId ? (
+              <section className="wm-session-view">
+                <div className="wm-session-controls">
+                  {canChat && (
+                    <Button
+                      ref={chatToggleRef}
+                      size="sm"
+                      variant={chatOpen ? "outline" : "default"}
+                      aria-expanded={chatOpen}
+                      aria-controls={chatOpen ? `chat-${previewId}` : undefined}
+                      disabled={launcher.busy}
+                      onClick={() => {
+                        if (chatOpen) closeChat();
+                        else {
+                          if (launcher.context) launcher.close();
+                          setChatTarget({
+                            itemId: selected.id,
+                            threadId: previewId,
+                          });
+                        }
+                      }}
+                    >
+                      {chatOpen ? "Back to summary" : "Chat here"}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => actions.open(previewId)}
+                  >
+                    <Icon name="ArrowUpRight" />
+                    Open full session
+                  </Button>
+                </div>
+                {chatOpen ? (
+                  <section
+                    id={`chat-${previewId}`}
+                    className="wm-live-session"
+                    aria-label={`Live session: ${previewThread?.title ?? selected.title}`}
+                  >
+                    <div className="wm-live-heading">
+                      <strong>{previewThread?.title ?? selected.title}</strong>
+                      <span>{sessionState(previewId)}</span>
+                    </div>
+                    <ThreadChat
+                      key={previewId}
+                      threadId={previewId}
+                      variant="compact"
+                      layout="contained"
+                      permissionPolicy="inherit"
+                      focusRequest={chatFocusRequest}
+                      className="wm-live-chat"
+                    />
+                  </section>
+                ) : (
+                  <div className="wm-detail-section wm-session-summary">
+                    <h3>
+                      {previewThread &&
+                      threadSignal(previewThread) === "working"
+                        ? "Latest response · session is working"
+                        : "Latest session response"}
+                    </h3>
+                    {previewFailure?.key !== loadKey &&
+                    loadedKey === loadKey &&
+                    preview?.text &&
+                    !preview.error ? (
+                      <div
+                        className="wm-response"
+                        role="region"
+                        aria-label="Session response"
+                        tabIndex={0}
+                      >
+                        <Markdown content={preview.text} />
+                      </div>
+                    ) : (
+                      <p>
+                        {previewFailure?.key === loadKey
+                          ? previewFailure.message
+                          : loadedKey !== loadKey
+                            ? "Loading session preview…"
+                            : preview?.text ||
+                              "No response yet. Open the chat to follow its progress."}
+                      </p>
+                    )}
+                    {(previewFailure?.key === loadKey || preview?.error) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPreviewRetry((n) => n + 1)}
+                      >
+                        Retry preview
+                      </Button>
+                    )}
+                    <p className="wm-excerpt-note">
+                      {loadedKey === loadKey &&
+                        !preview?.error &&
+                        preview?.truncated &&
+                        "Shortened response. Open the full session for the rest. "}
+                      {canChat
+                        ? "Latest excerpt. Chat here to reply and follow the session live."
+                        : previewThread?.isArchived
+                          ? "Archived session. Open the full session to view or reopen it."
+                          : "This session is not in BB's active list. Open the full session to check it."}
+                    </p>
+                  </div>
+                )}
+                {relatedTasks.length > 0 && (
+                  <div className="wm-detail-section wm-connections wm-related-tasks">
+                    <h3>Tasks connected to this session</h3>
+                    {relatedTasks.map((task) => {
+                      const related = leaves.find(
+                        (item) => item.task?.id === task.id,
+                      );
+                      const content = (
+                        <>
+                          <strong>
+                            {task.key} · {task.title}
+                          </strong>
+                          <span>
+                            {task.threadIds.includes(previewId)
+                              ? "Attached session"
+                              : "Commented on this task"}
+                          </span>
+                        </>
+                      );
+                      return related && related.id !== selected.id ? (
+                        <button
+                          key={task.id}
+                          onClick={() => openPreview(related)}
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <UrlLink
+                          key={task.id}
+                          href={`/plugins/tasks/tasks/task/${task.key}`}
+                        >
+                          {content}
+                        </UrlLink>
+                      );
+                    })}
+                  </div>
+                )}
+                <button
+                  className="wm-split"
+                  onClick={() => actions.open(previewId, { split: true })}
+                >
+                  Open alongside ↗
+                </button>
+                {previewThread?.isPinned && selected.kind === "task" && (
+                  <button
+                    className="wm-split"
+                    onClick={() => {
+                      actions.setPinned(previewId, false).catch(report);
+                    }}
+                  >
+                    Unpin this session
+                  </button>
+                )}
+                {previewThread?.indicator === "unread-error" && (
+                  <button
+                    className="wm-split"
+                    onClick={() => {
+                      actions.setRead(previewId, true).catch(report);
+                    }}
+                  >
+                    Mark error seen
+                  </button>
+                )}
+              </section>
+            ) : null}
+          </>
+        )}
+      </Element>
+    );
+  }
+  return (
+    <div
+      className="wm-root"
+      onClickCapture={(event) => {
+        if (settling || manager.busy) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        if (
+          launcher.busy &&
+          !(event.target as HTMLElement).closest(".wm-session-launcher")
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        captureLayout();
+      }}
+      onKeyDownCapture={(event) => {
+        if (settling || manager.busy) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        if (
+          event.key === "Escape" &&
+          (event.target as HTMLElement).closest?.(".wm-live-session")
+        )
+          rescueChatEscape();
+        if (keyMovesLayout(event)) captureLayout();
+      }}
+      onKeyDown={(event) => {
+        if (
+          event.key === "Escape" &&
+          !settling &&
+          !event.defaultPrevented &&
+          (selection || launcher.context)
+        ) {
+          event.stopPropagation();
+          collapseDetails();
+        } else if (
+          event.key === "Escape" &&
+          tidy &&
+          !settling &&
+          !event.defaultPrevented
+        ) {
+          // Tidy mode steps back last: after the task and the area.
+          event.stopPropagation();
+          setTidy(false);
+        }
+      }}
+    >
+      <header className="wm-toolbar">
+        <h1 className="sr-only">Work Map</h1>
+        <div className="wm-filterbar">
+          <select
+            className="wm-filter-select"
+            aria-label="Filter work"
+            value={filter}
+            disabled={launcher.busy}
+            onChange={(event) => chooseFilter(event.target.value as Filter)}
+          >
+            {filters.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+                {value !== "all" ? ` · ${counts[value]}` : ""}
+              </option>
+            ))}
+          </select>
+          {/* Counts wait for the tasks: a 0 while loading reads as a real 0. */}
+          {mapReady && (
+            <div
+              className="wm-filter-counts"
+              role="group"
+              aria-label="Attention counts"
+            >
+              <button
+                className="wm-filter wm-waiting"
+                aria-label={
+                  heatOn
+                    ? `Show work that needs you (${counts.waiting})`
+                    : `Show work waiting for you (${counts.waiting})`
+                }
+                title={`${counts.waiting} ${heatOn ? "need you" : "waiting for you"}`}
+                aria-pressed={filter === "waiting"}
+                disabled={launcher.busy}
+                onClick={() => chooseFilter("waiting")}
+              >
+                <i />
+                {counts.waiting}
+              </button>
+              <button
+                className="wm-filter wm-unread"
+                aria-label={`Show results ready to read (${counts.unread})`}
+                title={`${counts.unread} ready to read`}
+                aria-pressed={filter === "unread"}
+                disabled={launcher.busy}
+                onClick={() => chooseFilter("unread")}
+              >
+                <i />
+                {counts.unread}
+              </button>
+            </div>
+          )}
+          <div className="wm-filters" role="group" aria-label="Filter work">
+            {filters.map(([value, label]) => (
+              <button
+                key={value}
+                className={`wm-filter wm-${value}`}
+                aria-pressed={filter === value}
+                disabled={launcher.busy}
+                onClick={() => chooseFilter(value)}
+              >
+                <i />
+                {label}
+                {value !== "all" && mapReady && <b>{counts[value]}</b>}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="wm-tools">
+          <Input
+            disabled={launcher.busy}
+            value={query}
+            onChange={(event) => {
+              if (manager.active) manager.close(false);
+              if (launcher.context) launcher.close();
+              setSelection(null);
+              setExpandedArea(null);
+              setQuery(event.target.value);
+            }}
+            placeholder="Search work…"
+            aria-label="Find a task or session"
+          />
+          <Button disabled={launcher.busy} onClick={() => startSession()}>
+            <Icon name="MessageCirclePlus" /> New session
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={launcher.busy || manager.busy}
+            onClick={() => {
+              setPreviewMode("inline");
+              manager.open("createProject");
+            }}
+          >
+            New project
+          </Button>
+        </div>
+        <div className="wm-view-tools">
+          <div className="wm-layouts" role="group" aria-label="Map layout">
+            {(
+              [
+                ["overview", "Overview", "Layers"],
+                ["heat", "Heat", "GridView"],
+              ] as [MapLayout, string, string][]
+            ).map(([value, label, icon]) => (
+              <button
+                key={value}
+                type="button"
+                className="wm-layout"
+                aria-label={`${label} layout`}
+                title={`${label} layout`}
+                aria-pressed={layoutMode === value}
+                disabled={launcher.busy || manager.busy}
+                onClick={() => chooseLayout(value)}
+              >
+                <Icon name={icon} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+          <ZoomControls
+            {...zoomControl}
+            disabled={zoomDisabled}
+            inert={heatOn ? "Zoom applies to Overview" : undefined}
+          />
+          <button
+            type="button"
+            className="wm-tool-icon"
+            aria-label="Manage areas"
+            title="Manage areas"
+            disabled={launcher.busy || manager.busy}
+            onClick={() => {
+              setPreviewMode("inline");
+              manager.open();
+            }}
+          >
+            <Icon name="Settings" />
+          </button>
+          <button
+            type="button"
+            className="wm-tool-icon wm-refresh"
+            aria-label="Refresh map"
+            aria-describedby="wm-refresh-status"
+            onClick={() => void refresh(true)}
+          >
+            <Icon name="RotateCcw" />
+            {snapshot && !refreshError && (
+              <i className="wm-live-dot" aria-hidden="true" />
+            )}
+            <span
+              id="wm-refresh-status"
+              role="tooltip"
+              className="wm-refresh-status"
+            >
+              {snapshot
+                ? `Updated ${age(snapshot.generatedAt, now)}`
+                : "Connecting"}
+            </span>
+          </button>
+        </div>
+      </header>
+      {error && (
+        <div role="alert" className="wm-error">
+          {error}
+          <button onClick={() => setError("")}>Dismiss</button>
+        </div>
+      )}
+      {refreshError && (
+        <div role="alert" className="wm-error">
+          <span>
+            {snapshot
+              ? "Showing the last loaded tasks. "
+              : "Could not load tasks. "}
+            {refreshError}
+          </span>
+          <button onClick={() => void refresh()}>Retry refresh</button>
+        </div>
+      )}
+      {notice && (
+        <div role="status" className="wm-notice">
+          {notice}
+          <button onClick={() => setNotice("")}>Dismiss</button>
+        </div>
+      )}
+      {sidebar.status === "error" && (
+        <div role="alert" className="wm-error">
+          Session status is unavailable. Tasks remain visible; refresh BB to
+          reconnect.
+        </div>
+      )}
+      {!!snapshot?.warnings.length && (
+        <div className="wm-error" role="status">
+          {snapshot.warnings.length} task connections could not be loaded.
+          Attached or contributing sessions may be missing.
+        </div>
+      )}
+      <div
+        className={`wm-body ${manager.pane || (selected && previewMode === "pane") ? "wm-with-preview" : ""}`}
+      >
+        <main
+          className={`wm-canvas ${fitRequested ? "wm-fit-canvas" : ""} ${heatOn ? "wm-heat-canvas" : ""}`}
+          ref={canvasRef}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onFocusCapture={() => setHovered(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget))
+              setHovered(false);
+          }}
+        >
+          {launcher.context?.id === "global" && (
+            <>
+              {launcher.view}
+              {launcher.threadId &&
+                settleControls(undefined, launcher.threadId)}
+            </>
+          )}
+          {dragging && (
+            <div className="wm-dropzones">
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => drop(e, true)}
+              >
+                Drop here to bring into focus
+              </div>
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => drop(e, false)}
+              >
+                Drop here to remove your focus
+              </div>
+            </div>
+          )}
+          {!mapReady ? (
+            <div className="wm-empty" role="status">
+              {refreshError
+                ? "Task data is unavailable. Use Retry refresh above."
+                : "Gathering your projects and sessions…"}
+            </div>
+          ) : shown.length === 0 && !(fitRequested && candidates.length) ? (
+            <div className="wm-empty">
+              <Icon name="Search" />
+              <h2>
+                {needle ? "No matching work" : "Nothing here needs attention"}
+              </h2>
+              <p>
+                {needle
+                  ? "Try a task key, project name or a few words from its title."
+                  : !snapshot?.projects.length && !items.length
+                    ? "No open work yet. Create a project or start a session."
+                    : "Choose Overview to see the rest of your work."}
+              </p>
+            </div>
+          ) : (
+            <div
+              ref={worldRef}
+              className={`wm-map-world ${zoom < 1 ? "wm-zoomed-out" : zoom > 1 ? "wm-zoomed-in" : ""} ${fitRequested ? "wm-fit-world" : ""}`}
+              data-zoom={Math.round(zoom * 100)}
+              data-detail={
+                zoom <= 0.8 ? "compact" : zoom > 1 ? "detail" : "overview"
+              }
+              style={
+                {
+                  width: "100%",
+                  containerType: "inline-size",
+                  "--wm-zoom-detail": density.detail,
+                  "--wm-zoom-compact": density.compact,
+                  "--wm-zoom-lines": density.lines,
+                } as CSSProperties
+              }
+            >
+              {heat && (
+                <div className="wm-heat-stats">
+                  <div className="wm-heat-counts">
+                    {(
+                      [
+                        [heat.waiting, "need you", "waiting"],
+                        [heat.unread, "ready to read", "unread"],
+                        [heat.running, "agents running", "working"],
+                        [heat.overdue, "overdue", "overdue"],
+                        [heat.aged, "undated 30d+", "aged"],
+                      ] as [number, string, string][]
+                    ).map(([count, label, tone]) => (
+                      <div key={label} data-tone={tone}>
+                        <b>{count}</b>
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                    {/* Slipped dates are housekeeping, not heat: the chip
+                        opens tidy mode, where each one is fixed in a click. */}
+                    {heat.slipped > 0 && (
+                      <button
+                        type="button"
+                        className="wm-heat-chip"
+                        aria-pressed={tidy}
+                        disabled={settling || launcher.busy}
+                        title={
+                          tidy
+                            ? "Leave tidy mode"
+                            : "Tidy mode: dim everything else and fix each slipped date in one click"
+                        }
+                        onClick={() => setTidy((on) => !on)}
+                      >
+                        <b>{heat.slipped}</b>
+                        {` slipped date${heat.slipped === 1 ? "" : "s"}`}
+                      </button>
+                    )}
+                  </div>
+                  <span className="wm-heat-hint">
+                    {tidy
+                      ? "Tidy mode · Fix a date in one click, Undo in Settled today · Escape leaves"
+                      : heatFreeze
+                        ? "Layout held while expanded"
+                        : "Click to expand in place · Escape steps back"}
+                  </span>
+                  <button
+                    type="button"
+                    className="wm-heat-legend-toggle"
+                    aria-expanded={legendOpen}
+                    aria-controls="wm-heat-legend"
+                    onClick={toggleLegend}
+                  >
+                    Legend
+                  </button>
+                  <div
+                    id="wm-heat-legend"
+                    className="wm-heat-legend"
+                    data-open={legendOpen}
+                    title={
+                      "Red = now (at most 5 on the whole map): in focus, then a request for your hands or a failed run, then due today, tomorrow or late within a week by priority, then the highest pull.\n" +
+                      "Amber = next (at most 8 more): due this week, high or urgent priority, then what follows by pull. Grey = later: the rest, sized by pull.\n" +
+                      "Every coloured tile says why in its label row. A date more than two weeks past has slipped: it says so, adds no urgency, and the slipped-dates chip opens tidy mode to fix it."
+                    }
+                  >
+                    <span className="wm-heat-tiers" aria-label="Tiers">
+                      {(
+                        [
+                          ["now", "Now"],
+                          ["next", "Next"],
+                          ["later", "Later"],
+                        ] as const
+                      ).map(([tier, word]) => (
+                        <em key={tier}>
+                          <i className="wm-heat-key" data-tier={tier} />
+                          {word}
+                        </em>
+                      ))}
+                    </span>
+                    {(
+                      [
+                        ["input", "Needs your input"],
+                        ["error", "Run failed"],
+                        ["working", "Agent working"],
+                        ["focused", "In focus"],
+                      ] as [string, string][]
+                    ).map(([tone, label]) => (
+                      <span key={tone}>
+                        <i className={`wm-heat-key wm-heat-${tone}`} />
+                        {label}
+                      </span>
+                    ))}
+                    <span className="wm-heat-sense">
+                      Red = now, at most 5 · Amber = next · Grey = later · The
+                      tile says why
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div className="wm-map-caption" hidden={heatOn}>
+                <span>
+                  {heatOn
+                    ? "EVERYTHING, SIZED BY PULL"
+                    : spatial
+                      ? "FOCUS & RECENT ACTIVITY"
+                      : filter === "focus"
+                        ? "IN FOCUS"
+                        : needle
+                          ? "SEARCH RESULTS"
+                          : filter === "all"
+                            ? "ALL WORK"
+                            : "MATCHING WORK"}
+                </span>
+                <span>
+                  {heatOn
+                    ? heatFreeze
+                      ? "Layout held while expanded"
+                      : "Click to expand in place · Escape steps back"
+                    : fitting
+                      ? shown.length
+                        ? `${shown.length} of ${candidates.length} areas and sessions · Fits this screen`
+                        : "More room needed · Use Show all below"
+                      : zoom !== 1 && spatial
+                        ? inspectionLayout
+                          ? `${shown.length} areas and sessions · Layout held while expanded`
+                          : `${shown.length === candidates.length ? `All ${shown.length}` : `${shown.length} of ${candidates.length}`} areas and sessions · ${zoom < 1 ? "Compact" : "Detail"}`
+                        : `${shown.length} of ${candidates.length} ${needle ? "search results" : "items"}`}
+                </span>
+              </div>
+              {heatOn ? (
+                <HeatMap
+                  areas={heatAreas}
+                  expandedAreaId={inspecting ? heatAreaId : undefined}
+                  expandedItemId={
+                    inspecting && selected && selected.kind !== "project"
+                      ? selected.id
+                      : undefined
+                  }
+                  now={now}
+                  onOpen={openPreview}
+                  onOpenArea={(heatArea) => {
+                    if (heatArea.root) openPreview(heatArea.root);
+                    else
+                      setUncollapsed((open) =>
+                        open.includes(heatArea.id)
+                          ? open.filter((id) => id !== heatArea.id)
+                          : [...open, heatArea.id],
+                      );
+                  }}
+                  onDragStart={(event, item) => {
+                    event.dataTransfer.setData(
+                      "application/x-bb-work-map",
+                      item.id,
+                    );
+                    event.dataTransfer.effectAllowed = "move";
+                    setDragging(true);
+                  }}
+                  onDragEnd={() => setDragging(false)}
+                  areaActions={heatAreaActions}
+                  selected={picked}
+                  tileActions={(item) => (
+                    <TileActions
+                      item={item}
+                      orchestrated={
+                        !!item.task &&
+                        !!items.find(
+                          (root) =>
+                            root.id === `project:${item.task?.projectId}`,
+                        )?.orchestrator
+                      }
+                      disabled={settling || launcher.busy || !!bulk}
+                      busy={acting?.id === item.id ? acting.action : null}
+                      context={actionContext}
+                      error={
+                        actError?.scope === "item" && actError.id === item.id
+                          ? actError.message
+                          : undefined
+                      }
+                      onAct={(action, target) => void act(action, target)}
+                      onDismissError={() => setActError(null)}
+                    />
+                  )}
+                  excerpt={(item) =>
+                    detailExcerpts[item.threads[0]?.id ?? ""] ?? ""
+                  }
+                  tidy={tidy}
+                  dateFixes={(item) =>
+                    item.task ? (
+                      <DateFixes
+                        task={item.task}
+                        now={now}
+                        disabled={settling || launcher.busy || !!bulk}
+                        onBusy={setSettling}
+                        onSettled={(result) => {
+                          // The fix lands in Settled today with its Undo, and
+                          // the map re-reads the task; tidy mode stays on for
+                          // the next date.
+                          captureLayout();
+                          recordSettlement(result);
+                          setNotice(
+                            `${result.taskKey ?? "Task"}: ${result.dueDate ? `date moved to ${result.dueDate}` : "date cleared"}.`,
+                          );
+                          void refresh(true);
+                        }}
+                      />
+                    ) : null
+                  }
+                  tileDetails={
+                    inspecting && selected && selected.kind !== "project"
+                      ? details()
+                      : null
+                  }
+                />
+              ) : spatial ? (
+                <section
+                  ref={overviewRef}
+                  className={`wm-spatial ${inspecting ? `wm-inspecting wm-expand-${expandedZone}` : ""} ${fitRequested ? "wm-fit-map" : ""}`}
+                  aria-label="Work arranged around your focus"
+                >
+                  <div className="wm-orbit-rings" aria-hidden="true" />
+                  <section
+                    className="wm-orbit-core"
+                    aria-label="Work at the center"
+                  >
+                    {orbit.anchor && (
+                      <div className="wm-orbit-anchor">
+                        <span
+                          className={`wm-center-label wm-${orbit.anchor.focus ? "focused" : orbit.anchor.signal}`}
+                          style={
+                            fitting
+                              ? {
+                                  left: fit.placements[orbit.anchor.id].x,
+                                  right: "auto",
+                                  top: Math.max(
+                                    0,
+                                    fit.placements[orbit.anchor.id].y - 20,
+                                  ),
+                                  width: fit.placements[orbit.anchor.id].width,
+                                }
+                              : undefined
+                          }
+                        >
+                          {orbit.anchor.focus
+                            ? "IN FOCUS"
+                            : orbit.anchor.signal === "waiting"
+                              ? orbit.anchor.attention === "review"
+                                ? "NEEDS REVIEW"
+                                : orbit.anchor.attention === "followup"
+                                  ? "FOLLOW-UP DUE"
+                                  : orbit.anchor.attention === "error"
+                                    ? "RUN FAILED"
+                                    : "NEEDS YOUR INPUT"
+                              : orbit.anchor.signal === "unread"
+                                ? "READY TO READ"
+                                : isWorking(orbit.anchor)
+                                  ? "WORKING NOW"
+                                  : orbit.anchor.recent
+                                    ? "ACTIVE IN THE LAST 24H"
+                                    : "IN VIEW"}
+                        </span>
+                        {mapArea(orbit.anchor)}
+                      </div>
+                    )}
+                    <div className="wm-orbit-near wm-near-first">
+                      {orbit.near[0] && mapArea(orbit.near[0])}
+                    </div>
+                    <div className="wm-orbit-near wm-near-second">
+                      {orbit.near[1] && mapArea(orbit.near[1])}
+                    </div>
+                  </section>
+                  <section
+                    className="wm-orbit-west wm-orbit-side"
+                    aria-label="Work to the left"
+                  >
+                    {orbit.west.map(mapArea)}
+                  </section>
+                  <section
+                    className="wm-orbit-east wm-orbit-side"
+                    aria-label="Work to the right"
+                  >
+                    {orbit.east.map(mapArea)}
+                  </section>
+                  <section
+                    className="wm-orbit-north wm-orbit-far"
+                    aria-label="Outer work above"
+                  >
+                    {orbit.north.map(mapArea)}
+                  </section>
+                  <section
+                    className="wm-orbit-south wm-orbit-far"
+                    aria-label="Outer work below"
+                  >
+                    {orbit.south.map(mapArea)}
+                  </section>
+                </section>
+              ) : (
+                <section className="wm-results" aria-label="Matching work">
+                  {shown.map((item) => (
+                    <div
+                      key={item.id}
+                      className="wm-result"
+                      data-layout-id={item.id}
+                    >
+                      {!matches(item) && (
+                        <p className="wm-result-retained">
+                          No longer matches this view · kept here while you read
+                        </p>
+                      )}
+                      {island(item)}
+                    </div>
+                  ))}
+                </section>
+              )}
+              {!heatOn &&
+                browseCount > (fitting ? shown.length : visible.length) && (
+                  <button
+                    className="wm-more"
+                    onClick={() => {
+                      setSelection(null);
+                      setExpandedArea(null);
+                      setActiveSession(null);
+                      setExpanded(true);
+                    }}
+                  >
+                    {hiddenImportant
+                      ? `${hiddenImportant} more active or focused areas · `
+                      : ""}
+                    Show all {browseCount} areas and sessions{" "}
+                    <span aria-hidden="true">↗</span>
+                  </button>
+                )}
+            </div>
+          )}
+          <SettledToday
+            rows={[...snoozes, ...settled].sort((a, b) => b.at - a.at)}
+            onUndo={(id) => void undoSettlement(id)}
+            pending={undoing}
+            error={settledError}
+          />
+          {/* Overview's legend only: Heat carries its own above the map, and a
+              search run from Heat is still Heat's, as is the wait for the
+              stored layout. */}
+          {layoutMode === "overview" && (
+            <footer className="wm-footer">
+              <span>
+                <span className="wm-legend-focus">Coral ring · Focus</span>
+                {" · "}
+                <span className="wm-legend-working">
+                  Green bar · Agent working
+                </span>
+                {" · "}
+                <span className="wm-legend-waiting">Amber · Action needed</span>
+                {" · "}
+                <span className="wm-legend-unread">Blue · Ready to read</span>
+                {" · "}
+                {spatial
+                  ? "Focus stays prominent. Older activity moves outward."
+                  : "Ordered by importance and attention."}
+              </span>
+              <button
+                aria-pressed={rotate}
+                onClick={() => setRotate((r) => !r)}
+              >
+                {rotate
+                  ? zoom !== 1
+                    ? "Rotation paused while zoomed"
+                    : "Rotation on"
+                  : "Rotation paused"}
+              </button>
+            </footer>
+          )}
+        </main>
+        {manager.pane || (selected && previewMode === "pane" && details(true))}
+      </div>
+    </div>
+  );
+}
+
+export default definePluginApp((app) => {
+  app.slots.navPanel({
+    id: "map",
+    title: "Work Map",
+    icon: "Layers",
+    path: "map",
+    component: WorkMap,
+  });
+});

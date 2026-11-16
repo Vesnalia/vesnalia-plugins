@@ -1,0 +1,12869 @@
+import "./check-test-machine.mjs";
+import { forgetMonitorReadings } from "../src/app/monitor/use-snapshot.ts";
+// The panel, the desktop viewer and the settings section, rendered with the
+// SDK's slot harness against fake RPC handlers and a fake noVNC. Run with
+// vitest: npm run test:app.
+
+import { useState, type ComponentType } from "react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { toast } from "sonner";
+import { afterEach, expect, test, vi } from "vitest";
+import { useRpc } from "@get-bb/plugin-sdk/app";
+import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import type { ImageOptionView } from "../src/plugin/views.ts";
+import type { ApplyResult, BoxEntry, BulkCheck, MonitorReach, MonitorSnapshot, BoxPageState, BoxResult, BoxSnapshotsView, CheckResult, ConfigState, Contract, DesktopState, KeepPreview, MachineEntry, PanelState, ForkPreview, ForkStarted, ResizeResult, RestorePreview, SnapshotChange, SnapshotRowView, SnapshotsTabView, TakeCheck, ThreadOnBox } from "../src/plugin/contract.ts";
+import type { EndedBox } from "../src/core/box-log.ts";
+import type { Busy } from "../src/monitor/busy.ts";
+import { busyNow, busyUntil, rowLine, rowReasons, rowWords } from "../src/app/row-line.ts";
+import { busyWords } from "../src/app/box-words.ts";
+import type { ConfigDocument, Problem, SaveReceipt } from "../src/core/document.ts";
+import type { BackendView, BoxView, DoctorView, KindView, ProviderProfile } from "../src/plugin/views.ts";
+import type { DoctorReport, GpuRoom } from "../src/backends/types.ts";
+import { kindCardReads } from "../src/plugin/kind-cards.ts";
+import type { DockerHostView } from "../src/plugin/docker-hosts.ts";
+import type { MachineAccessProblem, MachineSetup } from "../src/plugin/setup-offer.ts";
+import type { ImagesStatus } from "../src/plugin/contract.ts";
+import type { SettingsCards } from "../src/plugin/gpu-settings.ts";
+import { buildPlace, roughly } from "../src/app/first-run.tsx";
+import { boxTitleBadges, fitTitle, forgetLive, isArm64Badge, lacksDocker, Meta, useLive } from "../src/app/common.tsx";
+import { BoxLine, DEVICE_PASTE_FIELD_WORDS, DesktopSession, HIGH_RESOLUTION_WORDS, PASTE_CHORD_DELAY_MS, SETTLE_MS, WINDOWS_HIGH_RESOLUTION_WORDS, forgetInsecurePageNote, forgetStreams, forgetThreadTitles, streamChoiceKey, threadGroupHeading } from "../src/app/desktop.tsx";
+import { rgbaPng } from "../src/core/png.ts";
+import { BAR_NUMBERS_SHOWN_KEY } from "../src/app/view-bar.tsx";
+import { forgetMoves } from "../src/app/box-route.ts";
+import { FRESH_PLACE, forgetListPlace, keepListPlace, leaveRow, listPlace, placeFrom, returnToPlace, rowToReturnTo } from "../src/app/list-place.ts";
+import { CLIPBOARD_MAX_BYTES, FIRST_FRAME_MS, FIT_WAIT_MS, HOLD_NO_SIZE_MS, HOLD_SETTLE_MS, RESTART_GAP_MS, SLOW_VIDEO_RETRY_MS, SLOW_VIDEO_STILLS_WORDS, STALL_MS, STILLS_WORDS, SelkiesSession, decodesMacroblocks, devicePasteTooLongWords, forgetFullColour, spsCodec, unicodeKeysym } from "../src/app/selkies.ts";
+import { DEVICE_CLIPBOARD_MOST, PASTE_REQUEST_SINCE_VERSION } from "../src/core/device.ts";
+import { KeysAfterPaste, MAX_RETRY_MS, OptionComposer, PASTE_HOLD_MS, PASTE_LANDS_MS, boxKey, macBrowser, pasteShortcut, retryWait } from "../src/app/viewer.ts";
+import { checkWords, forgetResizesAsked } from "../src/app/resize.tsx";
+import { freesWords, keepOpeningDate, snapshotSizeWords } from "../src/app/snapshot-words.ts";
+import { IMAGE_REQUEST } from "../src/app/new-box.tsx";
+import { FieldShell, SideLabelField } from "../src/app/field-shell.tsx";
+import { SettingRow } from "../src/app/settings-parts.tsx";
+import { BoxDialog, DialogButton, DialogCancel } from "../src/app/box-dialog.tsx";
+import { DeviceToolbar } from "../src/app/device-toolbar.tsx";
+import { deviceModel, type DeviceState } from "../src/core/device.ts";
+import { choiceOf, displayChoices, formFilterOf, gpuChoices, gpuFullNote, kindFor, nearest, offersShown, providerTitle, runsOnOptions, systemsOf } from "../src/app/box-form.tsx";
+import { backendName } from "../src/app/settings-backends.tsx";
+import { limitWords, makesWords, roomWords, runsOnWords, statusWords, usuallyWords } from "../src/app/provider-profile.tsx";
+import { providerKeys, providerName } from "../src/core/provider-name.ts";
+type BoxEntryLike = { threadId: string; box: BoxView; owner: "thread" | "yours" };
+import { dropAllKept, HAND_BACK_MS, HIDDEN_MS } from "../src/app/kept.ts";
+import { runsOn, sparesWords } from "../src/app/settings-kinds.tsx";
+import { statusOf, timingWords } from "../src/app/status.ts";
+import { choices, firstSort, NO_FILTERS, shown, splitGroups, stateGroup, tagCounts, tagsOf } from "../src/app/boxes-filter.ts";
+import { screensOf, screenTitle, screenWord } from "../src/app/screens.ts";
+import { terminalTitle } from "../src/app/terminal.tsx";
+import { sourceName, warmShortWords } from "../src/app/config.ts";
+import { openSettingsView } from "../src/app/settings-route.ts";
+import { forgetDrafts } from "../src/app/settings-drafts.ts";
+import { forgetConfigurationPage } from "../src/app/settings-configuration.tsx";
+import { forgetStandardImages } from "../src/app/settings-images.tsx";
+import { forgetFindQuery } from "../src/app/settings-find.tsx";
+import { FIND_SHOWN, pathFor, searchSettings, settingsIndex, type FindEntry } from "../src/app/settings-find-index.ts";
+import { problemPath } from "../src/app/settings-paths.ts";
+import { LOADING_SHOWN_AFTER_MS } from "../src/app/loading-states.tsx";
+import { forgetFormChecks } from "../src/app/settings-checks.ts";
+import { hostChip, onBbMachine } from "../src/app/settings-status.ts";
+import { SavedTick } from "../src/app/settings-parts.tsx";
+import { CheckRow } from "../src/app/settings-backend-page.tsx";
+import type { BackendConfig } from "../src/core/document.ts";
+import packageJson from "../package.json";
+
+/** noVNC's RFB, recording each client the viewer makes. */
+const novnc = vi.hoisted(() => {
+  class FakeRfb extends EventTarget {
+    static made: FakeRfb[] = [];
+    viewOnly = false;
+    scaleViewport = false;
+    #resizeSession = false;
+    /** How often the viewer turned resizeSession on, each of which makes noVNC check the desktop's size. */
+    resizeChecks = 0;
+    focused = 0;
+    disconnected = false;
+    /** How often noVNC's keyboard was told to let go of every key it holds. */
+    keysLetGo = 0;
+    readonly _keyboard = { _allKeysUp: () => void this.keysLetGo++ };
+    readonly url: string;
+    readonly options: unknown;
+    readonly target: HTMLElement;
+    /** How many of the next clients fail as noVNC makes them, as a client that cannot start would. */
+    static refuse = 0;
+    constructor(target: HTMLElement, url: string, options: unknown) {
+      super();
+      if (FakeRfb.refuse > 0) {
+        FakeRfb.refuse--;
+        throw new Error("noVNC could not start.");
+      }
+      this.target = target;
+      this.url = url;
+      this.options = options;
+      FakeRfb.made.push(this);
+    }
+    get resizeSession() {
+      return this.#resizeSession;
+    }
+    set resizeSession(value: boolean) {
+      this.#resizeSession = value;
+      if (value) this.resizeChecks++;
+    }
+    /** Keys sent with sendKey, in order. */
+    keys: { keysym: number; code: string | null; down: boolean }[] = [];
+    /** Text sent as the viewer's clipboard. */
+    pasted: string[] = [];
+    /** What the keyboard handler's events became, after the viewer's own mapping. */
+    keyEvents: { keysym: number; code: string; down: boolean }[] = [];
+    /** Keys sent with sendKey and the keyboard handler's events together, in the order they went. */
+    input: string[] = [];
+    sendKey(keysym: number, code: string | null, down?: boolean) {
+      this.input.push(`sent ${code}${down === false ? " up" : ""}`);
+      if (down === undefined) {
+        this.keys.push({ keysym, code, down: true }, { keysym, code, down: false });
+        return;
+      }
+      this.keys.push({ keysym, code, down });
+    }
+    clipboardPasteFrom(text: string) {
+      this.pasted.push(text);
+    }
+    _handleKeyEvent(keysym: number, code: string, down: boolean) {
+      this.keyEvents.push({ keysym, code, down });
+      this.input.push(`typed ${code}${down ? "" : " up"}`);
+    }
+    /** noVNC's canvas and cursor state: the box's cursor is none until it sends one; the connection state is connected throughout. */
+    _canvas = document.createElement("canvas");
+    _cursorImage = { rgbaPixels: new Uint8Array(), hotx: 0, hoty: 0, w: 0, h: 0 };
+    _rfbConnectionState = "connected";
+    cursorRefreshes = 0;
+    /** As noVNC's own: the box's cursor goes on the canvas (a keyword stands in for its image URL, which jsdom's CSS would reject), an empty one as "none". */
+    _refreshCursor() {
+      this.cursorRefreshes++;
+      this._canvas.style.cursor = this._cursorImage.w && this._cursorImage.h ? "crosshair" : "none";
+    }
+    disconnect() {
+      this.disconnected = true;
+    }
+    focus() {
+      this.focused++;
+    }
+    blur() {}
+    /** noVNC's own measure: the element's rect, fractional. */
+    _screenSize() {
+      return { w: 851.5, h: 1007.25 };
+    }
+    /** noVNC's defaults: the JPEG quality and zlib level it asks for. */
+    qualityLevel = 6;
+    compressionLevel = 2;
+    /** Each SetEncodings and FramebufferUpdateRequest sent, in order, as noVNC's client messages would send them. */
+    static sent: string[] = [];
+    static messages = {
+      clientEncodings: (_sock: unknown, encodings: number[]) => void FakeRfb.sent.push(`encodings ${encodings.join(",")}`),
+      fbUpdateRequest: (_sock: unknown, incremental: boolean, x: number, y: number, w: number, h: number) =>
+        void FakeRfb.sent.push(`${incremental ? "incremental" : "full"} ${x},${y},${w},${h}`),
+    };
+    _sock = {};
+    /** As noVNC's: Tight, then the quality level, then a pseudo-encoding. */
+    _sendEncodings() {
+      FakeRfb.messages.clientEncodings(this._sock, [7, -32 + this.qualityLevel, -223]);
+    }
+    _display = { imageRect(..._rect: unknown[]) {}, blitImage(..._rect: unknown[]) {}, fillRect(..._rect: unknown[]) {}, videoFrame(..._rect: unknown[]) {} };
+    /** One FramebufferUpdate read whole. */
+    _framebufferUpdate() {
+      return true;
+    }
+  }
+  return { FakeRfb };
+});
+vi.mock("@novnc/novnc", () => ({ default: novnc.FakeRfb }));
+
+// xterm draws nothing in jsdom: a fake keeps what was written and lets a test type and resize.
+const xterm = vi.hoisted(() => {
+  /** xterm's WebGL addon: loading it fails where `FakeWebgl.missing`, as it does without WebGL 2; `lose` loses its context. */
+  class FakeWebgl {
+    static missing = false;
+    disposed = false;
+    lose: (() => void) | null = null;
+    onContextLoss(handler: () => void) {
+      this.lose = handler;
+      return { dispose: () => {} };
+    }
+    dispose() {
+      this.disposed = true;
+    }
+  }
+  class FakeTerminal {
+    static made: FakeTerminal[] = [];
+    cols = 80;
+    rows = 24;
+    written: string[] = [];
+    data: ((text: string) => void) | null = null;
+    resized: ((size: { cols: number; rows: number }) => void) | null = null;
+    target: HTMLElement | null = null;
+    textarea: HTMLTextAreaElement | undefined;
+    keys: ((event: KeyboardEvent) => boolean) | null = null;
+    constructor() {
+      FakeTerminal.made.push(this);
+    }
+    open(target: HTMLElement) {
+      this.target = target;
+      this.textarea = document.createElement("textarea");
+      this.textarea.setAttribute("aria-label", "Terminal input");
+      target.appendChild(this.textarea);
+    }
+    attachCustomKeyEventHandler(handler: (event: KeyboardEvent) => boolean) {
+      this.keys = handler;
+    }
+    addons: unknown[] = [];
+    loadAddon(addon: unknown) {
+      if (addon instanceof FakeWebgl && FakeWebgl.missing) throw new Error("WebGL2 not supported");
+      this.addons.push(addon);
+    }
+    focus() {}
+    reset() {}
+    dispose() {}
+    write(data: string | Uint8Array) {
+      this.written.push(typeof data === "string" ? data : new TextDecoder().decode(data));
+    }
+    onData(handler: (text: string) => void) {
+      this.data = handler;
+      return { dispose: () => {} };
+    }
+    onResize(handler: (size: { cols: number; rows: number }) => void) {
+      this.resized = handler;
+      return { dispose: () => {} };
+    }
+  }
+  return { FakeTerminal, FakeWebgl };
+});
+vi.mock("@xterm/xterm", () => ({ Terminal: xterm.FakeTerminal }));
+vi.mock("@xterm/addon-webgl", () => ({ WebglAddon: xterm.FakeWebgl }));
+vi.mock("@xterm/addon-fit", () => ({
+  FitAddon: class {
+    calls = 0;
+    fit() {
+      this.calls += 1;
+    }
+  },
+}));
+
+/** A WebSocket a test opens, feeds and closes. */
+class FakeSocket {
+  static OPEN = 1;
+  static made: FakeSocket[] = [];
+  readyState = 0;
+  binaryType = "blob";
+  sent: (string | Uint8Array)[] = [];
+  onopen: ((event: unknown) => void) | null = null;
+  onmessage: ((event: { data: unknown }) => void) | null = null;
+  onclose: ((event: { code: number; reason: string }) => void) | null = null;
+  onerror: ((event: unknown) => void) | null = null;
+  readonly url: string;
+  constructor(url: string) {
+    this.url = url;
+    FakeSocket.made.push(this);
+  }
+  send(data: string | Uint8Array) {
+    this.sent.push(data);
+  }
+  close() {
+    this.readyState = 3;
+  }
+  open() {
+    this.readyState = 1;
+    this.onopen?.({});
+  }
+  receive(text: string) {
+    this.onmessage?.({ data: new TextEncoder().encode(text).buffer });
+  }
+  end(code: number, reason: string) {
+    this.readyState = 3;
+    this.onclose?.({ code, reason });
+  }
+}
+vi.stubGlobal("WebSocket", FakeSocket);
+
+/** ResizeObserver, which jsdom lacks: a test gives each observer its elements' new size. */
+class FakeObserver {
+  static made: FakeObserver[] = [];
+  readonly targets: Element[] = [];
+  disconnected = false;
+  readonly #callback: ResizeObserverCallback;
+  constructor(callback: ResizeObserverCallback) {
+    this.#callback = callback;
+    FakeObserver.made.push(this);
+  }
+  observe(target: Element) {
+    this.targets.push(target);
+  }
+  unobserve() {}
+  disconnect() {
+    this.disconnected = true;
+  }
+  resize(width: number, height: number) {
+    const entries = this.targets.map((target) => ({ target, contentRect: { width, height } }) as unknown as ResizeObserverEntry);
+    this.#callback(entries, this as unknown as ResizeObserver);
+  }
+}
+vi.stubGlobal("ResizeObserver", FakeObserver);
+
+/** The observer of the element noVNC draws in. */
+function observerOf(client: { target: HTMLElement }): FakeObserver {
+  return FakeObserver.made.find((observer) => observer.targets.includes(client.target))!;
+}
+
+/**
+ * BB's toaster, which the host gives plugins as sonner's `toast`: each toast in a polite live region, under its id, so the next with
+ * that id takes its place, with its description under it, until its duration has passed or it is dismissed.
+ */
+vi.mock("sonner", () => {
+  const shown = new Map<string | number, { readonly node: HTMLElement; readonly timer: ReturnType<typeof setTimeout> }>();
+  const dismiss = (id?: string | number) => {
+    for (const [key, entry] of shown) {
+      if (id !== undefined && key !== id) continue;
+      clearTimeout(entry.timer);
+      entry.node.remove();
+      shown.delete(key);
+    }
+  };
+  const toast = (message: string, options: { id?: string | number; description?: unknown; duration?: number } = {}) => {
+    const id = options.id ?? message;
+    (globalThis as { lastToastDescription?: unknown }).lastToastDescription = options.description;
+    dismiss(id);
+    let region = document.querySelector<HTMLElement>("section[data-toaster]");
+    if (!region) {
+      region = document.createElement("section");
+      region.dataset.toaster = "";
+      region.setAttribute("aria-live", "polite");
+      document.body.appendChild(region);
+    }
+    const node = document.createElement("li");
+    node.dataset.toastId = String(id);
+    const title = document.createElement("div");
+    title.textContent = message;
+    node.appendChild(title);
+    if (typeof options.description === "string" && options.description) {
+      const description = document.createElement("div");
+      description.textContent = options.description;
+      node.appendChild(description);
+    }
+    region.appendChild(node);
+    shown.set(id, { node, timer: setTimeout(() => dismiss(id), options.duration ?? 4_000) });
+    return id;
+  };
+  return { toast: Object.assign(toast, { dismiss }) };
+});
+
+/** The toasts shown now, each as its text. */
+function toasts(): string[] {
+  return Array.from(document.querySelectorAll("section[data-toaster] li"), (node) => node.textContent ?? "");
+}
+
+const THREAD = "thr_panel";
+const DESKTOP_PATH = "/api/v1/plugins/bb-box/http/desktop";
+const TERMINAL_PATH = "/api/v1/plugins/bb-box/http/terminal";
+const app = await loadPluginApp(() => import("../app.tsx"));
+afterEach(() => {
+  forgetMonitorReadings();
+  cleanup();
+  forgetMoves();
+  forgetListPlace();
+  forgetThreadTitles();
+  toast.dismiss();
+  dropAllKept();
+  forgetLive();
+  vi.useRealTimers();
+  applied = null;
+  novnc.FakeRfb.made = [];
+  novnc.FakeRfb.sent = [];
+  xterm.FakeTerminal.made = [];
+  FakeSocket.made = [];
+  FakeObserver.made = [];
+  window.sessionStorage.clear();
+  window.localStorage.clear();
+  forgetDrafts();
+  forgetStreams();
+  forgetResizesAsked();
+});
+
+function box(overrides: Partial<BoxView> = {}): BoxView {
+  return {
+    id: "box_1",
+    name: "calm-otter",
+    kind: "linux",
+    kindLabel: "Linux",
+    backendLabel: "Fake host",
+    nature: "virtual",
+    form: "LXC",
+    shared: false,
+    role: "box",
+    state: "ready",
+    error: null,
+    stopped: null,
+    createdAt: Date.now() - 12 * 60_000,
+    readyAt: Date.now() - 12 * 60_000 + 2100,
+    os: "linux",
+    arch: "x86_64",
+    gpu: false,
+    requires: [],
+    extras: ["docker"],
+    docker: true,
+    desktop: false,
+    display: null,
+    control: null,
+    computerUse: false,
+    terminal: true,
+    address: "192.0.2.10",
+    facts: [{ label: "Template", value: "9000" }],
+    timings: { clone: 700, total: 2100, enrol: 5300 },
+    enrol: { state: "enrolled", hostId: "host_1", error: null },
+    enrols: true,
+    canStopStart: true,
+    size: "2 cores, 4 GiB memory",
+    ...overrides,
+  };
+}
+
+function size(cores: number, memoryGiB: number, diskGiB: number | null = null) {
+  return { cores, memoryGiB, diskGiB, words: `${cores} cores, ${memoryGiB} GiB memory${diskGiB === null ? "" : `, ${diskGiB} GiB disk`}` };
+}
+
+function kindView(id: string, label: string, description: string, cores: number, desktop: boolean): KindView {
+  return {
+    id,
+    label,
+    description,
+    size: size(cores, cores * 2).words,
+    presets: [
+      { name: "small", ...size(cores, cores * 2) },
+      { name: "medium", ...size(cores * 2, cores * 4) },
+      { name: "large", ...size(cores * 4, cores * 8) },
+    ],
+    defaultPreset: "small",
+    largest: size(cores * 8, cores * 16, 256),
+    gpu: desktop,
+    desktop,
+    os: "linux",
+    arch: id.includes("arm64") ? "arm64" : "x86_64",
+    windowing: id.includes("wayland") ? "wayland" : "x11",
+    features: id === "linux-docker" ? ["docker"] : [],
+    docker: true,
+    enrol: true,
+    spares: { target: 0, ready: 0, making: 0 },
+    admin: true,
+    devices: null,
+    backends: ["Fake host"],
+    forms: ["LXC"],
+    offers: [
+      {
+        backend: "fake",
+        name: "Fake host on pve",
+        type: "fake",
+        label: "Fake host",
+        hosts: ["pve"],
+        form: "LXC",
+        ready: 0,
+        free: null,
+        admin: true,
+        resizable: desktop ? true : null,
+        typicalReadyMs: desktop ? 3100 : 2200,
+        docker: true,
+        hostOs: "linux",
+        gpuRoom: null,
+      },
+    ],
+    computerUse: desktop,
+  };
+}
+
+function offered(kind: KindView, offers: KindView["offers"]): KindView {
+  return { ...kind, offers };
+}
+
+const ADDS_A_GPU = { cores: "live", memory: "live", disk: "live", shrinks: true, gpu: { add: "restart", share: "no", move: "no" } } as const;
+const CANNOT_ADD_A_GPU = { cores: "live", memory: "live", disk: "no", shrinks: true, gpu: { add: "no", share: "live", move: "no" } } as const;
+
+// jsdom has no scrollIntoView, which a menu calls on its chosen item.
+Element.prototype.scrollIntoView = () => {};
+
+/** Opens the labelled menu with the keyboard and picks the option. */
+async function choose(label: string, option: string): Promise<void> {
+  fireEvent.keyDown(screen.getByRole("combobox", { name: label }), { key: "ArrowDown" });
+  const item = (await screen.findAllByRole("option")).find((candidate) => candidate.textContent === option);
+  if (!item) throw new Error(`No option "${option}" under ${label}`);
+  fireEvent.click(item);
+  // A filter's trigger carries its label ("Kind: All"); the GPU's carries the value alone.
+  await waitFor(() => expect(screen.getByRole("combobox", { name: label }).textContent?.endsWith(option)).toBe(true));
+}
+
+/** The menu's options, with "disabled" after one that cannot be chosen, and the menu closed again. */
+async function optionsOf(label: string): Promise<string[]> {
+  fireEvent.keyDown(screen.getByRole("combobox", { name: label }), { key: "ArrowDown" });
+  const items = (await screen.findAllByRole("option")).map((candidate) => `${candidate.textContent}${candidate.getAttribute("aria-disabled") ? ":disabled" : ""}`);
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("option")).toBeNull());
+  return items;
+}
+
+/** The form's one button: Create box, or Add machine (the settings page has a button of that name that opens the form too). */
+const submitButton = () => document.querySelector('form button[type="submit"]') as HTMLButtonElement;
+
+const KINDS: KindView[] = [
+  kindView("linux", "Linux", "For builds, servers, Docker and the agent's own work.", 2, false),
+  kindView("linux-desktop", "Linux desktop", "A desktop on the GPU.", 4, true),
+];
+
+/** The LXC host's profile, as the (i) on its row shows it. */
+const PROFILE: ProviderProfile = {
+  backend: "fake",
+  name: "Fake host on pve",
+  technology: "Linux containers on a test host.",
+  nature: "virtual",
+  hosts: ["pve"],
+  hostOs: "linux",
+  makes: [
+    { id: "linux", label: "Linux", form: "LXC", typicalReadyMs: 2200, ready: 1 },
+    { id: "linux-desktop", label: "Linux desktop (GPU)", form: "LXC", typicalReadyMs: 3100, ready: 0 },
+  ],
+  boxes: 2,
+  room: {
+    ok: true,
+    message: null,
+    warm: null,
+    hosts: [{ host: "pve", ok: true, limits: [{ resource: "memory", used: 12 * 1024, total: 64 * 1024, reserve: 4 * 1024, unit: "MiB" }, { resource: "cpu", used: 6, total: 16, reserve: 0, unit: "count" }] }],
+  },
+  status: { state: "active", problem: null, ok: true, summary: "Proxmox VE 9.2 on pve", checkedAt: 0 },
+};
+
+/** Linux as two backends offer it: the LXC host and a pool of real machines. */
+const POOLED: KindView = {
+  ...KINDS[0]!,
+  offers: [
+    KINDS[0]!.offers[0]!,
+    { backend: "ssh-pool", name: "SSH host pool", type: "ssh-pool", label: "SSH host pool", hosts: [], form: "Physical", ready: 0, free: 1, admin: false, resizable: null, typicalReadyMs: null, docker: true, hostOs: "linux", gpuRoom: null },
+  ],
+  admin: null,
+  forms: ["LXC", "Physical"],
+};
+
+const BACKENDS: BackendView[] = [
+  {
+    id: "fake",
+    type: "fake",
+    label: "Fake host",
+    nature: "virtual",
+    state: "misconfigured",
+    problems: ["Set the API URL.", "Set the API token."],
+    fieldProblems: [
+      { path: "backends.fake.url", message: "Set the API URL." },
+      { path: "backends.fake.token", message: "Set the API token." },
+    ],
+    kinds: [],
+    setup: { guide: "setup/fake/README.md", scripts: ["setup/fake/one.sh", "setup/fake/two.sh"] },
+  },
+];
+
+/** RPC handlers over one thread's boxes, recording each change. */
+const NOT_READ: MonitorReach = { is: "not-running", machineId: null, why: null };
+
+function server(initial: BoxView[], options: { projects?: { id: string; name: string }[]; cards?: Record<string, SettingsCards>; entries?: (box: BoxView) => Partial<BoxEntry>; busy?: Busy; monitor?: MonitorReach; holder?: ThreadOnBox; deviceFailed?: BoxPageState["deviceFailed"]; rooms?: Record<string, string> | ((size: unknown) => Record<string, string>); holdCards?: Promise<void>; cardsFail?: boolean; cardFailed?: boolean; profileFailsOnce?: Set<string>; kinds?: KindView[]; failWith?: string; inUse?: ThreadOnBox[]; machines?: MachineEntry[]; runsOn?: PanelState["runsOn"]; imageOffer?: boolean; images?: ImageOptionView[]; config?: Partial<ConfigState>; checkWith?: CheckResult; applyWith?: ApplyResult; savedWith?: Problem[]; dockerHosts?: DockerHostView[]; setups?: MachineSetup[]; access?: MachineAccessProblem; desktopOnDemand?: PanelState["desktopOnDemand"]; desktopProblem?: PanelState["desktopProblem"]; sharp?: boolean | null; rebuildable?: ImagesStatus["images"]; progress?: ImagesStatus["progress"]; failures?: ImagesStatus["failures"]; refusal?: string; video?: boolean; videoByDefault?: boolean; switching?: { on: boolean }; resize?: (input: ResizeInput) => ResizeResult; deviceClipboard?: string; snapshots?: BoxSnapshotsView; restorePreview?: RestorePreview; restoreAnswers?: SnapshotChange[]; takeCheck?: { check: TakeCheck | null; refusal: string | null }; forkPreview?: (asMachine: boolean) => ForkPreview; forkAnswer?: ForkStarted; keepPreview?: (input: { days?: number; until?: string }) => KeepPreview | Promise<KeepPreview>; tab?: () => SnapshotsTabView | Promise<SnapshotsTabView>; bulkCheck?: (input: { snapshots: string[]; change: "keep" | "delete" }) => BulkCheck } = {}) {
+  let boxes = [...initial];
+  let machines = [...(options.machines ?? [])];
+  let dockerHosts = [...(options.dockerHosts ?? [])];
+  let setups = [...(options.setups ?? [])];
+  const changes: string[] = [];
+  const operations: string[] = [];
+  const receipts: SaveReceipt[] = [];
+  /** The providers whose profiles the form asked for, in order. */
+  const asked: string[] = [];
+  const result = (found: BoxView | null): BoxResult => (options.failWith ? { box: null, error: options.failWith } : { box: found, error: null });
+  const change = (method: string, ref: string, next: (found: BoxView) => BoxView | null): BoxResult => {
+    changes.push(`${method} ${ref}`);
+    if (options.failWith) return result(null);
+    const found = find(ref);
+    if (!found) return { box: null, error: `There is no box "${ref}".` };
+    const updated = next(found);
+    boxes = updated ? boxes.map((candidate) => (candidate === found ? updated : candidate)) : boxes.filter((candidate) => candidate !== found);
+    return result(updated);
+  };
+  const find = (ref: string) => boxes.find((candidate) => candidate.id === ref || candidate.name === ref) ?? null;
+  const ended = new Map<string, EndedBox>();
+  const endOf = (ref: string, how: EndedBox["how"]) => {
+    const found = find(ref);
+    if (found) ended.set(found.id, { box: found.id, thread: THREAD, name: found.name, how, at: Date.now(), by: { is: "person" }, backend: found.backendLabel, state: found.state });
+  };
+  /** A box's clipboard where BB Box moves it with commands (#464): as the viewer pasted, or as the box copied. */
+  let boxClipboard: { text: string; serial: number } | null = null;
+  const copyInBox = (text: string) => (boxClipboard = { text, serial: (boxClipboard?.serial ?? 0) + 1 });
+  const handlers: PluginRpcTestHandlers<Contract> = {
+    state: ({ threadId }): PanelState => ({ boxes: threadId === THREAD ? boxes : [], kinds: options.kinds ?? KINDS, backends: BACKENDS, desktopPath: DESKTOP_PATH, terminalPath: TERMINAL_PATH, runsOn: options.runsOn ?? null, imageOffer: options.imageOffer ?? false, images: options.images ?? [], desktopOnDemand: options.desktopOnDemand ?? null, desktopProblem: options.desktopProblem ?? null, access: options.access ?? null }),
+    desktop: ({ box: ref }): DesktopState => ({ box: find(ref) ?? machines.find((entry) => entry.box.id === ref)?.box ?? (options.runsOn?.box.id === ref ? options.runsOn.box : null), desktopPath: DESKTOP_PATH, terminalPath: TERMINAL_PATH, video: options.video ?? false, videoByDefault: options.videoByDefault ?? options.video ?? false, sharp: options.sharp ?? null, switching: options.switching?.on ?? false }),
+    profile: async () => ({ lines: [] }),
+    "setup.offer": () => ({ machines: setups, access: options.access ?? null }),
+    "images.list": () => ({ images: options.rebuildable ?? [] }),
+    "images.progress": () => ({ progress: options.progress ?? null, running: options.progress && options.progress.ended === null ? options.progress.started : null, failures: options.failures ?? [] }),
+    "images.refresh": () => {
+      changes.push("images.refresh");
+      return options.refusal ? { started: false, message: options.refusal } : { started: true, message: null };
+    },
+    "images.build": ({ image }) => {
+      changes.push(`images.build ${image}`);
+      return options.refusal ? { started: false, message: options.refusal } : { started: true, message: null };
+    },
+    "desktop.sharp": ({ on }) => {
+      changes.push(`desktop.sharp ${on}`);
+      return { error: null };
+    },
+    "setup.desktop": ({ threadId, hostId, kind, size, name }) => {
+      changes.push(`setup.desktop ${hostId}${kind && kind !== "linux-desktop-cpu" ? ` ${kind}` : ""}${size ? ` ${JSON.stringify(size)}` : ""}${threadId === "operator" ? " for operator" : ""}${name ? ` named ${name}` : ""}`);
+      return { result: { ok: true, state: {} as ConfigState, problems: [] } };
+    },
+    "setup.docker": ({ hostId }) => {
+      changes.push(`setup.docker ${hostId}`);
+      setups = setups.map((setup) => (setup.hostId === hostId ? { ...setup, state: "on" as const, build: { state: "building" as const, targets: ["linux"], detail: "#14 12.3 Setting up git (1:2.43.0) ...", step: { at: 7, of: 12 }, startedAt: Date.now() - 75_000, endedAt: null } } : setup));
+      return { result: { ok: true, state: {} as ConfigState, problems: [] }, machines: setups };
+    },
+    ping: async () => {
+      return null;
+    },
+    takeControl: ({ box: ref, viewer }) => change("takeControl", ref, (found) => ({ ...found, control: { owner: "human", holder: viewer } })),
+    handBack: ({ box: ref }) => change("handBack", ref, (found) => ({ ...found, control: { owner: "agent", holder: null } })),
+    desktopClipboard: () => boxClipboard,
+    deviceClipboard: ({ box: ref, viewer }) => {
+      changes.push("deviceClipboard");
+      const control = find(ref)?.control;
+      if (control?.owner !== "human" || control.holder !== viewer) return { text: null, error: "Take control first, then copy: only the tab with control reads the device's clipboard." };
+      return { text: options.deviceClipboard ?? "", error: null };
+    },
+    deviceScreenshot: () => {
+      changes.push("deviceScreenshot");
+      return { png: "iVBORw0KGgo=", model: "Pixel 8", error: null };
+    },
+    desktopPaste: ({ box: ref, viewer, text }) => {
+      changes.push(`desktopPaste ${ref} ${viewer} ${text}`);
+      boxClipboard = { text, serial: boxClipboard?.serial ?? 1 };
+      return null;
+    },
+    images: () => options.images ?? [],
+    allBoxes: () => boxes.map((found) => ({ threadId: THREAD, box: found, owner: "thread" as const, ...options.entries?.(found) })),
+    // Your machines (036): `options.machines` to start with, kept as the tests add, stop, start and remove them.
+    "machines.list": () => ({ machines, kinds: (options.kinds ?? KINDS).filter((kind) => kind.enrol), desktopOnDemand: options.desktopOnDemand ?? null, desktopProblem: options.desktopProblem ?? null, access: options.access ?? null }),
+    "machines.add": ({ kind, name }) => {
+      changes.push(`machines.add ${kind}${name ? ` ${name}` : ""}`);
+      if (options.failWith) return result(null);
+      const made = box({ id: `box_m${machines.length + 1}`, name: name ?? "swift-crane", kind, kindLabel: KINDS.find((candidate) => candidate.id === kind)?.label ?? kind, state: "acquiring", createdAt: Date.now(), timings: {}, enrol: { state: "off", hostId: null, error: null } });
+      machines = [...machines, { box: made, threads: [] }];
+      return result(made);
+    },
+    "machines.remove": ({ box: ref, force }) => {
+      const entry = machines.find((candidate) => candidate.box.id === ref || candidate.box.name === ref);
+      if (entry && entry.threads.some((thread) => thread.running) && !force) return { box: entry.box, error: null, threads: entry.threads.filter((thread) => thread.running) };
+      changes.push(`machines.remove${force ? " (forced)" : ""} ${ref}`);
+      machines = machines.filter((candidate) => candidate !== entry);
+      return result(null);
+    },
+    "machines.stop": ({ box: ref, force }) => {
+      const entry = machines.find((candidate) => candidate.box.id === ref || candidate.box.name === ref);
+      if (entry && entry.threads.some((thread) => thread.running) && !force) return { box: entry.box, error: null, threads: entry.threads.filter((thread) => thread.running) };
+      changes.push(`machines.stop${force ? " (forced)" : ""} ${ref}`);
+      machines = machines.map((candidate) => (candidate === entry ? { ...candidate, box: { ...candidate.box, state: "stopped" } } : candidate));
+      return result(entry ? { ...entry.box, state: "stopped" } : null);
+    },
+    resize: (input) => {
+      changes.push(`resize ${input.box} ${JSON.stringify({ ...input, threadId: undefined, box: undefined })}`);
+      const resized = options.resize?.(input);
+      if (resized?.changed && resized.box) boxes = boxes.map((candidate) => (candidate.id === resized.box!.id ? resized.box! : candidate));
+      return resized ?? { box: null, from: null, to: null, plan: null, changed: false, machine: null, needsRestart: false, presets: [], largest: null, error: "No resize in this test." };
+    },
+    "machines.resize": (input) => {
+      changes.push(`machines.resize ${input.box} ${JSON.stringify({ ...input, box: undefined })}`);
+      return options.resize ? options.resize(input) : { box: null, from: null, to: null, plan: null, changed: false, machine: null, needsRestart: false, presets: [], largest: null, error: "No resize in this test." };
+    },
+    "machines.start": ({ box: ref }) => {
+      changes.push(`machines.start ${ref}`);
+      machines = machines.map((candidate) => (candidate.box.id === ref ? { ...candidate, box: { ...candidate.box, state: "ready" } } : candidate));
+      return result(machines.find((candidate) => candidate.box.id === ref)?.box ?? null);
+    },
+    kinds: () => options.kinds ?? KINDS,
+    projects: () => options.projects ?? [],
+    rooms: ({ kind, size }) => {
+      changes.push(`rooms ${kind}${size ? ` ${JSON.stringify(size)}` : ""}`);
+      const blocked = typeof options.rooms === "function" ? options.rooms(size) : (options.rooms ?? {});
+      return ((options.kinds ?? KINDS).find((candidate) => candidate.id === kind)?.offers ?? []).map((offer) => ({ backend: offer.backend, available: !blocked[offer.backend], reason: blocked[offer.backend] ?? null }));
+    },
+    "kind.cards": async ({ kind }) => {
+      changes.push(`kind.cards ${kind}`);
+      if (options.holdCards) await options.holdCards;
+      if (options.cardsFail) throw new Error("The cards did not answer.");
+      const offers = (options.kinds ?? KINDS).find((candidate) => candidate.id === kind)?.offers ?? [];
+      if (options.cardFailed) return kindCardReads(offers.map((offer) => ({ backend: { id: offer.backend, gpuRoom: async () => Promise.reject(new Error("The cards did not answer.")) }, kind: { id: kind } })));
+      return offers.map((offer) => ({ backend: offer.backend, room: offer.gpuRoom, failed: false }));
+    },
+    provider: ({ backend }) => {
+      asked.push(backend);
+      if (options.profileFailsOnce?.has(backend)) {
+        options.profileFailsOnce.delete(backend);
+        throw new Error("The provider did not answer.");
+      }
+      return { ...PROFILE, backend, status: { ...PROFILE.status, checkedAt: Date.now() - 120_000 } };
+    },
+    thread: ({ box: ref, prompt }) => {
+      changes.push(`thread ${ref} ${prompt}`);
+      return { threadId: "thr_child", error: null };
+    },
+    acquire: ({ kind, size, on, image, dedicated, shared }) => {
+      changes.push(`acquire ${kind}${size ? ` ${JSON.stringify(size)}` : ""}${on ? ` on ${on}` : ""}${image ? ` image ${image}` : ""}${dedicated ? " dedicated" : ""}${shared ? " shared" : ""}`);
+      if (options.failWith) return result(null);
+      const made = box({ id: `box_${boxes.length + 2}`, name: "new-box", kind, kindLabel: KINDS.find((candidate) => candidate.id === kind)?.label ?? kind, state: "acquiring", createdAt: Date.now(), timings: {}, enrol: { state: "off", hostId: null, error: null } });
+      boxes = [...boxes, made];
+      return result(made);
+    },
+    release: ({ box: ref, force }) => {
+      if (options.inUse && !force) return { box: find(ref), error: null, threads: options.inUse };
+      endOf(ref, "released");
+      return change(force ? "release (forced)" : "release", ref, () => null);
+    },
+    stop: ({ box: ref, force }) =>
+      options.inUse && !force ? { box: find(ref), error: null, threads: options.inUse } : change(force ? "stop (forced)" : "stop", ref, (found) => ({ ...found, state: "stopped" })),
+    start: ({ box: ref }) => change("start", ref, (found) => ({ ...found, state: "ready" })),
+    refresh: ({ box: ref }) => change("refresh", ref, (found) => found),
+    enrol: ({ box: ref }) => change("enrol", ref, (found) => ({ ...found, enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 0, next: Date.now(), words: found.enrol.error ?? "", of: 5, setup: false } })),
+    forget: ({ box: ref }) => {
+      endOf(ref, "forgotten");
+      return change("forget", ref, () => null);
+    },
+    boxPage: ({ box: id }): BoxPageState => {
+      const found = boxes.find((candidate) => candidate.id === id);
+      const mine = machines.find((entry) => entry.box.id === id);
+      const blank = { monitor: options.monitor ?? NOT_READ, deviceFailed: options.deviceFailed ?? null, ended: null };
+      if (found) return { ...blank, box: found, threadId: THREAD, owner: "thread", thread: options.holder ?? { id: THREAD, title: "UI thread", running: false }, threads: options.inUse ?? [], snapshots: options.snapshots ?? null, busy: options.busy ?? null };
+      if (mine) return { ...blank, box: mine.box, threadId: "operator", owner: "yours", thread: null, threads: mine.threads };
+      return { ...blank, box: null, threadId: null, owner: null, thread: null, threads: [], ended: ended.get(id) ?? null };
+    },
+    "snapshot.takeCheck": ({ memory }) =>
+      options.takeCheck ?? {
+        check: { holds: memory ? "disk-and-memory" : "disk", aboutMs: memory ? 9_000 : 700, pause: memory ? { pauses: true, aboutMs: 2_000, basis: { bytes: 8e9, of: "memory" } } : { pauses: false }, addsBytes: null, storage: "fast", host: "pve-1", memory: { aboutMs: 9_000, addsBytes: 8 * 1024 ** 3, storage: "fast" }, memoryWhy: null },
+        refusal: null,
+      },
+    "snapshot.take": (input) => {
+      changes.push(`snapshot.take ${JSON.stringify({ ...input, request: undefined })}`);
+      return { error: options.failWith ?? null, pending: false };
+    },
+    "snapshot.restoreCheck": () => options.restorePreview ?? { refusal: "No preview.", threads: [], threadsUnread: null, control: false, terminals: 0, check: null, snapshot: null, token: "none", undoUnflushed: null },
+    "snapshot.restore": (input) => {
+      changes.push(`snapshot.restore ${JSON.stringify({ ...input, request: undefined })}`);
+      const answer = options.restoreAnswers?.shift();
+      if (answer) return answer;
+      return { error: options.failWith ?? null, pending: false };
+    },
+    "snapshot.delete": ({ snapshot }) => {
+      changes.push(`snapshot.delete ${snapshot}`);
+      if (options.snapshots) options.snapshots = { ...options.snapshots, records: options.snapshots.records.filter((row) => row.id !== snapshot) };
+      return { error: null, pending: false };
+    },
+    "snapshot.rename": ({ snapshot, name }) => {
+      changes.push(`snapshot.rename ${snapshot} ${name}`);
+      return { error: null, pending: false };
+    },
+    "snapshot.note": ({ snapshot, note }) => {
+      changes.push(`snapshot.note ${snapshot} ${note}`);
+      return { error: null, pending: false };
+    },
+    "snapshot.picture": () => null,
+    "snapshot.settle": ({ box: ref }) => {
+      changes.push(`snapshot.settle ${ref}`);
+      return { error: null, pending: false };
+    },
+    "snapshot.forkCheck": ({ asMachine }) => options.forkPreview?.(asMachine === true) ?? { refusal: "No preview.", check: null },
+    "snapshot.keepCheck": ({ days, until }) => options.keepPreview?.({ ...(days !== undefined ? { days } : {}), ...(until !== undefined ? { until } : {}) }) ?? { refusal: "No preview.", check: null },
+    "snapshot.keep": (input) => {
+      changes.push(`snapshot.keep ${JSON.stringify(input)}`);
+      return { error: options.failWith ?? null, pending: false };
+    },
+    "snapshot.unkeep": (input) => {
+      changes.push(`snapshot.unkeep ${JSON.stringify(input)}`);
+      return { error: options.failWith ?? null, pending: false };
+    },
+    "snapshots.tab": () => options.tab?.() ?? { groups: [], line: { count: 0, undos: 0, byAgents: 0, hosts: [], paid: [], attention: [] }, keepDays: 30, none: [] },
+    "snapshots.bulkCheck": (input) => options.bulkCheck?.(input) ?? { allowed: [], skipped: [] },
+    "snapshots.bulk": (input) => {
+      changes.push(`snapshots.bulk ${JSON.stringify(input)}`);
+      return { done: input.snapshots.map((id) => ({ id, name: id, box: "", words: "Done." })), refused: [] };
+    },
+    "snapshot.fork": (input) => {
+      changes.push(`snapshot.fork ${JSON.stringify({ ...input, request: undefined })}`);
+      return options.forkAnswer ?? { error: options.failWith ?? null, box: options.failWith ? null : { id: "box_fork", name: "fork-one" } };
+    },
+    backends: () => BACKENDS,
+    doctor: (): DoctorView => ({
+      ok: false,
+      sections: [
+        {
+          title: "Fake host on pve",
+          report: {
+            ok: false,
+            summary: "Fake host 1.0",
+            checks: [
+              { id: "proxmox.api", name: "API", status: "fail", detail: "No answer from the API.", fix: "Check the URL." },
+              { id: "proxmox.memory", name: "Disk", status: "ok", detail: "120 GiB free.", fix: null },
+            ],
+            notes: ["Install this public key in the templates: ssh-ed25519 AAAA bb-box"],
+          },
+        },
+      ],
+    }),
+    "config.get": () => configState({ ...options.config, receipts: [...receipts] }),
+    "config.cards": ({ backend }) => options.cards?.[backend] ?? { is: "none" },
+    "config.check": ({ draft, test }): CheckResult => {
+      changes.push(`check ${test ?? "-"} ${JSON.stringify(draft)}`);
+      return options.checkWith ?? { problems: [], doctor: null };
+    },
+    "config.apply": ({ draft, revision, operation }): ApplyResult => {
+      changes.push(`apply ${revision} ${JSON.stringify(draft)}`);
+      if (operation) operations.push(operation);
+      if (options.applyWith) return options.applyWith;
+      const next = revision + 1;
+      applied = savedLike(draft as ConfigDocument, next, options.config?.drivers);
+      const receipt = operation ? { operation, revision: next, at: Date.now() } : null;
+      if (receipt) receipts.push(receipt);
+      return { ok: true, state: configState({ ...options.config, document: applied, revision: next, receipts: [...receipts] }), problems: options.savedWith ?? [], ...(receipt ? { receipt } : {}) };
+    },
+    "config.migrated.remove": () => ({ removed: true, state: configState({ ...options.config, migrated: null }) }),
+    // BB machines that can host Docker boxes (042), switched as the tests ask.
+    "docker.hosts": () => ({ hosts: dockerHosts }),
+    "docker.host.set": ({ hostId, enabled, operation }) => {
+      changes.push(`docker.host.set ${hostId} ${enabled}`);
+      if (operation) operations.push(operation);
+      dockerHosts = dockerHosts.map((host) => (host.hostId === hostId ? { ...host, backend: enabled ? { id: `docker:${host.name}`, enabled: true, boxes: 0 } : null } : host));
+      const named = dockerHosts.find((host) => host.hostId === hostId)?.name ?? hostId;
+      if (applied) {
+        const others = applied.backends.filter((backend) => backend.fields.host !== `bb:${hostId}`);
+        const existing = applied.backends.find((backend) => backend.fields.host === `bb:${hostId}`);
+        const backend = existing ? { ...existing, enabled } : { id: `docker:${named}`, type: "docker", label: `Docker on ${named}`, enabled: true, fields: { host: `bb:${hostId}`, privileged: true } };
+        applied = { ...applied, revision: applied.revision + 1, backends: enabled || existing ? [...others, backend] : others };
+      }
+      return { result: { ok: true, state: configState(options.config ?? {}), problems: [] }, hosts: dockerHosts };
+    },
+    "monitor.state": () => ({ enabled: false, backgroundMonitoring: false, pressureNotifications: true, boxHistory: true, historyFull: null }),
+    "monitor.server": () => {
+      throw new Error("The Monitor is off.");
+    },
+    "monitor.machines": () => ({ machines: [] }),
+    "monitor.machine": () => {
+      throw new Error("The Monitor is off.");
+    },
+    "monitor.alerts": () => ({ enabled: false, notifications: true, cursor: 0, active: [], recent: [] }),
+    "files.tree": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.home": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.list": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.read": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.readRange": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.write": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.create": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.rename": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.delete": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.search": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "files.names": () => ({ error: "This box has no shell, so its files cannot be read." }),
+    "monitor.history": () => null,
+  };
+  return { handlers, changes, asked, copyInBox, operations, receipts };
+}
+
+function savedLike(draft: ConfigDocument, revision: number, drivers: ConfigState["drivers"] = configState({ document: draft }).drivers): ConfigDocument {
+  const files = draft.general.files?.map((file) => (typeof file.content === "string" ? { path: file.path, content: { set: true, version: revision } } : file.content === undefined ? { path: file.path, content: { set: true, version: 1 } } : file));
+  const secrets = new Set(drivers.flatMap((driver) => driver.fields.filter((field) => field.type === "string" && field.secret).map((field) => `${driver.type} ${field.key}`)));
+  const backends = draft.backends.map((backend) => ({
+    ...backend,
+    fields: Object.fromEntries(Object.entries(backend.fields).map(([key, value]) => [key, secrets.has(`${backend.type} ${key}`) && (typeof value === "string" || value === null) ? { set: value !== null, version: revision } : value])),
+  }));
+  const tailnet = draft.general.tailnet && {
+    ...draft.general.tailnet,
+    ...Object.fromEntries((["clientId", "clientSecret"] as const).flatMap((key) => (typeof draft.general.tailnet?.[key] === "string" ? [[key, { set: true, version: revision }]] : []))),
+  };
+  return { ...draft, backends, general: { ...draft.general, ...(files ? { files } : {}), ...(tailnet ? { tailnet } : {}) } };
+}
+
+let applied: ConfigDocument | null = null;
+
+/** The configuration as the server gives it: one Proxmox-like driver set up with problems, one driver not set up, and two kinds. */
+function configState(overrides: Partial<ConfigState> & { document?: ConfigDocument }): ConfigState {
+  const document: ConfigDocument = overrides.document ??
+    applied ?? {
+      schema: 1,
+      revision: 3,
+      backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: false }, key: { set: true } }, warm: { linux: 1 } }],
+      kinds: {},
+      general: {},
+    };
+  const size = (cores: number, memoryGiB: number, diskGiB: number | null = null) => ({ cores, memoryMiB: memoryGiB * 1024, diskGiB });
+  return {
+    document,
+    revision: document.revision,
+    defaults: {
+      general: { boxesPerThread: 0, enrol: true, defaultKind: "linux", video: true, nightlyImages: false, testDevice: false, encoderLedger: true, iosEncoder: "auto" },
+      monitor: { enabled: true, refreshIntervalSeconds: 5, backgroundMonitoring: false, pressureNotifications: true, boxHistory: true },
+      kinds: {
+        linux: { enabled: true, presets: { small: size(2, 4), medium: size(4, 8), large: size(8, 16) }, default: "small", largest: size(16, 32, 256) },
+        "linux-desktop": { enabled: true, presets: { small: size(4, 8), medium: size(8, 16), large: size(16, 32) }, default: "small", largest: size(32, 64, 256) },
+      },
+    },
+    kinds: [
+      { id: "linux", label: "Linux", description: "A Linux box.", gpu: false, desktop: false, os: "linux", arch: "x86_64", features: [], device: null, docker: true, drivers: ["fake", "other"], spares: { ready: 0, making: 0 } },
+      { id: "linux-desktop", label: "Linux desktop", description: "A desktop on a GPU.", gpu: true, desktop: true, os: "linux", arch: "x86_64", features: [], device: null, docker: true, drivers: ["fake"], spares: { ready: 0, making: 0 } },
+    ],
+    drivers: [
+      {
+        type: "fake",
+        label: "Fake host",
+        description: "Boxes on a fake host.",
+        nature: "virtual",
+        kinds: ["linux", "linux-desktop"],
+        warmKinds: ["linux"],
+        fields: [
+          { key: "url", type: "string", label: "API URL", description: "For example https://192.0.2.10:8006.", group: "connection", default: "" },
+          { key: "token", type: "string", label: "API token", secret: true, group: "credentials" },
+          { key: "key", type: "string", label: "SSH key", secret: true, group: "credentials" },
+          { key: "templates", type: "string", label: "Templates", description: "VMIDs, separated by spaces. Empty turns them off.", group: "boxes", default: "9100", offWhenEmpty: true },
+          { key: "reserve", type: "number", label: "Memory kept free (MiB)", group: "advanced", default: 4096 },
+        ],
+        hostFields: [],
+        setup: { guide: "setup/fake/README.md", scripts: ["setup/fake/one.sh"] },
+        several: false,
+      },
+      {
+        type: "other",
+        label: "Other pool",
+        description: "Your own machines over SSH.",
+        nature: "real",
+        kinds: ["linux"],
+        warmKinds: [],
+        fields: [{ key: "machines", type: "string", label: "Machines", group: "boxes", experimental_multiline: true, default: "" }],
+        hostFields: [
+          { key: "address", type: "string", label: "Address", group: "connection", default: "" },
+          { key: "user", type: "string", label: "User", group: "connection", default: "" },
+        ],
+        setup: { guide: "setup/other/README.md", scripts: [] },
+        several: false,
+      },
+    ],
+    backends: document.backends.map((backend) => ({
+      id: backend.id,
+      type: backend.type,
+      label: "Fake host",
+      form: backend.type === "fake" ? "LXC" : "Physical",
+      state: backend.enabled && (backend.fields.token as { set: boolean } | undefined)?.set === false ? "misconfigured" : backend.enabled ? "active" : "off",
+      problems: backend.enabled && (backend.fields.token as { set: boolean } | undefined)?.set === false ? [{ path: "backends.fake.token", message: "Set the API token." }] : [],
+      boxes: 2,
+      kinds: backend.enabled ? ["linux", "linux-desktop"] : [],
+      doctor: null,
+      warmShort: [],
+      changed: document.revision,
+    })),
+    problems: document.backends.some((backend) => backend.enabled && (backend.fields.token as { set: boolean } | undefined)?.set === false) ? [{ path: "backends.fake.token", message: "Set the API token." }] : [],
+    migrated: { at: 1_790_000_000_000, version: "0.2.0" },
+    receipts: [],
+    setupDone: document.backends.some((backend) => backend.enabled) ? { at: 1_790_000_000_000, revision: 1 } : null,
+    ...overrides,
+  };
+}
+
+function panel(handlers: PluginRpcTestHandlers<Contract>) {
+  const [action] = app.threadPanelActions;
+  return renderSlot(action!, { threadId: THREAD, params: null }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+}
+
+function stateCalls(slot: ReturnType<typeof panel>): number {
+  return slot.inspection.rpcCalls.filter((call) => call.method === "state").length;
+}
+
+/** A running desktop box. */
+function desktopBox(overrides: Partial<BoxView> = {}): BoxView {
+  return box({
+    id: "box_2",
+    name: "bold-heron",
+    kind: "linux-desktop",
+    kindLabel: "Linux desktop",
+    desktop: true,
+    gpu: true,
+    display: { protocol: "rfb", resizable: true, clipboard: null, refresh: null, quality: null, macKeys: null },
+    control: { owner: "agent", holder: null },
+    facts: [
+      { label: "GPU", value: "GPU-0a1b" },
+      { label: "Display mode", value: "gpu" },
+    ],
+    ...overrides,
+  });
+}
+
+/** Opens a row's menu with the keyboard, as Radix needs no pointer events for that. */
+function openMenu(trigger: HTMLElement) {
+  fireEvent.keyDown(trigger, { key: "Enter" });
+  return screen.findByRole("menu");
+}
+
+async function chooseMenuItem(trigger: HTMLElement, item: string) {
+  const menu = await openMenu(trigger);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: item }));
+}
+
+/** The desktop menu's Display submenu, opened from the keyboard as Radix's tests do. */
+async function openDisplay(trigger: HTMLElement) {
+  const menu = await openMenu(trigger);
+  fireEvent.keyDown(within(menu).getByRole("menuitem", { name: "Display" }), { key: "ArrowRight" });
+  return waitFor(() => {
+    const menus = screen.getAllByRole("menu");
+    expect(menus.length).toBeGreaterThan(1);
+    return menus.at(-1)!;
+  });
+}
+
+test("the app registers the Boxes panel, a desktop tab, a device tab with a phone for its icon, the Boxes page and the Backends settings section", () => {
+  expect(app.threadPanelActions.map((action) => [action.id, action.title])).toEqual([
+    ["boxes", "Box"],
+    ["desktop", "Desktop"],
+    ["device", "Device"],
+    ["terminal", "Terminal"],
+    ["files", "Files"],
+  ]);
+  expect(app.threadPanelActions.find((action) => action.id === "device")!.icon).toBe("bb-box/phone");
+  expect(app.navPanels.map((page) => [page.id, page.title, page.path])).toEqual([["boxes", "Boxes", "desktop"]]);
+  expect(app.settingsSections.map((section) => section.id)).toEqual(["configuration"]);
+  // BB resolves a plugin's icons by the names it declares: the Boxes page's is the cube, and every plugin icon used is declared.
+  expect(app.navPanels[0]!.icon).toBe("bb-box/box");
+  const declared = Object.keys((packageJson as { bb: { branding: { experimental_icons: Record<string, string> } } }).bb.branding.experimental_icons);
+  const used = [...app.navPanels, ...app.threadPanelActions].flatMap((slot) => (typeof slot.icon === "string" && slot.icon.startsWith("bb-box/") ? [slot.icon.slice("bb-box/".length)] : []));
+  expect(used.filter((name) => !declared.includes(name))).toEqual([]);
+  expect(declared).toContain("box");
+});
+
+test("a row keeps its name and kind on one line, the name whole first (F-22b), and its status on one, dropping whole items from the end, with the whole line in a tooltip when it does", async () => {
+  const slot = panel(server([desktopBox({ control: { owner: "human", holder: "viewer-9" } })]).handlers);
+  await slot.findByText("bold-heron");
+  const name = slot.getByText("bold-heron");
+  expect(name.className).toContain("truncate");
+  const title = name.closest<HTMLElement>("[data-row-title]")!;
+  expect(title.className.split(" ")).toEqual(expect.arrayContaining(["flex", "overflow-hidden", "whitespace-nowrap"]));
+  expect(title.className).not.toContain("flex-wrap");
+  expect(title.querySelector<HTMLElement>("[data-row-badges]")!.textContent).toBe("DesktopGPULXC");
+  // The second is one line high: the state, what to act on, then the rest; what does not fit drops whole from the end.
+  const line = slot.getByText("Ready in 2.1 s").closest<HTMLElement>("[data-status-line]")!;
+  expect(line.className).toContain("overflow-hidden");
+  expect(line.className).toContain("h-[1.375em]");
+  expect(line.textContent).toBe("Ready in 2.1 s·Another viewer has control·BB machine in 5.3 s·2 cores · 4 GiB");
+  // A line that shows all of it has no tooltip on hover; one that lost an item shows the whole of it.
+  fireEvent.pointerMove(line);
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  expect(screen.queryByRole("tooltip")).toBeNull();
+  fireEvent.pointerLeave(line);
+  Object.defineProperty(line, "scrollHeight", { configurable: true, value: 33 });
+  Object.defineProperty(line, "clientHeight", { configurable: true, value: 16 });
+  fireEvent.pointerMove(line);
+  expect((await screen.findByRole("tooltip")).textContent).toBe("Ready in 2.1 s · Another viewer has control · BB machine in 5.3 s · 2 cores · 4 GiB");
+});
+
+test("a list of items separated by dots never starts a line with a dot: each item's dot sits before it, and the one that starts a line is clipped", () => {
+  const { container } = render(<Meta items={["Ready in 2.1 s", null, "Threads: Shopping bot", false, "2 more"]} />);
+  const clip = container.firstElementChild as HTMLElement;
+  expect(clip.className).toContain("overflow-hidden");
+  const list = clip.firstElementChild as HTMLElement;
+  // The list sits one dot's width to the left, in the clip, so the dot of whichever item starts a line is out of sight.
+  expect(list.className).toContain("-ml-[1.25em]");
+  expect(list.className).toContain("flex-wrap");
+  const items = Array.from(list.children);
+  expect(items.map((item) => item.textContent)).toEqual(["·Ready in 2.1 s", "·Threads: Shopping bot", "·2 more"]);
+  for (const item of items) expect(item.firstElementChild!.className).toContain("w-[1.25em]");
+});
+
+test("the status line says the state, then what to act on, then BB enrolment and the size", () => {
+  const now = Date.now();
+  expect(statusOf(box(), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "BB machine in 5.3 s", "2 cores · 4 GiB"]);
+  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null } }), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Joining BB…", "2 cores · 4 GiB"]);
+  // A claimed spare that waited stopped says how long its BB machine took to reconnect with the thread's access, as a new box says
+  // how long it took to join (#539); one that ran has no such time, and says "BB machine".
+  const resumed = box({ timings: { spare: 3, spareResume: 4100, total: 4100, spareReconnect: 17_200 } });
+  expect(statusOf(resumed, now).items.map((item) => item.text)).toEqual(["Ready in 4.1 s", "BB machine in 17.2 s", "2 cores · 4 GiB"]);
+  expect(timingWords(resumed)).toBe("claiming a spare\u00a03\u00a0ms · resuming it\u00a04.1\u00a0s · total\u00a04.1\u00a0s · BB machine reconnecting\u00a017.2\u00a0s");
+  expect(statusOf(box({ timings: { spare: 3, total: 3 } }), now).items.map((item) => item.text)).toEqual(["Ready in 3 ms", "BB machine", "2 cores · 4 GiB"]);
+  expect(statusOf(box({ enrol: { state: "failed", hostId: null, error: "no route" } }), now).items[1]).toEqual({ text: "Could not join BB", tone: "warn" });
+  const tries = { failed: 1, of: 5, next: now + 30_000, words: "This box could not look up BB's address in time.", setup: false };
+  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: tries }), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Joining BB, try 2 of 5", "2 cores · 4 GiB"]);
+  expect(statusOf(box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { ...tries, failed: 6 } }), now).items[1]?.text).toBe("Joining BB, try 7");
+  expect(statusOf(box({ enrol: { state: "off", hostId: null, error: null }, timings: {}, size: null }), now).items.map((item) => item.text)).toEqual(["Ready"]);
+  expect(statusOf(box({ state: "acquiring", createdAt: now - 1400 }), now)).toEqual({ tone: "busy", items: [{ text: "Starting" }, { text: "1.4 s" }, { text: "2 cores · 4 GiB" }] });
+  expect(statusOf(box({ state: "stopped", size: "8 cores, 16 GiB memory, 64 GiB disk" }), now)).toEqual({ tone: "off", items: [{ text: "Stopped" }, { text: "8 cores · 16 GiB · 64 GiB" }] });
+  expect(statusOf(box({ state: "failed", error: "No GPU is left." }), now).items).toEqual([{ text: "Failed", tone: "danger" }]);
+  expect(statusOf(box({ state: "gone" }), now).items.map((item) => item.text)).toEqual(["Gone", "deleted outside BB Box"]);
+  expect(statusOf(desktopBox(), now).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "BB machine in 5.3 s", "2 cores · 4 GiB"]);
+  // What to act on comes straight after the state, so a narrow row, which cuts the line from its end, keeps it.
+  expect(statusOf(desktopBox({ facts: [{ label: "Display mode", value: "cpu" }] }), now).items[1]).toEqual({ text: "Display on the CPU", tone: "warn" });
+  const held = desktopBox({ control: { owner: "human", holder: "viewer-1" } });
+  expect(statusOf(held, now, new Set(["viewer-1"])).items[1]).toEqual({ text: "You have control", tone: "fg" });
+  expect(statusOf(held, now, new Set()).items.map((item) => item.text)).toEqual(["Ready in 2.1 s", "Another viewer has control", "BB machine in 5.3 s", "2 cores · 4 GiB"]);
+});
+
+test("the panel lists the thread's boxes as rows, opens a row's details, and opens a desktop", async () => {
+  const { handlers } = server([box({ timings: { clone: 700, total: 2100, enrol: 5300, "start.resume": 4100, "start.ssh": 1200, "start.clock": 600, "start.total": 6000 } }), desktopBox({ docker: false })]);
+  const slot = panel(handlers);
+
+  expect(await slot.findByText("calm-otter")).toBeTruthy();
+  expect(slot.queryByText(/^\d+ box(es)?$/)).toBeNull();
+  expect(slot.getByText("bold-heron")).toBeTruthy();
+  expect(slot.getAllByText("Ready in 2.1 s")).toHaveLength(2);
+  expect(slot.getAllByText("BB machine in 5.3 s")).toHaveLength(2);
+  expect(slot.getByText("GPU")).toBeTruthy();
+  expect(slot.getAllByText("No Docker")).toHaveLength(1);
+  expect(slot.getAllByText("LXC")).toHaveLength(2);
+  expect(slot.getByRole("button", { name: "New box" }).textContent).toBe("");
+  expect(slot.queryByText("192.0.2.10")).toBeNull();
+
+  fireEvent.click(slot.getByRole("button", { name: "calm-otter: details" }));
+  expect(slot.getByText("192.0.2.10")).toBeTruthy();
+  expect(slot.getByText("2 cores, 4 GiB memory")).toBeTruthy();
+  expect(slot.getByText("Fake host")).toBeTruthy();
+  expect(slot.getByText("Linux x86_64, with docker")).toBeTruthy();
+  expect(slot.getByText("clone 0.7 s · total 2.1 s · BB enrolment 5.3 s")).toBeTruthy();
+  expect(slot.getByText("resume 4.1 s · ssh 1.2 s · setting the clock 0.6 s · total 6.0 s")).toBeTruthy();
+  expect(slot.getByText("Last start")).toBeTruthy();
+  expect(slot.getByText("12 min ago")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "calm-otter: details" }));
+  expect(slot.queryByText("192.0.2.10")).toBeNull();
+
+  fireEvent.click(slot.getByRole("button", { name: "Open desktop" }));
+  await waitFor(() => expect(slot.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop", params: { box: "box_2" } } }]));
+
+  let menu = await openMenu(slot.getByRole("button", { name: "bold-heron actions" }));
+  expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+    "Open desktop",
+    "Open in browser",
+    "Open terminal",
+    "Open files",
+    "Details",
+    "Copy address",
+    "New thread…",
+    "Stop",
+    "Check now",
+    "Release…",
+  ]);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Details" }));
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2" } });
+  menu = await openMenu(slot.getByRole("button", { name: "bold-heron actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Open in browser" }));
+  // A full URL: BB's openUrl opens only http(s) URLs, by the person's browser preference, and returns false for a path.
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "openUrl", url: new URL("/plugins/bb-box/desktop/thr_panel/box_2", window.location.origin).href });
+});
+
+test("a device box's row names its device beside its system, then its form as a desktop's row does (F-22), and its details have a Device line, for android and ios", async () => {
+  const android = box({ id: "box_a", name: "pixel-box", kind: "android", kindLabel: "Android emulator", form: "VM", desktop: false, display: null, device: { platform: "android", model: "Pixel 8", simulatorHost: false }, control: { owner: "agent", holder: null } });
+  const ios = box({ id: "box_i", name: "phone-box", kind: "ios", kindLabel: "iOS Simulator", os: "macos", arch: "arm64", form: "VM", desktop: true, device: { platform: "ios", model: "iPhone 18 Pro", simulatorHost: true }, control: { owner: "agent", holder: null } });
+  const plain = box({ id: "box_p", name: "plain-vm", form: "VM" });
+  const slot = panel(server([android, ios, plain]).handlers);
+
+  expect(await slot.findByText("pixel-box")).toBeTruthy();
+  expect(slot.getByText("Pixel 8")).toBeTruthy();
+  expect(slot.getByText("iPhone 18 Pro")).toBeTruthy();
+  expect(slot.getAllByText("VM")).toHaveLength(3);
+
+  fireEvent.click(slot.getByRole("button", { name: "pixel-box: details" }));
+  expect(slot.getByText("Device")).toBeTruthy();
+  expect(slot.getAllByText("Pixel 8")).toHaveLength(2);
+  fireEvent.click(slot.getByRole("button", { name: "plain-vm: details" }));
+  expect(slot.getByText("Fake host")).toBeTruthy();
+  expect(slot.queryByText("Device")).toBeNull();
+});
+
+test("the panel makes a box by steps, System, Architecture, Type and Resources, and remembers the kind", async () => {
+  const { handlers, changes } = server([]);
+  const slot = panel(handlers);
+
+  expect(await slot.findByText("No boxes yet")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  // Each step shows what exists: the one system with its host under it; an architecture no kind has greys out and says so.
+  const systems = await screen.findByRole("radiogroup", { name: "System" });
+  expect(within(systems).getAllByRole("radio").map((option) => option.textContent)).toEqual(["Linuxpve"]);
+  const archs = screen.getByRole("radiogroup", { name: "Architecture" });
+  expect(within(archs).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-checked")}:${option.getAttribute("aria-disabled")}`)).toEqual(["x86_6464-bit Intel / AMD:true:null", "arm64Not available:false:true"]);
+  fireEvent.click(within(archs).getByRole("radio", { name: /^arm64/ }));
+  expect(within(archs).getAllByRole("radio").map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false"]);
+  expect(archs.querySelector("[data-option-words]")!.className.split(" ")).toEqual(expect.arrayContaining(["truncate", "max-sm:line-clamp-2", "max-sm:whitespace-normal"]));
+  // A terminal is access, not a type (the operator's note): Server and Desktop are the types, with what each gives under it.
+  const types = screen.getByRole("radiogroup", { name: "Type" });
+  expect(within(types).getAllByRole("radio").map((option) => option.textContent)).toEqual(["ServerTerminal", "DesktopScreen · Terminal · Computer use"]);
+  fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+  // One provider is no choice: its row stands alone, checked, named by its host and never by an ID.
+  const providers = screen.getByRole("radiogroup", { name: "Provider" });
+  expect(within(providers).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-checked")}`)).toEqual(["pveContainer · usually ~3.1 s:true"]);
+  const sizes = screen.getByRole("radiogroup", { name: "Size" });
+  expect(within(sizes).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-checked")}`)).toEqual(["Small4 cores · 8 GiB:true", "Medium8 cores · 16 GiB:false", "Large16 cores · 32 GiB:false", "Customup to 32 cores:false"]);
+  fireEvent.click(within(sizes).getByRole("radio", { name: /^Large/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+
+  expect(await slot.findByText("new-box")).toBeTruthy();
+  expect(changes).toEqual(['acquire linux-desktop {"preset":"large"}']);
+  expect(slot.getByText("Starting")).toBeTruthy();
+  expect(JSON.parse(window.localStorage.getItem("bb-box:new-box") ?? "{}")).toEqual({ kind: "linux-desktop", size: "large" });
+  await waitFor(() => expect(screen.queryByRole("radiogroup")).toBeNull());
+
+  // The form opens on the remembered kind; the default preset sends no size at all.
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  expect(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }).getAttribute("aria-checked")).toBe("true");
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Size" })).getByRole("radio", { name: /^Small/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(['acquire linux-desktop {"preset":"large"}', "acquire linux-desktop"]));
+});
+
+test("New box offers a desktop whose image is not built yet: it says it builds first and how long, and Create builds it, then the box follows", async () => {
+  const desktop: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
+  const { handlers, changes } = server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_bb", name: "devpc", kinds: [{ kind: desktop, took: null }] } });
+  const slot = panel(handlers);
+  fireEvent.click(await slot.findByRole("button", { name: "New box" }));
+  const types = await screen.findByRole("radiogroup", { name: "Type" });
+  expect(within(types).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-disabled")}`)).toEqual(["ServerTerminal:null", "DesktopBuilds first, usually 4 to 10 min:null"]);
+  // A server is made as ever.
+  expect(screen.getByRole("button", { name: "Create box" })).toBeTruthy();
+  fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+  expect(screen.getByText("BB Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box.")).toBeTruthy();
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Size" })).getByRole("radio", { name: /^Large/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Build and create" }));
+  await waitFor(() => expect(changes).toEqual(['setup.desktop host_bb {"preset":"large"}']));
+  await waitFor(() => expect(screen.queryByRole("radiogroup")).toBeNull());
+});
+
+test("New box offers the Wayland desktop beside the X11 one where both build first, under Display, and builds the one chosen", async () => {
+  const x11: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
+  const wayland: KindView = { ...KINDS[1]!, id: "linux-desktop-wayland-cpu", gpu: false, windowing: "wayland" };
+  const { handlers, changes } = server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_bb", name: "devpc", kinds: [{ kind: x11, took: null }, { kind: wayland, took: 360_000 }] } });
+  const slot = panel(handlers);
+  fireEvent.click(await slot.findByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  expect((await screen.findByRole("combobox", { name: "Display" })).textContent).toBe("X11");
+  expect(screen.getByText("BB Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box.")).toBeTruthy();
+  await choose("Display", "Wayland");
+  expect(screen.getByText("BB Box builds the Wayland desktop image on devpc first, about 6 min, then makes the box.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Build and create" }));
+  await waitFor(() => expect(changes).toEqual(["setup.desktop host_bb linux-desktop-wayland-cpu"]));
+});
+
+test("a host that has built an image before gives its own last time as the estimate, in the offer, the form and the build's card", async () => {
+  const slot = panel(server([], { kinds: [], setups: [setup({ took: { linux: 540_000 } })] }).handlers);
+  expect(await slot.findByText("Builds the Linux image first, about 9 min.")).toBeTruthy();
+  cleanup();
+  const building = setup({ state: "on", took: { desktop: 480_000 }, build: { state: "building", targets: ["desktop"], detail: null, step: { at: 2, of: 5 }, startedAt: Date.now() - 60_000, endedAt: null } });
+  const card = panel(server([box()], { setups: [building] }).handlers);
+  expect(await card.findByText(/It took 8 min last time here, and goes on if you close this panel\./)).toBeTruthy();
+  cleanup();
+  const desktop: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
+  const form = panel(server([], { kinds: [KINDS[0]!], desktopOnDemand: { hostId: "host_bb", name: "devpc", kinds: [{ kind: desktop, took: 480_000 }] } }).handlers);
+  fireEvent.click(await form.findByRole("button", { name: "New box" }));
+  expect(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }).textContent).toBe("DesktopBuilds first, about 8 min");
+});
+
+test("a desktop box not made after its image was built shows in the panel with its reason, as a refused box does", async () => {
+  const message = "The desktop image is built, but the box was not made: No room on devpc for 16 cores.";
+  const slot = panel(server([box()], { desktopProblem: { message, at: 1 } }).handlers);
+  expect(await slot.findByText(message)).toBeTruthy();
+});
+
+test("while a desktop's image builds, the panel says so with its step and time; a failed one says why and how to try again", async () => {
+  const building = setup({ state: "on", boxFollows: true, build: { state: "building", targets: ["desktop"], detail: "#9 [desktop 3/9] RUN apt-get install", step: { at: 3, of: 9 }, startedAt: Date.now() - 125_000, endedAt: null } });
+  const slot = panel(server([box()], { setups: [building] }).handlers);
+  expect(await slot.findByText("Building the desktop image on this machine")).toBeTruthy();
+  expect(slot.getByText("Step 3 of 9")).toBeTruthy();
+  expect(slot.getByText("Started 2 min ago. It usually takes 4 to 10 min, and goes on if you close this panel. The desktop box that was asked for follows.")).toBeTruthy();
+  cleanup();
+  // Built from bb box docker-build, with no box asked for, and both desktop images in one build.
+  const both = setup({ state: "on", build: { state: "building", targets: ["desktop", "desktop-wayland"], detail: null, step: { at: 3, of: 9 }, startedAt: Date.now() - 125_000, endedAt: null } });
+  const unasked = panel(server([box()], { setups: [both] }).handlers);
+  expect(await unasked.findByText("Started 2 min ago. It usually takes 8 to 16 min, and goes on if you close this panel.")).toBeTruthy();
+  cleanup();
+  const failed = setup({ state: "on", build: { state: "failed", targets: ["desktop"], detail: "build.sh exited with 1: no space left on device", startedAt: Date.now() - 300_000, endedAt: Date.now() - 5_000 } });
+  const after = panel(server([box()], { setups: [failed] }).handlers);
+  expect(await after.findByText("The desktop image did not build")).toBeTruthy();
+  expect(after.getByText("build.sh exited with 1: no space left on device")).toBeTruthy();
+  expect(after.getByText("So the desktop box was not made. To try again, choose Desktop in New box.")).toBeTruthy();
+});
+
+test("New box as a sheet on a narrow screen: Tab skips the radio cards that are not chosen, the Android device's among them, as a wide screen's popover does (F-4)", async () => {
+  const narrow = (query: string) => ({ matches: query === "(max-width: 767px)", media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false });
+  const wide = window.matchMedia;
+  window.matchMedia = narrow as unknown as typeof window.matchMedia;
+  try {
+    const android: KindView = { ...KINDS[0]!, id: "android", label: "Android emulator", devices: { platform: "android", models: ["Pixel 8", "Pixel Fold"] } };
+    const { handlers } = server([], { kinds: [...KINDS, android] });
+    const slot = panel(handlers);
+    await slot.findByText("No boxes yet");
+    fireEvent.click(slot.getByRole("button", { name: "New box" }));
+    const systems = await screen.findByRole("radiogroup", { name: "System" });
+    const cards = within(systems).getAllByRole("radio");
+    expect(within(systems).getByRole("radio", { name: /^Android device/ }).tabIndex).toBe(-1);
+    const chosen = cards.find((card) => card.getAttribute("aria-checked") === "true")!;
+    chosen.focus();
+    const reached: HTMLElement[] = [];
+    for (let press = 0; press < 40; press++) {
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: "Tab" });
+      reached.push(document.activeElement as HTMLElement);
+    }
+    expect(reached.filter((element) => element.tabIndex < 0)).toEqual([]);
+    expect(reached.filter((element) => element.getAttribute("role") === "radio" && element.getAttribute("aria-checked") !== "true")).toEqual([]);
+    expect(reached).toContain(screen.getByRole("button", { name: "Create box" }));
+  } finally {
+    window.matchMedia = wide;
+  }
+});
+
+test("New box offers to ask an agent to make the project a box image when it has none, in a new thread's composer (049)", async () => {
+  const slot = panel(server([], { imageOffer: true }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("radiogroup", { name: "Type" });
+  // One dim link in the footer, no sentence (the operator's note of 3 October 2026).
+  expect(screen.queryByText(/standard tools/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Make a box image for this project" }));
+  expect(IMAGE_REQUEST).toContain("with BB Box:");
+  expect(IMAGE_REQUEST).not.toMatch(/with bb-box:/);
+  await waitFor(() => expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toCompose", options: { initialPrompt: IMAGE_REQUEST, focusPrompt: true } }));
+  await waitFor(() => expect(screen.queryByRole("radiogroup")).toBeNull());
+
+  // A project with an image, or none, gets no offer.
+  const plain = panel(server([]).handlers);
+  await plain.findAllByText("No boxes yet");
+  fireEvent.click(plain.getAllByRole("button", { name: "New box" }).at(-1)!);
+  await screen.findByRole("radiogroup", { name: "Type" });
+  expect(screen.queryByRole("button", { name: "Make a box image for this project" })).toBeNull();
+});
+
+test("a desktop whose system has a GPU desktop and a CPU one takes the GPU from a menu", async () => {
+  const cpu: KindView = { ...kindView("linux-desktop-cpu", "Linux desktop", "A desktop on the CPU.", 4, true), gpu: false };
+  const { handlers, changes } = server([], { kinds: [...KINDS, cpu] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("radiogroup", { name: "Type" });
+  expect(screen.queryByRole("combobox", { name: "GPU" })).toBeNull();
+  expect(screen.queryByText("GPU")).toBeNull();
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  // Desktop opens on the CPU desktop; the GPU is a resource, a sub-label and menu under the presets, and 1 GPU names the GPU kind.
+  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["System", "Architecture", "Type", "Resources", "Provider"]);
+  expect(screen.getByText("GPU").tagName).toBe("P");
+  expect(screen.getByRole("combobox", { name: "GPU" }).textContent).toBe("None");
+  expect(await optionsOf("GPU")).toEqual(["None", "1 GPU"]);
+  await choose("GPU", "1 GPU");
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux-desktop"]));
+});
+
+test("071 unit 11: the New box form keeps the Docker reach sentence for a chosen GPU on the chosen provider, or the only one with room", async () => {
+  const reach = "On docker-1, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what BB Box places, not what a box can reach.";
+  const card = (host: string): GpuRoom => ({
+    readings: [],
+    fullUntil: null,
+    parts: ["none", "shared", "whole"],
+    host,
+    cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 20_000, totalMiB: 24_000, freeForWhole: true }],
+  });
+  const linuxBase = kindView("linux", "Linux", "A server.", 2, false);
+  const docker = { ...linuxBase.offers[0]!, backend: "docker", name: "Docker on docker-1", type: "docker", label: "Docker", hosts: ["docker-1"], form: "Docker" as const, gpuParts: ["none", "shared", "whole"] as const, gpuRoom: card("docker-1"), cardReach: reach, typicalReadyMs: 400 };
+  const proxmox = { ...linuxBase.offers[0]!, backend: "pve", name: "Proxmox on pve-1", label: "Proxmox", hosts: ["pve-1"], gpuParts: ["none", "shared", "whole"] as const, gpuRoom: card("pve-1"), typicalReadyMs: 2200 };
+  const pickProvider = (title: string) => {
+    const radio = within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").find((option) => option.textContent?.startsWith(title));
+    if (!radio) throw new Error(`No provider ${title}`);
+    fireEvent.click(radio);
+  };
+  const open = async (kinds: KindView[]) => {
+    const slot = panel(server([], { kinds }).handlers);
+    await slot.findByText("No boxes yet");
+    fireEvent.click(slot.getByRole("button", { name: "New box" }));
+    await screen.findByRole("combobox", { name: "GPU" });
+  };
+
+  await open([offered(linuxBase, [docker, proxmox])]);
+  expect(screen.queryByText(reach)).toBeNull();
+  expect(screen.queryByText(/BB Box places/)).toBeNull();
+  await choose("GPU", "Shared");
+  expect(screen.queryByText(reach)).toBeNull();
+  pickProvider("docker-1");
+  expect(screen.getByText(reach).tagName).toBe("P");
+  await choose("GPU", "None");
+  expect(screen.queryByText(reach)).toBeNull();
+  await choose("GPU", "Whole card");
+  expect(screen.getByText(reach).tagName).toBe("P");
+  pickProvider("pve-1");
+  expect(screen.queryByText(reach)).toBeNull();
+  pickProvider("First with room");
+  expect(screen.queryByText(reach)).toBeNull();
+
+  cleanup();
+  const held = panel(server([], { kinds: [offered(linuxBase, [docker, proxmox])], rooms: { pve: "No room for this size" } }).handlers);
+  await held.findByText("No boxes yet");
+  fireEvent.click(held.getByRole("button", { name: "New box" }));
+  await screen.findByRole("combobox", { name: "GPU" });
+  await choose("GPU", "Shared");
+  await screen.findByText("No room for this size");
+  expect(screen.getByText(reach).tagName).toBe("P");
+  await choose("GPU", "None");
+  expect(screen.queryByText(reach)).toBeNull();
+});
+
+test("071 unit 13: the GPU line keeps its height on screen", async () => {
+  let release: () => void = () => {};
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const room: GpuRoom = { readings: [], fullUntil: null, parts: ["none", "shared"], host: "pve-1", cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 18_227, totalMiB: 24_576 }] };
+  const base = kindView("linux", "Linux", "A server.", 2, false);
+  const linux: KindView = { ...base, offers: [{ ...base.offers[0]!, hosts: ["pve-1"], gpuParts: ["none", "shared"], gpuRoom: room, resizing: ADDS_A_GPU }] };
+  const slot = panel(server([], { kinds: [linux], holdCards: hold }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const line = await screen.findByText("No GPU. You can add one later with Resize.");
+  expect(line.className).toContain("h-[3lh]");
+  expect(line.className).toContain("overflow-hidden");
+  expect(line.className).toContain("@sm:h-[2lh]");
+  expect(line.className).toContain("text-xs");
+  expect(line.className).toContain("leading-snug");
+  expect(line.closest("[class*='@container']")).toBeTruthy();
+  release();
+});
+
+test("071 unit 13: a refusal stays on the GPU line", async () => {
+  const room: GpuRoom = {
+    readings: [],
+    fullUntil: null,
+    parts: ["none", "shared", "whole"],
+    host: "pve-1",
+    cards: [
+      { index: 0, boxes: 0, whole: false, freeMiB: 21_000, totalMiB: 24_576, wholeBy: "quiet-elm", freeForWhole: false },
+      { index: 1, boxes: 2, whole: false, freeMiB: 18_227, totalMiB: 24_576, freeForWhole: false },
+    ],
+  };
+  const base = kindView("linux", "Linux", "A server.", 2, false);
+  const linux: KindView = { ...base, offers: [{ ...base.offers[0]!, hosts: ["pve-1"], gpuParts: ["none", "shared", "whole"], gpuRoom: room }] };
+  const slot = panel(server([], { kinds: [linux] }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("combobox", { name: "GPU" });
+  await choose("GPU", "Whole card");
+  const line = await screen.findByText("pve-1 has no free card now: see below.");
+  expect(line.getAttribute("data-gpu-state")).toBe("refused");
+  expect(screen.getByText("Card 0 is quiet-elm's; card 1 has 2 boxes")).toBeTruthy();
+  expect(submitButton().disabled).toBe(true);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(screen.getByText("pve-1 has no free card now: see below.").getAttribute("data-gpu-state")).toBe("refused");
+  expect(submitButton().disabled).toBe(true);
+});
+
+test("071 unit 13: the New box form offers None, Shared and Whole card, and the line keeps its height while the cards are read", async () => {
+  let release: () => void = () => {};
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const at = Date.now() - 20_000;
+  const room: GpuRoom = {
+    readings: [],
+    fullUntil: null,
+    parts: ["none", "shared", "whole"],
+    host: "pve-1",
+    at,
+    neededMiB: 512,
+    cards: [
+      { index: 0, boxes: 0, whole: false, freeMiB: 21_000, totalMiB: 24_576, wholeBy: "quiet-elm", freeForWhole: false },
+      { index: 1, boxes: 2, whole: false, freeMiB: 18_227, totalMiB: 24_576, freeForWhole: false },
+    ],
+  };
+  const base = kindView("linux", "Linux", "A server.", 2, false);
+  const linux: KindView = { ...base, offers: [{ ...base.offers[0]!, hosts: ["pve-1"], gpuParts: ["none", "shared", "whole"], gpuRoom: room, resizing: ADDS_A_GPU }] };
+  const { handlers, changes } = server([], { kinds: [linux], holdCards: hold });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const line = await screen.findByText("No GPU. You can add one later with Resize.");
+  expect(line.getAttribute("data-gpu-state")).toBe("none");
+  expect(line.className).toContain("h-[3lh]");
+  expect(line.className).toContain("@sm:h-[2lh]");
+  expect(submitButton().disabled).toBe(false);
+  expect(await optionsOf("GPU")).toEqual(["None", "Shared", "Whole card"]);
+  await choose("GPU", "Shared");
+  await waitFor(() => expect(line.getAttribute("data-gpu-state")).toBe("reading"));
+  expect(submitButton().disabled).toBe(true);
+  release();
+  await waitFor(() => expect(line.textContent).toMatch(/^Card 1 on pve-1, shared with 2 boxes; 17\.8 GiB free when read, just now\. Boxes on a card share its memory\.$/));
+  expect(line.getAttribute("data-gpu-state")).toBe("shared");
+  await choose("GPU", "Whole card");
+  await waitFor(() => expect(line.textContent).toBe("pve-1 has no free card now: see below."));
+  expect(line.getAttribute("data-gpu-state")).toBe("refused");
+  expect(screen.getByText("Card 0 is quiet-elm's; card 1 has 2 boxes")).toBeTruthy();
+  expect(submitButton().disabled).toBe(true);
+  await choose("GPU", "None");
+  await waitFor(() => expect(line.getAttribute("data-gpu-state")).toBe("none"));
+  fireEvent.click(submitButton());
+  await waitFor(() => expect(changes).toContain("acquire linux"));
+  expect(changes.some((change) => change.startsWith("acquire linux {"))).toBe(false);
+  expect(changes).toContain("kind.cards linux");
+});
+
+test.each([
+  ["Docker", ["shared"] as const, ["None", "Shared"], "No GPU, and none can be added later on Fake host.", CANNOT_ADD_A_GPU],
+  ["Proxmox", ["shared", "whole"] as const, ["None", "Shared", "Whole card"], "No GPU. You can add one later with Resize.", ADDS_A_GPU],
+])("071 unit 13: None on a %s desktop with a CPU sibling keeps the GPU line and acquires the CPU desktop", async (_shape, parts, menu, noneLine, gpuResizing) => {
+  const room: GpuRoom = {
+    readings: [],
+    fullUntil: null,
+    parts: [...parts],
+    host: "pve-1",
+    cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 18_000, totalMiB: 24_000, freeForWhole: true }],
+  };
+  const gpuBase = kindView("linux-desktop", "Linux desktop", "A desktop on the GPU.", 4, true);
+  const cpuBase = kindView("linux-desktop-cpu", "Linux desktop", "A desktop drawn by the CPU.", 4, true);
+  const linuxBase = kindView("linux", "Linux", "A server.", 2, false);
+  const gpuKind = offered(gpuBase, [{ ...gpuBase.offers[0]!, gpuParts: [...parts], hosts: ["pve-1"], gpuRoom: room, resizing: gpuResizing }]);
+  const cpuKind: KindView = offered({ ...cpuBase, gpu: false }, [{ ...cpuBase.offers[0]!, gpuParts: ["none"], hosts: ["pve-1"], resizing: { cores: "live", memory: "live", disk: gpuResizing.disk, shrinks: true } }]);
+  const linux = offered(linuxBase, [{ ...linuxBase.offers[0]!, gpuParts: ["none", "shared"], hosts: ["pve-1"] }]);
+  const options: { kinds: KindView[]; cardFailed?: boolean } = { kinds: [linux, gpuKind, cpuKind] };
+  const { handlers, changes } = server([], options);
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "GPU" }).textContent).toBe("None"));
+  const heightOf = (element: Element) =>
+    element.className
+      .split(/\s+/)
+      .filter((token) => token.startsWith("h-[") || token.startsWith("@sm:h-["))
+      .join(" ");
+  const line = document.querySelector("[data-gpu-line]");
+  expect(line?.textContent).toBe(noneLine);
+  expect(line?.getAttribute("data-gpu-state")).toBe("none");
+  const height = heightOf(line!);
+  expect(height).toBe("h-[3lh] @sm:h-[2lh]");
+  expect(await optionsOf("GPU")).toEqual(menu);
+  await choose("GPU", "Shared");
+  await waitFor(() => expect(document.querySelector("[data-gpu-line]")?.getAttribute("data-gpu-state")).toBe("shared"));
+  const shared = document.querySelector("[data-gpu-line]");
+  expect(heightOf(shared!)).toBe(height);
+  await choose("GPU", "None");
+  const none = document.querySelector("[data-gpu-line]");
+  expect(none?.textContent).toBe(noneLine);
+  expect(none?.getAttribute("data-gpu-state")).toBe("none");
+  expect(heightOf(none!)).toBe(height);
+  options.cardFailed = true;
+  await choose("GPU", "Shared");
+  await waitFor(() => expect(document.querySelector("[data-gpu-line]")?.textContent).toMatch(/The cards could not be read/));
+  const failedLine = document.querySelector("[data-gpu-line]");
+  const retry = screen.getByRole("button", { name: "Retry" });
+  expect(retry.parentElement).toBe(failedLine);
+  expect(retry.classList.contains("inline")).toBe(true);
+  expect(heightOf(failedLine!)).toBe(height);
+  await choose("GPU", "None");
+  fireEvent.click(submitButton());
+  await waitFor(() => expect(changes).toContain("acquire linux-desktop-cpu"));
+  expect(changes.some((change) => change === "acquire linux-desktop" || change.startsWith("acquire linux-desktop "))).toBe(false);
+});
+
+test("071 unit 13: None does not promise Resize unless this backend's GPU desktop can add one", async () => {
+  const room: GpuRoom = {
+    readings: [],
+    fullUntil: null,
+    parts: ["shared"],
+    host: "pve-1",
+    cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 18_000, totalMiB: 24_000 }],
+  };
+  const gpuBase = kindView("linux-desktop", "Linux desktop", "A desktop on the GPU.", 4, true);
+  const cpuBase = kindView("linux-desktop-cpu", "Linux desktop", "A desktop drawn by the CPU.", 4, true);
+  const cpuOffer = { ...cpuBase.offers[0]!, gpuParts: ["none"] as const, hosts: ["pve-1"], resizing: { cores: "live" as const, memory: "live" as const, disk: "live" as const, shrinks: true } };
+  const openNone = async (gpuOffer: KindView["offers"][number]) => {
+    const gpuKind = offered(gpuBase, [gpuOffer]);
+    const cpuKind = offered({ ...cpuBase, gpu: false }, [cpuOffer]);
+    const slot = panel(server([], { kinds: [gpuKind, cpuKind] }).handlers);
+    await slot.findByText("No boxes yet");
+    fireEvent.click(slot.getByRole("button", { name: "New box" }));
+    fireEvent.click(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "GPU" }).textContent).toBe("None"));
+    return document.querySelector("[data-gpu-line]");
+  };
+  const absent = await openNone({ ...gpuBase.offers[0]!, gpuParts: ["shared"], hosts: ["pve-1"], gpuRoom: room });
+  expect(absent?.textContent).toBe("No GPU.");
+  expect(absent?.textContent).not.toMatch(/Resize/);
+  cleanup();
+  const elsewhere = await openNone({ ...gpuBase.offers[0]!, backend: "other", gpuParts: ["shared"], hosts: ["other"], gpuRoom: room, resizing: ADDS_A_GPU });
+  expect(elsewhere?.textContent).toBe("No GPU.");
+});
+
+test("071 unit 13: a GPU desktop with no CPU desktop does not offer None", async () => {
+  const gpuBase = kindView("linux-desktop", "Linux desktop", "A desktop on the GPU.", 4, true);
+  const linuxBase = kindView("linux", "Linux", "A server.", 2, false);
+  const gpuKind = offered(gpuBase, [{ ...gpuBase.offers[0]!, gpuParts: ["shared"], hosts: ["devpc"], form: "Docker" }]);
+  const linux = offered(linuxBase, [{ ...linuxBase.offers[0]!, gpuParts: ["none", "shared"], hosts: ["devpc"] }]);
+  const slot = panel(server([], { kinds: [linux, gpuKind] }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  await screen.findByRole("combobox", { name: "GPU" });
+  expect(await optionsOf("GPU")).toEqual(["Shared"]);
+});
+
+test("071 unit 13: a ready spare of the chosen GPU does not disable Create, and a spare of another GPU does", async () => {
+  const full: GpuRoom = {
+    readings: [],
+    fullUntil: null,
+    parts: ["shared"],
+    host: "pve-1",
+    limit: 2,
+    cards: [{ index: 0, boxes: 2, own: 2, whole: false, freeMiB: 18_000, totalMiB: 24_000 }],
+  };
+  const desktopBase = kindView("linux-desktop", "Linux desktop", "A desktop on the GPU.", 4, true);
+  const desktop = offered(desktopBase, [{ ...desktopBase.offers[0]!, ready: 1, hosts: ["pve-1"], gpuParts: ["shared"], gpuRoom: full }]);
+  const serverKind = kindView("linux", "Linux", "A server.", 2, false);
+  const slot = panel(server([], { kinds: [serverKind, desktop] }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  const line = await screen.findByText(/A ready box on pve-1 has this GPU|Card 0 on pve-1, shared/);
+  expect(line.getAttribute("data-gpu-state")).not.toBe("refused");
+  expect(submitButton().disabled).toBe(false);
+
+  cleanup();
+  const crowded: GpuRoom = { ...full, parts: ["none", "shared"] };
+  const crowdedServer = offered(serverKind, [{ ...serverKind.offers[0]!, ready: 1, hosts: ["pve-1"], gpuParts: ["none", "shared"], gpuRoom: crowded }]);
+  const again = panel(server([], { kinds: [crowdedServer] }).handlers);
+  await again.findByText("No boxes yet");
+  fireEvent.click(again.getByRole("button", { name: "New box" }));
+  await screen.findByRole("combobox", { name: "GPU" });
+  await choose("GPU", "Shared");
+  const refused = await screen.findByText("pve-1 has no card with room now: see below.");
+  expect(refused.getAttribute("data-gpu-state")).toBe("refused");
+  expect(submitButton().disabled).toBe(true);
+});
+
+test("071 unit 13: First with room previews a card only on a provider the size can use", async () => {
+  const card = (host: string): GpuRoom => ({
+    readings: [],
+    fullUntil: null,
+    parts: ["none", "shared"],
+    host,
+    cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 18_000, totalMiB: 24_000 }],
+  });
+  const linuxBase = kindView("linux", "Linux", "A server.", 2, false);
+  const first = { ...linuxBase.offers[0]!, backend: "tight", hosts: ["tight-host"], gpuParts: ["none", "shared"] as const, gpuRoom: card("tight-host") };
+  const second = { ...linuxBase.offers[0]!, backend: "roomy", hosts: ["roomy-host"], gpuParts: ["none", "shared"] as const, gpuRoom: card("roomy-host") };
+  const linux = offered(linuxBase, [first, second]);
+  const slot = panel(server([], { kinds: [linux], rooms: { tight: "No room for this size" } }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByText("No room for this size");
+  await choose("GPU", "Shared");
+  const line = await screen.findByText(/Card 0 on roomy-host/);
+  expect(line.getAttribute("data-gpu-state")).toBe("shared");
+  expect(line.textContent).not.toContain("tight-host");
+});
+
+test("071 unit 13: when no provider has room for the size, the GPU line says so", async () => {
+  const card = (host: string): GpuRoom => ({
+    readings: [],
+    fullUntil: null,
+    parts: ["none", "shared"],
+    host,
+    cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 18_000, totalMiB: 24_000 }],
+  });
+  const linuxBase = kindView("linux", "Linux", "A server.", 2, false);
+  const linux = offered(linuxBase, [
+    { ...linuxBase.offers[0]!, backend: "tight", hosts: ["tight-host"], gpuParts: ["none", "shared"], gpuRoom: card("tight-host") },
+    { ...linuxBase.offers[0]!, backend: "roomy", hosts: ["roomy-host"], gpuParts: ["none", "shared"], gpuRoom: card("roomy-host") },
+  ]);
+  const slot = panel(server([], { kinds: [linux], rooms: { tight: "No room for this size", roomy: "No room for this size" } }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("combobox", { name: "GPU" });
+  await choose("GPU", "Shared");
+  const line = await screen.findByText("No provider has room for this size: see below.");
+  expect(line.getAttribute("data-gpu-state")).toBe("refused");
+  expect(screen.queryByText(/This provider/)).toBeNull();
+  expect(screen.queryByText(/no card with room/)).toBeNull();
+  expect(screen.getAllByText("No room for this size")).toHaveLength(2);
+  expect(submitButton().disabled).toBe(true);
+});
+
+test("071 unit 13: a failed card reading can be retried, and None does not wait for it", async () => {
+  const room: GpuRoom = {
+    readings: [],
+    fullUntil: null,
+    parts: ["none", "shared"],
+    host: "pve-1",
+    cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 18_000, totalMiB: 24_000 }],
+  };
+  const linuxBase = kindView("linux", "Linux", "A server.", 2, false);
+  const offer = { ...linuxBase.offers[0]!, hosts: ["pve-1"], gpuParts: ["none", "shared"] as const, gpuRoom: null as GpuRoom | null, resizing: ADDS_A_GPU };
+  const linux = offered(linuxBase, [offer]);
+  let release: () => void = () => {};
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const options: { kinds: KindView[]; cardsFail?: boolean; holdCards?: Promise<void> } = { kinds: [linux], cardsFail: true, holdCards: hold };
+  const slot = panel(server([], options).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const line = await screen.findByText("No GPU. You can add one later with Resize.");
+  expect(line.getAttribute("data-gpu-state")).toBe("none");
+  expect(submitButton().disabled).toBe(false);
+  expect(screen.queryByText(/Reading the cards/)).toBeNull();
+  release();
+  await choose("GPU", "Shared");
+  await waitFor(() => expect(document.querySelector("[data-gpu-line]")?.getAttribute("data-gpu-state")).toBe("failed"));
+  const failed = document.querySelector("[data-gpu-line]")!;
+  expect(failed.textContent).toMatch(/The cards could not be read/);
+  expect(submitButton().disabled).toBe(true);
+  options.cardsFail = false;
+  offer.gpuRoom = room;
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  await waitFor(() => expect(line.getAttribute("data-gpu-state")).toBe("shared"));
+  expect(submitButton().disabled).toBe(false);
+});
+
+test("071 unit 13: a provider whose card reading fails in the RPC shape can be retried, and None stays usable", async () => {
+  const failed = await kindCardReads([{ backend: { id: "fake", gpuRoom: async () => Promise.reject(new Error("The cards did not answer.")) }, kind: { id: "linux" } }]);
+  expect(failed).toEqual([{ backend: "fake", room: null, failed: true }]);
+  const room: GpuRoom = {
+    readings: [],
+    fullUntil: null,
+    parts: ["none", "shared"],
+    host: "pve-1",
+    cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 18_000, totalMiB: 24_000 }],
+  };
+  const linuxBase = kindView("linux", "Linux", "A server.", 2, false);
+  const offer = { ...linuxBase.offers[0]!, hosts: ["pve-1"], gpuParts: ["none", "shared"] as const, gpuRoom: null as GpuRoom | null, resizing: ADDS_A_GPU };
+  const linux = offered(linuxBase, [offer]);
+  const options: { kinds: KindView[]; cardFailed?: boolean } = { kinds: [linux], cardFailed: true };
+  const slot = panel(server([], options).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const line = await screen.findByText("No GPU. You can add one later with Resize.");
+  expect(line.getAttribute("data-gpu-state")).toBe("none");
+  expect(submitButton().disabled).toBe(false);
+  expect(screen.queryByText(/no card with room/)).toBeNull();
+  await choose("GPU", "Shared");
+  await waitFor(() => expect(document.querySelector("[data-gpu-line]")?.getAttribute("data-gpu-state")).toBe("failed"));
+  const failure = document.querySelector("[data-gpu-line]")!;
+  expect(failure.textContent).toMatch(/The cards could not be read/);
+  expect(failure.contains(screen.getByRole("button", { name: "Retry" }))).toBe(true);
+  expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+  expect(submitButton().disabled).toBe(true);
+  expect(screen.queryByText(/no card with room/)).toBeNull();
+  options.cardFailed = false;
+  offer.gpuRoom = room;
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  await waitFor(() => expect(line.getAttribute("data-gpu-state")).toBe("shared"));
+  expect(submitButton().disabled).toBe(false);
+});
+
+test("with 1 GPU chosen, the form says when no GPU has room, and only then (#603)", async () => {
+  const now = Date.now();
+  const reading = (id: string, freeMiB: number) => ({ id, freeMiB, totalMiB: 8192, at: now, neededMiB: 384, source: "desktop" as const });
+  const full = { readings: [reading("gpu-a", 103)], fullUntil: now + 4 * 60_000 - 1_000 };
+  const withRoom = (gpuRoom: GpuRoom) => KINDS.map((kind) => (kind.id === "linux-desktop" ? { ...kind, offers: kind.offers.map((offer) => ({ ...offer, gpuRoom })) } : kind));
+  const cpu: KindView = { ...kindView("linux-desktop-cpu", "Linux desktop", "A desktop on the CPU.", 4, true), gpu: false };
+  const { handlers } = server([], { kinds: [...withRoom(full), cpu] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("radiogroup", { name: "Type" });
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  const note = "No GPU has room now: 103 MiB free, and a desktop needs 384 MiB. Choose None, or try again in 4 minutes.";
+  expect(screen.queryByText(note)).toBeNull();
+  await choose("GPU", "1 GPU");
+  expect(screen.getByText(note).tagName).toBe("P");
+  expect(screen.getByRole("combobox", { name: "GPU" }).textContent).toBe("1 GPU");
+  await choose("GPU", "None");
+  expect(screen.queryByText(note)).toBeNull();
+
+  // Several GPUs give the most free; room on one, a refusal that has ended, or no reading say nothing.
+  expect(gpuFullNote([{ ...KINDS[1]!.offers[0]!, gpuRoom: { readings: [reading("gpu-a", 103), reading("gpu-b", 21)], fullUntil: now + 60_000 } }], now)).toBe(
+    "No GPU has room now: at most 103 MiB free, and a desktop needs 384 MiB. Choose None, or try again in 1 minute.",
+  );
+  expect(gpuFullNote([{ ...KINDS[1]!.offers[0]!, gpuRoom: { readings: [reading("gpu-a", 6100)], fullUntil: null } }], now)).toBeNull();
+  expect(gpuFullNote([{ ...KINDS[1]!.offers[0]!, gpuRoom: full }], full.fullUntil)).toBeNull();
+  expect(gpuFullNote([{ ...KINDS[1]!.offers[0]!, gpuRoom: null }], now)).toBeNull();
+  expect(gpuFullNote([], now)).toBeNull();
+});
+
+test("one Escape closes the form whatever was used last: a card, a menu, a field", async () => {
+  const { handlers } = server([], { kinds: [POOLED, KINDS[1]!] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  const isOpen = () => screen.queryByRole("radiogroup", { name: "System" }) !== null;
+  const escape = () => fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("radiogroup", { name: "System" });
+  escape();
+  await waitFor(() => expect(isOpen()).toBe(false));
+
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("radiogroup", { name: "System" });
+  await choose("Kind", "Physical");
+  expect(isOpen()).toBe(true);
+  escape();
+  await waitFor(() => expect(isOpen()).toBe(false));
+
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const types = await screen.findByRole("radiogroup", { name: "Type" });
+  const card = within(types).getByRole("radio", { name: /^Desktop/ });
+  fireEvent.click(card);
+  card.focus();
+  escape();
+  await waitFor(() => expect(isOpen()).toBe(false));
+});
+
+test("the (i) on a provider row opens its profile, fetched for every provider once the form opens and kept, in plain rows; Escape closes the profile first", async () => {
+  const { handlers, changes, asked } = server([], { kinds: [POOLED, KINDS[1]!], profileFailsOnce: new Set(["ssh-pool"]) });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  // Nothing is asked while the form is closed; once it opens, every listed provider's profile is fetched in the background.
+  expect(asked).toEqual([]);
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("radiogroup", { name: "Provider" });
+  await waitFor(() => expect(asked).toEqual(["fake", "ssh-pool"]));
+  // The (i) opens filled, with no asking.
+  fireEvent.click(screen.getByRole("button", { name: "About pve" }));
+  expect(await screen.findByText("Fake host on pve")).toBeTruthy();
+  expect(screen.getByText("Linux containers on a test host.")).toBeTruthy();
+  const rows = screen.getAllByRole("definition").map((row) => row.textContent);
+  expect(rows).toEqual([
+    "pve (a Linux machine)",
+    "Linux, Linux desktop (GPU) · LXC containers",
+    "pve: memory 12 of 64 GiB, 4 GiB kept back · cores 6 of 16",
+    "Linux ~2.2 s (1 ready now) · Linux desktop (GPU) ~3.1 s",
+    "Ready · Proxmox VE 9.2 on pve · 2 boxes on it · checked 2 min ago",
+  ]);
+  expect(asked).toEqual(["fake", "ssh-pool"]);
+  // The (i) does not choose the row; it keeps its place in the card, shown on hover, focus or while its profile is open.
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false", "false"]);
+  const holder = screen.getByRole("button", { name: "About pve" }).parentElement!;
+  expect(holder.getAttribute("data-testid")).toBe("provider-info");
+  expect(holder.className).toMatch(/\bopacity-0\b/);
+  expect(holder.className).toMatch(/group-hover:opacity-100/);
+  expect(holder.className).toMatch(/group-focus-within:opacity-100/);
+  expect(holder.className).toMatch(/has-\[\[data-state=open\]\]:opacity-100/);
+  // Escape closes the profile and leaves the form; opening the profile again asks nothing more.
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByText("Linux containers on a test host.")).toBeNull());
+  expect(screen.getByRole("radiogroup", { name: "System" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "About pve" }));
+  expect(await screen.findByText("Linux containers on a test host.")).toBeTruthy();
+  expect(asked).toEqual(["fake", "ssh-pool"]);
+  // The pool's profile failed in the background; opening its (i) asks again, and the profile comes.
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByText("Linux containers on a test host.")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "About SSH host pool" }));
+  await waitFor(() => expect(asked).toEqual(["fake", "ssh-pool", "ssh-pool"]));
+  expect(await screen.findByText("Fake host on pve")).toBeTruthy();
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByText("Fake host on pve")).toBeNull());
+
+  // The pointer resting on the (i) opens the profile as a preview after a moment; leaving closes it; a click keeps it.
+  fireEvent.pointerEnter(screen.getByRole("button", { name: "About pve" }));
+  expect(screen.queryByText("Linux containers on a test host.")).toBeNull();
+  await waitFor(() => expect(screen.getByText("Linux containers on a test host.")).toBeTruthy(), { timeout: 1500 });
+  fireEvent.pointerLeave(screen.getByRole("button", { name: "About pve" }));
+  await waitFor(() => expect(screen.queryByText("Linux containers on a test host.")).toBeNull(), { timeout: 1500 });
+  fireEvent.pointerEnter(screen.getByRole("button", { name: "About pve" }));
+  await waitFor(() => expect(screen.getByText("Linux containers on a test host.")).toBeTruthy(), { timeout: 1500 });
+  fireEvent.click(screen.getByRole("button", { name: "About pve" }));
+  fireEvent.pointerLeave(screen.getByRole("button", { name: "About pve" }));
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  expect(screen.getByText("Linux containers on a test host.")).toBeTruthy();
+  expect(asked).toEqual(["fake", "ssh-pool", "ssh-pool"]);
+  // Closed and opened again, the form fetches afresh: the profiles live with the open form.
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByText("Linux containers on a test host.")).toBeNull());
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("radiogroup", { name: "System" })).toBeNull());
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await waitFor(() => expect(asked).toEqual(["fake", "ssh-pool", "ssh-pool", "fake", "ssh-pool"]));
+});
+
+test("the warm-short note names how short a pool is and why, in the operator's voice", () => {
+  expect(warmShortWords({ kinds: ["linux-desktop"], count: 1, have: 0, reason: "pve has no memory left." })).toBe("Has 0 of 1 ready: no room. pve has no memory left.");
+  expect(warmShortWords({ kinds: ["linux"], count: 2, have: 1, reason: "No host has room for a warm box." })).toBe("Has 1 of 2 ready: no room. No host has room for a warm box.");
+});
+
+test("the profile's words: limits, room, where it runs, what it makes, the usual start and the status", () => {
+  expect(limitWords({ resource: "memory", used: 12 * 1024, total: 64 * 1024, reserve: 4 * 1024, unit: "MiB" })).toBe("memory 12 of 64 GiB, 4 GiB kept back");
+  expect(limitWords({ resource: "disk", used: 100 * 1024, total: null, reserve: 0, unit: "MiB" })).toBe("disk 100 GiB used");
+  expect(limitWords({ resource: "machines", used: 1, total: 2, reserve: 0, unit: "count" })).toBe("machines 1 of 2");
+  expect(limitWords({ resource: "gpu-desktops", id: "0", used: 1, total: 1, reserve: 0, unit: "count" })).toBe("GPU desktops 0 1 of 1");
+  expect(roomWords(null)).toEqual(["Not known: the provider did not answer."]);
+  expect(roomWords({ ok: false, message: "pve has no memory left.", warm: { ready: 1, target: 2 }, hosts: [{ host: "pve", ok: false, limits: [] }] })).toEqual(["pve: full", "pve has no memory left.", "1 of 2 warm"]);
+  expect(roomWords({ ok: true, message: null, warm: null, hosts: [] })).toEqual(["Room for one more box."]);
+  expect(runsOnWords({ hosts: ["devpc"], hostOs: "windows", nature: "virtual" })).toBe("devpc (a Windows PC)");
+  expect(runsOnWords({ hosts: ["devpc"], hostOs: null, nature: "virtual" })).toBe("devpc (not known yet)");
+  expect(runsOnWords({ hosts: [], hostOs: "linux", nature: "real" })).toBe("machines of its own (Linux machine)");
+  expect(makesWords({ makes: [] })).toBe("Nothing now.");
+  expect(makesWords({ makes: [{ id: "macos", label: "macOS", form: "VM", typicalReadyMs: null, ready: 0 }] })).toBe("macOS · VMs");
+  expect(usuallyWords({ makes: [{ id: "macos", label: "macOS", form: "VM", typicalReadyMs: null, ready: 0 }] })).toBe("No cold start recorded yet.");
+  expect(statusWords({ status: { state: "off", problem: null, ok: null, summary: null, checkedAt: null }, boxes: 1 }, 0)).toBe("Off · 1 box on it");
+  expect(statusWords({ status: { state: "misconfigured", problem: "Set the API token.", ok: null, summary: null, checkedAt: null }, boxes: 0 }, 0)).toBe("Needs setting up: Set the API token. · 0 boxes on it");
+  expect(statusWords({ status: { state: "active", problem: null, ok: false, summary: "Template 9101 has no build tag.", checkedAt: 0 }, boxes: 3 }, 60_000)).toBe("Needs attention · Template 9101 has no build tag. · 3 boxes on it · checked 1 min ago");
+});
+
+test("a provider row says it has a spare ready now, with no count (#121, #440)", async () => {
+  const [linux, desktop] = KINDS;
+  const kinds = [{ ...linux!, spares: { target: 1, ready: 1, making: 0 }, offers: [{ ...linux!.offers[0]!, ready: 1 }] }, desktop!];
+  const slot = panel(server([], { kinds }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const providers = await screen.findByRole("radiogroup", { name: "Provider" });
+  expect(within(providers).getAllByRole("radio").map((option) => option.textContent)).toEqual(["pveContainer · ready now · usually ~2.2 s"]);
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.textContent)).toEqual(["pveContainer · usually ~3.1 s"]);
+});
+
+test("a provider row whose spares wait stopped says ready in seconds, as the claim resumes the spare first (#539)", async () => {
+  const [linux] = KINDS;
+  const kinds = [{ ...linux!, spares: { target: 1, ready: 1, making: 0 }, offers: [{ ...linux!.offers[0]!, ready: 1, spareStarts: true }] }];
+  const slot = panel(server([], { kinds }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const providers = await screen.findByRole("radiogroup", { name: "Provider" });
+  expect(within(providers).getAllByRole("radio").map((option) => option.textContent)).toEqual(["pveContainer · ready in seconds · usually ~2.2 s"]);
+});
+
+test("a kind's spares read as ready, part ready or being made, and say nothing while none is coming (#121)", () => {
+  expect(sparesWords(0, { ready: 0, making: 0 })).toEqual([]);
+  expect(sparesWords(2, { ready: 2, making: 0 })).toEqual(["2 spares ready"]);
+  expect(sparesWords(1, { ready: 1, making: 0 })).toEqual(["1 spare ready"]);
+  expect(sparesWords(2, { ready: 1, making: 1 })).toEqual(["1 of 2 spares ready"]);
+  expect(sparesWords(2, { ready: 0, making: 2 })).toEqual(["2 spares, being made"]);
+  expect(sparesWords(2, { ready: 0, making: 0 })).toEqual([]);
+});
+
+test("a custom size starts from the preset in view, sends only its filled fields, and refuses a field that is not a whole number", async () => {
+  const { handlers, changes } = server([]);
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const sizes = await screen.findByRole("radiogroup", { name: "Size" });
+  fireEvent.click(within(sizes).getByRole("radio", { name: /^Medium/ }));
+  fireEvent.click(within(sizes).getByRole("radio", { name: /^Custom/ }));
+  const cores = screen.getByLabelText(/^Cores/) as HTMLInputElement;
+  const memory = screen.getByLabelText(/^Memory, GiB/) as HTMLInputElement;
+  const disk = screen.getByLabelText(/^Disk, GiB/) as HTMLInputElement;
+  expect([cores.value, memory.value, disk.value, disk.placeholder]).toEqual(["4", "8", "", "Image's own"]);
+  expect(screen.getByText("Enter a whole number from 1 to 16.")).toBeTruthy();
+  expect(screen.getByText("Enter a whole number from 1 to 256.")).toBeTruthy();
+
+  fireEvent.change(cores, { target: { value: "six" } });
+  expect(screen.getByRole("alert").textContent).toBe("Enter a whole number from 1 to 16.");
+  expect(submitButton().disabled).toBe(true);
+  fireEvent.change(cores, { target: { value: "6" } });
+  fireEvent.change(memory, { target: { value: "12" } });
+
+  // Custom fields belong to the kind: another kind starts from its own preset, and the edits come back with the kind.
+  const types = screen.getByRole("radiogroup", { name: "Type" });
+  fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+  expect([(screen.getByLabelText(/^Cores/) as HTMLInputElement).value, (screen.getByLabelText(/^Memory, GiB/) as HTMLInputElement).value]).toEqual(["8", "16"]);
+  expect(screen.getByText("Enter a whole number from 1 to 32.")).toBeTruthy();
+  fireEvent.click(within(types).getByRole("radio", { name: /^Server/ }));
+  expect([(screen.getByLabelText(/^Cores/) as HTMLInputElement).value, (screen.getByLabelText(/^Memory, GiB/) as HTMLInputElement).value]).toEqual(["6", "12"]);
+
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(['acquire linux {"cores":6,"memoryGiB":12}']));
+  expect(JSON.parse(window.localStorage.getItem("bb-box:new-box") ?? "{}")).toEqual({ kind: "linux", size: "custom", custom: { linux: { cores: "6", memoryGiB: "12", diskGiB: "" } } });
+});
+
+test("New box's custom size says, under its fields, when a part is at or past the kind's largest, names the kind, and links to the kind's sizes in settings; its slot is kept, and the server's settings hint stays out of the form", async () => {
+  const { handlers } = server([], { failWith: "A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 16 cores, 40 GiB memory. Its presets are small. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux, Sizes, or run bb box kind set linux --largest-memory-gib <GiB>." });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const sizes = await screen.findByRole("radiogroup", { name: "Size" });
+  fireEvent.click(within(sizes).getByRole("radio", { name: /^Custom/ }));
+  const line = document.querySelector<HTMLElement>("[data-largest-line]")!;
+  const shown = () => line.querySelector('[aria-live="polite"]')!.textContent;
+  expect(shown()).toBe("");
+  expect(line.className).toContain("min-h-[1lh]");
+  expect(line.querySelector(".sr-only")!.textContent).toBe("Up to 16 cores, 32 GiB of memory and 256 GiB of disk, the largest for Linux boxes.");
+  fireEvent.change(screen.getByLabelText(/^Cores/), { target: { value: "15" } });
+  expect(shown()).toBe("");
+  fireEvent.change(screen.getByLabelText(/^Cores/), { target: { value: "16" } });
+  expect(shown()).toBe("Up to 16 cores, the largest for Linux boxes. Change it in Settings");
+  fireEvent.change(screen.getByLabelText(/^Memory, GiB/), { target: { value: "40" } });
+  expect(shown()).toBe("Up to 16 cores and 32 GiB of memory, the largest for Linux boxes. Change it in Settings");
+  expect(within(line).getByRole("link", { name: "Change it in Settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box#kind/linux");
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  expect(await screen.findByText("A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 16 cores, 40 GiB memory. Its presets are small.")).toBeTruthy();
+  fireEvent.click(within(line).getByRole("link", { name: "Change it in Settings" }));
+  await waitFor(() => expect(screen.queryByRole("radiogroup", { name: "Size" })).toBeNull());
+});
+
+test("a refused box stays in the form with the reason", async () => {
+  const { handlers } = server([], { failWith: "pve has no memory left. Release a box you no longer need." });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Create box" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("pve has no memory left. Release a box you no longer need.");
+  expect(screen.getByRole("radiogroup", { name: "System" })).toBeTruthy();
+});
+
+type ResizeInput = { box: string; size?: { preset?: string; cores?: number; memoryGiB?: number; diskGiB?: number }; check?: boolean; restart?: boolean; force?: boolean };
+
+/**
+ * A backend's resize, as the panel's RPC answers it: `ways` per part, the box's size `now`, a host with room unless `full`,
+ * threads working on the box until forced, and a refusal for memory below use when it shrinks below `inUseGiB`.
+ */
+function fakeResizer(now: { cores: number; memoryGiB: number; diskGiB: number | null }, options: { ways: { cores: "live" | "restart" | "no"; memory: "live" | "restart" | "no"; disk: "live" | "restart" | "no" }; full?: string; threads?: ThreadOnBox[]; inUseGiB?: number; machine?: string }) {
+  const presets = [
+    { name: "small", ...size(2, 4) },
+    { name: "medium", ...size(4, 8) },
+    { name: "large", ...size(8, 16) },
+  ];
+  const largest = size(16, 32, 256);
+  const view = (parts: { cores: number; memoryGiB: number; diskGiB: number | null }) => ({ ...parts, words: `${parts.cores} cores, ${parts.memoryGiB} GiB memory${parts.diskGiB === null ? "" : `, ${parts.diskGiB} GiB disk`}` });
+  let current = now;
+  let resizedWith: { restart: boolean } | null = null;
+  const boxNow = () => box({ sizeNow: view(current), resizing: { ...options.ways, shrinks: true }, lastResize: resizedWith ? { to: view(current), at: Date.now(), state: "done", restart: resizedWith.restart, ms: 800, error: null } : null });
+  return (input: ResizeInput): ResizeResult => {
+    const preset = presets.find((candidate) => candidate.name === input.size?.preset);
+    const to = { cores: input.size?.cores ?? preset?.cores ?? current.cores, memoryGiB: input.size?.memoryGiB ?? preset?.memoryGiB ?? current.memoryGiB, diskGiB: input.size?.diskGiB ?? current.diskGiB };
+    const base = { box: boxNow(), from: view(current), to: view(to), changed: false, machine: null, needsRestart: false, presets, largest, error: null };
+    if (to.diskGiB !== null && current.diskGiB !== null && to.diskGiB < current.diskGiB) return { ...base, to: null, plan: null, error: `A box's disk only grows, and this box's is ${current.diskGiB} GiB, more than the ${to.diskGiB} GiB asked for.` };
+    const parts = (["cores", "memory", "disk"] as const)
+      .map((part) => {
+        const key = part === "memory" ? "memoryGiB" : part === "disk" ? "diskGiB" : "cores";
+        return { part, from: current[key], to: to[key]!, way: options.ways[part] };
+      })
+      .filter((part) => part.from !== part.to);
+    if (!parts.length) return { ...base, plan: null };
+    const restart = parts.some((part) => part.way === "restart");
+    const plan = { parts, room: options.full ? { ok: false, message: options.full } : { ok: true, message: null }, downSeconds: restart ? 8 : null };
+    if (input.check) return { ...base, plan };
+    if (options.full) return { ...base, plan: null, error: options.full };
+    if (options.inUseGiB !== undefined && to.memoryGiB < current.memoryGiB && to.memoryGiB - 0.5 < options.inUseGiB) {
+      return { ...base, plan: null, error: `Box calm-otter uses ${options.inUseGiB} GiB of memory now, so ${to.memoryGiB} GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least ${Math.ceil(options.inUseGiB + 0.5)} GiB, or free memory in it first. BB Box changed nothing.` };
+    }
+    if (restart && !input.restart) return { ...base, plan: null, needsRestart: true, error: "Resizing box calm-otter needs a restart." };
+    if (restart && options.threads?.length && !input.force) return { ...base, plan: null, threads: options.threads };
+    current = to;
+    resizedWith = { restart };
+    return { ...base, box: boxNow(), plan, changed: true, machine: options.machine ?? null };
+  };
+}
+
+function checkedRadio(dialog: HTMLElement): string | null {
+  return within(dialog).getAllByRole("radio").find((radio) => radio.getAttribute("aria-checked") === "true")?.textContent ?? null;
+}
+
+/** Opens a box's Resize dialog from its menu, and waits for its first check. */
+async function openResize(slot: ReturnType<typeof panel>, name = "calm-otter") {
+  const menu = await openMenu(slot.getByRole("button", { name: `${name} actions` }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Resize…" }));
+  const dialog = await screen.findByRole("alertdialog");
+  await waitFor(() => expect(within(dialog).getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["Small2 cores · 4 GiB", "Medium4 cores · 8 GiB", "Large8 cores · 16 GiB", "Customup to 16 cores"]));
+  return dialog;
+}
+
+test("Resize changes a box live at once: the presets, cores, memory and disk within the kind's largest, and each part's way (061)", async () => {
+  const resize = fakeResizer({ cores: 2, memoryGiB: 4, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "live" } });
+  const { handlers, changes } = server([box({ sizeNow: size(2, 4, 20), resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } })], { resize });
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+  const dialog = await openResize(slot);
+  expect(within(dialog).getByText("Resize calm-otter")).toBeTruthy();
+  expect(within(dialog).getByText("Now 2 cores · 4 GiB · 20 GiB disk.")).toBeTruthy();
+  expect(within(dialog).getByText("Cores, memory and disk live. The disk only grows.")).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: "Resize" }).hasAttribute("disabled")).toBe(true);
+  // A box exactly a preset opens on it, and says so no more than Custom would.
+  await waitFor(() => expect(checkedRadio(dialog)).toBe("Small2 cores · 4 GiB"));
+  expect(within(dialog).getByText("Cores, memory and disk live. The disk only grows.")).toBeTruthy();
+  expect(within(dialog).queryByText("Nothing: the box has this size.")).toBeNull();
+  fireEvent.click(within(dialog).getByRole("radio", { name: /Custom/ }));
+  expect(within(dialog).getByText("Enter a whole number from 20 to 256.")).toBeTruthy();
+
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Cores" }), { target: { value: "6" } });
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Disk, GiB" }), { target: { value: "40" } });
+  const list = await within(dialog).findByRole("list", { name: "What changes" });
+  await waitFor(() => expect(within(list).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Cores2 → 6Live", "Disk20 GiB → 40 GiBLive"]));
+  expect(within(dialog).getByText("Changes at once. Everything running in calm-otter carries on.")).toBeTruthy();
+  expect(within(dialog).getByText("Its host has room for it to grow.")).toBeTruthy();
+  fireEvent.submit(dialog.querySelector("form")!);
+  expect(await within(dialog).findByText("Resized calm-otter")).toBeTruthy();
+  expect(within(dialog).getByText("It has 6 cores · 4 GiB · 40 GiB disk now, changed live.")).toBeTruthy();
+  expect(changes.filter((change) => !change.includes('"check":true'))).toEqual(['resize box_1 {"size":{"cores":6,"diskGiB":40}}']);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  // The dialog said how it went, so its row does not say it again, though the panel refetches the box with it.
+  const calls = stateCalls(slot);
+  await slot.behavior.emitRealtime("changed", { threadId: THREAD });
+  await waitFor(() => expect(stateCalls(slot)).toBe(calls + 1));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(slot.queryByText(/^Resized to/)).toBeNull();
+});
+
+test("Resize's custom size says, under its fields, when a part it can change is at or past the kind's largest, and links to the kind's sizes in settings; nothing shows below it", async () => {
+  const resize = fakeResizer({ cores: 2, memoryGiB: 4, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "no" } });
+  const { handlers } = server([box({ sizeNow: size(2, 4, 20), resizing: { cores: "live", memory: "live", disk: "no", shrinks: true } })], { resize });
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+  const dialog = await openResize(slot);
+  fireEvent.click(within(dialog).getByRole("radio", { name: /Custom/ }));
+  const line = dialog.querySelector<HTMLElement>("[data-largest-line]")!;
+  const shown = () => line.querySelector('[aria-live="polite"]')!.textContent;
+  expect(shown()).toBe("");
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Memory, GiB" }), { target: { value: "31" } });
+  expect(shown()).toBe("");
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Memory, GiB" }), { target: { value: "32" } });
+  expect(shown()).toBe("Up to 32 GiB of memory, the largest for Linux boxes. Change it in Settings");
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Memory, GiB" }), { target: { value: "48" } });
+  expect(shown()).toBe("Up to 32 GiB of memory, the largest for Linux boxes. Change it in Settings");
+  expect(within(line).getByRole("link", { name: "Change it in Settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box#kind/linux");
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Memory, GiB" }), { target: { value: "8" } });
+  expect(shown()).toBe("");
+  expect(checkWords("A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 2 cores, 48 GiB memory. Its presets are small. To allow more, raise the kind's largest size in BB Box settings, under Kinds, Linux, Sizes, or run bb box kind set linux --largest-memory-gib <GiB>.")).toBe(
+    "A linux box can be at most 16 cores, 32 GiB memory, 256 GiB disk, not 2 cores, 48 GiB memory. Its presets are small.",
+  );
+});
+
+test("a starting box's row says what its acquire waits on, with how long it takes, and a ready box's row does not (#1117)", async () => {
+  const words = "Building Namespace's Linux desktop image first, which takes about 7 minutes. Later boxes of this kind use it and start in under a minute.";
+  const slot = panel(server([box({ state: "starting", waitingOn: words }), box({ id: "box_2", name: "quiet-heron", waitingOn: null })]).handlers);
+  expect(await slot.findByText(words)).toBeTruthy();
+  expect(slot.getAllByText(/^Building Namespace's/)).toHaveLength(1);
+});
+
+test("a row says how a resize that ended in the last two minutes went, for a panel that reloaded while its dialog waited (061)", async () => {
+  const ended = (minutesAgo: number, state: "done" | "failed", error: string | null = null) => ({ to: size(4, 8, 64), at: Date.now() - minutesAgo * 60_000 - 15_000, state, restart: true, ms: 15_000, error });
+  const ways = { cores: "restart", memory: "restart", disk: "restart", shrinks: false } as const;
+  const boxes = [
+    box({ sizeNow: size(4, 8, 64), resizing: ways, lastResize: ended(0.5, "done") }),
+    box({ id: "box_2", name: "quiet-heron", sizeNow: size(2, 4, 64), resizing: ways, lastResize: ended(1, "failed", "The Mac has 2 GiB of memory left. BB Box changed nothing.") }),
+    box({ id: "box_3", name: "old-wren", sizeNow: size(4, 8, 64), resizing: ways, lastResize: ended(5, "done") }),
+    box({ id: "box_4", name: "busy-finch", sizeNow: size(2, 4, 64), resizing: ways, lastResize: { ...ended(0, "done"), state: "resizing", ms: null } }),
+  ];
+  const first = server(boxes);
+  let slot = panel(first.handlers);
+  expect(await slot.findByText("Resized to 4 cores · 8 GiB · 64 GiB disk after a restart, in 15 s.")).toBeTruthy();
+  expect(slot.getByText("Not resized to 4 cores · 8 GiB · 64 GiB disk: The Mac has 2 GiB of memory left.").className).toContain("text-destructive-text");
+  expect(slot.getAllByText(/^(Not r|R)esized to/)).toHaveLength(2);
+  slot.unmount();
+
+  // BB's panel can mount a row again: it says it again, within the two minutes (a row said it, was mounted again, and kept quiet).
+  slot = panel(server(boxes).handlers);
+  expect(await slot.findByText("Resized to 4 cores · 8 GiB · 64 GiB disk after a restart, in 15 s.")).toBeTruthy();
+  expect(slot.getAllByText(/^(Not r|R)esized to/)).toHaveLength(2);
+});
+
+test("Resize asks before a restart, in the record's words, then names the threads working on the box before it goes ahead anyway (061)", async () => {
+  const resize = fakeResizer({ cores: 2, memoryGiB: 4, diskGiB: 20 }, { ways: { cores: "restart", memory: "restart", disk: "live" }, threads: [{ id: "thr_worker", title: "Build the app", running: true }] });
+  const { handlers, changes } = server([box({ sizeNow: size(2, 4, 20), resizing: { cores: "restart", memory: "restart", disk: "live", shrinks: true } })], { resize });
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+  const dialog = await openResize(slot);
+  expect(within(dialog).getByText("Disk live; cores and memory with a restart. The disk only grows.")).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("radio", { name: /Large/ }));
+  await waitFor(() => expect(within(dialog).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Cores2 → 8Restart", "Memory4 GiB → 16 GiBRestart"]));
+  expect(within(dialog).getByText("Needs a restart: everything running in calm-otter stops, for about 8 s.")).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Resize…" }));
+  expect(within(dialog).getByText("Restart calm-otter to resize it?")).toBeTruthy();
+  expect(within(dialog).getByText("Everything running in it stops, and it is back in about 8 s.")).toBeTruthy();
+  expect(changes.filter((change) => !change.includes('"check":true'))).toEqual([]);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Restart and resize" }));
+  expect(await within(dialog).findByText("Restart calm-otter anyway?")).toBeTruthy();
+  expect(within(dialog).getByText("\"Build the app\" is working on calm-otter. Its work stops while it restarts.")).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: /Build the app/ })).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Restart anyway" }));
+  expect(await within(dialog).findByText("It has 8 cores · 16 GiB · 20 GiB disk now, after a restart.")).toBeTruthy();
+  expect(changes.filter((change) => !change.includes('"check":true'))).toEqual(['resize box_1 {"size":{"preset":"large"},"restart":true}', 'resize box_1 {"size":{"preset":"large"},"restart":true,"force":true}']);
+});
+
+test("Resize shows refusals plainly: no room, memory below use, and a disk that would shrink (061)", async () => {
+  const full = fakeResizer({ cores: 2, memoryGiB: 8, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "live" }, full: "pve has 2 GiB of memory left, and calm-otter would grow by 8 GiB. Release a box you no longer need." });
+  const first = server([box({ sizeNow: size(2, 8, 20), resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } })], { resize: full });
+  let slot = panel(first.handlers);
+  await slot.findByText("calm-otter");
+  let dialog = await openResize(slot);
+  expect(checkedRadio(dialog), "a box that is no preset opens on Custom").toBe("Customup to 16 cores");
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Memory, GiB" }), { target: { value: "16" } });
+  expect((await within(dialog).findByRole("alert")).textContent).toBe("pve has 2 GiB of memory left, and calm-otter would grow by 8 GiB. Release a box you no longer need.");
+  expect(within(dialog).getByRole("button", { name: "Resize" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Disk, GiB" }), { target: { value: "10" } });
+  expect(await within(dialog).findByText("A box's disk only grows, and this box's is 20 GiB, more than the 10 GiB asked for.")).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  slot.unmount();
+
+  const using = fakeResizer({ cores: 2, memoryGiB: 8, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "live" }, inUseGiB: 3.6 });
+  const second = server([box({ sizeNow: size(2, 8, 20), resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } })], { resize: using });
+  slot = panel(second.handlers);
+  await slot.findByText("calm-otter");
+  dialog = await openResize(slot);
+  fireEvent.click(within(dialog).getByRole("radio", { name: /Small/ }));
+  await within(dialog).findByRole("list", { name: "What changes" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Resize" }));
+  // The answer to Resize, headed as one: the plan's "changes at once" goes, as nothing changed.
+  expect((await within(dialog).findByRole("alert")).textContent).toBe(
+    "Not resizedBox calm-otter uses 3.6 GiB of memory now, so 4 GiB would leave less than 512 MiB free, and the kernel could end its processes. Give it at least 5 GiB, or free memory in it first. BB Box changed nothing.",
+  );
+  expect(within(dialog).queryByText("Changes at once. Everything running in calm-otter carries on.")).toBeNull();
+  expect(within(dialog).getByText("Resize calm-otter")).toBeTruthy();
+  // The same size again would be refused again: Resize waits for another.
+  expect(within(dialog).getByRole("button", { name: "Resize" }).hasAttribute("disabled")).toBe(true);
+});
+
+test("a refusal while the person chooses never says BB Box changed nothing: nothing was tried (061)", () => {
+  expect(checkWords("Resizing box calm-otter needs a restart for its memory. BB Box changed nothing.")).toBe("Resizing box calm-otter needs a restart for its memory.");
+  expect(checkWords("A box's disk only grows, and this box's is 20 GiB, more than the 10 GiB asked for.")).toBe("A box's disk only grows, and this box's is 20 GiB, more than the 10 GiB asked for.");
+});
+
+test("Resize is offered only where the box's backend changes a part, for a ready or stopped box (061)", async () => {
+  const { handlers } = server([
+    box({ id: "box_1", name: "calm-otter", resizing: { cores: "live", memory: "live", disk: "no", shrinks: true } }),
+    box({ id: "box_2", name: "bold-heron", resizing: { cores: "no", memory: "no", disk: "no", shrinks: false } }),
+    box({ id: "box_3", name: "busy-wren", state: "starting", resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } }),
+  ]);
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+  for (const [name, offered] of [["calm-otter", true], ["bold-heron", false], ["busy-wren", false]] as const) {
+    const menu = await openMenu(slot.getByRole("button", { name: `${name} actions` }));
+    expect(within(menu).queryByRole("menuitem", { name: "Resize…" }) !== null).toBe(offered);
+    fireEvent.keyDown(menu, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  }
+});
+
+test("releasing a box asks first", async () => {
+  const { handlers, changes } = server([box()]);
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+
+  let menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Release…" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Release calm-otter?")).toBeTruthy();
+  expect(within(dialog).getByText("Its disk and everything on it will be deleted. Copy out anything you want to keep first.")).toBeTruthy();
+  // It moves as BB's own dialogs do: a fade and a slight scale from the centre, no shadcn diagonal slide, none under reduced motion.
+  expect(dialog.className).toContain("data-[state=open]:zoom-in-95");
+  expect(dialog.className).toContain("duration-200");
+  expect(dialog.className).not.toMatch(/slide-in-from|slide-out-to/);
+  expect(dialog.className).toContain("motion-reduce:data-[state=open]:animate-none");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(changes).toEqual([]);
+
+  menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Release…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Release" }));
+  expect(await slot.findByText("No boxes yet")).toBeTruthy();
+  expect(changes).toEqual(["release box_1"]);
+});
+
+test("a box a thread runs on is released or stopped only once the user says so", async () => {
+  const { handlers, changes } = server([box()], { inUse: [{ id: "thr_worker", title: "Build the app", running: true }] });
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+
+  await chooseMenuItem(slot.getByRole("button", { name: "calm-otter actions" }), "Stop");
+  let dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Stop calm-otter anyway?")).toBeTruthy();
+  expect(within(dialog).getByText("\"Build the app\" is working on calm-otter.")).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: /Build the app/ })).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(changes).toEqual([]);
+
+  const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Release…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Release" }));
+  dialog = await screen.findByRole("alertdialog", { name: "Release calm-otter anyway?" });
+  expect(screen.getAllByRole("alertdialog")).toHaveLength(1);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Release anyway" }));
+  expect(await slot.findByText("No boxes yet")).toBeTruthy();
+  expect(changes).toEqual(["release (forced) box_1"]);
+});
+
+test("Release anyway in a thread's Box panel stays open until the release finishes, and Cancel clears a refusal", async () => {
+  const { handlers } = server([box()], { inUse: [{ id: "thr_worker", title: "Build the app", running: true }] });
+  let finish: (result: BoxResult) => void = () => {};
+  const hanging: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    release: (input) => {
+      if (!input.force) return handlers.release!(input);
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    },
+  };
+  const slot = panel(hanging);
+  await slot.findByText("calm-otter");
+  const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Release…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Release" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Release calm-otter anyway?" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Release anyway" }));
+  expect(within(dialog).getByRole("button", { name: "Releasing…" })).toBeTruthy();
+  await act(async () => finish({ box: null, error: "The host did not answer." }));
+  expect(within(dialog).getByRole("alert").textContent).toBe("The host did not answer.");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  const again = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(again).getByRole("menuitem", { name: "Release…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Release" }));
+  const next = await screen.findByRole("alertdialog", { name: "Release calm-otter anyway?" });
+  expect(within(next).queryByText("The host did not answer.")).toBeNull();
+});
+
+test("the panel stops and starts a box that can, and not one that cannot", async () => {
+  const { handlers, changes } = server([box()]);
+  const slot = panel(handlers);
+
+  await chooseMenuItem(await slot.findByRole("button", { name: "calm-otter actions" }), "Stop");
+  expect(await slot.findByText("Stopped")).toBeTruthy();
+  fireEvent.click(await slot.findByRole("button", { name: "Start" }));
+  await slot.findByText("Ready in 2.1 s");
+  expect(changes).toEqual(["stop box_1", "start box_1"]);
+
+  cleanup();
+  const fixed = panel(server([box({ id: "box_9", name: "real-box", canStopStart: false })]).handlers);
+  await fixed.findByText("real-box");
+  expect(fixed.queryByRole("button", { name: "Stop" })).toBeNull();
+  const menu = await openMenu(fixed.getByRole("button", { name: "real-box actions" }));
+  expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Open terminal", "Open files", "Details", "Copy address", "New thread…", "Check now", "Release…"]);
+});
+
+test("a row starts a child thread on its box, and opens it", async () => {
+  const { handlers, changes } = server([box()]);
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+
+  const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "New thread…" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("New thread on calm-otter")).toBeTruthy();
+  const start = within(dialog).getByRole("button", { name: "Start thread" }) as HTMLButtonElement;
+  expect(start.disabled).toBe(true);
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Prompt" }), { target: { value: "Run uname -a" } });
+  fireEvent.click(start);
+  await waitFor(() => expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toThread", threadId: "thr_child" }));
+  expect(changes).toEqual(["thread box_1 Run uname -a"]);
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+});
+
+test("a box that is not a BB machine offers no thread", async () => {
+  const slot = panel(server([box({ enrol: { state: "off", hostId: null, error: null } })]).handlers);
+  await slot.findByText("calm-otter");
+  const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  expect(within(menu).queryByRole("menuitem", { name: "New thread…" })).toBeNull();
+});
+
+test("a Windows box, whose kind cannot enrol, says its BB machine is not for this kind", async () => {
+  const slot = panel(server([box({ kind: "windows-desktop", kindLabel: "Windows desktop", os: "windows", enrols: false, enrol: { state: "off", hostId: null, error: null } })]).handlers);
+  await slot.findByText("calm-otter");
+  fireEvent.click(slot.getByRole("button", { name: "calm-otter: details" }));
+  expect(await slot.findByText("not for this kind")).toBeTruthy();
+  expect(slot.getByText(/Windows x86_64/)).toBeTruthy();
+  expect(slot.queryByText("off")).toBeNull();
+});
+
+test("the panel shows why a change failed", async () => {
+  const { handlers } = server([box()], { failWith: "Stopping the box failed: the host did not answer." });
+  const slot = panel(handlers);
+
+  await chooseMenuItem(await slot.findByRole("button", { name: "calm-otter actions" }), "Stop");
+  expect((await slot.findByRole("alert")).textContent).toBe("Stopping the box failed: the host did not answer.");
+});
+
+test("the panel says so when no backend is on, and links the settings", async () => {
+  const slot = panel(server([], { kinds: [] }).handlers);
+  expect(await slot.findByText("BB Box is not set up yet")).toBeTruthy();
+  expect(slot.queryByRole("button", { name: "New box" })).toBeNull();
+  expect(slot.getByRole("link", { name: /Open BB Box settings/ }).getAttribute("href")).toBe("/settings/plugins/bb-box");
+});
+
+function setup(overrides: Partial<MachineSetup> = {}): MachineSetup {
+  return { hostId: "host_bb", name: "bb", here: true, state: "ready", docker: "29.8.1", problem: null, fix: null, restart: null, kvm: "ok", freeGb: 120, build: null, took: {}, ...overrides };
+}
+
+test("first run: the panel offers Docker on the machine that runs BB, and one click turns it on and shows the Linux image's build", async () => {
+  const { handlers, changes } = server([], { kinds: [], setups: [setup({ hostId: "host_far", name: "far", here: false }), setup()] });
+  const slot = panel(handlers);
+  expect(await slot.findByText("This machine has Docker 29.8.1. BB Box can make Linux boxes there.")).toBeTruthy();
+  expect(slot.getByText("Builds the Linux image first, usually 5 to 12 min.")).toBeTruthy();
+  expect(slot.getByRole("link", { name: "Other backends" }).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  fireEvent.click(slot.getByRole("button", { name: "Use Docker on this machine" }));
+  await waitFor(() => expect(changes).toEqual(["setup.docker host_bb"]));
+  expect(await slot.findByText("Setting up Docker on this machine")).toBeTruthy();
+  // The step is the one the build kept, not its last line; the time is what it usually takes, as it varies with the host.
+  expect(slot.getByText("Building the Linux image · Step 7 of 12")).toBeTruthy();
+  expect(slot.getByText("Started 1 min ago. It usually takes 5 to 12 min, and goes on if you close this panel.")).toBeTruthy();
+  expect(slot.getByRole("progressbar", { name: "Building the Linux image" })).toBeTruthy();
+});
+
+test("first run: where BB's user cannot use Docker, the panel gives that machine's own fix and restart lines, says a restart ends turns, and checks again", async () => {
+  const fix = setup({ state: "fix", problem: "Docker is on bb, but BB's user, dev, cannot use it. Add dev to the docker group, then restart BB's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" });
+  const { handlers } = server([], { kinds: [], setups: [fix] });
+  const slot = panel(handlers);
+  expect(await slot.findByText(/^Docker is on bb, but BB's user, dev, cannot use it\./)).toBeTruthy();
+  expect(slot.getByText("sudo usermod -aG docker dev")).toBeTruthy();
+  expect(slot.getByText("sudo systemctl restart user@1000.service")).toBeTruthy();
+  expect(slot.getByText(/^The second line restarts all of that user's services, BB's daemon among them\. That ends the turns of threads running there and, if the user has a desktop there, its audio, notifications and other services too\. Logging out and in again, or rebooting, does the same more gently\.$/)).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Check again" }));
+  await waitFor(() => expect(slot.inspection.rpcCalls.filter((call) => call.method === "setup.offer").length).toBeGreaterThan(1));
+  cleanup();
+  // Where BB Box cannot tell how BB runs, it says so in words, with the usermod line alone.
+  const words = panel(server([], { kinds: [], setups: [{ ...fix, restart: null }] }).handlers);
+  expect(await words.findByText("Then restart BB there, or log out and in again, or reboot. That ends the turns of threads running there.")).toBeTruthy();
+  expect(words.queryByText(/systemctl/)).toBeNull();
+});
+
+test("a box that could not join BB says why in its row; for bb connect without a sign-in, in words with the two ways out and the guide", async () => {
+  const signIn = "Enrolling box calm-otter failed: Sign in to your bb account to use bb connect";
+  const slot = panel(server([box({ enrol: { state: "failed", hostId: null, error: signIn } })]).handlers);
+  expect(await slot.findByText(/^BB's machine access, bb connect, needs you signed in to your bb account\. Sign in to it in BB, or set Machine access to Manual/)).toBeTruthy();
+  expect(slot.getByRole("link", { name: "How boxes join BB" }).getAttribute("href")).toMatch(/docs\/guide\/boxes\.md#when-a-box-does-not-join-bb$/);
+  cleanup();
+  // Any other reason is BB's own words.
+  const other = panel(server([box({ enrol: { state: "failed", hostId: null, error: "BB removed the machine before it connected" } })]).handlers);
+  expect(await other.findByText(/^BB removed the machine before it connected\. See Machine access in BB's settings, under Machines\./)).toBeTruthy();
+  cleanup();
+  const alone = "This box could not look up BB's address in time. It failed 5 tries. Other boxes on Fake host joined BB, so BB's setup is fine: the fault is in this box's network.";
+  const confined = panel(server([box({ enrol: { state: "failed", hostId: null, error: alone }, joinTries: { failed: 5, of: 5, next: Date.now() + 1_800_000, words: "x", setup: false } })]).handlers);
+  const line = await confined.findByText(/^This box could not look up BB's address in time/);
+  expect(line.textContent).not.toMatch(/Machine access|tailnet/);
+});
+
+test("first run: where BB's machine access will not let boxes join, the offer says so up front", async () => {
+  const slot = panel(server([], { kinds: [], setups: [setup()], access: { provider: "bb connect", message: "Sign in to your bb account to use bb connect" } }).handlers);
+  expect(await slot.findByText(/^Boxes will not join BB yet\. BB's machine access, bb connect, needs you signed in to your bb account\./)).toBeTruthy();
+  cleanup();
+  const fine = panel(server([], { kinds: [], setups: [setup()] }).handlers);
+  await fine.findByRole("button", { name: "Use Docker on this machine" });
+  expect(fine.queryByText(/Boxes will not join BB yet/)).toBeNull();
+});
+
+test("New box says before making a box that it will not join BB, in the offer's words with both ways out and the guide, and still makes it", async () => {
+  const access = { provider: "bb connect", message: "Sign in to your bb account to use bb connect" };
+  const { handlers, changes } = server([], { access });
+  const slot = panel(handlers);
+  fireEvent.click(await slot.findByRole("button", { name: "New box" }));
+  const note = await screen.findByRole("note");
+  expect(note.textContent).toBe(
+    "Boxes will not join BB yet. BB's machine access, bb connect, needs you signed in to your bb account. Sign in to it in BB, or set Machine access to Manual in BB's settings, under Machines, with an address boxes can reach, and have BB listen there: started with npx bb-app, add --server-bind-host 0.0.0.0. How boxes join BB",
+  );
+  expect(within(note).getByRole("link", { name: "How boxes join BB" }).getAttribute("href")).toMatch(/docs\/guide\/boxes\.md#when-a-box-does-not-join-bb$/);
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.some((change) => change.startsWith("acquire"))).toBe(true));
+  cleanup();
+  const fine = panel(server([]).handlers);
+  fireEvent.click(await fine.findByRole("button", { name: "New box" }));
+  await screen.findByRole("button", { name: "Create box" });
+  expect(screen.queryByText(/Boxes will not join BB yet/)).toBeNull();
+});
+
+test("first run in settings leads until a backend that is on makes a kind: Use Docker on this machine, then the build, with Kinds and Options for later; once setup is done it never comes back, every backend off included (067 unit 7)", async () => {
+  const empty: ConfigDocument = { schema: 1, revision: 1, backends: [], kinds: {}, general: {} };
+  const { handlers, changes } = server([], { setups: [setup()], config: { document: empty } });
+  const none = settings(handlers);
+  expect(await none.findByRole("heading", { name: "Set up BB Box" })).toBeTruthy();
+  expect(await none.findByText("Use Docker on this machine")).toBeTruthy();
+  expect(none.getByText("bb, where BB runs, has Docker 29.8.1. BB Box builds its Linux image there, usually 5 to 12 min, then makes Linux boxes in seconds.")).toBeTruthy();
+  expect(none.queryByRole("link", { name: "Other backends" })).toBeNull();
+  expect(none.queryByText("Kinds")).toBeNull();
+  expect(none.queryByText("Every backend is off")).toBeNull();
+  fireEvent.click(none.getByRole("button", { name: /^Sizes and options: kinds, images, devices, network, Monitor and the configuration file, for later/ }));
+  expect(await none.findByText("Kinds")).toBeTruthy();
+  expect(none.getByText("Options")).toBeTruthy();
+  fireEvent.click(none.getByRole("button", { name: "Use Docker on bb" }));
+  await waitFor(() => expect(changes).toContain("setup.docker host_bb"));
+  expect(await none.findByText("Setting up Docker on this machine")).toBeTruthy();
+  expect(none.queryByRole("button", { name: /Choose another backend/ })).toBeNull();
+  cleanup();
+
+  const choose = settings(server([], { setups: [setup()], config: { document: empty } }).handlers);
+  fireEvent.click(await choose.findByRole("button", { name: /^Choose another backend/ }));
+  expect(window.location.hash).toBe("#add");
+  cleanup();
+
+  const allOff: ConfigDocument = { schema: 1, revision: 9, backends: [{ id: "fake", type: "fake", enabled: false, fields: { url: "https://192.0.2.10:8006", token: { set: true }, key: { set: true } } }], kinds: {}, general: {} };
+  const established = settings(server([], { setups: [setup()], config: { document: allOff, setupDone: { at: 1_790_000_000_000, revision: 4 } } }).handlers);
+  const callout = await established.findByRole("region", { name: "Things that need you" });
+  expect(within(callout).getByText("Every backend is off")).toBeTruthy();
+  expect(within(callout).getByText("Threads get no boxes until one is on. Boxes already made keep working.")).toBeTruthy();
+  expect(within(callout).getByText("Fix: Turn a backend on with its switch below.")).toBeTruthy();
+  fireEvent.click(within(callout).getByRole("button", { name: "Show the backends' switches" }));
+  expect(document.activeElement).toBe(established.getByRole("switch", { name: "Fake host: takes new boxes" }));
+  expect(window.location.hash).toBe("");
+  expect(established.queryByRole("heading", { name: "Set up BB Box" })).toBeNull();
+  expect(established.queryByText("Use Docker on this machine")).toBeNull();
+  expect(established.getByText("Kinds")).toBeTruthy();
+});
+
+test("first run says what stands in the way, titled for it: no Docker with its install line and a BB machine that has Docker, BB's user outside the docker group, too little disk; Check again asks Docker again (067 unit 7)", async () => {
+  const empty: ConfigDocument = { schema: 1, revision: 1, backends: [], kinds: {}, general: {} };
+  const missing = server([], { setups: [setup({ state: "none", docker: null }), setup({ hostId: "host_pc", name: "pc-1", here: false })], config: { document: empty } });
+  const slot = settings(missing.handlers);
+  expect(await slot.findByText("bb has no Docker")).toBeTruthy();
+  expect(slot.getByText("curl -fsSL https://get.docker.com | sudo sh")).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Copy the command: curl -fsSL https://get.docker.com | sudo sh" })).toBeTruthy();
+  expect(slot.getByText("Or use a BB machine that has Docker: pc-1 has Docker 29.8.1.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Check bb for Docker again" }));
+  await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "docker.hosts" && (call.input as { recheck?: string } | null)?.recheck === "host_bb")).toBe(true));
+  await waitFor(() => expect(slot.inspection.rpcCalls.filter((call) => call.method === "setup.offer").length).toBeGreaterThan(1));
+  fireEvent.click(slot.getByRole("button", { name: "Use Docker on pc-1" }));
+  await waitFor(() => expect(missing.changes).toContain("setup.docker host_pc"));
+  cleanup();
+
+  const fix = setup({ state: "fix", problem: "Docker is on this machine, but BB's user, dev, cannot use it. Add dev to the docker group, then restart BB's daemon there.", fix: "sudo usermod -aG docker dev", restart: "sudo systemctl restart user@1000.service" });
+  const access = settings(server([], { setups: [fix], config: { document: empty } }).handlers);
+  expect(await access.findByText("BB cannot use Docker on bb")).toBeTruthy();
+  expect(access.getByText("sudo usermod -aG docker dev")).toBeTruthy();
+  expect(access.getByText("sudo systemctl restart user@1000.service")).toBeTruthy();
+  expect(access.getByText(/^The second line restarts all of that user's services/)).toBeTruthy();
+  cleanup();
+
+  const disk = settings(server([], { setups: [setup({ state: "fix", freeGb: 6, problem: "The Linux image needs about 10 GB free to build, and this machine has 6 GB. Free some, for example with docker builder prune, then check again." })], config: { document: empty } }).handlers);
+  expect(await disk.findByText("Not enough disk on bb")).toBeTruthy();
+  expect(disk.getByText(/^The Linux image needs about 10 GB free to build, and this machine has 6 GB\./)).toBeTruthy();
+  expect(disk.getByRole("button", { name: "Check Docker on bb again" })).toBeTruthy();
+});
+
+test("a backend saved off and not finished stays in first run as Finish setting up, which opens its page (067 unit 7)", async () => {
+  const unfinished: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: false, fields: { token: { set: false } } }], kinds: {}, general: {} };
+  const base = configState({ document: unfinished });
+  const slot = settings(server([], { setups: [], config: { document: unfinished, problems: [{ path: "backends.fake.url", message: "Set the API URL." }], backends: base.backends.map((backend) => ({ ...backend, state: "off" as const, boxes: 0 })) } }).handlers);
+  const finish = await slot.findByRole("button", { name: /^Finish setting up Fake host/ });
+  expect(finish.textContent).toContain("Saved, not finished: Set the API URL.");
+  expect(slot.getByText("Backends")).toBeTruthy();
+  fireEvent.click(finish);
+  expect(window.location.hash).toBe("#backend/fake");
+  expect(await slot.findByText("Not finished")).toBeTruthy();
+});
+
+test("once the Linux image is built, the panel says it is ready until the thread has a box", async () => {
+  const built = setup({ state: "on", build: { state: "built", targets: ["linux"], detail: null, startedAt: Date.now() - 400_000, endedAt: Date.now() - 5_000 } });
+  const slot = panel(server([], { setups: [built] }).handlers);
+  expect(await slot.findByText("The Linux image is ready")).toBeTruthy();
+  expect(slot.getByText("Make a box with the plus.")).toBeTruthy();
+  cleanup();
+  const withBox = panel(server([box()], { setups: [built] }).handlers);
+  await withBox.findByText("calm-otter");
+  expect(withBox.queryByText("The Linux image is ready")).toBeNull();
+});
+
+test("first run: with no machine to set up, the panel says BB Box is not set up yet, as before", async () => {
+  const slot = panel(server([], { kinds: [], setups: [setup({ state: "none", docker: null })] }).handlers);
+  expect(await slot.findByText("BB Box is not set up yet")).toBeTruthy();
+});
+
+test("a build's time reads in whole seconds under a minute and minutes after, and its place reads as its image and that image's step, with a bar that only grows", () => {
+  expect([roughly(800), roughly(45_400), roughly(75_000), roughly(4 * 60_000)]).toEqual(["1 s", "45 s", "1 min", "4 min"]);
+  expect(buildPlace({})).toEqual({ words: null, share: 0.03 });
+  expect(buildPlace({ step: { at: 7, of: 12 } })).toEqual({ words: "Step 7 of 12", share: 0.5 });
+  const places = [
+    { image: { at: 1, of: 2 }, step: { at: 2, of: 4 } },
+    { image: { at: 1, of: 2 }, step: { at: 4, of: 4 } },
+    { image: { at: 2, of: 2 }, step: { at: 1, of: 9 } },
+    { image: { at: 2, of: 2 }, step: { at: 5, of: 9 } },
+  ].map(buildPlace);
+  expect(places.map((place) => place.words)).toEqual(["Image 1 of 2: step 2 of 4", "Image 1 of 2: step 4 of 4", "Image 2 of 2: step 1 of 9", "Image 2 of 2: step 5 of 9"]);
+  expect(places.map((place) => place.share)).toEqual([...places.map((place) => place.share)].sort((a, b) => a - b));
+});
+
+test("the panel refetches on its thread's change signals and after a reconnect", async () => {
+  const { handlers } = server([box()]);
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+  await waitFor(() => expect(stateCalls(slot)).toBe(1));
+
+  await slot.behavior.emitRealtime("changed", { threadId: "thr_other" });
+  expect(stateCalls(slot)).toBe(1);
+  await slot.behavior.emitRealtime("changed", { threadId: THREAD });
+  await waitFor(() => expect(stateCalls(slot)).toBe(2));
+  await slot.behavior.emitRealtime("changed", { threadId: null });
+  await waitFor(() => expect(stateCalls(slot)).toBe(3));
+
+  await slot.behavior.setRealtimeConnectionState("reconnecting");
+  await slot.behavior.setRealtimeConnectionState("connected");
+  await waitFor(() => expect(stateCalls(slot)).toBe(4));
+});
+
+function settings(handlers: PluginRpcTestHandlers<Contract>, hash = "", { keepDrafts = false } = {}) {
+  if (!keepDrafts) {
+    forgetDrafts();
+    forgetFormChecks();
+    forgetConfigurationPage();
+    forgetFindQuery();
+    forgetStandardImages();
+    window.sessionStorage.clear();
+  }
+  window.history.replaceState(null, "", `/settings/plugins/bb-box${hash}`);
+  const [section] = app.settingsSections;
+  return renderSlot(section!, {}, { rpc: handlers, pluginId: "bb-box" });
+}
+
+test("the settings overview shows an honest status, each backend with its state and switch, the kinds in groups, and the options", async () => {
+  const slot = settings(server([]).handlers);
+  expect(await slot.findByText("Fake host is not working")).toBeTruthy();
+  const things = within(slot.getByRole("region", { name: "Things that need you" }));
+  expect(things.getByText("3 things need you").className).toContain("font-normal");
+  expect(things.getByText("Fake host")).toBeTruthy();
+  expect(things.getByText("Not offered now: Linux")).toBeTruthy();
+  expect(things.getByRole("button", { name: "Open Fake host" })).toBeTruthy();
+  const backend = slot.getByRole("switch", { name: "Fake host: takes new boxes" });
+  expect(backend.getAttribute("aria-checked")).toBe("true");
+  expect(document.getElementById(backend.getAttribute("aria-describedby")!)!.textContent).toContain("Set the API token.");
+  expect(slot.queryByText("Other pool")).toBeNull();
+  expect(slot.getByRole("button", { name: "Add backend" })).toBeTruthy();
+
+  expect(slot.getByText("What a thread can ask for. Linux is the default.")).toBeTruthy();
+  const linux = slot.getByRole("switch", { name: "Linux: offered to threads" });
+  expect([linux.getAttribute("aria-checked"), linux.getAttribute("aria-disabled")]).toEqual(["true", "true"]);
+  expect(slot.getByRole("switch", { name: "Linux desktop: offered to threads" }).getAttribute("aria-checked")).toBe("true");
+  expect(slot.getAllByText("Not offered now: its backends cannot make it")).toHaveLength(2);
+
+  expect(slot.getByRole("button", { name: "Boxes", description: "Linux by default · no limit per thread · 0 files" })).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Configuration", description: "Revision 3" })).toBeTruthy();
+  expect(slot.getByRole("switch", { name: "Monitor: machine status in BB's sidebar" }).getAttribute("aria-checked")).toBe("true");
+  fireEvent.click(slot.getByRole("button", { name: /^Your machines/ }));
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "machines" } });
+});
+
+test("a backend's page lists BB's projects by name, saves the IDs of those it is kept for at once, and warns when none of them is still in BB (#1458)", async () => {
+  const projects = [{ id: "proj_work", name: "Work" }, { id: "proj_home", name: "Home" }];
+  const { handlers, changes } = server([], { projects });
+  const slot = settings(handlers, "#backend/fake");
+
+  expect(await slot.findByRole("switch", { name: "Keep Fake host for Work" })).toBeTruthy();
+  expect(slot.getByText("Every project")).toBeTruthy();
+  fireEvent.click(slot.getByRole("switch", { name: "Keep Fake host for Work" }));
+
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("apply "))).toHaveLength(1));
+  const saved = JSON.parse(changes.at(-1)!.slice(changes.at(-1)!.indexOf("{")));
+  expect(saved.backends[0].projects).toEqual(["proj_work"]);
+  expect(await slot.findByText("1 project only")).toBeTruthy();
+  cleanup();
+
+  const document: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { token: { set: true } }, projects: ["proj_gone"] }], kinds: {}, general: {} };
+  const gone = settings(server([], { projects, config: { document } }).handlers, "#backend/fake");
+  expect(await gone.findByText("No project: none of its projects is still in BB")).toBeTruthy();
+  expect(gone.getByText("A project no longer in BB")).toBeTruthy();
+  expect(gone.queryByText("proj_gone")).toBeNull();
+});
+
+test("status says a check's age, never ready for a pass over an hour old, and Check all runs every backend that is on", async () => {
+  const document: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { token: { set: true } } }], kinds: {}, general: {} };
+  const old = { report: { ok: true, summary: "Fake host 1.0", checks: [], notes: [] }, at: Date.now() - 6 * 3_600_000, revision: null };
+  const state = configState({ document });
+  const { handlers, changes } = server([], { config: { document, backends: state.backends.map((backend) => ({ ...backend, doctor: old })) } });
+  const slot = settings(handlers);
+  expect(await slot.findByText("Fake host passed its last check")).toBeTruthy();
+  expect(slot.getByText(/checked 6 h ago/)).toBeTruthy();
+  const checkAll = slot.getByRole("button", { name: "Check all" });
+  fireEvent.click(checkAll);
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("check fake "))).toHaveLength(1));
+});
+
+test("a switch saves at once and says Saved; a refusal, three refusals in a row and a lost reply put it back and say why", async () => {
+  const { handlers, changes, operations } = server([]);
+  const slot = settings(handlers);
+  fireEvent.click(await slot.findByRole("switch", { name: "Linux desktop: offered to threads" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(changes[0]!.startsWith("apply 3 ")).toBe(true);
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).kinds["linux-desktop"]).toEqual({ enabled: false });
+  expect(await slot.findByText("Saved")).toBeTruthy();
+  await waitFor(() => expect((slot.getByRole("switch", { name: "Fake host: takes new boxes" }) as HTMLButtonElement).disabled).toBe(false));
+  expect(slot.getByRole("switch", { name: "Linux desktop: offered to threads" }).getAttribute("aria-checked")).toBe("false");
+  fireEvent.click(slot.getByRole("switch", { name: "Fake host: takes new boxes" }));
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(JSON.parse(changes[1]!.slice(changes[1]!.indexOf("{"))).backends[0].enabled).toBe(false);
+  expect(operations).toHaveLength(2);
+  expect(new Set(operations).size).toBe(2);
+  cleanup();
+  applied = null;
+
+  const refused = settings(server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.fake.token", message: "Set the API token." }] } }).handlers);
+  fireEvent.click(await refused.findByRole("switch", { name: "Fake host: takes new boxes" }));
+  expect(await refused.findByText("Fake host was not changed: Set the API token.")).toBeTruthy();
+  expect(refused.getByRole("switch", { name: "Fake host: takes new boxes" }).getAttribute("aria-checked")).toBe("true");
+  expect(refused.queryByText("Saved")).toBeNull();
+  cleanup();
+
+  const raced = server([], { applyWith: { ok: false, reason: "revision", state: configState({}) } });
+  const racing = settings(raced.handlers);
+  fireEvent.click(await racing.findByRole("switch", { name: "Fake host: takes new boxes" }));
+  expect(await racing.findByText("Fake host was not changed: the configuration changed 3 times while saving. It is on; try again.")).toBeTruthy();
+  expect(raced.changes).toHaveLength(3);
+  expect(racing.queryByText("Saved")).toBeNull();
+  cleanup();
+
+  const lost = server([]);
+  const silent = settings({ ...lost.handlers, "config.apply": () => { throw new Error("The connection closed."); } });
+  fireEvent.click(await silent.findByRole("switch", { name: "Fake host: takes new boxes" }));
+  expect(await silent.findByText("Not confirmed: BB Box did not reply (The connection closed), and has no receipt for this change. Fake host is on now, at revision 3.")).toBeTruthy();
+  expect(silent.queryByText("Saved")).toBeNull();
+});
+
+test("opening a backend by its address focuses the heading, as BB's back button does when it returns to the page", async () => {
+  const slot = settings(server([]).handlers, "#backend/fake");
+  const heading = await slot.findByRole("heading", { name: "Fake host" });
+  await waitFor(() => expect(document.activeElement).toBe(heading));
+  expect(heading.className).toContain("font-normal");
+  expect(slot.getByRole("heading", { name: "Boxes" }).className).toContain("font-normal");
+  const templates = slot.getByRole("textbox", { name: "Templates" });
+  expect(templates.className).toContain("placeholder:text-muted-foreground/60");
+  expect(templates.getAttribute("placeholder")).toBe("9100");
+});
+
+test("Saved fades out, and a check's name is at the same weight as other settings text", async () => {
+  const shown = render(<SavedTick show />);
+  const saved = shown.getByText("Saved");
+  expect(saved.className).toContain("transition-opacity");
+  expect(saved.className).toContain("motion-reduce:transition-none");
+  expect(saved.className).toContain("opacity-100");
+  shown.rerender(<SavedTick show={false} />);
+  expect(shown.getByText("Saved").className).toContain("opacity-0");
+  await waitFor(() => expect(shown.queryByText("Saved")).toBeNull());
+  cleanup();
+
+  const row = render(
+    <ul>
+      <CheckRow check={{ id: "doctor", name: "API", status: "ok", detail: "Ready", fix: null }} />
+    </ul>,
+  );
+  expect(row.getByText("API").className).toContain("font-normal");
+});
+
+test("iOS Simulator lists Namespace with Tart and the SSH host pool, and says warm boxes are the shared hosts", () => {
+  const base = configState({});
+  const types = [
+    ["tart", "Tart"],
+    ["ssh-pool", "SSH host pool"],
+    ["namespace", "Namespace"],
+  ] as const;
+  const driver = (type: string, label: string) => ({
+    ...base.drivers[0]!,
+    type,
+    label,
+    kinds: [] as string[],
+    warmKinds: [] as string[],
+    fields: [{ ...base.drivers[0]!.fields[0]!, key: "ios-hosts-ahead", label: "Ready slots kept on a shared iOS host", group: "ios-hosts" as const }],
+  });
+  const document = { ...base.document, backends: types.map(([type]) => ({ id: type, type, enabled: true, fields: {} })) };
+  const backends = types.map(([type, label]) => ({
+    id: type,
+    type,
+    label,
+    form: null,
+    state: "active" as const,
+    problems: [],
+    boxes: 0,
+    kinds: ["ios"],
+    doctor: null,
+    warmShort: [],
+    changed: 1,
+  }));
+  const info = { ...base.kinds[0]!, id: "ios", label: "iOS Simulator", device: "ios" as const, drivers: ["tart", "ssh-pool", "namespace"] };
+  const rows = runsOn({ ...base, document, drivers: types.map(([type, label]) => driver(type, label)), backends }, info);
+  expect(rows.map((row) => row.config.type)).toEqual(["tart", "ssh-pool", "namespace"]);
+  expect(rows.map((row) => row.noWarm)).toEqual(["shared-ios-hosts", "shared-ios-hosts", "shared-ios-hosts"]);
+});
+
+test("each row opens its part's page by the hash with focus on its heading, back returns focus to the row, and a link to a part that is not here says so", async () => {
+  const slot = settings(server([]).handlers);
+  fireEvent.click(await slot.findByRole("button", { name: /^Fake host/ }));
+  expect(window.location.hash).toBe("#backend/fake");
+  const heading = await slot.findByRole("heading", { name: "Fake host" });
+  await waitFor(() => expect(document.activeElement).toBe(heading));
+  expect(slot.getByRole("navigation", { name: "Where you are" }).textContent).toContain("BB Box settings›Fake host");
+  expect(slot.getByRole("link", { name: "Fake host setup guide" })).toBeTruthy();
+  act(() => window.history.back());
+  await waitFor(() => expect(window.location.hash).toBe(""));
+  await waitFor(() => expect((document.activeElement as HTMLElement | null)?.getAttribute("data-row-key")).toBe("backend-fake"));
+
+  fireEvent.click(slot.getByRole("button", { name: /^Linux desktop/ }));
+  expect(window.location.hash).toBe("#kind/linux-desktop");
+  expect(await slot.findByRole("heading", { name: /^Linux desktop/ })).toBeTruthy();
+  act(() => openSettingsView({ page: "option", id: "monitor" }));
+  expect(await slot.findByRole("heading", { name: "Monitor" })).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Back to Linux desktop" })).toBeTruthy();
+  cleanup();
+
+  for (const [hash, words] of [["#kind/no-such-kind", "This kind is not here"], ["#backend/gone", "This backend is not here"], ["#option/nothing", "This page is not here"], ["#setup/nothing", "This kind of backend is not here"]] as const) {
+    const missing = settings(server([]).handlers, hash);
+    expect(await missing.findByRole("heading", { name: words })).toBeTruthy();
+    fireEvent.click(missing.getByRole("button", { name: "Go to BB Box settings" }));
+    expect(await missing.findByRole("heading", { name: "BB Box settings" })).toBeTruthy();
+    cleanup();
+  }
+});
+
+function spanSaying(text: string) {
+  return (_content: string, element: Element | null) => element?.tagName === "SPAN" && element.textContent === text;
+}
+
+function bodyOf(change: string) {
+  return JSON.parse(change.slice(change.indexOf("{")));
+}
+
+test("a backend's page: health, In use, its fields by card with the first sentence of help, effective values and explicit off, and Save on the engine that stays on the page", async () => {
+  const { handlers, changes, operations } = server([], {
+    checkWith: { problems: [], doctor: { ok: true, summary: "Fake host 1.0", checks: [{ id: "proxmox.api", name: "API", status: "ok", detail: "Answers.", fix: null }], notes: ["Install this key:\nssh-ed25519 AAAA"] } },
+  });
+  const slot = settings(handlers, "#backend/fake");
+  const heading = await slot.findByRole("heading", { name: "Fake host" });
+  await waitFor(() => expect(document.activeElement).toBe(heading));
+  expect(slot.getByText("Not working")).toBeTruthy();
+  expect(slot.getAllByText("Set the API token.").length).toBeGreaterThan(0);
+  const inUse = slot.getByRole("region", { name: "In use" });
+  expect(within(inUse).getByText("2 boxes")).toBeTruthy();
+  expect(within(inUse).getByRole("button", { name: "Linux desktop" })).toBeTruthy();
+  expect(within(inUse).getByText("1 Linux")).toBeTruthy();
+
+  const url = slot.getByRole("textbox", { name: "API URL" }) as HTMLInputElement;
+  expect(url.value).toBe("https://192.0.2.10:8006");
+  const templates = slot.getByRole("textbox", { name: "Templates" }) as HTMLInputElement;
+  expect(templates.placeholder).toBe("9100");
+  expect(slot.getByText("VMIDs, separated by spaces.")).toBeTruthy();
+  expect(slot.queryByText(/Empty turns them off/)).toBeNull();
+  fireEvent.click(slot.getByRole("button", { name: "More about Templates" }));
+  expect(slot.getByText(/Empty turns them off/)).toBeTruthy();
+  expect(document.getElementById(templates.getAttribute("aria-describedby")!.split(" ").at(-1)!)!.textContent).toBe("Empty: 9100, the default");
+  expect(slot.queryByRole("textbox", { name: "Memory kept free (MiB)" })).toBeNull();
+  expect(slot.getByText("Not set")).toBeTruthy();
+
+  fireEvent.click(slot.getByRole("button", { name: "Set the API token" }));
+  fireEvent.change(slot.getByLabelText("API token", { selector: "input" }), { target: { value: "s3cret" } });
+  fireEvent.click(slot.getByRole("button", { name: "Clear the SSH key" }));
+  expect(slot.getByText("Cleared when you save.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Show Advanced: 1 setting" }));
+  fireEvent.change(slot.getByRole("textbox", { name: "Memory kept free (MiB)" }), { target: { value: "2048" } });
+  fireEvent.click(slot.getByRole("checkbox", { name: "Offer Templates" }));
+  expect((slot.getByRole("textbox", { name: "Templates" }) as HTMLInputElement).placeholder).toBe("Off");
+  expect(slot.getByText("4 changes to Fake host not saved")).toBeTruthy();
+
+  fireEvent.click(slot.getByRole("button", { name: "Check with my changes" }));
+  expect(await slot.findByText("Your changes pass its checks")).toBeTruthy();
+  expect(slot.getByText(/against your unsaved changes\. Nothing is saved yet\./)).toBeTruthy();
+  expect(changes[0]!.startsWith("check fake ")).toBe(true);
+  expect(bodyOf(changes[0]!).backends[0].fields).toEqual({ url: "https://192.0.2.10:8006", token: "s3cret", key: null, reserve: 2048, templates: "" });
+  fireEvent.change(url, { target: { value: "https://192.0.2.11:8006" } });
+  expect(slot.getByText("Your form changed after you checked it, so that result was cleared. Check again.")).toBeTruthy();
+  expect(slot.queryByText("Your changes pass its checks")).toBeNull();
+
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(changes[1]!.startsWith("apply 3 ")).toBe(true);
+  expect(operations).toHaveLength(1);
+  expect(bodyOf(changes[1]!).backends[0]).toEqual({ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.11:8006", token: "s3cret", key: null, reserve: 2048, templates: "" }, warm: { linux: 1 } });
+  expect(await slot.findByText("Saved.")).toBeTruthy();
+  expect(window.location.hash).toBe("#backend/fake");
+  expect(slot.getByText("Off: saved empty, so its boxes are not offered.")).toBeTruthy();
+});
+
+test("an empty field another backend fills says where its value comes from, until its set is filled here", async () => {
+  const inherits = (set: string[]) => ({ from: "fake", label: "Fake host", set });
+  const windows: ConfigState["drivers"][number] = {
+    type: "win",
+    label: "Fake Windows",
+    description: "Windows boxes on the fake host.",
+    nature: "virtual",
+    kinds: ["linux"],
+    warmKinds: [],
+    fields: [
+      { key: "url", type: "string", label: "API URL", group: "connection", default: "", inherits: inherits(["url", "key"]) },
+      { key: "token", type: "string", label: "API token", secret: true, group: "credentials", inherits: inherits(["token"]) },
+      { key: "key", type: "string", label: "SSH key", secret: true, group: "credentials", inherits: inherits(["url", "key"]) },
+    ],
+    hostFields: [],
+    setup: { guide: "setup/win/README.md", scripts: [] },
+    several: false,
+  };
+  const slot = settings(server([], { config: { drivers: [...configState({}).drivers, windows] } }).handlers, "#setup/win");
+  const url = (await slot.findByRole("textbox", { name: "API URL" })) as HTMLInputElement;
+  expect(url.value).toBe("");
+  expect(url.placeholder).toBe("https://192.0.2.10:8006");
+  expect(slot.getByText((_, element) => element?.tagName === "SPAN" && element.textContent === "Empty: https://192.0.2.10:8006, from Fake host")).toBeTruthy();
+  expect(slot.getAllByText("from Fake host")).toHaveLength(1);
+  fireEvent.change(url, { target: { value: "https://192.0.2.20:8006" } });
+  expect(slot.queryByText((_, element) => element?.tagName === "SPAN" && (element.textContent ?? "").startsWith("Empty: https"))).toBeNull();
+  expect(slot.queryByText("from Fake host")).toBeNull();
+});
+
+test("a refused save shows each problem at its field and the rest in the bar, and keeps the draft", async () => {
+  const { handlers } = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.fake.url", message: "Use an https URL." }, { path: "backends.fake", message: "BB Box runs one Fake host backend for now." }] } });
+  const slot = settings(handlers, "#backend/fake");
+  fireEvent.change(await slot.findByRole("textbox", { name: "API URL" }), { target: { value: "http://192.0.2.10:8006" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  expect(await slot.findByText("Use an https URL.")).toBeTruthy();
+  expect(slot.getByText("BB Box runs one Fake host backend for now.")).toBeTruthy();
+  expect(slot.getByText(/^Not saved: fix the 2 fields marked\. Your changes are still here\./)).toBeTruthy();
+  expect(slot.getByRole("textbox", { name: "API URL" }).getAttribute("aria-invalid")).toBe("true");
+  expect((slot.getByRole("textbox", { name: "API URL" }) as HTMLInputElement).value).toBe("http://192.0.2.10:8006");
+});
+
+test("a backend saved off part way says Not finished with what is missing, and its stored problems sit under their fields", async () => {
+  const unfinished: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: false, fields: { token: { set: false } } }], kinds: {}, general: {} };
+  const base = configState({ document: unfinished });
+  const { handlers } = server([], { config: { document: unfinished, problems: [{ path: "backends.fake.url", message: "Set the API URL." }], backends: base.backends.map((backend) => ({ ...backend, state: "off" as const, boxes: 0 })) } });
+  const slot = settings(handlers, "#backend/fake");
+  expect(await slot.findByText("Not finished")).toBeTruthy();
+  expect(slot.getByText("Set the API URL. Finish its settings, then turn it on.")).toBeTruthy();
+  const url = slot.getByRole("textbox", { name: "API URL" });
+  expect(document.getElementById(url.getAttribute("aria-describedby")!.split(" ")[1]!)!.textContent).toBe("Set the API URL.");
+});
+
+function tartPage(options: { estimates?: Record<string, Record<string, number>>; boxes?: number } = {}) {
+  const tart: ConfigState["drivers"][number] = {
+    type: "tart",
+    label: "Tart",
+    description: "macOS VMs on your Macs.",
+    nature: "virtual",
+    kinds: ["linux"],
+    warmKinds: [],
+    fields: [
+      { key: "ios-hosts-on", type: "boolean", label: "Shared iOS hosts", group: "ios-hosts", default: false },
+      { key: "ios-hosts-cores", type: "number", label: "Cores of a shared iOS host", description: "The cores of a shared iOS host's VM. Empty takes each Mac's performance cores.", group: "ios-hosts" },
+    ],
+    hostFields: [
+      { key: "address", type: "string", label: "Address", description: "The Mac's address.", group: "connection", default: "" },
+      { key: "user", type: "string", label: "User", group: "connection", default: "" },
+      { key: "ios-hosts-cores", type: "number", label: "Cores of a shared iOS host", description: "In place of the backend's setting.", group: "ios-hosts" },
+    ],
+    setup: { guide: "setup/tart/README.md", scripts: [] },
+    several: false,
+  };
+  const document: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "tart", type: "tart", enabled: true, fields: {}, hosts: [{ name: "mac-1", enabled: true, fields: { address: "192.0.2.20", user: "admin" } }] }], kinds: {}, general: {} };
+  const base = configState({ document });
+  const backends = [{ ...base.backends[0]!, label: "Tart", boxes: options.boxes ?? 0, hostEstimates: options.estimates ?? { "mac-1": { "ios-hosts-cores": 10 } } }];
+  applied = document;
+  return server([], { config: { drivers: [...base.drivers, tart], backends, problems: [] } });
+}
+
+test("a Tart backend's Macs: each switch acts at once, each Mac opens to its fields and its own sizes with what an empty one takes, and Add Mac stages a new Mac by name", async () => {
+  const { handlers, changes, operations } = tartPage();
+  const slot = settings(handlers, "#backend/tart");
+  expect(await slot.findByRole("heading", { name: /^Tart/ })).toBeTruthy();
+  expect(slot.getByText("mac-1", { selector: "h2 span" })).toBeTruthy();
+  const macs = slot.getByRole("region", { name: "Macs" });
+  expect(within(macs).getByText("admin@192.0.2.20")).toBeTruthy();
+  fireEvent.click(within(macs).getByRole("switch", { name: "Mac mac-1: takes new boxes" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(bodyOf(changes[0]!).backends[0].hosts).toEqual([{ name: "mac-1", enabled: false, fields: { address: "192.0.2.20", user: "admin" } }]);
+  expect(operations).toHaveLength(1);
+
+  fireEvent.click(within(macs).getByRole("button", { name: /^mac-1/ }));
+  const cores = within(macs).getByRole("textbox", { name: "Cores of a shared iOS host on mac-1" }) as HTMLInputElement;
+  expect(cores.placeholder).toBe("10");
+  expect(within(macs).getByText(spanSaying("Empty: 10 cores, BB Box's estimate for mac-1"))).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Show Shared iOS hosts: 2 settings" }));
+  fireEvent.change(slot.getByRole("textbox", { name: "Cores of a shared iOS host" }), { target: { value: "8" } });
+  expect(within(macs).getByText(spanSaying("Empty: 8 cores, Tart's setting"))).toBeTruthy();
+  fireEvent.change(slot.getByRole("textbox", { name: "Cores of a shared iOS host" }), { target: { value: "" } });
+
+  fireEvent.click(within(macs).getByRole("button", { name: "Add Mac" }));
+  const name = await within(macs).findByRole("textbox", { name: "Name of the new Mac" });
+  await waitFor(() => expect(document.activeElement).toBe(name));
+  fireEvent.change(name, { target: { value: "mac-1" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  expect(await within(macs).findByText("mac-1 is already a Mac on Tart.")).toBeTruthy();
+  expect(changes).toHaveLength(1);
+  fireEvent.change(name, { target: { value: "review-mac" } });
+  fireEvent.change(within(macs).getByRole("textbox", { name: "Address on review-mac" }), { target: { value: "192.0.2.30" } });
+  fireEvent.change(within(macs).getByRole("textbox", { name: "Cores of a shared iOS host on review-mac" }), { target: { value: "8" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(bodyOf(changes[1]!).backends[0].hosts).toEqual([
+    { name: "mac-1", enabled: false, fields: { address: "192.0.2.20", user: "admin" } },
+    { name: "review-mac", enabled: true, fields: { address: "192.0.2.30", "ios-hosts-cores": 8 } },
+  ]);
+  expect(await slot.findByText("Saved.")).toBeTruthy();
+  expect(within(macs).queryByText("Added when you save")).toBeNull();
+
+  fireEvent.click(within(macs).getByRole("button", { name: "Remove mac-1…" }));
+  fireEvent.click(await slot.findByRole("button", { name: "Remove when I save" }));
+  expect(await within(macs).findByText("Removed when you save")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes).toHaveLength(3));
+  expect(bodyOf(changes[2]!).backends[0].hosts.map((host: { name: string }) => host.name)).toEqual(["review-mac"]);
+});
+
+test("G7 on the page: a new Mac's refused cores are shown under its field, and Show opens it and focuses that field", async () => {
+  const { handlers } = tartPage();
+  const refusing: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    "config.apply": () => ({ ok: false, reason: "problems", problems: [{ path: "backends.tart.hosts.1.ios-hosts-cores", message: "Mac small-mac: the cores of a shared iOS host on it must be a whole number from 2 to 64." }] }),
+  };
+  const slot = settings(refusing, "#backend/tart");
+  fireEvent.click(await slot.findByRole("button", { name: "Add Mac" }));
+  fireEvent.change(await slot.findByRole("textbox", { name: "Name of the new Mac" }), { target: { value: "small-mac" } });
+  fireEvent.change(slot.getByRole("textbox", { name: "Cores of a shared iOS host on small-mac" }), { target: { value: "1" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  expect(await slot.findByText("Mac small-mac: the cores of a shared iOS host on it must be a whole number from 2 to 64.")).toBeTruthy();
+  const cores = slot.getByRole("textbox", { name: "Cores of a shared iOS host on small-mac" });
+  expect(cores.getAttribute("aria-invalid")).toBe("true");
+  slot.getByRole("button", { name: "Save again" }).focus();
+  fireEvent.click(slot.getByRole("button", { name: "Show" }));
+  expect(document.activeElement).toBe(cores);
+});
+
+test("the backend's menu renames at once, copies nothing secret, and removes only after asking: refused while it has boxes, and gone once confirmed", async () => {
+  const { handlers, changes } = server([]);
+  const slot = settings(handlers, "#backend/fake");
+  let menu = await openMenu(await slot.findByRole("button", { name: "More for Fake host" }));
+  expect(within(menu).getByRole("menuitem", { name: "Remove: release its 2 boxes first" }).getAttribute("aria-disabled")).toBe("true");
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Rename…" }));
+  fireEvent.change(await screen.findByRole("textbox", { name: "Name" }), { target: { value: "Fake on lab-2" } });
+  fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(bodyOf(changes[0]!).backends[0].label).toBe("Fake on lab-2");
+  cleanup();
+  applied = null;
+
+  const empty = configState({}).backends.map((backend) => ({ ...backend, boxes: 0 }));
+  const refusing = server([], { config: { backends: empty }, applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.fake", message: "Backend fake has 1 box, so it cannot be removed or renamed. Turn it off and release them first." }] } });
+  const refused = settings(refusing.handlers, "#backend/fake");
+  menu = await openMenu(await refused.findByRole("button", { name: "More for Fake host" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Remove backend…" }));
+  expect(await screen.findByText(/with the SSH key, which BB Box cannot show or get back/)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Remove backend" }));
+  expect(await refused.findByText("Fake host was not removed: Backend fake has 1 box, so it cannot be removed or renamed. Turn it off and release them first.")).toBeTruthy();
+  expect(window.location.hash).toBe("#backend/fake");
+  cleanup();
+
+  const removing = server([], { config: { backends: empty } });
+  const removed = settings(removing.handlers, "#backend/fake");
+  menu = await openMenu(await removed.findByRole("button", { name: "More for Fake host" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Remove backend…" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Remove backend" }));
+  await waitFor(() => expect(removing.changes).toHaveLength(1));
+  expect(bodyOf(removing.changes[0]!).backends).toEqual([]);
+  await waitFor(() => expect(window.location.hash).toBe(""));
+});
+
+test("removing a backend stays open while the write runs, and a refusal stays in the dialog", async () => {
+  const empty = configState({}).backends.map((backend) => ({ ...backend, boxes: 0 }));
+  const base = server([], { config: { backends: empty } });
+  let finish: (result: ApplyResult) => void = () => {};
+  const handlers: PluginRpcTestHandlers<Contract> = {
+    ...base.handlers,
+    "config.apply": () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  };
+  const slot = settings(handlers, "#backend/fake");
+  const menu = await openMenu(await slot.findByRole("button", { name: "More for Fake host" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Remove backend…" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Remove backend" }));
+  const dialog = screen.getByRole("alertdialog", { name: "Remove Fake host?" });
+  expect(within(dialog).getByRole("button", { name: "Removing…" })).toBeTruthy();
+  await act(async () =>
+    finish({ ok: false, reason: "problems", problems: [{ path: "backends.fake", message: "Backend fake has 1 box, so it cannot be removed." }] }),
+  );
+  expect(within(dialog).getByRole("alert").textContent).toContain("was not removed");
+  expect(screen.getByRole("alertdialog", { name: "Remove Fake host?" })).toBeTruthy();
+});
+
+test("the overview's backend row says Saving while a save is out and Unsaved changes after, and each row has its host from its fields", async () => {
+  const { handlers } = server([]);
+  let release = () => {};
+  const held: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    "config.apply": (input) =>
+      new Promise((resolve) => {
+        release = () => resolve(handlers["config.apply"]!(input as never) as ApplyResult);
+      }),
+  };
+  const slot = settings(held, "#backend/fake");
+  fireEvent.change(await slot.findByRole("textbox", { name: "API URL" }), { target: { value: "https://192.0.2.12:8006" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  fireEvent.click(await slot.findByRole("button", { name: "BB Box settings" }));
+  expect(await slot.findByRole("button", { name: "Fake host", description: /Saving…/ })).toBeTruthy();
+  await act(async () => release());
+  await waitFor(() => expect(slot.queryByText("Saving…")).toBeNull());
+  expect(slot.queryByText("Unsaved changes")).toBeNull();
+
+  const backend = (type: string, fields: BackendConfig["fields"], hosts: BackendConfig["hosts"] = undefined): BackendConfig => ({ id: type, type, enabled: true, fields, ...(hosts ? { hosts } : {}) });
+  expect(hostChip(backend("proxmox-lxc", { node: "pve-1", url: "https://192.0.2.5:8006" }), "Proxmox LXC")).toBe("pve-1");
+  expect(hostChip(backend("proxmox-qemu", { url: "https://pve-2.example:8006" }), "Proxmox QEMU")).toBe("pve-2.example");
+  expect(hostChip(backend("tart", {}, [{ name: "mac-1", enabled: true, fields: {} }]), "Tart")).toBe("mac-1");
+  expect(hostChip(backend("tart", {}, [{ name: "mac-1", enabled: true, fields: {} }, { name: "mac-2", enabled: true, fields: {} }]), "Tart")).toBe("2 Macs");
+  expect(hostChip(backend("docker", { host: "ssh://admin@docker-1.example" }), "Docker")).toBe("docker-1.example");
+  expect(hostChip(backend("docker", {}), "Docker")).toBe("this machine");
+  expect(hostChip(backend("docker", {}), "Docker", ["docker-1"])).toBe("docker-1");
+  expect(hostChip(backend("microsandbox", { host: "bb:host_abc" }), "microsandbox")).toBeNull();
+  expect(hostChip(backend("microsandbox", { host: "bb:host_abc" }), "microsandbox", ["build-1"])).toBe("build-1");
+  expect(hostChip(backend("tart", {}, [{ name: "mac-1", enabled: true, fields: {} }, { name: "mac-2", enabled: true, fields: {} }]), "Tart", ["mac-1", "mac-2"])).toBe("2 Macs");
+  expect(onBbMachine(backend("microsandbox", { host: "bb:host_abc" }))).toBe(true);
+  expect(onBbMachine(backend("docker", { host: "bb:host_abc" }))).toBe(true);
+  expect(onBbMachine(backend("docker", { host: "ssh://admin@docker-1.example" }))).toBe(false);
+  expect(hostChip({ ...backend("docker", { host: "bb:host_abc" }), id: "docker:bb-1" }, "Docker on bb-1")).toBeNull();
+  expect(hostChip(backend("microsandbox", { host: "ssh://msb-1:2222" }), "microsandbox")).toBe("msb-1");
+  expect(hostChip(backend("ssh-pool", { machines: "a admin@192.0.2.1\n# b\nc admin@192.0.2.3" }), "SSH host pool")).toBe("2 machines");
+  expect(hostChip(backend("hetzner", {}), "Hetzner Cloud")).toBeNull();
+});
+
+test("Add backend groups every driver by where boxes run, with what it makes and needs; setting one up runs in four steps on the engine, saves on in one go with its secret and an operation ID, and lands on its page in place of the form (067 unit 7)", async () => {
+  const { handlers, changes, operations } = server([], { config: { drivers: configState({}).drivers.map((driver) => (driver.type === "fake" ? { ...driver, type: "proxmox-lxc", label: "Proxmox LXC", setup: { ...driver.setup, needs: "A Proxmox VE host." } } : driver)) } });
+  const slot = settings(handlers, "#add");
+  expect(await slot.findByRole("heading", { name: "Add a backend" })).toBeTruthy();
+  const lxc = slot.getByRole("button", { name: /^Proxmox LXC/ });
+  expect(lxc.closest("section")!.querySelector("h3")!.textContent).toBe("On a Proxmox VE host");
+  expect(lxc.textContent).toContain("Makes Linux and Linux desktop.");
+  expect(lxc.textContent).toContain("You need: A Proxmox VE host.");
+  expect(lxc.textContent).toContain("Set up");
+  fireEvent.click(lxc);
+  expect(window.location.hash).toBe("#setup/proxmox-lxc");
+  expect(await slot.findByRole("heading", { name: "Set up Proxmox LXC" })).toBeTruthy();
+  for (const step of ["Step 1: Prepare", "Step 2: Connect", "Step 3: Choose what it makes", "Step 4: Check it"]) expect(slot.getByRole("region", { name: step })).toBeTruthy();
+  expect(slot.getByText("It can make Linux and Linux desktop. Untick Offer to leave one out.")).toBeTruthy();
+  expect(slot.getByRole("link", { name: "one.sh, script 1 of 1" }).getAttribute("href")).toMatch(/setup\/fake\/one\.sh$/);
+  const url = slot.getByRole("textbox", { name: "API URL" });
+  fireEvent.change(url, { target: { value: "https://192.0.2.30:8006" } });
+  fireEvent.keyDown(url, { key: "Enter" });
+  expect(changes.filter((change) => change.startsWith("apply"))).toHaveLength(0);
+  fireEvent.click(slot.getByRole("checkbox", { name: "Offer Templates" }));
+  expect(slot.getByText("It can make Linux and Linux desktop. Left out, as you unticked Offer: Templates.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Set the API token" }));
+  fireEvent.change(slot.getByLabelText(/^API token$/, { selector: "input" }), { target: { value: "made-up-setup-token" } });
+  fireEvent.click(slot.getByRole("button", { name: "Check" }));
+  await waitFor(() => expect(changes.some((change) => change.startsWith("check proxmox-lxc "))).toBe(true));
+  const checked = JSON.parse(changes.find((change) => change.startsWith("check proxmox-lxc "))!.slice("check proxmox-lxc ".length));
+  expect(checked.backends.find((backend: { id: string }) => backend.id === "proxmox-lxc")).toMatchObject({ enabled: false, fields: { url: "https://192.0.2.30:8006", templates: "" } });
+  expect(changes.filter((change) => change.startsWith("apply"))).toHaveLength(0);
+  fireEvent.click(slot.getByRole("button", { name: "Save and turn on" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("apply"))).toHaveLength(1));
+  const apply = changes.find((change) => change.startsWith("apply"))!;
+  const saved = JSON.parse(apply.slice(apply.indexOf("{")));
+  expect(saved.backends.find((backend: { id: string }) => backend.id === "proxmox-lxc")).toMatchObject({ id: "proxmox-lxc", type: "proxmox-lxc", enabled: true, fields: { url: "https://192.0.2.30:8006", templates: "", token: "made-up-setup-token" } });
+  expect(apply).not.toContain("@new-");
+  expect(operations).toHaveLength(1);
+  await waitFor(() => expect(window.location.hash).toBe("#backend/proxmox-lxc"));
+  expect(await slot.findByRole("heading", { name: /^Fake host/ })).toBeTruthy();
+  expect(slot.getByText("Saved.")).toBeTruthy();
+  expect(JSON.stringify({ ...window.sessionStorage })).not.toContain("made-up-setup-token");
+  expect(JSON.stringify({ ...window.sessionStorage })).not.toContain("@new-");
+  cleanup();
+  applied = null;
+
+  const refused = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.other.machines", message: "Add a machine." }, { path: "backends.other", message: "BB Box runs one Other pool backend for now." }] } });
+  const again = settings(refused.handlers, "#setup/other");
+  fireEvent.click(await again.findByRole("button", { name: "Save and turn on" }));
+  expect(await again.findByText("Add a machine.")).toBeTruthy();
+  expect(again.getByText("BB Box runs one Other pool backend for now.")).toBeTruthy();
+  expect(again.getByText(/^Not saved: it cannot be on without the 2 fields marked\. Fix it, or save it off to finish later\./)).toBeTruthy();
+  expect(window.location.hash).toBe("#setup/other");
+  fireEvent.click(again.getByRole("button", { name: "Save, keep it off" }));
+  await waitFor(() => expect(refused.changes.filter((change) => change.startsWith("apply"))).toHaveLength(2));
+  const off = refused.changes.filter((change) => change.startsWith("apply"))[1]!;
+  expect(JSON.parse(off.slice(off.indexOf("{"))).backends.find((backend: { id: string }) => backend.id === "other")).toMatchObject({ enabled: false });
+  fireEvent.click(again.getByRole("button", { name: "Discard and go back" }));
+  expect(again.queryByText("Add a machine.")).toBeNull();
+});
+
+test("a backend type that is added already opens it from Add backend; one that allows several offers Add another, under the next free ID (067 unit 7)", async () => {
+  const drivers = configState({}).drivers.map((driver) => (driver.type === "other" ? { ...driver, several: true } : driver));
+  const document: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: true }, key: { set: true } } }, { id: "other", type: "other", enabled: true, fields: { machines: "a 192.0.2.5 linux" } }, { id: "other:2", type: "other", enabled: true, fields: { machines: "c 192.0.2.7 linux" } }], kinds: {}, general: {} };
+  const { handlers, changes } = server([], { config: { drivers, document } });
+  const slot = settings(handlers, "#add");
+  expect((await slot.findByRole("button", { name: /^Fake host/ })).textContent).toContain("Added: open it");
+  const other = slot.getByRole("button", { name: /^Other pool/ });
+  expect(other.textContent).toContain("2 added");
+  expect(other.textContent).not.toContain("addeds");
+  expect(other.textContent).toContain("Add another");
+  fireEvent.click(other);
+  fireEvent.change(await slot.findByRole("textbox", { name: "Machines" }), { target: { value: "b 192.0.2.6 linux" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save, keep it off" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("apply"))).toHaveLength(1));
+  const apply = changes.find((change) => change.startsWith("apply"))!;
+  expect(JSON.parse(apply.slice(apply.indexOf("{"))).backends.map((backend: { id: string; enabled: boolean }) => [backend.id, backend.enabled])).toEqual([["fake", true], ["other", true], ["other:2", true], ["other:3", false]]);
+  await waitFor(() => expect(window.location.hash).toBe("#backend/other%3A3"));
+});
+
+test("a kind's page saves its sizes, default size, largest size, warm counts and spares together, as changes from the shipped sizes, and Enter saves", async () => {
+  const { handlers, changes, operations } = server([]);
+  const slot = settings(handlers, "#kind/linux");
+  expect(await slot.findByRole("heading", { name: /^Linux/ })).toBeTruthy();
+  expect((slot.getByRole("textbox", { name: "Small size: cores" }) as HTMLInputElement).value).toBe("2");
+  expect((slot.getByRole("textbox", { name: "Small size: memory, in GiB" }) as HTMLInputElement).value).toBe("4");
+  expect((slot.getByRole("textbox", { name: "Small size: disk, in GiB" }) as HTMLInputElement).placeholder).toBe("Image's own");
+  expect((slot.getByRole("textbox", { name: "Largest size: disk, in GiB" }) as HTMLInputElement).value).toBe("256");
+  expect((slot.getByRole("radio", { name: "Small is the default size" }) as HTMLInputElement).checked).toBe(true);
+  fireEvent.change(slot.getByRole("textbox", { name: "Large size: cores" }), { target: { value: "12" } });
+  fireEvent.change(slot.getByRole("textbox", { name: "Large size: memory, in GiB" }), { target: { value: "24" } });
+  fireEvent.click(slot.getByRole("radio", { name: "Medium is the default size" }));
+  fireEvent.change(slot.getByRole("textbox", { name: "Warm boxes on Fake host" }), { target: { value: "2" } });
+  fireEvent.change(slot.getByRole("textbox", { name: "Spares to keep" }), { target: { value: "1" } });
+  expect(changes).toHaveLength(0);
+  expect(slot.getByRole("region", { name: "Save Linux" }).textContent).toContain("5 changes to Linux not saved");
+  fireEvent.keyDown(slot.getByRole("textbox", { name: "Spares to keep" }), { key: "Enter" });
+  await waitFor(() => expect(changes).toHaveLength(1));
+  const saved = JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{")));
+  expect(saved.kinds).toEqual({ linux: { spares: 1, presets: { large: { cores: 12, memoryMiB: 24576, diskGiB: null } }, default: "medium" } });
+  expect(saved.backends[0].warm).toEqual({ linux: 2 });
+  expect(operations).toHaveLength(1);
+  expect(await slot.findByText("Saved.")).toBeTruthy();
+  expect(window.location.hash).toBe("#kind/linux");
+});
+
+test("a kind's sizes are checked before Save, and a refusal sits under its size, named, with Show", async () => {
+  const { handlers, changes } = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "kinds.linux.presets.medium", message: "The medium linux preset, 40 cores, is above the largest size." }, { path: "backends.fake.warm.linux", message: "Keep 0 to 20 warm linux boxes." }] } });
+  const slot = settings(handlers, "#kind/linux");
+  fireEvent.change(await slot.findByRole("textbox", { name: "Small size: cores" }), { target: { value: "two" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  expect(await slot.findByText("Small: Give the cores as a whole number, at least 1.")).toBeTruthy();
+  expect(slot.getByRole("textbox", { name: "Small size: cores" }).getAttribute("aria-invalid")).toBe("true");
+  expect(changes).toHaveLength(0);
+  fireEvent.change(slot.getByRole("textbox", { name: "Small size: cores" }), { target: { value: "2" } });
+  fireEvent.change(slot.getByRole("textbox", { name: "Medium size: cores" }), { target: { value: "40" } });
+  fireEvent.change(slot.getByRole("textbox", { name: "Warm boxes on Fake host" }), { target: { value: "30" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  expect(await slot.findByText("Medium: the medium linux preset, 40 cores, is above the largest size.")).toBeTruthy();
+  expect(slot.getByText("Keep 0 to 20 warm linux boxes.")).toBeTruthy();
+  expect(slot.getByText(/^Not saved: fix the 2 fields marked/)).toBeTruthy();
+  const medium = slot.getByRole("textbox", { name: "Medium size: cores" });
+  expect(medium.getAttribute("aria-invalid")).toBe("true");
+  expect(document.getElementById(medium.getAttribute("aria-describedby")!)!.textContent).toContain("Medium:");
+});
+
+test("Where it runs lists every backend that makes the kind, declared or live, with a warm count only where it keeps warm boxes", async () => {
+  const document: ConfigDocument = {
+    schema: 1,
+    revision: 3,
+    backends: [
+      { id: "fake", type: "fake", enabled: true, fields: { token: { set: true } }, warm: { linux: 1 } },
+      { id: "other", type: "other", enabled: true, fields: {}, warm: { linux: 2 } },
+      { id: "spare", type: "other", enabled: false, fields: {} },
+    ],
+    kinds: {},
+    general: {},
+  };
+  applied = document;
+  const base = configState({ document });
+  const backends = base.backends.map((backend) => ({ ...backend, label: backend.id === "fake" ? "Fake host" : backend.id === "other" ? "Other pool" : "Spare pool", kinds: backend.id === "other" ? ["linux", "linux-desktop"] : backend.kinds }));
+  const slot = settings(server([], { config: { backends } }).handlers, "#kind/linux-desktop");
+  const where = within((await slot.findByRole("heading", { name: "Where it runs" })).closest("section")!);
+  expect(where.getByRole("button", { name: "Fake host" })).toBeTruthy();
+  expect(where.getByRole("button", { name: "Other pool" })).toBeTruthy();
+  expect(where.queryByRole("button", { name: "Spare pool" })).toBeNull();
+  expect(where.queryAllByRole("textbox")).toHaveLength(0);
+  expect(where.getAllByText("No warm boxes of this kind: it makes each box when a thread asks.")).toHaveLength(2);
+  cleanup();
+
+  const linux = settings(server([], { config: { backends } }).handlers, "#kind/linux");
+  const runs = within((await linux.findByRole("heading", { name: "Where it runs" })).closest("section")!);
+  expect((runs.getByRole("textbox", { name: "Warm boxes on Fake host" }) as HTMLInputElement).value).toBe("1");
+  expect((runs.getByRole("textbox", { name: "Warm boxes on Other pool" }) as HTMLInputElement).value).toBe("2");
+  expect(runs.getByText(/This count does nothing here: set it to 0\./)).toBeTruthy();
+  expect(runs.getByText("Off")).toBeTruthy();
+  expect(runs.getAllByText("Makes it now")).toHaveLength(2);
+});
+
+test("Where it runs names each backend's host as the overview does, so two backends of one kind can be told apart", async () => {
+  const stored: ConfigDocument = {
+    schema: 1,
+    revision: 3,
+    backends: [
+      { id: "fake", type: "fake", enabled: true, fields: { token: { set: true } } },
+      { id: "fake:second", type: "fake", enabled: true, fields: { token: { set: true } } },
+    ],
+    kinds: {},
+    general: {},
+  };
+  applied = stored;
+  const base = configState({ document: stored });
+  const backends = base.backends.map((backend) => ({ ...backend, hosts: [backend.id === "fake" ? "pve-1" : "pve-2"] }));
+  const slot = settings(server([], { config: { backends } }).handlers, "#kind/linux");
+  const where = within((await slot.findByRole("heading", { name: "Where it runs" })).closest("section")!);
+  const rows = where.getAllByRole("button", { name: "Fake host" });
+  expect(rows).toHaveLength(2);
+  expect(rows.map((row) => document.getElementById(row.getAttribute("aria-describedby")!)!.textContent)).toEqual(["pve-1", "pve-2"]);
+  cleanup();
+  const overview = settings(server([], { config: { backends } }).handlers);
+  expect(await overview.findByRole("button", { name: "Fake host", description: /^pve-1/ })).toBeTruthy();
+  expect(overview.getByRole("button", { name: "Fake host", description: /^pve-2/ })).toBeTruthy();
+});
+
+test("a kind's warm pool short of room shows a note under that backend's warm count, and none when it has room", async () => {
+  const short = { kinds: ["linux"], count: 1, have: 0, reason: "pve has no memory left." };
+  const withShort = configState({}).backends.map((backend) => (backend.id === "fake" ? { ...backend, warmShort: [short] } : backend));
+  const slot = settings(server([], { config: { backends: withShort } }).handlers, "#kind/linux");
+  expect(await slot.findByText("Has 0 of 1 ready: no room. pve has no memory left.")).toBeTruthy();
+  cleanup();
+  const ok = settings(server([]).handlers, "#kind/linux");
+  await ok.findByRole("textbox", { name: "Small size: cores" });
+  expect(ok.queryByText(/no room/)).toBeNull();
+});
+
+test("the default kind's switch stays on, on the overview and its page, says why and links to the choice, which opens with the menu focused", async () => {
+  const { handlers, changes } = server([]);
+  const slot = settings(handlers, "#kind/linux");
+  const own = await slot.findByRole("switch", { name: "Linux: offered to threads" });
+  expect(own.getAttribute("aria-disabled")).toBe("true");
+  expect(own.getAttribute("aria-checked")).toBe("true");
+  expect(document.getElementById(own.getAttribute("aria-describedby")!)!.textContent).toBe("The default kind stays on. Choose another default to turn it off.");
+  fireEvent.click(own);
+  expect(own.getAttribute("aria-checked")).toBe("true");
+  expect(slot.queryByRole("button", { name: "Make default" })).toBeNull();
+  fireEvent.click(slot.getByRole("button", { name: "Choose another default" }));
+  expect(window.location.hash).toBe("#option/boxes");
+  await waitFor(() => expect(document.activeElement).toBe(slot.getByRole("combobox", { name: "Default kind" })));
+  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  const row = await slot.findByRole("switch", { name: "Linux: offered to threads" });
+  expect(row.getAttribute("aria-disabled")).toBe("true");
+  expect(row.getAttribute("aria-describedby")!.split(" ").map((id) => document.getElementById(id)!.textContent).join(" ")).toContain("The default kind stays on. Choose another default to turn it off.");
+  fireEvent.click(row);
+  expect(changes).toHaveLength(0);
+});
+
+test("Make default acts at once and moves focus to the kind's switch, which then stays on", async () => {
+  const { handlers, changes } = server([]);
+  const slot = settings(handlers, "#kind/linux-desktop");
+  fireEvent.click(await slot.findByRole("button", { name: "Make default" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).general).toEqual({ defaultKind: "linux-desktop" });
+  const own = slot.getByRole("switch", { name: "Linux desktop: offered to threads" });
+  await waitFor(() => expect(document.activeElement).toBe(own));
+  expect(own.getAttribute("aria-disabled")).toBe("true");
+  expect(slot.getByText("Default kind")).toBeTruthy();
+});
+
+test("a default kind that is off says so on its page, and its switch turns it on", async () => {
+  const document: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { token: { set: true } } }], kinds: { linux: { enabled: false } }, general: {} };
+  applied = document;
+  const { handlers, changes } = server([]);
+  const slot = settings(handlers, "#kind/linux");
+  expect(await slot.findByText(/^This is the default kind, but it is off, so a thread that names no kind gets no box\./)).toBeTruthy();
+  const own = slot.getByRole("switch", { name: "Linux: offered to threads" });
+  expect(own.getAttribute("aria-disabled")).toBeNull();
+  fireEvent.click(own);
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).kinds).toEqual({});
+});
+
+test("a kind turned off on its page or the overview stays in its place, dimmed, until the person leaves the settings", async () => {
+  const { handlers } = server([]);
+  const slot = settings(handlers, "#kind/linux-desktop");
+  fireEvent.click(await slot.findByRole("switch", { name: "Linux desktop: offered to threads" }));
+  expect(await slot.findByText("Off: no new boxes")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  const row = await slot.findByRole("button", { name: "Linux desktop" });
+  expect(row.getAttribute("aria-describedby") && document.getElementById(row.getAttribute("aria-describedby")!)!.textContent).toBe("Off: no new boxes");
+  expect(slot.queryByText(/1 kind off/)).toBeNull();
+  cleanup();
+  const again = settings(handlers, "");
+  expect(await again.findByText("1 kind off")).toBeTruthy();
+  expect(again.queryByRole("button", { name: "Linux desktop" })).toBeNull();
+});
+
+test("the Boxes and Images options: a field waits for Save, which Enter gives, and a switch saves at once, leaving out a value at its default", async () => {
+  const { handlers, changes, operations } = server([]);
+  const slot = settings(handlers, "#option/boxes");
+  expect(await slot.findByText("Switches, and menus that stand alone, act at once. Fields, checkboxes and radio choices wait for Save.")).toBeTruthy();
+  const limit = await slot.findByRole("textbox", { name: "Boxes per thread" });
+  fireEvent.change(limit, { target: { value: "3" } });
+  fireEvent.blur(limit);
+  expect(changes).toHaveLength(0);
+  expect(slot.getByText("Changed")).toBeTruthy();
+  expect(slot.getByRole("region", { name: "Save Boxes" }).textContent).toContain("1 change to Boxes not saved");
+  fireEvent.keyDown(limit, { key: "Enter" });
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).general).toEqual({ boxesPerThread: 3 });
+  expect(await slot.findByText("Saved.")).toBeTruthy();
+  expect(slot.queryByText("Changed")).toBeNull();
+  fireEvent.click(slot.getByRole("switch", { name: "Boxes join BB as machines" }));
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(JSON.parse(changes[1]!.slice(changes[1]!.indexOf("{"))).general).toEqual({ boxesPerThread: 3, enrol: false });
+  expect(operations).toHaveLength(2);
+  cleanup();
+  const images = settings(handlers, "#option/images");
+  const nightly = await images.findByRole("switch", { name: "Rebuild each night" });
+  expect(nightly.getAttribute("aria-checked")).toBe("false");
+  fireEvent.click(nightly);
+  await waitFor(() => expect(changes).toHaveLength(3));
+  expect(JSON.parse(changes[2]!.slice(changes[2]!.indexOf("{"))).general).toEqual({ boxesPerThread: 3, enrol: false, nightlyImages: true });
+});
+
+test("the Images page lists every standard image with its build, why it is due and what the last rebuild did to it, and rebuilds what is due", async () => {
+  const hours = (count: number) => Date.now() - count * 3_600_000;
+  const images: ImagesStatus["images"] = [
+    { name: "fake/linux", kind: "linux", backend: "fake", built: "build.2026-10-01, 10 days old", due: "it is 10 days old, past its 7-day interval", last: null, outcome: null },
+    { name: "fake/desktop", kind: "linux-desktop", backend: "fake", built: "build.2026-10-10, 1 day old", due: null, last: "Last rebuilt 2026-10-10", outcome: { state: "refreshed", at: hours(26), reason: null } },
+    { name: "fake/old", kind: "linux", backend: "fake", built: "build.2026-09-01, 40 days old", due: "it fails the doctor", last: null, outcome: { state: "failed", at: hours(30), reason: "the trial box did not answer." } },
+  ];
+  const { handlers, changes } = server([], { rebuildable: images, refusal: "A rebuild has gone on since 02:00 UTC, one image at a time. Start another once it ends." });
+  const slot = settings(handlers, "#option/images");
+  expect(await slot.findByText("2 of 3 images due.")).toBeTruthy();
+  const row = (name: string) => within(document.querySelector<HTMLElement>(`[data-image-row="${name}"]`)!);
+  expect(row("fake/linux").getByText("Due: it is 10 days old, past its 7-day interval")).toBeTruthy();
+  expect(row("fake/linux").getByText("on Fake host")).toBeTruthy();
+  expect(row("fake/linux").getByText("build.2026-10-01, 10 days old")).toBeTruthy();
+  expect(document.querySelector('[data-image-row="fake/desktop"]')).toBeNull();
+  fireEvent.click(slot.getByRole("button", { name: "1 image up to date" }));
+  expect(row("fake/desktop").getByText("Up to date")).toBeTruthy();
+  expect(row("fake/desktop").getByText("build.2026-10-10, 1 day old")).toBeTruthy();
+  expect(row("fake/desktop").getByText("Linux desktop")).toBeTruthy();
+  expect(row("fake/old").getByText("Its last rebuild failed 1 d 6 h ago: the trial box did not answer.")).toBeTruthy();
+  expect(row("fake/old").getByText("due: it fails the doctor")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Rebuild 2 images" }));
+  await waitFor(() => expect(changes).toContain("images.refresh"));
+  expect(await slot.findByText("A rebuild has gone on since 02:00 UTC, one image at a time. Start another once it ends.")).toBeTruthy();
+});
+
+test("a standard image whose last rebuild failed has Try again on its row, which rebuilds that image alone; a refusal says why, and a run going on disables it", async () => {
+  const images: ImagesStatus["images"] = [
+    { name: "fake/old", kind: "linux", backend: "fake", built: "build.2026-09-01, 40 days old", due: "it fails the doctor", last: null, outcome: { state: "failed", at: Date.now() - 3_600_000, reason: "the trial box did not answer." } },
+    { name: "fake/linux", kind: "linux", backend: "fake", built: "build.2026-10-01, 10 days old", due: "it is 10 days old, past its 7-day interval", last: null, outcome: { state: "waiting", at: Date.now() - 3_600_000, reason: "no room" } },
+  ];
+  const { handlers, changes } = server([], { rebuildable: images });
+  const slot = settings(handlers, "#option/images");
+  const again = await slot.findByRole("button", { name: "Try the Linux image on Fake host again" });
+  expect(slot.getAllByRole("button", { name: /^Try .* again$/ })).toHaveLength(1);
+  fireEvent.click(again);
+  await waitFor(() => expect(changes).toEqual(["images.build fake/old"]));
+  cleanup();
+  const refused = server([], { rebuildable: images, refusal: "A rebuild has gone on since 02:00 UTC, one image at a time. Start another once it ends." });
+  const page = settings(refused.handlers, "#option/images");
+  fireEvent.click(await page.findByRole("button", { name: "Try the Linux image on Fake host again" }));
+  expect(await page.findByText("A rebuild has gone on since 02:00 UTC, one image at a time. Start another once it ends.")).toBeTruthy();
+  cleanup();
+  const progress: ImagesStatus["progress"] = { started: Date.now() - 5_000, ended: null, only: null, images: [{ name: "fake/linux", kind: "linux", state: "refreshing", detail: null }] };
+  const busy = settings(server([], { rebuildable: images, progress }).handlers, "#option/images");
+  expect(((await busy.findByRole("button", { name: "Try the Linux image on Fake host again" })) as HTMLButtonElement).disabled).toBe(true);
+  cleanup();
+  const skipped: ImagesStatus["progress"] = { started: Date.now() - 60_000, ended: Date.now() - 30_000, only: null, images: [{ name: "fake/old", kind: "linux", state: "skipped", detail: "its last rebuild failed and nothing it is built from has changed; bb box images build fake/old tries again" }] };
+  const after = settings(server([], { rebuildable: images, progress: skipped }).handlers, "#option/images");
+  expect(await after.findByText(/^Skipped: its last rebuild failed/)).toBeTruthy();
+  expect(((await after.findByRole("button", { name: "Try the Linux image on Fake host again" })) as HTMLButtonElement).disabled).toBe(false);
+});
+
+test("two backends with one label are told apart on the Images page by their host", async () => {
+  applied = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { token: { set: true, version: 1 } } }, { id: "fake:second", type: "fake", enabled: true, fields: { token: { set: true, version: 1 } } }], kinds: {}, general: {} };
+  const listed = (name: string, backend: string): ImagesStatus["images"][number] => ({ name, kind: "linux", backend, built: "build.2026-10-11, 2 days old", due: null, last: null, outcome: null });
+  const slot = settings(server([], { rebuildable: [listed("fake/linux", "fake"), listed("fake:second/linux", "fake:second")] }).handlers, "#option/images");
+  const row = (name: string) => within(document.querySelector<HTMLElement>(`[data-image-row="${name}"]`)!);
+  fireEvent.click(await slot.findByRole("button", { name: "2 images up to date" }));
+  expect(await slot.findByText("on Fake host (second)")).toBeTruthy();
+  expect(row("fake/linux").getByText("on Fake host")).toBeTruthy();
+});
+
+test("after a run the Images page says what it did to each image: rebuilt, waited for room, failed with why, skipped or not started", async () => {
+  const ended = Date.now() - 2 * 3_600_000;
+  const listed = (name: string, kind: string): ImagesStatus["images"][number] => ({ name, kind, backend: "fake", built: "build.2026-10-11, built today", due: null, last: null, outcome: null });
+  const progress: ImagesStatus["progress"] = {
+    started: ended - 600_000,
+    ended,
+    only: null,
+    images: [
+      { name: "fake/linux", kind: "linux", state: "refreshed", detail: "now build.2026-10-11, in 300 s" },
+      { name: "fake/desktop", kind: "linux-desktop", state: "waiting", detail: "no room for its build and trial boxes: the host is full" },
+      { name: "fake/old", kind: "linux", state: "failed", detail: "the trial box did not answer." },
+      { name: "fake/arm", kind: "linux", state: "skipped", detail: "not due" },
+      { name: "fake/last", kind: "linux", state: "not started", detail: "the run's 4 hours were up" },
+    ],
+  };
+  const slot = settings(server([], { rebuildable: ["fake/linux", "fake/desktop", "fake/old", "fake/arm"].map((name, index) => listed(name, index === 1 ? "linux-desktop" : "linux")), progress }).handlers, "#option/images");
+  expect(await slot.findByText("0 of 5 images due. The last rebuild ended 2 h ago: 1 rebuilt, 1 waited for room, 1 failed, 1 skipped, 1 not started.")).toBeTruthy();
+  expect(slot.queryByText("Rebuilt, now build.2026-10-11, in 300 s")).toBeNull();
+  fireEvent.click(slot.getByRole("button", { name: "2 images up to date" }));
+  expect(slot.getByText("Rebuilt, now build.2026-10-11, in 300 s")).toBeTruthy();
+  expect(slot.getByText("Waits: no room for its build and trial boxes: the host is full")).toBeTruthy();
+  expect(slot.getByText("Failed: the trial box did not answer.")).toBeTruthy();
+  expect(slot.getByText("Skipped: not due")).toBeTruthy();
+  expect(slot.getByText("Not started: the run's 4 hours were up")).toBeTruthy();
+  expect((slot.getByRole("button", { name: "Rebuild what is due" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(slot.getByText("No image is due, so there is nothing to rebuild.")).toBeTruthy();
+});
+
+test("while a rebuild runs, the Images page shows how far it is, and each image's own state on its row", async () => {
+  const progress: ImagesStatus["progress"] = {
+    started: Date.now() - 125_000,
+    ended: null,
+    only: null,
+    images: [
+      { name: "fake/linux", kind: "linux", state: "refreshed", detail: "now build.2026-10-11, in 300 s" },
+      { name: "fake/desktop", kind: "linux-desktop", state: "refreshing", detail: "it is 40 days old", since: Date.now() - 20_000, line: "#9 [desktop 3/9] RUN", step: { at: 3, of: 9 } },
+      { name: "fake/9100", kind: "linux", state: "next", detail: "it fails the doctor" },
+    ],
+  };
+  const slot = settings(server([], { progress }).handlers, "#option/images");
+  expect(await slot.findByText("Rebuilding images")).toBeTruthy();
+  expect(slot.getByText("2 of 3 · fake/desktop")).toBeTruthy();
+  expect(slot.getByText("Started 2 min ago. One image at a time; it goes on if you leave this page.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "1 image up to date" }));
+  expect(slot.getByText("Rebuilt, now build.2026-10-11, in 300 s")).toBeTruthy();
+  expect(slot.getByText("Rebuilding · step 3 of 9")).toBeTruthy();
+  expect(slot.getByText("Next")).toBeTruthy();
+  expect(slot.getByRole("progressbar", { name: "Rebuilding images" }).getAttribute("aria-valuenow")).toBe("41");
+  expect(slot.queryByRole("button", { name: /^Rebuild \d/ })).toBeNull();
+});
+
+function standardImage(name: string, options: Partial<ImagesStatus["images"][number]> = {}): ImagesStatus["images"][number] {
+  return { name, kind: "linux", backend: name.slice(0, name.indexOf("/")), built: "build.2026-10-11, 2 days old", due: null, last: null, outcome: null, ...options };
+}
+
+const FAILED_OUTCOME = { state: "failed" as const, at: Date.now() - 3_600_000, reason: "the trial box did not answer." };
+
+function imageRowNames(): string[] {
+  return Array.from(document.querySelectorAll("[data-image-row]"), (element) => element.getAttribute("data-image-row")!);
+}
+
+test("the Images page folds the images that are up to date into one row after the nightly switch, which opens in place by keyboard or pointer and closes again", async () => {
+  const slot = settings(server([], { rebuildable: [standardImage("fake/linux"), standardImage("fake/desktop", { kind: "linux-desktop" }), standardImage("fake/arm")] }).handlers, "#option/images");
+  const fold = await slot.findByRole("button", { name: "3 images up to date" });
+  expect(slot.getByText("0 of 3 images due.")).toBeTruthy();
+  expect(imageRowNames()).toEqual([]);
+  expect(fold.tagName).toBe("BUTTON");
+  expect(fold.getAttribute("aria-expanded")).toBe("false");
+  expect(fold.getAttribute("aria-controls")).toBeNull();
+  expect(fold.lastElementChild?.getAttribute("aria-hidden")).toBe("true");
+  const nightly = slot.getByRole("switch", { name: "Rebuild each night" });
+  const rebuild = slot.getByRole("button", { name: "Rebuild what is due" });
+  expect(nightly.compareDocumentPosition(fold) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(fold.compareDocumentPosition(rebuild) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fold.focus();
+  expect(document.activeElement).toBe(fold);
+  fireEvent.click(fold);
+  expect(fold.getAttribute("aria-expanded")).toBe("true");
+  const list = document.getElementById(fold.getAttribute("aria-controls")!)!;
+  expect(Array.from(list.querySelectorAll("[data-image-row]"), (element) => element.getAttribute("data-image-row"))).toEqual(["fake/linux", "fake/desktop", "fake/arm"]);
+  expect(within(list).getAllByText("Up to date")).toHaveLength(3);
+  expect(within(list).getByText("Linux desktop")).toBeTruthy();
+  expect(list.compareDocumentPosition(rebuild) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(document.activeElement).toBe(fold);
+  fireEvent.click(fold);
+  expect(fold.getAttribute("aria-expanded")).toBe("false");
+  expect(imageRowNames()).toEqual([]);
+  expect(document.activeElement).toBe(fold);
+});
+
+test("an image that is due or failed has its own row on the Images page, and the fold says how many of the rest are up to date", async () => {
+  const images = [standardImage("fake/linux"), standardImage("fake/old", { outcome: FAILED_OUTCOME }), standardImage("fake/arm"), standardImage("fake/desktop", { kind: "linux-desktop", due: "it is 10 days old, past its 7-day interval" })];
+  const { handlers, changes } = server([], { rebuildable: images });
+  const slot = settings(handlers, "#option/images");
+  const fold = await slot.findByRole("button", { name: "2 images up to date" });
+  expect(imageRowNames()).toEqual(["fake/old", "fake/desktop"]);
+  expect(slot.getByText("Due: it is 10 days old, past its 7-day interval")).toBeTruthy();
+  expect(slot.getByText("Its last rebuild failed 1 h ago: the trial box did not answer.")).toBeTruthy();
+  expect(slot.getByText("1 of 4 images due.")).toBeTruthy();
+  expect(document.querySelector('[data-image-row="fake/desktop"]')!.compareDocumentPosition(fold) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Try the Linux image on Fake host again" }));
+  await waitFor(() => expect(changes).toEqual(["images.build fake/old"]));
+  fireEvent.click(fold);
+  expect(imageRowNames()).toEqual(["fake/old", "fake/desktop", "fake/linux", "fake/arm"]);
+});
+
+test("when every standard image needs attention the Images page has no fold row", async () => {
+  const slot = settings(server([], { rebuildable: [standardImage("fake/linux", { outcome: FAILED_OUTCOME }), standardImage("fake/arm", { outcome: { state: "waiting", at: Date.now() - 3_600_000, reason: "no room" } })] }).handlers, "#option/images");
+  expect(await slot.findByText("Its last rebuild waited 1 h ago: no room")).toBeTruthy();
+  expect(imageRowNames()).toEqual(["fake/linux", "fake/arm"]);
+  expect(slot.queryByRole("button", { name: /up to date$/ })).toBeNull();
+});
+
+test("a rebuild going on takes the images it is rebuilding or has next out of the fold", async () => {
+  const images = [standardImage("fake/linux"), standardImage("fake/desktop", { kind: "linux-desktop" }), standardImage("fake/arm"), standardImage("fake/done")];
+  const progress: ImagesStatus["progress"] = {
+    started: Date.now() - 60_000,
+    ended: null,
+    only: null,
+    images: [
+      { name: "fake/done", kind: "linux", state: "refreshed", detail: "now build.2026-10-12, in 200 s" },
+      { name: "fake/desktop", kind: "linux-desktop", state: "refreshing", detail: "it is 40 days old", since: Date.now() - 20_000, step: { at: 2, of: 9 } },
+      { name: "fake/arm", kind: "linux", state: "next", detail: "it fails the doctor" },
+    ],
+  };
+  const slot = settings(server([], { rebuildable: images, progress }).handlers, "#option/images");
+  expect(await slot.findByRole("button", { name: "2 images up to date" })).toBeTruthy();
+  expect(imageRowNames()).toEqual(["fake/desktop", "fake/arm"]);
+  expect(slot.getByText("Rebuilding · step 2 of 9")).toBeTruthy();
+  expect(slot.getByText("Next")).toBeTruthy();
+});
+
+test("a backend's page lists its own standard images under Images, with Try again on a failed one and a link to the Images page", async () => {
+  const images = [standardImage("fake/linux", { outcome: FAILED_OUTCOME }), standardImage("fake/desktop", { kind: "linux-desktop", due: "it fails the doctor" }), standardImage("fake/arm"), standardImage("other/linux")];
+  const { handlers, changes } = server([], { rebuildable: images });
+  const slot = settings(handlers, "#backend/fake");
+  const group = await slot.findByRole("region", { name: "Images" });
+  const listed = Array.from(group.querySelectorAll("[data-image-row]"), (element) => element.getAttribute("data-image-row"));
+  expect(listed).toEqual(["fake/linux", "fake/desktop", "fake/arm"]);
+  expect(within(group).getByText("The standard images its boxes start from. 1 of 3 images due.")).toBeTruthy();
+  expect(within(group).queryByText(/^on /)).toBeNull();
+  expect(within(group).getByText("Up to date")).toBeTruthy();
+  expect(within(group).getByText("Due: it fails the doctor")).toBeTruthy();
+  expect(within(group).getAllByText("build.2026-10-11, 2 days old")).toHaveLength(3);
+  expect(within(group).queryByRole("button", { name: /up to date$/ })).toBeNull();
+  fireEvent.click(within(group).getByRole("button", { name: "Try the Linux image on Fake host again" }));
+  await waitFor(() => expect(changes).toEqual(["images.build fake/linux"]));
+  fireEvent.click(within(group).getByRole("button", { name: "Open the Images page" }));
+  expect(window.location.hash).toBe("#option/images");
+});
+
+test("a backend with no standard images has no Images group on its page", async () => {
+  let listed = 0;
+  const { handlers } = server([], { rebuildable: [standardImage("other/linux")] });
+  const slot = settings({ ...handlers, "images.list": () => ((listed += 1), { images: [standardImage("other/linux")] }) }, "#backend/fake");
+  await slot.findByRole("heading", { name: "Fake host" });
+  await waitFor(() => expect(listed).toBeGreaterThan(0));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(slot.queryByRole("region", { name: "Images" })).toBeNull();
+  expect(document.querySelector("[data-image-row]")).toBeNull();
+});
+
+const PROJECT_IMAGE = { kinds: ["linux", "linux-desktop"], script: "apt-get install -y ripgrep\n", check: "rg --version\n", projects: ["proj_1"], source: { script: ".bb/box-setup.sh", check: ".bb/box-check.sh" }, updated: new Date(Date.now() - 3 * 86_400_000).toISOString() };
+
+function withProjectImages(): void {
+  applied = {
+    schema: 1,
+    revision: 3,
+    backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: true, version: 1 }, key: { set: true } } }],
+    kinds: {},
+    general: {},
+    images: { "rust-tools": PROJECT_IMAGE, "go-tools": { kinds: ["linux"], script: "apt-get install -y golang\n", projects: ["proj_2"], bake: "never" } },
+  };
+}
+
+const PROJECT_VIEWS: ImageOptionView[] = [
+  { name: "rust-tools", kinds: ["linux", "linux-desktop"], projects: [{ id: "proj_1", name: "Example" }], mine: false, builds: [{ kind: "linux", backend: "fake", build: "b1", built: new Date(Date.now() - 86_400_000).toISOString() }], failed: [{ kind: "linux-desktop", backend: "fake", at: Date.now() - 3_600_000, reason: "its check failed: exit code 127: rg: not found" }], spares: [] },
+  { name: "go-tools", kinds: ["linux"], projects: [{ id: "proj_2", name: "Another project" }], mine: false, builds: [], spares: [] },
+];
+
+test("projects' images: each with its projects, kinds and builds, its script and check one step in, and when it is built ahead changed at once", async () => {
+  withProjectImages();
+  const { handlers, changes, operations } = server([], { images: PROJECT_VIEWS });
+  const slot = settings(handlers, "#option/images");
+  expect(await slot.findByText("Its build for Linux desktop on Fake host failed")).toBeTruthy();
+  const rust = slot.getByRole("button", { name: "rust-tools" });
+  expect(document.getElementById(rust.getAttribute("aria-describedby")!.split(" ")[0]!)!.textContent).toBe("For Example");
+  expect(slot.getByText("Its script runs as each box starts")).toBeTruthy();
+  expect(slot.getByText("Linux and Linux desktop")).toBeTruthy();
+  expect(rust.getAttribute("aria-expanded")).toBe("false");
+  fireEvent.click(rust);
+  expect(rust.getAttribute("aria-expanded")).toBe("true");
+  expect(slot.getByText("From .bb/box-setup.sh and .bb/box-check.sh in the project's repository, set 3 d ago.")).toBeTruthy();
+  expect(slot.getByText("Built for Linux on Fake host")).toBeTruthy();
+  expect(slot.getByText("Its build for Linux desktop on Fake host failed 1 h ago: its check failed: exit code 127: rg: not found")).toBeTruthy();
+  expect(slot.getByLabelText("Script of rust-tools, run as root").textContent).toBe("apt-get install -y ripgrep");
+  expect(slot.getByLabelText("Check of rust-tools, run as the box user").textContent).toBe("rg --version");
+  expect(screen.getByRole("combobox", { name: "When go-tools is built ahead" }).textContent).toBe("Run at each box's start");
+  await choose("When rust-tools is built ahead", "Always built ahead");
+  await waitFor(() => expect(changes).toHaveLength(1));
+  const sent = JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{")));
+  expect(sent.images["rust-tools"]).toEqual({ ...PROJECT_IMAGE, bake: "always" });
+  expect(sent.images["go-tools"].bake).toBe("never");
+  expect(operations).toHaveLength(1);
+  expect(await slot.findByText("Saved")).toBeTruthy();
+  await choose("When go-tools is built ahead", "Built when used often");
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(JSON.parse(changes[1]!.slice(changes[1]!.indexOf("{"))).images["go-tools"]).toEqual({ kinds: ["linux"], script: "apt-get install -y golang\n", projects: ["proj_2"] });
+});
+
+test("until the projects' images' builds and project names arrive, a row says it is reading them, never a project's ID or Not built yet", async () => {
+  withProjectImages();
+  const { handlers } = server([], { images: PROJECT_VIEWS });
+  const slot = settings({ ...handlers, images: () => new Promise<ImageOptionView[]>(() => {}) }, "#option/images");
+  const rust = await slot.findByRole("button", { name: "rust-tools" });
+  expect(document.getElementById(rust.getAttribute("aria-describedby")!.split(" ")[0]!)!.textContent).toBe("");
+  expect(slot.getAllByText("Reading its builds…")).toHaveLength(2);
+  expect(slot.queryByText("proj_1")).toBeNull();
+  expect(slot.queryByText(/^Not built yet/)).toBeNull();
+  cleanup();
+  withProjectImages();
+  const failing = settings({ ...handlers, images: () => Promise.reject(new Error("BB did not answer.")) }, "#option/images");
+  expect(await failing.findByText("proj_1")).toBeTruthy();
+  expect(failing.queryByText("Reading its builds…")).toBeNull();
+});
+
+test("removing a project's image asks first and says what follows; a refusal says why on the page, and a confirmed removal sends the configuration without it", async () => {
+  withProjectImages();
+  const refusing = server([], { images: PROJECT_VIEWS, applyWith: { ok: false, reason: "problems", problems: [{ path: "images", message: "The configuration is locked for a test." }] } });
+  const slot = settings(refusing.handlers, "#option/images");
+  await slot.findByText("Its build for Linux desktop on Fake host failed");
+  fireEvent.click(slot.getByRole("button", { name: "rust-tools" }));
+  fireEvent.click(slot.getByRole("button", { name: "Remove rust-tools…" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove the image rust-tools?" });
+  expect(dialog.textContent).toContain("New Linux and Linux desktop boxes in Example start from the standard images again, without its script. Its builds are deleted.");
+  expect(dialog.textContent).toContain("Boxes already made keep what they have.");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(refusing.changes).toHaveLength(0);
+  fireEvent.click(slot.getByRole("button", { name: "Remove rust-tools…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove image" }));
+  const refused = await screen.findByRole("alertdialog", { name: "Remove the image rust-tools?" });
+  expect(within(refused).getByRole("alert").textContent).toContain("The image rust-tools was not removed: the configuration is locked for a test.");
+  expect(document.querySelector('[data-row-key="image-rust-tools"]')!.textContent).not.toContain("was not removed");
+  fireEvent.click(within(refused).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(slot.getByRole("button", { name: "rust-tools" })).toBeTruthy();
+  cleanup();
+  withProjectImages();
+  const { handlers, changes } = server([], { images: PROJECT_VIEWS });
+  const page = settings(handlers, "#option/images");
+  await page.findByText("Its build for Linux desktop on Fake host failed");
+  fireEvent.click(page.getByRole("button", { name: "rust-tools" }));
+  fireEvent.click(page.getByRole("button", { name: "Remove rust-tools…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove image" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(Object.keys(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).images)).toEqual(["go-tools"]);
+  expect(await page.findByText("Removed the image rust-tools.")).toBeTruthy();
+  await waitFor(() => expect(page.queryByRole("button", { name: "rust-tools" })).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(page.getByRole("button", { name: "go-tools" })));
+});
+
+test("removing a project image stays open while the write runs, and a refusal stays in the dialog", async () => {
+  withProjectImages();
+  const base = server([], { images: PROJECT_VIEWS });
+  let finish: (result: ApplyResult) => void = () => {};
+  const handlers: PluginRpcTestHandlers<Contract> = {
+    ...base.handlers,
+    "config.apply": () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  };
+  const page = settings(handlers, "#option/images");
+  await page.findByText("Its build for Linux desktop on Fake host failed");
+  fireEvent.click(page.getByRole("button", { name: "rust-tools" }));
+  fireEvent.click(page.getByRole("button", { name: "Remove rust-tools…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove image" }));
+  const dialog = screen.getByRole("alertdialog", { name: "Remove the image rust-tools?" });
+  expect(within(dialog).getByRole("button", { name: "Removing…" })).toBeTruthy();
+  await act(async () => finish({ ok: false, reason: "problems", problems: [{ path: "images.rust-tools", message: "The image is in use." }] }));
+  expect(within(dialog).getByRole("alert").textContent).toContain("was not removed: the image is in use.");
+  expect(document.querySelector('[data-row-key="image-rust-tools"]')!.textContent).not.toContain("was not removed");
+  expect(screen.getByRole("alertdialog", { name: "Remove the image rust-tools?" })).toBeTruthy();
+});
+
+test("a failed rebuild and a project image's failed build are in the overview's Status, each with its fix and a way to the Images page", async () => {
+  const failures: ImagesStatus["failures"] = [
+    { of: "standard", name: "fake/9100", kind: "linux", backend: "fake", at: Date.now() - 3_600_000, reason: "the trial box did not answer." },
+    { of: "project", name: "rust-tools", kind: "linux-desktop", backend: "fake", at: Date.now() - 7_200_000, reason: "its check failed: exit code 127." },
+  ];
+  const slot = settings(server([], { failures }).handlers);
+  const things = within(await slot.findByRole("region", { name: "Things that need you" }));
+  expect(await things.findByText("The Linux image on Fake host did not rebuild")).toBeTruthy();
+  expect(things.getByText("Failed 1 h ago: the trial box did not answer. New boxes start from its last build meanwhile.")).toBeTruthy();
+  expect(things.getByText("Fix: Fix the cause, then Try again on the Images page, or run bb box images build fake/9100.")).toBeTruthy();
+  expect(things.getByText("The image rust-tools did not build for Linux desktop on Fake host")).toBeTruthy();
+  expect(things.getByText("Fix: Fix its script, then set the image again with bb box image set rust-tools.")).toBeTruthy();
+  expect(things.getByText("5 things need you")).toBeTruthy();
+  expect(document.getElementById("settings-option-images")!.textContent).toContain("2 failed");
+  fireEvent.click(things.getByRole("button", { name: "Open The Linux image on Fake host did not rebuild" }));
+  expect(window.location.hash).toBe("#option/images");
+});
+
+test("files for every box show each path and whether it is set, never a content; Save files sends a kept file's path alone, and Remove asks first (#455)", async () => {
+  applied = { schema: 1, revision: 3, backends: [], kinds: {}, general: { files: [{ path: ".pi/agent/models.json", content: { set: true, version: 2 } }] } };
+  const { handlers, changes, operations } = server([]);
+  const slot = settings(handlers, "#option/boxes");
+  expect(await slot.findByText("~/.pi/agent/models.json")).toBeTruthy();
+  expect(slot.getByText("Set")).toBeTruthy();
+  const sent = (at: number) => JSON.parse(changes[at]!.slice(changes[at]!.indexOf("{"))).general.files;
+
+  fireEvent.click(slot.getByRole("button", { name: "Add file" }));
+  fireEvent.change(slot.getByRole("textbox", { name: "New file's path under the box user's home" }), { target: { value: " .config/tool/config.toml " } });
+  fireEvent.change(slot.getByRole("textbox", { name: "Content of ~/.config/tool/config.toml" }), { target: { value: "key = 1" } });
+  expect(slot.getByRole("region", { name: "Save files for every box" }).textContent).toContain("1 change to files for every box not saved");
+  expect(window.sessionStorage.getItem("bb-box.settings.draft.files")).not.toContain("key = 1");
+  fireEvent.click(slot.getByRole("button", { name: "Save files" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(sent(0)).toEqual([{ path: ".pi/agent/models.json" }, { path: ".config/tool/config.toml", content: "key = 1" }]);
+  expect(await slot.findByText("~/.config/tool/config.toml")).toBeTruthy();
+  await waitFor(() => expect(slot.queryByRole("textbox", { name: "Content of ~/.config/tool/config.toml" })).toBeNull());
+  expect(slot.queryByText(/key = 1/)).toBeNull();
+
+  fireEvent.click(slot.getByRole("button", { name: "Replace the content of ~/.pi/agent/models.json" }));
+  fireEvent.change(slot.getByRole("textbox", { name: "New content for ~/.pi/agent/models.json" }), { target: { value: "{}" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save files" }));
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(sent(1)).toEqual([{ path: ".pi/agent/models.json", content: "{}" }, { path: ".config/tool/config.toml" }]);
+  await waitFor(() => expect(slot.queryByRole("textbox", { name: "New content for ~/.pi/agent/models.json" })).toBeNull());
+
+  fireEvent.click(slot.getByRole("button", { name: "Remove ~/.config/tool/config.toml" }));
+  expect(changes).toHaveLength(2);
+  fireEvent.click(await slot.findByRole("button", { name: "Remove file" }));
+  await waitFor(() => expect(changes).toHaveLength(3));
+  expect(sent(2)).toEqual([{ path: ".pi/agent/models.json" }]);
+  expect(operations).toHaveLength(3);
+});
+
+test("removing a file stays open while the write runs, and a refusal stays in the dialog", async () => {
+  applied = { schema: 1, revision: 3, backends: [], kinds: {}, general: { files: [{ path: ".config/tool/config.toml", content: { set: true, version: 1 } }] } };
+  const base = server([]);
+  let finish: (result: ApplyResult) => void = () => {};
+  const handlers: PluginRpcTestHandlers<Contract> = {
+    ...base.handlers,
+    "config.apply": () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  };
+  const slot = settings(handlers, "#option/boxes");
+  fireEvent.click(await slot.findByRole("button", { name: "Remove ~/.config/tool/config.toml" }));
+  fireEvent.click(await slot.findByRole("button", { name: "Remove file" }));
+  const dialog = screen.getByRole("alertdialog", { name: "Remove ~/.config/tool/config.toml?" });
+  expect(within(dialog).getByRole("button", { name: "Removing…" })).toBeTruthy();
+  await act(async () => finish({ ok: false, reason: "problems", problems: [{ path: "general.files", message: "The file is in use." }] }));
+  expect(within(dialog).getByRole("alert").textContent).toContain("was not removed");
+  expect(screen.getByRole("alertdialog", { name: "Remove ~/.config/tool/config.toml?" })).toBeTruthy();
+});
+
+const MONITOR_DOCUMENT: ConfigDocument = { schema: 1, revision: 3, backends: [], kinds: {}, general: {} };
+
+test("a field edited here that changed elsewhere is a conflict on its row at once, with Use theirs and Keep mine, while a switch follows the stored value", async () => {
+  applied = MONITOR_DOCUMENT;
+  const { handlers, changes } = server([]);
+  const slot = settings(handlers, "#option/monitor");
+  const refresh = (await slot.findByRole("textbox", { name: "Refresh every, in seconds" })) as HTMLInputElement;
+  expect(refresh.value).toBe("5");
+  fireEvent.change(refresh, { target: { value: "12" } });
+  expect(slot.getByRole("region", { name: "Save the Monitor" }).textContent).toContain("1 change to the Monitor not saved");
+  applied = { ...MONITOR_DOCUMENT, revision: 4, monitor: { refreshIntervalSeconds: 8, backgroundMonitoring: true } };
+  await slot.emitRealtime("changed", null);
+  expect(await slot.findByText(/Changed elsewhere to/)).toBeTruthy();
+  expect(slot.getByText("8").closest("[role=status]")).toBeTruthy();
+  expect(slot.getByRole("switch", { name: "Background monitoring" }).getAttribute("aria-checked")).toBe("true");
+  expect(refresh.value).toBe("12");
+  expect(refresh.getAttribute("aria-describedby")).toContain("conflict");
+  expect(slot.getByRole("region", { name: "Save the Monitor" }).textContent).toContain("A setting you changed was changed elsewhere too. Choose for each, then save.");
+  expect((slot.getByRole("button", { name: "Save" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(slot.getByRole("button", { name: "Show" }));
+  expect(document.activeElement).toBe(refresh);
+  fireEvent.click(slot.getByRole("button", { name: "Keep mine" }));
+  expect(slot.queryByText(/Changed elsewhere to/)).toBeNull();
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(changes[0]!.startsWith("apply 4 ")).toBe(true);
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).monitor).toEqual({ refreshIntervalSeconds: 12, backgroundMonitoring: true });
+
+  fireEvent.change(refresh, { target: { value: "20" } });
+  applied = { ...applied!, revision: 6, monitor: { refreshIntervalSeconds: 30 } };
+  await slot.emitRealtime("changed", null);
+  fireEvent.click(await slot.findByRole("button", { name: "Use theirs" }));
+  expect(refresh.value).toBe("30");
+  expect(slot.queryByRole("region", { name: "Save the Monitor" })?.textContent ?? "").not.toContain("not saved");
+});
+
+test("a draft waits when the page is left, the overview marks its row, a reload brings it back without what was pasted, and closing the tab asks first", async () => {
+  applied = { ...MONITOR_DOCUMENT, general: { files: [{ path: ".cfg/a.json", content: { set: true, version: 2 } }] } };
+  const { handlers } = server([], { config: { setupDone: { at: 1_790_000_000_000, revision: 1 } } });
+  const slot = settings(handlers, "#option/monitor");
+  fireEvent.change(await slot.findByRole("textbox", { name: "Refresh every, in seconds" }), { target: { value: "12" } });
+  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  expect(await slot.findByRole("button", { name: "Monitor", description: /^Unsaved changes/ })).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Boxes" }).getAttribute("aria-describedby")!.split(" ")).toHaveLength(1);
+  cleanup();
+
+  const back = settings(handlers, "#option/boxes", { keepDrafts: true });
+  fireEvent.click(await back.findByRole("button", { name: "Replace the content of ~/.cfg/a.json" }));
+  fireEvent.change(back.getByRole("textbox", { name: "New content for ~/.cfg/a.json" }), { target: { value: "made-up-file-secret" } });
+  const leaving = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(leaving);
+  expect(leaving.defaultPrevented).toBe(true);
+  expect(JSON.stringify({ ...window.sessionStorage })).not.toContain("made-up-file-secret");
+  cleanup();
+
+  forgetDrafts();
+  const reloaded = settings(handlers, "#option/monitor", { keepDrafts: true });
+  expect(await reloaded.findByText("Your unsaved changes to the Monitor are back: 1 change.")).toBeTruthy();
+  expect(((await reloaded.findByRole("textbox", { name: "Refresh every, in seconds" })) as HTMLInputElement).value).toBe("12");
+  cleanup();
+  const files = settings(handlers, "#option/boxes", { keepDrafts: true });
+  expect(await files.findByText(/For safety the content of ~\/\.cfg\/a\.json you pasted was not kept; paste it again\./)).toBeTruthy();
+  fireEvent.click(files.getByRole("button", { name: "Discard them" }));
+  expect(files.queryByText(/For safety/)).toBeNull();
+});
+
+test("a save whose request never arrived is not confirmed, and Save again resends the same operation, applied once", async () => {
+  applied = MONITOR_DOCUMENT;
+  const { handlers, changes, operations } = server([]);
+  let lost = 1;
+  const flaky: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    "config.apply": (input) => {
+      if (lost-- > 0) throw new Error("The connection closed.");
+      return handlers["config.apply"]!(input as never) as ApplyResult;
+    },
+  };
+  const slot = settings(flaky, "#option/monitor");
+  const refresh = await slot.findByRole("textbox", { name: "Refresh every, in seconds" });
+  fireEvent.change(refresh, { target: { value: "12" } });
+  fireEvent.keyDown(refresh, { key: "Enter" });
+  expect(await slot.findByText("Save not confirmed: BB Box has no receipt for it yet. Your changes are still here. Saving again resends the same request, which BB Box applies at most once.")).toBeTruthy();
+  expect(slot.queryByText("Saved.")).toBeNull();
+  fireEvent.change(refresh, { target: { value: "15" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save again" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).monitor).toEqual({ refreshIntervalSeconds: 12 });
+  expect(await slot.findByText("Saved. Your newer change is not saved yet.")).toBeTruthy();
+  expect(operations).toHaveLength(1);
+  expect((refresh as HTMLInputElement).value).toBe("15");
+});
+
+function desktopTab(handlers: PluginRpcTestHandlers<Contract>, boxId = "box_2") {
+  const action = app.threadPanelActions.find((candidate) => candidate.id === "desktop");
+  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "bb-box" });
+}
+
+function deviceTab(handlers: PluginRpcTestHandlers<Contract>, boxId = "box_2") {
+  const action = app.threadPanelActions.find((candidate) => candidate.id === "device");
+  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "bb-box" });
+}
+
+test("a desktop that cannot be resized says you have control, and noVNC does not resize it", async () => {
+  const { handlers } = server([desktopBox({ kind: "windows-desktop", kindLabel: "Windows desktop", display: { protocol: "rfb", resizable: false, clipboard: null, refresh: null, quality: null, macKeys: null } })]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const [client] = novnc.FakeRfb.made;
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  expect(await slot.findByText("You have control.")).toBeTruthy();
+  expect(slot.queryByText(/follows this tab's size/)).toBeNull();
+  expect([client!.viewOnly, client!.resizeSession]).toEqual([false, false]);
+  vi.useFakeTimers();
+  act(() => observerOf(client!).resize(1037, 746));
+  act(() => void vi.advanceTimersByTime(SETTLE_MS));
+  expect(client!.resizeChecks).toBe(0);
+});
+
+test("every desktop is asked for JPEG quality 2, and an X11 one, whose server sends a still area again itself, is not asked again (056)", async () => {
+  const { handlers } = server([desktopBox()]);
+  desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const [client] = novnc.FakeRfb.made;
+  expect([client!.qualityLevel, client!.compressionLevel]).toEqual([2, 2]);
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  vi.useFakeTimers();
+  client!._display.imageRect(0, 0, 100, 50, "image/jpeg", new Uint8Array());
+  client!._framebufferUpdate();
+  act(() => void vi.advanceTimersByTime(1000));
+  expect(novnc.FakeRfb.sent).toEqual([]);
+});
+
+test("a Wayland desktop's viewer asks for a still area it drew as JPEG again with no quality level, then for JPEG again (056)", async () => {
+  const wayland = desktopBox({ kind: "linux-desktop-wayland-cpu", gpu: false, display: { protocol: "rfb", resizable: true, clipboard: null, refresh: "viewer", quality: null, macKeys: null } });
+  const { handlers } = server([wayland]);
+  desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const [client] = novnc.FakeRfb.made;
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  vi.useFakeTimers();
+  // A scroll: JPEG rects, then nothing for a moment.
+  client!._display.imageRect(0, 0, 100, 50, "image/jpeg", new Uint8Array());
+  client!._display.imageRect(0, 50, 200, 50, "image/jpeg", new Uint8Array());
+  client!._framebufferUpdate();
+  act(() => void vi.advanceTimersByTime(249));
+  expect(novnc.FakeRfb.sent).toEqual([]);
+  act(() => void vi.advanceTimersByTime(1));
+  expect(novnc.FakeRfb.sent).toEqual(["encodings 7,-223", "full 0,0,200,100"]);
+  // wayvnc answers losslessly: the viewer asks for quality 2 again, and nothing more.
+  client!._display.blitImage(0, 0, 200, 100, new Uint8Array(), 0);
+  client!._framebufferUpdate();
+  act(() => void vi.advanceTimersByTime(1000));
+  expect(novnc.FakeRfb.sent).toEqual(["encodings 7,-223", "full 0,0,200,100", "encodings 7,-30,-223"]);
+});
+
+test("a desktop whose display names a JPEG quality is asked for that one, as Windows on a Mac's 4 (056)", async () => {
+  const windows = desktopBox({ kind: "windows-arm64-desktop", os: "windows", gpu: false, display: { protocol: "rfb", resizable: true, clipboard: "commands", refresh: "viewer", quality: 4, macKeys: null } });
+  const { handlers } = server([windows]);
+  desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const [client] = novnc.FakeRfb.made;
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  await waitFor(() => expect(client!.qualityLevel).toBe(4));
+  // Its refresh returns to quality 4, not the viewer's own 2.
+  vi.useFakeTimers();
+  client!._display.imageRect(0, 0, 64, 64, "image/jpeg", new Uint8Array());
+  client!._framebufferUpdate();
+  act(() => void vi.advanceTimersByTime(250));
+  client!._display.blitImage(0, 0, 64, 64, new Uint8Array(), 0);
+  client!._framebufferUpdate();
+  expect(novnc.FakeRfb.sent).toEqual(["encodings 7,-223", "full 0,0,64,64", "encodings 7,-28,-223"]);
+});
+
+test("taking control keeps the desktop's size; once the tab's size changes and holds, a desktop in your control asks for it once; while it moves, noVNC may not ask", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const [client] = novnc.FakeRfb.made;
+  const observer = observerOf(client!);
+  // The viewer measures its screen in whole pixels, as noVNC floors what it asks for, so a size that holds is asked for once (#353).
+  expect(client!._screenSize()).toEqual({ w: 851, h: 1007 });
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  vi.useFakeTimers();
+  act(() => observer.resize(1037, 746));
+  act(() => void vi.advanceTimersByTime(SETTLE_MS));
+  expect(client!.resizeChecks).toBe(0);
+  vi.useRealTimers();
+
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  expect(await slot.findByText("You have control.")).toBeTruthy();
+  // Taking control leaves the desktop's size as it is, so the picture stays as it was (the owner's note of 16 October 2026).
+  expect(client!.resizeSession).toBe(false);
+  const taken = client!.resizeChecks;
+  vi.useFakeTimers();
+  // The size as it was, observed again (a mount's first observation), is no move: nothing is asked.
+  act(() => observer.resize(1037, 746));
+  act(() => void vi.advanceTimersByTime(SETTLE_MS));
+  expect([client!.resizeChecks, client!.resizeSession]).toEqual([taken, false]);
+  const held = client!.resizeChecks;
+  // A pane opening: while the size moves noVNC may not ask (1.7 would ask on the first frame, and the box would set that size first), each frame puts the wait back, and the one request comes once the size holds.
+  act(() => observer.resize(1006, 746));
+  expect(client!.resizeSession).toBe(false);
+  act(() => void vi.advanceTimersByTime(SETTLE_MS - 50));
+  act(() => observer.resize(1037, 746));
+  expect(client!.resizeSession).toBe(false);
+  act(() => void vi.advanceTimersByTime(SETTLE_MS - 50));
+  expect(client!.resizeChecks).toBe(held);
+  act(() => void vi.advanceTimersByTime(50));
+  expect([client!.resizeChecks, client!.resizeSession]).toEqual([held + 1, true]);
+  // Out of the page the element has no size, which is not asked for.
+  act(() => observer.resize(0, 0));
+  act(() => void vi.advanceTimersByTime(SETTLE_MS));
+  expect(client!.resizeChecks).toBe(held + 1);
+
+  act(() => observer.resize(518, 722));
+  dropAllKept();
+  act(() => void vi.advanceTimersByTime(SETTLE_MS));
+  expect([client!.resizeChecks, observer.disconnected]).toEqual([held + 1, true]);
+});
+
+/** This computer's clipboard, as the tests stand in for it. */
+function fakeClipboard(readText: () => Promise<string>) {
+  const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", { value: { readText, writeText }, configurable: true });
+  return { writeText };
+}
+
+/** A keydown on the desktop's canvas, as noVNC would see it. */
+function keyOnCanvas(slot: ReturnType<typeof desktopTab>, init: KeyboardEventInit) {
+  const screen = slot.getByTestId("desktop-screen").firstElementChild!;
+  const canvas = document.createElement("canvas");
+  screen.appendChild(canvas);
+  const reached = vi.fn();
+  canvas.addEventListener("keydown", reached);
+  const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
+  canvas.dispatchEvent(event);
+  return { event, reached };
+}
+
+function pasteEvent(text: string) {
+  const event = new Event("paste", { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "clipboardData", { value: { getData: (type: string) => (type === "text/plain" ? text : "") } });
+  return event;
+}
+
+test("a character above U+FFFF, as an emoji from the keyboard or the emoji picker, goes to the box as its Unicode keysym, down and up, while dead keys and composition stay noVNC's", async () => {
+  for (const os of ["linux", "macos", "windows"] as const) {
+    novnc.FakeRfb.made.length = 0;
+    const { handlers } = server([desktopBox({ id: `box_${os}`, name: `${os}-1`, os })]);
+    const slot = desktopTab(handlers, `box_${os}`);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    const without = keyOnCanvas(slot, { key: "😀", code: "" });
+    expect(without.reached).not.toHaveBeenCalled();
+    expect(client.keyEvents).toEqual([]);
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const emoji = keyOnCanvas(slot, { key: "😀", code: "" });
+    expect(emoji.reached).not.toHaveBeenCalled();
+    expect(emoji.event.defaultPrevented).toBe(true);
+    keyOnCanvas(slot, { key: "🇲", code: "" });
+    expect(client.keyEvents).toEqual([
+      { keysym: 0x101f600, code: "Unidentified", down: true },
+      { keysym: 0x101f600, code: "Unidentified", down: false },
+      { keysym: 0x101f1f2, code: "Unidentified", down: true },
+      { keysym: 0x101f1f2, code: "Unidentified", down: false },
+    ]);
+    expect(keyOnCanvas(slot, { key: "Dead", code: "BracketLeft" }).reached).toHaveBeenCalledTimes(1);
+    expect(keyOnCanvas(slot, { key: "😀", code: "", isComposing: true }).reached).toHaveBeenCalledTimes(1);
+    expect(keyOnCanvas(slot, { key: "é", code: "KeyE" }).reached).toHaveBeenCalledTimes(1);
+    expect(client.keyEvents).toHaveLength(4);
+    cleanup();
+  }
+});
+
+test("Type text shows only while you have control, and opens a field over the desktop for input methods and emoji: Enter types its text into the box and keeps it open, Shift+Enter a new line, Esc closes, and long text goes as a paste", async () => {
+  const { handlers } = server([desktopBox({ id: "box_t", name: "type-1", os: "linux" })]);
+  const slot = desktopTab(handlers, "box_t");
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  await slot.findByRole("button", { name: "Take control" });
+  expect(slot.queryByRole("button", { name: /^Type text/ })).toBeNull();
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  const letGo = client.keysLetGo;
+  fireEvent.click(slot.getByRole("button", { name: "Type text (Ctrl+Alt+Space)" }));
+  const field = await slot.findByRole("textbox", { name: "Text to type" });
+  expect(slot.getByRole("group", { name: "Type text into type-1" })).toBeTruthy();
+  expect(document.activeElement).toBe(field);
+  expect(client.keysLetGo).toBe(letGo + 1);
+  const focusedWhileOpen = client.focused;
+  fireEvent.change(field, { target: { value: "aé😀\nb" } });
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter", isComposing: true, keyCode: 229 });
+  expect(client.keyEvents).toEqual([]);
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter", shiftKey: true });
+  expect(client.keyEvents).toEqual([]);
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter" });
+  const keysyms = client.keyEvents.map((key) => `${key.keysym.toString(16)}${key.down ? "" : " up"}`);
+  expect(keysyms).toEqual(["61", "61 up", "e9", "e9 up", "101f600", "101f600 up", "ff0d", "ff0d up", "62", "62 up"]);
+  expect((field as HTMLTextAreaElement).value).toBe("");
+  expect(slot.getByRole("textbox", { name: "Text to type" })).toBe(field);
+
+  client.keyEvents.length = 0;
+  fireEvent.change(field, { target: { value: "AbC" } });
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter" });
+  expect(client.keyEvents.map((key) => `${key.keysym.toString(16)}${key.down ? "" : " up"}`)).toEqual(["ffe1", "41", "41 up", "ffe1 up", "62", "62 up", "ffe1", "43", "43 up", "ffe1 up"]);
+
+  client.keyEvents.length = 0;
+  fireEvent.change(field, { target: { value: "日本" } });
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter", isComposing: true, keyCode: 229 });
+  fireEvent.compositionEnd(field);
+  expect(client.keyEvents).toEqual([]);
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter", keyCode: 229 });
+  expect(client.keyEvents.map((key) => key.keysym.toString(16))).toEqual(["10065e5", "10065e5", "100672c", "100672c"]);
+
+  client.keyEvents.length = 0;
+  fireEvent.change(field, { target: { value: "日本" } });
+  fireEvent.compositionEnd(field);
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter", keyCode: 229 });
+  expect(client.keyEvents).toEqual([]);
+  fireEvent.keyDown(field, { key: "Enter", code: "Enter", keyCode: 229 });
+  expect(client.keyEvents).toHaveLength(4);
+  const sent = client.keyEvents.length;
+
+  const long = "x".repeat(250);
+  fireEvent.change(field, { target: { value: long } });
+  expect(slot.getByText("Long text goes as a paste.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Send" }));
+  expect(client.pasted).toEqual([long]);
+  expect(client.keyEvents).toHaveLength(sent);
+  expect(client.focused).toBe(focusedWhileOpen);
+
+  fireEvent.keyDown(field, { key: "Escape", code: "Escape" });
+  expect(slot.queryByRole("textbox", { name: "Text to type" })).toBeNull();
+  expect(client.keysLetGo).toBe(letGo + 2);
+  expect(client.focused).toBeGreaterThan(focusedWhileOpen);
+
+  const shortcut = keyOnCanvas(slot, { key: " ", code: "Space", ctrlKey: true, altKey: true });
+  expect(shortcut.reached).not.toHaveBeenCalled();
+  expect(await slot.findByRole("textbox", { name: "Text to type" })).toBeTruthy();
+  expect(client.keysLetGo).toBe(letGo + 3);
+  expect(client.keyEvents).toHaveLength(sent);
+  fireEvent.click(slot.getByRole("button", { name: "Close" }));
+  expect(client.keysLetGo).toBe(letGo + 4);
+  expect(keyOnCanvas(slot, { key: " ", code: "Space", ctrlKey: true }).reached).toHaveBeenCalledTimes(1);
+  expect(keyOnCanvas(slot, { key: "Dead", code: "BracketLeft" }).reached).toHaveBeenCalledTimes(1);
+
+  fireEvent.click(slot.getByRole("button", { name: "Hand back to the agent" }));
+  await waitFor(() => expect(slot.queryByRole("button", { name: /^Type text/ })).toBeNull());
+});
+
+test("on a Mac, Ctrl+Cmd+Space with the desktop focused opens Type text rather than going to the box, and the field says to press it again for emoji", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
+  try {
+    const { handlers } = server([desktopBox({ id: "box_m", name: "mac-type", os: "macos", kind: "macos-desktop", kindLabel: "macOS desktop", display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" } })]);
+    const slot = desktopTab(handlers, "box_m");
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    expect(keyOnCanvas(slot, { key: " ", code: "Space", ctrlKey: true, altKey: true }).reached).toHaveBeenCalledTimes(1);
+    expect(slot.queryByRole("textbox", { name: "Text to type" })).toBeNull();
+    const shortcut = keyOnCanvas(slot, { key: " ", code: "Space", ctrlKey: true, metaKey: true });
+    expect(shortcut.reached).not.toHaveBeenCalled();
+    const field = await slot.findByRole("textbox", { name: "Text to type" });
+    expect(field.getAttribute("placeholder")).toBe("Type or paste text. Press Ctrl+Cmd+Space again for emoji.");
+    expect(slot.getByRole("button", { name: "Type text (Ctrl+Cmd+Space)" })).toBeTruthy();
+  } finally {
+    platform.mockRestore();
+  }
+});
+
+type FakeClient = { input: string[]; pasted: string[]; keysLetGo: number; focused: number; keys: { keysym: number; code: string | null; down: boolean }[]; keyEvents: { keysym: number; code: string; down: boolean }[]; _handleKeyEvent(keysym: number, code: string, down: boolean, numlock: boolean | null, capslock: boolean | null): void } & EventTarget;
+
+test("with control, Cmd+V on a Mac pastes this computer's text into a Linux box with the box's Ctrl+V, and Cmd stands for Ctrl there", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
+  try {
+    const { handlers } = server([desktopBox()]);
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    // Before control, a Cmd+V is noVNC's to drop.
+    expect(keyOnCanvas(slot, { key: "v", metaKey: true }).reached).toHaveBeenCalledTimes(1);
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    // Cmd is Ctrl in the box, code and all, so QEMU's scancode follows too. In a Mac's browser noVNC sends the left
+    // Cmd as Alt_L and the right one as Super_L, as Safari on macOS showed.
+    client._handleKeyEvent(0xffe9, "MetaLeft", true, null, null);
+    client._handleKeyEvent(0x63, "KeyC", true, null, null);
+    client._handleKeyEvent(0xffeb, "MetaRight", true, null, null);
+    // The left Option (Mode_switch) composes: held back, then only the character it made; the right one is Alt.
+    client._handleKeyEvent(0xffe9, "MetaLeft", false, null, null);
+    client._handleKeyEvent(0xffeb, "MetaRight", false, null, null);
+    client._handleKeyEvent(0xff7e, "AltLeft", true, null, null);
+    client._handleKeyEvent(0xe7, "KeyC", true, null, null);
+    client._handleKeyEvent(0xff7e, "AltLeft", false, null, null);
+    client._handleKeyEvent(0xfe03, "AltRight", true, null, null);
+    expect(client.keyEvents).toEqual([
+      { keysym: 0xffe3, code: "ControlLeft", down: true },
+      { keysym: 0x63, code: "KeyC", down: true },
+      { keysym: 0xffe4, code: "ControlRight", down: true },
+      { keysym: 0xffe3, code: "ControlLeft", down: false },
+      { keysym: 0xffe4, code: "ControlRight", down: false },
+      { keysym: 0xe7, code: "KeyC", down: true },
+      { keysym: 0xffea, code: "AltRight", down: true },
+    ]);
+    // Cmd+V: kept from noVNC, left to the browser, whose paste event brings the text; the box gets it, then its own Ctrl+V.
+    vi.useFakeTimers();
+    const { event, reached } = keyOnCanvas(slot, { key: "v", metaKey: true });
+    expect(reached).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+    const paste = pasteEvent("hello from the Mac");
+    act(() => void document.dispatchEvent(paste));
+    expect(paste.defaultPrevented).toBe(true);
+    expect(client.pasted).toEqual(["hello from the Mac"]);
+    expect(client.keys).toEqual([]);
+    act(() => void vi.advanceTimersByTime(PASTE_CHORD_DELAY_MS));
+    // The right Option, still held, goes up for the chord and down again after, so the box gets Ctrl+V alone.
+    expect(client.keys).toEqual([
+      { keysym: 0xffea, code: "AltRight", down: false },
+      { keysym: 0xffe3, code: "ControlLeft", down: true },
+      { keysym: 0x76, code: "KeyV", down: true },
+      { keysym: 0x76, code: "KeyV", down: false },
+      { keysym: 0xffe3, code: "ControlLeft", down: false },
+      { keysym: 0xffea, code: "AltRight", down: true },
+    ]);
+    expect(slot.getByText("Pasted")).toBeTruthy();
+    // A paste event meant for a field elsewhere is not the desktop's.
+    const elsewhere = pasteEvent("for the composer");
+    act(() => void document.dispatchEvent(elsewhere));
+    expect(elsewhere.defaultPrevented).toBe(false);
+    expect(client.pasted).toEqual(["hello from the Mac"]);
+  } finally {
+    platform.mockRestore();
+    vi.useRealTimers();
+  }
+});
+
+test("a macOS box keeps Cmd, and the menu's Paste reads this computer's clipboard on the click and presses the box's Cmd+V", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
+  fakeClipboard(() => Promise.resolve("from the menu"));
+  try {
+    // A pool Mac (real), whose own input takes the clipboard as noVNC sends it.
+    const { handlers } = server([desktopBox({ os: "macos", nature: "real", kind: "macos-desktop", kindLabel: "macOS desktop" })]);
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    // Cmd and Option go as Screen Sharing names Command and Option: Meta and Alt, not noVNC's Alt_L and Mode_switch.
+    client._handleKeyEvent(0xffe9, "MetaLeft", true, null, null);
+    client._handleKeyEvent(0xff7e, "AltLeft", true, null, null);
+    client._handleKeyEvent(0xfe03, "AltRight", true, null, null);
+    expect(client.keyEvents).toEqual([
+      { keysym: 0xffe7, code: "MetaLeft", down: true },
+      { keysym: 0xffe9, code: "AltLeft", down: true },
+      { keysym: 0xffea, code: "AltRight", down: true },
+    ]);
+    client._handleKeyEvent(0xffe9, "MetaLeft", false, null, null);
+    client._handleKeyEvent(0xff7e, "AltLeft", false, null, null);
+    client._handleKeyEvent(0xfe03, "AltRight", false, null, null);
+    const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Paste from this computer" }));
+    await waitFor(() => expect(client.pasted).toEqual(["from the menu"]));
+    expect(await slot.findByText("Pasted")).toBeTruthy();
+    // The chord follows after its short wait, on real timers here.
+    await waitFor(() => expect(client.keys).toHaveLength(4));
+    expect(client.keys.map((key) => `${key.code}:${key.down ? "down" : "up"}`)).toEqual(["MetaLeft:down", "KeyV:down", "KeyV:up", "MetaLeft:up"]);
+  } finally {
+    platform.mockRestore();
+  }
+});
+
+test("when this computer's clipboard cannot be read, the menu's Paste offers a field whose text goes to the box", async () => {
+  fakeClipboard(() => Promise.reject(new Error("Read permission denied.")));
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Paste from this computer" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Paste into bold-heron")).toBeTruthy();
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Text to paste" }), { target: { value: "typed into the field" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Paste into the box" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(client.pasted).toEqual(["typed into the field"]);
+});
+
+test("what the box copies reaches this computer's clipboard quietly; the menu's Copy writes it on the click and says Copied, or says why when nothing came", async () => {
+  const { writeText } = fakeClipboard(() => Promise.resolve(""));
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  // Nothing yet: Copy says to copy in the box first.
+  let menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Copy to this computer" }));
+  // A toast, BB's own, so the toolbar keeps its height (the owner's note of 18 October 2026).
+  expect((await slot.findByText("Nothing has come from the box's clipboard yet. Copy something in the box first.")).closest("[aria-live=polite]")).not.toBeNull();
+  // The box's cut text, as noVNC gives it to the viewer with control: it can come with no copy of the person's, so no note.
+  act(() => void client.dispatchEvent(new CustomEvent("clipboard", { detail: { text: "from the box" } })));
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith("from the box"));
+  expect(slot.queryByText("Copied")).toBeNull();
+  menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Copy to this computer" }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
+  expect(await slot.findByText("Copied")).toBeTruthy();
+
+  cleanup();
+  dropAllKept();
+  // A Windows box through QEMU's console: the message says the console does not send it.
+  const windows = desktopTab(server([desktopBox({ id: "box_7", name: "win-7", os: "windows", kind: "windows-desktop", kindLabel: "Windows desktop", display: { protocol: "rfb", resizable: false, clipboard: null, refresh: null, quality: null, macKeys: null } })]).handlers, "box_7");
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(2));
+  act(() => void novnc.FakeRfb.made[1]!.dispatchEvent(new Event("connect")));
+  menu = await openMenu(windows.getByRole("button", { name: "Desktop actions" }));
+  expect(within(menu).getByRole("menuitem", { name: "Paste from this computer" }).getAttribute("aria-disabled")).toBe("true");
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Copy to this computer" }));
+  expect(await windows.findByText(/does not report its clipboard to viewers/)).toBeTruthy();
+
+});
+
+test("clipboard outcomes are toolbar notes that go after about 3 s, never from taking control; a paste the box refused is a lasting problem with Dismiss", async () => {
+  fakeClipboard(() => Promise.resolve(""));
+  const { handlers } = server([desktopBox({ id: "box_8", name: "mac-8", os: "macos", nature: "virtual", kind: "macos-desktop", kindLabel: "macOS desktop", display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" } })]);
+  const refusing: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    desktopPaste: () => {
+      throw new Error("Box mac-8 did not take the text for its clipboard: no desktop session.");
+    },
+  };
+  const slot = desktopTab(refusing, "box_8");
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  // Taking control tried this computer's empty clipboard, and says nothing of it.
+  expect(toasts()).toEqual([]);
+  expect(slot.queryByRole("alert")).toBeNull();
+
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Paste from this computer" }));
+    const note = await slot.findByText("This computer's clipboard has no text.");
+    expect(note.closest("[aria-live=polite]")).not.toBeNull();
+    expect(slot.queryByRole("alert")).toBeNull();
+    act(() => void vi.advanceTimersByTime(3_000));
+    expect(slot.queryByText("This computer's clipboard has no text.")).toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
+
+  // A Ctrl+V (Cmd+V on a Mac) whose text the box refused needs action: it stays, in red, until dismissed.
+  keyOnCanvas(slot, { key: "v", ctrlKey: true });
+  act(() => void document.dispatchEvent(pasteEvent("for the box")));
+  const problem = await slot.findByRole("alert");
+  expect(problem.textContent).toBe("Box mac-8 did not take the text for its clipboard: no desktop session.");
+  expect(slot.queryByText("Pasted")).toBeNull();
+  fireEvent.click(slot.getByRole("button", { name: "Dismiss" }));
+  expect(slot.queryByRole("alert")).toBeNull();
+});
+
+test("a macOS VM on Tart, whose VNC server moves no clipboard, has it through bb-box: Paste and Cmd+V send the text as UTF-8 by RPC, then press Cmd+V, and Copy reads the box's (#464)", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
+  const { writeText } = fakeClipboard(() => Promise.resolve("héllo, wörld ✓ 日本"));
+  try {
+    const { handlers, changes, copyInBox } = server([desktopBox({ id: "box_8", name: "mac-8", os: "macos", nature: "virtual", kind: "macos-desktop", kindLabel: "macOS desktop", display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" } })]);
+    const slot = desktopTab(handlers, "box_8");
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    const viewer = new URL(novnc.FakeRfb.made[0]!.url).searchParams.get("viewer");
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    act(() => void window.dispatchEvent(new Event("focus")));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(changes.filter((change) => change.startsWith("desktopPaste"))).toEqual([]);
+
+    // Tart's VNC server takes Alt as Command and Meta as Option: Cmd goes as Alt, Option as Meta, and the paste chord is Alt+V.
+    client._handleKeyEvent(0xffe9, "MetaLeft", true, null, null);
+    client._handleKeyEvent(0xff7e, "AltLeft", true, null, null);
+    // € goes as its Unicode keysym, which BB Box's input in the Mac types as the character.
+    client._handleKeyEvent(0x20ac, "KeyE", true, null, null);
+    expect(client.keyEvents).toEqual([
+      { keysym: 0xffe9, code: "AltLeft", down: true },
+      { keysym: 0xffe7, code: "MetaLeft", down: true },
+      { keysym: 0x10020ac, code: "KeyE", down: true },
+    ]);
+    client._handleKeyEvent(0xffe9, "MetaLeft", false, null, null);
+    client._handleKeyEvent(0xff7e, "AltLeft", false, null, null);
+    const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Paste from this computer" }));
+    await waitFor(() => expect(client.keys).toHaveLength(4));
+    expect(client.keys.map((key) => `${key.code}:${key.down ? "down" : "up"}`)).toEqual(["AltLeft:down", "KeyV:down", "KeyV:up", "AltLeft:up"]);
+    expect(await slot.findByText("Pasted")).toBeTruthy();
+    expect(changes.filter((change) => change.startsWith("desktopPaste"))).toEqual([`desktopPaste box_8 ${viewer} héllo, wörld ✓ 日本`]);
+
+    // Cmd+V on the desktop: the browser's paste event's text goes the same way.
+    keyOnCanvas(slot, { key: "v", metaKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("ünïcode → box")));
+    await waitFor(() => expect(changes).toContain(`desktopPaste box_8 ${viewer} ünïcode → box`));
+    await waitFor(() => expect(client.keys).toHaveLength(8));
+    expect(client.pasted).toEqual([]);
+
+    // What the box copies comes back through the RPC, and Copy writes it here.
+    copyInBox("from the Mac ✓");
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Copy to this computer" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("from the Mac ✓"));
+  } finally {
+    platform.mockRestore();
+  }
+});
+
+test("a desktop gets this computer's clipboard only with a paste, not on taking control or the focus, and the menu says a paste from the box's own menu uses the box's clipboard (F-15)", async () => {
+  const readText = vi.fn(() => Promise.resolve("a test value"));
+  fakeClipboard(readText);
+  const { handlers, changes } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  act(() => void window.dispatchEvent(new Event("focus")));
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  expect(readText).not.toHaveBeenCalled();
+  expect(client.pasted).toEqual([]);
+  const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+  const paste = within(menu).getByRole("menuitem", { name: "Paste from this computer" });
+  expect(paste.hasAttribute("aria-describedby")).toBe(false);
+  expect(menu.textContent).not.toContain("own clipboard");
+  fireEvent.click(paste);
+  await waitFor(() => expect(client.pasted).toEqual(["a test value"]));
+  expect(readText).toHaveBeenCalledTimes(1);
+  expect(changes.filter((change) => change.startsWith("desktopPaste"))).toEqual([]);
+});
+
+test("a Mac's first copy reaches this computer when its clipboard was empty as the tab took control, within a poll", async () => {
+  const { writeText } = fakeClipboard(() => Promise.resolve(""));
+  const focus = vi.spyOn(document, "hasFocus").mockReturnValue(true);
+  try {
+    const { handlers, copyInBox } = server([desktopBox({ id: "box_9", name: "mac-9", os: "macos", nature: "virtual", kind: "macos-desktop", kindLabel: "macOS desktop", display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" } })]);
+    const slot = desktopTab(handlers, "box_9");
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    copyInBox("the first copy ✓");
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("the first copy ✓"), { timeout: 900 });
+  } finally {
+    focus.mockRestore();
+  }
+});
+
+test("a Windows box, whose QEMU console moves no clipboard, has it through bb-box: Cmd+V from a Mac and the menu's Paste send UTF-8 by RPC, then press the box's Ctrl+V, and Copy reads the box's (#461)", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
+  const { writeText } = fakeClipboard(() => Promise.resolve("from the Mac ✓"));
+  try {
+    const { handlers, changes, copyInBox } = server([desktopBox({ id: "box_7", name: "win-7", os: "windows", kind: "windows-desktop", kindLabel: "Windows desktop", display: { protocol: "rfb", resizable: true, clipboard: "commands", refresh: null, quality: null, macKeys: null } })]);
+    const slot = desktopTab(handlers, "box_7");
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    const viewer = new URL(novnc.FakeRfb.made[0]!.url).searchParams.get("viewer");
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    // The menu's items are live here, not the old "does not report its clipboard" words.
+    const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+    expect(within(menu).getByRole("menuitem", { name: "Paste from this computer" }).getAttribute("aria-disabled")).toBeNull();
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Paste from this computer" }));
+    await waitFor(() => expect(changes).toContain(`desktopPaste box_7 ${viewer} from the Mac ✓`));
+    // Windows' paste chord is Ctrl+V, whatever the browser's platform.
+    await waitFor(() => expect(client.keys).toHaveLength(4));
+    expect(client.keys.map((key) => `${key.code}:${key.down ? "down" : "up"}`)).toEqual(["ControlLeft:down", "KeyV:down", "KeyV:up", "ControlLeft:up"]);
+    // Cmd+V on the desktop: the browser's paste event's text goes by RPC too, not as noVNC's Latin-1 cut text.
+    keyOnCanvas(slot, { key: "v", metaKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("日本 → Windows")));
+    await waitFor(() => expect(changes).toContain(`desktopPaste box_7 ${viewer} 日本 → Windows`));
+    await waitFor(() => expect(client.keys).toHaveLength(8));
+    expect(client.pasted).toEqual([]);
+    // What the box copies comes back through the RPC, and Copy writes it here.
+    copyInBox("copied in Windows ✓");
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Copy to this computer" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("copied in Windows ✓"));
+    expect(slot.queryByText(/does not report its clipboard/)).toBeNull();
+  } finally {
+    platform.mockRestore();
+  }
+});
+
+test("keys typed straight after a paste land after it, though the box's clipboard takes a while; with no paste pending a key goes at once (#915)", async () => {
+  const { handlers, changes } = server([desktopBox({ id: "box_7", name: "win-7", os: "windows", kind: "windows-desktop", kindLabel: "Windows desktop", display: { protocol: "rfb", resizable: true, clipboard: "commands", refresh: null, quality: null, macKeys: null } })]);
+  // Only the paste's own text waits for the test; the clipboard that goes to the box as control is taken answers at once, so
+  // under load it cannot take the paste's place. This computer's clipboard starts empty, whatever an earlier test left there.
+  fakeClipboard(() => Promise.resolve(""));
+  let landed: (() => void) | null = null;
+  const slow: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    desktopPaste: ({ box: ref, viewer, text }) => {
+      const land = () => changes.push(`desktopPaste ${ref} ${viewer} ${text}`);
+      if (text !== "[PASTE]") {
+        land();
+        return null;
+      }
+      return new Promise<null>((resolve) => {
+        landed = () => {
+          land();
+          resolve(null);
+        };
+      });
+    },
+  };
+  const slot = desktopTab(slow, "box_7");
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  client.input.length = 0;
+
+  client._handleKeyEvent(0x61, "KeyA", true, null, null);
+  expect(client.input).toEqual(["typed KeyA"]);
+  client._handleKeyEvent(0x61, "KeyA", false, null, null);
+
+  client.input.length = 0;
+  keyOnCanvas(slot, { key: "v", ctrlKey: true });
+  act(() => void document.dispatchEvent(pasteEvent("[PASTE]")));
+  await waitFor(() => expect(landed).not.toBeNull());
+  for (const [code, down] of [["KeyX", true], ["KeyX", false], ["Enter", true], ["Enter", false]] as const) client._handleKeyEvent(code === "Enter" ? 0xff0d : 0x78, code, down, null, null);
+  expect(client.input).toEqual([]);
+  landed!();
+  await waitFor(() => expect(changes).toContain(`desktopPaste box_7 ${new URL(novnc.FakeRfb.made[0]!.url).searchParams.get("viewer")} [PASTE]`));
+  await waitFor(() => expect(client.input).toHaveLength(8));
+  expect(client.input).toEqual(["sent ControlLeft", "sent KeyV", "sent KeyV up", "sent ControlLeft up", "typed KeyX", "typed KeyX up", "typed Enter", "typed Enter up"]);
+});
+
+test("a person's Ctrl+V from Linux or Windows into a Mac on Tart pastes with Command+V alone: their Ctrl, still down at the box while its release waits behind the chord, goes up first and down again after (#915)", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("Linux x86_64");
+  try {
+    const { handlers, changes } = server([desktopBox({ id: "box_8", name: "mac-8", os: "macos", nature: "virtual", kind: "macos-desktop", kindLabel: "macOS desktop", display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" } })]);
+    const slot = desktopTab(handlers, "box_8");
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    client.input.length = 0;
+
+    client._handleKeyEvent(0xffe3, "ControlLeft", true, null, null);
+    keyOnCanvas(slot, { key: "v", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("[PASTE]")));
+    client._handleKeyEvent(0xffe3, "ControlLeft", false, null, null);
+    client._handleKeyEvent(0x78, "KeyX", true, null, null);
+    client._handleKeyEvent(0x78, "KeyX", false, null, null);
+    await waitFor(() => expect(client.input).toHaveLength(10));
+    expect(changes).toContain(`desktopPaste box_8 ${new URL(novnc.FakeRfb.made[0]!.url).searchParams.get("viewer")} [PASTE]`);
+    expect(client.input).toEqual([
+      "typed ControlLeft",
+      "sent ControlLeft up",
+      "sent AltLeft",
+      "sent KeyV",
+      "sent KeyV up",
+      "sent AltLeft up",
+      "sent ControlLeft",
+      "typed ControlLeft up",
+      "typed KeyX",
+      "typed KeyX up",
+    ]);
+  } finally {
+    platform.mockRestore();
+  }
+});
+
+test("over VNC, a letter typed with Shift held and Caps Lock off goes as its capital, released as pressed; with Caps Lock on it stays as named (#913)", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  client.keyEvents.length = 0;
+  client._handleKeyEvent(0xffe1, "ShiftLeft", true, null, false);
+  client._handleKeyEvent(0x61, "KeyA", true, null, false);
+  client._handleKeyEvent(0xffe1, "ShiftLeft", false, null, false);
+  client._handleKeyEvent(0x61, "KeyA", false, null, false);
+  client._handleKeyEvent(0xffe1, "ShiftLeft", true, null, true);
+  client._handleKeyEvent(0x62, "KeyB", true, null, true);
+  client._handleKeyEvent(0x62, "KeyB", false, null, true);
+  client._handleKeyEvent(0xffe1, "ShiftLeft", false, null, true);
+  client._handleKeyEvent(0x63, "KeyC", true, null, false);
+  client._handleKeyEvent(0x63, "KeyC", false, null, false);
+  expect(client.keyEvents.map((key) => `${key.keysym.toString(16)}${key.down ? "" : " up"}`)).toEqual(["ffe1", "41", "ffe1 up", "41 up", "ffe1", "62", "62 up", "ffe1 up", "63", "63 up"]);
+
+  // A capital with no Shift press, as CDP and soft keyboards send it, goes inside Shift; not with Caps Lock on, and no symbol.
+  client.keyEvents.length = 0;
+  client._handleKeyEvent(0x53, "KeyS", true, null, false);
+  client._handleKeyEvent(0x53, "KeyS", false, null, false);
+  client._handleKeyEvent(0x54, "KeyT", true, null, true);
+  client._handleKeyEvent(0x54, "KeyT", false, null, true);
+  client._handleKeyEvent(0x21, "Digit1", true, null, false);
+  client._handleKeyEvent(0x21, "Digit1", false, null, false);
+  expect(client.keyEvents.map((key) => `${key.keysym.toString(16)}${key.down ? "" : " up"}`)).toEqual(["ffe1", "53", "53 up", "ffe1 up", "54", "54 up", "21", "21 up"]);
+});
+
+test("the pointer over the desktop: the local arrow without control whatever the box sends, the box's cursor with control, and never an invisible one", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]! as unknown as FakeClient & { _canvas: HTMLCanvasElement; _cursorImage: { rgbaPixels: Uint8Array; hotx: number; hoty: number; w: number; h: number }; _refreshCursor(): void };
+  act(() => void client.dispatchEvent(new Event("connect")));
+  // Without control: the arrow, even once the box sends a cursor of its own, and even an empty one.
+  expect(client._canvas.style.cursor).toBe("default");
+  const arrow = { rgbaPixels: new Uint8Array([0, 0, 0, 255]), hotx: 0, hoty: 0, w: 1, h: 1 };
+  const hidden = { rgbaPixels: new Uint8Array([0, 0, 0, 0]), hotx: 0, hoty: 0, w: 1, h: 1 };
+  client._cursorImage = arrow;
+  client._refreshCursor();
+  expect(client._canvas.style.cursor).toBe("default");
+  client._cursorImage = hidden;
+  client._refreshCursor();
+  expect(client._canvas.style.cursor).toBe("default");
+  // With control: the box's cursor, as noVNC puts it; an empty one, or none, is the arrow instead.
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  client._cursorImage = arrow;
+  client._refreshCursor();
+  expect(client._canvas.style.cursor).toBe("crosshair");
+  client._cursorImage = hidden;
+  client._refreshCursor();
+  expect(client._canvas.style.cursor).toBe("default");
+  client._cursorImage = { rgbaPixels: new Uint8Array(), hotx: 0, hoty: 0, w: 0, h: 0 };
+  client._refreshCursor();
+  expect(client._canvas.style.cursor).toBe("default");
+  // Handing back puts the arrow back at once, without waiting for the box to send a cursor.
+  client._cursorImage = arrow;
+  client._refreshCursor();
+  expect(client._canvas.style.cursor).toBe("crosshair");
+  fireEvent.click(slot.getByRole("button", { name: "Hand back to the agent" }));
+  await slot.findByText("The agent has control.");
+  expect(client._canvas.style.cursor).toBe("default");
+});
+
+test("a desktop tab shows the box through the relay, and takes and hands back control", async () => {
+  const { handlers, changes } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+
+  expect(await slot.findByText("Connecting to the desktop…")).toBeTruthy();
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const [client] = novnc.FakeRfb.made;
+  const url = new URL(client!.url);
+  expect(url.protocol).toBe("ws:");
+  expect(url.pathname).toBe(DESKTOP_PATH);
+  expect(url.searchParams.get("box")).toBe("box_2");
+  const viewer = url.searchParams.get("viewer")!;
+  expect(viewer).toMatch(/^[0-9a-f]{24}$/);
+  expect(client!.options).toEqual({ shared: true });
+  expect([client!.viewOnly, client!.scaleViewport]).toEqual([true, true]);
+  expect(slot.getByText("Connecting…")).toBeTruthy();
+  expect((slot.getByRole("button", { name: "Take control" }) as HTMLButtonElement).disabled).toBe(true);
+
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  expect(slot.queryByText("Connecting to the desktop…")).toBeNull();
+  expect(slot.getByText("The agent has control.")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  expect(await slot.findByText("You have control.")).toBeTruthy();
+  expect(slot.inspection.rpcCalls.find((call) => call.method === "takeControl")?.input).toEqual({ threadId: THREAD, box: "box_2", viewer });
+  // Input goes to the box now; the desktop keeps its size until this tab's size changes (the owner's note of 16 October 2026).
+  expect([client!.viewOnly, client!.resizeSession, client!.focused]).toEqual([false, false, 1]);
+  expect(slot.getByTestId("control-ring")).toBeTruthy();
+
+  fireEvent.click(slot.getByRole("button", { name: "Hand back to the agent" }));
+  expect(await slot.findByText("The agent has control.")).toBeTruthy();
+  expect([client!.viewOnly, client!.resizeSession]).toEqual([true, false]);
+  expect(slot.queryByTestId("control-ring")).toBeNull();
+  expect(changes).toEqual(["takeControl box_2", "handBack box_2"]);
+});
+
+/** WebCodecs, which jsdom lacks: each decoder shows each chunk at once, as a frame of the desktop's size, 1280x800 unless a test changes it. */
+class FakeDecoder {
+  static made: FakeDecoder[] = [];
+  static size = { width: 1280, height: 800 };
+  /** Whether this browser decodes 4:4:4, as isConfigSupported answers. */
+  static fullColour = true;
+  /** Codecs this browser does not decode, as Safari's level 6 (#864). */
+  static refused = new Set<string>();
+  static async isConfigSupported(config: { codec: string }) {
+    return { supported: (!/^avc1\.f4/i.test(config.codec) || FakeDecoder.fullColour) && !FakeDecoder.refused.has(config.codec), config };
+  }
+  state = "unconfigured";
+  readonly codecs: string[] = [];
+  readonly chunks: { type: string; timestamp: number }[] = [];
+  readonly #output: (frame: unknown) => void;
+  readonly #error: (error: unknown) => void;
+  /** What the decoder's error callback threw, as a browser reports it and goes on. */
+  static thrown: unknown[] = [];
+  /** Whether decoders take frames and give none back, with no error: a video that stalled. */
+  static silent = false;
+  /** How many of the next decoders fail as they are made, as a browser that cannot make one now would. */
+  static refuse = 0;
+  constructor(init: { output: (frame: unknown) => void; error: (error: unknown) => void }) {
+    if (FakeDecoder.refuse > 0) {
+      FakeDecoder.refuse--;
+      throw new DOMException("No decoder now.", "NotSupportedError");
+    }
+    this.#output = init.output;
+    this.#error = init.error;
+    FakeDecoder.made.push(this);
+  }
+  /** A frame it cannot decode, or a decoder the browser takes back: as WebCodecs says, it closes, then calls its error callback. */
+  fail(name = "EncodingError") {
+    this.state = "closed";
+    try {
+      this.#error(new DOMException("The decoder failed.", name));
+    } catch (error) {
+      FakeDecoder.thrown.push(error);
+    }
+  }
+  configure(config: { codec: string }) {
+    this.codecs.push(config.codec);
+    this.state = "configured";
+  }
+  decode(chunk: { type: string; timestamp: number }) {
+    this.chunks.push(chunk);
+    if (FakeDecoder.silent) return;
+    this.#output({ displayWidth: FakeDecoder.size.width, displayHeight: FakeDecoder.size.height, timestamp: chunk.timestamp, close() {} });
+  }
+  close() {
+    // As WebCodecs says: a closed decoder cannot be closed again.
+    if (this.state === "closed") throw new DOMException("The decoder is closed.", "InvalidStateError");
+    this.state = "closed";
+  }
+}
+
+/** Puts WebCodecs and a secure context in place for a test that shows video, and takes them away after. */
+function withVideo() {
+  FakeDecoder.made = [];
+  FakeDecoder.thrown = [];
+  FakeDecoder.refuse = 0;
+  FakeDecoder.silent = false;
+  FakeDecoder.refused = new Set();
+  FakeDecoder.fullColour = true;
+  FakeDecoder.size = { width: 1280, height: 800 };
+  forgetFullColour();
+  vi.stubGlobal("VideoDecoder", FakeDecoder);
+  vi.stubGlobal("EncodedVideoChunk", class {
+    readonly type: string;
+    readonly timestamp: number;
+    constructor(init: { type: string; timestamp: number }) {
+      this.type = init.type;
+      this.timestamp = init.timestamp;
+    }
+  });
+  vi.stubGlobal("isSecureContext", true);
+  return () => {
+    vi.unstubAllGlobals();
+    vi.stubGlobal("WebSocket", FakeSocket);
+    vi.stubGlobal("ResizeObserver", FakeObserver);
+  };
+}
+
+/** A Selkies video message: type 4, H.264, its frame id, and the frame's size when given. */
+function videoFrame(id: number, key: boolean, width = 0, height = 0): ArrayBuffer {
+  const bytes = new Uint8Array(20);
+  bytes[0] = 4;
+  bytes[1] = 0x10 | (key ? 1 : 0);
+  bytes[2] = id >> 8;
+  bytes[3] = id & 0xff;
+  bytes[6] = width >> 8;
+  bytes[7] = width & 0xff;
+  bytes[8] = height >> 8;
+  bytes[9] = height & 0xff;
+  return bytes.buffer;
+}
+
+/** The video socket the viewer opened: through the relay, with &stream=selkies. */
+function videoSocket(): FakeSocket {
+  const socket = FakeSocket.made.find((made) => new URL(made.url).searchParams.get("stream") === "selkies");
+  if (!socket) throw new Error("no video socket");
+  return socket;
+}
+
+test("with the setting on, a desktop shows as video whatever the round trip to BB's server, and over VNC with the setting off (056)", async () => {
+  const undo = withVideo();
+  try {
+    // The setting off: VNC.
+    const off = server([desktopBox()]);
+    desktopTab(off.handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    cleanup();
+    dropAllKept();
+    forgetStreams();
+    forgetLive();
+    novnc.FakeRfb.made = [];
+    FakeSocket.made = [];
+
+    // On: video, through the relay, with no round trips timed, however quick BB's server answers.
+    const on = server([desktopBox()], { video: true });
+    const slot = desktopTab(on.handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    expect(slot.inspection.rpcCalls.filter((call) => call.method === "ping")).toEqual([]);
+    const socket = videoSocket();
+    const url = new URL(socket.url);
+    expect([url.pathname, url.searchParams.get("box")]).toEqual([DESKTOP_PATH, "box_2"]);
+    act(() => socket.open());
+    expect(socket.sent).toEqual(['SETTINGS,{"displayId":"primary"}', "START_VIDEO"]);
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    // A delta before the first key frame is dropped; the key frame shows, and the desktop is connected.
+    act(() => void socket.onmessage?.({ data: videoFrame(4, false) }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    expect(FakeDecoder.made.at(-1)!.chunks).toEqual([{ type: "key", timestamp: 5 }]);
+    expect(await slot.findByText("The agent has control.")).toBeTruthy();
+    // It says which frame it has shown.
+    await waitFor(() => expect(socket.sent).toContain("CLIENT_FRAME_ACK 5 0"));
+
+    // With control, keys go as Selkies' kd and ku, and the pointer as m; without, nothing goes.
+    const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+    fireEvent.keyDown(canvas, { key: "a", code: "KeyA" });
+    expect(socket.sent.filter((sent) => typeof sent === "string" && sent.startsWith("kd,"))).toEqual([]);
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    fireEvent.keyDown(canvas, { key: "a", code: "KeyA" });
+    fireEvent.keyUp(canvas, { key: "a", code: "KeyA" });
+    expect(socket.sent).toContain("kd,97");
+    expect(socket.sent).toContain("ku,97");
+    fireEvent.click(slot.getByRole("button", { name: "Type text (Ctrl+Alt+Space)" }));
+    const typed = await slot.findByRole("textbox", { name: "Text to type" });
+    fireEvent.change(typed, { target: { value: "日本" } });
+    fireEvent.keyDown(typed, { key: "Enter", code: "Enter" });
+    expect(socket.sent.filter((sent) => typeof sent === "string" && /^k[du],(16803301|16803628)$/.test(sent))).toEqual(["kd,16803301", "ku,16803301", "kd,16803628", "ku,16803628"]);
+    fireEvent.keyDown(typed, { key: "Escape", code: "Escape" });
+    const emoji = 0x1000000 + 0x1f600;
+    fireEvent.keyDown(canvas, { key: "😀", code: "" });
+    fireEvent.keyUp(canvas, { key: "😀", code: "" });
+    expect(socket.sent.filter((sent) => sent === `kd,${emoji}` || sent === `ku,${emoji}`)).toEqual([`kd,${emoji}`, `ku,${emoji}`]);
+    canvas.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, button: 0 }));
+    expect(socket.sent.at(-1)).toBe("m,0,0,1,0");
+    canvas.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, button: 0 }));
+    expect(socket.sent.at(-1)).toBe("m,0,0,0,0");
+
+    // The box's clipboard, for the viewer with control, goes to this computer's.
+    const { writeText } = fakeClipboard(() => Promise.resolve(""));
+    act(() => void socket.onmessage?.({ data: `clipboard,${btoa("from the box")}` }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("from the box"));
+
+    // The menu's "Show as VNC", unticked while video shows, turns it to VNC, which the tab keeps for this box only.
+    const item = within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show as VNC" });
+    expect(item.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(item);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    expect(window.sessionStorage.getItem(streamChoiceKey("box_2"))).toBe("rfb");
+    expect(window.localStorage.length).toBe(0);
+    expect(socket.readyState).toBe(3);
+    expect(within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show as VNC" }).getAttribute("aria-checked")).toBe("true");
+  } finally {
+    undo();
+  }
+});
+
+test("on a device, an input method's committed text, an emoji and Type text each go as one text message, and a person watching sees the agent's touches (063)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.clear();
+    const { handlers } = server([desktopBox({ device: { platform: "android", model: "Pixel 8", simulatorHost: false } })], { video: true });
+    const slot = deviceTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
+    const device = deviceSocket();
+    act(() => device.open());
+    act(() => void device.onmessage?.({ data: "MODE websockets" }));
+    act(() => void device.onmessage?.({ data: videoFrame(1, true, 360, 800) }));
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
+    expect(await slot.findByText("The agent has control.")).toBeTruthy();
+    const screen = slot.getByTestId("desktop-screen");
+    const circles = () => screen.querySelectorAll('[aria-hidden="true"] > div').length;
+    const sized = (name: "clientWidth" | "clientHeight", value: number) => vi.spyOn(HTMLElement.prototype, name, "get").mockReturnValue(value);
+    const spies = [sized("clientWidth", 360), sized("clientHeight", 800)];
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_TOUCH ${JSON.stringify({ contacts: [{ id: 0, x: 180, y: 400 }], by: "agent", generation: 1 })}` }));
+    expect(circles()).toBe(1);
+    const circle = screen.querySelector<HTMLElement>('[aria-hidden="true"] > div')!;
+    expect(circle.style.width).toBe("36px");
+
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_TOUCH ${JSON.stringify({ contacts: [{ id: 0, x: 10, y: 10 }], by: "person", generation: 1 })}` }));
+    expect(circles()).toBe(1);
+    for (const spy of spies) spy.mockRestore();
+    const strings = () => device.sent.filter((sent): sent is string => typeof sent === "string");
+    const texts = () => strings().filter((sent) => sent.startsWith("BB_DEVICE ")).map((sent) => JSON.parse(sent.slice("BB_DEVICE ".length)) as { type: string; text?: string });
+    const keys = slot.getByLabelText("Keyboard input for the device");
+    expect(document.activeElement).toBe(keys);
+    fireEvent.keyDown(keys, { key: "Process", code: "KeyN", keyCode: 229, isComposing: true });
+    expect(strings().some((sent) => sent.startsWith("kd,"))).toBe(false);
+    fireEvent.compositionEnd(keys, { data: "日本語" });
+    fireEvent.input(keys, { data: "😀", inputType: "insertText" });
+    expect(texts()).toEqual([expect.objectContaining({ type: "text", text: "日本語" }), expect.objectContaining({ type: "text", text: "😀" })]);
+
+    fireEvent.click(slot.getByRole("button", { name: "Type text (Ctrl+Alt+Space)" }));
+    const field = await slot.findByRole("textbox", { name: "Text to type" });
+    fireEvent.change(field, { target: { value: "مرحبا ".repeat(40) } });
+    fireEvent.keyDown(field, { key: "Enter", code: "Enter" });
+    expect(texts().at(-1)).toEqual(expect.objectContaining({ type: "text", text: "مرحبا ".repeat(40) }));
+    expect(strings().some((sent) => sent.startsWith("cw,"))).toBe(false);
+  } finally {
+    undo();
+  }
+});
+
+function deviceSocket(): FakeSocket {
+  const socket = FakeSocket.made.find((made) => new URL(made.url).searchParams.get("display") === "device");
+  if (!socket) throw new Error("no device socket");
+  return socket;
+}
+
+const PIXEL_8_STATE = {
+  platform: "android",
+  form: "phone",
+  model: "Pixel 8",
+  power: { is: "booted", awake: true },
+  geometry: { generation: 1, physical: "upright", content: "upright", video: { width: 360, height: 800 } },
+  settings: {
+    appearance: { known: true, value: "light", at: 1, by: "bb-box" },
+    fontScale: { known: true, value: 1, at: 1, by: "bb-box" },
+    location: { known: true, value: null, at: 1, by: "bb-box" },
+    battery: { known: true, value: { level: 100, charging: true }, at: 1, by: "bb-box" },
+    network: { known: true, value: "online", at: 1, by: "bb-box" },
+    statusBar: { set: null, at: null },
+  },
+  at: 1,
+};
+
+const IPHONE_STATE = {
+  platform: "ios",
+  model: "iPhone 18 Pro",
+  power: { is: "booted", awake: true },
+  geometry: { generation: 1, physical: "upright", content: "upright", video: { width: 1206, height: 2622 } },
+  settings: {
+    appearance: { known: true, value: "light", at: 1, by: "bb-box" },
+    textSize: { known: true, value: "large", at: 1, by: "bb-box" },
+    location: { set: null, at: null },
+    statusBar: { set: null, at: null },
+  },
+  at: 1,
+};
+
+const IOS_RUNTIME = { platform: "ios", os: "27.0", build: "25A1", xcode: "27.0", companion: "1.7.7" };
+
+function iosHello(bootedHere?: readonly string[]) {
+  const devices = ["iPhone 18 Pro", "iPhone 17", "iPad Pro 13-inch (M5)"].map((model) => ({ model, native: model, runtime: IOS_RUNTIME }));
+  return `BB_DEVICE_HELLO ${JSON.stringify({ protocol: 1, version: 10, platform: "ios", devices, state: IPHONE_STATE, lease: false, ...(bootedHere ? { bootedHere } : {}) })}`;
+}
+
+function sizedPanel(width: number, height: number) {
+  const sized = (name: "clientWidth" | "clientHeight", value: number) => vi.spyOn(HTMLElement.prototype, name, "get").mockReturnValue(value);
+  const spies = [sized("clientWidth", width), sized("clientHeight", height)];
+  return () => {
+    for (const spy of spies) spy.mockRestore();
+  };
+}
+
+async function deviceShown(model: string, state: object, hello?: string, deviceClipboard?: string) {
+  const { handlers, changes } = server([desktopBox({ device: { platform: model.startsWith("Pixel") ? "android" : "ios", model, simulatorHost: false } })], { video: true, ...(deviceClipboard !== undefined ? { deviceClipboard } : {}) });
+  const slot = deviceTab(handlers);
+  await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
+  const device = deviceSocket();
+  act(() => device.open());
+  act(() => void device.onmessage?.({ data: "MODE websockets" }));
+  const video = (state as { geometry: { video: { width: number; height: number } } }).geometry.video;
+  act(() => void device.onmessage?.({ data: videoFrame(1, true, video.width, video.height) }));
+  if (hello) act(() => void device.onmessage?.({ data: hello }));
+  act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state })}` }));
+  await slot.findByRole("toolbar");
+  const requests = () =>
+    device.sent
+      .filter((sent): sent is string => typeof sent === "string" && sent.startsWith("BB_DEVICE "))
+      .map((sent) => JSON.parse(sent.slice("BB_DEVICE ".length)) as { id: string; type: string; control?: { action: string }; url?: string });
+  const answer = (id: string, ok = true, words = "") =>
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_ANSWER ${JSON.stringify(ok ? { id, ok, ms: 412, state, result: { type: "done" } } : { id, ok, error: { code: "busy", words }, state })}` }));
+  return { slot, device, changes, requests, answer };
+}
+
+test("a device gets this computer's clipboard only with a paste: taking control and the focus send none, Cmd+V and Paste send it once as one paste, and a refused paste sends nothing (F-15)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    const readText = vi.fn(() => Promise.resolve("a test value"));
+    fakeClipboard(readText);
+    const { slot, device, requests, answer } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello().replace('"version":10', `"version":${PASTE_REQUEST_SINCE_VERSION}`));
+    const clipboardSent = () => device.sent.filter((sent) => typeof sent === "string" && /^c[wb]/.test(sent));
+    const pastes = () => requests().filter((request) => request.type === "paste" || request.type === "text") as { id: string; type: string; text?: string }[];
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    act(() => void window.dispatchEvent(new Event("focus")));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(readText).not.toHaveBeenCalled();
+    expect(clipboardSent()).toEqual([]);
+    expect(pastes()).toEqual([]);
+
+    const keys = slot.getByLabelText("Keyboard input for the device");
+    fireEvent.keyDown(keys, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("pasted by keys")));
+    await waitFor(() => expect(pastes()).toHaveLength(1));
+    expect(pastes()[0]).toMatchObject({ type: "paste", text: "pasted by keys" });
+    answer(pastes()[0]!.id);
+    expect(await slot.findByText("Pasted")).toBeTruthy();
+
+    const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+    const paste = within(menu).getByRole("menuitem", { name: "Paste from this computer" });
+    expect(paste.hasAttribute("aria-describedby")).toBe(false);
+    expect(menu.textContent).not.toContain("own clipboard");
+    fireEvent.click(paste);
+    await waitFor(() => expect(pastes()).toHaveLength(2));
+    expect(readText).toHaveBeenCalledTimes(1);
+    expect(pastes()[1]).toMatchObject({ type: "paste", text: "a test value" });
+    answer(pastes()[1]!.id, false, "The device is busy.");
+    expect(await slot.findByText("The device is busy.")).toBeTruthy();
+
+    fireEvent.keyDown(keys, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("x".repeat(DEVICE_CLIPBOARD_MOST + 1))));
+    expect(await slot.findByText(devicePasteTooLongWords(DEVICE_CLIPBOARD_MOST + 1))).toBeTruthy();
+    expect(pastes()).toHaveLength(2);
+    expect(clipboardSent()).toEqual([]);
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("on a device, the field Paste offers when this computer's clipboard cannot be read says the device's clipboard is put back, and sends one paste (F-16)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    fakeClipboard(() => Promise.reject(new Error("Read permission denied.")));
+    const { slot, requests } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello().replace('"version":10', `"version":${PASTE_REQUEST_SINCE_VERSION}`));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Paste from this computer" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText(DEVICE_PASTE_FIELD_WORDS)).toBeTruthy();
+    expect(within(dialog).queryByText(/goes to the box's clipboard/)).toBeNull();
+    fireEvent.change(within(dialog).getByRole("textbox", { name: "Text to paste" }), { target: { value: "typed into the field" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Paste into the device" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    await waitFor(() => expect(requests().filter((request) => request.type === "paste")).toHaveLength(1));
+    expect(requests().find((request) => request.type === "paste")).toMatchObject({ type: "paste", text: "typed into the field" });
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+function barButtons(slot: ReturnType<typeof desktopTab>): string[] {
+  return within(slot.getByRole("toolbar")).getAllByRole("button").map((button) => button.getAttribute("aria-label") ?? "");
+}
+
+test("an iPhone's toolbar has Home, both rotations, Appearance, Text size, Screenshot and More beside the frame, and nothing iOS lacks (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    const { slot } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello());
+    const toolbar = slot.getByRole("toolbar");
+    expect(toolbar.getAttribute("aria-label")).toBe("iPhone 18 Pro controls");
+    expect(toolbar.getAttribute("aria-orientation")).toBe("vertical");
+    expect(toolbar.dataset.arrangement).toBe("beside");
+    expect(barButtons(slot)).toEqual(["Home", "Rotate left", "Rotate right", "Dark appearance", "Text size", "Copy screenshot", "More device controls"]);
+    expect(within(toolbar).getByRole("button", { name: "Dark appearance" }).getAttribute("aria-pressed")).toBe("false");
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("a Pixel 8's toolbar adds Back and Recent apps, and a narrow panel puts the most used in one row with the rest in More (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(400, 800);
+  try {
+    window.sessionStorage.clear();
+    const { slot } = await deviceShown("Pixel 8", PIXEL_8_STATE);
+    const toolbar = slot.getByRole("toolbar");
+    expect(toolbar.dataset.arrangement).toBe("below");
+    expect(toolbar.getAttribute("aria-orientation")).toBe("horizontal");
+    expect(barButtons(slot)).toEqual(["Home", "Back", "Recent apps", "Rotate left", "More device controls"]);
+    const more = await openMenu(within(toolbar).getByRole("button", { name: "More device controls" }));
+    for (const name of ["Rotate right", "Copy screenshot", "Lock", "Open link…", /^Reboot device ?Takes about 18 s\. Keeps apps and data\.$/]) expect(within(more).getByRole("menuitem", { name })).toBeTruthy();
+    expect(within(more).getByRole("menuitemcheckbox", { name: "Dark appearance" })).toBeTruthy();
+    expect(within(more).getByRole("menuitemcheckbox", { name: /Clean status bar/ })).toBeTruthy();
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("a toolbar click takes control and sends its control once control comes, says so in the top bar, and shows a refusal's words (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    const { slot, changes, requests, answer } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello());
+    expect(slot.getByText("The agent has control.")).toBeTruthy();
+    fireEvent.click(within(slot.getByRole("toolbar")).getByRole("button", { name: "Home" }));
+    await slot.findByText("You have control. Hand back when done.");
+    expect(changes).toEqual(["takeControl box_2"]);
+    await waitFor(() => expect(requests().filter((request) => request.type === "control")).toHaveLength(1));
+    const home = requests().find((request) => request.type === "control")!;
+    expect(home.control).toEqual({ action: "home" });
+    expect(within(slot.getByRole("toolbar")).getByRole("button", { name: "Home" }).getAttribute("aria-busy")).toBe("true");
+    answer(home.id);
+    await waitFor(() => expect(within(slot.getByRole("toolbar")).getByRole("button", { name: "Home" }).getAttribute("aria-busy")).toBeNull());
+    expect(toasts()).toEqual([]);
+    fireEvent.click(within(slot.getByRole("toolbar")).getByRole("button", { name: "Dark appearance" }));
+    await waitFor(() => expect(requests().at(-1)?.control).toEqual({ action: "appearance", to: "dark" }));
+    answer(requests().at(-1)!.id, false, "Another control is under way on this device. Try again when it has finished.");
+    await waitFor(() => expect(toasts()).toEqual(["Another control is under way on this device. Try again when it has finished."]));
+    expect(changes).toEqual(["takeControl box_2"]);
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("More holds Show frame and Pixel for pixel, kept per box, and settings with no picture of their own say what they did (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    const { slot, requests, answer } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello());
+    const more = () => openMenu(within(slot.getByRole("toolbar")).getByRole("button", { name: "More device controls" }));
+    const menu = await more();
+    expect(within(menu).getByRole("menuitemcheckbox", { name: "Show frame" }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: "Pixel for pixel" }));
+    const viewKey = Object.keys(window.localStorage).find((key) => key.startsWith("bb-box:device-view:"))!;
+    expect(JSON.parse(window.localStorage.getItem(viewKey)!)).toEqual({ frame: true, pixelForPixel: true });
+    window.localStorage.removeItem(viewKey);
+    const again = await more();
+    fireEvent.click(within(again).getByRole("menuitemcheckbox", { name: /Clean status bar/ }));
+    await waitFor(() => expect(requests().at(-1)?.control).toEqual({ action: "status_bar", to: "clean" }));
+    answer(requests().at(-1)!.id);
+    await waitFor(() => expect(toasts()).toEqual([`Made the iPhone 18 Pro's status bar clean in 0.4 s. It shows 9:41, full signal and Wi-Fi, and a full battery unless battery set one.`]));
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("Open link opens a typed address on the device, with https:// added, and refuses one with spaces in words (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    const { slot, requests, answer } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello());
+    const more = await openMenu(within(slot.getByRole("toolbar")).getByRole("button", { name: "More device controls" }));
+    fireEvent.click(within(more).getByRole("menuitem", { name: "Open link…" }));
+    const field = await screen.findByRole("textbox", { name: "Link" });
+    fireEvent.change(field, { target: { value: "example.com/two words" } });
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("A link has no spaces. Write %20 for a space.");
+    fireEvent.change(field, { target: { value: "example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    await waitFor(() => expect(requests().at(-1)).toEqual(expect.objectContaining({ type: "open", url: "https://example.com" })));
+    answer(requests().at(-1)!.id);
+    await waitFor(() => expect(toasts()).toEqual(["Opened https://example.com on the iPhone 18 Pro."]));
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("the device picker lists the box's models, warns of one not started in this box, and switches with control taken (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    const { slot, requests, answer } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello(["iPhone 18 Pro", "iPhone 17"]));
+    const picker = await openMenu(slot.getByRole("button", { name: "Device: iPhone 18 Pro. Choose another" }));
+    expect(within(picker).getByRole("menuitemcheckbox", { name: "iPhone 18 Pro" }).getAttribute("aria-checked")).toBe("true");
+    expect(within(picker).getByRole("menuitemcheckbox", { name: "iPhone 17" })).toBeTruthy();
+    const ipad = within(picker).getByRole("menuitemcheckbox", { name: /^iPad Pro 13-inch \(M5\) ?Not started in this box yet, so it may take a minute\.$/ });
+    expect(within(picker).getByText(/Apps are per device/)).toBeTruthy();
+    fireEvent.click(ipad);
+    await waitFor(() => expect(requests().at(-1)?.control).toEqual({ action: "switch", device: "iPad Pro 13-inch (M5)" }));
+    answer(requests().at(-1)!.id);
+    await waitFor(() => expect(toasts()).toEqual(["Switched to the iPad Pro 13-inch (M5) in 0.4 s.Apps are per device. Install your app again on the iPad Pro 13-inch (M5) if it needs it."]));
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("Screenshot asks BB Box for the device's own pixels without taking control, and copies them as a PNG (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  const write = vi.fn<(items: unknown[]) => Promise<void>>().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", { value: { write, readText: () => Promise.resolve(""), writeText: () => Promise.resolve() }, configurable: true });
+  vi.stubGlobal("ClipboardItem", class {
+    readonly items: Record<string, unknown>;
+    constructor(items: Record<string, unknown>) {
+      this.items = items;
+    }
+  });
+  try {
+    window.sessionStorage.clear();
+    const { slot, changes } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello());
+    fireEvent.click(within(slot.getByRole("toolbar")).getByRole("button", { name: "Copy screenshot" }));
+    await waitFor(() => expect(toasts()).toEqual(["Copied the iPhone 18 Pro's screen."]));
+    expect(changes).toEqual(["deviceScreenshot"]);
+    expect(write).toHaveBeenCalledTimes(1);
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("Copy to this computer reads the device's clipboard for the tab with control, says how much it copied, and Cmd+C in the device copies it too (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  const { writeText } = fakeClipboard(() => Promise.resolve(""));
+  try {
+    window.sessionStorage.clear();
+    const { slot, changes } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello(), "Hello from the device");
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Copy to this computer" }));
+    await waitFor(() => expect(toasts()).toEqual(["Take control first, then copy: only the tab with control reads the device's clipboard."]));
+    expect(writeText).not.toHaveBeenCalled();
+
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Copy to this computer" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("Hello from the device"));
+    await waitFor(() => expect(toasts()).toContain("Copied 21 characters from the iPhone 18 Pro."));
+
+    const keyboard = slot.getByRole("textbox", { name: "Keyboard input for the device", hidden: true });
+    keyboard.focus();
+    fireEvent.keyDown(keyboard, { key: "c", metaKey: true });
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
+    expect(changes.filter((change) => change === "deviceClipboard")).toHaveLength(3);
+
+    fireEvent.keyDown(keyboard, { key: "c", metaKey: true, shiftKey: true });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(writeText).toHaveBeenCalledTimes(2);
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("the toolbar moves by arrow keys as one tab stop, and the device's changes are read out (063)", async () => {
+  const undo = withVideo();
+  const unsize = sizedPanel(900, 800);
+  try {
+    window.sessionStorage.clear();
+    const { slot, device } = await deviceShown("iPhone 18 Pro", IPHONE_STATE, iosHello());
+    const toolbar = slot.getByRole("toolbar");
+    const buttons = within(toolbar).getAllByRole("button");
+    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1, -1, -1]);
+    buttons[0]!.focus();
+    fireEvent.keyDown(buttons[0]!, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(buttons[1]);
+    fireEvent.keyDown(buttons[1]!, { key: "End" });
+    expect(document.activeElement).toBe(buttons.at(-1));
+    const dark = { ...IPHONE_STATE, settings: { ...IPHONE_STATE.settings, appearance: { known: true, value: "dark", at: 2, by: "bb-box" } }, geometry: { ...IPHONE_STATE.geometry, generation: 2, physical: "turned-left" } };
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: dark })}` }));
+    await waitFor(() => expect(slot.getByTestId("device-announcer").textContent).toBe("Turned left. Dark appearance."));
+    expect(within(toolbar).getByRole("button", { name: "Dark appearance" }).getAttribute("aria-pressed")).toBe("true");
+  } finally {
+    unsize();
+    undo();
+  }
+});
+
+test("a tab from before the device tab, for a box with a device and a desktop, opens on the screen last chosen, and its Desktop and Emulator buttons switch between two kept sessions, each with its own socket, input and clipboard, with no hand-back (063)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.clear();
+    window.sessionStorage.setItem("bb-box:display:box_2", "device");
+    const { handlers, changes } = server([desktopBox({ device: { platform: "android", model: "Pixel 8", simulatorHost: false } })], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
+    expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(false);
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    const device = deviceSocket();
+    expect(device.url).not.toContain("stream=");
+    expect((await slot.findAllByText("Pixel 8")).length).toBeGreaterThan(0);
+    expect(slot.getByText("Connecting")).toBeTruthy();
+    act(() => device.open());
+    expect(device.sent).toEqual(["START_VIDEO"]);
+    act(() => void device.onmessage?.({ data: "MODE websockets" }));
+    act(() => void device.onmessage?.({ data: videoFrame(1, true, 360, 800) }));
+    expect(await slot.findByText("The agent has control.")).toBeTruthy();
+    expect(slot.queryByRole("button", { name: "Emulator" })).toBeNull();
+    const actions = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+    expect(within(actions).queryByRole("menuitem", { name: "Display" })).toBeNull();
+    fireEvent.keyDown(actions, { key: "Escape" });
+
+    const readText = vi.fn(() => Promise.resolve("for the device"));
+    fakeClipboard(readText);
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const keys = slot.getByLabelText("Keyboard input for the device");
+    fireEvent.keyDown(keys, { key: "a", code: "KeyA" });
+    fireEvent.keyUp(keys, { key: "a", code: "KeyA" });
+    expect(device.sent).toContain("kd,97");
+
+    vi.useFakeTimers();
+    fireEvent.click(slot.getByRole("button", { name: "Desktop" }));
+    vi.useRealTimers();
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    expect(slot.queryByRole("button", { name: "Desktop" })).toBeNull();
+    const desktop = videoSocket();
+    expect(window.sessionStorage.getItem("bb-box:display:box_2")).toBe("desktop");
+    expect(device.readyState).toBe(1);
+    expect(device.sent.at(-1)).toBe("STOP_VIDEO");
+    act(() => desktop.open());
+    act(() => void desktop.onmessage?.({ data: videoFrame(1, true) }));
+    act(() => void window.dispatchEvent(new Event("focus")));
+    const desktopCanvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+    const keysBefore = device.sent.filter((sent) => sent === "kd,98").length;
+    fireEvent.keyDown(desktopCanvas, { key: "b", code: "KeyB" });
+    expect(desktop.sent).toContain("kd,98");
+    expect(device.sent.filter((sent) => sent === "kd,98").length).toBe(keysBefore);
+    expect(desktop.sent.some((sent) => typeof sent === "string" && sent.startsWith("cw"))).toBe(false);
+    fireEvent.keyDown(desktopCanvas, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("for the desktop")));
+    await waitFor(() => expect(desktop.sent).toContain(`cw,${btoa("for the desktop")}`));
+    expect(device.sent.filter((sent) => typeof sent === "string" && sent.startsWith("BB_DEVICE "))).toEqual([]);
+
+    vi.useFakeTimers();
+    fireEvent.click(slot.getByRole("button", { name: "Emulator" }));
+    await vi.advanceTimersByTimeAsync(HAND_BACK_MS + 50);
+    vi.useRealTimers();
+    expect(changes).toEqual(["takeControl box_2"]);
+    expect(FakeSocket.made.filter((made) => made.url.includes("display=device"))).toHaveLength(1);
+    const back = device.sent.slice(device.sent.lastIndexOf("STOP_VIDEO") + 1);
+    expect(back.filter((sent) => sent === "START_VIDEO" || sent === "REQUEST_KEYFRAME")).toEqual(["START_VIDEO", "REQUEST_KEYFRAME"]);
+    expect(device.sent.some((sent) => typeof sent === "string" && sent.startsWith("cw"))).toBe(false);
+    expect(readText).not.toHaveBeenCalled();
+    expect(desktop.readyState).toBe(1);
+    expect(desktop.sent.at(-1)).toBe("STOP_VIDEO");
+  } finally {
+    undo();
+  }
+});
+
+test("where the browser has no WebCodecs, the device shows stills over its own connection, with words above it, and never the desktop (063)", async () => {
+  window.sessionStorage.clear();
+  vi.stubGlobal("createImageBitmap", async () => ({ width: 360, height: 800, close() {} }));
+  try {
+    const { handlers } = server([desktopBox({ device: { platform: "android", model: "Pixel 8", simulatorHost: false } })], { video: true });
+    const slot = deviceTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
+    const device = deviceSocket();
+    act(() => device.open());
+    expect(device.sent).toEqual(['BB_DEVICE_STILLS {"on":true}', "START_VIDEO"]);
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_HELLO ${JSON.stringify({ protocol: 1, version: 2, platform: "android", devices: [{ model: "Pixel 8", native: "bb-box-test-device", runtime: { platform: "android", api: 35, image: "google_apis", revision: 1, abi: "x86_64", emulator: "BB Box test driver", snapshot: null } }], state: { ...PIXEL_8_STATE, power: { is: "booting", since: 1 } }, lease: false })}` }));
+    expect(await slot.findByText("Booting")).toBeTruthy();
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_STILL ${JSON.stringify({ png: "iVBORw0KGgo=", generation: 1 })}` }));
+    expect(await slot.findByText("This browser cannot play the device's video, so it shows a picture a few times a second.")).toBeTruthy();
+    expect(slot.getByText("The agent has control.")).toBeTruthy();
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    expect(FakeSocket.made.some((made) => made.url.includes("stream="))).toBe(false);
+  } finally {
+    vi.unstubAllGlobals();
+    vi.stubGlobal("WebSocket", FakeSocket);
+    vi.stubGlobal("ResizeObserver", FakeObserver);
+  }
+});
+
+test("a device whose first frame does not decode within 3 s asks for stills instead, on the same connection (063)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.clear();
+    FakeDecoder.silent = true;
+    const { handlers } = server([desktopBox({ device: { platform: "android", model: "Pixel 8", simulatorHost: false } })], { video: true });
+    deviceTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
+    const device = deviceSocket();
+    act(() => device.open());
+    vi.useFakeTimers();
+    act(() => void device.onmessage?.({ data: videoFrame(1, true, 360, 800) }));
+    await vi.advanceTimersByTimeAsync(3_050);
+    vi.useRealTimers();
+    expect(device.sent).toContain('BB_DEVICE_STILLS {"on":true}');
+    expect(FakeSocket.made.filter((made) => made.url.includes("display=device"))).toHaveLength(1);
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+  } finally {
+    undo();
+  }
+});
+
+test("a device whose first frame came too late for its stills tries its video again: the words say why, and video shows once a frame decodes (F-9, H8)", async () => {
+  const undo = withVideo();
+  vi.stubGlobal("createImageBitmap", async () => ({ width: 360, height: 800, close() {} }));
+  try {
+    window.sessionStorage.clear();
+    FakeDecoder.silent = true;
+    const { handlers } = server([desktopBox({ device: { platform: "android", model: "Pixel 8", simulatorHost: false } })], { video: true });
+    const slot = deviceTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("display=device"))).toBe(true));
+    const device = deviceSocket();
+    act(() => device.open());
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_STATE ${JSON.stringify({ state: PIXEL_8_STATE })}` }));
+    vi.useFakeTimers();
+    act(() => void device.onmessage?.({ data: videoFrame(1, true, 360, 800) }));
+    await vi.advanceTimersByTimeAsync(3_050);
+    expect(device.sent).toContain('BB_DEVICE_STILLS {"on":true}');
+    act(() => void device.onmessage?.({ data: `BB_DEVICE_STILL ${JSON.stringify({ png: "iVBORw0KGgo=", generation: 1 })}` }));
+    await vi.advanceTimersByTimeAsync(50);
+    expect(slot.getByText(SLOW_VIDEO_STILLS_WORDS)).toBeTruthy();
+    expect(slot.queryByText(STILLS_WORDS)).toBeNull();
+
+    FakeDecoder.silent = false;
+    await act(async () => void (await vi.advanceTimersByTimeAsync(SLOW_VIDEO_RETRY_MS)));
+    expect(device.sent.at(-1)).toBe('BB_DEVICE_STILLS {"on":false}');
+    expect(slot.queryByText(SLOW_VIDEO_STILLS_WORDS)).toBeNull();
+    act(() => void device.onmessage?.({ data: videoFrame(2, true, 360, 800) }));
+    await vi.advanceTimersByTimeAsync(5_000);
+    vi.useRealTimers();
+    expect(device.sent.filter((sent) => sent === 'BB_DEVICE_STILLS {"on":true}')).toHaveLength(1);
+    expect(FakeDecoder.made.at(-1)!.chunks.map((chunk) => chunk.timestamp)).toEqual([2]);
+    expect(FakeSocket.made.filter((made) => made.url.includes("display=device"))).toHaveLength(1);
+  } finally {
+    vi.useRealTimers();
+    undo();
+  }
+});
+
+test("a desktop whose video is shown only by choice, as a Tart Mac's, opens over VNC with Show as VNC ticked, and unticking it shows video, kept for the box", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.clear();
+    const on = server([desktopBox()], { video: true, videoByDefault: false });
+    const slot = desktopTab(on.handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(false);
+    const item = within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show as VNC" });
+    expect(item.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(item);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    expect(window.sessionStorage.getItem(streamChoiceKey("box_2"))).toBe("selkies");
+    expect(within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show as VNC" }).getAttribute("aria-checked")).toBe("false");
+
+    // The choice stays for the box: a viewer opened again shows video.
+    cleanup();
+    dropAllKept();
+    forgetStreams();
+    forgetLive();
+    novnc.FakeRfb.made = [];
+    FakeSocket.made = [];
+    desktopTab(server([desktopBox()], { video: true, videoByDefault: false }).handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+  } finally {
+    window.sessionStorage.clear();
+    undo();
+  }
+});
+
+test("a video desktop whose decoder failed shows again when its tab comes back, rather than crashing the panel", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    let slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    await slot.findByText("The agent has control.");
+    // The decoder fails, as Safari's can after the window's size changes or while its tab is away, and closes.
+    act(() => FakeDecoder.made.at(-1)!.fail());
+    expect(FakeDecoder.thrown).toEqual([]);
+    // The person switches to another tab and back: the kept session shows again, with a decoder of its own.
+    cleanup();
+    slot = desktopTab(handlers);
+    expect(await slot.findByText("The agent has control.")).toBeTruthy();
+    expect(FakeDecoder.made.at(-1)!.state).toBe("configured");
+    act(() => void socket.onmessage?.({ data: videoFrame(6, true) }));
+    expect(FakeDecoder.made.at(-1)!.chunks).toEqual([{ type: "key", timestamp: 6 }]);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a video desktop whose stream this browser cannot decode, as Safari past H.264 level 5.2, shows over VNC, and its decoder is not made again and again", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const slot = desktopTab(server([desktopBox()], { video: true }).handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    await slot.findByText("The agent has control.");
+    const made = FakeDecoder.made.length;
+    act(() => FakeDecoder.made.at(-1)!.fail("NotSupportedError"));
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    expect(FakeDecoder.made).toHaveLength(made);
+    expect(socket.readyState).toBe(3);
+    expect(toasts()).toEqual(["Video did not start, so this shows VNC.This browser cannot decode the desktop's video at its size (avc1.42E01F)."]);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a video viewer says how large a frame its browser decodes, and waits for a frame it decodes while the box makes its desktop smaller for it (#864)", async () => {
+  const undo = withVideo();
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    // A browser that decodes no more than level 5.2, as Safari.
+    FakeDecoder.refused = new Set(["avc1.42C03D", "avc1.42C03C"]);
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const slot = desktopTab(server([desktopBox()], { video: true }).handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    await waitFor(() => expect(socket.sent).toContain("BB_DECODES,34560"));
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true, 1920, 1080) }));
+    await slot.findByText("The agent has control.");
+    // The desktop is at twice a Chrome viewer's tab, past what this browser decodes: its decoder refuses it, and the viewer waits.
+    act(() => void socket.onmessage?.({ data: videoFrame(6, true, 5200, 3000) }));
+    act(() => FakeDecoder.made.at(-1)!.fail("NotSupportedError"));
+    act(() => void socket.onmessage?.({ data: videoFrame(7, true, 5200, 3000) }));
+    const made = FakeDecoder.made.length;
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    // The box makes it smaller: the next key frame of a size it decodes shows, with a decoder of its own.
+    act(() => void socket.onmessage?.({ data: videoFrame(8, true, 3904, 2256) }));
+    expect(FakeDecoder.made).toHaveLength(made + 1);
+    expect(FakeDecoder.made.at(-1)!.chunks).toEqual([{ type: "key", timestamp: 8 }]);
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    // Too large again, and no frame it decodes comes: after a while, the desktop shows over VNC.
+    act(() => void socket.onmessage?.({ data: videoFrame(9, true, 5200, 3000) }));
+    act(() => FakeDecoder.made.at(-1)!.fail("NotSupportedError"));
+    act(() => void vi.advanceTimersByTime(FIT_WAIT_MS));
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  } finally {
+    vi.useRealTimers();
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a video viewer whose browser decodes level 6.1 says so (#864)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    desktopTab(server([desktopBox()], { video: true }).handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    await waitFor(() => expect(socket.sent).toContain("BB_DECODES,139264"));
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("video that this browser cannot decode while its tab is away shows over VNC as the tab comes back, rather than a frozen picture", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    let slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    await slot.findByText("The agent has control.");
+    cleanup();
+    act(() => FakeDecoder.made.at(-1)!.fail("NotSupportedError"));
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    slot = desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    expect(toasts()).toEqual(["Video did not start, so this shows VNC.This browser cannot decode the desktop's video at its size (avc1.42E01F)."]);
+    // Back again later, it shows over VNC at once, its kept session, with no new try at video.
+    const videos = FakeSocket.made.filter((made) => made.url.includes("stream=selkies")).length;
+    cleanup();
+    slot = desktopTab(handlers);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(novnc.FakeRfb.made).toHaveLength(1);
+    expect(FakeSocket.made.filter((made) => made.url.includes("stream=selkies"))).toHaveLength(videos);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("over video, keys typed straight after a paste go after the box's paste chord (#915)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+    fireEvent.keyDown(canvas, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("[PASTE]")));
+    fireEvent.keyDown(canvas, { key: "x", code: "KeyX" });
+    expect(socket.sent).not.toContain("kd,120");
+    await waitFor(() => expect(socket.sent).toContain("ku,118"));
+    const chord = performance.now();
+    await waitFor(() => expect(socket.sent).toContain("kd,120"));
+    expect(performance.now() - chord).toBeGreaterThanOrEqual(PASTE_LANDS_MS - 60);
+    const keys = socket.sent.filter((sent): sent is string => typeof sent === "string" && /^k[du],/.test(sent));
+    expect(keys.slice(-5)).toEqual(["kd,65507", "kd,118", "ku,118", "ku,65507", "kd,120"]);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("over video, a letter typed with Shift held and Caps Lock off goes as its capital; with Caps Lock on it stays as named (#913)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+    const sent = socket.sent.length;
+    fireEvent.keyDown(canvas, { key: "Shift", code: "ShiftLeft", shiftKey: true });
+    fireEvent.keyDown(canvas, { key: "a", code: "KeyA", shiftKey: true });
+    fireEvent.keyUp(canvas, { key: "a", code: "KeyA", shiftKey: true });
+    fireEvent.keyDown(canvas, { key: "b", code: "KeyB", shiftKey: true, modifierCapsLock: true } as KeyboardEventInit);
+    fireEvent.keyUp(canvas, { key: "b", code: "KeyB", shiftKey: true, modifierCapsLock: true } as KeyboardEventInit);
+    fireEvent.keyUp(canvas, { key: "Shift", code: "ShiftLeft" });
+    // A capital with no Shift press goes inside Shift.
+    fireEvent.keyDown(canvas, { key: "S", code: "KeyS", shiftKey: true });
+    fireEvent.keyUp(canvas, { key: "S", code: "KeyS", shiftKey: true });
+    const keys = socket.sent.slice(sent).filter((message): message is string => typeof message === "string" && /^k[du],/.test(message));
+    expect(keys).toEqual(["kd,65505", "kd,65", "ku,65", "kd,98", "ku,98", "ku,65505", "kd,65505", "kd,83", "ku,83", "ku,65505"]);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a paste on its way as the stream switches to VNC is pressed before the video goes, and keys typed over VNC go after it (#933)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+    fireEvent.keyDown(canvas, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("[PASTE]")));
+    fireEvent.click(within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show as VNC" }));
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const keys = socket.sent.filter((message): message is string => typeof message === "string" && /^k[du],/.test(message));
+    expect(keys.slice(-4)).toEqual(["kd,65507", "kd,118", "ku,118", "ku,65507"]);
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    client._handleKeyEvent(0x78, "KeyX", true, null, false);
+    expect(client.keyEvents.some((key) => key.keysym === 0x78)).toBe(false);
+    await waitFor(() => expect(client.keyEvents.some((key) => key.keysym === 0x78)).toBe(true));
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("with localStorage bb-box-keylog set to 1, the video viewer logs each key it sends and asks the relay to log them too; without it, neither (a diagnostic)", async () => {
+  const undo = withVideo();
+  const logged = vi.spyOn(console, "log").mockImplementation(() => undefined);
+  try {
+    window.localStorage.setItem("bb-box-keylog", "1");
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    expect(new URL(FakeSocket.made.find((made) => made.url.includes("stream=selkies"))!.url).searchParams.get("keylog")).toBe("1");
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+    fireEvent.keyDown(canvas, { key: "a", code: "KeyA" });
+    expect(logged.mock.calls.some(([line]) => /^bb-box key video: down 0x61 'a', held \[97\]|^bb-box key video: down 0x61 'a', held \[0x61\]/.test(String(line)))).toBe(true);
+    window.localStorage.removeItem("bb-box-keylog");
+    logged.mockClear();
+    fireEvent.keyUp(canvas, { key: "a", code: "KeyA" });
+    expect(logged).not.toHaveBeenCalled();
+  } finally {
+    window.localStorage.removeItem("bb-box-keylog");
+    logged.mockRestore();
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a viewer in control lets go of the keys it holds down as its tab goes, so the box keeps no Ctrl held, over video and VNC", async () => {
+  const undo = withVideo();
+  try {
+    // Video: Ctrl goes down in the box; the tab goes before it comes up.
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    let slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+    fireEvent.keyDown(canvas, { key: "Control", code: "ControlLeft" });
+    expect(socket.sent).toContain("kd,65507");
+    cleanup();
+    expect(socket.sent).toContain("ku,65507");
+    window.sessionStorage.clear();
+    dropAllKept();
+    forgetStreams();
+
+    // VNC: noVNC's keyboard lets go of what it holds as the tab goes, while this tab has control; not without.
+    slot = desktopTab(server([desktopBox()]).handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]!;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    cleanup();
+    expect(client.keysLetGo).toBe(1);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a kept video session that fails as its tab comes back gives way to a fresh one, and the panel does not crash", async () => {
+  const undo = withVideo();
+  const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    let slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const first = videoSocket();
+    act(() => first.open());
+    act(() => void first.onmessage?.({ data: "MODE websockets" }));
+    act(() => void first.onmessage?.({ data: videoFrame(5, true) }));
+    await slot.findByText("The agent has control.");
+    cleanup();
+    // Back on the tab, the kept session starts its video again, and its new decoder cannot be made.
+    FakeDecoder.refuse = 1;
+    slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.filter((made) => made.url.includes("stream=selkies"))).toHaveLength(2));
+    expect(first.readyState).toBe(3);
+    expect((await slot.findAllByText(/Connecting/)).length).toBeGreaterThan(0);
+    expect(slot.queryByText(/crashed/)).toBeNull();
+    expect(logged.mock.calls.some(([words]) => String(words).includes("failed as it showed again, so a fresh one starts"))).toBe(true);
+  } finally {
+    logged.mockRestore();
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a kept VNC session that fails as it connects again when its tab comes back gives way to a fresh one, and the panel does not crash", async () => {
+  const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    const { handlers } = server([desktopBox()]);
+    let slot = desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const [client] = novnc.FakeRfb.made;
+    act(() => void client!.dispatchEvent(new Event("connect")));
+    await slot.findByText("The agent has control.");
+    // Its connection ends, and the person switches to another tab before it connects again; back on the tab, connecting again
+    // fails as noVNC makes its client.
+    act(() => void client!.dispatchEvent(new CustomEvent("disconnect", { detail: { clean: false } })));
+    cleanup();
+    novnc.FakeRfb.refuse = 1;
+    slot = desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(2));
+    act(() => void novnc.FakeRfb.made[1]!.dispatchEvent(new Event("connect")));
+    expect(await slot.findByText("The agent has control.")).toBeTruthy();
+    expect(logged.mock.calls.some(([words]) => String(words).includes("failed as it showed again, so a fresh one starts"))).toBe(true);
+  } finally {
+    novnc.FakeRfb.refuse = 0;
+    logged.mockRestore();
+  }
+});
+
+test("a desktop that would show as video on a page that is not secure shows over VNC and says so once for the page, with the desktops guide's Video", async () => {
+  const undo = withVideo();
+  forgetInsecurePageNote();
+  vi.stubGlobal("isSecureContext", false);
+  try {
+    const { handlers } = server([desktopBox()], { video: true });
+    desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(false);
+    await waitFor(() => expect(toasts()).toHaveLength(1));
+    expect(toasts()[0]).toMatch(/^This desktop shows over VNC: video needs a secure connection to BB\./);
+    const link = (globalThis as { lastToastDescription?: { props?: { href?: string; children?: unknown } } }).lastToastDescription;
+    expect(link?.props?.href).toMatch(/docs\/guide\/desktops\.md#video$/);
+    expect(link?.props?.children).toBe("Video, in the desktops guide");
+    cleanup();
+    act(() => void toast.dismiss());
+    dropAllKept();
+    desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(2));
+    expect(toasts()).toEqual([]);
+  } finally {
+    undo();
+  }
+});
+
+test("a desktop's notes are BB's toasts, one at a time, with their reason under them, and the toolbar keeps its height (the owner's note of 18 October 2026)", async () => {
+  const undo = withVideo();
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const slot = desktopTab(server([desktopBox()], { video: true }).handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => socket.end(1011, "Selkies is not running"));
+    act(() => vi.advanceTimersByTime(FIRST_FRAME_MS));
+    await waitFor(() => expect(toasts()).toEqual(["Video did not start, so this shows VNC.Selkies is not running."]));
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const toolbar = slot.getByRole("button", { name: "Desktop actions" }).closest("div.border-b")!;
+    expect(toolbar.textContent).not.toContain("Video did not start");
+    // The next note of this tab takes its place.
+    act(() => void novnc.FakeRfb.made[0]!.dispatchEvent(new Event("connect")));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    fakeClipboard(() => Promise.resolve(""));
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Paste from this computer" }));
+    await waitFor(() => expect(toasts()).toEqual(["This computer's clipboard has no text."]));
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("an open video desktop retries refused connections after a restart and shows video when Selkies listens three seconds later", async () => {
+  const undo = withVideo();
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+    act(() => {
+      videoSocket().open();
+      videoSocket().onmessage?.({ data: videoFrame(1, true) });
+    });
+    await stopBox(handlers, slot, "box_2");
+    await slot.findByText("bold-heron is stopped.");
+    await startBox(handlers, slot, "box_2");
+    await waitFor(() => expect(FakeSocket.made).toHaveLength(2));
+    for (const delay of [1_000, 2_000]) {
+      act(() => {
+        FakeSocket.made.at(-1)!.open();
+        FakeSocket.made.at(-1)!.end(1011, "connect ECONNREFUSED 127.0.0.1:5980");
+      });
+      expect(novnc.FakeRfb.made).toHaveLength(0);
+      act(() => vi.advanceTimersByTime(delay));
+    }
+    expect(FakeSocket.made).toHaveLength(4);
+    act(() => {
+      const listening = FakeSocket.made.at(-1)!;
+      listening.open();
+      listening.onmessage?.({ data: videoFrame(2, true) });
+    });
+    expect(slot.getByText("The agent has control.")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(FIRST_FRAME_MS * 2));
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    expect(toasts()).toEqual([]);
+  } finally {
+    random.mockRestore();
+    undo();
+  }
+});
+
+test("an open video desktop falls back once when Selkies never listens after a restart, then tries video after another restart", async () => {
+  const undo = withVideo();
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+    act(() => {
+      videoSocket().open();
+      videoSocket().onmessage?.({ data: videoFrame(1, true) });
+    });
+    await stopBox(handlers, slot, "box_2");
+    await slot.findByText("bold-heron is stopped.");
+    await startBox(handlers, slot, "box_2");
+    await waitFor(() => expect(FakeSocket.made).toHaveLength(2));
+    for (const delay of [1_000, 2_000, 4_000]) {
+      act(() => {
+        FakeSocket.made.at(-1)!.open();
+        FakeSocket.made.at(-1)!.end(1011, "connect ECONNREFUSED 127.0.0.1:5980");
+      });
+      act(() => vi.advanceTimersByTime(delay));
+    }
+    act(() => FakeSocket.made.at(-1)!.end(1011, "connect ECONNREFUSED 127.0.0.1:5980"));
+    expect(novnc.FakeRfb.made).toHaveLength(0);
+    act(() => vi.advanceTimersByTime(3_000));
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    expect(toasts()).toEqual(["Video did not start, so this shows VNC.connect ECONNREFUSED 127.0.0.1:5980."]);
+    const attempts = FakeSocket.made.length;
+    act(() => vi.advanceTimersByTime(FIRST_FRAME_MS * 2));
+    expect(FakeSocket.made).toHaveLength(attempts);
+    act(() => void novnc.FakeRfb.made[0]!.dispatchEvent(new Event("connect")));
+    await stopBox(handlers, slot, "box_2");
+    await slot.findByText("bold-heron is stopped.");
+    await startBox(handlers, slot, "box_2");
+    await waitFor(() => expect(FakeSocket.made).toHaveLength(attempts + 2));
+    act(() => {
+      const listening = FakeSocket.made.at(-1)!;
+      listening.open();
+      listening.onmessage?.({ data: videoFrame(3, true) });
+    });
+    expect(slot.getByText("The agent has control.")).toBeTruthy();
+    expect(novnc.FakeRfb.made).toHaveLength(1);
+  } finally {
+    random.mockRestore();
+    undo();
+  }
+});
+
+test("video startup has one deadline across refused, silent and unopened sockets, and disposal cancels retries", async () => {
+  const undo = withVideo();
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+  vi.useFakeTimers();
+  try {
+    const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    const fallback = vi.fn();
+    session.onFallback = fallback;
+    FakeSocket.made.at(-1)!.open();
+    FakeSocket.made.at(-1)!.end(1011, "Connection refused");
+    vi.advanceTimersByTime(1_000);
+    FakeSocket.made.at(-1)!.open();
+    vi.advanceTimersByTime(3_000);
+    FakeSocket.made.at(-1)!.end(1011, "No frame");
+    vi.advanceTimersByTime(2_000);
+    vi.advanceTimersByTime(3_999);
+    expect(fallback).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(fallback).toHaveBeenCalledExactlyOnceWith("No frame.");
+    expect(FakeSocket.made.at(-1)!.readyState).toBe(3);
+    const attempts = FakeSocket.made.length;
+    vi.advanceTimersByTime(FIRST_FRAME_MS * 2);
+    expect(FakeSocket.made).toHaveLength(attempts);
+    session.dispose();
+    const disposed = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    disposed.onFallback = fallback;
+    FakeSocket.made.at(-1)!.end(1011, "Connection refused");
+    disposed.dispose();
+    vi.advanceTimersByTime(FIRST_FRAME_MS * 2);
+    expect(FakeSocket.made).toHaveLength(attempts + 1);
+    expect(fallback).toHaveBeenCalledTimes(1);
+  } finally {
+    await decodesMacroblocks();
+    random.mockRestore();
+    undo();
+  }
+});
+
+test("a video startup deadline pauses while hidden and resumes when visible", async () => {
+  const undo = withVideo();
+  vi.useFakeTimers();
+  const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+  try {
+    const fallback = vi.fn();
+    session.onFallback = fallback;
+    FakeSocket.made.at(-1)!.open();
+    vi.advanceTimersByTime(2_000);
+    session.hidden = true;
+    vi.advanceTimersByTime(FIRST_FRAME_MS * 2);
+    expect(fallback).not.toHaveBeenCalled();
+    session.hidden = false;
+    vi.advanceTimersByTime(FIRST_FRAME_MS - 1);
+    expect(fallback).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(fallback).toHaveBeenCalledExactlyOnceWith("No video came within 10 s.");
+  } finally {
+    session.dispose();
+    await decodesMacroblocks();
+    undo();
+  }
+});
+
+test.each([true, false])("a desktop in a background browser tab defers startup retries until visible, initially hidden: %s", async (hiddenAtStart) => {
+  const undo = withVideo();
+  vi.useFakeTimers();
+  let pageHidden = hiddenAtStart;
+  const visibility = vi.spyOn(document, "visibilityState", "get").mockImplementation(() => pageHidden ? "hidden" : "visible");
+  const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+  try {
+    const fallback = vi.fn();
+    session.onFallback = fallback;
+    const first = FakeSocket.made.at(-1)!;
+    first.open();
+    first.end(1011, "Connection refused");
+    pageHidden = true;
+    document.dispatchEvent(new Event("visibilitychange"));
+    vi.advanceTimersByTime(60_000);
+    expect(FakeSocket.made).toHaveLength(1);
+    expect(fallback).not.toHaveBeenCalled();
+    pageHidden = false;
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(FakeSocket.made).toHaveLength(2);
+    const resumed = FakeSocket.made.at(-1)!;
+    resumed.open();
+    resumed.onmessage?.({ data: videoFrame(1, true) });
+    expect(session.connection.state).toBe("connected");
+    expect(fallback).not.toHaveBeenCalled();
+  } finally {
+    session.dispose();
+    await decodesMacroblocks();
+    visibility.mockRestore();
+    undo();
+  }
+});
+
+test("a slow relay socket open leaves the desktop a full ten seconds for its first video frame", async () => {
+  const undo = withVideo();
+  vi.useFakeTimers();
+  const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+  try {
+    const fallback = vi.fn();
+    session.onFallback = fallback;
+    vi.advanceTimersByTime(FIRST_FRAME_MS * 2);
+    expect(fallback).not.toHaveBeenCalled();
+    expect(FakeSocket.made).toHaveLength(1);
+    FakeSocket.made.at(-1)!.open();
+    vi.advanceTimersByTime(FIRST_FRAME_MS - 1);
+    expect(fallback).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(fallback).toHaveBeenCalledExactlyOnceWith("No video came within 10 s.");
+  } finally {
+    session.dispose();
+    await decodesMacroblocks();
+    undo();
+  }
+});
+
+test("a video desktop's Display holds Show as VNC, and no choice of the box's pointer: the video leaves it out while you hold control, with its shape on your own", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const display = within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" })));
+    expect(display.getAllByRole("menuitemcheckbox").map((item) => item.textContent?.trim())).toEqual(["Show as VNC"]);
+    expect(socket.sent.some((sent) => String(sent).startsWith("BB_SHOWPOINTER"))).toBe(false);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("Cmd and Option reach a Mac as its server names Command and Option, from a Mac's browser or another, and Cmd is Ctrl elsewhere from a Mac", () => {
+  const keys = (keysym: number, code: string, os: string, mac: boolean, macKeys: "alt-command" | null) => {
+    const key = boxKey(keysym, code, os, mac, macKeys);
+    return `${key.keysym.toString(16)} ${key.code}`;
+  };
+  // From a Mac: noVNC's Alt_L (left Cmd), Super_L (right Cmd), Mode_switch (left Option), ISO_Level3_Shift (right Option).
+  expect([keys(0xffe9, "MetaLeft", "macos", true, null), keys(0xffeb, "MetaRight", "macos", true, null), keys(0xff7e, "AltLeft", "macos", true, null), keys(0xfe03, "AltRight", "macos", true, null)]).toEqual([
+    "ffe7 MetaLeft",
+    "ffe8 MetaRight",
+    "ffe9 AltLeft",
+    "ffea AltRight",
+  ]);
+  expect([keys(0xffe9, "MetaLeft", "macos", true, "alt-command"), keys(0xff7e, "AltLeft", "macos", true, "alt-command")]).toEqual(["ffe9 AltLeft", "ffe7 MetaLeft"]);
+  // From another browser: Alt is Option and the Windows key Command, on Tart's VNC as anywhere.
+  expect([keys(0xffe9, "AltLeft", "macos", false, null), keys(0xffeb, "MetaLeft", "macos", false, null)]).toEqual(["ffe9 AltLeft", "ffe7 MetaLeft"]);
+  expect([keys(0xffe9, "AltLeft", "macos", false, "alt-command"), keys(0xffeb, "MetaLeft", "macos", false, "alt-command")]).toEqual(["ffe7 MetaLeft", "ffe9 AltLeft"]);
+  // Chrome on a Mac says "macOS", Safari "MacIntel".
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("Linux x86_64");
+  Object.defineProperty(navigator, "userAgentData", { value: { platform: "macOS" }, configurable: true });
+  try {
+    expect(macBrowser()).toBe(true);
+  } finally {
+    delete (navigator as { userAgentData?: unknown }).userAgentData;
+    platform.mockRestore();
+  }
+  // Elsewhere: from a Mac, Cmd is Ctrl; from another browser, keys go as they are.
+  expect([keys(0xffe9, "MetaLeft", "linux", true, null), keys(0xffe9, "AltLeft", "windows", false, null), keys(0xffeb, "MetaLeft", "linux", false, null), keys(0x61, "KeyA", "macos", true, null)]).toEqual([
+    "ffe3 ControlLeft",
+    "ffe9 AltLeft",
+    "ffeb MetaLeft",
+    "61 KeyA",
+  ]);
+});
+
+test("a Mac's left Option on a desktop that is not a Mac composes: a character alone, Alt before any other key, nothing alone (the desktop sweep)", () => {
+  const option = new OptionComposer();
+  const sent = (keysym: number, code: string, down: boolean) => option.keys({ keysym, code }, down).map((each) => `${each.down ? "d" : "u"}:${each.key.keysym.toString(16)}`);
+  // Option+E then E: the dead key, which noVNC drops in Safari and gives no keysym in Chrome, sends nothing; é goes
+  // alone, and Option sends nothing.
+  expect([...sent(0xffe9, "AltLeft", true), ...sent(null as unknown as number, "KeyE", true), ...sent(0, "KeyE", false), ...sent(0xe9, "KeyE", true), ...sent(0xe9, "KeyE", false), ...sent(0xffe9, "AltLeft", false)]).toEqual(["d:e9", "u:e9"]);
+  // Option+Left: Alt, then the arrow, and Alt up after.
+  expect([...sent(0xffe9, "AltLeft", true), ...sent(0xff51, "ArrowLeft", true), ...sent(0xff51, "ArrowLeft", false), ...sent(0xffe9, "AltLeft", false)]).toEqual(["d:ffe9", "d:ff51", "u:ff51", "u:ffe9"]);
+  // The right Option is Alt, and a key with it goes as its US character: Alt+F, not the ƒ a Mac makes.
+  const plain = (keysym: number, code: string, down: boolean) => option.keys({ keysym, code }, down).map((each) => `${each.down ? "d" : "u"}:${each.key.keysym.toString(16)}`);
+  expect([...plain(0xffea, "AltRight", true), ...plain(0x8f6, "KeyF", true), ...plain(0x8f6, "KeyF", false), ...plain(0xffea, "AltRight", false)]).toEqual(["d:ffea", "d:66", "u:66", "u:ffea"]);
+  // With Ctrl (a Mac's Cmd) held, a letter is a shortcut: Ctrl+Alt+T.
+  expect([...sent(0xffe3, "ControlLeft", true), ...sent(0xffe9, "AltLeft", true), ...sent(0x74, "KeyT", true)]).toEqual(["d:ffe3", "d:ffe9", "d:74"]);
+});
+
+test("a Windows box's video gets a character X names itself, such as €, as its Unicode keysym, and Latin-1 and keys as they are (the desktop sweep)", () => {
+  expect(unicodeKeysym(0x20ac)).toBe(0x10020ac);
+  expect(unicodeKeysym(0x6d6)).toBe(0x1000436);
+  expect([unicodeKeysym(97), unicodeKeysym(0xe9), unicodeKeysym(0xff0d), unicodeKeysym(0xffe1)]).toEqual([97, 0xe9, 0xff0d, 0xffe1]);
+  expect(unicodeKeysym(0x100263a)).toBe(0x100263a);
+});
+
+test("High resolution's tooltip gives its cost for the box's system: Windows' frame rate and keys, Linux's CPU", async () => {
+  for (const [os, words] of [
+    ["windows", WINDOWS_HIGH_RESOLUTION_WORDS],
+    ["linux", HIGH_RESOLUTION_WORDS],
+  ] as const) {
+    const { handlers } = server([desktopBox({ os, kind: os === "windows" ? "windows-desktop" : "linux-desktop-cpu" })], { sharp: false });
+    const slot = desktopTab(handlers);
+    const display = within(await openDisplay(await slot.findByRole("button", { name: "Desktop actions" })));
+    const item = display.getByRole("menuitemcheckbox", { name: /High resolution/ });
+    expect(document.getElementById(item.getAttribute("aria-describedby")!)?.textContent).toBe(words);
+    cleanup();
+  }
+  expect(WINDOWS_HIGH_RESOLUTION_WORDS).toMatch(/half the frame rate, and keys about 85 ms, while on; more cores do not help/);
+});
+
+test("through a High resolution switch, the video holds its last picture until the desktop has its new size and has drawn at its new scale, here or in another tab (the owner's note of 18 October 2026)", async () => {
+  const undo = withVideo();
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const switching = { on: false };
+    const { handlers } = server([desktopBox()], { video: true, sharp: false, switching });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    await slot.findByText("The agent has control.");
+    const screen = slot.getByTestId("desktop-screen");
+    const pictures = () => screen.querySelectorAll("canvas").length;
+    expect(pictures()).toBe(1);
+
+    // Another tab switches it: this one holds its picture over the video while the box changes, and through the new size's first frames.
+    switching.on = true;
+    await slot.behavior.emitRealtime("changed", { threadId: THREAD });
+    await waitFor(() => expect(pictures()).toBe(2));
+    FakeDecoder.size = { width: 2560, height: 1600 };
+    act(() => void socket.onmessage?.({ data: videoFrame(6, true) }));
+    switching.on = false;
+    await slot.behavior.emitRealtime("changed", { threadId: THREAD });
+    await new Promise((resolve) => setTimeout(resolve, HOLD_SETTLE_MS / 2));
+    expect(pictures()).toBe(2);
+    // Once the desktop has had time to draw at its new scale, the new picture shows.
+    await waitFor(() => expect(pictures()).toBe(1), { timeout: HOLD_SETTLE_MS * 2 });
+
+    // Asked here, it holds at once; a switch whose new size never comes lets go soon after it ends, so the view never freezes.
+    fireEvent.click(within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: /High resolution/ }));
+    expect(pictures()).toBe(2);
+    await waitFor(() => expect(pictures()).toBe(1), { timeout: HOLD_NO_SIZE_MS * 2 });
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("as a desktop in your control takes the tab's new size, the video holds its last picture, stretched to the tab, until a frame of the new size comes (the owner's note of 18 October 2026)", async () => {
+  const undo = withVideo();
+  const size = FakeDecoder.size;
+  try {
+    FakeDecoder.size = { width: 800, height: 800 };
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const screen = slot.getByTestId("desktop-screen");
+    const video = screen.querySelector("canvas")!.parentElement!;
+    const observer = FakeObserver.made.find((made) => made.targets.includes(video))!;
+    const pictures = () => Array.from(screen.querySelectorAll("canvas"));
+    const tab = (width: number, height: number) => {
+      Object.defineProperty(video, "clientWidth", { value: width, configurable: true });
+      Object.defineProperty(video, "clientHeight", { value: height, configurable: true });
+      act(() => observer.resize(width, height));
+    };
+    tab(740, 800);
+
+    // Expand: the picture shown is held over the video, filling the tab, not left at its old size in the middle.
+    tab(1840, 800);
+    await waitFor(() => expect(socket.sent).toContain("r,1840x800"));
+    expect(pictures()).toHaveLength(2);
+    expect(pictures()[1]!.style.objectFit).toBe("fill");
+    // Frames of the old size, as Selkies may send while the desktop changes, stay under it.
+    act(() => void socket.onmessage?.({ data: videoFrame(6, true) }));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(pictures()).toHaveLength(2);
+    // The first frame of the new size shows at once.
+    FakeDecoder.size = { width: 1840, height: 800 };
+    act(() => void socket.onmessage?.({ data: videoFrame(7, true) }));
+    await waitFor(() => expect(pictures()).toHaveLength(1));
+
+    // A tab whose size the desktop has already, once made a multiple of 8 wide, holds nothing.
+    tab(1845, 801);
+    await waitFor(() => expect(socket.sent).toContain("r,1845x801"));
+    expect(pictures()).toHaveLength(1);
+
+    // A size that never comes, as one below the desktop's smallest, lets go soon, so the view never freezes.
+    tab(700, 800);
+    await waitFor(() => expect(socket.sent).toContain("r,700x800"));
+    expect(pictures()).toHaveLength(2);
+    await waitFor(() => expect(pictures()).toHaveLength(1), { timeout: HOLD_NO_SIZE_MS * 2 });
+  } finally {
+    FakeDecoder.size = size;
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a person watching a Wayland desktop with bb-box-cursor sees the box's pointer drawn over the video, where BB Box says it is, scaled with the picture; the person in control does not (060)", async () => {
+  const undo = withVideo();
+  const size = FakeDecoder.size;
+  try {
+    FakeDecoder.size = { width: 1920, height: 1080 };
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    await slot.findByText("The agent has control.");
+    const screen = slot.getByTestId("desktop-screen");
+    const video = screen.querySelector("canvas")!.parentElement!;
+    // The pane, half the desktop's size: the picture fills it at half scale.
+    Object.defineProperty(video, "clientWidth", { value: 960, configurable: true });
+    Object.defineProperty(video, "clientHeight", { value: 540, configurable: true });
+    const drawn = () => video.querySelector("img");
+    // The box's cursor, a PNG of 2 by 1 with its hotspot at (1, 0), then where the pointer is.
+    const png = rgbaPng(2, 1, Uint8Array.from([255, 0, 0, 255, 0, 0, 0, 0])).toString("base64");
+    act(() => void socket.onmessage?.({ data: `cursor,${JSON.stringify({ curdata: png, hotx: 1, hoty: 0 })}` }));
+    act(() => void socket.onmessage?.({ data: "BB_POINTER,640,360" }));
+    await waitFor(() => expect(drawn()?.style.display).toBe("block"));
+    const style = drawn()!.style;
+    expect([style.left, style.top, style.width, style.height]).toEqual(["319.5px", "180px", "1px", "0.5px"]);
+    expect(drawn()!.getAttribute("src")).toBe(`data:image/png;base64,${png}`);
+    // It moves as the box's pointer does, and goes when it leaves the desktop.
+    act(() => void socket.onmessage?.({ data: "BB_POINTER,1001,1" }));
+    expect([drawn()!.style.left, drawn()!.style.top]).toEqual(["500px", "0.5px"]);
+    act(() => void socket.onmessage?.({ data: "BB_POINTER," }));
+    expect(drawn()!.style.display).toBe("none");
+    // The person in control has their own pointer, in the box's shape: none is drawn for them.
+    act(() => void socket.onmessage?.({ data: "BB_POINTER,640,360" }));
+    expect(drawn()!.style.display).toBe("block");
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    await waitFor(() => expect(drawn()!.style.display).toBe("none"));
+    act(() => void socket.onmessage?.({ data: "BB_POINTER,700,360" }));
+    expect(drawn()!.style.display).toBe("none");
+  } finally {
+    FakeDecoder.size = size;
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a person watching a Wayland desktop with bb-box-cursor over VNC sees the box's pointer drawn over the picture, from a pointer stream of its own, which a desktop without the helper ends for good (060)", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const rfb = novnc.FakeRfb.made[0]!;
+  // noVNC's canvas, the desktop's 1920 by 1080 pixels fitted at half scale, 60 px down the pane.
+  const canvas = document.createElement("canvas");
+  canvas.width = 1920;
+  canvas.height = 1080;
+  rfb.target.appendChild(canvas);
+  const rect = (left: number, top: number, width: number, height: number) => () => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => null }) as DOMRect;
+  rfb.target.getBoundingClientRect = rect(0, 0, 960, 660);
+  canvas.getBoundingClientRect = rect(0, 60, 960, 540);
+  act(() => void rfb.dispatchEvent(new Event("connect")));
+  const stream = await waitFor(() => {
+    const made = FakeSocket.made.find((each) => each.url.endsWith("&stream=pointer"));
+    expect(made).toBeTruthy();
+    return made!;
+  });
+  expect(stream.url).toBe(`${rfb.url}&stream=pointer`);
+  act(() => stream.open());
+  const png = rgbaPng(2, 1, Uint8Array.from([255, 0, 0, 255, 0, 0, 0, 0])).toString("base64");
+  act(() => void stream.onmessage?.({ data: `cursor,${JSON.stringify({ curdata: png, hotx: 1, hoty: 0 })}` }));
+  act(() => void stream.onmessage?.({ data: "BB_POINTER,640,360" }));
+  const drawn = () => rfb.target.querySelector("img");
+  await waitFor(() => expect(drawn()?.style.display).toBe("block"));
+  expect([drawn()!.style.left, drawn()!.style.top, drawn()!.style.width, drawn()!.style.height]).toEqual(["319.5px", "240px", "1px", "0.5px"]);
+  // The person in control has their own pointer, in the box's shape from wayvnc: none is drawn for them.
+  fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  await waitFor(() => expect(drawn()!.style.display).toBe("none"));
+
+  // A desktop whose image has no helper ends the stream at once, saying so: the next connection opens none.
+  const before = FakeSocket.made.length;
+  act(() => stream.end(1000, "This desktop's pointer comes with its picture."));
+  act(() => void rfb.dispatchEvent(new Event("disconnect")));
+  await waitFor(() => expect(novnc.FakeRfb.made.length).toBeGreaterThan(1), { timeout: 5000 });
+  act(() => void novnc.FakeRfb.made.at(-1)!.dispatchEvent(new Event("connect")));
+  expect(FakeSocket.made.slice(before).some((each) => each.url.endsWith("&stream=pointer"))).toBe(false);
+});
+
+test("a person watching a Linux desktop sees the agent's pointer where it clicks, with a ring for the click, over VNC and over video (073)", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const rfb = novnc.FakeRfb.made[0]!;
+  const canvas = document.createElement("canvas");
+  canvas.width = 1920;
+  canvas.height = 1080;
+  rfb.target.appendChild(canvas);
+  const rect = (left: number, top: number, width: number, height: number) => () => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => null }) as DOMRect;
+  rfb.target.getBoundingClientRect = rect(0, 0, 960, 660);
+  canvas.getBoundingClientRect = rect(0, 60, 960, 540);
+  act(() => void rfb.dispatchEvent(new Event("connect")));
+  const stream = await waitFor(() => {
+    const made = FakeSocket.made.find((each) => each.url.endsWith("&stream=pointer"));
+    expect(made).toBeTruthy();
+    return made!;
+  });
+  act(() => stream.open());
+  const agent = () => rfb.target.querySelector<HTMLElement>("[data-testid=agent-pointer]");
+  const rings = () => rfb.target.querySelectorAll("[data-testid=agent-ring]").length;
+  act(() => void stream.onmessage?.({ data: "BB_AGENT,at,100,100" }));
+  await waitFor(() => expect(agent()?.style.display).toBe("block"));
+  expect([agent()!.style.left, agent()!.style.top]).toEqual(["50px", "110px"]);
+  expect(rings()).toBe(0);
+  act(() => void stream.onmessage?.({ data: "BB_AGENT,click,640,360" }));
+  expect([agent()!.style.left, agent()!.style.top]).toEqual(["320px", "240px"]);
+  expect(rings()).toBe(1);
+  act(() => void stream.onmessage?.({ data: "BB_AGENT,click,x,y" }));
+  expect([agent()!.style.left, agent()!.style.top]).toEqual(["320px", "240px"]);
+  fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  await waitFor(() => expect(agent()!.style.display).toBe("none"));
+});
+
+test("a person watching a Linux desktop as video sees the agent's pointer where it clicks (073)", async () => {
+  const undo = withVideo();
+  const size = FakeDecoder.size;
+  try {
+    FakeDecoder.size = { width: 1920, height: 1080 };
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+    act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+    await slot.findByText("The agent has control.");
+    const video = slot.getByTestId("desktop-screen").querySelector("canvas")!.parentElement!;
+    Object.defineProperty(video, "clientWidth", { value: 960, configurable: true });
+    Object.defineProperty(video, "clientHeight", { value: 540, configurable: true });
+    const agent = () => video.querySelector<HTMLElement>("[data-testid=agent-pointer]");
+    const png = rgbaPng(2, 1, Uint8Array.from([255, 0, 0, 255, 0, 0, 0, 0])).toString("base64");
+    act(() => void socket.onmessage?.({ data: `cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}` }));
+    act(() => void socket.onmessage?.({ data: "BB_POINTER,640,360" }));
+    act(() => void socket.onmessage?.({ data: "BB_AGENT,click,640,360" }));
+    await waitFor(() => expect(agent()?.style.display).toBe("block"));
+    expect([agent()!.style.left, agent()!.style.top]).toEqual(["320px", "180px"]);
+    expect(video.querySelectorAll("[data-testid=agent-ring]").length).toBe(1);
+    const boxPointer = video.querySelector<HTMLElement>("img");
+    expect(boxPointer?.style.display).toBe("none");
+    act(() => void socket.onmessage?.({ data: "BB_AGENT,clear" }));
+    expect(agent()?.style.display).toBe("none");
+    expect(boxPointer?.style.display).toBe("block");
+    act(() => void socket.onmessage?.({ data: "BB_AGENT,click,640,360" }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    act(() => void socket.onmessage?.({ data: "BB_AGENT,clear" }));
+    expect(boxPointer?.style.display).toBe("none");
+    fireEvent.click(slot.getByRole("button", { name: "Hand back to the agent" }));
+    await slot.findByText("The agent has control.");
+    await waitFor(() => expect(boxPointer?.style.display).toBe("block"));
+    expect(agent()?.style.display).toBe("none");
+  } finally {
+    FakeDecoder.size = size;
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+for (const transport of ["video", "VNC"] as const) {
+  test(`a ${transport} viewer reconnecting after a missed agent clear shows the box pointer without the old agent place, shape or rings`, async () => {
+    const undo = withVideo();
+    const size = FakeDecoder.size;
+    const session = transport === "video"
+      ? new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies")
+      : new DesktopSession("ws://bb/desktop?box=box_2&viewer=v");
+    try {
+      FakeDecoder.size = { width: 1920, height: 1080 };
+      const connect = () => {
+        if (transport === "video") {
+          const socket = FakeSocket.made.at(-1)!;
+          socket.open();
+          socket.onmessage?.({ data: videoFrame(5, true) });
+          Object.defineProperty(session.element, "clientWidth", { value: 960, configurable: true });
+          Object.defineProperty(session.element, "clientHeight", { value: 540, configurable: true });
+          return socket;
+        }
+        const rfb = novnc.FakeRfb.made.at(-1)!;
+        const canvas = document.createElement("canvas");
+        canvas.width = 1920;
+        canvas.height = 1080;
+        rfb.target.appendChild(canvas);
+        canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 960, height: 540 }) as DOMRect;
+        rfb.dispatchEvent(new Event("connect"));
+        return FakeSocket.made.at(-1)!;
+      };
+      let socket = connect();
+      await decodesMacroblocks();
+      const png = rgbaPng(2, 1, Uint8Array.from([255, 0, 0, 255, 0, 0, 0, 0])).toString("base64");
+      const boxPointer = () => session.element.querySelector<HTMLElement>("img");
+      const agent = () => session.element.querySelector<HTMLElement>("[data-testid=agent-pointer]");
+      const tell = (data: string) => socket.onmessage?.({ data });
+      tell(`cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}`);
+      tell("BB_POINTER,640,360");
+      tell("BB_AGENT,click,640,360");
+      tell("BB_AGENT,shape,640,360,ibeam");
+      expect(agent()?.style.display).toBe("block");
+      expect(boxPointer()?.style.display).toBe("none");
+      expect(session.element.querySelectorAll("[data-testid=agent-ring]")).toHaveLength(1);
+      if (transport === "VNC") {
+        socket.end(1012, "Plugin reloaded");
+        expect(agent()?.style.display).toBe("none");
+      }
+      session.reconnect();
+      socket = connect();
+      await decodesMacroblocks();
+      tell(`cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}`);
+      tell("BB_POINTER,700,400");
+      expect(agent()?.style.display).toBe("none");
+      expect(session.element.querySelectorAll("[data-testid=agent-ring]")).toHaveLength(0);
+      expect(boxPointer()?.style.display).toBe("block");
+      tell("BB_AGENT,at,700,400");
+      expect(agent()?.getAttribute("data-shape")).toBe("arrow");
+      tell("BB_AGENT,click,700,400");
+      const replaced = socket;
+      session.reconnect();
+      socket = connect();
+      await decodesMacroblocks();
+      replaced.onmessage?.({ data: "BB_AGENT,click,640,360" });
+      tell(`cursor,${JSON.stringify({ curdata: png, hotx: 0, hoty: 0 })}`);
+      tell("BB_POINTER,700,400");
+      expect(agent()?.style.display).toBe("none");
+      expect(session.element.querySelectorAll("[data-testid=agent-ring]")).toHaveLength(0);
+      expect(boxPointer()?.style.display).toBe("block");
+    } finally {
+      session.dispose();
+      FakeDecoder.size = size;
+      undo();
+    }
+  });
+}
+
+/** Bytes as Selkies sends them in a clipboard message: base64. */
+function b64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+/** An image's bytes, as a test stands in for a PNG: any bytes, in a Blob of its type. */
+function fakePng(size: number): Uint8Array<ArrayBuffer> {
+  return Uint8Array.from({ length: size }, (_, index) => index % 251);
+}
+
+test("a hidden video session closes its decoder, which holds a decoder of the browser's while nothing shows, and makes a new one as it shows again", async () => {
+  const undo = withVideo();
+  try {
+    const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    const socket = FakeSocket.made.at(-1)!;
+    act(() => socket.open());
+    await decodesMacroblocks();
+    socket.onmessage?.({ data: videoFrame(0, true) });
+    const shown = FakeDecoder.made.at(-1)!;
+    expect(shown.state).toBe("configured");
+
+    socket.sent.length = 0;
+    session.hidden = true;
+    expect(socket.sent).toEqual(["STOP_VIDEO"]);
+    expect(shown.state).toBe("closed");
+    const made = FakeDecoder.made.length;
+    socket.onmessage?.({ data: videoFrame(1, false) });
+    expect(FakeDecoder.made).toHaveLength(made);
+    expect(FakeDecoder.thrown).toEqual([]);
+
+    socket.sent.length = 0;
+    session.hidden = false;
+    expect(socket.sent.slice(-2)).toEqual(["START_VIDEO", "REQUEST_KEYFRAME"]);
+    expect(FakeDecoder.made).toHaveLength(made + 1);
+    socket.onmessage?.({ data: videoFrame(0, true) });
+    expect(FakeDecoder.made.at(-1)!.chunks).toEqual([{ type: "key", timestamp: 0 }]);
+    session.dispose();
+  } finally {
+    undo();
+  }
+});
+
+test("the video client starts its video again when it stalls, as control is taken and as the window regains focus (the owner's note of 19 October 2026)", async () => {
+  const undo = withVideo();
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "performance"] });
+  try {
+    const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    const socket = FakeSocket.made.at(-1)!;
+    act(() => socket.open());
+    // What this browser decodes, asked as the socket opens.
+    await decodesMacroblocks();
+    let id = 0;
+    const frames = (ms: number) => {
+      for (let at = 0; at < ms; at += 100) {
+        socket.onmessage?.({ data: videoFrame(id, id === 0) });
+        id++;
+        act(() => vi.advanceTimersByTime(100));
+      }
+    };
+    const restarts = () => socket.sent.filter((sent) => sent === "REQUEST_KEYFRAME").length;
+    frames(5_000);
+    expect(session.connection.state).toBe("connected");
+    // Frames that come and show: the video is left alone.
+    expect(restarts()).toBe(0);
+
+    // Control taken: the video starts again, from a key frame, with a new decoder, and the viewer says which frame came last.
+    socket.sent.length = 0;
+    const decoders = FakeDecoder.made.length;
+    session.setControl(true, true);
+    expect(socket.sent).toEqual([`CLIENT_FRAME_ACK ${id - 1} 0`, "START_VIDEO", "REQUEST_KEYFRAME"]);
+    expect(FakeDecoder.made.length).toBe(decoders + 1);
+    id = 0;
+    frames(1_000);
+
+    // Frames come but the decoder shows none, with no error: after STALL_MS the video starts again; then not again within RESTART_GAP_MS.
+    FakeDecoder.silent = true;
+    socket.sent.length = 0;
+    // Within RESTART_GAP_MS of the last start it waits; then starts again.
+    frames(RESTART_GAP_MS - 1_000 - 200);
+    expect(restarts()).toBe(0);
+    frames(1_000);
+    expect(restarts()).toBe(1);
+    frames(RESTART_GAP_MS - 1_000);
+    expect(restarts()).toBe(1);
+    FakeDecoder.silent = false;
+    id = 0;
+    frames(1_000);
+
+    // Input goes and no frame comes back: after STALL_MS the video starts again.
+    act(() => vi.advanceTimersByTime(RESTART_GAP_MS));
+    socket.sent.length = 0;
+    session.element.querySelector("canvas")!.dispatchEvent(new MouseEvent("pointermove", { clientX: 10, clientY: 10 }));
+    expect(socket.sent.some((sent) => typeof sent === "string" && sent.startsWith("m,"))).toBe(true);
+    act(() => vi.advanceTimersByTime(STALL_MS - 1_000));
+    expect(restarts()).toBe(0);
+    // The watch looks each second.
+    act(() => vi.advanceTimersByTime(2_000));
+    expect(restarts()).toBe(1);
+
+    // The window regains focus: the video starts again, once in RESTART_GAP_MS.
+    id = 0;
+    frames(RESTART_GAP_MS);
+    socket.sent.length = 0;
+    window.dispatchEvent(new Event("focus"));
+    window.dispatchEvent(new Event("focus"));
+    expect(restarts()).toBe(1);
+
+    // Disposed: no watch, no focus.
+    session.dispose();
+    act(() => vi.advanceTimersByTime(RESTART_GAP_MS));
+    window.dispatchEvent(new Event("focus"));
+    expect(restarts()).toBe(1);
+  } finally {
+    vi.useRealTimers();
+    undo();
+  }
+});
+
+test("the video client takes the box's images and long text from Selkies, whole or in parts, and the text beside copied markup (#609)", async () => {
+  const undo = withVideo();
+  try {
+    const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    const texts: string[] = [];
+    const images: Blob[] = [];
+    session.onClipboard = (text) => texts.push(text);
+    session.onClipboardImage = (image) => images.push(image);
+    const socket = FakeSocket.made.at(-1)!;
+    act(() => socket.open());
+    const say = (data: string) => socket.onmessage?.({ data });
+    // An image in one message.
+    const small = fakePng(100);
+    say(`clipboard_binary,image/png,${b64(small)}`);
+    // An image in parts, as Selkies sends anything over a chunk.
+    const large = fakePng(40_000);
+    say(`clipboard_start,image/png,${large.byteLength}`);
+    for (let offset = 0; offset < large.byteLength; offset += 16_383) say(`clipboard_data,${b64(large.subarray(offset, offset + 16_383))}`);
+    say("clipboard_finish");
+    // Long text in parts, and markup with its text beside it.
+    const long = "x".repeat(20_000);
+    say(`clipboard_start,text/plain,${long.length}`);
+    say(`clipboard_data,${btoa(long.slice(0, 16_383))}`);
+    say(`clipboard_data,${btoa(long.slice(16_383))}`);
+    say("clipboard_finish");
+    say(`clipboard_binary,application/x-selkies-clipboard-flavours,${btoa(JSON.stringify({ "text/html": "<b>bold</b>", "text/plain": "bold" }))}`);
+    // Parts that do not add up are dropped.
+    say("clipboard_start,image/png,10");
+    say(`clipboard_data,${b64(fakePng(4))}`);
+    say("clipboard_finish");
+    expect(texts).toEqual([long, "bold"]);
+    expect(images.map((image) => image.type)).toEqual(["image/png", "image/png"]);
+    expect(new Uint8Array(await images[0]!.arrayBuffer())).toEqual(small);
+    expect(new Uint8Array(await images[1]!.arrayBuffer())).toEqual(large);
+    session.dispose();
+  } finally {
+    undo();
+  }
+});
+
+test("the video client pastes an image as Selkies' cb, or cbs, cbd and cbe when it is over a chunk, then the box's chord; Cmd+V takes an image too (#609)", async () => {
+  const undo = withVideo();
+  try {
+    const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    const pasted: (string | Blob | null)[] = [];
+    const failed: unknown[] = [];
+    session.onPaste = (what) => pasted.push(what);
+    session.onPasteFailed = (error) => failed.push(error);
+    const socket = FakeSocket.made.at(-1)!;
+    act(() => socket.open());
+    socket.onmessage?.({ data: videoFrame(1, true) });
+    session.setControl(true, true);
+    const clipboardSent = () => socket.sent.filter((sent): sent is string => typeof sent === "string" && /^c[wb][sde]?,/.test(sent));
+
+    const small = new Blob([fakePng(100)], { type: "image/png" });
+    await session.pasteImage(small);
+    expect(clipboardSent()).toEqual([`cb,image/png,${b64(fakePng(100))}`]);
+    await waitFor(() => expect(socket.sent).toContain("ku,118"));
+    expect(pasted).toEqual([small]);
+
+    socket.sent.length = 0;
+    const bytes = fakePng(40_000);
+    await session.pasteImage(new Blob([bytes], { type: "image/png" }));
+    const [start, ...rest] = clipboardSent();
+    const id = start!.split(",")[1]!;
+    expect(start).toBe(`cbs,${id},image/png,40000`);
+    expect(rest).toEqual([
+      `cbd,${id},${b64(bytes.subarray(0, 16_383))}`,
+      `cbd,${id},${b64(bytes.subarray(16_383, 32_766))}`,
+      `cbd,${id},${b64(bytes.subarray(32_766))}`,
+      `cbe,${id}`,
+    ]);
+
+    // Too big for the desktop: nothing goes, and the viewer says why.
+    socket.sent.length = 0;
+    const huge = { size: CLIPBOARD_MAX_BYTES + 1, type: "image/png", arrayBuffer: async () => new ArrayBuffer(0) } as unknown as Blob;
+    await session.pasteImage(huge);
+    expect(clipboardSent()).toEqual([]);
+    expect(String(failed[0])).toMatch(/more than the 64 MiB the desktop takes/);
+
+    // Cmd+V, or Ctrl+V, with an image on this computer's clipboard.
+    socket.sent.length = 0;
+    const image = new File([fakePng(10)], "copied.png", { type: "image/png" });
+    session.element.dispatchEvent(new KeyboardEvent("keydown", { key: "v", ctrlKey: true, bubbles: true, cancelable: true }));
+    const paste = new Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(paste, "clipboardData", { value: { files: [image], getData: () => "" } });
+    document.dispatchEvent(paste);
+    await waitFor(() => expect(clipboardSent()).toEqual([`cb,image/png,${b64(fakePng(10))}`]));
+    session.dispose();
+  } finally {
+    undo();
+  }
+});
+
+test("with video, an image the box copies reaches this computer's clipboard, and the menu's Copy and Paste carry images, with their notes (#609)", async () => {
+  const undo = withVideo();
+  const written: unknown[] = [];
+  vi.stubGlobal(
+    "ClipboardItem",
+    class {
+      readonly items: Record<string, Blob | Promise<Blob>>;
+      constructor(items: Record<string, Blob | Promise<Blob>>) {
+        this.items = items;
+      }
+      get types() {
+        return Object.keys(this.items);
+      }
+      async getType(type: string) {
+        return this.items[type]!;
+      }
+    },
+  );
+  try {
+    window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+    const { handlers } = server([desktopBox()], { video: true });
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+    const socket = videoSocket();
+    act(() => socket.open());
+    act(() => void socket.onmessage?.({ data: videoFrame(1, true) }));
+    fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const fromComputer = new Blob([fakePng(30)], { type: "image/png" });
+    const write = vi.fn(async (items: { items: Record<string, Blob | Promise<Blob>> }[]) => void written.push(await items[0]!.items["image/png"]));
+    Object.defineProperty(navigator, "clipboard", {
+      value: { read: async () => [{ types: ["text/plain", "image/png"], getType: async () => fromComputer }], readText: async () => "", writeText: vi.fn(), write },
+      configurable: true,
+    });
+
+    // The box copies an image: it goes to this computer's clipboard with no note.
+    const copied = fakePng(50);
+    act(() => void socket.onmessage?.({ data: `clipboard_binary,image/png,${b64(copied)}` }));
+    await waitFor(() => expect(written).toHaveLength(1));
+    expect(new Uint8Array(await (written[0] as Blob).arrayBuffer())).toEqual(copied);
+    expect(slot.queryByText("Copied")).toBeNull();
+
+    // The menu's Copy writes it again, and says so.
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Copy to this computer" }));
+    expect(await slot.findByText("Copied")).toBeTruthy();
+    expect(written).toHaveLength(2);
+
+    // The menu's Paste takes this computer's image before its text, and says so.
+    socket.sent.length = 0;
+    fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Paste from this computer" }));
+    expect(await slot.findByText("Pasted")).toBeTruthy();
+    expect(socket.sent).toContain(`cb,image/png,${b64(fakePng(30))}`);
+  } finally {
+    undo();
+  }
+});
+
+test("the tab the agent took control back from says so, and takes it again; another tab does not (038)", async () => {
+  const { handlers } = server([desktopBox()]);
+  // No RPC makes the agent's take: the server shows it in the box's control.
+  let takenFrom: string | undefined;
+  const live: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    desktop: async (input): Promise<DesktopState> => {
+      const state = await handlers.desktop!(input);
+      return takenFrom && state.box ? { ...state, box: { ...state.box, control: { owner: "agent", holder: null, takenFrom } } } : state;
+    },
+    takeControl: (input) => {
+      takenFrom = undefined;
+      return handlers.takeControl!(input);
+    },
+  };
+  const slot = desktopTab(live);
+  await slot.findByText("Connecting to the desktop…");
+  const other = desktopTab(live);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(2));
+  const [mine, theirs] = [within(slot.container), within(other.container)];
+  const [client, otherClient] = novnc.FakeRfb.made;
+  const viewer = new URL(client!.url).searchParams.get("viewer")!;
+  act(() => {
+    client!.dispatchEvent(new Event("connect"));
+    otherClient!.dispatchEvent(new Event("connect"));
+  });
+  fireEvent.click(mine.getByRole("button", { name: "Take control" }));
+  expect(await mine.findByText("You have control.")).toBeTruthy();
+
+  takenFrom = viewer;
+  await slot.behavior.emitRealtime("changed", { threadId: THREAD });
+  await other.behavior.emitRealtime("changed", { threadId: THREAD });
+  expect(await mine.findByText("The agent took control.")).toBeTruthy();
+  expect([client!.viewOnly, client!.resizeSession]).toEqual([true, false]);
+  expect(mine.queryByTestId("control-ring")).toBeNull();
+  expect(await theirs.findByText("The agent has control.")).toBeTruthy();
+  expect(theirs.getByRole("button", { name: "Take control" })).toBeTruthy();
+
+  fireEvent.click(mine.getByRole("button", { name: "Take control again" }));
+  expect(await mine.findByText("You have control.")).toBeTruthy();
+  expect(slot.inspection.rpcCalls.filter((call) => call.method === "takeControl").map((call) => call.input)).toEqual([
+    { threadId: THREAD, box: "box_2", viewer },
+    { threadId: THREAD, box: "box_2", viewer },
+  ]);
+});
+
+test("a desktop tab keeps its viewer ID when it remounts, and two tabs never share one", async () => {
+  const { handlers } = server([desktopBox()]);
+  const first = desktopTab(handlers);
+  await first.findByText("Connecting to the desktop…");
+  const second = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(2));
+  const [a, b] = novnc.FakeRfb.made.map((client) => new URL(client.url).searchParams.get("viewer"));
+  expect(a).not.toBe(b);
+
+  first.unmount();
+  second.unmount();
+  expect(novnc.FakeRfb.made.map((client) => client.disconnected)).toEqual([false, false]);
+  const again = desktopTab(handlers);
+  // The tab takes back the kept session for its viewer ID at once, before its state has refetched: no new client, no handshake, no blank frame.
+  expect(again.getByTestId("desktop-screen").contains(novnc.FakeRfb.made[1]!.target)).toBe(true);
+  expect(again.getByText("Connecting…")).toBeTruthy();
+  await again.findByText("Connecting to the desktop…");
+  expect(novnc.FakeRfb.made).toHaveLength(2);
+  expect(new URL(novnc.FakeRfb.made[1]!.url).searchParams.get("viewer")).toBe(b);
+});
+
+test("a desktop tab that BB moves to another place in one commit, as at the phone breakpoint, keeps its viewer, its connection and its control", async () => {
+  const { handlers, changes } = server([desktopBox()]);
+  const Desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!.component as ComponentType<{ threadId: string; params: { box: string } }>;
+  let turn!: () => void;
+  function Layout(props: { threadId: string; params: { box: string } }) {
+    const [wide, setWide] = useState(true);
+    turn = () => setWide((now) => !now);
+    return wide ? (
+      <div data-layout="wide">
+        <Desktop {...props} />
+      </div>
+    ) : (
+      <section data-layout="phone">
+        <Desktop {...props} />
+      </section>
+    );
+  }
+  const slot = renderSlot({ component: Layout }, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "bb-box" });
+  await slot.findByText("Connecting to the desktop…");
+  const [client] = novnc.FakeRfb.made;
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText("You have control.");
+
+  for (const layout of ["phone", "wide"]) {
+    act(() => turn());
+    expect(slot.container.querySelector(`[data-layout="${layout}"]`)!.contains(client!.target)).toBe(true);
+    expect(slot.getByText("You have control.")).toBeTruthy();
+  }
+  vi.useFakeTimers();
+  await vi.advanceTimersByTimeAsync(HAND_BACK_MS + 50);
+  vi.useRealTimers();
+  expect(novnc.FakeRfb.made).toHaveLength(1);
+  expect(client!.disconnected).toBe(false);
+  expect(changes).toEqual(["takeControl box_2"]);
+  expect(slot.getByText("You have control.")).toBeTruthy();
+});
+
+test("a hidden desktop tab keeps its stream, hands control back after a minute, and closes after ten", async () => {
+  const { handlers, changes } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await slot.findByText("Connecting to the desktop…");
+  const [client] = novnc.FakeRfb.made;
+  act(() => void client!.dispatchEvent(new Event("connect")));
+  fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+  await slot.findByText("You have control.");
+
+  vi.useFakeTimers();
+  slot.unmount();
+  expect(client!.disconnected).toBe(false);
+  await vi.advanceTimersByTimeAsync(HAND_BACK_MS + 50);
+  expect(changes).toEqual(["takeControl box_2", "handBack box_2"]);
+  expect(client!.disconnected).toBe(false);
+  vi.advanceTimersByTime(HIDDEN_MS);
+  expect(client!.disconnected).toBe(true);
+  vi.useRealTimers();
+
+  // Coming back within the minute keeps control.
+  const back = desktopTab(handlers);
+  await back.findByText("Connecting to the desktop…");
+  const [, next] = novnc.FakeRfb.made;
+  act(() => void next!.dispatchEvent(new Event("connect")));
+  fireEvent.click(back.getByRole("button", { name: "Take control" }));
+  await back.findByText("You have control.");
+  vi.useFakeTimers();
+  back.unmount();
+  vi.advanceTimersByTime(HAND_BACK_MS / 2);
+  const returned = desktopTab(handlers);
+  // The tab's state loads over promises; give the fake clock a few turns before the minute runs out.
+  for (let turn = 0; turn < 5; turn++) await act(() => vi.advanceTimersByTimeAsync(5));
+  expect(returned.getByText("You have control.")).toBeTruthy();
+  await vi.advanceTimersByTimeAsync(HAND_BACK_MS);
+  expect(changes).toEqual(["takeControl box_2", "handBack box_2", "takeControl box_2"]);
+  expect(novnc.FakeRfb.made).toHaveLength(2);
+  returned.unmount();
+});
+
+test("a paste in one of a tab's sessions holds the keys typed in another until its chord has gone, though the session goes meanwhile (#933)", () => {
+  vi.useFakeTimers();
+  try {
+    const sent: string[] = [];
+    const video = new KeysAfterPaste<string>((key) => sent.push(`video ${key}`));
+    const vnc = new KeysAfterPaste<string>((key) => sent.push(`vnc ${key}`));
+    const elsewhere = new KeysAfterPaste<string>((key) => sent.push(`elsewhere ${key}`));
+    video.join("box_2:viewer-one");
+    vnc.join("box_2:viewer-one");
+    elsewhere.join("box_9:viewer-two");
+    video.hold();
+    expect(vnc.keep("a")).toBe(true);
+    expect(elsewhere.keep("z")).toBe(false);
+    // The video session goes, as the stream switches, having sent its chord: the tab's keys wait for the paste to land.
+    video.releaseIn(PASTE_LANDS_MS);
+    video.close();
+    expect(vnc.keep("b")).toBe(true);
+    vi.advanceTimersByTime(PASTE_LANDS_MS);
+    expect(sent).toEqual(["vnc a", "vnc b"]);
+    expect(vnc.keep("c")).toBe(false);
+    vnc.close();
+    elsewhere.close();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("keys typed while a paste is on its way wait for it, at most PASTE_HOLD_MS, and go in order; with none pending they go at once (#915)", () => {
+  vi.useFakeTimers();
+  try {
+    const sent: string[] = [];
+    const keys = new KeysAfterPaste<string>((key) => sent.push(key));
+    expect(keys.keep("a")).toBe(false);
+    keys.hold();
+    expect([keys.keep("b"), keys.keep("c")]).toEqual([true, true]);
+    keys.release();
+    expect(sent).toEqual(["b", "c"]);
+    keys.hold();
+    keys.keep("d");
+    vi.advanceTimersByTime(PASTE_HOLD_MS - 1);
+    expect(sent).toEqual(["b", "c"]);
+    vi.advanceTimersByTime(1);
+    expect(sent).toEqual(["b", "c", "d"]);
+    keys.hold();
+    keys.keep("e");
+    keys.drop();
+    vi.advanceTimersByTime(PASTE_HOLD_MS);
+    expect(sent).toEqual(["b", "c", "d"]);
+    // Once the chord has gone, they go after the paste has had time to land.
+    keys.hold();
+    keys.keep("f");
+    keys.releaseIn(PASTE_LANDS_MS);
+    vi.advanceTimersByTime(PASTE_LANDS_MS - 1);
+    expect(sent).toEqual(["b", "c", "d"]);
+    vi.advanceTimersByTime(1);
+    expect(sent).toEqual(["b", "c", "d", "f"]);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("a reconnect waits 1 s, doubling to MAX_RETRY_MS, and up to a quarter more at random, so pages that lose the plugin together do not retry in step", () => {
+  expect([0, 1, 2, 3, 4, 5].map((failures) => retryWait(failures, () => 0))).toEqual([1000, 2000, 4000, 8000, MAX_RETRY_MS, MAX_RETRY_MS]);
+  expect([0, 1, 4].map((failures) => retryWait(failures, () => 1))).toEqual([1250, 2500, MAX_RETRY_MS * 1.25]);
+  expect(retryWait(2, () => 0.5)).toBe(4500);
+});
+
+test("both viewers wait with jitter before they reconnect", async () => {
+  const undo = withVideo();
+  const random = vi.spyOn(Math, "random").mockReturnValue(1);
+  try {
+    const session = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    const socket = FakeSocket.made.at(-1)!;
+    act(() => socket.open());
+    socket.onmessage?.({ data: videoFrame(0, true) });
+    await decodesMacroblocks();
+    socket.onclose?.({ code: 1012, reason: "Plugin reloaded" });
+    expect(session.connection).toMatchObject({ state: "disconnected", retryMs: 1250 });
+    session.dispose();
+  } finally {
+    random.mockRestore();
+    undo();
+  }
+  const random2 = vi.spyOn(Math, "random").mockReturnValue(1);
+  try {
+    const vnc = new DesktopSession("ws://bb/desktop?box=box_2&viewer=v");
+    act(() => void novnc.FakeRfb.made.at(-1)!.dispatchEvent(new CustomEvent("disconnect", { detail: { clean: false } })));
+    expect(vnc.connection).toMatchObject({ state: "disconnected", retryMs: 1250 });
+    vnc.dispose();
+  } finally {
+    random2.mockRestore();
+  }
+});
+
+test("both viewers leave the area around the picture to the pane, in the theme's neutral, not noVNC's dark grey (#916)", () => {
+  const undo = withVideo();
+  try {
+    const video = new SelkiesSession("ws://bb/desktop?box=box_2&viewer=v&stream=selkies");
+    expect(video.element.style.background).toBe("transparent");
+    video.dispose();
+  } finally {
+    undo();
+  }
+  const vnc = new DesktopSession("ws://bb/desktop?box=box_2&viewer=v");
+  expect((novnc.FakeRfb.made.at(-1) as unknown as { background: string }).background).toBe("transparent");
+  vnc.dispose();
+});
+
+test("a desktop tab shows why the desktop refused it, and reconnects", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await slot.findByText("Connecting to the desktop…");
+  const [client] = novnc.FakeRfb.made;
+  act(() => {
+    client!.dispatchEvent(new CustomEvent("securityfailure", { detail: { status: 1, reason: "The box's desktop refused its VNC password." } }));
+    client!.dispatchEvent(new CustomEvent("disconnect", { detail: { clean: false } }));
+  });
+  expect(slot.getByText("The box's desktop refused its VNC password.")).toBeTruthy();
+  expect(slot.getByText(/^Trying again in [12] s$/)).toBeTruthy();
+  expect(slot.getByText("Disconnected")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Reconnect now" }));
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(2));
+});
+
+test("a desktop tab's note counts down to its next try, rather than show the same number throughout (#916)", async () => {
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+  try {
+    const { handlers } = server([desktopBox()]);
+    const slot = desktopTab(handlers);
+    await slot.findByText("Connecting to the desktop…");
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
+    // Three ends in a row: the waits are 1 s, 2 s and then 4 s.
+    for (let end = 0; end < 3; end++) {
+      act(() => void novnc.FakeRfb.made.at(-1)!.dispatchEvent(new CustomEvent("disconnect", { detail: { clean: false } })));
+      if (end < 2) act(() => vi.advanceTimersByTime(1000 * 2 ** end));
+    }
+    expect(slot.getByText("Trying again in 4 s")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(slot.getByText("Trying again in 3 s")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(2000));
+    expect(slot.getByText("Trying again in 1 s")).toBeTruthy();
+  } finally {
+    vi.useRealTimers();
+    random.mockRestore();
+  }
+});
+
+test("a desktop tab says when its box is not running or gone, and starts a stopped box", async () => {
+  const { handlers, changes } = server([desktopBox({ state: "stopped" })]);
+  const stopped = desktopTab(handlers);
+  expect(await stopped.findByText("bold-heron is stopped.")).toBeTruthy();
+  expect(novnc.FakeRfb.made).toEqual([]);
+  fireEvent.click(stopped.getByRole("button", { name: "Start" }));
+  await waitFor(() => expect(changes).toEqual(["start box_2"]));
+  expect(await stopped.findByText("Connecting to the desktop…")).toBeTruthy();
+  cleanup();
+  const gone = desktopTab(server([]).handlers);
+  expect(await gone.findByText(/has been released\.$/)).toBeTruthy();
+  expect(gone.getByText("Released")).toBeTruthy();
+});
+
+test("a desktop tab whose box is released while it is open says Released, keeps the box's name, and offers nothing that needs the box", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  act(() => void novnc.FakeRfb.made[0]!.dispatchEvent(new Event("connect")));
+  expect(await slot.findByRole("button", { name: "Take control" })).toBeTruthy();
+  // The thread's agent releases the box.
+  await handlers.release!({ threadId: THREAD, box: "box_2" } as never);
+  await slot.behavior.emitRealtime("changed", { threadId: THREAD });
+  expect(await slot.findByText("bold-heron has been released.")).toBeTruthy();
+  expect(slot.getByText("Close this tab when you are done with it.")).toBeTruthy();
+  expect(slot.getByText("Released")).toBeTruthy();
+  expect(slot.getAllByText("bold-heron").length).toBeGreaterThan(0);
+  expect(slot.queryByText("Loading…")).toBeNull();
+  expect(slot.queryByRole("button", { name: "Take control" })).toBeNull();
+  expect(slot.queryByRole("button", { name: "Desktop actions" })).toBeNull();
+});
+
+test("a desktop tab whose box is gone or failed says so, with no Take control and no desktop items in its menu", async () => {
+  for (const [state, words] of [
+    ["gone", "Gone"],
+    ["failed", "Failed"],
+  ] as const) {
+    const slot = desktopTab(server([desktopBox({ state, ...(state === "failed" ? { error: "it did not start" } : {}) })]).handlers);
+    expect(await slot.findByText(words)).toBeTruthy();
+    expect(slot.queryByText("Loading…")).toBeNull();
+    expect(slot.queryByRole("button", { name: "Take control" })).toBeNull();
+    const menu = await openMenu(slot.getByRole("button", { name: "Desktop actions" }));
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent?.trim())).toEqual(["Open in browser"]);
+    cleanup();
+    dropAllKept();
+  }
+});
+
+test("the Desktop tab opened bare opens the thread's one desktop, lists several, and offers the Box panel with none", async () => {
+  const action = app.threadPanelActions.find((candidate) => candidate.id === "desktop");
+  // One desktop (next to a server): the desktop opens straight away, a shortcut, not a chooser.
+  const one = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box(), desktopBox()]).handlers, pluginId: "bb-box" });
+  expect(await one.findByText("Connecting to the desktop…")).toBeTruthy();
+  cleanup();
+
+  // Two desktops: a chooser with an Open button each.
+  const many = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([desktopBox(), desktopBox({ id: "box_9", name: "wild-cove" })]).handlers, pluginId: "bb-box" });
+  expect(await many.findByText("bold-heron")).toBeTruthy();
+  expect(many.getByText("wild-cove")).toBeTruthy();
+  fireEvent.click(many.getAllByRole("button", { name: "Open" })[0]!);
+  expect(many.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop · bold-heron", params: { box: "box_2" } } }]);
+  cleanup();
+
+  // No desktop: a button to the Box panel.
+  const none = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box()]).handlers, pluginId: "bb-box" });
+  expect(await none.findByText("No desktop box")).toBeTruthy();
+  fireEvent.click(none.getByRole("button", { name: "Open the Box panel" }));
+  expect(none.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "boxes", title: "Box" } }]);
+});
+
+test("a thread card says Thread until its title loads", async () => {
+  let give: (thread: ReturnType<typeof makeThreadResponse>) => void = () => undefined;
+  const pending = new Promise<ReturnType<typeof makeThreadResponse>>((resolve) => {
+    give = resolve;
+  });
+  const { handlers } = server([box()]);
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: () => pending } } });
+  const card = await list.findByRole("region", { name: "Thread" });
+  expect(within(card).getByRole("button", { name: (name) => name === "Thread" }).textContent).toBe("Thread");
+  give(makeThreadResponse({ title: "UI thread" }));
+  expect(await list.findByRole("button", { name: "UI thread" })).toBeTruthy();
+  expect(list.getByRole("region", { name: "UI thread" })).toBeTruthy();
+});
+
+test("the Boxes page lists every box under its thread, servers as well as desktops, and shows one desktop for a browser tab", async () => {
+  const { handlers } = server([box(), desktopBox()]);
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  expect(await list.findByText("bold-heron")).toBeTruthy();
+  expect(list.getByText("calm-otter")).toBeTruthy(); // a server box, not only desktops
+  expect(list.getByText("Desktop")).toBeTruthy();
+  expect(list.queryByText("The agent has control")).toBeNull();
+  // With no machines of yours, the page opens on Threads: one card for the thread, headed by its title, which opens it.
+  expect(list.getByRole("tab", { name: "Threads 1" }).getAttribute("aria-selected")).toBe("true");
+  await waitFor(() => expect(list.getAllByText("UI thread")).toHaveLength(1));
+  const card = list.getByRole("region", { name: "UI thread" });
+  expect(within(card).getByText("calm-otter")).toBeTruthy();
+  const header = within(card).getByRole("button", { name: "UI thread" }).parentElement!;
+  expect(header.className).not.toContain("border-b");
+  expect(header.className).toContain("mt-1.5 flex h-7");
+  expect(card.querySelector("[data-resource-row]")!.parentElement!.className).toMatch(/^mt-1\.5 /);
+  expect(card.className).not.toMatch(/\b(py|pb|pt)-/);
+  fireEvent.click(within(card).getByRole("button", { name: "UI thread" }));
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toThread", threadId: THREAD });
+
+  fireEvent.click(list.getByRole("button", { name: "Open desktop" }));
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/desktop/from-list" } });
+  // The rows sort by name, so bold-heron's terminal comes first.
+  fireEvent.click(list.getAllByRole("button", { name: "Open terminal" })[0]!);
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/terminal/from-list" } });
+  fireEvent.click(list.getAllByRole("button", { name: "Open thread" })[0]!);
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toThread", threadId: THREAD });
+  cleanup();
+
+  const one = renderSlot(page!, { subPath: "thr_panel/box_2" }, { rpc: handlers, pluginId: "bb-box" });
+  expect(await one.findByText("Connecting to the desktop…")).toBeTruthy();
+  fireEvent.click(await one.findByRole("button", { name: "Back to bold-heron" }));
+  expect(one.inspection.navigateCalls).toEqual([{ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2", replace: true } }]);
+  cleanup();
+
+  const listed = renderSlot(page!, { subPath: "box/box_2/desktop/from-list" }, { rpc: handlers, pluginId: "bb-box" });
+  expect(await listed.findByText("Connecting to the desktop…")).toBeTruthy();
+  fireEvent.click(listed.getByRole("button", { name: "Back to boxes" }));
+  expect(listed.inspection.navigateCalls).toEqual([{ method: "toPluginPanel", path: "desktop", options: { subPath: "", replace: true } }]);
+  cleanup();
+
+  await handlers.release!({ threadId: "thr_panel", box: "box_2" } as never);
+  for (const subPath of ["thr_panel/box_2", "thr_panel/box_2/terminal"]) {
+    const gone = renderSlot(page!, { subPath }, { rpc: handlers, pluginId: "bb-box" });
+    expect(await gone.findByText("bold-heron was released")).toBeTruthy();
+    expect(gone.queryByText("Close this tab when you are done with it.")).toBeNull();
+    const backs = gone.getAllByRole("button", { name: "Back to boxes" });
+    expect(backs).toHaveLength(2);
+    fireEvent.click(backs[1]!);
+    expect(gone.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "", replace: true } });
+    cleanup();
+  }
+});
+
+function terminalTab(handlers: PluginRpcTestHandlers<Contract>, boxId = "box_1") {
+  const action = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
+  return renderSlot(action!, { threadId: THREAD, params: { box: boxId } }, { rpc: handlers, pluginId: "bb-box" });
+}
+
+test("a terminal tab whose box is released while it is open names the box and says to close the tab, as the desktop's does (#916)", async () => {
+  const { handlers } = server([box()]);
+  const slot = terminalTab(handlers);
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+  await handlers.release!({ threadId: THREAD, box: "box_1" } as never);
+  await slot.behavior.emitRealtime("changed", { threadId: THREAD });
+  expect(await slot.findByText("calm-otter has been released.")).toBeTruthy();
+  expect(slot.getByText("Close this tab when you are done with it.")).toBeTruthy();
+  // Its header says so too, with the box's name, not "Connecting…".
+  expect(slot.getByText("Released")).toBeTruthy();
+  expect(slot.queryByText("Connecting…")).toBeNull();
+  expect(slot.getAllByText("calm-otter").length).toBeGreaterThan(0);
+});
+
+test("a row opens a box's terminal tab, named after the box", async () => {
+  const slot = panel(server([box()]).handlers);
+  fireEvent.click(await slot.findByRole("button", { name: "Open terminal" }));
+  expect(slot.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "terminal", title: "Terminal: calm-otter", params: { box: "box_1" } } }]);
+
+  cleanup();
+  const stopped = panel(server([box({ state: "stopped" })]).handlers);
+  await stopped.findByText("calm-otter");
+  expect(stopped.queryByRole("button", { name: "Open terminal" })).toBeNull();
+});
+
+test("the Terminal tab opened bare opens the thread's one terminal, lists several, and offers the Box panel with none", async () => {
+  const action = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
+  // One box with a terminal: its terminal opens straight away, a shortcut, not a chooser.
+  const one = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box()]).handlers, pluginId: "bb-box" });
+  expect(await one.findByText("Connecting…")).toBeTruthy();
+  await waitFor(() => expect(new URL(FakeSocket.made.at(-1)!.url).searchParams.get("box")).toBe("box_1"));
+  cleanup();
+
+  // Two boxes with a terminal: a chooser with an Open button each.
+  const many = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box(), box({ id: "box_6", name: "swift-fox" })]).handlers, pluginId: "bb-box" });
+  expect(await many.findByText("calm-otter")).toBeTruthy();
+  expect(many.getByText("swift-fox")).toBeTruthy();
+  fireEvent.click(many.getAllByRole("button", { name: "Open" })[0]!);
+  expect(many.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "terminal", title: "Terminal: calm-otter", params: { box: "box_1" } } }]);
+  cleanup();
+
+  // No box with a terminal: a button to the Box panel.
+  const none = renderSlot(action!, { threadId: THREAD, params: null }, { rpc: server([box({ terminal: false })]).handlers, pluginId: "bb-box" });
+  expect(await none.findByText("No box with a terminal")).toBeTruthy();
+  fireEvent.click(none.getByRole("button", { name: "Open the Box panel" }));
+  expect(none.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "boxes", title: "Box" } }]);
+});
+
+test("the terminal tab streams the shell over the plugin's socket, sends what is typed and the size, and offers a new shell when it ends", async () => {
+  const { handlers } = server([box()]);
+  const slot = terminalTab(handlers);
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+  const [socket] = FakeSocket.made;
+  const url = new URL(socket!.url);
+  expect(url.pathname).toBe(TERMINAL_PATH);
+  expect(url.protocol).toBe("ws:");
+  expect(url.searchParams.get("box")).toBe("box_1");
+  expect(url.searchParams.get("cols")).toBe("80");
+  expect(url.searchParams.get("rows")).toBe("24");
+  const session = url.searchParams.get("session")!;
+  expect(session).toMatch(/^[0-9a-f]{24}$/);
+  expect(window.sessionStorage.getItem("bb-box:terminal:box_1")).toBe(session);
+  expect(slot.getByText("Connecting…")).toBeTruthy();
+
+  act(() => socket!.open());
+  expect(slot.getByText("Connected")).toBeTruthy();
+  act(() => socket!.receive("box@calm-otter:~$ "));
+  const [view] = xterm.FakeTerminal.made;
+  expect(view!.written.join("")).toBe("box@calm-otter:~$ ");
+
+  act(() => view!.data!("ls\r"));
+  expect(new TextDecoder().decode(socket!.sent[0] as Uint8Array)).toBe("ls\r");
+
+  vi.useFakeTimers();
+  act(() => view!.resized!({ cols: 100, rows: 30 }));
+  act(() => view!.resized!({ cols: 120, rows: 40 }));
+  act(() => {
+    vi.advanceTimersByTime(150);
+  });
+  vi.useRealTimers();
+  expect(socket!.sent.filter((frame) => typeof frame === "string")).toEqual([JSON.stringify({ type: "resize", cols: 120, rows: 40 })]);
+
+  act(() => socket!.end(1000, "The shell exited."));
+  expect(slot.getByText("The terminal has ended.")).toBeTruthy();
+  expect(slot.getByText("The shell exited.")).toBeTruthy();
+  expect(slot.getByText("Ended")).toBeTruthy();
+
+  fireEvent.click(slot.getAllByRole("button", { name: "Start a new shell" })[0]!);
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(2));
+  const next = new URL(FakeSocket.made[1]!.url).searchParams.get("session")!;
+  expect(next).not.toBe(session);
+  expect(window.sessionStorage.getItem("bb-box:terminal:box_1")).toBe(next);
+});
+
+test("a terminal tab for a box the panel lists as ready connects at once, without waiting for the box's state (#916)", async () => {
+  const { handlers } = server([box({ id: "box_4", name: "quick-fox" })]);
+  const listing = panel(handlers);
+  expect(await listing.findByText("quick-fox")).toBeTruthy();
+  listing.unmount();
+  let answer!: () => void;
+  const slow: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    desktop: (input) => new Promise<DesktopState>((resolve) => (answer = () => resolve(handlers.desktop!(input) as DesktopState))),
+  };
+  const tab = terminalTab(slow, "box_4");
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+  expect(answer).toBeTypeOf("function");
+  expect(new URL(FakeSocket.made[0]!.url).pathname).toBe(TERMINAL_PATH);
+  act(() => FakeSocket.made[0]!.open());
+  expect(tab.getByText("Connected")).toBeTruthy();
+  answer();
+  await waitFor(() => expect(tab.getByText("Connected")).toBeTruthy());
+  expect(FakeSocket.made).toHaveLength(1);
+});
+
+function sizeTheTerminal(made: { target: HTMLElement | null } = xterm.FakeTerminal.made.at(-1)!, width = 800, height = 400): void {
+  const element = made.target;
+  if (!element) throw new Error("no terminal element");
+  Object.defineProperty(element, "clientWidth", { configurable: true, value: width });
+  Object.defineProperty(element, "clientHeight", { configurable: true, value: height });
+  observerOf({ target: element }).resize(width, height);
+}
+
+test("a terminal draws with WebGL, and with xterm's DOM renderer where WebGL is missing or its context is lost", async () => {
+  const { handlers } = server([box(), box({ id: "box_2", name: "bold-heron" })]);
+  terminalTab(handlers);
+  await waitFor(() => expect(xterm.FakeTerminal.made).toHaveLength(1));
+  sizeTheTerminal(xterm.FakeTerminal.made[0]!);
+  const webgl = xterm.FakeTerminal.made[0]!.addons.find((addon) => addon instanceof xterm.FakeWebgl) as InstanceType<typeof xterm.FakeWebgl>;
+  expect(webgl).toBeTruthy();
+  webgl.lose!();
+  expect(webgl.disposed, "a lost context gives the terminal back to the DOM renderer").toBe(true);
+
+  xterm.FakeWebgl.missing = true;
+  try {
+    terminalTab(handlers, "box_2");
+    await waitFor(() => expect(xterm.FakeTerminal.made).toHaveLength(2));
+    sizeTheTerminal(xterm.FakeTerminal.made[1]!);
+    expect(xterm.FakeTerminal.made[1]!.addons.some((addon) => addon instanceof xterm.FakeWebgl)).toBe(false);
+    await waitFor(() => expect(FakeSocket.made).toHaveLength(2));
+  } finally {
+    xterm.FakeWebgl.missing = false;
+  }
+});
+
+test("a remounted terminal tab attaches to the same shell, and a stopped box offers Start", async () => {
+  const { handlers } = server([box()]);
+  const first = terminalTab(handlers);
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+  const session = new URL(FakeSocket.made[0]!.url).searchParams.get("session");
+  first.unmount();
+  expect(FakeSocket.made[0]!.readyState).toBe(0);
+  act(() => FakeSocket.made[0]!.open());
+  const again = terminalTab(handlers);
+  // The tab takes back the kept shell at once, before its state has refetched: the same socket, already connected, in the page.
+  expect(again.getByTestId("terminal-screen").contains(xterm.FakeTerminal.made[0]!.target)).toBe(true);
+  expect(again.getByText("Connected")).toBeTruthy();
+  expect(again.getByTestId("terminal-screen").className).not.toContain("invisible");
+  expect(FakeSocket.made).toHaveLength(1);
+  expect(session).toBeTruthy();
+  vi.useFakeTimers();
+  again.unmount();
+  vi.advanceTimersByTime(HIDDEN_MS + 50);
+  expect(FakeSocket.made[0]!.readyState).toBe(3);
+  vi.useRealTimers();
+
+  // Another box, so the tab does not start from the first box's remembered state.
+  const { handlers: stoppedHandlers, changes } = server([box({ id: "box_3", name: "wild-cove", state: "stopped" })]);
+  const stopped = terminalTab(stoppedHandlers, "box_3");
+  expect(await stopped.findByText("wild-cove is stopped.")).toBeTruthy();
+  expect(FakeSocket.made).toHaveLength(1);
+  fireEvent.click(stopped.getByRole("button", { name: "Start" }));
+  await waitFor(() => expect(changes).toEqual(["start box_3"]));
+
+  cleanup();
+  const none = terminalTab(server([box({ id: "box_5", name: "no-shell", terminal: false })]).handlers, "box_5");
+  expect(await none.findByText("no-shell has no terminal.")).toBeTruthy();
+  // Start made wild-cove ready, so its tab connected; no-shell never does.
+  expect(FakeSocket.made.map((made) => new URL(made.url).searchParams.get("box"))).toEqual(["box_1", "box_3"]);
+});
+
+/** One of your machines: a ready desktop a thread is working on. */
+function machine(overrides: Partial<BoxView> = {}, threads: ThreadOnBox[] = [{ id: "thr_a", title: "Fix the login form", running: true }, { id: "thr_b", title: "Docs pass", running: false }]): MachineEntry {
+  return { box: desktopBox({ id: "box_m1", name: "build-1", ...overrides }), threads };
+}
+
+test("the Boxes page opens on its Machines tab from settings, and New box takes a kind, a size and a name it checks as you type", async () => {
+  const { handlers, changes } = server([box()]);
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "machines" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  expect(await list.findByText(/You have no machines\. New box adds one/)).toBeTruthy();
+  expect(list.getByRole("tab", { name: /^Machines/ }).getAttribute("aria-selected")).toBe("true");
+  fireEvent.click(list.getByRole("button", { name: "New box" }));
+  expect(await screen.findByText("Of the kinds whose boxes join BB.")).toBeTruthy();
+  const name = screen.getByRole("textbox", { name: "Name" });
+  expect(name.getAttribute("placeholder")).toBe("Optional: BB Box picks a name like calm-tundra");
+  fireEvent.change(name, { target: { value: "Build 1" } });
+  expect(screen.getByText("Lowercase letters, digits and hyphens, starting with a letter, up to 32 characters.")).toBeTruthy();
+  expect(submitButton().disabled).toBe(true);
+  fireEvent.change(name, { target: { value: "build-" } });
+  expect(screen.getByText("A name cannot end with a hyphen.")).toBeTruthy();
+  fireEvent.change(name, { target: { value: "build-1" } });
+  fireEvent.click(submitButton());
+  await waitFor(() => expect(changes).toEqual(["machines.add linux build-1"]));
+});
+
+test("the Boxes page's New box adds one of your machines with settings' Add machine form, and the new machine shows under Machines", async () => {
+  const { handlers, changes } = server([box()], { machines: [machine()] });
+  // The page lists your machines from allBoxes; here they come from the harness's machines, so a machine added shows up.
+  const yours = () => (handlers["machines.list"] as (input: null) => { machines: MachineEntry[] })(null).machines.map((entry) => ({ threadId: "operator", box: entry.box, owner: "yours" as const }));
+  const withMine: PluginRpcTestHandlers<Contract> = { ...handlers, allBoxes: () => [...yours(), ...(handlers.allBoxes as () => BoxEntryLike[])()] };
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "" }, { rpc: withMine, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  expect(await list.findByText("build-1")).toBeTruthy();
+  expect(list.queryByText(/^\d+ box(es)?$/)).toBeNull();
+  expect(list.queryByText("BB machine")).toBeNull();
+  // New box at the top right, as Automations' New automation: settings' Add machine form, machine mode, with the Name step (the operator, 4 October 2026).
+  fireEvent.click(list.getByRole("button", { name: "New box" }));
+  expect(await screen.findByText("Of the kinds whose boxes join BB.")).toBeTruthy();
+  const name = screen.getByRole("textbox", { name: "Name" });
+  fireEvent.change(name, { target: { value: "build-2" } });
+  expect(submitButton().textContent).toBe("Create box");
+  fireEvent.click(submitButton());
+  await waitFor(() => expect(changes).toEqual(["machines.add linux build-2"]));
+  // It shows under Machines, starting; the threads' boxes are on the other tab.
+  expect(await list.findByText("build-2")).toBeTruthy();
+  expect(list.getAllByText(/build-1|build-2|calm-otter/).map((node) => node.textContent)).toEqual(["build-1", "build-2"]);
+  expect(list.getByRole("tab", { name: "Machines 2" }).getAttribute("aria-selected")).toBe("true");
+});
+
+test("the Boxes page's New box offers a desktop whose image is not built yet, as the Box panel does, and builds it for a machine with its name", async () => {
+  const desktop: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
+  const onDemand = { hostId: "host_bb", name: "devpc", kinds: [{ kind: desktop, took: null }] };
+  for (const [where, open, submit] of [
+    ["the Boxes page", (handlers: PluginRpcTestHandlers<Contract>) => boxesPage(handlers).findByRole("button", { name: "New box" }), "Build and create"],
+  ] as const) {
+    const { handlers, changes } = server([], { kinds: [KINDS[0]!], desktopOnDemand: onDemand });
+    fireEvent.click(await open(handlers));
+    const types = await screen.findByRole("radiogroup", { name: "Type" });
+    fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+    expect(screen.getByText("BB Box builds the desktop image on devpc first, usually 4 to 10 min, then makes the box."), where).toBeTruthy();
+    fireEvent.change(screen.getByRole("textbox", { name: "Name" }), { target: { value: "desk-1" } });
+    fireEvent.click(screen.getByRole("button", { name: submit }));
+    await waitFor(() => expect(changes, where).toEqual(["setup.desktop host_bb for operator named desk-1"]));
+    cleanup();
+  }
+});
+
+test("the Boxes page shows a desktop image's build while it runs, as the Box panel and settings do", async () => {
+  const building = setup({ state: "on", build: { state: "building", targets: ["desktop"], detail: null, step: { at: 3, of: 9 }, startedAt: Date.now() - 125_000, endedAt: null } });
+  const list = boxesPage(server([], { setups: [building] }).handlers);
+  expect(await list.findByText("Building the desktop image on this machine")).toBeTruthy();
+  expect(list.getByText("Step 3 of 9")).toBeTruthy();
+});
+
+test("a desktop machine not made after its image was built says why on the Boxes page, once", async () => {
+  const list = boxesPage(server([], { desktopProblem: { message: "The desktop image is built, but the box was not made: no room", at: 1 } }).handlers);
+  expect(await list.findByText("The desktop image is built, but the box was not made: no room")).toBeTruthy();
+});
+
+function listedRowNames(): string[] {
+  return Array.from(document.querySelectorAll("[data-row-name]"), (link) => link.getAttribute("aria-label") ?? "");
+}
+
+/** The Boxes page, with thread titles from the SDK. */
+function boxesPage(handlers: PluginRpcTestHandlers<Contract>) {
+  const [page] = app.navPanels;
+  return renderSlot(page!, { subPath: "" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+}
+
+test("the Boxes page manages a thread's boxes with the Box panel's menu: Stop, Start, Release with its question, as that thread", async () => {
+  const { handlers, changes } = server([box(), box({ id: "box_6", name: "swift-fox", state: "stopped" })]);
+  const list = boxesPage(handlers);
+  expect(await list.findByText("calm-otter")).toBeTruthy();
+  let menu = await openMenu(list.getByRole("button", { name: "calm-otter actions" }));
+  expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Open terminal", "Open files", "Copy address", "Stop", "Check now", "Release…"]);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  expect(list.getAllByRole("button", { name: "Open thread" })).toHaveLength(1);
+  // A stopped box offers Start.
+  menu = await openMenu(list.getByRole("button", { name: "swift-fox actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Start" }));
+  await waitFor(() => expect(changes).toEqual(["start box_6"]));
+  // Release asks first, as the panel does, and acts as the box's thread.
+  menu = await openMenu(list.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Release…" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Release calm-otter?")).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Release" }));
+  await waitFor(() => expect(changes).toEqual(["start box_6", "release box_1"]));
+  expect(list.inspection.rpcCalls.find((call) => call.method === "release")?.input).toEqual({ threadId: THREAD, box: "box_1" });
+  await waitFor(() => expect(list.queryByText("calm-otter")).toBeNull());
+});
+
+test("on the Boxes page, a box another thread is working on is released only after 'Release anyway?'", async () => {
+  const { handlers, changes } = server([box()], { inUse: [{ id: "thr_worker", title: "Build the app", running: true }] });
+  const list = boxesPage(handlers);
+  await list.findByText("calm-otter");
+  const menu = await openMenu(list.getByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Release…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Release" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Release calm-otter anyway?" });
+  expect(within(dialog).getByText("\"Build the app\" is working on calm-otter.")).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: /Build the app/ })).toBeTruthy();
+  expect(changes).toEqual([]);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Release anyway" }));
+  await waitFor(() => expect(changes).toEqual(["release (forced) box_1"]));
+  expect(list.inspection.rpcCalls.filter((call) => call.method === "release").at(-1)?.input).toEqual({ threadId: THREAD, box: "box_1", force: true });
+});
+
+test("the Boxes page's Machines resize one of your machines through machines.resize (061)", async () => {
+  const resize = fakeResizer({ cores: 2, memoryGiB: 4, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "live" }, machine: "BB's daemon on machine build-1 is restarting, so BB counts its 4 processors." });
+  const { handlers, changes } = server([], { machines: [machine({ sizeNow: size(2, 4, 20), resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } }, [])], resize });
+  const slot = boxesPage(handlers);
+  const menu = await openMenu(await slot.findByRole("button", { name: "build-1 actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Resize…" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Resize build-1")).toBeTruthy();
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Cores" }), { target: { value: "4" } });
+  await within(dialog).findByRole("list", { name: "What changes" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Resize" }));
+  expect(await within(dialog).findByText("BB's daemon on machine build-1 is restarting, so BB counts its 4 processors.")).toBeTruthy();
+  expect(changes.filter((change) => !change.includes('"check":true'))).toEqual(['machines.resize box_m1 {"size":{"cores":4}}']);
+});
+
+test("a machine's threads show as up to 3 chips, working first, then the latest, and +N more lists them all, searchable when long; each opens its thread", async () => {
+  const threads: ThreadOnBox[] = Array.from({ length: 12 }, (_, index) => ({ id: `thr_${index}`, title: `Thread number ${index}`, running: false, activeAt: 1_000 + index }));
+  threads[2] = { id: "thr_2", title: "Replying to this earlier message in the conversation: > Check the release notes", running: true, activeAt: 10 };
+  threads[5] = { id: "thr_5", title: null, running: false, activeAt: 2_000 };
+  const { handlers } = server([], { machines: [machine({}, threads)] });
+  const list = boxesPage(handlers);
+  const chips = within(await list.findByRole("list", { name: "Threads on this box" }));
+  expect(chips.getAllByRole("button").map((chip) => chip.textContent)).toEqual(["Check the release notes", "Untitled thread", "Thread number 11", "+11 more", "+9 more"]);
+  const where = (text: string) => chips.getAllByRole("button").find((chip) => chip.textContent === text)!.closest("[role=listitem], span.flex")!.className;
+  expect(where("Check the release notes")).not.toMatch(/@(max-)?md:hidden/);
+  expect(["Untitled thread", "Thread number 11", "+9 more"].map(where)).toEqual(Array(3).fill(expect.stringContaining("@max-md:hidden")));
+  expect(where("+11 more")).toContain("@md:hidden");
+  fireEvent.click(chips.getByRole("button", { name: "9 more threads" }));
+  const search = await screen.findByRole("textbox", { name: "Search threads" });
+  const all = () => within(screen.getByRole("list", { name: "All threads on this box" })).getAllByRole("button");
+  expect(all()).toHaveLength(12);
+  fireEvent.change(search, { target: { value: "number 1" } });
+  const found = all();
+  expect(found.map((button) => button.textContent)).toEqual(["Thread number 11", "Thread number 10", "Thread number 1"]);
+  fireEvent.click(found[2]!);
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toThread", threadId: "thr_1" });
+});
+
+test("the Boxes page's Machines have settings' rows and warnings: Stop, Start and Remove, each asking when threads work there", async () => {
+  const { handlers, changes } = server([], { machines: [machine(), machine({ id: "box_m2", name: "scratch", desktop: false, display: null, state: "stopped" }, [])] });
+  const list = boxesPage(handlers);
+  expect(await list.findByText("Machines")).toBeTruthy();
+  expect(list.getAllByRole("button", { name: /Fix the login form/ })).toHaveLength(1);
+  const rows = Array.from(list.container.querySelectorAll("[data-resource-row]"));
+  expect(rows).toHaveLength(2);
+  for (const row of rows) {
+    expect(row.className).toContain("py-3");
+    expect(row.className).not.toMatch(/first:pt-0|last:pb-0/);
+  }
+  expect(rows[0]!.parentElement!.parentElement!.className).toContain("px-4");
+  expect(rows[0]!.parentElement!.parentElement!.className).not.toMatch(/\b(py|pb|pt)-/);
+  // A machine's desktop opens on the page, with the way back to the page, not settings.
+  fireEvent.click(list.getAllByRole("button", { name: "Open desktop" })[0]!);
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_m1/desktop/from-list" } });
+  // Remove asks with settings' words, then again, since a thread works there.
+  let menu = await openMenu(list.getByRole("button", { name: "build-1 actions" }));
+  expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toContain("Open in browser");
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Remove…" }));
+  let dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Remove build-1?")).toBeTruthy();
+  expect(within(dialog).getByText(/Its machine leaves BB, and its disk and everything on it will be deleted/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+  dialog = await screen.findByRole("alertdialog", { name: "Remove build-1 anyway?" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(changes).toEqual([]);
+  // Stop asks too; Stop anyway goes on.
+  await chooseMenuItem(list.getByRole("button", { name: "build-1 actions" }), "Stop");
+  dialog = await screen.findByRole("alertdialog", { name: "Stop build-1 anyway?" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Stop anyway" }));
+  await waitFor(() => expect(changes).toEqual(["machines.stop (forced) box_m1"]));
+  // A stopped machine offers Start; one nobody works on is removed after the first question.
+  menu = await openMenu(list.getByRole("button", { name: "scratch actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Start" }));
+  await waitFor(() => expect(changes).toEqual(["machines.stop (forced) box_m1", "machines.start box_m2"]));
+  menu = await openMenu(list.getByRole("button", { name: "scratch actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Remove…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove" }));
+  await waitFor(() => expect(changes.at(-1)).toBe("machines.remove box_m2"));
+});
+
+test("the Boxes page's tab row has the settings gear, then New box at the far right, a plain button where Automations has New automation; the gear is a link to Settings > BB Box", async () => {
+  const [page] = app.navPanels;
+  expect(page!.headerContent).toBeUndefined();
+  const list = boxesPage(server([box()]).handlers);
+  await list.findByText("calm-otter");
+  expect(list.getByText("Computers for your threads, and machines of your own.")).toBeTruthy();
+  const gear = list.getByRole("link", { name: "BB Box settings" });
+  expect(gear.getAttribute("href")).toBe("/settings/plugins/bb-box");
+  expect(gear.textContent).toBe("");
+  // A pair at the tab row's end: the gear first, then New box, a plain button with no menu, as BB's new-thread screen offers New box.
+  const newBox = list.getByRole("button", { name: "New box" });
+  const pair = gear.closest("div.flex")!;
+  expect(pair.contains(newBox)).toBe(true);
+  expect(gear.compareDocumentPosition(newBox) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(list.queryByRole("button", { name: "New box options" })).toBeNull();
+  const row = pair.parentElement!;
+  expect(row.contains(list.getByRole("tablist"))).toBe(true);
+  expect(row.className).toContain("justify-between");
+  // Before the lists, not under them.
+  expect(gear.compareDocumentPosition(list.getByRole("link", { name: "calm-otter" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+
+
+
+test("the Boxes page's search matches a box's name, kind, provider and thread; its filters tick tags, providers and states; its sort orders by name or age", () => {
+  const hour = 3_600_000;
+  const rows = [
+    { box: box({ id: "box_1", name: "calm-otter", createdAt: 3 * hour }), words: ["Add dark mode"] },
+    { box: desktopBox({ id: "box_2", name: "bold-heron", backendLabel: "Proxmox LXC on pve", createdAt: 1 * hour }), words: ["Add dark mode"] },
+    { box: box({ id: "box_3", name: "still-pond", state: "stopped", createdAt: 2 * hour }), words: ["Docs pass"] },
+    { box: box({ id: "box_4", name: "quiet-fern", state: "acquiring", createdAt: 4 * hour }), words: ["Docs pass"] },
+  ];
+  const names = (found: readonly { box: BoxView }[]) => found.map((row) => row.box.name);
+  const byName = { key: "name", ascending: true } as const;
+  // Every word typed must match, in any field, whatever its case.
+  expect(names(shown(rows, "", NO_FILTERS, byName))).toEqual(["bold-heron", "calm-otter", "quiet-fern", "still-pond"]);
+  expect(names(shown(rows, "docs", NO_FILTERS, byName))).toEqual(["quiet-fern", "still-pond"]);
+  expect(names(shown(rows, "PVE desktop", NO_FILTERS, byName))).toEqual(["bold-heron"]);
+  expect(names(shown(rows, "dark pond", NO_FILTERS, byName))).toEqual([]);
+  // A filter keeps what it ticks; ticks in one filter widen, filters together narrow.
+  expect(names(shown(rows, "", { ...NO_FILTERS, states: ["Stopped", "Starting"] }, byName))).toEqual(["quiet-fern", "still-pond"]);
+  expect(names(shown(rows, "", { ...NO_FILTERS, has: ["Desktop"], states: ["Ready"] }, byName))).toEqual(["bold-heron"]);
+  expect(names(shown(rows, "", { ...NO_FILTERS, providers: ["Proxmox LXC on pve"] }, byName))).toEqual(["bold-heron"]);
+  // The sort: name either way, or age, oldest first when ascending.
+  expect(names(shown(rows, "", NO_FILTERS, { key: "name", ascending: false }))).toEqual(["still-pond", "quiet-fern", "calm-otter", "bold-heron"]);
+  expect(names(shown(rows, "", NO_FILTERS, { key: "created", ascending: true }))).toEqual(["bold-heron", "still-pond", "calm-otter", "quiet-fern"]);
+  // The filters offer what is listed, each once; the states in a fixed order.
+  expect(choices(rows.map((row) => row.box))).toEqual({ systems: ["Linux"], forms: ["Container"], has: ["Desktop", "GPU"], providers: ["Fake host", "Proxmox LXC on pve"], states: ["Ready", "Starting", "Stopped"] });
+  expect([box({ state: "starting" }), box({ state: "stopping" }), box({ state: "releasing" }), box({ state: "gone" }), box({ state: "failed" })].map(stateGroup)).toEqual(["Starting", "Stopped", "Stopped", "Failed", "Failed"]);
+});
+
+test("on the Boxes page, the search narrows the list, says when nothing matches, and the filters and sort act on the rows", async () => {
+  const { handlers } = server([box(), desktopBox(), box({ id: "box_6", name: "swift-fox", state: "stopped", createdAt: Date.now() - 60 * 60_000 })]);
+  const list = boxesPage(handlers);
+  await list.findByText("calm-otter");
+  // An open menu hides the page from the accessibility tree, so the rows are read hidden or not.
+  const rowNames = listedRowNames;
+  // Name, ascending, at first, as on the Automations page.
+  expect(rowNames()).toEqual(["bold-heron", "calm-otter", "swift-fox"]);
+  expect(list.getByRole("button", { name: "Sort: Name, ascending" })).toBeTruthy();
+  const search = list.getByRole("textbox", { name: "Search boxes" });
+  fireEvent.change(search, { target: { value: "fox" } });
+  expect(rowNames()).toEqual(["swift-fox"]);
+  fireEvent.change(search, { target: { value: "nothing like it" } });
+  expect(list.getByText("No boxes match.")).toBeTruthy();
+  fireEvent.click(list.getByRole("button", { name: "Clear search" }));
+  expect(rowNames()).toHaveLength(3);
+  // The tab counts stay totals.
+  expect(list.getByRole("tab", { name: "Threads 1" })).toBeTruthy();
+  let menu = await openMenu(list.getByRole("button", { name: "Filters" }));
+  expect(within(menu).getAllByText(/^(System|Tags|Provider|State)$/).map((node) => node.textContent)).toEqual(["System", "Tags", "Provider", "State"]);
+  fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: /^Stopped/ }));
+  expect(rowNames()).toEqual(["swift-fox"]);
+  fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: /^Stopped/ }));
+  fireEvent.keyDown(menu, { key: "Escape" });
+  expect(rowNames()).toHaveLength(3);
+  // Sort: Created, oldest first; the same again reverses it.
+  menu = await openMenu(list.getByRole("button", { name: "Sort: Name, ascending" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Created" }));
+  expect(rowNames()[0]).toBe("swift-fox");
+  menu = await openMenu(list.getByRole("button", { name: "Sort: Created, ascending" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Created" }));
+  expect(list.getByRole("button", { name: "Sort: Created, descending" })).toBeTruthy();
+  expect(rowNames().at(-1)).toBe("swift-fox");
+});
+
+function rowOf(list: ReturnType<typeof boxesPage>, name: string): HTMLElement {
+  return list.getByRole("link", { name, hidden: true }).closest<HTMLElement>("[data-resource-row]")!;
+}
+
+test("on the Boxes page a row's click and its name open the box's page from the list; a row no longer unfolds, and its controls do not open the page (069 unit 1d)", async () => {
+  const { handlers, changes } = server([box(), desktopBox()]);
+  const list = boxesPage(handlers);
+  const name = await list.findByRole("link", { name: "calm-otter" });
+  expect(name.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_1/from-list");
+  expect(list.queryByRole("button", { name: /: details$/ })).toBeNull();
+  const toPage = { method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_1/from-list" } };
+  fireEvent.click(name);
+  expect(list.inspection.navigateCalls).toEqual([toPage]);
+  const row = rowOf(list, "calm-otter");
+  fireEvent.click(row.querySelector("[data-row-line]")!);
+  expect(list.inspection.navigateCalls).toEqual([toPage, toPage]);
+  fireEvent.click(name, { metaKey: true });
+  fireEvent.click(name, { ctrlKey: true });
+  await chooseMenuItem(within(row).getByRole("button", { name: "calm-otter actions" }), "Stop");
+  await waitFor(() => expect(changes).toEqual(["stop box_1"]));
+  await chooseMenuItem(within(row).getByRole("button", { name: "calm-otter actions" }), "Check now");
+  expect(list.inspection.navigateCalls).toHaveLength(2);
+  expect(row.className).toContain("hover:bg-state-hover/40");
+  expect(row.querySelector("dl")).toBeNull();
+});
+
+test("a ready row has no inline Stop and no chevron, and Stop in its menu stops it", async () => {
+  const { handlers, changes } = server([box()], { machines: [machine({}, [])] });
+  const list = boxesPage(handlers);
+  const openTab = async (name: RegExp, boxName: string) => {
+    fireEvent.click(await list.findByRole("tab", { name }));
+    return rowOf(list, (await list.findByRole("link", { name: boxName })).getAttribute("aria-label")!);
+  };
+  const machineRow = await openTab(/^Machines/, "build-1");
+  expect(within(machineRow).queryByRole("button", { name: "Stop" })).toBeNull();
+  expect(machineRow.querySelector("[data-row-action] a")).toBeNull();
+  const row = await openTab(/^Threads/, "calm-otter");
+  expect(within(row).queryByRole("button", { name: "Stop" })).toBeNull();
+  expect(row.querySelector("[data-row-action] a")).toBeNull();
+  await chooseMenuItem(within(row).getByRole("button", { name: "calm-otter actions" }), "Stop");
+  await waitFor(() => expect(changes).toEqual(["stop box_1"]));
+});
+
+test("the Boxes page keeps its search, filters and sort, and focus returns to the row's name, after a box is opened by its name, the row, a quick icon or its menu (G9)", async () => {
+  const { handlers } = server([box(), desktopBox(), box({ id: "box_6", name: "swift-fox", state: "stopped" })]);
+  const ways: [string, (row: HTMLElement) => Promise<void>, string][] = [
+    ["name", async (row) => void fireEvent.click(within(row).getByRole("link", { name: "bold-heron" })), "box/box_2/from-list"],
+    ["row", async (row) => void fireEvent.click(row.querySelector("[data-row-line]")!), "box/box_2/from-list"],
+    ["quick icon", async (row) => void fireEvent.click(within(row).getByRole("button", { name: "Open terminal" })), "box/box_2/terminal/from-list"],
+    [
+      "menu",
+      async (row) => {
+        const menu = await openMenu(within(row).getByRole("button", { name: "bold-heron actions" }));
+        fireEvent.click(within(menu).getByRole("menuitem", { name: "Open desktop" }));
+      },
+      "box/box_2/desktop/from-list",
+    ],
+  ];
+  let list = boxesPage(handlers);
+  await list.findByRole("link", { name: "calm-otter" });
+  fireEvent.change(list.getByRole("textbox", { name: "Search boxes" }), { target: { value: "o" } });
+  let menu = await openMenu(list.getByRole("button", { name: "Filters" }));
+  fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: /^Ready/ }));
+  fireEvent.keyDown(menu, { key: "Escape" });
+  menu = await openMenu(list.getByRole("button", { name: "Sort: Name, ascending" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Name" }));
+  expect(listedRowNames()).toEqual(["calm-otter", "bold-heron"]);
+  for (const [way, open, subPath] of ways) {
+    await open(rowOf(list, "bold-heron"));
+    expect([way, list.inspection.navigateCalls.at(-1)]).toEqual([way, { method: "toPluginPanel", path: "desktop", options: { subPath } }]);
+    cleanup();
+    list = boxesPage(handlers);
+    const name = await list.findByRole("link", { name: "bold-heron" });
+    expect([way, (list.getByRole("textbox", { name: "Search boxes" }) as HTMLInputElement).value]).toEqual([way, "o"]);
+    expect(list.getByRole("button", { name: "Sort: Name, descending" })).toBeTruthy();
+    expect([way, listedRowNames()]).toEqual([way, ["calm-otter", "bold-heron"]]);
+    expect([way, list.getByRole("button", { name: "Filters" }).className]).toEqual([way, expect.stringContaining("bg-state-active")]);
+    await waitFor(() => expect([way, document.activeElement]).toEqual([way, name]));
+  }
+});
+
+test("returning to the Boxes page after a box went, focus is on the row now in its place, also when the fresh list drops the row shown at first (G9)", async () => {
+  const { handlers } = server([box(), desktopBox(), box({ id: "box_6", name: "swift-fox", state: "stopped" })]);
+  let list = boxesPage(handlers);
+  fireEvent.click(await list.findByRole("link", { name: "calm-otter" }));
+  cleanup();
+  await handlers.release!({ threadId: THREAD, box: "box_1" } as never);
+  list = boxesPage(handlers);
+  await waitFor(() => expect(listedRowNames()).toEqual(["bold-heron", "swift-fox"]));
+  await waitFor(() => expect(document.activeElement).toBe(list.getByRole("link", { name: "swift-fox" })));
+});
+
+test("a machine's row opens its page, and a thread chip on it records the row, so the way back focuses it (G9)", async () => {
+  const { handlers } = server([], { machines: [machine(), machine({ id: "box_m2", name: "scratch", desktop: false, display: null, state: "stopped" }, [])] });
+  let list = boxesPage(handlers);
+  const name = await list.findByRole("link", { name: "build-1" });
+  expect(name.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_m1/from-list");
+  fireEvent.click(rowOf(list, "scratch").firstElementChild!);
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_m2/from-list" } });
+  fireEvent.click(within(rowOf(list, "build-1")).getByRole("button", { name: /Fix the login form/ }));
+  expect(list.inspection.navigateCalls.at(-1)).toEqual({ method: "toThread", threadId: "thr_a" });
+  cleanup();
+  list = boxesPage(handlers);
+  const back = await list.findByRole("link", { name: "build-1" });
+  await waitFor(() => expect(document.activeElement).toBe(back));
+});
+
+test("the list's place is kept in session storage for a reload, with its scroll for the tab it was on; what is not a place is left out", () => {
+  const list = document.createElement("div");
+  Object.defineProperty(list, "scrollTop", { value: 240, writable: true });
+  for (const id of ["box_a", "box_b", "box_c"]) {
+    const link = document.createElement("a");
+    link.href = "#";
+    link.setAttribute("data-row-name", id);
+    list.appendChild(link);
+  }
+  document.body.appendChild(list);
+  keepListPlace({ search: "fox", sort: { key: "created", ascending: false } });
+  leaveRow(list, "threads", "box_b");
+  forgetListPlace();
+  expect(listPlace()).toEqual({ search: "fox", filters: NO_FILTERS, sort: { key: "created", ascending: false }, scroll: { tab: "threads", top: 240 }, left: { tab: "threads", boxId: "box_b", index: 1 } });
+  list.scrollTop = 0;
+  expect(returnToPlace(list, "machines")).toBeNull();
+  expect(list.scrollTop).toBe(0);
+  expect(returnToPlace(list, "threads")).toEqual({ tab: "threads", boxId: "box_b", index: 1 });
+  expect(list.scrollTop).toBe(240);
+  expect(document.activeElement?.getAttribute("data-row-name")).toBe("box_b");
+  expect(listPlace().left).toBeNull();
+  list.removeChild(list.children[1]!);
+  expect(rowToReturnTo(list, { tab: "threads", boxId: "box_b", index: 1 })?.getAttribute("data-row-name")).toBe("box_c");
+  expect(rowToReturnTo(list, { tab: "threads", boxId: "box_b", index: 7 })?.getAttribute("data-row-name")).toBe("box_c");
+  list.remove();
+  expect(placeFrom("not json")).toBeNull();
+  expect(placeFrom('{"search":3,"filters":{"systems":[1]},"sort":{"key":"price","ascending":true},"scroll":{"tab":"other","top":5},"left":{"tab":"threads","boxId":"box_1","index":-1}}')).toEqual(FRESH_PLACE);
+});
+
+function tagged(id: string, name: string, facts: Partial<BoxView>): BoxView {
+  return box({ id, name, ...facts });
+}
+
+const TAGGED = [
+  tagged("box_t1", "linux-vm", { os: "linux", form: "VM", backendLabel: "Proxmox QEMU on pve", provider: "Proxmox", requires: ["kvm"] }),
+  tagged("box_t2", "linux-lxc", { os: "linux", form: "LXC", backendLabel: "Proxmox LXC on pve", provider: "Proxmox", desktop: true }),
+  tagged("box_t3", "pool-mac", { os: "macos", form: "Physical", arch: "arm64", backendLabel: "SSH host pool", provider: "SSH pool", desktop: true }),
+  tagged("box_t4", "tart-mac", { os: "macos", form: "VM", arch: "arm64", backendLabel: "Tart on studio", provider: "Tart" }),
+  tagged("box_t5", "win-vm", { os: "windows", form: "VM", backendLabel: "Proxmox QEMU on pve", provider: "Proxmox", desktop: true, extras: [] }),
+  tagged("box_t6", "arm-micro", { os: "linux", form: "microVM", arch: "arm64", backendLabel: "microsandbox on studio", provider: "microsandbox" }),
+  tagged("box_t7", "cloud-box", { os: "linux", form: "Docker", backendLabel: "Hetzner Cloud", provider: "Hetzner Cloud", gpu: true }),
+];
+
+test("the Boxes page's tags come from a box's facts, not its backend's name: system, form, what it has, provider and state", () => {
+  expect(TAGGED.map((one) => { const tags = tagsOf(one); return `${one.name}: ${tags.systems.join()} | ${tags.forms.join()} | ${tags.has.join()}`; })).toEqual([
+    "linux-vm: Linux | VM | KVM",
+    "linux-lxc: Linux | Container | Desktop",
+    "pool-mac: macOS | Physical | Desktop,arm64",
+    "tart-mac: macOS | VM | arm64",
+    "win-vm: Windows | VM | Desktop",
+    "arm-micro: Linux | microVM | arm64",
+    "cloud-box: Linux | Container | GPU",
+  ]);
+  expect(choices(TAGGED)).toEqual({
+    systems: ["Linux", "macOS", "Windows"],
+    forms: ["VM", "Container", "microVM", "Physical"],
+    has: ["Desktop", "GPU", "KVM", "arm64"],
+    providers: ["Hetzner Cloud", "microsandbox", "Proxmox", "SSH pool", "Tart"],
+    states: ["Ready"],
+  });
+  expect([...splitGroups(TAGGED)]).toEqual(["systems", "forms", "has", "providers"]);
+});
+
+test("a Wayland desktop has a Wayland tag beside Desktop, so it reads differently from an X11 desktop of the same backend", () => {
+  const x11 = tagged("box_x", "xfce-box", { os: "linux", form: "Docker", kind: "linux-desktop-cpu", desktop: true });
+  const wayland = tagged("box_w", "sway-box", { os: "linux", form: "Docker", kind: "linux-desktop-wayland-cpu", desktop: true });
+  expect(tagsOf(x11).has).toEqual(["Desktop"]);
+  expect(tagsOf(wayland).has).toEqual(["Desktop", "Wayland"]);
+  expect(choices([x11, wayland]).has).toEqual(["Desktop", "Wayland"]);
+});
+
+test("ticks in one tag group widen (Linux or macOS) and groups together narrow (Linux and VM); each tag counts what ticking it would show", () => {
+  const rows = TAGGED.map((one) => ({ box: one, words: [] }));
+  const names = (filters: typeof NO_FILTERS) => shown(rows, "", filters, { key: "name", ascending: true }).map((row) => row.box.name);
+  expect(names({ ...NO_FILTERS, systems: ["Linux"] })).toEqual(["arm-micro", "cloud-box", "linux-lxc", "linux-vm"]);
+  expect(names({ ...NO_FILTERS, systems: ["Linux", "macOS"] })).toEqual(["arm-micro", "cloud-box", "linux-lxc", "linux-vm", "pool-mac", "tart-mac"]);
+  expect(names({ ...NO_FILTERS, systems: ["Linux"], forms: ["VM"] })).toEqual(["linux-vm"]);
+  expect(names({ ...NO_FILTERS, systems: ["macOS"], forms: ["Physical"] })).toEqual(["pool-mac"]);
+  expect(names({ ...NO_FILTERS, forms: ["VM", "microVM"], has: ["arm64"] })).toEqual(["arm-micro", "tart-mac"]);
+  expect(names({ ...NO_FILTERS, has: ["Desktop", "GPU"] })).toEqual(["cloud-box", "linux-lxc", "pool-mac", "win-vm"]);
+  expect(names({ ...NO_FILTERS, providers: ["Hetzner Cloud"] })).toEqual(["cloud-box"]);
+  expect(names({ ...NO_FILTERS, providers: ["Proxmox"] })).toEqual(["linux-lxc", "linux-vm", "win-vm"]);
+  expect(names({ ...NO_FILTERS, providers: ["Proxmox"], forms: ["VM"] })).toEqual(["linux-vm", "win-vm"]);
+
+  const none = tagCounts(rows, "", NO_FILTERS);
+  expect(none.systems).toEqual({ Linux: 4, macOS: 2, Windows: 1 });
+  expect(none.forms).toEqual({ VM: 3, Container: 2, Physical: 1, microVM: 1 });
+  expect(none.has).toEqual({ KVM: 1, Desktop: 3, arm64: 3, GPU: 1 });
+  const linux = tagCounts(rows, "", { ...NO_FILTERS, systems: ["Linux"] });
+  expect(linux.systems).toEqual({ Linux: 4, macOS: 2, Windows: 1 });
+  expect(linux.forms).toEqual({ VM: 1, Container: 2, microVM: 1 });
+  expect(linux.forms.Physical ?? 0).toBe(0);
+  expect(tagCounts(rows, "mac", NO_FILTERS).systems).toEqual({ macOS: 2 });
+});
+
+test("on the Boxes page, the Filters menu lists the tags under one Tags heading, without counts, then the providers by type under Provider; greys a tag that would show none, and keeps its ticks across the tabs", async () => {
+  const { handlers } = server(TAGGED.slice(0, 4), { machines: [machine({ id: "box_m2", name: "cloud-machine", form: "Docker", backendLabel: "Hetzner Cloud" }, []), machine({ id: "box_m3", name: "vm-machine", form: "VM", backendLabel: "Proxmox QEMU on pve" }, [])] });
+  const list = boxesPage(handlers);
+  await list.findByText("cloud-machine");
+  fireEvent.click(list.getByRole("tab", { name: /^Threads/ }));
+  await list.findByText("linux-vm");
+  const rowNames = listedRowNames;
+  const menu = await openMenu(list.getByRole("button", { name: "Filters" }));
+  expect(menu.className).toContain("min-w-56");
+  expect(within(menu).getByRole("menuitemcheckbox", { name: "Proxmox" }).className).toContain("whitespace-nowrap");
+  expect(within(menu).queryByText(/^(Form|Has)$/)).toBeNull();
+  expect(within(menu).getAllByText(/^(System|Tags|Provider|State)$/).map((node) => node.textContent)).toEqual(["System", "Tags", "Provider"]);
+  expect(within(menu).queryByRole("menuitem", { name: "Clear filters" })).toBeNull();
+  expect(within(menu).getAllByRole("menuitemcheckbox").map((option) => option.textContent)).toEqual([
+    "Linux",
+    "macOS",
+    "VM",
+    "Container",
+    "Physical",
+    "Desktop",
+    "KVM",
+    "arm64",
+    "Proxmox",
+    "SSH pool",
+    "Tart",
+  ]);
+  const item = (name: string) => within(menu).getByRole("menuitemcheckbox", { name });
+  fireEvent.click(item("Linux"));
+  fireEvent.click(item("VM"));
+  expect(rowNames()).toEqual(["linux-vm"]);
+  expect(item("macOS").getAttribute("aria-disabled")).toBeNull();
+  expect(item("Physical").getAttribute("aria-disabled")).toBe("true");
+  expect(item("Desktop").getAttribute("aria-disabled")).toBe("true");
+  fireEvent.click(item("macOS"));
+  expect(rowNames()).toEqual(["linux-vm", "tart-mac"]);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  fireEvent.click(list.getByRole("tab", { name: /^Machines/ }));
+  await waitFor(() => expect(list.queryByText("cloud-machine")).toBeNull());
+  expect(list.getByText("vm-machine")).toBeTruthy();
+  fireEvent.click(list.getByRole("tab", { name: /^Threads/ }));
+  await waitFor(() => expect(rowNames()).toEqual(["linux-vm", "tart-mac"]));
+  const again = await openMenu(list.getByRole("button", { name: "Filters" }));
+  for (const name of ["Linux", "VM", "macOS"]) fireEvent.click(within(again).getByRole("menuitemcheckbox", { name }));
+  await waitFor(() => expect(rowNames()).toHaveLength(4));
+  fireEvent.click(within(again).getByRole("menuitemcheckbox", { name: "Proxmox" }));
+  await waitFor(() => expect(rowNames()).toEqual(["linux-lxc", "linux-vm"]));
+});
+
+test("on the Boxes page, a value every listed box shares is still listed under System, Tags and Provider; State shows only when the states differ", async () => {
+  const macs = [
+    tagged("box_s1", "mac-one", { os: "macos", form: "VM", arch: "arm64", backendLabel: "Tart on studio", provider: "Tart" }),
+    tagged("box_s2", "mac-two", { os: "macos", form: "VM", arch: "arm64", backendLabel: "Tart on studio", provider: "Tart" }),
+  ];
+  const list = boxesPage(server(macs).handlers);
+  await list.findByText("mac-one");
+  const menu = await openMenu(list.getByRole("button", { name: "Filters" }));
+  expect(within(menu).getAllByText(/^(System|Tags|Provider|State)$/).map((node) => node.textContent)).toEqual(["System", "Tags", "Provider"]);
+  expect(within(menu).getAllByRole("menuitemcheckbox").map((option) => option.textContent)).toEqual(["macOS", "VM", "arm64", "Tart"]);
+});
+
+test("a refusal in the Box panel or on the Boxes page is a red line with Dismiss", async () => {
+  const failure = "Stopping the box failed: the host did not answer.";
+  const slot = panel(server([box()], { failWith: failure }).handlers);
+  await slot.findByText("calm-otter");
+  await chooseMenuItem(slot.getByRole("button", { name: "calm-otter actions" }), "Stop");
+  expect(await slot.findByRole("alert")).toBeTruthy();
+  expect(slot.getByRole("alert").textContent).toBe(failure);
+  fireEvent.click(slot.getByRole("button", { name: "Dismiss" }));
+  await waitFor(() => expect(slot.queryByRole("alert")).toBeNull());
+
+  cleanup();
+  const list = boxesPage(server([box()], { failWith: failure }).handlers);
+  await list.findByText("calm-otter");
+  await chooseMenuItem(list.getByRole("button", { name: "calm-otter actions" }), "Stop");
+  expect((await list.findByRole("alert")).textContent).toBe(failure);
+  fireEvent.click(list.getByRole("button", { name: "Dismiss" }));
+  await waitFor(() => expect(list.queryByRole("alert")).toBeNull());
+});
+
+test("the Boxes page has a Machines tab and a Threads tab with counts, opens on the tab chosen last, and shows a machine's terminal", async () => {
+  const { handlers } = server([desktopBox()], { machines: [machine()] });
+  const mine = { threadId: "operator", box: desktopBox({ id: "box_m1", name: "build-1" }), owner: "yours" as const };
+  const withMine: PluginRpcTestHandlers<Contract> = { ...handlers, allBoxes: () => [...(handlers.allBoxes as () => BoxEntryLike[])(), mine] };
+  const [page] = app.navPanels;
+  const render = () => renderSlot(page!, { subPath: "" }, { rpc: withMine, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  // Your machines first, without Open thread.
+  let list = render();
+  expect(await list.findByText("build-1")).toBeTruthy();
+  expect(list.getAllByRole("tab").map((tab) => [tab.textContent, tab.getAttribute("aria-selected")])).toEqual([
+    ["Machines1", "true"],
+    ["Threads1", "false"],
+    ["Snapshots", "false"],
+  ]);
+  expect(list.getAllByRole("button", { name: "Open desktop" })).toHaveLength(1);
+  expect(list.queryByRole("button", { name: "Open thread" })).toBeNull();
+  expect(list.queryByText("bold-heron")).toBeNull();
+  // The threads' boxes on the other tab.
+  fireEvent.click(list.getByRole("tab", { name: "Threads 1" }));
+  expect(await list.findByText("bold-heron")).toBeTruthy();
+  expect(list.queryByText("build-1")).toBeNull();
+  expect(list.getAllByRole("button", { name: "Open thread" })).toHaveLength(1);
+  // The page opens again on the tab chosen last, so the way back from a desktop lands there.
+  cleanup();
+  list = render();
+  expect(await list.findByText("bold-heron")).toBeTruthy();
+  expect(list.getByRole("tab", { name: "Threads 1" }).getAttribute("aria-selected")).toBe("true");
+  cleanup();
+
+  const terminal = renderSlot(page!, { subPath: "operator/box_m1/terminal/from-settings" }, { rpc: withMine, pluginId: "bb-box" });
+  // Back to settings is a link to the app's settings page, for the same reason.
+  expect((await terminal.findByRole("link", { name: "Back to BB Box settings" })).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  await waitFor(() => expect(FakeSocket.made.at(-1)?.url).toContain("box=box_m1"));
+});
+
+test("the panel lists the box this thread runs on first in the one list with a BB machine badge, no heading and no count, without Release or Stop, and says where they are", async () => {
+  const yours = desktopBox({ id: "box_m1", name: "build-1" });
+  const { handlers } = server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } });
+  const slot = panel(handlers);
+  expect(await slot.findByText("build-1")).toBeTruthy();
+  // No heading, no card of its own and no count (the operator, 4 October 2026): one list, the machine first, its badge "BB machine" among the others.
+  expect(slot.queryByText("This thread runs on it")).toBeNull();
+  expect(slot.getByText("BB machine")).toBeTruthy();
+  expect(slot.queryByText("Yours")).toBeNull();
+  expect(slot.getByText(/Remove or stop it on the/)).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Boxes page, under Machines" })).toBeTruthy();
+  expect(slot.queryByText(/^\d+ box(es)?$/)).toBeNull();
+  const rows = slot.getAllByRole("button", { name: /: details$/ }).map((node) => node.getAttribute("aria-label"));
+  expect(rows).toEqual(["build-1: details", "calm-otter: details"]);
+  expect(slot.queryByRole("button", { name: "Stop" })).toBeNull();
+  const own = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  expect(within(own).getByRole("menuitem", { name: "Stop" })).toBeTruthy();
+  fireEvent.keyDown(own, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  const menu = await openMenu(slot.getByRole("button", { name: "build-1 actions" }));
+  expect(within(menu).queryByRole("menuitem", { name: "Stop" })).toBeNull();
+  expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Open desktop", "Open in browser", "Open terminal", "Open files", "Details", "Copy address", "Check now"]);
+
+  cleanup();
+  // Only the machine it runs on, no boxes of its own: the list, not the empty state.
+  const only = panel(server([], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers);
+  expect(await only.findByText("build-1")).toBeTruthy();
+  expect(only.queryByText("No boxes yet")).toBeNull();
+
+  cleanup();
+  const theirs = panel(server([], { runsOn: { box: yours, owner: "thread", threadId: "thr_other" } }).handlers);
+  expect(await theirs.findByText(/Held by/)).toBeTruthy();
+  expect(await theirs.findByRole("button", { name: "UI thread" })).toBeTruthy();
+  expect(theirs.getByText("BB machine")).toBeTruthy();
+  expect(theirs.queryByText("No boxes yet")).toBeNull();
+});
+
+test("the bare Desktop and Terminal tabs count the box this thread runs on: alone it opens straight away, with others it is listed first (036)", async () => {
+  const yours = desktopBox({ id: "box_m1", name: "build-1" });
+  const desktopAction = app.threadPanelActions.find((candidate) => candidate.id === "desktop");
+  const terminalAction = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
+  // Alone: the thread's own boxes have no desktop, so the machine's desktop opens straight away.
+  const alone = renderSlot(desktopAction!, { threadId: THREAD, params: null }, { rpc: server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  expect(await alone.findByText("Connecting to the desktop…")).toBeTruthy();
+  await waitFor(() => expect(new URL(novnc.FakeRfb.made.at(-1)!.url).searchParams.get("box")).toBe("box_m1"));
+  cleanup();
+  // With a desktop of the thread's own: a chooser, the machine first.
+  const many = renderSlot(desktopAction!, { threadId: THREAD, params: null }, { rpc: server([desktopBox()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  expect(await many.findByText("build-1")).toBeTruthy();
+  expect(many.getByText("bold-heron")).toBeTruthy();
+  expect(many.getByText("BB machine")).toBeTruthy();
+  expect(many.getAllByRole("button", { name: "Open" })).toHaveLength(2);
+  fireEvent.click(many.getAllByRole("button", { name: "Open" })[0]!);
+  expect(many.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop · build-1", params: { box: "box_m1" } } }]);
+  cleanup();
+  // The Terminal tab: alone, the machine's terminal opens straight away.
+  const terminal = renderSlot(terminalAction!, { threadId: THREAD, params: null }, { rpc: server([box({ terminal: false })], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  expect(await terminal.findByText("Connecting…")).toBeTruthy();
+  await waitFor(() => expect(new URL(FakeSocket.made.at(-1)!.url).searchParams.get("box")).toBe("box_m1"));
+  cleanup();
+  // With a box of the thread's own: a chooser, the machine first.
+  const both = renderSlot(terminalAction!, { threadId: THREAD, params: null }, { rpc: server([box()], { runsOn: { box: yours, owner: "yours", threadId: null } }).handlers, pluginId: "bb-box" });
+  expect(await both.findByText("build-1")).toBeTruthy();
+  expect(both.getByText("BB machine")).toBeTruthy();
+  fireEvent.click(both.getAllByRole("button", { name: "Open" })[0]!);
+  expect(both.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "terminal", title: "Terminal: build-1", params: { box: "box_m1" } } }]);
+});
+
+test("an arm64 kind carries an arm64 badge, and macOS, always arm64, does not (040); the form offers arm64 when a kind has it", async () => {
+  expect(isArm64Badge("linux", "arm64")).toBe(true);
+  expect(isArm64Badge("linux", "x86_64")).toBe(false);
+  expect(isArm64Badge("macos", "arm64")).toBe(false);
+  const { handlers, changes } = server([], { kinds: [...KINDS, kindView("linux-arm64", "Linux on arm64", "A Linux box on a Mac.", 2, false)] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const archs = await screen.findByRole("radiogroup", { name: "Architecture" });
+  expect(within(archs).getAllByRole("radio").map((option) => option.textContent)).toEqual(["x86_6464-bit Intel / AMD", "arm6464-bit ARM"]);
+  fireEvent.click(within(archs).getByRole("radio", { name: /^arm64/ }));
+  // arm64 has no desktop here, so Desktop greys out, and the summary follows the choice.
+  const types = screen.getByRole("radiogroup", { name: "Type" });
+  expect(within(types).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-disabled")}`)).toEqual(["ServerTerminal:null", "DesktopNot available:true"]);
+  fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+  expect(within(types).getAllByRole("radio").map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false"]);
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux-arm64"]));
+});
+
+test("the steps narrow each other: a system with no server snaps to Desktop, the Kind chips grey out, and Physical hides Runs on and names the provider left", async () => {
+  const windows: KindView = {
+    ...kindView("windows-desktop", "Windows desktop", "A Windows desktop.", 4, true),
+    os: "windows",
+    gpu: false,
+    forms: ["VM"],
+    enrol: false,
+    computerUse: true,
+    docker: false,
+    offers: [{ backend: "proxmox-qemu", name: "Proxmox QEMU on pve1", type: "proxmox-qemu", label: "Proxmox QEMU", hosts: ["pve1"], form: "VM", ready: 0, free: null, admin: true, resizable: true, typicalReadyMs: 30000, docker: false, hostOs: "linux", gpuRoom: null }],
+  };
+  const { handlers, changes } = server([], { kinds: [POOLED, KINDS[1]!, windows] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  // A system's card names its hosts, or counts its providers when there are many.
+  const systems = await screen.findByRole("radiogroup", { name: "System" });
+  expect(within(systems).getAllByRole("radio").map((option) => option.textContent)).toEqual(["Linuxpve, SSH host pool", "Windowspve1"]);
+  fireEvent.click(within(systems).getByRole("radio", { name: /^Windows/ }));
+  const types = screen.getByRole("radiogroup", { name: "Type" });
+  expect(within(types).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-checked")}`)).toEqual(["ServerNot available:false", "DesktopScreen · Terminal · Computer use:true"]);
+  // The Kind menu keeps an option no provider makes, but it cannot be chosen; Runs on lists the machines the providers run on.
+  const filters = screen.getByRole("group", { name: "Filter" });
+  expect(within(filters).getAllByRole("combobox").map((menu) => menu.textContent)).toEqual(["Kind:All", "Runs on:Any machine"]);
+  expect(await optionsOf("Kind")).toEqual(["All", "Container:disabled", "VM", "Physical:disabled"]);
+  expect(screen.getByRole("combobox", { name: "Runs on" }).textContent).toBe("Runs on:Any machine");
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.textContent)).toEqual(["pve1VM · usually ~30.0 s"]);
+  expect(screen.queryByRole("combobox", { name: "GPU" })).toBeNull();
+
+  // Back on Linux, Physical keeps the pool only, hides Runs on, and the request names the one provider left.
+  fireEvent.click(within(systems).getByRole("radio", { name: /^Linux/ }));
+  fireEvent.click(within(types).getByRole("radio", { name: /^Server/ }));
+  await choose("Kind", "Physical");
+  expect(screen.queryByRole("combobox", { name: "Runs on" })).toBeNull();
+  const providers = screen.getByRole("radiogroup", { name: "Provider" });
+  expect(within(providers).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-checked")}`)).toEqual(["First with roomThe one below:true", "SSH host poolPhysical · 1 free:false"]);
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux on ssh-pool"]));
+});
+
+test("the providers are a choice, First with room first, which goes with the request and resets with the type and when the form closes (044)", async () => {
+  const { handlers, changes } = server([], { kinds: [POOLED, KINDS[1]!] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const providers = await screen.findByRole("radiogroup", { name: "Provider" });
+  expect(within(providers).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-checked")}`)).toEqual([
+    "First with roomAny of the 2 below, in order:true",
+    "pveContainer · usually ~2.2 s:false",
+    "SSH host poolPhysical · 1 free:false",
+  ]);
+  fireEvent.click(within(providers).getByRole("radio", { name: /^SSH host pool/ }));
+  expect(within(providers).getAllByRole("radio").map((option) => option.getAttribute("aria-checked"))).toEqual(["false", "false", "true"]);
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux on ssh-pool"]));
+
+  // The choice is not remembered: the form opens on First with room again, and another type puts it back too.
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const again = await screen.findByRole("radiogroup", { name: "Provider" });
+  expect(within(again).getAllByRole("radio").map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false", "false"]);
+  fireEvent.click(within(again).getByRole("radio", { name: /^SSH host pool/ }));
+  const types = screen.getByRole("radiogroup", { name: "Type" });
+  fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.textContent)).toEqual(["pveContainer · usually ~3.1 s"]);
+  fireEvent.click(within(types).getByRole("radio", { name: /^Server/ }));
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false", "false"]);
+});
+
+test("a provider that cannot take the box now is greyed, after the ones that can, says why in place of its free count, and First with room counts only those that can", async () => {
+  const pool = { ...POOLED.offers[1]!, free: 0 };
+  const cloud = { ...KINDS[0]!.offers[0]!, backend: "namespace", name: "Namespace", type: "namespace", label: "Namespace", hosts: [], form: "VM" as const, typicalReadyMs: null };
+  const crowded: KindView = { ...POOLED, offers: [pool, KINDS[0]!.offers[0]!, cloud], forms: ["Physical", "LXC", "VM"] };
+  const { handlers, changes } = server([], { kinds: [crowded, KINDS[1]!], rooms: { "ssh-pool": "In use by swift-fox", namespace: "Namespace has 3 of the 3 machines BB Box may have at once" } });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const providers = await screen.findByRole("radiogroup", { name: "Provider" });
+  await waitFor(() =>
+    expect(within(providers).getAllByRole("radio").map((option) => `${option.textContent}:${option.getAttribute("aria-disabled") ?? "-"}`)).toEqual([
+      "First with roomThe one below:-",
+      "pveContainer · usually ~2.2 s:-",
+      "SSH host poolPhysical · In use by swift-fox:true",
+      "NamespaceVM · Namespace has 3 of the 3 machines BB Box may have at once:true",
+    ]),
+  );
+  fireEvent.click(within(providers).getByRole("radio", { name: /^SSH host pool/ }));
+  expect(within(providers).getAllByRole("radio").map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false", "false", "false"]);
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("acquire"))).toEqual(["acquire linux"]));
+});
+
+test("the providers are checked at the size chosen, again after it changes: a cloud that refuses the default size takes another", async () => {
+  const cloud = { ...KINDS[0]!.offers[0]!, backend: "namespace", name: "Namespace", type: "namespace", label: "Namespace", hosts: [], form: "VM" as const, typicalReadyMs: null };
+  const two: KindView = { ...KINDS[0]!, offers: [KINDS[0]!.offers[0]!, cloud], forms: ["LXC", "VM"] };
+  const { handlers, changes } = server([], { kinds: [two, KINDS[1]!], rooms: (size): Record<string, string> => (size ? {} : { namespace: "Namespace's workspace allows machines of at most 2 cores" }) });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const providers = await screen.findByRole("radiogroup", { name: "Provider" });
+  await waitFor(() => expect(within(providers).getByRole("radio", { name: /^Namespace/ }).getAttribute("aria-disabled")).toBe("true"));
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Size" })).getByRole("radio", { name: /^Medium/ }));
+  await waitFor(() => expect(within(providers).getByRole("radio", { name: /^Namespace/ }).getAttribute("aria-disabled")).toBeNull());
+  expect(within(providers).getByRole("radio", { name: /^Namespace/ }).textContent).toBe("NamespaceVM");
+  expect(changes.filter((change) => change.startsWith("rooms"))).toEqual(["rooms linux", 'rooms linux {"preset":"medium"}']);
+});
+
+test("Runs on keeps the providers on that machine, and one that does not know its machine yet; a Docker machine without a name is an unnamed machine", async () => {
+  const mixed: KindView = {
+    ...KINDS[0]!,
+    admin: null,
+    forms: ["LXC", "VM", "Docker"],
+    offers: [
+      KINDS[0]!.offers[0]!,
+      { backend: "tart", name: "Tart on mac-mini", type: "tart", label: "Tart", hosts: ["mac-mini"], form: "VM", ready: 0, free: null, admin: true, resizable: false, typicalReadyMs: 26000, docker: true, hostOs: "macos", gpuRoom: null },
+      { backend: "docker:host_1", name: "Docker", type: "docker", label: "Docker", hosts: [], form: "Docker", ready: 0, free: null, admin: true, resizable: true, typicalReadyMs: null, docker: true, hostOs: null, gpuRoom: null },
+    ],
+  };
+  const { handlers, changes } = server([], { kinds: [mixed, KINDS[1]!] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const providers = await screen.findByRole("radiogroup", { name: "Provider" });
+  expect(within(providers).getAllByRole("radio").map((option) => option.textContent)).toEqual(["First with roomAny of the 3 below, in order", "pveContainer · usually ~2.2 s", "mac-miniVM · usually ~26.0 s", "an unnamed machineContainer"]);
+  expect(screen.queryByText(/host_1/)).toBeNull();
+  // The menu lists the machines the providers run on, Macs first; the one that does not know yet adds none.
+  expect(await optionsOf("Runs on")).toEqual(["Any machine", "a Mac", "a Linux machine"]);
+  await choose("Runs on", "a Mac");
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.textContent)).toEqual(["First with roomAny of the 2 below, in order", "mac-miniVM · usually ~26.0 s", "an unnamed machineContainer"]);
+  // First with room among the providers the filters left sends them as a list, so the box never lands outside the filter (044).
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux on tart,docker:host_1"]));
+  await waitFor(() => expect(screen.queryByRole("radiogroup")).toBeNull());
+
+  // Reopened, the filters are back; Container on a Mac leaves the Docker machine, which the request then names alone.
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  expect((await screen.findByRole("combobox", { name: "Runs on" })).textContent).toBe("Runs on:Any machine");
+  expect(screen.getByRole("combobox", { name: "Kind" }).textContent).toBe("Kind:All");
+  await choose("Runs on", "a Mac");
+  await choose("Kind", "Container");
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.textContent)).toEqual(["First with roomThe one below", "an unnamed machineContainer"]);
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux on tart,docker:host_1", "acquire linux on docker:host_1"]));
+});
+
+test("filters that leave no provider disable Create and say so", async () => {
+  const pair: KindView = {
+    ...KINDS[0]!,
+    admin: null,
+    forms: ["LXC", "VM"],
+    offers: [KINDS[0]!.offers[0]!, { backend: "tart", name: "Tart on mac-mini", type: "tart", label: "Tart", hosts: ["mac-mini"], form: "VM", ready: 0, free: null, admin: true, resizable: false, typicalReadyMs: 26000, docker: true, hostOs: "macos", gpuRoom: null }],
+  };
+  const { handlers, changes } = server([], { kinds: [pair, KINDS[1]!] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("combobox", { name: "Kind" });
+  await choose("Kind", "Container");
+  await choose("Runs on", "a Mac");
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).queryAllByRole("radio")).toEqual([]);
+  expect(screen.getByText("No provider matches these filters.")).toBeTruthy();
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(submitButton().disabled).toBe(true);
+  fireEvent.click(submitButton());
+  expect(changes).toEqual([]);
+  // All brings the Mac back, and Create box with it.
+  await choose("Kind", "All");
+  expect(within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.textContent)).toEqual(["First with roomThe one below", "mac-miniVM · usually ~26.0 s"]);
+  expect(screen.queryByText("No provider matches these filters.")).toBeNull();
+  expect(submitButton().disabled).toBe(false);
+});
+
+test("the Display choice shows only when a system offers X11 and Wayland, defaults to X11, and Wayland drops the GPU (048)", async () => {
+  const offer = KINDS[1]!.offers[0]!;
+  const x11Cpu: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11", offers: [offer] };
+  const waylandCpu: KindView = { ...KINDS[1]!, id: "linux-desktop-wayland-cpu", label: "Linux desktop on Wayland", gpu: false, windowing: "wayland", offers: [offer] };
+  const { handlers, changes } = server([], { kinds: [KINDS[0]!, KINDS[1]!, x11Cpu, waylandCpu] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  // A server has no windowing, so the Display choice is hidden.
+  const types = await screen.findByRole("radiogroup", { name: "Type" });
+  expect(screen.queryByRole("combobox", { name: "Display" })).toBeNull();
+  // A desktop offers it, X11 by default, with the GPU still a choice. It is a sub-label of Type, not a section of its
+  // own (the operator's notes of 3 October 2026), so it is no heading, and it carries no description.
+  fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+  expect((await screen.findByRole("combobox", { name: "Display" })).textContent).toBe("X11");
+  expect(screen.queryByRole("heading", { name: "Display" })).toBeNull();
+  expect(screen.getByRole("combobox", { name: "GPU" })).toBeTruthy();
+  // Wayland: the GPU choice goes (Wayland is CPU-only), still no description, and Create makes the Wayland kind.
+  await choose("Display", "Wayland");
+  expect(screen.queryByRole("combobox", { name: "GPU" })).toBeNull();
+  expect(screen.queryByText(/X11 desktop|XFCE|Sway/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux-desktop-wayland-cpu"]));
+});
+
+/** Two projects' images for Linux (049): this project's, and another project's. */
+const IMAGES: ImageOptionView[] = [
+  { name: "rust-tools", kinds: ["linux"], projects: [{ id: "proj_1", name: "Example" }], mine: true, builds: [{ kind: "linux", backend: "proxmox-lxc", build: "b1", built: "2026-10-02T10:00:00Z" }], spares: [] },
+  { name: "go-tools", kinds: ["linux"], projects: [{ id: "proj_2", name: "Another project" }], mine: false, builds: [], spares: [] },
+];
+
+test("the Image choice shows under Type where an image covers the kind, this project's first and chosen, and Create sends the choice (049)", async () => {
+  const { handlers, changes } = server([], { images: IMAGES });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const types = await screen.findByRole("radiogroup", { name: "Type" });
+  // A Linux server: two images cover it. A dim sub-label of Type, no heading, this project's image chosen at first.
+  const menu = await screen.findByRole("combobox", { name: "Image" });
+  expect(menu.textContent).toBe("rust-tools");
+  expect(screen.queryByRole("heading", { name: "Image" })).toBeNull();
+  // The options in order: this project's, Standard, the other project's with its name.
+  fireEvent.keyDown(menu, { key: "ArrowDown" });
+  const options = (await screen.findAllByRole("option")).map((option) => option.textContent);
+  expect(options).toEqual(["rust-tools", "Standard", "go-tools · Another project"]);
+  fireEvent.click(screen.getAllByRole("option").find((option) => option.textContent === "Standard")!);
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "Image" }).textContent).toBe("Standard"));
+  // A desktop: no image covers it, so no choice and no image sent.
+  fireEvent.click(within(types).getByRole("radio", { name: /^Desktop/ }));
+  await waitFor(() => expect(screen.queryByRole("combobox", { name: "Image" })).toBeNull());
+  // Back to the server: the hand's choice stands. Create sends it.
+  fireEvent.click(within(types).getByRole("radio", { name: /^Server/ }));
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "Image" }).textContent).toBe("Standard"));
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes).toEqual(["acquire linux image standard"]));
+});
+
+test("ready now follows the box: a spare of the chosen image, at the default size, and none for your machines (#440)", async () => {
+  const [linux] = KINDS;
+  const offer = linux!.offers[0]!;
+  const rows = () => within(screen.getByRole("radiogroup", { name: "Provider" })).getAllByRole("radio").map((option) => option.textContent);
+  // This project's image has a spare ready there; the kind has none.
+  const images = [{ ...IMAGES[0]!, spares: [{ kind: "linux", backend: offer.backend, ready: 1, making: 0 }] }, IMAGES[1]!];
+  const slot = panel(server([], { images }).handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  await screen.findByRole("combobox", { name: "Image" });
+  expect(rows()).toEqual(["pveContainer · ready now · usually ~2.2 s"]);
+  // Another size claims no spare.
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Size" })).getByRole("radio", { name: /^Medium/ }));
+  expect(rows()).toEqual(["pveContainer · usually ~2.2 s"]);
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Size" })).getByRole("radio", { name: /^Small/ }));
+  // Standard claims only the kind's spares.
+  const menu = screen.getByRole("combobox", { name: "Image" });
+  fireEvent.keyDown(menu, { key: "ArrowDown" });
+  fireEvent.click((await screen.findAllByRole("option")).find((option) => option.textContent === "Standard")!);
+  await waitFor(() => expect(rows()).toEqual(["pveContainer · usually ~2.2 s"]));
+  cleanup();
+  // A machine claims none, though the kind has one ready.
+  const machinesPage = boxesPage(server([], { kinds: [{ ...linux!, offers: [{ ...offer, ready: 1 }] }] }).handlers);
+  fireEvent.click(await machinesPage.findByRole("button", { name: "New box" }));
+  await screen.findByRole("radiogroup", { name: "Provider" });
+  expect(rows()).toEqual(["pveContainer · usually ~2.2 s"]);
+});
+
+test("New box's new-thread inputs offer the Image group with the project's image chosen, and nothing chosen without a project (049)", async () => {
+  const [inputs] = app.machineProviderInputs;
+  const values: unknown[] = [];
+  const onChange = (next: { status: string; value?: unknown }) => values.push(next.status === "ready" ? next.value : next.status);
+  // In a project: its image is the choice at first, and it goes in the value.
+  renderSlot(inputs!, { value: null, onChange }, { rpc: server([], { images: IMAGES }).handlers, pluginId: "bb-box", context: { projectId: "proj_1" } });
+  await waitFor(() => expect(values.at(-1)).toEqual({ kind: "linux", size: "small", image: "rust-tools" }));
+  const trigger = screen.getByRole("button", { name: "New box options" });
+  expect(trigger.textContent).toContain("rust-tools");
+  fireEvent.keyDown(trigger, { key: "ArrowDown" });
+  const items = (await screen.findAllByRole("menuitemradio")).map((item) => item.textContent);
+  expect(items.slice(-3)).toEqual(["rust-tools", "Standard", "go-tools · Another project"]);
+  expect(screen.getAllByRole("menuitemradio").some((item) => item.getAttribute("aria-checked") === "true")).toBe(true);
+  fireEvent.click(screen.getAllByRole("menuitemradio").find((item) => item.textContent === "Standard")!);
+  await waitFor(() => expect(values.at(-1)).toEqual({ kind: "linux", size: "small", image: "standard" }));
+  cleanup();
+  // Outside a project: no image is this project's, nothing is chosen, and no image goes in the value until the person picks one.
+  const outside: unknown[] = [];
+  const nobody = IMAGES.map((image) => ({ ...image, mine: false }));
+  renderSlot(inputs!, { value: null, onChange: (next: { status: string; value?: unknown }) => outside.push(next.status === "ready" ? next.value : next.status) }, { rpc: server([], { images: nobody }).handlers, pluginId: "bb-box", context: { projectId: null } });
+  await waitFor(() => expect(outside.at(-1)).toEqual({ kind: "linux", size: "small" }));
+  fireEvent.keyDown(screen.getByRole("button", { name: "New box options" }), { key: "ArrowDown" });
+  fireEvent.click((await screen.findAllByRole("menuitemradio")).find((item) => item.textContent === "go-tools · Another project")!);
+  await waitFor(() => expect(outside.at(-1)).toEqual({ kind: "linux", size: "small", image: "go-tools" }));
+});
+
+test("New box's new-thread inputs stay off when no kind can run a thread", async () => {
+  const [inputs] = app.machineProviderInputs;
+  const values: { status: string; reason?: string }[] = [];
+  renderSlot(inputs!, { value: null, onChange: (next: { status: string; reason?: string }) => values.push(next) }, { rpc: server([], { kinds: [] }).handlers, pluginId: "bb-box", context: { projectId: "proj_1" } });
+  const trigger = await screen.findByRole("button", { name: "New box options" });
+  await waitFor(() => expect((trigger as HTMLButtonElement).disabled).toBe(true));
+  expect(trigger.textContent).toContain("No box to offer");
+  expect(trigger.textContent).not.toContain("Loading");
+  expect(screen.getByText("BB Box offers no kind that a thread can run on. Set a backend up in BB Box's settings and turn it on.")).toBeTruthy();
+  expect(values.at(-1)?.status).toBe("blocked");
+});
+
+test("a second backend of a type shows the name in its ID, unless its label already says it (053)", () => {
+  expect(backendName("microsandbox:mac-mini", "microsandbox on mac-mini")).toBeNull();
+  expect(backendName("docker:attic", "Docker")).toBe("attic");
+  expect(backendName("microsandbox", "microsandbox on gpu-host")).toBeNull();
+});
+
+test("the form's words: a provider's title, the systems' hosts, the nearest choice and the filters", () => {
+  const linux = KINDS[0]!;
+  const offer = linux.offers[0]!;
+  expect(providerTitle(offer)).toBe("pve");
+  expect(providerTitle({ ...offer, type: "tart", hosts: ["mac-mini", "studio"] })).toBe("2 Macs");
+  expect(providerTitle({ ...offer, hosts: ["pve1", "pve2", "pve3"] })).toBe("3 hosts");
+  // A Docker machine BB has not named yet is never shown by its ID (the operator's rule).
+  expect(providerTitle({ ...offer, type: "docker", label: "Docker", hosts: [] })).toBe("an unnamed machine");
+  expect(providerTitle({ ...offer, type: "ssh-pool", label: "SSH host pool", hosts: [] })).toBe("SSH host pool");
+  // Docker and microsandbox on one host: each says which it is; a host of its own needs no more (053).
+  const onGpuHost = { ...offer, backend: "docker", type: "docker", label: "Docker", hosts: ["gpu-host"] };
+  const msb = { ...offer, backend: "microsandbox", type: "microsandbox", label: "microsandbox", hosts: ["gpu-host"] };
+  const all = [offer, onGpuHost, msb];
+  expect([providerTitle(onGpuHost, all), providerTitle(msb, all), providerTitle(offer, all)]).toEqual(["gpu-host (Docker)", "gpu-host (microsandbox)", "pve"]);
+  const mac: KindView = { ...linux, id: "macos", os: "macos", arch: "arm64", offers: [{ ...offer, backend: "tart", type: "tart", label: "Tart", hosts: ["mac-mini"], hostOs: "macos", gpuRoom: null }] };
+  const many: KindView = { ...linux, id: "linux-arm64", arch: "arm64", offers: [offer, { ...offer, backend: "b", hosts: ["pve2"] }, { ...offer, backend: "c", hosts: ["pve3"] }] };
+  expect(systemsOf([mac, many, linux]).map((system) => [system.label, system.words])).toEqual([
+    ["Linux", "3 providers"],
+    ["macOS", "mac-mini"],
+  ]);
+  const android: KindView = { ...linux, id: "android", devices: { platform: "android", models: ["Pixel 8", "Pixel Fold", "Pixel Tablet"] } };
+  expect(systemsOf([linux, android]).map((system) => [system.label, system.device ?? null, system.words])).toEqual([
+    ["Linux", null, "pve"],
+    ["Android device", "android", "pve"],
+  ]);
+  // The nearest choice that exists: the system stays when it can, then the arch, the type and the GPU snap to what there is.
+  expect(nearest(KINDS, { os: "linux", arch: "arm64", desktop: true, gpu: false, windowing: "x11" })).toEqual({ os: "linux", arch: "x86_64", desktop: true, gpu: true, windowing: "x11" });
+  expect(nearest([mac], { os: "windows", arch: "x86_64", desktop: true, gpu: true, windowing: "x11" })).toEqual({ os: "macos", arch: "arm64", desktop: false, gpu: false, windowing: "x11" });
+  expect(choiceOf(KINDS[1]!)).toEqual({ os: "linux", arch: "x86_64", desktop: true, gpu: true, windowing: "x11" });
+  expect(kindFor(KINDS, { os: "linux", arch: "x86_64", desktop: true, gpu: false, windowing: "x11" })?.id).toBe("linux-desktop");
+  // The Display choice (048): a backend offering X11 and Wayland CPU desktops shows both; Wayland is CPU-only, so it snaps the GPU off.
+  const waylandCpu: KindView = { ...KINDS[1]!, id: "linux-desktop-wayland-cpu", label: "Linux desktop on Wayland", gpu: false, windowing: "wayland" };
+  const x11Cpu: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, windowing: "x11" };
+  const both = [KINDS[0]!, KINDS[1]!, x11Cpu, waylandCpu];
+  expect(displayChoices(both, "linux", "x86_64")).toEqual({ x11: true, wayland: true });
+  expect(displayChoices(KINDS, "linux", "x86_64")).toEqual({ x11: true, wayland: false });
+  expect(gpuChoices(both, "linux", "x86_64", "x11")).toEqual({ none: true, gpu: true });
+  expect(gpuChoices(both, "linux", "x86_64", "wayland")).toEqual({ none: true, gpu: false });
+  expect(nearest(both, { os: "linux", arch: "x86_64", desktop: true, gpu: true, windowing: "wayland" })).toEqual({ os: "linux", arch: "x86_64", desktop: true, gpu: false, windowing: "wayland" });
+  expect(kindFor(both, { os: "linux", arch: "x86_64", desktop: true, gpu: false, windowing: "wayland" })?.id).toBe("linux-desktop-wayland-cpu");
+  expect(kindFor(both, { os: "linux", arch: "x86_64", desktop: true, gpu: true, windowing: "x11" })?.id).toBe("linux-desktop");
+  const gpuDesktop: KindView = { ...KINDS[1]!, offers: [{ ...KINDS[1]!.offers[0]!, gpuParts: ["shared", "whole"] }] };
+  const cpuDesktop: KindView = { ...KINDS[1]!, id: "linux-desktop-cpu", gpu: false, offers: [{ ...KINDS[1]!.offers[0]!, gpuParts: ["none"] }] };
+  expect(kindFor([gpuDesktop, cpuDesktop], { os: "linux", arch: "x86_64", desktop: true, gpu: false, windowing: "x11" })?.id).toBe("linux-desktop-cpu");
+  expect(kindFor([gpuDesktop, cpuDesktop], { os: "linux", arch: "x86_64", desktop: true, gpu: true, windowing: "x11" })?.id).toBe("linux-desktop");
+  // The filters: a Kind chip keeps its form; Runs on keeps the machine's OS and an offer that does not know it yet; Physical ignores Runs on.
+  const pool = { ...offer, backend: "ssh-pool", type: "ssh-pool", form: "Physical" as const };
+  const docker = { ...offer, backend: "docker:1", type: "docker", form: "Docker" as const, hostOs: null, gpuRoom: null };
+  const tart = { ...offer, backend: "tart", type: "tart", form: "VM" as const, hostOs: "macos" as const };
+  expect((["LXC", "Docker", "VM", "Physical"] as const).map((form) => formFilterOf({ ...offer, form }))).toEqual(["container", "container", "vm", "physical"]);
+  expect(runsOnOptions([offer, pool, docker, tart])).toEqual(["macos", "linux"]);
+  expect(offersShown([offer, pool, docker, tart], "all", "macos").map((shown) => shown.backend)).toEqual(["docker:1", "tart"]);
+  expect(offersShown([offer, pool, docker, tart], "container", "any").map((shown) => shown.backend)).toEqual(["fake", "docker:1"]);
+  expect(offersShown([offer, pool, docker, tart], "physical", "macos").map((shown) => shown.backend)).toEqual(["ssh-pool"]);
+  // The name the server made, which `on` takes too (044).
+  expect(providerName({ id: "tart", label: "Tart", hosts: ["mac-mini", "studio"] })).toBe("Tart on 2 Macs");
+  expect(providerName({ id: "tart", label: "Tart (VMs on a Mac)", hosts: ["mac-mini"] })).toBe("Tart on mac-mini");
+  expect(providerName({ id: "ssh-pool", label: "SSH host pool", hosts: [] })).toBe("SSH host pool");
+  expect(providerKeys({ id: "docker:devpc", label: "Docker", hosts: ["devpc"] })).toEqual(["docker on devpc", "docker:devpc", "devpc"]);
+  expect(providerName({ id: "namespace", label: "Namespace", hosts: [] })).toBe("Namespace");
+  expect(providerKeys({ id: "namespace:team-b", label: "Namespace", hosts: [] })).toEqual(["namespace (team-b)", "namespace:team-b"]);
+  // The badge: a Linux kind or box without Docker, not one whose offers differ, nor another OS (041).
+  expect([lacksDocker({ os: "linux", docker: false }), lacksDocker({ os: "linux", docker: null }), lacksDocker({ os: "linux", docker: true }), lacksDocker({ os: "windows", docker: false })]).toEqual([true, false, false, false]);
+});
+
+test("a field that takes a value from another backend names that backend when there are two of its type (#197)", () => {
+  const lxc = (id: string, label?: string): BackendConfig => ({ id, type: "proxmox-lxc", ...(label ? { label } : {}), enabled: true, fields: {} });
+  const document = (...backends: BackendConfig[]) => ({ schema: 1, revision: 1, backends, kinds: {}, general: {} }) as unknown as ConfigDocument;
+  expect(sourceName(document(lxc("proxmox-lxc")), lxc("proxmox-lxc"), "Proxmox LXC")).toBe("Proxmox LXC");
+  const two = document(lxc("proxmox-lxc"), lxc("proxmox-lxc:lab", "Lab"));
+  expect(sourceName(two, lxc("proxmox-lxc"), "Proxmox LXC")).toBe("proxmox-lxc");
+  expect(sourceName(two, lxc("proxmox-lxc:lab", "Lab"), "Proxmox LXC")).toBe("Lab");
+});
+
+const DOCKER_DRIVER: ConfigState["drivers"][number] = {
+  type: "docker",
+  label: "Docker",
+  description: "Linux boxes as containers on a Docker host.",
+  nature: "virtual",
+  kinds: ["linux"],
+  fields: [
+    { key: "host", type: "string", label: "Host", group: "connection", default: "" },
+    { key: "boxes", type: "number", label: "Most boxes", group: "advanced", default: 20 },
+  ],
+  hostFields: [],
+  warmKinds: ["linux"],
+  setup: { guide: "setup/docker/README.md", scripts: [] },
+  several: true,
+};
+
+function dockerMachine(hostId: string, name: string, more: Partial<DockerHostView> = {}): DockerHostView {
+  return { hostId, name, connected: true, docker: { version: "29.8.1", os: "Arch Linux", arch: "x86_64", cpus: 16, memoryMiB: 100 * 1024 }, problem: null, absent: false, backend: null, images: null, fix: null, ...more };
+}
+
+const NO_GROUP: Partial<DockerHostView> = {
+  docker: null,
+  problem: "Docker did not answer: Docker's socket refused BB's daemon.",
+  fix: { problem: "Docker is on lab, but BB's user, bb, cannot use it. Add bb to the docker group, then restart BB's daemon there.", command: "sudo usermod -aG docker bb", restart: "sudo systemctl restart user@1000.service" },
+};
+
+function machineBackend(hostId: string, name: string, enabled = true): BackendConfig {
+  return { id: `docker:${name}`, type: "docker", label: `Docker on ${name}`, enabled, fields: { host: `bb:${hostId}`, privileged: true } };
+}
+
+function machinesServer(hosts: DockerHostView[], backends: BackendConfig[]) {
+  const document: ConfigDocument = { schema: 1, revision: 3, backends, kinds: {}, general: {} };
+  applied = document;
+  const base = configState({ document });
+  const live = base.backends.map((backend) => ({ ...backend, label: backends.find((each) => each.id === backend.id)?.label ?? backend.label, boxes: 0, kinds: backend.state === "active" ? ["linux"] : [] }));
+  return server([], { dockerHosts: hosts, config: { drivers: [...base.drivers, DOCKER_DRIVER], backends: live, problems: [] } });
+}
+
+test("Add backend offers Docker on your BB machines first: Add for those that can host boxes, Cannot host boxes with its fix and Check again, those added, and one line for machines with no Docker", async () => {
+  const hosts = [
+    dockerMachine("host_b", "devpc"),
+    dockerMachine("host_n", "lab", NO_GROUP),
+    dockerMachine("host_p", "plain", { docker: null, absent: true }),
+    dockerMachine("host_q", "quiet", { docker: null, absent: true }),
+    dockerMachine("host_o", "sleepy", { connected: false, docker: null, problem: "The machine is offline in BB." }),
+    dockerMachine("host_g", "builder", { backend: { id: "docker:builder", enabled: true, boxes: 0 }, images: { state: "building", targets: ["linux"], detail: "#5 [linux 2/9] RUN apt-get install", startedAt: 0, endedAt: null } }),
+  ];
+  const { handlers, changes, operations } = machinesServer(hosts, [machineBackend("host_g", "builder")]);
+  const slot = settings(handlers, "#add");
+  const group = (await slot.findByRole("heading", { name: "Docker on your BB machines" })).closest("section") as HTMLElement;
+  const headings = slot.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+  expect(headings.indexOf("Docker on your BB machines")).toBeLessThan(headings.indexOf("On BB's server or a machine you have"));
+  const row = (name: string) => within(group).getByText(name, { selector: "p, span" }).closest("div.flex, button") as HTMLElement;
+  await within(group).findByText("devpc", { selector: "p, span" });
+  expect(within(row("devpc")).getByText("Can host boxes")).toBeTruthy();
+  expect(within(row("devpc")).getByText("16 cores")).toBeTruthy();
+  expect(within(row("lab")).getByText("Cannot host boxes")).toBeTruthy();
+  expect(within(row("lab")).getByText(/BB's user, bb, cannot use it/)).toBeTruthy();
+  expect(within(row("lab")).getByText("sudo usermod -aG docker bb")).toBeTruthy();
+  expect(within(row("lab")).getByText("sudo systemctl restart user@1000.service")).toBeTruthy();
+  expect(within(row("sleepy")).getByText("Offline in BB")).toBeTruthy();
+  expect(within(row("builder")).getByText("Added: open it")).toBeTruthy();
+  expect(within(row("builder")).getByText("Building linux images: #5 [linux 2/9] RUN apt-get install")).toBeTruthy();
+  expect(within(group).getByText("No Docker on plain and quiet.")).toBeTruthy();
+  expect(within(group).queryByRole("switch")).toBeNull();
+
+  fireEvent.click(within(group).getByRole("button", { name: "Check Docker on lab again" }));
+  await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "docker.hosts" && (call.input as { recheck?: string } | null)?.recheck === "host_n")).toBe(true));
+
+  fireEvent.click(within(group).getByRole("button", { name: "Add Docker on devpc" }));
+  await waitFor(() => expect(changes).toContain("docker.host.set host_b true"));
+  expect(operations).toHaveLength(1);
+  const added = await within(group).findByRole("button", { name: /^devpc/ });
+  await waitFor(() => expect(document.activeElement).toBe(added));
+  expect(within(added).getByText("Added: open it")).toBeTruthy();
+});
+
+test("a BB machine's Docker in use is a backend row like the others: its build on the row, Cannot host boxes on the row and in Status with its fix, and the machines that could host boxes in one line", async () => {
+  const hosts = [
+    dockerMachine("host_g", "builder", { backend: { id: "docker:builder", enabled: true, boxes: 0 }, images: { state: "building", targets: ["linux", "desktop", "desktop-wayland"], detail: "#5 [linux 2/9] RUN apt-get install", image: { at: 1, of: 3 }, step: { at: 2, of: 9 }, startedAt: 0, endedAt: null } }),
+    dockerMachine("host_n", "lab", { ...NO_GROUP, backend: { id: "docker:lab", enabled: true, boxes: 0 } }),
+    dockerMachine("host_b", "devpc"),
+    dockerMachine("host_x", "attic", { docker: null, problem: "Docker did not answer: connect: no such file or directory" }),
+  ];
+  const { handlers } = machinesServer(hosts, [machineBackend("host_g", "builder"), machineBackend("host_n", "lab")]);
+  const slot = settings(handlers);
+  const backends = (await slot.findByRole("heading", { name: "Backends" })).closest("section") as HTMLElement;
+  const rowOf = (name: string) => within(backends).getByRole("button", { name }).parentElement as HTMLElement;
+  await waitFor(() => expect(within(rowOf("Docker on lab")).getByText("Cannot host boxes")).toBeTruthy());
+  expect(within(rowOf("Docker on lab")).getAllByText("BB machine").length).toBe(1);
+  expect(within(rowOf("Docker on builder")).getByText("Building linux, desktop and desktop-wayland images · Image 1 of 3, step 2 of 9")).toBeTruthy();
+  const callout = slot.getByRole("region", { name: "Things that need you" });
+  expect(within(callout).getByText("Docker on lab")).toBeTruthy();
+  expect(within(callout).getByText("Fix: On lab, run sudo usermod -aG docker bb, then sudo systemctl restart user@1000.service. Then check again.")).toBeTruthy();
+  expect(within(backends).getByText(/devpc has Docker and could host boxes\. Docker on attic cannot host boxes now\./)).toBeTruthy();
+  fireEvent.click(within(backends).getByRole("button", { name: "See them under Add backend" }));
+  expect(await slot.findByRole("heading", { name: "Add a backend" })).toBeTruthy();
+});
+
+test("Status says a BB machine's Docker is offline in BB, not that it is not working", async () => {
+  const offline: Partial<DockerHostView> = { connected: false, docker: null, problem: "The machine is offline in BB.", backend: { id: "docker:attic", enabled: true, boxes: 0 } };
+  const alone = settings(machinesServer([dockerMachine("host_a", "attic", offline)], [machineBackend("host_a", "attic")]).handlers);
+  expect(await alone.findByText("Docker on attic is offline in BB")).toBeTruthy();
+  expect(alone.queryByText(/is not working/)).toBeNull();
+  cleanup();
+  const hosts = [dockerMachine("host_a", "attic", offline), dockerMachine("host_b", "devpc", { backend: { id: "docker:devpc", enabled: true, boxes: 0 } })];
+  const two = settings(machinesServer(hosts, [machineBackend("host_a", "attic"), machineBackend("host_b", "devpc")]).handlers);
+  const status = (await two.findByText(/of 2 backends/)).closest("p") as HTMLElement;
+  await waitFor(() => expect(status.textContent).toContain(" · 1 offline in BB"));
+});
+
+test("a BB machine's Docker page: the machine, Docker's facts and its fix, off keeps the backend and on goes through docker.host.set", async () => {
+  const hosts = [dockerMachine("host_n", "lab", { ...NO_GROUP, backend: { id: "docker:lab", enabled: true, boxes: 0 } })];
+  const { handlers, changes, operations } = machinesServer(hosts, [machineBackend("host_n", "lab")]);
+  const slot = settings(handlers, "#backend/docker:lab");
+  expect(await slot.findByRole("heading", { name: /^Docker on lab/ })).toBeTruthy();
+  const card = (await slot.findByRole("heading", { name: "BB machine" })).closest("section") as HTMLElement;
+  await waitFor(() => expect(within(card).getByText("Cannot host boxes")).toBeTruthy());
+  expect(within(card).getByText("sudo usermod -aG docker bb")).toBeTruthy();
+  expect(within(card).getByRole("button", { name: "Copy the command: sudo usermod -aG docker bb" })).toBeTruthy();
+  fireEvent.click(within(card).getByRole("button", { name: "Check Docker on lab again" }));
+  await waitFor(() => expect(changes.some((change) => change.startsWith("check docker:lab "))).toBe(true));
+  await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "docker.hosts" && (call.input as { recheck?: string } | null)?.recheck === "host_n")).toBe(true));
+  expect(slot.queryByRole("textbox", { name: "Host" })).toBeNull();
+  expect(slot.queryByText("Docker on BB machines")).toBeNull();
+
+  const takes = slot.getByRole("switch", { name: "Docker on lab: takes new boxes" });
+  fireEvent.click(takes);
+  await waitFor(() => expect(changes.some((change) => change.startsWith("apply "))).toBe(true));
+  expect(changes.some((change) => change.startsWith("docker.host.set"))).toBe(false);
+  expect(bodyOf(changes.find((change) => change.startsWith("apply "))!).backends).toEqual([{ ...machineBackend("host_n", "lab"), enabled: false }]);
+  await waitFor(() => expect(slot.getByRole("switch", { name: "Docker on lab: takes new boxes" }).getAttribute("aria-checked")).toBe("false"));
+  expect(slot.getByRole("heading", { name: /^Docker on lab/ })).toBeTruthy();
+
+  fireEvent.click(slot.getByRole("switch", { name: "Docker on lab: takes new boxes" }));
+  await waitFor(() => expect(changes).toContain("docker.host.set host_n true"));
+  expect(operations).toHaveLength(2);
+});
+
+// The review of 22 October 2026: the paste hold, Shift and the stream switch together.
+
+/** The video tab in control, for the review's tests: its socket, canvas and slot. */
+async function videoInControl(handlers: PluginRpcTestHandlers<Contract>) {
+  window.sessionStorage.setItem(streamChoiceKey("box_2"), "selkies");
+  const slot = desktopTab(handlers);
+  await waitFor(() => expect(FakeSocket.made.some((made) => made.url.includes("stream=selkies"))).toBe(true));
+  const socket = videoSocket();
+  act(() => socket.open());
+  act(() => void socket.onmessage?.({ data: "MODE websockets" }));
+  act(() => void socket.onmessage?.({ data: videoFrame(5, true) }));
+  fireEvent.click(await slot.findByRole("button", { name: "Take control" }));
+  await slot.findByText(/You have control/);
+  const canvas = slot.getByTestId("desktop-screen").querySelector("canvas")!;
+  return { slot, socket, canvas };
+}
+
+test("keys typed over video after a paste, before the stream switches to VNC, reach the box over VNC after the chord, not the closed video (the review of 22 October 2026)", async () => {
+  const undo = withVideo();
+  try {
+    const { handlers } = server([desktopBox()], { video: true });
+    const { slot, socket, canvas } = await videoInControl(handlers);
+    fireEvent.keyDown(canvas, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("[PASTE]")));
+    fireEvent.keyDown(canvas, { key: "y", code: "KeyY" });
+    fireEvent.keyUp(canvas, { key: "y", code: "KeyY" });
+    expect(socket.sent).not.toContain("kd,121");
+    fireEvent.click(within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show as VNC" }));
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    await new Promise((resolve) => setTimeout(resolve, PASTE_LANDS_MS + 100));
+    expect([socket.sent.includes("kd,121"), client.keyEvents.some((key) => key.keysym === 0x79)]).toEqual([false, true]);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("a paste whose text is still on its way to the box as the stream switches to VNC is pressed over VNC once it lands (the review of 22 October 2026)", async () => {
+  const undo = withVideo();
+  try {
+    const { handlers } = server([desktopBox({ display: { protocol: "rfb", resizable: true, clipboard: "commands", refresh: null, quality: null, macKeys: null } })], { video: true });
+    let landed: (() => void) | null = null;
+    const slow: PluginRpcTestHandlers<Contract> = { ...handlers, desktopPaste: () => new Promise<null>((resolve) => (landed = () => resolve(null))) };
+    const { slot, socket, canvas } = await videoInControl(slow);
+    fireEvent.keyDown(canvas, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("[PASTE]")));
+    await waitFor(() => expect(landed).not.toBeNull());
+    fireEvent.click(within(await openDisplay(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show as VNC" }));
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    act(() => landed!());
+    await new Promise((resolve) => setTimeout(resolve, PASTE_CHORD_DELAY_MS + 100));
+    expect([socket.sent.includes("kd,118"), client.keys.some((key) => key.keysym === 0x76)]).toEqual([false, true]);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+test("two pastes in quick succession press the box's chord twice, not once (the review of 22 October 2026)", async () => {
+  const undo = withVideo();
+  try {
+    const { handlers } = server([desktopBox()], { video: true });
+    const { socket, canvas } = await videoInControl(handlers);
+    fireEvent.keyDown(canvas, { key: "v", code: "KeyV", ctrlKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("[ONE]")));
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    fireEvent.keyDown(canvas, { key: "v", code: "KeyV", ctrlKey: true, repeat: true });
+    act(() => void document.dispatchEvent(pasteEvent("[ONE]")));
+    await new Promise((resolve) => setTimeout(resolve, PASTE_CHORD_DELAY_MS + PASTE_LANDS_MS + 100));
+    expect(socket.sent.filter((sent) => sent === "kd,118")).toHaveLength(2);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+  }
+});
+
+/** The box keyboard modes the review covers: each box's system, and how a Mac's server names Command. */
+const KEYBOARD_MODES = [
+  { name: "a Linux box", box: {}, command: { keysym: 0xffe3, code: "ControlLeft" } },
+  {
+    name: "a Windows box",
+    box: { os: "windows", kind: "windows-desktop", kindLabel: "Windows desktop", display: { protocol: "rfb", resizable: true, clipboard: "commands", refresh: null, quality: null, macKeys: null } },
+    command: { keysym: 0xffe3, code: "ControlLeft" },
+  },
+  {
+    name: "a Mac on Tart",
+    box: { os: "macos", nature: "virtual", kind: "macos-desktop", kindLabel: "macOS desktop", display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" } },
+    command: { keysym: 0xffe9, code: "AltLeft" },
+  },
+  { name: "a pool Mac", box: { os: "macos", nature: "real", kind: "macos-desktop", kindLabel: "macOS desktop" }, command: { keysym: 0xffe7, code: "MetaLeft" } },
+] as const;
+const BROWSERS = [
+  { name: "Linux", platform: "Linux x86_64" },
+  { name: "a Mac", platform: "MacIntel" },
+] as const;
+
+test.each(KEYBOARD_MODES.flatMap((mode) => BROWSERS.map((browser) => ({ mode, browser }))))(
+  "over VNC to $mode.name from $browser.name: Shift and AltGr held through a paste go up for the chord and down again, keys repeated while it is on its way follow it in order, and Shift and Caps Lock type capitals after it",
+  async ({ mode, browser }) => {
+    const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue(browser.platform);
+    fakeClipboard(() => Promise.resolve("[TEXT]"));
+    try {
+      const { handlers, changes } = server([desktopBox(mode.box as Partial<BoxView>)]);
+      const slot = desktopTab(handlers);
+      // The text is on its way once noVNC or BB Box's RPC has it.
+      const textSent = () => client.pasted.length + changes.filter((change) => change.startsWith("desktopPaste")).length;
+      await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+      const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+      act(() => void client.dispatchEvent(new Event("connect")));
+      fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+      await slot.findByText(/You have control/);
+      const keys = () => client.keys.map((key) => `${key.code}${key.down ? "" : " up"}`);
+      const typed = () => client.keyEvents.map((key) => `${key.keysym.toString(16)}${key.down ? "" : " up"}`);
+      const menuPaste = async () => fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Paste from this computer" }));
+      const command = mode.command.code;
+
+      // Shift held through the paste; X held down, its repeats while the paste is on its way.
+      client._handleKeyEvent(0xffe1, "ShiftLeft", true, null, false);
+      client.keyEvents.length = 0;
+      await menuPaste();
+      await waitFor(() => expect(textSent()).toBeGreaterThan(0));
+      for (let repeat = 0; repeat < 3; repeat++) client._handleKeyEvent(0x58, "KeyX", true, null, false);
+      client._handleKeyEvent(0x58, "KeyX", false, null, false);
+      expect(typed()).toEqual([]);
+      await waitFor(() => expect(typed()).toHaveLength(4));
+      expect(keys()).toEqual(["ShiftLeft up", command, "KeyV", "KeyV up", `${command} up`, "ShiftLeft"]);
+      expect(typed()).toEqual(["58", "58", "58", "58 up"]);
+      // A letter the browser names lower case with Shift held goes as its capital.
+      client.keyEvents.length = 0;
+      client._handleKeyEvent(0x61, "KeyA", true, null, false);
+      client._handleKeyEvent(0x61, "KeyA", false, null, false);
+      client._handleKeyEvent(0xffe1, "ShiftLeft", false, null, false);
+      // Caps Lock on, no Shift: the capital goes as named, with no Shift around it.
+      client._handleKeyEvent(0x42, "KeyB", true, null, true);
+      client._handleKeyEvent(0x42, "KeyB", false, null, true);
+      expect(typed()).toEqual(["41", "41 up", "ffe1 up", "42", "42 up"]);
+
+      // AltGr held from Linux, as noVNC names it there; from a Mac the right Option is plain Alt on a box that is not a Mac.
+      client.keys.length = 0;
+      client.keyEvents.length = 0;
+      client._handleKeyEvent(0xfe03, "AltRight", true, null, false);
+      const held = client.keyEvents.at(-1)!;
+      await menuPaste();
+      await waitFor(() => expect(client.keys).toHaveLength(6));
+      expect(keys()).toEqual([`${held.code} up`, command, "KeyV", "KeyV up", `${command} up`, held.code]);
+      expect(client.keys[0]!.keysym).toBe(held.keysym);
+    } finally {
+      platform.mockRestore();
+    }
+  },
+);
+
+
+test.each(KEYBOARD_MODES.flatMap((mode) => BROWSERS.map((browser) => ({ mode, browser }))))(
+  "over video to $mode.name from $browser.name: Shift and AltGr held through a paste go up for the chord and down again, keys repeated while it is on its way follow it in order, and Shift and Caps Lock type capitals after it",
+  async ({ mode, browser }) => {
+    const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue(browser.platform);
+    fakeClipboard(() => Promise.resolve("[TEXT]"));
+    const undo = withVideo();
+    try {
+      const { handlers, changes } = server([desktopBox(mode.box as Partial<BoxView>)], { video: true });
+      const { slot, socket, canvas } = await videoInControl(handlers);
+      const keys = () => socket.sent.filter((sent): sent is string => typeof sent === "string" && /^k[du],/.test(sent));
+      const menuPaste = async () => fireEvent.click(within(await openMenu(slot.getByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Paste from this computer" }));
+      const textSent = () => socket.sent.filter((sent) => typeof sent === "string" && /^c[bw]/.test(sent)).length + changes.filter((change) => change.startsWith("desktopPaste")).length;
+      // BB Box's own Mac input for video takes Meta as Command.
+      const command = (mode.box as Partial<BoxView>).os === "macos" ? 65511 : 65507;
+
+      fireEvent.keyDown(canvas, { key: "Shift", code: "ShiftLeft", shiftKey: true });
+      const shift = keys().at(-1)!.slice(3);
+      await menuPaste();
+      await waitFor(() => expect(textSent()).toBeGreaterThan(0));
+      const before = keys().length;
+      for (let repeat = 0; repeat < 3; repeat++) fireEvent.keyDown(canvas, { key: "X", code: "KeyX", shiftKey: true, repeat: repeat > 0 });
+      fireEvent.keyUp(canvas, { key: "X", code: "KeyX", shiftKey: true });
+      expect(keys()).toHaveLength(before);
+      await waitFor(() => expect(keys().length).toBeGreaterThanOrEqual(before + 10));
+      expect(keys().slice(before)).toEqual([`ku,${shift}`, `kd,${command}`, "kd,118", "ku,118", `ku,${command}`, `kd,${shift}`, "kd,88", "kd,88", "kd,88", "ku,88"]);
+
+      // A letter the browser names lower case with Shift held goes as its capital; with Caps Lock on, a capital as named.
+      fireEvent.keyDown(canvas, { key: "a", code: "KeyA", shiftKey: true });
+      fireEvent.keyUp(canvas, { key: "a", code: "KeyA", shiftKey: true });
+      fireEvent.keyUp(canvas, { key: "Shift", code: "ShiftLeft" });
+      fireEvent.keyDown(canvas, { key: "B", code: "KeyB", modifierCapsLock: true });
+      fireEvent.keyUp(canvas, { key: "B", code: "KeyB", modifierCapsLock: true });
+      expect(keys().slice(before + 10)).toEqual(["kd,65", "ku,65", `ku,${shift}`, "kd,66", "ku,66"]);
+
+      // AltGr held through a second paste.
+      fireEvent.keyDown(canvas, { key: "AltGraph", code: "AltRight" });
+      const altGr = keys().at(-1)!.slice(3);
+      const second = keys().length;
+      await menuPaste();
+      await waitFor(() => expect(keys().length).toBeGreaterThanOrEqual(second + 6));
+      expect(keys().slice(second)).toEqual([`ku,${altGr}`, `kd,${command}`, "kd,118", "ku,118", `ku,${command}`, `kd,${altGr}`]);
+    } finally {
+      undo();
+      window.sessionStorage.clear();
+      platform.mockRestore();
+    }
+  },
+);
+
+test("a session that goes with its paste on its way hands the keys it held to the tab's newest session, before that session's own, and the chord too once the text lands (the review of 22 October 2026)", () => {
+  vi.useFakeTimers();
+  try {
+    const sent: string[] = [];
+    const video = new KeysAfterPaste<string>((key) => sent.push(`video ${key}`));
+    video.join("box_2:viewer-one");
+    video.hold();
+    expect(video.keep("a")).toBe(true);
+    // The stream switches before the text lands: the video session goes, and VNC comes.
+    video.close();
+    const vnc = new KeysAfterPaste<string>((key) => sent.push(`vnc ${key}`));
+    let pressed = 0;
+    vnc.pressChord = () => {
+      pressed++;
+      vnc.hold();
+    };
+    vnc.join("box_2:viewer-one");
+    expect(vnc.keep("b")).toBe(true);
+    // The text lands: VNC presses the chord, and sends the video's key, then its own, once that has landed.
+    video.handChord(false);
+    expect(pressed).toBe(1);
+    expect(sent).toEqual([]);
+    vnc.releaseIn(PASTE_LANDS_MS);
+    vi.advanceTimersByTime(PASTE_LANDS_MS);
+    expect(sent).toEqual(["vnc a", "vnc b"]);
+    expect(vnc.keep("c")).toBe(false);
+    // The video session has left the tab: a new paste there holds only VNC's keys.
+    vnc.close();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("Ctrl+V, Cmd+V from a Mac, is a paste of this computer's clipboard, and with Shift too on a box that is not a Mac, as Linux terminals paste; Cmd+Shift+V on a Mac box is the person's own", () => {
+  const press = (init: Partial<KeyboardEvent>) => ({ key: "v", altKey: false, shiftKey: false, ctrlKey: false, metaKey: false, ...init });
+  for (const os of ["linux", "windows"]) {
+    expect(pasteShortcut(press({ ctrlKey: true }), os, false)).toBe("plain");
+    expect(pasteShortcut(press({ key: "V", ctrlKey: true, shiftKey: true }), os, false)).toBe("shifted");
+    expect(pasteShortcut(press({ key: "V", metaKey: true, shiftKey: true }), os, true)).toBe("shifted");
+    expect(pasteShortcut(press({ ctrlKey: true, altKey: true }), os, false)).toBeNull();
+  }
+  expect(pasteShortcut(press({ metaKey: true }), "macos", true)).toBe("plain");
+  expect(pasteShortcut(press({ ctrlKey: true }), "macos", false)).toBe("plain");
+  expect(pasteShortcut(press({ key: "V", metaKey: true, shiftKey: true }), "macos", true)).toBeNull();
+  expect(pasteShortcut(press({ key: "V", ctrlKey: true, shiftKey: true }), "macos", false)).toBeNull();
+  expect(pasteShortcut(press({ ctrlKey: true }), "linux", true)).toBeNull();
+});
+
+test("over VNC, Ctrl+Shift+V from Linux pastes this computer's text into a Linux box with the box's Ctrl+Shift+V, the person's own Ctrl and Shift up for it; on a Mac box Cmd+Shift+V goes to the box as typed", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("Linux x86_64");
+  try {
+    const { handlers } = server([desktopBox()]);
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    client._handleKeyEvent(0xffe3, "ControlLeft", true, null, false);
+    client._handleKeyEvent(0xffe1, "ShiftLeft", true, null, false);
+    const { reached } = keyOnCanvas(slot, { key: "V", code: "KeyV", ctrlKey: true, shiftKey: true });
+    expect(reached).not.toHaveBeenCalled();
+    act(() => void document.dispatchEvent(pasteEvent("[TERMINAL]")));
+    await waitFor(() => expect(client.keys).toHaveLength(10));
+    expect(client.pasted).toContain("[TERMINAL]");
+    expect(client.keys.map((key) => `${key.code}${key.down ? "" : " up"}`)).toEqual([
+      "ControlLeft up",
+      "ShiftLeft up",
+      "ControlLeft",
+      "ShiftLeft",
+      "KeyV",
+      "KeyV up",
+      "ShiftLeft up",
+      "ControlLeft up",
+      "ControlLeft",
+      "ShiftLeft",
+    ]);
+  } finally {
+    platform.mockRestore();
+  }
+});
+
+test("on a Mac box, Cmd+Shift+V from a Mac goes to the box as the person's own keys, paste and match style, not a paste of this computer's clipboard", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("MacIntel");
+  try {
+    const { handlers } = server([desktopBox({ os: "macos", nature: "real", kind: "macos-desktop", kindLabel: "macOS desktop" })]);
+    const slot = desktopTab(handlers);
+    await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+    const client = novnc.FakeRfb.made[0]! as unknown as FakeClient;
+    act(() => void client.dispatchEvent(new Event("connect")));
+    fireEvent.click(slot.getByRole("button", { name: "Take control" }));
+    await slot.findByText(/You have control/);
+    const { reached } = keyOnCanvas(slot, { key: "V", code: "KeyV", metaKey: true, shiftKey: true });
+    expect(reached).toHaveBeenCalled();
+    act(() => void document.dispatchEvent(pasteEvent("[TEXT]")));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(client.keys).toEqual([]);
+  } finally {
+    platform.mockRestore();
+  }
+});
+
+test("over video, Ctrl+Shift+V from Linux pastes this computer's text into a Windows box with the box's Ctrl+Shift+V", async () => {
+  const platform = vi.spyOn(Navigator.prototype, "platform", "get").mockReturnValue("Linux x86_64");
+  const undo = withVideo();
+  try {
+    const { handlers, changes } = server([desktopBox(KEYBOARD_MODES[1].box as Partial<BoxView>)], { video: true });
+    const { socket, canvas } = await videoInControl(handlers);
+    const keys = () => socket.sent.filter((sent): sent is string => typeof sent === "string" && /^k[du],/.test(sent));
+    fireEvent.keyDown(canvas, { key: "V", code: "KeyV", ctrlKey: true, shiftKey: true });
+    act(() => void document.dispatchEvent(pasteEvent("[TERMINAL]")));
+    await waitFor(() => expect(keys()).toContain("ku,65507"));
+    expect(changes.some((change) => change.startsWith("desktopPaste") && change.endsWith("[TERMINAL]"))).toBe(true);
+    expect(keys()).toEqual(["kd,65507", "kd,65505", "kd,118", "ku,118", "ku,65505", "ku,65507"]);
+  } finally {
+    undo();
+    window.sessionStorage.clear();
+    platform.mockRestore();
+  }
+});
+
+const TAILNET_SET: ConfigDocument = { schema: 1, revision: 3, backends: [], kinds: {}, general: { tailnet: { mode: "oauth", clientId: { set: true, version: 2 }, clientSecret: { set: true, version: 2 } } } };
+
+function sentTailnet(changes: readonly string[], at: number): unknown {
+  return JSON.parse(changes[at]!.slice(changes[at]!.indexOf("{"))).general.tailnet;
+}
+
+test("the tailnet's choice, tags and OAuth client save together with one operation; a set secret shows only as set and is kept until replaced; No deletes them, and says so first (067 unit 9)", async () => {
+  applied = { ...TAILNET_SET, general: {} };
+  const fresh = server([]);
+  const slot = settings(fresh.handlers, "#option/network");
+  const no = (await slot.findByRole("radio", { name: "No: BB is reached without one" })) as HTMLInputElement;
+  expect(no.checked).toBe(true);
+  expect(slot.getByText("Switches, and menus that stand alone, act at once. Fields, checkboxes and radio choices wait for Save.")).toBeTruthy();
+  expect(slot.queryByRole("textbox", { name: "Tags" })).toBeNull();
+  fireEvent.click(slot.getByRole("radio", { name: "Yes, with a Tailscale OAuth client" }));
+  expect(slot.getByRole("region", { name: "Save the tailnet" }).textContent).toContain("1 change to the tailnet not saved");
+  expect((slot.getByRole("textbox", { name: "Tags" }) as HTMLInputElement).placeholder).toBe("tag:bb-box");
+  expect(slot.getByText(/the default/).textContent).toContain("Empty: tag:bb-box, the default");
+  fireEvent.change(slot.getByRole("textbox", { name: "Tags" }), { target: { value: "tag:bb-box tag:bb-box-mac" } });
+  fireEvent.click(slot.getByRole("button", { name: "Set the OAuth client ID" }));
+  fireEvent.change(slot.getByLabelText("OAuth client ID"), { target: { value: "kMADEUPid" } });
+  fireEvent.click(slot.getByRole("button", { name: "Set the OAuth client secret" }));
+  fireEvent.change(slot.getByLabelText("OAuth client secret"), { target: { value: "tskey-client-MADEUP" } });
+  expect(JSON.stringify({ ...window.sessionStorage })).not.toContain("MADEUP");
+  expect(slot.getByRole("region", { name: "Save the tailnet" }).textContent).toContain("4 changes to the tailnet not saved");
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(fresh.changes).toHaveLength(1));
+  expect(fresh.operations).toHaveLength(1);
+  expect(sentTailnet(fresh.changes, 0)).toEqual({ mode: "oauth", tags: ["tag:bb-box", "tag:bb-box-mac"], clientId: "kMADEUPid", clientSecret: "tskey-client-MADEUP" });
+  expect(await slot.findByText("Saved.")).toBeTruthy();
+  expect(slot.getAllByText("Set")).toHaveLength(2);
+  expect(slot.queryByDisplayValue(/MADEUP/)).toBeNull();
+  cleanup();
+
+  applied = TAILNET_SET;
+  const stored = server([]);
+  const again = settings(stored.handlers, "#option/network");
+  fireEvent.change(await again.findByRole("textbox", { name: "Tags" }), { target: { value: "tag:ci" } });
+  fireEvent.keyDown(again.getByRole("textbox", { name: "Tags" }), { key: "Enter" });
+  await waitFor(() => expect(stored.changes).toHaveLength(1));
+  expect(sentTailnet(stored.changes, 0)).toEqual({ mode: "oauth", tags: ["tag:ci"], clientId: { set: true, version: 2 }, clientSecret: { set: true, version: 2 } });
+  fireEvent.click(again.getByRole("radio", { name: "No: BB is reached without one" }));
+  expect(again.getByText("Saving No deletes the saved OAuth client ID and secret.")).toBeTruthy();
+  expect(again.queryByRole("textbox", { name: "Tags" })).toBeNull();
+  fireEvent.click(again.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(stored.changes).toHaveLength(2));
+  expect(sentTailnet(stored.changes, 1)).toBeUndefined();
+});
+
+test("the tailnet refused part way keeps every change, with the reason under the field it names, and nothing saved (067 unit 9)", async () => {
+  applied = { ...TAILNET_SET, general: {} };
+  const refused = server([], { applyWith: { ok: false, reason: "problems", problems: [{ path: "general.tailnet.clientSecret", message: "Set the Tailscale OAuth client's secret, as the guide shows." }] } });
+  const slot = settings(refused.handlers, "#option/network");
+  fireEvent.click(await slot.findByRole("radio", { name: "Yes, with a Tailscale OAuth client" }));
+  fireEvent.click(slot.getByRole("button", { name: "Set the OAuth client ID" }));
+  fireEvent.change(slot.getByLabelText("OAuth client ID"), { target: { value: "kMADEUPid" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  expect(await slot.findByText("Not saved: fix the field marked. Your changes are still here.")).toBeTruthy();
+  const problem = slot.getByText("Set the Tailscale OAuth client's secret, as the guide shows.");
+  const setSecret = slot.getByRole("button", { name: "Set the OAuth client secret" });
+  expect(setSecret.getAttribute("aria-describedby")).toContain(problem.id);
+  expect(document.activeElement).toBe(setSecret);
+  expect((slot.getByLabelText("OAuth client ID") as HTMLInputElement).value).toBe("kMADEUPid");
+  expect((slot.getByRole("radio", { name: "Yes, with a Tailscale OAuth client" }) as HTMLInputElement).checked).toBe(true);
+  expect(applied!.general.tailnet).toBeUndefined();
+});
+
+test("a tailnet secret replaced elsewhere while it is replaced here is a conflict that names the revision, with both choices (067 unit 9)", async () => {
+  applied = TAILNET_SET;
+  const { handlers, changes } = server([]);
+  const slot = settings(handlers, "#option/network");
+  fireEvent.click(await slot.findByRole("button", { name: "Replace the OAuth client secret" }));
+  fireEvent.change(slot.getByLabelText("New OAuth client secret"), { target: { value: "tskey-client-MINE" } });
+  applied = { ...TAILNET_SET, revision: 4, general: { tailnet: { mode: "oauth", clientId: { set: true, version: 2 }, clientSecret: { set: true, version: 4 } } } };
+  await slot.emitRealtime("changed", null);
+  expect(await slot.findByText("Replaced elsewhere while you edited, at revision 4. Saving yours replaces that one.")).toBeTruthy();
+  expect((slot.getByRole("button", { name: "Save" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(slot.getByRole("button", { name: "Keep mine" }));
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(changes[0]!.startsWith("apply 4 ")).toBe(true);
+  expect(sentTailnet(changes, 0)).toEqual({ mode: "oauth", clientId: { set: true, version: 2 }, clientSecret: "tskey-client-MINE" });
+});
+
+test("Devices: iOS video encoding acts at once as a menu, encoder sharing and the test device as switches, each with its receipt; the device kinds' spares say they are off by default and open the kind (067 unit 9)", async () => {
+  applied = { schema: 1, revision: 3, backends: [], kinds: { android: { spares: 2 } }, general: {} };
+  const deviceKind = (id: string, label: string, platform: "ios" | "android") => ({ ...configState({}).kinds[0]!, id, label, device: platform, drivers: ["fake"] });
+  const { handlers, changes, operations } = server([], { config: { kinds: [...configState({}).kinds, deviceKind("ios", "iOS Simulator", "ios"), deviceKind("android", "Android emulator", "android")] } });
+  const slot = settings(handlers, "#option/devices");
+  await slot.findByRole("combobox", { name: "iOS video encoding" });
+  expect(slot.queryByText(/bb box config apply/)).toBeNull();
+  await choose("iOS video encoding", "Software only");
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).general.iosEncoder).toBe("software");
+  fireEvent.click(slot.getByRole("switch", { name: "Share each Mac's encoder fairly" }));
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(JSON.parse(changes[1]!.slice(changes[1]!.indexOf("{"))).general.encoderLedger).toBe(false);
+  fireEvent.click(slot.getByRole("switch", { name: "Test device" }));
+  await waitFor(() => expect(changes).toHaveLength(3));
+  expect(JSON.parse(changes[2]!.slice(changes[2]!.indexOf("{"))).general.testDevice).toBe(true);
+  expect(operations).toHaveLength(3);
+  expect(slot.getByText(/Spares of device boxes are off unless you set a number/)).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Spare iOS Simulator boxes" }).getAttribute("aria-describedby")).toBeTruthy();
+  expect(slot.getByText("None, as by default")).toBeTruthy();
+  expect(slot.getByText("2 spares")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Spare Android emulator boxes" }));
+  expect(await slot.findByRole("heading", { name: /Android emulator/ })).toBeTruthy();
+  expect(window.location.hash).toBe("#kind/android");
+});
+
+test("an ios box's New box form chooses Shared or a VM of its own before the device; Shared is off with its words until a shared host is set up, and a VM of its own sends dedicated with its size (064, unit 2)", async () => {
+  const linux = KINDS[0]!;
+  const ios: KindView = {
+    ...linux,
+    id: "ios",
+    label: "iOS Simulator",
+    os: "macos",
+    arch: "arm64",
+    devices: { platform: "ios", models: ["iPhone 18 Pro", "iPhone 17"] },
+    placement: { kind: "ios", shared: false, why: "No shared iOS host is set up", sizeNeedsDedicated: false },
+  };
+  const { handlers, changes } = server([], { kinds: [linux, ios] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  const systems = await screen.findByRole("radiogroup", { name: "System" });
+  expect(screen.queryByRole("radiogroup", { name: "Machine" })).toBeNull();
+  fireEvent.click(within(systems).getByRole("radio", { name: /^iOS/ }));
+  const machine = screen.getByRole("radiogroup", { name: "Machine" });
+  const options = within(machine).getAllByRole("radio");
+  expect(options.map((option) => [option.textContent, option.getAttribute("aria-checked"), option.getAttribute("aria-disabled"), option.tabIndex])).toEqual([
+    ["SharedNo shared iOS host is set up.", "false", "true", -1],
+    ["A VM of its ownsudo, Homebrew, its own cores, ports and desktop. Takes one of the Mac's two VMs, so it can wait for one.", "true", null, 0],
+  ]);
+  const placement = screen.getByText("Machine");
+  const device = screen.getByText("Device");
+  expect(placement.compareDocumentPosition(device) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fireEvent.click(options[0]!);
+  fireEvent.keyDown(options[1]!, { key: "ArrowUp" });
+  expect(options.map((option) => option.getAttribute("aria-checked"))).toEqual(["false", "true"]);
+  expect(screen.getByRole("radiogroup", { name: "Size" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("acquire"))).toEqual(["acquire ios dedicated"]));
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "System" })).getByRole("radio", { name: /^iOS/ }));
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Size" })).getByRole("radio", { name: /^Large/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("acquire"))).toEqual(["acquire ios dedicated", 'acquire ios {"preset":"large"} dedicated']));
+});
+
+test("a macos box's New box form offers Shared beside a VM of its own once a host lends slots, by click and by keyboard; Shared sends shared with no size, and a VM of its own sends neither shared nor dedicated (064, unit 8)", async () => {
+  const linux = KINDS[0]!;
+  const macos: KindView = {
+    ...linux,
+    id: "macos",
+    label: "macOS",
+    os: "macos",
+    arch: "arm64",
+    placement: { kind: "macos", shared: true, why: null, sizeNeedsDedicated: false },
+  };
+  const { handlers, changes } = server([], { kinds: [linux, macos] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "System" })).getByRole("radio", { name: /^macOS/ }));
+  const options = within(screen.getByRole("radiogroup", { name: "Machine" })).getAllByRole("radio");
+  expect(options.map((option) => [option.textContent, option.getAttribute("aria-checked"), option.getAttribute("aria-disabled"), option.tabIndex])).toEqual([
+    ["SharedReady in seconds, for commands, builds and the iOS Simulator. No sudo, Homebrew installs, desktop or app windows. Other boxes on the host share its cores and ports, and see its processes.", "false", null, -1],
+    ["A VM of its ownsudo, Homebrew, its own cores and ports. Takes one of the Mac's two VMs, so it can wait for one.", "true", null, 0],
+  ]);
+  expect(screen.getByRole("radiogroup", { name: "Size" })).toBeTruthy();
+  options[1]!.focus();
+  fireEvent.keyDown(options[1]!, { key: "ArrowUp" });
+  expect(options.map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false"]);
+  expect(document.activeElement).toBe(options[0]);
+  expect(options.map((option) => option.tabIndex)).toEqual([0, -1]);
+  expect(screen.queryByRole("radiogroup", { name: "Size" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("acquire"))).toEqual(["acquire macos shared"]));
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "System" })).getByRole("radio", { name: /^macOS/ }));
+  const again = within(screen.getByRole("radiogroup", { name: "Machine" })).getAllByRole("radio");
+  fireEvent.click(again[0]!);
+  fireEvent.keyDown(again[0]!, { key: "ArrowDown" });
+  expect(again.map((option) => option.getAttribute("aria-checked"))).toEqual(["false", "true"]);
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("acquire"))).toEqual(["acquire macos shared", "acquire macos"]));
+});
+
+test("a macos kind with no host lending slots shows no Machine choice (064, unit 8)", async () => {
+  const linux = KINDS[0]!;
+  const macos: KindView = { ...linux, id: "macos", label: "macOS", os: "macos", arch: "arm64", placement: null };
+  const { handlers } = server([], { kinds: [linux, macos] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "System" })).getByRole("radio", { name: /^macOS/ }));
+  expect(screen.queryByRole("radiogroup", { name: "Machine" })).toBeNull();
+});
+
+test("with a shared iOS host set up, Shared can be chosen and sends shared with no size; A VM of its own stays the first choice until shared is the default (064, unit 4)", async () => {
+  const linux = KINDS[0]!;
+  const ios: KindView = {
+    ...linux,
+    id: "ios",
+    label: "iOS Simulator",
+    os: "macos",
+    arch: "arm64",
+    devices: { platform: "ios", models: ["iPhone 18 Pro", "iPhone 17"] },
+    placement: { kind: "ios", shared: true, why: null, sizeNeedsDedicated: false },
+  };
+  const { handlers, changes } = server([], { kinds: [linux, ios] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "System" })).getByRole("radio", { name: /^iOS/ }));
+  const options = within(screen.getByRole("radiogroup", { name: "Machine" })).getAllByRole("radio");
+  expect(options.map((option) => [option.textContent, option.getAttribute("aria-checked"), option.getAttribute("aria-disabled")])).toEqual([
+    ["SharedReady in seconds. No sudo or Homebrew installs. Other iOS boxes on the host share its cores and ports, and see its processes.", "false", null],
+    ["A VM of its ownsudo, Homebrew, its own cores, ports and desktop. Takes one of the Mac's two VMs, so it can wait for one.", "true", null],
+  ]);
+  fireEvent.keyDown(options[1]!, { key: "ArrowUp" });
+  expect(options.map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false"]);
+  expect(screen.queryByRole("radiogroup", { name: "Size" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("acquire"))).toEqual(["acquire ios shared"]));
+});
+
+test("with shared the default and a shared iOS host set up, Shared is chosen first and sends shared with no size; A VM of its own sends dedicated with its size (064, unit 6)", async () => {
+  const linux = KINDS[0]!;
+  const ios: KindView = {
+    ...linux,
+    id: "ios",
+    label: "iOS Simulator",
+    os: "macos",
+    arch: "arm64",
+    devices: { platform: "ios", models: ["iPhone 18 Pro", "iPhone 17"] },
+    placement: { kind: "ios", shared: true, why: null, sizeNeedsDedicated: true },
+  };
+  const { handlers, changes } = server([], { kinds: [linux, ios] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  fireEvent.click(within(await screen.findByRole("radiogroup", { name: "System" })).getByRole("radio", { name: /^iOS/ }));
+  const options = within(screen.getByRole("radiogroup", { name: "Machine" })).getAllByRole("radio");
+  expect(options.map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false"]);
+  expect(screen.queryByRole("radiogroup", { name: "Size" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("acquire"))).toEqual(["acquire ios shared"]));
+});
+
+const SHARED_IOS = box({ id: "box_si", name: "brisk-wren", kind: "ios", kindLabel: "iOS Simulator", os: "macos", arch: "arm64", form: null, shared: true, backendLabel: "SSH host pool", provider: "SSH pool", desktop: false, display: null, device: { platform: "ios", model: "iPhone 18 Pro", simulatorHost: true }, control: { owner: "agent", holder: null } });
+const DEDICATED_IOS = box({ id: "box_di", name: "tall-ridge", kind: "ios", kindLabel: "iOS Simulator", os: "macos", arch: "arm64", form: "VM", backendLabel: "Tart on studio", provider: "Tart", desktop: true, display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" }, device: { platform: "ios", model: "iPhone 17", simulatorHost: true }, control: { owner: "agent", holder: null } });
+const ANDROID = box({ id: "box_an", name: "green-bay", kind: "android", kindLabel: "Android emulator", os: "linux", form: "VM", backendLabel: "Proxmox QEMU on pve", provider: "Proxmox", requires: ["kvm"], desktop: false, display: null, device: { platform: "android", model: "Pixel 8", simulatorHost: false }, control: { owner: "agent", holder: null } });
+const ANDROID_WITH_DESKTOP = desktopBox({ id: "box_ad", name: "wide-dune", kind: "android", kindLabel: "Android emulator", device: { platform: "android", model: "Pixel Fold", simulatorHost: false } });
+const MAC_DESKTOP = box({ id: "box_md", name: "pool-mac", kind: "macos-desktop", kindLabel: "macOS desktop", os: "macos", arch: "arm64", form: "VM", desktop: true, display: { protocol: "rfb", resizable: false, clipboard: "commands", refresh: null, quality: null, macKeys: "alt-command" }, control: { owner: "agent", holder: null } });
+const LINUX_DESKTOP = desktopBox();
+
+test("F-19: iOS and Android are systems in the Boxes page's filters, after Linux, macOS and Windows; a device box is its device's system, with counts, and the search finds it by its device", () => {
+  const rows = [box(), LINUX_DESKTOP, MAC_DESKTOP, SHARED_IOS, DEDICATED_IOS, ANDROID].map((one) => ({ box: one, words: [] }));
+  const names = (search: string, filters: typeof NO_FILTERS) => shown(rows, search, filters, { key: "name", ascending: true }).map((row) => row.box.name);
+  expect(rows.map((row) => `${row.box.name}: ${tagsOf(row.box).systems.join()}`)).toEqual(["calm-otter: Linux", "bold-heron: Linux", "pool-mac: macOS", "brisk-wren: iOS", "tall-ridge: iOS", "green-bay: Android"]);
+  expect(choices(rows.map((row) => row.box)).systems).toEqual(["Linux", "macOS", "iOS", "Android"]);
+  expect(tagCounts(rows, "", NO_FILTERS).systems).toEqual({ Linux: 2, macOS: 1, iOS: 2, Android: 1 });
+  expect(names("", { ...NO_FILTERS, systems: ["iOS"] })).toEqual(["brisk-wren", "tall-ridge"]);
+  expect(names("", { ...NO_FILTERS, systems: ["Android"] })).toEqual(["green-bay"]);
+  expect(names("", { ...NO_FILTERS, systems: ["iOS", "Android"] })).toEqual(["brisk-wren", "green-bay", "tall-ridge"]);
+  expect(names("", { ...NO_FILTERS, systems: ["macOS"] })).toEqual(["pool-mac"]);
+  expect(names("", { ...NO_FILTERS, systems: ["iOS"], has: ["Desktop"] })).toEqual(["tall-ridge"]);
+  expect(tagCounts(rows, "", { ...NO_FILTERS, has: ["Desktop"] }).systems).toEqual({ Linux: 1, macOS: 1, iOS: 1 });
+  expect(names("iphone 18", NO_FILTERS)).toEqual(["brisk-wren"]);
+  expect(names("pixel", NO_FILTERS)).toEqual(["green-bay"]);
+  expect(tagCounts(rows, "iphone", NO_FILTERS).systems).toEqual({ iOS: 2 });
+});
+
+test("a device box's Simulator or Emulator badge and a shared box's Shared badge are tags in the Boxes page's filters too", () => {
+  const rows = [box(), MAC_DESKTOP, SHARED_IOS, DEDICATED_IOS, ANDROID].map((one) => ({ box: one, words: [] }));
+  const names = (filters: typeof NO_FILTERS) => shown(rows, "", filters, { key: "name", ascending: true }).map((row) => row.box.name);
+  expect(rows.map((row) => { const tags = tagsOf(row.box); return `${row.box.name}: ${tags.forms.join()} | ${tags.has.join()}`; })).toEqual([
+    "calm-otter: Container | ",
+    "pool-mac: VM | Desktop,arm64",
+    "brisk-wren: Shared | Simulator,arm64",
+    "tall-ridge: VM | Simulator,Desktop,arm64",
+    "green-bay: VM | Emulator,KVM",
+  ]);
+  const listed = choices(rows.map((row) => row.box));
+  expect(listed.forms).toEqual(["VM", "Container", "Shared"]);
+  expect(listed.has).toEqual(["Simulator", "Emulator", "Desktop", "KVM", "arm64"]);
+  expect(names({ ...NO_FILTERS, has: ["Simulator"] })).toEqual(["brisk-wren", "tall-ridge"]);
+  expect(names({ ...NO_FILTERS, has: ["Emulator"] })).toEqual(["green-bay"]);
+  expect(names({ ...NO_FILTERS, forms: ["Shared"] })).toEqual(["brisk-wren"]);
+});
+
+test("F-19: on the Boxes page, the Filters menu offers iOS and Android under System, and ticking one lists only its device boxes", async () => {
+  const { handlers } = server([box(), MAC_DESKTOP, SHARED_IOS, DEDICATED_IOS, ANDROID]);
+  const list = boxesPage(handlers);
+  await list.findByText("brisk-wren");
+  const rowNames = listedRowNames;
+  const menu = await openMenu(list.getByRole("button", { name: "Filters" }));
+  expect(within(menu).getAllByRole("menuitemcheckbox").map((option) => option.textContent).slice(0, 4)).toEqual(["Linux", "macOS", "iOS", "Android"]);
+  fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: "iOS" }));
+  expect(rowNames()).toEqual(["brisk-wren", "tall-ridge"]);
+  fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: "iOS" }));
+  fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: "Android" }));
+  expect(rowNames()).toEqual(["green-bay"]);
+  fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: "Android" }));
+  fireEvent.keyDown(menu, { key: "Escape" });
+  fireEvent.change(list.getByRole("textbox", { name: "Search boxes" }), { target: { value: "iPhone 17" } });
+  expect(rowNames()).toEqual(["tall-ridge"]);
+});
+
+test("F-19: a box's tabs say what they show: Simulator for an iOS device, Emulator for an Android one, Desktop for a desktop, a box with both has both, and the box's name follows only when another box's tab would say the same", () => {
+  const tabs = (one: BoxView) => screensOf(one).map((each) => screenWord(one, each));
+  expect(tabs(SHARED_IOS)).toEqual(["Simulator"]);
+  expect(tabs(DEDICATED_IOS)).toEqual(["Simulator", "Desktop"]);
+  expect(tabs(ANDROID)).toEqual(["Emulator"]);
+  expect(tabs(ANDROID_WITH_DESKTOP)).toEqual(["Emulator", "Desktop"]);
+  expect(tabs(MAC_DESKTOP)).toEqual(["Desktop"]);
+  expect(tabs(LINUX_DESKTOP)).toEqual(["Desktop"]);
+  expect(tabs(box())).toEqual([]);
+  expect(screenTitle(SHARED_IOS, "device", [SHARED_IOS, ANDROID, LINUX_DESKTOP])).toBe("Simulator");
+  expect(screenTitle(SHARED_IOS, "device", [SHARED_IOS, DEDICATED_IOS])).toBe("Simulator · brisk-wren");
+  expect(screenTitle(DEDICATED_IOS, "desktop", [DEDICATED_IOS, SHARED_IOS])).toBe("Desktop");
+  expect(screenTitle(DEDICATED_IOS, "desktop", [DEDICATED_IOS, LINUX_DESKTOP])).toBe("Desktop · tall-ridge");
+  expect(screenTitle(ANDROID, "device", [ANDROID, SHARED_IOS])).toBe("Emulator");
+});
+
+test("F-19: the panel's rows open each screen in a tab of its own, titled by what it shows: a dedicated iOS box's Simulator and Desktop, a shared one's Simulator, an Android box's Emulator, and a Linux desktop's Desktop", async () => {
+  const slot = panel(server([SHARED_IOS, DEDICATED_IOS, ANDROID, LINUX_DESKTOP]).handlers);
+  await slot.findByText("brisk-wren");
+  const opened = async (label: string, index = 0) => {
+    const before = slot.inspection.navigateCalls.length;
+    fireEvent.click(slot.getAllByRole("button", { name: label })[index]!);
+    await waitFor(() => expect(slot.inspection.navigateCalls.length).toBe(before + 1));
+    return slot.inspection.navigateCalls.at(-1);
+  };
+  expect(slot.getAllByRole("button", { name: "Open simulator" })).toHaveLength(2);
+  expect(slot.getAllByRole("button", { name: "Open desktop" })).toHaveLength(2);
+  expect(slot.getAllByRole("button", { name: "Open emulator" })).toHaveLength(1);
+  expect(await opened("Open simulator", 0)).toEqual({ method: "openThreadPanel", options: { actionId: "device", title: "Simulator · brisk-wren", params: { box: "box_si" } } });
+  expect(await opened("Open simulator", 1)).toEqual({ method: "openThreadPanel", options: { actionId: "device", title: "Simulator · tall-ridge", params: { box: "box_di" } } });
+  expect(await opened("Open desktop", 0)).toEqual({ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop · tall-ridge", params: { box: "box_di", shows: "desktop" } } });
+  expect(await opened("Open emulator")).toEqual({ method: "openThreadPanel", options: { actionId: "device", title: "Emulator", params: { box: "box_an" } } });
+  expect(await opened("Open desktop", 1)).toEqual({ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop · bold-heron", params: { box: "box_2" } } });
+  const menu = await openMenu(slot.getByRole("button", { name: "tall-ridge actions" }));
+  expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent).slice(0, 2)).toEqual(["Open simulator", "Open desktop"]);
+});
+
+test("F-19: a dedicated iOS box's Simulator tab has a Desktop button that opens its Desktop tab, and that tab's Simulator button opens the Simulator tab; a shared box's and a Linux desktop's tabs have neither", async () => {
+  const handlers = server([DEDICATED_IOS, SHARED_IOS, LINUX_DESKTOP]).handlers;
+  const device = app.threadPanelActions.find((candidate) => candidate.id === "device")!;
+  const desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!;
+  const simulator = renderSlot(device, { threadId: THREAD, params: { box: "box_di" } }, { rpc: handlers, pluginId: "bb-box" });
+  fireEvent.click(await simulator.findByRole("button", { name: "Desktop" }));
+  await waitFor(() => expect(simulator.inspection.navigateCalls.at(-1)).toEqual({ method: "openThreadPanel", options: { actionId: "desktop", title: "Desktop · tall-ridge", params: { box: "box_di", shows: "desktop" } } }));
+  expect(simulator.queryByRole("button", { name: "Simulator" })).toBeNull();
+  cleanup();
+  const ownDesktop = renderSlot(desktop, { threadId: THREAD, params: { box: "box_di", shows: "desktop" } }, { rpc: handlers, pluginId: "bb-box" });
+  expect(await ownDesktop.findByText("Connecting to the desktop…")).toBeTruthy();
+  fireEvent.click(ownDesktop.getByRole("button", { name: "Simulator" }));
+  await waitFor(() => expect(ownDesktop.inspection.navigateCalls.at(-1)).toEqual({ method: "openThreadPanel", options: { actionId: "device", title: "Simulator · tall-ridge", params: { box: "box_di" } } }));
+  cleanup();
+  const shared = renderSlot(device, { threadId: THREAD, params: { box: "box_si" } }, { rpc: handlers, pluginId: "bb-box" });
+  await shared.findByText("brisk-wren");
+  expect(shared.queryByRole("button", { name: "Desktop" })).toBeNull();
+  cleanup();
+  const linux = renderSlot(desktop, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "bb-box" });
+  expect(await linux.findByText("Connecting to the desktop…")).toBeTruthy();
+  expect(linux.queryByRole("button", { name: /^(Simulator|Emulator)$/ })).toBeNull();
+});
+
+test("F-19: a bare Desktop tab whose one box is a shared iOS box shows its device and retitles itself Simulator; a bare Device tab with an Android box retitles itself Emulator; a bare Desktop tab with a dedicated iOS box shows its desktop and keeps its title", async () => {
+  const desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!;
+  const device = app.threadPanelActions.find((candidate) => candidate.id === "device")!;
+  const shared = renderSlot(desktop, { threadId: THREAD, params: null }, { rpc: server([box(), SHARED_IOS]).handlers, pluginId: "bb-box" });
+  await waitFor(() => expect(shared.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "desktop", title: "Simulator" } }]));
+  expect(await shared.findByText("brisk-wren")).toBeTruthy();
+  cleanup();
+  forgetLive();
+  const android = renderSlot(device, { threadId: THREAD, params: null }, { rpc: server([ANDROID, LINUX_DESKTOP]).handlers, pluginId: "bb-box" });
+  await waitFor(() => expect(android.inspection.navigateCalls).toEqual([{ method: "openThreadPanel", options: { actionId: "device", title: "Emulator" } }]));
+  cleanup();
+  forgetLive();
+  const dedicated = renderSlot(desktop, { threadId: THREAD, params: null }, { rpc: server([DEDICATED_IOS]).handlers, pluginId: "bb-box" });
+  expect(await dedicated.findByText("Connecting to the desktop…")).toBeTruthy();
+  expect(dedicated.getByRole("button", { name: "Simulator" })).toBeTruthy();
+  expect(dedicated.inspection.navigateCalls).toEqual([]);
+  cleanup();
+  forgetLive();
+  const none = renderSlot(device, { threadId: THREAD, params: null }, { rpc: server([LINUX_DESKTOP]).handlers, pluginId: "bb-box" });
+  expect(await none.findByText("No device box")).toBeTruthy();
+  expect(none.inspection.navigateCalls).toEqual([]);
+});
+
+test("F-19: moving from a box's Desktop tab with control to its Simulator tab keeps control past the hidden tab's minute; closing that tab too hands it back", async () => {
+  const both = desktopBox({ kind: "ios", os: "macos", device: { platform: "ios", model: "iPhone 17", simulatorHost: true } });
+  const { handlers, changes } = server([both]);
+  const desktop = app.threadPanelActions.find((candidate) => candidate.id === "desktop")!;
+  const device = app.threadPanelActions.find((candidate) => candidate.id === "device")!;
+  const ownDesktop = renderSlot(desktop, { threadId: THREAD, params: { box: "box_2", shows: "desktop" } }, { rpc: handlers, pluginId: "bb-box" });
+  await ownDesktop.findByText("Connecting to the desktop…");
+  act(() => void novnc.FakeRfb.made[0]!.dispatchEvent(new Event("connect")));
+  fireEvent.click(ownDesktop.getByRole("button", { name: "Take control" }));
+  await ownDesktop.findByText("You have control.");
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  ownDesktop.unmount();
+  const simulator = renderSlot(device, { threadId: THREAD, params: { box: "box_2" } }, { rpc: handlers, pluginId: "bb-box" });
+  expect(await simulator.findByRole("button", { name: "Hand back to the agent" })).toBeTruthy();
+  await vi.advanceTimersByTimeAsync(HAND_BACK_MS + 50);
+  expect(changes).toEqual(["takeControl box_2"]);
+  simulator.unmount();
+  await vi.advanceTimersByTimeAsync(HAND_BACK_MS + 50);
+  vi.useRealTimers();
+  await waitFor(() => expect(changes).toEqual(["takeControl box_2", "handBack box_2"]));
+});
+
+function rowTitle(details: HTMLElement): { system: string[]; badges: string[] } {
+  const title = details.querySelector("[data-row-title]")!;
+  const system = ["system", "model"].flatMap((part) => Array.from(title.querySelectorAll(`[data-title-part="${part}"]`)).map((each) => each.textContent ?? ""));
+  const badges = Array.from(title.querySelectorAll("[data-badge-rank]")).map((badge) => badge.textContent ?? "");
+  return { system, badges };
+}
+
+const F22_ROWS: readonly [BoxView, { system: string[]; badges: string[] }][] = [
+  [SHARED_IOS, { system: ["iOS", "iPhone 18 Pro"], badges: ["Simulator", "Shared"] }],
+  [DEDICATED_IOS, { system: ["iOS", "iPhone 17"], badges: ["Simulator", "Desktop", "VM"] }],
+  [ANDROID, { system: ["Android", "Pixel 8"], badges: ["Emulator", "VM"] }],
+  [MAC_DESKTOP, { system: ["macOS"], badges: ["Desktop", "VM"] }],
+  [box(), { system: ["Linux"], badges: ["LXC"] }],
+];
+
+test("F-22: a device box's row reads as a desktop's does: its device's system, its model, then Simulator or Emulator where Desktop goes and Shared or VM where VM goes, and a dedicated ios box keeps its Desktop badge", async () => {
+  const slot = panel(server(F22_ROWS.map(([one]) => one)).handlers);
+  await slot.findByText("brisk-wren");
+  for (const [one, expected] of F22_ROWS) expect([one.name, rowTitle(slot.getByRole("button", { name: `${one.name}: details` }))]).toEqual([one.name, expected]);
+});
+
+test("F-22: the Boxes page's rows and the bare tabs' choosers badge a device box as the Box panel does", async () => {
+  const list = boxesPage(server(F22_ROWS.map(([one]) => one)).handlers);
+  await list.findByText("brisk-wren");
+  for (const [one, expected] of F22_ROWS) expect([one.name, rowTitle(list.getByRole("link", { name: one.name, hidden: true }))]).toEqual([one.name, expected]);
+  cleanup();
+  for (const [one, expected] of F22_ROWS) {
+    const line = render(<BoxLine box={one} />);
+    expect([one.name, rowTitle(line.container as HTMLElement)]).toEqual([one.name, expected]);
+    line.unmount();
+  }
+});
+
+test("F-22: where BB's viewport is compact, a tab that would name its box says the box's name alone, as its icon says what it shows; a terminal's tab too", () => {
+  expect(screenTitle(SHARED_IOS, "device", [SHARED_IOS, DEDICATED_IOS], true)).toBe("brisk-wren");
+  expect(screenTitle(DEDICATED_IOS, "desktop", [DEDICATED_IOS, LINUX_DESKTOP], true)).toBe("tall-ridge");
+  expect(screenTitle(SHARED_IOS, "device", [SHARED_IOS, ANDROID], true)).toBe("Simulator");
+  expect(screenTitle(DEDICATED_IOS, "desktop", [DEDICATED_IOS, SHARED_IOS], true)).toBe("Desktop");
+  expect(screenTitle(SHARED_IOS, "device", [SHARED_IOS, DEDICATED_IOS], false)).toBe("Simulator · brisk-wren");
+  expect(terminalTitle(box(), true)).toBe("calm-otter");
+  expect(terminalTitle(box(), false)).toBe("Terminal: calm-otter");
+});
+
+test("F-22: at 360 px the panel's rows open tabs titled by the box's name where a wide panel would say 'Simulator · ' and the name, and a terminal by its box's name", async () => {
+  const compact = (query: string) => ({ matches: query === "(max-width: 767px)", media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false });
+  const wide = window.matchMedia;
+  window.matchMedia = compact as unknown as typeof window.matchMedia;
+  try {
+    const slot = panel(server([SHARED_IOS, DEDICATED_IOS, ANDROID, LINUX_DESKTOP]).handlers);
+    await slot.findByText("brisk-wren");
+    const opened = async (label: string, index = 0) => {
+      const before = slot.inspection.navigateCalls.length;
+      fireEvent.click(slot.getAllByRole("button", { name: label })[index]!);
+      await waitFor(() => expect(slot.inspection.navigateCalls.length).toBe(before + 1));
+      return (slot.inspection.navigateCalls.at(-1) as { options: { title: string } }).options.title;
+    };
+    expect(await opened("Open simulator", 0)).toBe("brisk-wren");
+    expect(await opened("Open simulator", 1)).toBe("tall-ridge");
+    expect(await opened("Open emulator")).toBe("Emulator");
+    expect(await opened("Open desktop", 0)).toBe("bold-heron");
+    fireEvent.click(slot.getByRole("button", { name: "tall-ridge actions" }));
+    const before = slot.inspection.navigateCalls.length;
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Open desktop" }));
+    await waitFor(() => expect(slot.inspection.navigateCalls.length).toBe(before + 1));
+    expect((slot.inspection.navigateCalls.at(-1) as { options: { title: string } }).options.title).toBe("tall-ridge");
+    fireEvent.click(slot.getByRole("button", { name: "brisk-wren actions" }));
+    const beforeTerminal = slot.inspection.navigateCalls.length;
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Open terminal" }));
+    await waitFor(() => expect(slot.inspection.navigateCalls.length).toBe(beforeTerminal + 1));
+    expect((slot.inspection.navigateCalls.at(-1) as { options: { title: string } }).options.title).toBe("brisk-wren");
+    cleanup();
+  } finally {
+    window.matchMedia = wide;
+  }
+});
+
+test("F-22: each panel tab has an icon of its own: a monitor for Desktop, a phone for Device, a terminal for Terminal, each a name BB Box declares, and the Box tab keeps BB's default", () => {
+  expect(app.threadPanelActions.map((action) => [action.id, action.icon ?? null])).toEqual([
+    ["boxes", null],
+    ["desktop", "bb-box/monitor"],
+    ["device", "bb-box/phone"],
+    ["terminal", "bb-box/terminal"],
+    ["files", "bb-box/folder"],
+  ]);
+  const declared = (packageJson as { bb: { branding: { experimental_icons: Record<string, string> } } }).bb.branding.experimental_icons;
+  expect([declared.monitor, declared.phone, declared.terminal, declared.folder]).toEqual(["./assets/monitor.svg", "./assets/phone.svg", "./assets/terminal.svg", "./assets/folder.svg"]);
+});
+
+test("F-22b: a row title keeps the name whole, then badges by rank, Simulator, Emulator, Shared and the form before Desktop, and cuts the model, then drops it, before any badge", () => {
+  const shared = { name: 70, system: 18, model: 91, badges: [{ width: 66, rank: 0 }, { width: 48, rank: 0 }] };
+  expect(fitTitle({ room: 400, ...shared })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: null, showsModel: true, showsBadge: [true, true] });
+  expect(fitTitle({ room: 300, ...shared })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: 70, showsModel: true, showsBadge: [true, true] });
+  expect(fitTitle({ room: 250, ...shared })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: null, showsModel: false, showsBadge: [true, true] });
+  expect(fitTitle({ room: 170, ...shared })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: null, showsModel: false, showsBadge: [true, false] });
+  const dedicated = { name: 70, system: 18, model: 63, badges: [{ width: 66, rank: 0 }, { width: 54, rank: 1 }, { width: 24, rank: 0 }] };
+  expect(fitTitle({ room: 240, ...dedicated })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: 34, showsModel: true, showsBadge: [true, false, true] });
+  expect(fitTitle({ room: 262, ...dedicated })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: null, showsModel: false, showsBadge: [true, true, true] });
+  expect(fitTitle({ room: 185, ...dedicated })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: null, showsModel: false, showsBadge: [true, false, false] });
+  expect(fitTitle({ room: 90, ...dedicated })).toEqual({ nameRoom: null, showsSystem: false, modelRoom: null, showsModel: false, showsBadge: [false, false, false] });
+  expect(fitTitle({ room: 60, ...dedicated })).toEqual({ nameRoom: 60, showsSystem: false, modelRoom: null, showsModel: false, showsBadge: [false, false, false] });
+});
+
+function withRowLayout<T>(room: number, run: () => Promise<T>): Promise<T> {
+  const restore: (() => void)[] = [];
+  const stub = (target: object, key: string, get: (this: HTMLElement) => unknown) => {
+    const before = Object.getOwnPropertyDescriptor(target, key);
+    Object.defineProperty(target, key, { configurable: true, get });
+    restore.push(() => (before ? Object.defineProperty(target, key, before) : delete (target as Record<string, unknown>)[key]));
+  };
+  stub(HTMLElement.prototype, "clientWidth", function () {
+    return this.hasAttribute("data-row-title") ? room : 0;
+  });
+  stub(Element.prototype, "scrollWidth", function () {
+    return (this.textContent ?? "").length * 7;
+  });
+  const rect = Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect = function () {
+    const width = (this.textContent ?? "").length * 6 + (this.hasAttribute("data-badge-rank") ? 12 : 0);
+    return { width, height: 18, x: 0, y: 0, top: 0, left: 0, right: width, bottom: 18, toJSON: () => ({}) } as DOMRect;
+  };
+  restore.push(() => (Element.prototype.getBoundingClientRect = rect));
+  const observer = globalThis.ResizeObserver;
+  globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+  restore.push(() => (globalThis.ResizeObserver = observer));
+  return run().finally(() => {
+    cleanup();
+    for (const undo of restore.reverse()) undo();
+  });
+}
+
+function shownTitle(details: HTMLElement): { name: string; parts: string[]; cut: string | null } {
+  const title = details.querySelector("[data-row-title]")!;
+  const shown = (element: Element) => !element.className.includes("invisible");
+  const parts = Array.from(title.querySelectorAll('[data-title-part="system"], [data-title-part="model"], [data-badge-rank]')).filter(shown).map((part) => part.textContent ?? "");
+  const model = title.querySelector<HTMLElement>('[data-title-part="model"]');
+  const name = title.querySelector<HTMLElement>('[data-title-part="name"]')!;
+  return { name: name.style.maxWidth ? `${name.textContent} cut to ${name.style.maxWidth}` : (name.textContent ?? ""), parts, cut: model && shown(model) && model.style.maxWidth ? model.style.maxWidth : null };
+}
+
+test("F-22b: in the thread pane's 506 px a shared ios row shows its name, iOS, Simulator and Shared, with the model cut to the room left", async () => {
+  await withRowLayout(300, async () => {
+    const slot = panel(server([SHARED_IOS]).handlers);
+    await slot.findByText("brisk-wren");
+    expect(shownTitle(slot.getByRole("button", { name: "brisk-wren: details" }))).toEqual({ name: "brisk-wren", parts: ["iOS", "iPhone 18 Pro", "Simulator", "Shared"], cut: "70px" });
+  });
+});
+
+test("F-22b: at 360 px a dedicated ios row shows its name, iOS and Simulator, its model and the badges after them giving way, and one quick action beside the menu", async () => {
+  const compact = (query: string) => ({ matches: query === "(max-width: 767px)", media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false });
+  const wide = window.matchMedia;
+  window.matchMedia = compact as unknown as typeof window.matchMedia;
+  try {
+    await withRowLayout(185, async () => {
+      const slot = panel(server([DEDICATED_IOS, box()]).handlers);
+      await slot.findByText("tall-ridge");
+      expect(shownTitle(slot.getByRole("button", { name: "tall-ridge: details" }))).toEqual({ name: "tall-ridge", parts: ["iOS", "Simulator"], cut: null });
+      const actions = (name: string) => Array.from(slot.getByRole("button", { name: `${name}: details` }).closest("[data-resource-row]")!.querySelectorAll("[data-row-action] button")).map((button) => button.getAttribute("aria-label"));
+      expect(actions("tall-ridge")).toEqual(["Open simulator", "tall-ridge actions"]);
+      expect(actions("calm-otter")).toEqual(["Open terminal", "calm-otter actions"]);
+      fireEvent.click(slot.getByRole("button", { name: "tall-ridge actions" }));
+      expect((await screen.findAllByRole("menuitem")).map((item) => item.textContent)).toEqual(expect.arrayContaining(["Open simulator", "Open desktop", "Open terminal", "Stop"]));
+    });
+  } finally {
+    window.matchMedia = wide;
+  }
+});
+
+test("F-22c: a row's badges rank its device's word first, then Shared, then its form, then Desktop, then the rest", () => {
+  const ranks = (one: BoxView, machine = false) => boxTitleBadges(one, machine).map((badge) => `${badge.label} ${badge.rank}`);
+  expect(ranks(SHARED_IOS)).toEqual(["Simulator 0", "Shared 1"]);
+  expect(ranks(DEDICATED_IOS)).toEqual(["Simulator 0", "Desktop 3", "VM 2"]);
+  expect(ranks(ANDROID)).toEqual(["Emulator 0", "VM 2"]);
+  expect(ranks(LINUX_DESKTOP, true)).toEqual(["Desktop 3", "GPU 4", "LXC 2", "BB machine 2"]);
+});
+
+test("F-22c: at 360 px an android row shows Emulator before VM, and a shared ios row Simulator, then Shared, before anything else", async () => {
+  const compact = (query: string) => ({ matches: query === "(max-width: 767px)", media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false });
+  const wide = window.matchMedia;
+  window.matchMedia = compact as unknown as typeof window.matchMedia;
+  try {
+    await withRowLayout(188, async () => {
+      const slot = panel(server([ANDROID, SHARED_IOS]).handlers);
+      await slot.findByText("green-bay");
+      expect(shownTitle(slot.getByRole("button", { name: "green-bay: details" }))).toEqual({ name: "green-bay", parts: ["Android", "Emulator"], cut: null });
+      expect(shownTitle(slot.getByRole("button", { name: "brisk-wren: details" }))).toEqual({ name: "brisk-wren", parts: ["iOS", "Simulator"], cut: null });
+    });
+    await withRowLayout(250, async () => {
+      const slot = panel(server([ANDROID, SHARED_IOS]).handlers);
+      await slot.findByText("green-bay");
+      expect(shownTitle(slot.getByRole("button", { name: "green-bay: details" }))).toEqual({ name: "green-bay", parts: ["Android", "Pixel 8", "Emulator", "VM"], cut: "33px" });
+      expect(shownTitle(slot.getByRole("button", { name: "brisk-wren: details" }))).toEqual({ name: "brisk-wren", parts: ["iOS", "Simulator", "Shared"], cut: null });
+    });
+  } finally {
+    window.matchMedia = wide;
+  }
+});
+
+test("F-22d: on a device box the system word gives way before the device badge, which says it already; a row with room keeps both", () => {
+  const android = { name: 80, system: 45, model: 38, badges: [{ width: 56, rank: 0, outranksSystem: true }, { width: 30, rank: 2 }] };
+  expect(fitTitle({ room: 188, ...android })).toEqual({ nameRoom: null, showsSystem: false, modelRoom: null, showsModel: false, showsBadge: [true, true] });
+  expect(fitTitle({ room: 300, ...android })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: null, showsModel: true, showsBadge: [true, true] });
+  expect(fitTitle({ room: 188, ...android, badges: android.badges.map(({ width, rank }) => ({ width, rank })) })).toEqual({ nameRoom: null, showsSystem: true, modelRoom: null, showsModel: false, showsBadge: [false, true] });
+  expect(fitTitle({ room: 120, ...android })).toEqual({ nameRoom: null, showsSystem: false, modelRoom: null, showsModel: false, showsBadge: [false, false] });
+});
+
+test("F-22d: at 360 px an android row whose name leaves no room for Emulator beside Android shows its name, Emulator and VM", async () => {
+  await withRowLayout(188, async () => {
+    const slot = panel(server([{ ...ANDROID, name: "vivid-badger" }, box()]).handlers);
+    await slot.findByText("vivid-badger");
+    expect(shownTitle(slot.getByRole("button", { name: "vivid-badger: details" }))).toEqual({ name: "vivid-badger", parts: ["Emulator", "VM"], cut: null });
+    expect(shownTitle(slot.getByRole("button", { name: "calm-otter: details" }))).toEqual({ name: "calm-otter", parts: ["Linux", "LXC"], cut: null });
+  });
+});
+
+function checkedFake(checks: DoctorReport["checks"], options: { hosts?: string[] } = {}) {
+  const document: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: true }, key: { set: true } } }], kinds: {}, general: {} };
+  const report: DoctorReport = { ok: checks.every((check) => check.status !== "fail"), summary: "Fake host 1.0 on pve-1", checks, notes: [] };
+  const backends = configState({ document }).backends.map((backend) => ({ ...backend, boxes: 0, doctor: { report, at: Date.now() - 2 * 60 * 60_000, revision: 3 }, hosts: options.hosts ?? [] }));
+  applied = document;
+  return server([], { config: { backends, problems: [] } });
+}
+
+const PASSED: DoctorReport["checks"][number] = { id: "proxmox.api", name: "Proxmox API", status: "ok", detail: "Answers.", fix: null };
+const SWAP: DoctorReport["checks"][number] = { id: "proxmox.memory", name: "Node memory", status: "warn", detail: "Swap is on.", fix: "Turn swap off." };
+const BRIDGE: DoctorReport["checks"][number] = { id: "proxmox.bridge", name: "Network bridge", status: "warn", detail: "vmbr1 is down.", fix: null };
+
+test("a check that passed with warnings says so on its row and its page, in a pass's tone, and is not something that needs you", async () => {
+  const { handlers } = checkedFake([PASSED, SWAP, BRIDGE], { hosts: ["pve-1"] });
+  const slot = settings(handlers);
+  const row = await slot.findByRole("button", { name: "Fake host" });
+  const state = document.getElementById(row.getAttribute("aria-describedby")!.split(" ").at(-1)!)!;
+  expect(state.textContent).toContain("Last check passed, 2 warnings");
+  expect(state.querySelector(".text-warning-text, .text-destructive-text")).toBeNull();
+  expect(slot.getByText("pve-1")).toBeTruthy();
+  expect(slot.queryByRole("region", { name: "Things that need you" })).toBeNull();
+  expect(slot.queryByText(/Needs attention/)).toBeNull();
+  fireEvent.click(row);
+  expect(await slot.findByText("Last check passed, 2 warnings")).toBeTruthy();
+  expect(slot.getByText("Swap is on.")).toBeTruthy();
+  expect(slot.getByText("vmbr1 is down.")).toBeTruthy();
+  expect(slot.getByRole("heading", { name: /^Fake host/ }).textContent).toContain("pve-1");
+  expect(slot.queryByText(/Needs attention/)).toBeNull();
+});
+
+test("a check with a failure says Not working on its row and its page, in the failing tone, and is listed as needing you", async () => {
+  const { handlers } = checkedFake([PASSED, SWAP, { id: "proxmox.node", name: "Node", status: "fail", detail: "pve-1 is offline.", fix: "Start pve-1." }]);
+  const slot = settings(handlers);
+  const row = await slot.findByRole("button", { name: "Fake host" });
+  const state = document.getElementById(row.getAttribute("aria-describedby")!.split(" ").at(-1)!)!;
+  expect(state.textContent).toContain("Not working");
+  expect(state.querySelector(".text-destructive-text")).toBeTruthy();
+  expect(within(slot.getByRole("region", { name: "Things that need you" })).getByText("pve-1 is offline.")).toBeTruthy();
+});
+
+test("the Configuration page exports with no secret in it and says which to give again; an import is checked, lists each change before and after, keeps its text out of storage, and applies (067 unit 10)", async () => {
+  applied = null;
+  const read = {
+    document: { schema: 1 as const, revision: 0, backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006" }, warm: { linux: 1 } }], kinds: {}, general: {}, monitor: { refreshIntervalSeconds: 15 } },
+    secrets: { fake: { token: "set" as const } },
+    unknownTypes: [],
+  };
+  const { handlers, changes } = server([], { checkWith: { problems: [], doctor: null, read } });
+  const slot = settings(handlers, "#option/configuration");
+  expect(await slot.findByText("Revision 3")).toBeTruthy();
+  expect(slot.getByText("Fake host: the SSH key")).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Copy as JSON" })).toBeTruthy();
+  expect(slot.getByText("bb box config show --json", { selector: "code" }).className).toContain("whitespace-nowrap");
+
+  fireEvent.click(slot.getByRole("button", { name: "Import…" }));
+  const text = await slot.findByRole("textbox", { name: "Import a configuration" });
+  await waitFor(() => expect(document.activeElement).toBe(text));
+  fireEvent.change(text, { target: { value: '{"monitor": made-up-token-5Rt1' } });
+  fireEvent.click(slot.getByRole("button", { name: "Check" }));
+  expect((await slot.findByRole("alert")).textContent).toMatch(/^This is not a configuration file: it is not valid JSON/);
+  expect(changes.filter((change) => change.startsWith("check"))).toHaveLength(0);
+  expect(slot.getByRole("alert").textContent).not.toContain("made-up-token");
+
+  const file = JSON.stringify({ backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: "made-up-token-5Rt1" }, warm: { linux: 1 } }], monitor: { refreshIntervalSeconds: 15 } }, null, 2);
+  fireEvent.change(text, { target: { value: file } });
+  fireEvent.click(slot.getByRole("button", { name: "Check" }));
+  const list = await slot.findByRole("region", { name: /^What it changes against revision 3: 2 changes/ });
+  const monitor = within(within(list).getByRole("group", { name: "Monitor" }));
+  expect(monitor.getByText("Refresh every")).toBeTruthy();
+  expect(monitor.getByText("5 s")).toBeTruthy();
+  expect(monitor.getByText("15 s")).toBeTruthy();
+  const fake = within(within(list).getByRole("group", { name: "Fake host" }));
+  expect(fake.getByText("The API token")).toBeTruthy();
+  expect(fake.getByText("A new value (not shown)")).toBeTruthy();
+  expect(list.textContent).not.toContain("made-up-token");
+  const stored = JSON.stringify({ ...window.sessionStorage });
+  expect(stored).toContain("monitor/refreshIntervalSeconds");
+  expect(stored).not.toContain("made-up-token");
+
+  fireEvent.click(slot.getByRole("button", { name: "Apply" }));
+  expect(await slot.findByText("Applied.")).toBeTruthy();
+  const sent = JSON.parse(changes.find((change) => change.startsWith("apply"))!.replace(/^apply \d+ /, "")) as ConfigDocument;
+  expect(sent.monitor?.refreshIntervalSeconds).toBe(15);
+  expect(sent.backends[0]!.fields.token).toBe("made-up-token-5Rt1");
+  await waitFor(() => expect(slot.queryByRole("textbox", { name: "Import a configuration" })).toBeNull());
+  expect(JSON.stringify({ ...window.sessionStorage })).not.toContain("made-up-token");
+  fireEvent.click(slot.getByRole("button", { name: "Import…" }));
+  const again = await slot.findByRole("textbox", { name: "Import a configuration" });
+  fireEvent.change(again, { target: { value: "{}" } });
+  expect(slot.queryByText(/^Applied/)).toBeNull();
+  expect(slot.getByText("Check it to see what it changes. Nothing is applied until you choose Apply.")).toBeTruthy();
+});
+
+test("the copy of BB's earlier settings is removed only after Remove copy is confirmed, and the page says so once BB Box has removed it (067 unit 10)", async () => {
+  applied = null;
+  const fake = server([]);
+  let removed = false;
+  const get = fake.handlers["config.get"]!;
+  const handlers: PluginRpcTestHandlers<Contract> = {
+    ...fake.handlers,
+    "config.get": (input: null) => ({ ...(get(input) as ConfigState), migrated: removed ? null : { at: 1_790_000_000_000, version: "0.2.0" } }),
+    "config.migrated.remove": () => {
+      removed = true;
+      return { removed: true, state: configState({ migrated: null }) };
+    },
+  };
+  const slot = settings(handlers, "#option/configuration");
+  expect(await slot.findByText("Settings moved from BB")).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Remove copy…" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" });
+  expect(dialog.textContent).toContain("Once removed it cannot be got back.");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  expect(removed).toBe(false);
+  fireEvent.click(slot.getByRole("button", { name: "Remove copy…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove copy" }));
+  expect(await slot.findByText("Removed the copy of BB's earlier settings.")).toBeTruthy();
+  expect(removed).toBe(true);
+  await waitFor(() => expect(slot.queryByText("Settings moved from BB")).toBeNull());
+  await waitFor(() => expect(document.activeElement?.textContent).toBe("Removed the copy of BB's earlier settings."));
+});
+
+function stateOf(handlers: PluginRpcTestHandlers<Contract>): ConfigState {
+  return (handlers["config.get"] as () => ConfigState)();
+}
+
+function foundBy(entries: readonly FindEntry[], path: string): FindEntry | undefined {
+  return entries.find((entry) => "view" in entry.opens && entry.opens.path === path);
+}
+
+function labelsFor(entries: readonly FindEntry[], query: string): string[] {
+  return searchSettings(entries, query).map((entry) => `${entry.label} | ${entry.where}`);
+}
+
+const findField = (slot: ReturnType<typeof settings>) => slot.getByRole("combobox", { name: "Find a setting" }) as HTMLInputElement;
+
+async function findAndOpen(slot: ReturnType<typeof settings>, query: string, label: string | RegExp) {
+  const field = findField(slot);
+  field.focus();
+  fireEvent.change(field, { target: { value: query } });
+  const list = await slot.findByRole("listbox", { name: "Settings that match" });
+  const options = within(list).getAllByRole("option");
+  const at = options.findIndex((option) => (typeof label === "string" ? option.textContent?.startsWith(label) : label.test(option.textContent ?? "")));
+  expect(at, `no result ${String(label)} for "${query}" among ${options.map((option) => option.textContent).join(" / ")}`).toBeGreaterThanOrEqual(0);
+  for (let step = 0; step < at; step += 1) fireEvent.keyDown(field, { key: "ArrowDown" });
+  expect(field.getAttribute("aria-activedescendant")).toBe(options[at]!.id);
+  fireEvent.keyDown(field, { key: "Enter" });
+}
+
+async function foundSetting(path: string) {
+  return waitFor(
+    () => {
+      const active = document.activeElement as HTMLElement | null;
+      expect(active?.getAttribute("data-draft-path")).toBe(path);
+      expect(active?.closest("[data-found]")).toBeTruthy();
+      return active!;
+    },
+    { timeout: 3000 },
+  );
+}
+
+test("Find's index holds every field of every backend, each Mac's own fields, each kind's sizes, default size, warm counts where kept and spares, and every option, each with its value (067 unit 11)", () => {
+  const entries = settingsIndex(stateOf(server([]).handlers));
+  const at = (path: string) => foundBy(entries, path);
+  expect(["url", "token", "key", "templates", "reserve"].map((key) => at(`backends/fake/fields/${key}`)?.value)).toEqual(["https://192.0.2.10:8006", "Not set", "Set", "Empty: 9100, the default", "Empty: 4096 MiB, the default"]);
+  expect(at("backends/fake/fields/reserve")).toMatchObject({ label: "Memory kept free (MiB)", where: "Fake host › Advanced", opens: { view: { page: "backend", id: "fake" } } });
+  expect(at("backends/fake/enabled")).toMatchObject({ label: "Takes new boxes", value: "On", turns: true });
+  expect(at("kinds/linux/presets/small/cores")).toMatchObject({ label: "Small size", where: "Kinds › Linux › Sizes", value: "2 cores · 4 GiB · the image's disk · the default" });
+  expect(at("kinds/linux/largest/cores")).toMatchObject({ label: "Largest size", value: "16 cores · 32 GiB · 256 GiB disk" });
+  expect(at("kinds/linux/default")).toMatchObject({ label: "Default size", value: "Small" });
+  expect(at("backends/fake/warm/linux")).toMatchObject({ label: "Warm boxes on Fake host", where: "Kinds › Linux › Where it runs", value: "1" });
+  expect(at("backends/fake/warm/linux-desktop")).toBeUndefined();
+  expect(at("kinds/linux-desktop/spares")).toMatchObject({ label: "Spares to keep", value: "0" });
+  for (const path of ["general/defaultKind", "general/boxesPerThread", "general/enrol", "general/video", "files/add", "general/nightlyImages", "general/iosEncoder", "general/encoderLedger", "general/testDevice", "general/tailnet/mode", "monitor/enabled", "monitor/refreshIntervalSeconds", "monitor/backgroundMonitoring", "monitor/pressureNotifications"]) {
+    expect(at(path), path).toBeTruthy();
+  }
+  expect(at("general/defaultKind")?.value).toBe("Linux");
+  expect(entries.find((entry) => entry.label === "Tags")).toMatchObject({ value: "Used with Yes", opens: { path: "general/tailnet/mode" } });
+
+  const tart = settingsIndex(stateOf(tartPage().handlers));
+  expect(foundBy(tart, "backends/tart/hosts/mac-1/fields/ios-hosts-cores")).toMatchObject({ label: "Cores of a shared iOS host on mac-1", where: "Tart on mac-1 › Macs › mac-1", value: "Empty: 10 cores, BB Box's estimate" });
+  expect(foundBy(tart, "backends/tart/hosts/mac-1/fields/address")?.value).toBe("192.0.2.20");
+  expect(foundBy(tart, "backends/tart/hosts/mac-1/enabled")).toMatchObject({ label: "mac-1", where: "Tart on mac-1 › Macs", value: "On" });
+});
+
+test("Find names each backend with its host as the overview does, so two of one type are told apart, warm boxes included (067 unit 11)", () => {
+  const document: ConfigDocument = {
+    schema: 1,
+    revision: 3,
+    backends: [
+      { id: "fake:pc-1", type: "fake", enabled: true, fields: { token: { set: true } }, warm: { linux: 1 } },
+      { id: "fake:pc-2", type: "fake", enabled: true, fields: { token: { set: true } }, warm: { linux: 2 } },
+    ],
+    kinds: {},
+    general: {},
+  };
+  const entries = settingsIndex(configState({ document }));
+  expect(foundBy(entries, "backends/fake:pc-1/fields/reserve")?.where).toBe("Fake host on pc-1 › Advanced");
+  expect(foundBy(entries, "backends/fake:pc-2/fields/reserve")?.where).toBe("Fake host on pc-2 › Advanced");
+  expect(entries.find((entry) => entry.key === "backend fake:pc-2")?.label).toBe("Fake host on pc-2");
+  expect(foundBy(entries, "backends/fake:pc-1/warm/linux")).toMatchObject({ label: "Warm boxes on Fake host on pc-1", value: "1" });
+  expect(foundBy(entries, "backends/fake:pc-2/warm/linux")).toMatchObject({ label: "Warm boxes on Fake host on pc-2", value: "2" });
+  expect(labelsFor(entries, "reserve pc-2")).toEqual(["Memory kept free (MiB) | Fake host on pc-2 › Advanced"]);
+  expect(foundBy(settingsIndex(stateOf(tartPage().handlers)), "backends/tart/fields/ios-hosts-cores")?.where).toBe("Tart on mac-1 › Shared iOS hosts");
+});
+
+test("Find matches each word against a setting's label, place, help or key, with synonyms against labels only, and says when nothing matches (067 unit 11)", () => {
+  const entries = settingsIndex(stateOf(server([]).handlers));
+  expect(labelsFor(entries, "ram")).toContain("Memory kept free (MiB) | Fake host › Advanced");
+  expect(labelsFor(entries, "ram")).toContain("Small size | Kinds › Linux › Sizes");
+  expect(labelsFor(entries, "memory")).toContain("Background monitoring | Options › Monitor");
+  expect(labelsFor(entries, "ram")).not.toContain("Background monitoring | Options › Monitor");
+  expect(labelsFor(entries, "reserve")[0]).toBe("Memory kept free (MiB) | Fake host › Advanced");
+  expect(labelsFor(entries, "linux desktop ram").slice(0, 4)).toEqual(["Small size | Kinds › Linux desktop › Sizes", "Medium size | Kinds › Linux desktop › Sizes", "Large size | Kinds › Linux desktop › Sizes", "Largest size | Kinds › Linux desktop › Sizes"]);
+  expect(labelsFor(entries, "templates fake")[0]).toBe("Templates | Fake host › Boxes");
+  expect(labelsFor(entries, "turn off monitor")[0]).toBe("Machine status | Options › Monitor");
+  expect(labelsFor(entries, "tailscale tags")).toEqual(["Tags | Options › Network"]);
+  expect(labelsFor(entries, "192.0.2.10")).toEqual(["API URL | Fake host › Connection"]);
+  expect(searchSettings(entries, "zebra memory")).toEqual([]);
+  expect(searchSettings(entries, "  the  ")).toEqual([]);
+  const small = searchSettings(entries, "linux small memory")[0]!;
+  expect(pathFor(small, "linux small memory")).toBe("kinds/linux/presets/small/memoryGiB");
+  expect(pathFor(small, "linux small disk")).toBe("kinds/linux/presets/small/diskGiB");
+  expect(pathFor(small, "linux small")).toBe("kinds/linux/presets/small/cores");
+  const tart = settingsIndex(stateOf(tartPage().handlers));
+  expect(labelsFor(tart, "mac-1 cpu")[0]).toBe("Cores of a shared iOS host on mac-1 | Tart on mac-1 › Macs › mac-1");
+});
+
+test("Find from the overview opens a folded field on its backend's page, on screen, focused and highlighted, and the query stays when the person comes back (067 unit 11)", async () => {
+  const slot = settings(server([]).handlers);
+  await slot.findByText("Fake host is not working");
+  const field = findField(slot);
+  field.focus();
+  fireEvent.change(field, { target: { value: "reserve" } });
+  const list = await slot.findByRole("listbox", { name: "Settings that match" });
+  expect(within(list).getAllByRole("option")[0]!.textContent).toBe("Memory kept free (MiB)Fake host › AdvancedEmpty: 4096 MiB, the default");
+  expect(slot.getByText("1 setting matches")).toBeTruthy();
+  fireEvent.keyDown(field, { key: "Enter" });
+  expect(window.location.hash).toBe("#backend/fake");
+  const found = await foundSetting("backends/fake/fields/reserve");
+  expect((found as HTMLInputElement).placeholder).toBe("4096");
+  expect(slot.queryByRole("listbox")).toBeNull();
+  expect(findField(slot).value).toBe("reserve");
+  fireEvent.click(slot.getByRole("button", { name: "BB Box settings" }));
+  await waitFor(() => expect(window.location.hash).toBe(""));
+  await waitFor(() => expect(document.activeElement).toBe(findField(slot)));
+  expect(findField(slot).value).toBe("reserve");
+});
+
+test("Find on the target's own page opens a folded card in place and focuses the setting, and a Mac's own field opens its Mac (067 unit 11)", async () => {
+  const slot = settings(server([]).handlers, "#backend/fake");
+  await slot.findByRole("heading", { name: /^Fake host/ });
+  expect(slot.queryByRole("textbox", { name: "Memory kept free (MiB)" })).toBeNull();
+  await findAndOpen(slot, "memory kept free", "Memory kept free (MiB)");
+  expect(window.location.hash).toBe("#backend/fake");
+  await foundSetting("backends/fake/fields/reserve");
+  expect(slot.getByRole("button", { name: "Hide Advanced" })).toBeTruthy();
+  cleanup();
+
+  const tart = settings(tartPage().handlers);
+  await tart.findByRole("button", { name: "Tart" });
+  await findAndOpen(tart, "mac-1 cores", "Cores of a shared iOS host on mac-1");
+  expect(window.location.hash).toBe("#backend/tart");
+  await foundSetting("backends/tart/hosts/mac-1/fields/ios-hosts-cores");
+  await findAndOpen(tart, "mac-1 address", "Address on mac-1");
+  await foundSetting("backends/tart/hosts/mac-1/fields/address");
+});
+
+test("Find opens a kind's size at the part the words name, and options from any page (067 unit 11)", async () => {
+  const slot = settings(server([]).handlers, "#option/monitor");
+  await slot.findByRole("heading", { name: "Monitor" });
+  await findAndOpen(slot, "linux desktop medium ram", /^Medium sizeKinds › Linux desktop › Sizes/);
+  expect(window.location.hash).toBe("#kind/linux-desktop");
+  await foundSetting("kinds/linux-desktop/presets/medium/memoryGiB");
+  await findAndOpen(slot, "warm linux", "Warm boxes on Fake host");
+  expect(window.location.hash).toBe("#kind/linux");
+  await foundSetting("backends/fake/warm/linux");
+  await findAndOpen(slot, "boxes per thread", "Boxes per thread");
+  expect(window.location.hash).toBe("#option/boxes");
+  await foundSetting("general/boxesPerThread");
+  await findAndOpen(slot, "turn off monitor", "Machine status");
+  await foundSetting("monitor/enabled");
+  expect(document.activeElement?.getAttribute("role")).toBe("switch");
+});
+
+test("Find finds a standard image by its kind and backend, and opens its row on the backend's page", async () => {
+  const images = [standardImage("fake/linux"), standardImage("fake/desktop", { kind: "linux-desktop", outcome: FAILED_OUTCOME }), standardImage("gone/linux")];
+  const entries = settingsIndex(stateOf(server([]).handlers), images);
+  expect(foundBy(entries, "standard-images/fake/linux")).toMatchObject({ label: "Standard Linux image", where: "Fake host › Images", value: "Up to date", opens: { view: { page: "backend", id: "fake" } } });
+  expect(foundBy(entries, "standard-images/fake/desktop")).toMatchObject({ label: "Standard Linux desktop image", value: "Its last rebuild failed" });
+  expect(foundBy(entries, "standard-images/gone/linux")).toBeUndefined();
+  expect(searchSettings(entries, "linux image fake")[0]?.label).toBe("Standard Linux image");
+  const slot = settings(server([], { rebuildable: images }).handlers);
+  await slot.findByText("Fake host is not working");
+  findField(slot).focus();
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  await findAndOpen(slot, "linux image fake host", "Standard Linux imageFake host › Images");
+  expect(window.location.hash).toBe("#backend/fake");
+  await foundSetting("standard-images/fake/linux");
+});
+
+test("Find's arrow keys stay within the results shown, Escape clears, and no match says so (067 unit 11)", async () => {
+  const slot = settings(server([]).handlers);
+  await slot.findByText("Fake host is not working");
+  const field = findField(slot);
+  field.focus();
+  fireEvent.change(field, { target: { value: "linux desktop size" } });
+  const options = within(await slot.findByRole("listbox", { name: "Settings that match" })).getAllByRole("option");
+  for (let step = 0; step < options.length + 3; step += 1) fireEvent.keyDown(field, { key: "ArrowDown" });
+  expect(field.getAttribute("aria-activedescendant")).toBe(options.at(-1)!.id);
+  expect(options.at(-1)!.getAttribute("aria-selected")).toBe("true");
+  for (let step = 0; step < options.length + 3; step += 1) fireEvent.keyDown(field, { key: "ArrowUp" });
+  expect(field.getAttribute("aria-activedescendant")).toBe(options[0]!.id);
+
+  fireEvent.change(field, { target: { value: "e" } });
+  const many = within(slot.getByRole("listbox", { name: "Settings that match" })).getAllByRole("option");
+  expect(many).toHaveLength(FIND_SHOWN);
+  expect(slot.getByText(/settings match; the first 40 are listed$/)).toBeTruthy();
+  for (let step = 0; step < FIND_SHOWN + 5; step += 1) fireEvent.keyDown(field, { key: "ArrowDown" });
+  expect(field.getAttribute("aria-activedescendant")).toBe(many.at(-1)!.id);
+
+  fireEvent.change(field, { target: { value: "zebra memory" } });
+  expect(slot.queryByRole("listbox")).toBeNull();
+  expect(slot.getByText("No setting matches “zebra memory”. Try a word from its label, such as memory, template or spares.")).toBeTruthy();
+  expect(slot.getByText("No setting matches")).toBeTruthy();
+  fireEvent.keyDown(field, { key: "ArrowDown" });
+  fireEvent.keyDown(field, { key: "Enter" });
+  expect(window.location.hash).toBe("");
+  fireEvent.keyDown(field, { key: "Escape" });
+  expect(field.value).toBe("");
+});
+
+test("every setting with a control on an option page is in Find's index, and every option Find opens is on its page (067 unit 11)", async () => {
+  const document_: ConfigDocument = { schema: 1, revision: 3, backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: true }, key: { set: true } } }], kinds: {}, general: { tailnet: { mode: "oauth", tags: ["tag:bb-box"], clientId: { set: true }, clientSecret: { set: true } }, files: [{ path: ".npmrc", content: { set: true } }] }, images: { "web-app": { kinds: ["linux"], projects: ["proj_1"], script: "true", bake: "auto" } } };
+  applied = document_;
+  const { handlers } = server([]);
+  const entries = settingsIndex(stateOf(handlers));
+  for (const page of ["boxes", "images", "devices", "network", "monitor", "configuration"]) {
+    const slot = settings(handlers, `#option/${page}`);
+    await slot.findByRole("heading", { name: new RegExp(`^${page}$`, "i") });
+    await waitFor(() => expect(document.querySelector("[data-settings-view]")).toBeTruthy());
+    const onPage = new Set(Array.from(document.querySelectorAll("[data-settings-view] [data-draft-path]"), (element) => element.getAttribute("data-draft-path")!));
+    const indexed = new Set(entries.flatMap((entry) => ("view" in entry.opens && entry.opens.view.page === "option" && entry.opens.view.id === page && entry.opens.path ? [entry.opens.path] : [])));
+    expect([...onPage].filter((path) => !indexed.has(path)), page).toEqual([]);
+    expect([...indexed].filter((path) => !onPage.has(path)), page).toEqual([]);
+    cleanup();
+  }
+});
+
+function boxPageAt(handlers: PluginRpcTestHandlers<Contract>, subPath: string) {
+  const [page] = app.navPanels;
+  return renderSlot(page!, { subPath }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+}
+
+test("a box's page, at box/<boxId>: the trail, its name with focus, its state, ID and link, its thread, its views as links, Stop, the menu, the facts, other threads and how it started (069)", async () => {
+  const { handlers } = server([desktopBox({ timings: { warm: 300, clone: 1100, configure: 24, tags: 18, start: 1300, network: 300, ssh: 200, total: 3600, enrol: 2400 } })], { holder: { id: THREAD, title: "Fix the sign-in flow", running: true }, inUse: [{ id: "thr_other", title: "Run the tests", running: false }] });
+  const slot = boxPageAt(handlers, "box/box_2");
+  const heading = await slot.findByRole("heading", { level: 1 });
+  expect(heading.textContent).toContain("bold-heron");
+  await waitFor(() => expect(document.activeElement).toBe(heading));
+  expect(within(slot.getByRole("navigation", { name: "Where you are" })).getByRole("button", { name: "Back to boxes" }).textContent).toBe("Boxes");
+  expect(slot.getByText("Ready")).toBeTruthy();
+  expect(slot.getByText(/^· up \d+ min$/)).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Box ID box_2: copy" })).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Copy link" })).toBeTruthy();
+  expect(slot.getByText("working now")).toBeTruthy();
+  expect(slot.getByRole("button", { name: /Fix the sign-in flow/ })).toBeTruthy();
+  const desktop = slot.getByRole("link", { name: "Desktop" });
+  expect(desktop.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/desktop/from-box");
+  expect(slot.getByRole("link", { name: "Terminal" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/terminal/from-box");
+  fireEvent.click(desktop);
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/desktop/from-box" } });
+  fireEvent.click(desktop, { metaKey: true });
+  expect(slot.inspection.navigateCalls).toHaveLength(1);
+  expect(slot.getByRole("button", { name: "Stop" })).toBeTruthy();
+  const facts = slot.getByRole("region", { name: "Facts" });
+  expect(within(facts).getByText("Linux desktop")).toBeTruthy();
+  expect(within(facts).getByText("LXC container")).toBeTruthy();
+  expect(within(facts).getByText("Joined")).toBeTruthy();
+  expect(within(facts).getByText("Threads can run on it")).toBeTruthy();
+  expect(within(facts).getByText("The agent has control")).toBeTruthy();
+  expect(slot.getByRole("heading", { name: "Other threads on it" })).toBeTruthy();
+  expect(slot.getByRole("button", { name: "Run the tests" })).toBeTruthy();
+  expect(slot.getByText("Ready in 3.6 s")).toBeTruthy();
+  expect(slot.getByRole("img", { name: /^The time each step took: Took a warm box 0\.3 s, Clone 1\.1 s/ })).toBeTruthy();
+  expect(slot.getByText(/^And 3 quicker steps\. It joined BB 2\.4 s later\. Made (today at|yesterday at) \d{2}:\d{2}/)).toBeTruthy();
+  const menu = await openMenu(slot.getByRole("button", { name: "bold-heron actions" }));
+  expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Copy address", "New thread…", "Check now", "Release…"]);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  fireEvent.click(within(slot.getByRole("navigation", { name: "Where you are" })).getByRole("button", { name: "Back to boxes" }));
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "", replace: true } });
+});
+
+test("a view's way back goes back in history when the panel itself made the move, and otherwise replaces with the origin its path names (G8)", async () => {
+  const { handlers } = server([desktopBox()]);
+  const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2");
+  const page = boxPageAt(handlers, "box/box_2");
+  fireEvent.click(await page.findByRole("link", { name: "Desktop" }));
+  cleanup();
+  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2/desktop/from-box");
+  const view = boxPageAt(handlers, "box/box_2/desktop/from-box");
+  fireEvent.click(await view.findByRole("button", { name: "Back to bold-heron" }));
+  expect(back).toHaveBeenCalledTimes(1);
+  expect(view.inspection.navigateCalls).toEqual([]);
+  cleanup();
+  const reloaded = boxPageAt(handlers, "box/box_2/desktop/from-box");
+  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2/terminal/from-box");
+  fireEvent.click(await reloaded.findByRole("button", { name: "Back to bold-heron" }));
+  expect(back).toHaveBeenCalledTimes(1);
+  expect(reloaded.inspection.navigateCalls).toEqual([{ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2", replace: true } }]);
+  expect(reloaded.getByRole("link", { name: "bold-heron" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2");
+  cleanup();
+  const settings = boxPageAt(handlers, "box/box_2/desktop/from-box/from-settings");
+  fireEvent.click(await settings.findByRole("button", { name: "Back to bold-heron" }));
+  expect(settings.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/from-settings", replace: true } });
+  cleanup();
+  const settingsPage = boxPageAt(handlers, "box/box_2/from-settings");
+  expect((await settingsPage.findByRole("link", { name: "Back to BB Box settings" })).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  expect(settingsPage.getByRole("link", { name: "Desktop" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/desktop/from-box/from-settings");
+  back.mockRestore();
+  window.history.pushState(null, "", "/");
+});
+
+test("a view's bar has the box's other screens as buttons, a screen's menu opens its terminal and files with no Files button on its bar, and a switch replaces the view keeping every origin of G8, there and back (069 section 8, unit 5)", async () => {
+  const android = box({ id: "box_a", name: "pixel-box", kind: "android", kindLabel: "Android emulator", form: "VM", desktop: false, display: null, device: { platform: "android", model: "Pixel 8", simulatorHost: false }, control: { owner: "agent", holder: null } });
+  const { handlers } = server([desktopBox(), android]);
+  for (const origins of ["", "/from-list", "/from-box", "/from-box/from-list", "/from-box/from-settings", "/from-settings"]) {
+    const desktop = boxPageAt(handlers, `box/box_2/desktop${origins}`);
+    const actions = await desktop.findByRole("button", { name: "Desktop actions" });
+    expect(desktop.queryByRole("button", { name: "Terminal" })).toBeNull();
+    expect(desktop.queryByRole("button", { name: "Files" })).toBeNull();
+    expect(desktop.queryByRole("button", { name: "Desktop" })).toBeNull();
+    const menu = await openMenu(actions);
+    expect(items(menu).slice(0, 3)).toEqual(["Open thread", "Open terminal", "Open files"]);
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Open terminal" }));
+    expect(desktop.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: `box/box_2/terminal${origins}`, replace: true } });
+    cleanup();
+    const shell = boxPageAt(handlers, `box/box_2/terminal${origins}`);
+    fireEvent.click(await shell.findByRole("button", { name: "Desktop" }));
+    expect(shell.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: `box/box_2/desktop${origins}`, replace: true } });
+    cleanup();
+    const emulator = boxPageAt(handlers, `box/box_a/device${origins}`);
+    fireEvent.click(within(await openMenu(await emulator.findByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Open terminal" }));
+    expect(emulator.queryByRole("button", { name: "Terminal" })).toBeNull();
+    expect(emulator.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: `box/box_a/terminal${origins}`, replace: true } });
+    cleanup();
+    const emulatorShell = boxPageAt(handlers, `box/box_a/terminal${origins}`);
+    fireEvent.click(await emulatorShell.findByRole("button", { name: "Emulator" }));
+    expect(emulatorShell.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: `box/box_a/device${origins}`, replace: true } });
+    cleanup();
+  }
+  const old = boxPageAt(handlers, "thr_ui/box_2/from-settings");
+  fireEvent.click(within(await openMenu(await old.findByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Open terminal" }));
+  expect(old.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/terminal/from-settings", replace: true } });
+  cleanup();
+  const boxPage = boxPageAt(handlers, "box/box_2");
+  expect((await boxPage.findByRole("link", { name: "Files" })).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/files/from-box");
+  cleanup();
+  const shell = boxPageAt(handlers, "box/box_2/terminal");
+  expect(await shell.findByRole("button", { name: "Files" })).toBeTruthy();
+});
+
+function unstubTheMonitor(done: () => void) {
+  done();
+  vi.unstubAllGlobals();
+  vi.stubGlobal("WebSocket", FakeSocket);
+  vi.stubGlobal("ResizeObserver", FakeObserver);
+}
+
+test("a reading that fails after one worked keeps the bar's numbers, says which time they are from, in amber, and says so in its name; one that fails first says Not answering (069 unit 5)", async () => {
+  let readings = 0;
+  const { handlers, done } = readByTheMonitor("host_stale", () => {
+    readings += 1;
+    if (readings > 1) throw new Error("connect ECONNREFUSED 10.0.0.31:7777");
+    return monitorReading({ refreshIntervalMs: 2000 });
+  });
+  const view = boxPageAt(handlers, "box/box_2/terminal/from-list");
+  const fresh = await view.findByRole("link", { name: "bold-heron: CPU 31%, memory 58%. Open bold-heron's page" });
+  expect(fresh.hasAttribute("data-stale")).toBe(false);
+  const stale = await view.findByRole("link", { name: /^bold-heron: CPU 31%, memory 58%, from \d{1,2}:\d{2}\s?[AP]M\. Open bold-heron's page$/ }, { timeout: 8000 });
+  expect(stale.hasAttribute("data-stale")).toBe(true);
+  expect(stale.textContent).toMatch(/^CPU 31%Memory 58%at \d{1,2}:\d{2}\s?[AP]M$/);
+  expect(within(stale).getByText(/^at /).className).toContain("text-warning-text");
+  cleanup();
+  unstubTheMonitor(done);
+
+  forgetMonitorReadings();
+
+  const silent = readByTheMonitor("host_silent", () => {
+    throw new Error("connect ECONNREFUSED 10.0.0.31:7777");
+  });
+  const quiet = boxPageAt(silent.handlers, "box/box_2/terminal/from-list");
+  const notAnswering = await quiet.findByRole("link", { name: "Can't reach bold-heron. Open bold-heron's page" });
+  expect(notAnswering.textContent).toBe("Not answering");
+  expect(notAnswering.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/from-list");
+  cleanup();
+  unstubTheMonitor(silent.done);
+}, 15_000);
+
+test("a Namespace slot's Mac, which has no name of its own, is its Namespace Mac in Activity's tiles, chart and network, and in the page's facts, never the host's tag (069 unit 5)", async () => {
+  const slot = box({ id: "box_s", name: "quiet-fjord", kind: "ios", kindLabel: "iOS Simulator", shared: true, slotHost: "its Namespace Mac", backendLabel: "Namespace", form: null, desktop: false, display: null, device: { platform: "ios", model: "iPhone 18 Pro", simulatorHost: false } });
+  const reading = monitorReading({ own: { cpuCores: 1, memoryBytes: 1024 ** 3 }, slot: { host: "its Namespace Mac", encoder: { usedPercent: 20, words: "1 of about 5 full-size streams' room in use." }, share: { slots: 4, cores: 2, memoryBytes: 4 * 1024 ** 3 } }, history: [{ timestamp: Date.now(), cpuPercent: 30, memoryPercent: 50, networkRxBytesPerSecond: 1, networkTxBytesPerSecond: 1, ownCpuCores: 1, ownMemoryBytes: 1024 ** 3 }] } as Partial<MonitorSnapshot>);
+  const { handlers, done } = readByTheMonitor("host_namespace", () => reading, [slot]);
+  const page = boxPageAt(handlers, "box/box_s");
+  const activity = await page.findByRole("region", { name: "Activity" });
+  expect(await within(activity).findByRole("region", { name: "Its Namespace Mac, all slots" })).toBeTruthy();
+  expect(within(activity).getByRole("region", { name: "Its Namespace Mac's encoder" })).toBeTruthy();
+  expect(within(activity).getByRole("region", { name: "Its Namespace Mac's disk" })).toBeTruthy();
+  expect(within(activity).getByRole("button", { name: "Its Namespace Mac's CPU, all slots" })).toBeTruthy();
+  expect(activity.querySelector("[data-network-whose]")!.textContent).toBe("Its Namespace Mac, all slots");
+  expect(activity.querySelector("[data-slot-line]")!.textContent).toMatch(/^This slot is a macOS user on its Namespace Mac, .* Its Namespace Mac's numbers are every slot's together/);
+  expect(activity.textContent).not.toContain("ios-host");
+  const facts = page.getByRole("region", { name: "Facts" });
+  expect(within(facts).getByText("A share of its Namespace Mac")).toBeTruthy();
+  expect(within(facts).getByText("A shared slot on its Namespace Mac")).toBeTruthy();
+  cleanup();
+  unstubTheMonitor(done);
+});
+
+test("Ctrl+Shift+Up moves focus from the terminal to the bar's view button and never reaches the shell; every other key, Tab and Shift+Tab too, stays the shell's, and a screen reader hears so (WCAG 2.1.2, unit 5)", async () => {
+  const { handlers } = server([desktopBox()]);
+  const slot = boxPageAt(handlers, "box/box_2/terminal/from-list");
+  const desktop = await slot.findByRole("button", { name: "Desktop" });
+  fireEvent.pointerMove(desktop);
+  expect((await screen.findByRole("tooltip")).textContent).toBe("In the terminal, Ctrl+Shift+Up comes here.");
+  fireEvent.pointerLeave(desktop);
+  const fake = await waitFor(() => {
+    const made = xterm.FakeTerminal.made.at(-1);
+    if (!made?.keys) throw new Error("no terminal yet");
+    return made;
+  });
+  const input = fake.textarea!;
+  expect(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent).toBe("Tab goes to the shell. Ctrl+Shift+Up moves focus to the bar above.");
+  input.focus();
+  const key = (init: KeyboardEventInit, type = "keydown") => new KeyboardEvent(type, { cancelable: true, ...init });
+  for (const init of [{ key: "Tab" }, { key: "Tab", shiftKey: true }, { key: "ArrowUp" }, { key: "ArrowUp", ctrlKey: true }, { key: "ArrowUp", shiftKey: true }, { key: "ArrowUp", ctrlKey: true, shiftKey: true, altKey: true }, { key: "Escape" }, { key: "b", ctrlKey: true }]) {
+    expect(fake.keys!(key(init)), JSON.stringify(init)).toBe(true);
+    expect(document.activeElement).toBe(input);
+  }
+  const leave = key({ key: "ArrowUp", ctrlKey: true, shiftKey: true });
+  expect(fake.keys!(leave)).toBe(false);
+  expect(leave.defaultPrevented).toBe(true);
+  expect(document.activeElement).toBe(desktop);
+  expect(fake.keys!(key({ key: "ArrowUp", ctrlKey: true, shiftKey: true }, "keyup"))).toBe(false);
+});
+
+test("a terminal sized while hidden does not fit, and refits once it has a size or the tab is visible again", async () => {
+  const { handlers } = server([desktopBox()]);
+  boxPageAt(handlers, "box/box_2/terminal/from-list");
+  const fake = await waitFor(() => {
+    const made = xterm.FakeTerminal.made.at(-1);
+    if (!made?.target) throw new Error("no terminal yet");
+    return made;
+  });
+  const fit = fake.addons[0] as { calls: number };
+  expect(fit.calls).toBe(0);
+  expect(fake.addons.some((addon) => addon instanceof xterm.FakeWebgl)).toBe(false);
+  observerOf({ target: fake.target! }).resize(0, 0);
+  expect(fit.calls).toBe(0);
+  sizeTheTerminal(fake);
+  expect(fit.calls).toBe(1);
+  expect(fake.addons.some((addon) => addon instanceof xterm.FakeWebgl)).toBe(true);
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+  document.dispatchEvent(new Event("visibilitychange"));
+  expect(fit.calls).toBe(1);
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+  document.dispatchEvent(new Event("visibilitychange"));
+  expect(fit.calls).toBe(2);
+});
+
+test("Ctrl+Shift+Up from a terminal tab with no other view lands on Leave the terminal", async () => {
+  const terminalAction = app.threadPanelActions.find((candidate) => candidate.id === "terminal");
+  renderSlot(terminalAction!, { threadId: THREAD, params: { box: "box_2" } }, { rpc: server([desktopBox()]).handlers, pluginId: "bb-box" });
+  const fake = await waitFor(() => {
+    const made = xterm.FakeTerminal.made.at(-1);
+    if (!made?.keys) throw new Error("no terminal yet");
+    return made;
+  });
+  fake.textarea!.focus();
+  const leave = new KeyboardEvent("keydown", { key: "ArrowUp", ctrlKey: true, shiftKey: true, cancelable: true });
+  expect(fake.keys!(leave)).toBe(false);
+  const leaveButton = screen.getByRole("button", { name: "Leave the terminal" });
+  expect(leaveButton.tabIndex).toBe(-1);
+  expect(document.activeElement).toBe(leaveButton);
+});
+
+const NOT_ANSWERING = { is: "not-answering" as const, since: Date.now() - 12 * 60_000, lastAnswered: null, nextCheckAt: Date.now() + 4 * 60_000, checking: false, attempts: 2, error: "It did not answer a command.", host: "pve-3" };
+
+test("a terminal opens once the loaded box answers, even when the panel still lists it as not answering", async () => {
+  const quiet = desktopBox({ reach: NOT_ANSWERING });
+  const { handlers } = server([quiet]);
+  const loadState = handlers.state;
+  const loadDesktop = handlers.desktop;
+  const answering: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    state: async (input) => ({ ...(await loadState(input)), boxes: [quiet] }),
+    desktop: async (input) => {
+      const answer = await loadDesktop(input);
+      if (!answer.box || answer.box.id !== quiet.id) return answer;
+      return { ...answer, box: { ...answer.box, reach: null } };
+    },
+  };
+  const seen = panel(answering);
+  await seen.findByText("bold-heron");
+  cleanup();
+  terminalTab(answering, quiet.id);
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+});
+
+test("a connected terminal or desktop stays up when a reach check fails, and Check now asks again", async () => {
+  const hers = desktopBox();
+  const { handlers, changes } = server([hers]);
+  let reach: BoxView["reach"] = null;
+  const loadDesktop = handlers.desktop;
+  const live: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    desktop: async (input) => {
+      const answer = await loadDesktop(input);
+      if (!answer.box || answer.box.id !== hers.id) return answer;
+      return { ...answer, box: { ...answer.box, reach } };
+    },
+  };
+  const term = terminalTab(live, hers.id);
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+  const socket = FakeSocket.made[0]!;
+  act(() => socket.open());
+  expect(await term.findByText("Connected")).toBeTruthy();
+  reach = NOT_ANSWERING;
+  await term.behavior.emitRealtime("changed", { threadId: THREAD });
+  expect(await term.findByText("bold-heron does not answer")).toBeTruthy();
+  expect(term.getByText("Not answering")).toBeTruthy();
+  expect(socket.readyState).toBe(FakeSocket.OPEN);
+  expect(FakeSocket.made).toHaveLength(1);
+  expect(term.getByTestId("terminal-screen").className).not.toContain("invisible");
+  expect(term.getByTestId("terminal-screen").className).toContain("opacity-30");
+  expect(term.getByTestId("terminal-screen").hasAttribute("inert")).toBe(true);
+  fireEvent.click(term.getByRole("button", { name: "Check now" }));
+  await waitFor(() => expect(changes).toEqual(["refresh box_2"]));
+  cleanup();
+
+  reach = null;
+  const desk = desktopTab(live, hers.id);
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  const client = novnc.FakeRfb.made[0]!;
+  act(() => void client.dispatchEvent(new Event("connect")));
+  expect(await desk.findByText("The agent has control.")).toBeTruthy();
+  reach = NOT_ANSWERING;
+  await desk.behavior.emitRealtime("changed", { threadId: THREAD });
+  expect(await desk.findByText("bold-heron does not answer")).toBeTruthy();
+  expect(client.disconnected).toBe(false);
+  expect(novnc.FakeRfb.made).toHaveLength(1);
+  expect(desk.getByTestId("desktop-screen").className).toContain("opacity-30");
+  expect(desk.getByTestId("desktop-screen").hasAttribute("inert")).toBe(true);
+  reach = null;
+  await desk.behavior.emitRealtime("changed", { threadId: THREAD });
+  await waitFor(() => expect(desk.getByTestId("desktop-screen").className).not.toContain("opacity-30"));
+  expect(desk.getByTestId("desktop-screen").hasAttribute("inert")).toBe(false);
+  reach = NOT_ANSWERING;
+  await desk.behavior.emitRealtime("changed", { threadId: THREAD });
+  fireEvent.click(desk.getByRole("button", { name: "Check now" }));
+  await waitFor(() => expect(changes).toEqual(["refresh box_2", "refresh box_2"]));
+});
+
+function withAnswering(handlers: PluginRpcTestHandlers<Contract>, boxId: string) {
+  let reach: BoxView["reach"] = null;
+  const loadDesktop = handlers.desktop;
+  const live: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    desktop: async (input) => {
+      const answer = await loadDesktop(input);
+      if (!answer.box || answer.box.id !== boxId) return answer;
+      return { ...answer, box: { ...answer.box, reach } };
+    },
+  };
+  return { live, setAnswering: (answering: boolean) => void (reach = answering ? null : NOT_ANSWERING) };
+}
+
+async function stopBox(handlers: PluginRpcTestHandlers<Contract>, tab: ReturnType<typeof terminalTab>, boxId: string) {
+  await handlers.stop!({ threadId: THREAD, box: boxId } as never);
+  await tab.behavior.emitRealtime("changed", { threadId: THREAD });
+}
+
+async function startBox(handlers: PluginRpcTestHandlers<Contract>, tab: ReturnType<typeof terminalTab>, boxId: string) {
+  await handlers.start!({ threadId: THREAD, box: boxId } as never);
+  await tab.behavior.emitRealtime("changed", { threadId: THREAD });
+}
+
+test("a connected terminal whose box stops and starts again opens a new shell in the same tab", async () => {
+  const { handlers } = server([desktopBox()]);
+  const term = terminalTab(handlers, "box_2");
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+  act(() => FakeSocket.made[0]!.open());
+  expect(await term.findByText("Connected")).toBeTruthy();
+  await stopBox(handlers, term, "box_2");
+  expect(await term.findByText("bold-heron is stopped.")).toBeTruthy();
+  expect(FakeSocket.made[0]!.readyState).toBe(3);
+  expect(term.queryByText("Connected")).toBeNull();
+  await startBox(handlers, term, "box_2");
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(2));
+  expect(term.getByText("Connecting…")).toBeTruthy();
+  act(() => FakeSocket.made[1]!.open());
+  expect(await term.findByText("Connected")).toBeTruthy();
+  const screenArea = term.getByTestId("terminal-screen");
+  expect(screenArea.contains(xterm.FakeTerminal.made.at(-1)!.target)).toBe(true);
+  expect(screenArea.className).not.toContain("invisible");
+});
+
+test("a connected desktop whose box stops and comes back not answering opens no noVNC client until it answers", async () => {
+  const { handlers } = server([desktopBox()]);
+  const { live, setAnswering } = withAnswering(handlers, "box_2");
+  const desk = desktopTab(live, "box_2");
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(1));
+  act(() => void novnc.FakeRfb.made[0]!.dispatchEvent(new Event("connect")));
+  expect(await desk.findByText("The agent has control.")).toBeTruthy();
+  await stopBox(live, desk, "box_2");
+  expect(await desk.findByText("bold-heron is stopped.")).toBeTruthy();
+  expect(novnc.FakeRfb.made[0]!.disconnected).toBe(true);
+  setAnswering(false);
+  await startBox(live, desk, "box_2");
+  expect(await desk.findByText("bold-heron does not answer")).toBeTruthy();
+  expect(novnc.FakeRfb.made).toHaveLength(1);
+  setAnswering(true);
+  await desk.behavior.emitRealtime("changed", { threadId: THREAD });
+  await waitFor(() => expect(novnc.FakeRfb.made).toHaveLength(2));
+});
+
+test("a connected terminal whose box stops and comes back not answering opens no shell until it answers", async () => {
+  const { handlers } = server([desktopBox()]);
+  const { live, setAnswering } = withAnswering(handlers, "box_2");
+  const term = terminalTab(live, "box_2");
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(1));
+  act(() => FakeSocket.made[0]!.open());
+  expect(await term.findByText("Connected")).toBeTruthy();
+  await stopBox(live, term, "box_2");
+  expect(await term.findByText("bold-heron is stopped.")).toBeTruthy();
+  setAnswering(false);
+  await startBox(live, term, "box_2");
+  expect(await term.findByText("bold-heron does not answer")).toBeTruthy();
+  expect(term.getByText("Not answering")).toBeTruthy();
+  expect(FakeSocket.made).toHaveLength(1);
+  setAnswering(true);
+  await term.behavior.emitRealtime("changed", { threadId: THREAD });
+  await waitFor(() => expect(FakeSocket.made).toHaveLength(2));
+});
+
+test("a desktop or terminal of a box that does not answer does not connect, and says why", async () => {
+  const quiet = desktopBox({ reach: NOT_ANSWERING });
+  const { handlers } = server([quiet]);
+  const desk = boxPageAt(handlers, "box/box_2/desktop/from-list");
+  expect(await desk.findByText("bold-heron does not answer")).toBeTruthy();
+  expect(desk.getByText("Not answering")).toBeTruthy();
+  expect(novnc.FakeRfb.made).toHaveLength(0);
+  cleanup();
+  const term = boxPageAt(handlers, "box/box_2/terminal/from-list");
+  expect(await term.findByText("bold-heron does not answer")).toBeTruthy();
+  expect(term.getByText("Not answering")).toBeTruthy();
+  expect(FakeSocket.made).toHaveLength(0);
+  expect(xterm.FakeTerminal.made).toHaveLength(0);
+});
+
+test("after a switch, the way back still goes back in history to where the view was opened from, as the switch replaced its entry (G8, unit 5)", async () => {
+  const { handlers } = server([desktopBox()]);
+  const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
+  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2");
+  const page = boxPageAt(handlers, "box/box_2");
+  fireEvent.click(await page.findByRole("link", { name: "Desktop" }));
+  cleanup();
+  window.history.pushState(null, "", "/plugins/bb-box/desktop/box/box_2/desktop/from-box");
+  const view = boxPageAt(handlers, "box/box_2/desktop/from-box");
+  fireEvent.click(within(await openMenu(await view.findByRole("button", { name: "Desktop actions" }))).getByRole("menuitem", { name: "Open terminal" }));
+  cleanup();
+  window.history.replaceState(null, "", "/plugins/bb-box/desktop/box/box_2/terminal/from-box");
+  const switched = boxPageAt(handlers, "box/box_2/terminal/from-box");
+  fireEvent.click(await switched.findByRole("button", { name: "Back to bold-heron" }));
+  expect(back).toHaveBeenCalledTimes(1);
+  expect(switched.inspection.navigateCalls).toEqual([]);
+  back.mockRestore();
+  window.history.pushState(null, "", "/");
+});
+
+function monitorReading(patch: Partial<MonitorSnapshot> = {}): MonitorSnapshot {
+  return {
+    timestamp: new Date().toISOString(),
+    refreshIntervalMs: 5000,
+    host: { hostname: "bold-heron", platform: "linux", release: "6.17", arch: "x64", uptimeSeconds: 3600 },
+    cpu: { model: "AMD EPYC", cores: 4, speedMHz: 0, usagePercent: 31.4, perCoreUsagePercent: [], loadAverage: [1.24, 1, 0.8], stallPercent: null },
+    memory: { totalBytes: 8 * 1024 ** 3, usedBytes: 4.64 * 1024 ** 3, freeBytes: 3 * 1024 ** 3, availableBytes: 3.36 * 1024 ** 3, cachedBytes: 0, buffersBytes: 0, swapTotalBytes: 0, swapUsedBytes: 0, usagePercent: 57.6, stallPercent: null },
+    disk: { mount: "/", totalBytes: 32 * 1024 ** 3, usedBytes: 13 * 1024 ** 3, freeBytes: 19 * 1024 ** 3, usagePercent: 40 },
+    network: { interface: "eth0", rxBytesPerSecond: 1024, txBytesPerSecond: 512, rxTotalBytes: 1, txTotalBytes: 1 },
+    battery: null,
+    sensors: null,
+    tailscale: null,
+    processes: { available: true, total: 1, running: 1, top: [] },
+    runtime: null,
+    health: { status: "healthy", issues: [] },
+    history: [],
+    ...patch,
+  } as MonitorSnapshot;
+}
+
+function readByTheMonitor(machineId: string, reading: () => MonitorSnapshot, boxes: BoxView[] = [desktopBox()]) {
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      readonly #callback: IntersectionObserverCallback;
+      constructor(callback: IntersectionObserverCallback) {
+        this.#callback = callback;
+      }
+      observe() {
+        this.#callback([{ isIntersecting: true, intersectionRect: { width: 900, height: 40 } } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+      disconnect() {}
+      unobserve() {}
+    },
+  );
+  const rects = vi.spyOn(Element.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
+  const { handlers } = server(boxes, { monitor: { is: "read", machineId, why: null } });
+  const read = handlers as unknown as Record<string, unknown>;
+  read["monitor.machine"] = () => reading();
+  return { handlers, done: () => rects.mockRestore() };
+}
+
+test("a terminal's bar has the box's CPU and memory now, from the same reading as its page, leading to the page, and gone below 640 px (069 section 8, unit 5)", async () => {
+  const { handlers, done } = readByTheMonitor("host_bold", () => monitorReading());
+  const slot = boxPageAt(handlers, "box/box_2/terminal/from-list");
+  const numbers = await slot.findByRole("link", { name: "bold-heron: CPU 31%, memory 58%. Open bold-heron's page" });
+  expect(numbers.textContent).toBe("CPU 31%Memory 58%");
+  expect(numbers.getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_2/from-list");
+  expect(numbers.closest("[data-bar-numbers]")!.className).toContain("max-sm:hidden");
+  fireEvent.click(numbers);
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_2/from-list" } });
+  cleanup();
+  const page = boxPageAt(handlers, "box/box_2");
+  const activity = await page.findByRole("region", { name: "Activity" });
+  await waitFor(() => expect(within(activity).getByRole("region", { name: "CPU" }).querySelector(".text-xl")!.textContent).toBe("31"));
+  expect(within(activity).getByRole("region", { name: "Memory" }).querySelector(".text-xl")!.textContent).toBe("58");
+  done();
+  vi.unstubAllGlobals();
+  vi.stubGlobal("WebSocket", FakeSocket);
+  vi.stubGlobal("ResizeObserver", FakeObserver);
+});
+
+test("a desktop's bar shows CPU and memory only once Show CPU and memory is ticked in its menu, at every width, and the choice lasts in this browser until unticked", async () => {
+  const { handlers, done } = readByTheMonitor("host_bold", () => monitorReading());
+  const figures = "bold-heron: CPU 31%, memory 58%. Open bold-heron's page";
+  const toggle = async (view: ReturnType<typeof boxPageAt>) => within(await openMenu(await view.findByRole("button", { name: "Desktop actions" }))).getByRole("menuitemcheckbox", { name: "Show CPU and memory" });
+  const first = boxPageAt(handlers, "box/box_2/desktop/from-list");
+  const off = await toggle(first);
+  expect(off.getAttribute("aria-checked")).toBe("false");
+  expect(first.queryByRole("link", { name: figures })).toBeNull();
+  fireEvent.click(off);
+  const numbers = await first.findByRole("link", { name: figures });
+  expect(numbers.closest("[data-bar-numbers]")!.className).not.toContain("max-sm:hidden");
+  expect(window.localStorage.getItem(BAR_NUMBERS_SHOWN_KEY)).toBe("on");
+  cleanup();
+  const reloaded = boxPageAt(handlers, "box/box_2/desktop/from-list");
+  expect(await reloaded.findByRole("link", { name: figures })).toBeTruthy();
+  const on = await toggle(reloaded);
+  expect(on.getAttribute("aria-checked")).toBe("true");
+  fireEvent.click(on);
+  await waitFor(() => expect(reloaded.queryByRole("link", { name: figures })).toBeNull());
+  expect(window.localStorage.getItem(BAR_NUMBERS_SHOWN_KEY)).toBeNull();
+  cleanup();
+  const unread = boxPageAt(server([desktopBox()]).handlers, "box/box_2/desktop/from-list");
+  const menu = await openMenu(await unread.findByRole("button", { name: "Desktop actions" }));
+  expect(within(menu).queryByRole("menuitemcheckbox", { name: "Show CPU and memory" })).toBeNull();
+  cleanup();
+  done();
+  vi.unstubAllGlobals();
+  vi.stubGlobal("WebSocket", FakeSocket);
+  vi.stubGlobal("ResizeObserver", FakeObserver);
+});
+
+test("a shared slot's bar gives its own CPU and memory against its share, as its page's tiles do, and the network names its Mac once (069 unit 5)", async () => {
+  const slotReading = monitorReading({ own: { cpuCores: 2, memoryBytes: 1.5 * 1024 ** 3 }, slot: { host: "mac-1", encoder: null, share: { slots: 3, cores: 4, memoryBytes: 12 * 1024 ** 3 } }, history: [{ timestamp: Date.now(), cpuPercent: 30, memoryPercent: 50, networkRxBytesPerSecond: 1, networkTxBytesPerSecond: 1, ownCpuCores: 2, ownMemoryBytes: 1.5 * 1024 ** 3 }] } as Partial<MonitorSnapshot>);
+  const { handlers, done } = readByTheMonitor("host_slot", () => slotReading);
+  const view = boxPageAt(handlers, "box/box_2/terminal/from-box");
+  const numbers = await view.findByRole("link", { name: "bold-heron: this slot's CPU 50% of its share, memory 13% of its share. Open bold-heron's page" });
+  expect(numbers.textContent).toBe("CPU 50%Memory 13%");
+  cleanup();
+  const page = boxPageAt(handlers, "box/box_2");
+  const activity = await page.findByRole("region", { name: "Activity" });
+  await waitFor(() => expect(within(activity).getByRole("region", { name: "This slot's CPU" }).querySelector(".text-xl")!.textContent).toBe("50"));
+  expect(within(activity).getByRole("region", { name: "This slot's memory" }).textContent).toContain("· 13%");
+  expect(activity.querySelector("[data-network-whose]")!.textContent).toBe("mac-1, all slots");
+  expect(within(activity).getByText("Network")).toBeTruthy();
+  done();
+  vi.unstubAllGlobals();
+  vi.stubGlobal("WebSocket", FakeSocket);
+  vi.stubGlobal("ResizeObserver", FakeObserver);
+});
+
+test("Stop on the page asks while the box's own thread is working, names it, and stops only after Stop it anyway; an idle thread's box stops at once (G3)", async () => {
+  const { handlers, changes } = server([box()], { inUse: [{ id: THREAD, title: "Fix the sign-in flow in Safari", running: true }] });
+  const slot = boxPageAt(handlers, "box/box_1");
+  fireEvent.click(await slot.findByRole("button", { name: "Stop" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Stop calm-otter anyway?")).toBeTruthy();
+  expect(within(dialog).getByText("\"Fix the sign-in flow in Safari\" is working on calm-otter.")).toBeTruthy();
+  expect(changes).toEqual([]);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Stop anyway" }));
+  await waitFor(() => expect(changes).toEqual(["stop (forced) box_1"]));
+  cleanup();
+  const idle = server([box()]);
+  const calm = boxPageAt(idle.handlers, "box/box_1");
+  fireEvent.click(await calm.findByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(idle.changes).toEqual(["stop box_1"]));
+  expect(screen.queryByRole("alertdialog")).toBeNull();
+});
+
+test("a backend not in settings or not answering turns off Stop, Start, Resize and New thread with the reason in words; a box that does not answer keeps Stop, Start and Resize, and says it can still be stopped (G20, lead decision)", async () => {
+  const removed = box({ id: "box_7", name: "maple-row", canStopStart: false, reach: { is: "not-in-settings", backend: "Fake host", lastAnswered: null } });
+  const silent = box({ id: "box_8", name: "fern-hollow", reach: { is: "not-answering", since: Date.now() - 12 * 60_000, lastAnswered: null, nextCheckAt: Date.now() + 4 * 60_000, checking: false, attempts: 2, error: "It did not answer a command.", host: "pve-3" } });
+  const down = box({ id: "box_9", name: "reed-marsh", resizing: { cores: "live", memory: "live", disk: "no", shrinks: true }, reach: { is: "backend-silent", backend: "Fake host", since: Date.now() - 6 * 60_000, error: "Listing the boxes on Fake host failed: connect ECONNREFUSED", lastAnswered: null } });
+  const { handlers, changes } = server([removed, silent, down]);
+  const maple = boxPageAt(handlers, "box/box_7");
+  expect(await maple.findByText("Not checked")).toBeTruthy();
+  const notice = maple.getByRole("region", { name: "Its backend is not in settings" });
+  expect(within(notice).getByText(/^Fake host was removed from BB Box's settings, so BB Box cannot check, stop or release maple-row/)).toBeTruthy();
+  expect(within(notice).getByRole("link", { name: "Open BB Box settings" }).getAttribute("href")).toBe("/settings/plugins/bb-box");
+  expect((maple.getByRole("button", { name: "Stop" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((maple.getByRole("button", { name: "Terminal" }) as HTMLButtonElement).disabled).toBe(true);
+  const reasons = maple.getByText("Terminal, Files and Stop are off: its backend is not in settings.");
+  expect(maple.getByRole("button", { name: "Stop" }).getAttribute("aria-describedby")).toBe(reasons.id);
+  let menu = await openMenu(maple.getByRole("button", { name: "maple-row actions" }));
+  expect(items(menu)).toEqual(["Copy address", "New thread…Its backend is not in settings (disabled)", "Resize…Its backend is not in settings (disabled)", "Check now", "Forget…"]);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Forget…" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Forget maple-row?")).toBeTruthy();
+  expect(within(dialog).getByText(/^BB Box removes its record of maple-row, and nothing else\. Its box is not deleted/)).toBeTruthy();
+  expect(within(dialog).getByText(/If its backend comes back, BB Box takes the box back into its records, because a running box left untracked costs money and cannot be released\./)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Forget" }));
+  await waitFor(() => expect(changes).toEqual(["forget box_7"]));
+  expect(await maple.findByText("maple-row was forgotten")).toBeTruthy();
+  expect(maple.getByText(/^BB Box removed its record\. Its box was not deleted and may still run on Fake host\. Forgotten just now, today at \d{2}:\d{2}, by you\.$/)).toBeTruthy();
+  cleanup();
+
+  const reed = boxPageAt(handlers, "box/box_9");
+  expect(await reed.findByText("Not checked")).toBeTruthy();
+  const silence = reed.getByRole("region", { name: "Fake host does not answer" });
+  expect(within(silence).getByText(/cannot check, stop, start or resize reed-marsh through it/)).toBeTruthy();
+  expect((reed.getByRole("button", { name: "Stop" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(reed.getByText("Terminal, Files and Stop are off: Fake host does not answer.")).toBeTruthy();
+  menu = await openMenu(reed.getByRole("button", { name: "reed-marsh actions" }));
+  expect(items(menu)).toEqual(["Copy address", "New thread…Fake host does not answer (disabled)", "Resize…Fake host does not answer (disabled)", "Check now", "Release…"]);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  cleanup();
+
+  const fern = boxPageAt(handlers, "box/box_8");
+  expect(await fern.findByText("Not answering")).toBeTruthy();
+  const reach = fern.getByRole("region", { name: "fern-hollow does not answer" });
+  expect(within(reach).getByText(/^It did not answer a command\. Since .+, BB Box cannot reach it on pve-3, so it cannot read it or run commands in it\. You can still stop, start or release it: those go through Fake host\.$/)).toBeTruthy();
+  expect(within(reach).getByText("BB Box checks again in 4 min.")).toBeTruthy();
+  expect((fern.getByRole("button", { name: "Stop" }) as HTMLButtonElement).disabled).toBe(false);
+  expect(fern.getByText("Terminal and Files are off: fern-hollow does not answer.")).toBeTruthy();
+  fireEvent.click(within(reach).getByRole("button", { name: "Check now" }));
+  await waitFor(() => expect(changes).toContain("refresh box_8"));
+  menu = await openMenu(fern.getByRole("button", { name: "fern-hollow actions" }));
+  expect(items(menu)).toEqual(["Copy address", "New thread…fern-hollow does not answer (disabled)", "Check now", "Release…"]);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  fireEvent.click(fern.getByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(changes).toContain("stop box_8"));
+  cleanup();
+
+  const list = boxesPage(handlers);
+  await list.findByText("reed-marsh");
+  menu = await openMenu(list.getByRole("button", { name: "reed-marsh actions" }));
+  expect(items(menu)).toEqual(["Open terminal", "Open files", "Copy address", "StopFake host does not answer (disabled)", "Resize…Fake host does not answer (disabled)", "Check now", "Release…"]);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  expect(within(list.getByText("reed-marsh").closest("[data-resource-row]") as HTMLElement).queryByRole("button", { name: "Stop" })).toBeNull();
+});
+
+test("a box whose release did not finish says so on its page and its row, with Release again, never a spinner without end", async () => {
+  const failed = { operation: "release" as const, at: Date.now() - 60_000, words: "Proxmox refused: the container is locked by a backup.", observed: { state: "running" as const, at: Date.now() - 60_000, from: "Proxmox LXC on pve-1" }, parts: [] };
+  const stuck = box({ state: "releasing", backendLabel: "Proxmox LXC on pve-1", error: "Proxmox refused: the container is locked by a backup. BB Box tries again in a few minutes.", log: { lastStart: null, lastStop: null, lastFailed: failed } });
+  const { handlers, changes } = server([stuck]);
+  const page = boxPageAt(handlers, "box/box_1");
+  expect(await page.findByText("Release did not finish")).toBeTruthy();
+  const notice = page.getByRole("region", { name: "Release did not finish 1 min ago" });
+  expect(within(notice).getByText("Proxmox refused: the container is locked by a backup. The box may still run on pve-1; BB Box keeps its record until a release is confirmed.")).toBeTruthy();
+  expect(document.querySelector('[aria-label="Starting"]')).toBeNull();
+  fireEvent.click(within(notice).getByRole("button", { name: "Release again…" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("Release calm-otter again?")).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Release" }));
+  await waitFor(() => expect(changes).toEqual(["release box_1"]));
+  expect(await page.findByText("calm-otter was released")).toBeTruthy();
+  expect(page.getByText(/^Released just now, today at \d{2}:\d{2}, by you\. BB Box remembers a released box for 24 hours\.$/)).toBeTruthy();
+  cleanup();
+
+  const row = server([stuck]);
+  const list = boxesPage(row.handlers);
+  expect(await list.findByText("Release did not finish")).toBeTruthy();
+  expect(list.queryByText("Releasing…")).toBeNull();
+  const menu = await openMenu(list.getByRole("button", { name: "calm-otter actions" }));
+  expect(items(menu).at(-1)).toBe("Release again…");
+});
+
+test("a link to a box that is not here says so, with Back to boxes", async () => {
+  const { handlers } = server([]);
+  const slot = boxPageAt(handlers, "box/bxnosuchbox000");
+  expect(await slot.findByText("This box is not here")).toBeTruthy();
+  expect(slot.getByText("It may have been released more than 24 hours ago, or the link is wrong.")).toBeTruthy();
+  fireEvent.click(slot.getAllByRole("button", { name: "Back to boxes" })[1]!);
+  expect(slot.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "", replace: true } });
+});
+
+test("a machine of yours has its page too: no line to describe it, Threads on this machine, Check now, and Remove… with its question", async () => {
+  const { handlers, changes } = server([], { machines: [machine()] });
+  const slot = boxPageAt(handlers, "box/box_m1/from-settings");
+  expect(await slot.findByRole("heading", { name: "Threads on this machine" })).toBeTruthy();
+  expect(slot.queryByText(/One of your machines/)).toBeNull();
+  expect(slot.getByRole("button", { name: /Fix the login form/ })).toBeTruthy();
+  const menu = await openMenu(slot.getByRole("button", { name: "build-1 actions" }));
+  expect(items(menu)).toContain("Check now");
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Check now" }));
+  await waitFor(() => expect(slot.inspection.rpcCalls.find((call) => call.method === "refresh")?.input).toEqual({ threadId: "operator", box: "box_m1" }));
+  expect(changes).toEqual(["refresh box_m1"]);
+  cleanup();
+
+  const device = machine({ id: "box_ios", name: "brisk-wren", desktop: false, display: null, device: { platform: "ios", model: "iPhone 18 Pro", simulatorHost: true } });
+  const phone = boxPageAt(server([], { machines: [device] }).handlers, "box/box_ios/from-settings");
+  const deviceMenu = await openMenu(await phone.findByRole("button", { name: "brisk-wren actions" }));
+  expect(items(deviceMenu)).toContain("Open simulator");
+  expect(items(deviceMenu)).toContain("Check now");
+  fireEvent.click(within(deviceMenu).getByRole("menuitem", { name: "Open simulator" }));
+  expect(phone.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "box/box_ios/device/from-box/from-settings" } });
+});
+
+test("Cmd or Ctrl click on an app link is left to the browser", async () => {
+  const removed = box({ id: "box_7", name: "maple-row", canStopStart: false, reach: { is: "not-in-settings", backend: "Fake host", lastAnswered: null } });
+  const slot = boxPageAt(server([removed]).handlers, "box/box_7");
+  const link = await slot.findByRole("link", { name: "Open BB Box settings" });
+  let bubbled = 0;
+  const hear = () => {
+    bubbled += 1;
+  };
+  document.addEventListener("click", hear);
+  fireEvent.click(link, { metaKey: true });
+  fireEvent.click(link, { ctrlKey: true });
+  document.removeEventListener("click", hear);
+  expect(bubbled).toBe(0);
+  expect(slot.inspection.navigateCalls).toHaveLength(0);
+});
+
+function items(menu: HTMLElement): string[] {
+  return within(menu).getAllByRole("menuitem").map((item) => `${item.textContent}${item.hasAttribute("data-disabled") ? " (disabled)" : ""}`);
+}
+
+test("a box's page while it starts: its steps so far and what it waits on, from when it was asked for; started again, from when Start was pressed, with its own steps", async () => {
+  const making = box({ state: "acquiring", createdAt: Date.now() - 6_000, readyAt: null, timings: { warm: 300, clone: 1100 }, waitingOn: "Waiting for the box to answer on SSH" });
+  const first = server([making]);
+  const slot = boxPageAt(first.handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Starting" });
+  expect(card.querySelector("p")!.textContent).toMatch(/^Starting for \d s$/);
+  expect(within(card).getByText("Took a warm box")).toBeTruthy();
+  expect(within(card).getByText("Clone")).toBeTruthy();
+  expect(within(card).getByText("Waiting for the box to answer on SSH")).toBeTruthy();
+  expect(slot.getByText(/^· for \d s$/)).toBeTruthy();
+  expect(slot.queryByRole("region", { name: "Facts" })).toBeNull();
+  cleanup();
+
+  const again = box({ state: "starting", createdAt: Date.now() - 3 * 3_600_000, log: { lastStart: { askedAt: Date.now() - 2_000, readyAt: null, failedAt: null, by: { is: "person" }, first: false }, lastStop: null, lastFailed: null } });
+  const second = server([again]);
+  const restart = boxPageAt(second.handlers, "box/box_1");
+  const restarting = await restart.findByRole("region", { name: "Starting" });
+  expect(restarting.querySelector("p")!.textContent).toMatch(/^Starting again for [23] s$/);
+  expect(within(restarting).getByText("Waiting for it to boot and answer")).toBeTruthy();
+  expect(restart.getByText(/^· for [23] s$/)).toBeTruthy();
+});
+
+test("a box's page says a device did not boot, a join that failed, a box deleted outside BB Box, and one that did not start, each with its way on (069 section 7)", async () => {
+  const phone = box({ id: "box_p", name: "keen-iris", device: { platform: "ios", model: "iPhone 17 Pro", simulatorHost: true } });
+  const device = server([phone], { deviceFailed: { model: "iPhone 17 Pro", words: "The simulator runtime is missing." } });
+  let slot = boxPageAt(device.handlers, "box/box_p");
+  const notice = await slot.findByRole("region", { name: "Its iPhone 17 Pro did not boot" });
+  expect(within(notice).getByText("The simulator runtime is missing.")).toBeTruthy();
+  expect(within(notice).getByRole("button", { name: "Check now" })).toBeTruthy();
+  expect(slot.getByRole("link", { name: "Simulator" }).getAttribute("href")).toBe("/plugins/bb-box/desktop/box/box_p/device/from-box");
+  cleanup();
+
+  const unjoined = server([box({ enrol: { state: "failed", hostId: null, error: "BB at http://127.0.0.1:7801 is not reachable from the box." } })]);
+  slot = boxPageAt(unjoined.handlers, "box/box_1");
+  expect(await slot.findByText("· Could not join BB")).toBeTruthy();
+  expect(slot.getByRole("region", { name: "It could not join BB" }).textContent).toContain("is not reachable from the box");
+  expect(slot.getByText("None. It is not a BB machine, so no thread can run on it.")).toBeTruthy();
+  fireEvent.click(within(slot.getByRole("region", { name: "It could not join BB" })).getByRole("button", { name: "Join BB again" }));
+  await waitFor(() => expect(unjoined.changes).toContain("enrol box_1"));
+  expect(await slot.findByText("Joining, try 1 of 5")).toBeTruthy();
+  expect(slot.queryByRole("region", { name: "It could not join BB" })).toBeNull();
+  expect(unjoined.changes.filter((each) => !each.startsWith("enrol")), "joining again neither starts, stops nor restarts the box").toEqual([]);
+  cleanup();
+
+  const waiting = server([box({ enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 1, next: Date.now() + 30_000, words: "This box could not look up BB's address in time (curl: (28) Resolving timed out after 10001 milliseconds).", of: 5, setup: false } })]);
+  slot = boxPageAt(waiting.handlers, "box/box_1");
+  const pending = await slot.findByRole("region", { name: "It has not joined BB yet" });
+  expect(pending.textContent).toContain("Try 1 failed: This box could not look up BB's address in time");
+  fireEvent.click(within(pending).getByRole("button", { name: "Join BB again" }));
+  await waitFor(() => expect(waiting.changes).toContain("enrol box_1"));
+  cleanup();
+
+  const gone = server([box({ state: "gone", address: null, terminal: false })]);
+  slot = boxPageAt(gone.handlers, "box/box_1");
+  expect(await slot.findByText("· deleted outside BB Box")).toBeTruthy();
+  expect(slot.getByRole("region", { name: "Facts" })).toBeTruthy();
+  expect(slot.queryByRole("button", { name: "Stop" })).toBeNull();
+  const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  expect(items(menu).at(-1)).toBe("Release…");
+  fireEvent.keyDown(menu, { key: "Escape" });
+  cleanup();
+
+  const failed = server([box({ state: "failed", error: "The template did not answer on SSH within 120 s.", timings: { clone: 700 } })]);
+  slot = boxPageAt(failed.handlers, "box/box_1");
+  const didNot = await slot.findByRole("region", { name: "It did not start" });
+  expect(within(didNot).getByText("The template did not answer on SSH within 120 s.")).toBeTruthy();
+  expect(within(didNot).getByRole("button", { name: "Release…" })).toBeTruthy();
+  expect(slot.getByText("Did not finish")).toBeTruthy();
+  expect(slot.queryByRole("heading", { name: "Other threads on it" })).toBeNull();
+});
+
+function pageWith(view: () => BoxView, holder: ThreadOnBox = { id: THREAD, title: "UI thread", running: false }): PluginRpcTestHandlers<Contract> {
+  const { handlers } = server([view()]);
+  return { ...handlers, boxPage: () => ({ box: view(), threadId: THREAD, owner: "thread", thread: holder, threads: [], monitor: NOT_READ, deviceFailed: null, ended: null }) };
+}
+
+test("notices are not live regions: one polite announcer says a new notice once, never on opening and never as the clock moves (review 5)", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    const failure = () => ({ lastStart: null, lastStop: null, lastFailed: { operation: "stop" as const, at: Date.now() - 1_000, words: "Docker refused", observed: { state: "running" as const, at: Date.now() - 1_000, from: "Fake host" }, parts: [] } });
+    const opened = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => box({ log: failure() })), pluginId: "bb-box" });
+    await opened.findByRole("region", { name: /^Stop failed / });
+    expect(document.querySelector("[data-announcer]")!.textContent, "a failure from before the page opened is not announced").toBe("");
+    expect(document.querySelectorAll("[data-notice][role], [data-notice] [role=alert], [data-notice] [role=status], [data-notice] [aria-live]")).toHaveLength(0);
+    cleanup();
+
+    let current = box();
+    const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => current), pluginId: "bb-box" });
+    await slot.findByRole("heading", { level: 1 });
+    const announcer = document.querySelector("[data-announcer]")!;
+    expect(announcer.getAttribute("aria-live")).toBe("polite");
+    current = box({ log: failure() });
+    const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Check now" }));
+    await slot.findByRole("region", { name: /^Stop failed / });
+    await waitFor(() => expect(announcer.textContent).toMatch(/^Stop failed\. Docker refused\. It is still running \(checked .+\)\.$/));
+    const said = announcer.textContent;
+    await act(async () => {
+      vi.advanceTimersByTime(61_000);
+    });
+    await waitFor(() => expect(slot.getByRole("region", { name: /^Stop failed 1 min ago/ })).toBeTruthy());
+    expect(announcer.textContent).toBe(said);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("starting again shows no step of the last start, and no Total, only what it waits on (review 4)", async () => {
+  const again = box({ state: "starting", createdAt: Date.now() - 3 * 3_600_000, timings: { clone: 700, total: 2100, "start.boot": 1400, "start.ssh": 500, "start.total": 1900 }, log: { lastStart: { askedAt: Date.now() - 2_000, readyAt: null, failedAt: null, by: { is: "person" }, first: false }, lastStop: null, lastFailed: null } });
+  const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => again), pluginId: "bb-box" });
+  const card = await slot.findByRole("region", { name: "Starting" });
+  expect(Array.from(card.querySelectorAll("li"), (item) => item.textContent)).toEqual(["Waiting for it to boot and answer"]);
+});
+
+test("an open page asks again every 15 s while it is shown, so Working now and the threads keep up (review 9); the working mark stops under reduced motion (review 10)", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
+  try {
+    const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: pageWith(() => box(), { id: THREAD, title: "UI thread", running: true }), pluginId: "bb-box" });
+    await slot.findByText("working now");
+    expect(slot.getAllByLabelText("Working")[0]!.getAttribute("class")).toContain("motion-reduce:animate-none");
+    const asked = () => slot.inspection.rpcCalls.filter((call) => call.method === "boxPage").length;
+    const before = asked();
+    await act(async () => {
+      vi.advanceTimersByTime(15_100);
+    });
+    await waitFor(() => expect(asked()).toBe(before + 1));
+  } finally {
+    Reflect.deleteProperty(document, "visibilityState");
+    vi.useRealTimers();
+  }
+});
+
+test("a view opened by box ID has its way back while it loads, and when its box cannot be read (review 11)", async () => {
+  const { handlers } = server([desktopBox()]);
+  const pending: PluginRpcTestHandlers<Contract> = { ...handlers, boxPage: () => new Promise<never>(() => undefined) };
+  const waiting = renderSlot(app.navPanels[0]!, { subPath: "box/box_2/desktop/from-list" }, { rpc: pending, pluginId: "bb-box" });
+  const back = await waiting.findByRole("button", { name: "Back to boxes" });
+  fireEvent.click(back);
+  expect(waiting.inspection.navigateCalls.at(-1)).toEqual({ method: "toPluginPanel", path: "desktop", options: { subPath: "", replace: true } });
+  cleanup();
+  const broken: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    boxPage: () => {
+      throw new Error("BB's server did not answer.");
+    },
+  };
+  const failing = renderSlot(app.navPanels[0]!, { subPath: "box/box_2/terminal/from-box/from-settings" }, { rpc: broken, pluginId: "bb-box" });
+  expect(await failing.findByText("BB's server did not answer.")).toBeTruthy();
+  expect(failing.getByRole("button", { name: "Back to the box" })).toBeTruthy();
+});
+
+test("when BB cannot say whether the box's thread works, Stop asks and says so (review 2)", async () => {
+  const { handlers, changes } = server([box()], { inUse: [{ id: THREAD, title: null, running: false, unchecked: true }] });
+  const slot = boxPageAt(handlers, "box/box_1");
+  fireEvent.click(await slot.findByRole("button", { name: "Stop" }));
+  const dialog = await screen.findByRole("alertdialog");
+  expect(within(dialog).getByText("BB Box could not ask BB whether its thread is working on calm-otter.")).toBeTruthy();
+  expect(changes).toEqual([]);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Stop anyway" }));
+  await waitFor(() => expect(changes).toEqual(["stop (forced) box_1"]));
+});
+
+test("a release whose failure the log lost still says it did not finish, with Release again, not Releasing for ever (review 7)", async () => {
+  const stuck = box({ state: "releasing", backendLabel: "Proxmox LXC on pve-1", error: "Releasing the box failed: the host refused. BB Box tries again in a few minutes." });
+  const { handlers, changes } = server([stuck]);
+  const page = boxPageAt(handlers, "box/box_1");
+  expect(await page.findByText("Release did not finish", { selector: "span" })).toBeTruthy();
+  const notice = page.getByRole("region", { name: "Release did not finish" });
+  expect(within(notice).getByText("Releasing the box failed: the host refused. BB Box tries again in a few minutes. The box may still run on pve-1; BB Box keeps its record until a release is confirmed.")).toBeTruthy();
+  expect(page.queryByText("Releasing…")).toBeNull();
+  const menu = await openMenu(page.getByRole("button", { name: "calm-otter actions" }));
+  expect(items(menu).at(-1)).toBe("Release again…");
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Release again…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Release" }));
+  await waitFor(() => expect(changes).toEqual(["release box_1"]));
+});
+
+const SNAPSHOT_DOCUMENT: ConfigDocument = { schema: 1, revision: 4, backends: [{ id: "fake", type: "fake", enabled: true, fields: { url: "https://192.0.2.10:8006", token: { set: true }, key: { set: true } } }], kinds: {}, general: {} };
+
+function snapshotServer(paid: { past?: boolean; ceiling?: number; included?: { included: number; used: number }; billing?: "billed" | "estimate"; monthly?: number; count?: number } | null) {
+  applied = SNAPSHOT_DOCUMENT;
+  const backends = configState({}).backends.map((backend) => ({
+    ...backend,
+    doctor: { at: 1_790_000_000_000, revision: 4, report: { ok: true, summary: "Fake host", checks: [{ id: "proxmox.snapshots" as const, name: "Snapshots", status: "warn" as const, detail: "fast (LVM-thin) restores any snapshot.", fix: "Watch the pool's metadata on the host." }], notes: [] } },
+    snapshots: {
+      offers: [{ kinds: ["linux", "linux-desktop"], words: paid ? "its disk, or its disk and memory, while it runs · $0.056 a day each" : "its disk, or its disk and memory, while it runs · no charge" }],
+      price: paid ? { amount: 0.056, currency: "USD" as const, per: "day" as const, known: true } : null,
+      paid: paid ? { currency: "USD" as const, count: paid.count ?? 2, unknown: 0, monthly: paid.monthly ?? 3.36, spent: 0.39, ceiling: paid.ceiling ?? 5, past: paid.past ?? false, included: paid.included ?? null, billing: paid.billing ?? null } : null,
+    },
+  }));
+  return server([], { config: { backends } });
+}
+
+test("070 unit 4: Settings' Snapshots page saves the limit, the room and each paid ceiling through drafts and Save, and shows what each backend offers", async () => {
+  const { handlers, changes } = snapshotServer({});
+  const slot = settings(handlers, "#option/snapshots");
+  const perBox = (await slot.findByRole("textbox", { name: "Snapshots per box, in snapshots a box" })) as HTMLInputElement;
+  const room = slot.getByRole("textbox", { name: "Refuse new snapshots when a host's storage is past, in percent full" }) as HTMLInputElement;
+  const ceiling = slot.getByRole("textbox", { name: "Fake host, in dollars a month" }) as HTMLInputElement;
+  expect([perBox.value, room.value, ceiling.value]).toEqual(["5", "85", "5"]);
+  expect(ceiling.getAttribute("inputmode")).toBe("decimal");
+  expect(slot.getByText(/\$0\.056 a day for each snapshot\. Held now: 2 snapshots, about \$3\.36 a month\. Spent this month so far, deleted ones included: \$0\.39\./)).toBeTruthy();
+  expect(slot.getByText(/A new snapshot is refused past this, or past 80% of a thin pool's metadata\. Past 92%, BB Box deletes agents' snapshots/)).toBeTruthy();
+  expect(slot.getByText("Its disk, or its disk and memory, while it runs · $0.056 a day each")).toBeTruthy();
+  expect(slot.getByText("fast (LVM-thin) restores any snapshot.")).toBeTruthy();
+  expect(slot.getByText("Fix: Watch the pool's metadata on the host.").className).toContain("text-warning-text");
+  expect(slot.getAllByRole("switch").map((each) => each.getAttribute("aria-label"))).toEqual(["Agents may restore their own boxes", "Agents may restore memory snapshots", "Keep a picture of the screen with each snapshot"]);
+  expect((slot.getByRole("textbox", { name: "Keep keeps a snapshot for, in days" }) as HTMLInputElement).value).toBe("30");
+  expect(slot.getByText(/A kept snapshot is yours, outlives its box's release, and BB Box deletes it after its date\. Only you keep one\. Keeping it again adds these days to its date\. 1 to 365\./)).toBeTruthy();
+
+  fireEvent.change(room, { target: { value: "60" } });
+  expect(slot.getByText(/or past 55% of a thin pool's metadata\. Past 67%/)).toBeTruthy();
+  fireEvent.change(perBox, { target: { value: "3" } });
+  fireEvent.change(ceiling, { target: { value: "7.5" } });
+  expect(slot.getByRole("region", { name: "Save the snapshot settings" }).textContent).toContain("3 changes to the snapshot settings not saved");
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).general.snapshots).toEqual({ perBox: 3, roomPercent: 60, ceilings: { fake: 7.5 } });
+});
+
+test("070 unit 4: with no backend that charges the page says so, a ceiling past the rate warns in words, and the overview's row sums it up", async () => {
+  const free = settings(snapshotServer(null).handlers, "#option/snapshots");
+  expect(await free.findByText("None of your backends charges for snapshots.")).toBeTruthy();
+  expect(free.queryByRole("textbox", { name: /dollars a month/ })).toBeNull();
+  cleanup();
+  const past = settings(snapshotServer({ past: true, ceiling: 3 }).handlers, "#option/snapshots");
+  expect(await past.findByText(/The rate held is past this ceiling: BB Box refuses new paid snapshots, undos, Keep and renewals there until you raise it or delete some\. It deletes none by itself\./)).toBeTruthy();
+  cleanup();
+  const overview = settings(snapshotServer({ past: true, ceiling: 3 }).handlers);
+  const row = await overview.findByRole("button", { name: "Snapshots" });
+  expect(document.getElementById(row.getAttribute("aria-describedby")!.split(" ").at(-1)!)?.textContent).toBe("5 per box · kept 30 days · none taken past 85% full · past a paid ceiling");
+  cleanup();
+  const within = settings(snapshotServer({ ceiling: 7.5 }).handlers);
+  const withinRow = await within.findByRole("button", { name: "Snapshots" });
+  expect(document.getElementById(withinRow.getAttribute("aria-describedby")!.split(" ").at(-1)!)?.textContent).toBe("5 per box · kept 30 days · none taken past 85% full · paid up to $7.50 a month");
+  cleanup();
+  const plain = settings(snapshotServer(null).handlers);
+  const freeRow = await plain.findByRole("button", { name: "Snapshots" });
+  expect(document.getElementById(freeRow.getAttribute("aria-describedby")!.split(" ").at(-1)!)?.textContent).toBe("5 per box · kept 30 days · none taken past 85% full");
+});
+
+test("070 unit 4: Find finds each snapshot setting with its value, and a refused value's problem lands on its field", () => {
+  const entries = settingsIndex(stateOf(snapshotServer({ ceiling: 7.5 }).handlers));
+  expect(foundBy(entries, "snapshots/perBox")).toMatchObject({ label: "Snapshots per box", where: "Options › Snapshots", value: "5", opens: { view: { page: "option", id: "snapshots" } } });
+  expect(foundBy(entries, "snapshots/roomPercent")?.value).toBe("85% full");
+  expect(foundBy(entries, "snapshots/ceilings/fake")).toMatchObject({ label: "Paid snapshots on Fake host", value: "$7.50 a month" });
+  expect(labelsFor(entries, "snapshot limit")[0]).toBe("Snapshots per box | Options › Snapshots");
+  expect(labelsFor(entries, "snapshot ceiling")[0]).toBe("Paid snapshots on Fake host | Options › Snapshots");
+  expect(labelsFor(entries, "storage full")).toContain("Refuse new snapshots when a host's storage is past | Options › Snapshots");
+  expect(entries.find((entry) => /Keep keeps/.test(entry.label))?.value).toBe("30 days");
+  const free = settingsIndex(stateOf(snapshotServer(null).handlers));
+  expect(free.find((entry) => entry.key === "option snapshots ceiling")).toMatchObject({ label: "Paid snapshots", value: "None of your backends charges" });
+  expect(problemPath("general.snapshots.ceilings.fake:pc-1", {})).toBe("snapshots/ceilings/fake:pc-1");
+  expect(problemPath("general.snapshots.perBox", {})).toBe("snapshots/perBox");
+});
+
+test("070 unit 4: two backends of one type are told apart in What each backend offers by the overview's own host chips", async () => {
+  const twins = (type: string) => ["pc-1", "pc-2"].map((host) => ({ id: `${type}:${host}`, type, enabled: true, fields: { host: `ssh://box@${host}` } }));
+  applied = { schema: 1, revision: 5, backends: [...twins("docker"), ...twins("microsandbox")], kinds: {}, general: {} };
+  const labels: Record<string, string> = { docker: "Docker", microsandbox: "microsandbox" };
+  const backends = configState({}).backends.map((backend) => ({ ...backend, label: labels[backend.type]! }));
+  const { handlers } = server([], { config: { backends } });
+  const chipsOf = (row: HTMLElement) => document.getElementById(row.getAttribute("aria-describedby")!.split(" ")[0]!)?.textContent;
+  const page = settings(handlers, "#option/snapshots");
+  await page.findByText("What each backend offers");
+  const offered = (name: string) => page.getAllByRole("button", { name: new RegExp(`^${name}$`) }).filter((row) => row.dataset.rowKey?.startsWith("snapshot-offer-"));
+  expect(offered("Docker").map(chipsOf)).toEqual(["pc-1", "pc-2"]);
+  expect(offered("microsandbox").map(chipsOf)).toEqual(["pc-1", "pc-2"]);
+  cleanup();
+  const overview = settings(handlers);
+  await overview.findByText("Options");
+  const listed = (name: string) => overview.getAllByRole("button", { name: new RegExp(`^${name}$`) }).filter((row) => row.dataset.rowKey?.startsWith("backend-"));
+  expect(listed("Docker").map(chipsOf)).toEqual(["pc-1", "pc-2"]);
+  expect(listed("microsandbox").map(chipsOf)).toEqual(["pc-1", "pc-2"]);
+});
+
+test("070 unit 5: the agents' two switches are on the Snapshots page and save at once, and Find finds them with their values", async () => {
+  const { handlers, changes } = snapshotServer(null);
+  const slot = settings(handlers, "#option/snapshots");
+  const restores = await slot.findByRole("switch", { name: "Agents may restore their own boxes" });
+  const memory = slot.getByRole("switch", { name: "Agents may restore memory snapshots" });
+  expect([restores.getAttribute("aria-checked"), memory.getAttribute("aria-checked")]).toEqual(["true", "true"]);
+  expect(slot.getByText(/Off, it asks for a yes in its thread through a form\. A box threads run on, or one of your machines, always needs that yes\./)).toBeTruthy();
+  fireEvent.click(restores);
+  await waitFor(() => expect(changes).toHaveLength(1));
+  expect(JSON.parse(changes[0]!.slice(changes[0]!.indexOf("{"))).general.snapshots).toEqual({ agentsRestore: false });
+  fireEvent.click(memory);
+  await waitFor(() => expect(changes).toHaveLength(2));
+  expect(JSON.parse(changes[1]!.slice(changes[1]!.indexOf("{"))).general.snapshots).toEqual({ agentsRestore: false, agentsMemory: false });
+  const entries = settingsIndex(stateOf(snapshotServer(null).handlers));
+  expect(foundBy(entries, "snapshots/agentsRestore")).toMatchObject({ label: "Agents may restore their own boxes", where: "Options › Snapshots", value: "On" });
+  expect(foundBy(entries, "snapshots/agentsMemory")).toMatchObject({ label: "Agents may restore memory snapshots", value: "On" });
+  expect(labelsFor(entries, "agent restore")).toContain("Agents may restore their own boxes | Options › Snapshots");
+});
+
+test("070 unit 5: the restore form says what goes, that an undo is always taken and that an answer is a yes given in the thread, and submits its plan", async () => {
+  const { RestoreForm, restoreFormWords } = await import("../src/app/restore-form.tsx");
+  const payload = {
+    box: { id: "bxdevdesk", name: "dev-desk" },
+    snapshot: { id: "sn1", name: "before the upgrade", takenAt: Date.now() - 2 * 3_600_000, holds: "disk" },
+    undo: { name: "before the restore at 11:02", aboutSeconds: 1, heldCopy: false },
+    asks: "machine" as const,
+    losses: ['"Fix the sign-in flow" runs on it: its worktree, uncommitted files and session there go'],
+    sizeBack: null,
+    excludes: null,
+    runsOnIt: true,
+    changed: false,
+    plan: "abc123",
+    gpuStay: "Its GPU stays as it is now: shared, card 1.",
+    userspaceNote: null,
+  };
+  const words = restoreFormWords(payload, Date.now());
+  expect(words.lead).toMatch(/^An agent in this thread asks to restore dev-desk to "before the upgrade", taken (?:today|yesterday) at \d{2}:\d{2}, 2 h ago\. dev-desk is a box threads run on, so an agent restores it only on a yes given here\.$/);
+  expect(words.button).toBe("Restore dev-desk anyway");
+  const submitted: unknown[] = [];
+  let cancelled = 0;
+  render(
+    <RestoreForm
+      interaction={{ id: "int_1", threadId: "thr_one", title: "Restore dev-desk to \"before the upgrade\"?", payload, createdAt: Date.now(), expiresAt: null }}
+      submit={async (value) => void submitted.push(value)}
+      cancel={async () => void cancelled++}
+    />,
+  );
+  expect(screen.getByRole("alertdialog", { name: 'Restore dev-desk to "before the upgrade"?' })).toBeTruthy();
+  expect(screen.getByText(/Everything on its disk since then goes: files, installed apps and settings\. dev-desk restarts, so every process in it ends\./)).toBeTruthy();
+  expect(screen.getByText(payload.losses[0]!)).toBeTruthy();
+  expect(screen.getByText("This thread runs on dev-desk: its session there goes back too, and its next turn starts on the restored box.")).toBeTruthy();
+  expect(screen.getByText(/BB Box always takes an undo first: a snapshot of dev-desk once stopped, named "before the restore at 11:02"/)).toBeTruthy();
+  expect(screen.getByText("BB Box records an answer here as a yes given in this thread: it cannot tell who gives it.")).toBeTruthy();
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+  const anyway = screen.getByRole("button", { name: "Restore dev-desk anyway" });
+  expect(anyway.className).not.toMatch(/bg-destructive/);
+  expect(anyway.parentElement?.className).toContain("flex-col");
+  expect(anyway.parentElement?.className).not.toContain("flex-col-reverse");
+  expect(anyway.parentElement?.lastElementChild).toBe(anyway);
+  fireEvent.click(anyway);
+  await waitFor(() => expect(submitted).toEqual([{ restore: true, plan: "abc123" }]));
+  expect(cancelled).toBe(0);
+});
+
+function snapshotRow(overrides: Partial<SnapshotRowView> = {}): SnapshotRowView {
+  return {
+    id: "snaaaaaaaaaaaa",
+    name: "before the migration",
+    note: null,
+    state: "ready",
+    error: null,
+    takenAt: Date.now() - 2 * 60 * 60_000,
+    by: { is: "person" },
+    scope: "box",
+    holds: "disk",
+    size: { bytes: 1.2e9, means: "own" },
+    storage: { name: "fast", type: "lvmthin" },
+    host: "pve-1",
+    price: null,
+    keptUntil: null,
+    guest: "current",
+    undoOf: null,
+    picture: null,
+    busyWhy: null,
+    forkWhy: null,
+    keepWhy: null,
+    boxGone: null,
+    unflushed: null,
+    pausedMs: 0,
+    after: [],
+    ...overrides,
+  };
+}
+
+function snapshotsView(overrides: Partial<BoxSnapshotsView> = {}): BoxSnapshotsView {
+  return {
+    offer: { holds: ["disk"], scope: "box", whileRunning: "live", restore: "in-place", fork: "none", keeps: false, excludes: null, price: null },
+    noneWhy: null,
+    keepDays: 30,
+    perBox: 5,
+    counted: 1,
+    undos: 0,
+    host: "pve-1",
+    takeWhy: null,
+    screen: false,
+    pictures: true,
+    records: [snapshotRow()],
+    restoring: null,
+    unconfirmed: null,
+    restored: null,
+    failed: null,
+    ...overrides,
+  };
+}
+
+function clockAtLocalNoon(): void {
+  vi.useFakeTimers({ toFake: ["Date"], now: new Date(2026, 9, 14, 12, 0), shouldAdvanceTime: true });
+}
+
+function takeFactLines(dialog: HTMLElement): { label: string; value: string }[] {
+  const describedBy = within(dialog).getByRole("textbox", { name: "Name" }).getAttribute("aria-describedby");
+  const described = describedBy ? document.getElementById(describedBy) : null;
+  expect(described, "the name field describes the facts").toBeTruthy();
+  const terms = Array.from(described!.querySelectorAll("dt"));
+  const details = Array.from(described!.querySelectorAll("dd"));
+  expect(terms, "the facts are labelled lines, so a paragraph would fail").toHaveLength(details.length);
+  return terms.map((term, index) => ({
+    label: (term.textContent ?? "").replace(/:\s*$/, ""),
+    value: (details[index]!.textContent ?? "").replaceAll("\u00a0", " "),
+  }));
+}
+
+function restorePreviewOf(overrides: Partial<RestorePreview> = {}): RestorePreview {
+  return {
+    refusal: null,
+    threads: [],
+    threadsUnread: null,
+    control: false,
+    terminals: 0,
+    check: { swap: false, fromSnapshot: false, costWords: null, onAMachine: false, plan: "plan", undo: { kind: "snapshot", name: "before the restore at 11:02", aboutMs: 700, bytes: null, price: null }, from: null, to: null, anyway: [], leavesOnEarlierGuest: 0, replaces: null, storage: "fast", undoRefused: null, capture: "stop", gpuStay: null, userspaceNote: null },
+    snapshot: snapshotRow(),
+    token: "tokenone",
+    undoUnflushed: null,
+    ...overrides,
+  };
+}
+
+test("070 unit 6: the Snapshots card sits after Activity and before the facts, with its count, its rows and its words, and Take snapshot… is in the header's menu beside Resize…", async () => {
+  const { handlers } = server([box({ resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } })], { snapshots: snapshotsView({ counted: 2, undos: 1, records: [snapshotRow({ id: "snundo", name: "before the restore at 09:00", by: { is: "person" }, undoOf: { at: Date.now() - 60_000, to: "Thu 09:15" } }), snapshotRow({ id: "snkept", name: "Thu 09:15", keptUntil: Date.UTC(2026, 10, 29), note: "Signed in to the staging site." })] }) });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  expect(card.textContent).toContain("2 of 5, and 1 undo · disk · on pve-1");
+  expect(within(card).getByText("Undo")).toBeTruthy();
+  expect(within(card).getByText("Kept")).toBeTruthy();
+  expect(within(card).getByText(/The undo of the restore to "Thu 09:15" at /)).toBeTruthy();
+  expect(within(card).getByText("Signed in to the staging site.")).toBeTruthy();
+  expect(card.textContent).toContain("kept until Sun 29 Nov");
+  expect(card.textContent).toContain("by you · 1.2 GB");
+  expect(within(card).getByText("Snapshots hold the disk. They go when calm-otter is released.")).toBeTruthy();
+  expect(within(card).queryByRole("button", { name: /^Fork/ }), "no Fork where the backend forks none: no dead controls").toBeNull();
+  const facts = slot.getByRole("region", { name: "Facts" });
+  expect(card.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  const listed = items(menu);
+  expect(listed.indexOf("Take snapshot…")).toBe(listed.indexOf("Resize…") + 1);
+  fireEvent.keyDown(menu, { key: "Escape" });
+});
+
+test("070 unit 7: Fork opens a dialog with the new box's name, where it goes, its size, time and space and what a fork holds; Fork sends it with what was chosen and opens the new box's page", async () => {
+  clockAtLocalNoon();
+  const preview = (asMachine: boolean): ForkPreview => ({
+    refusal: null,
+    check: { snapshot: "before the migration", takenAt: Date.now() - 2 * 60 * 60_000, threadId: asMachine ? "operator" : THREAD, asMachine, canBeMachine: true, size: "2 cores, 4 GiB memory, 16 GiB disk", aboutMs: 38_000, bytes: 17e9, host: "pve-1", storage: "local-lvm", unflushed: null, gpu: "none", offersGpu: true },
+  });
+  const { handlers, changes } = server([box()], { snapshots: snapshotsView({ offer: { holds: ["disk"], scope: "box", whileRunning: "live", restore: "in-place", fork: "copy", keeps: true, excludes: null, price: null } }), forkPreview: preview });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const button = within(card).getByRole("button", { name: "Fork before the migration into a new box" });
+  button.focus();
+  fireEvent.click(button);
+  const dialog = await slot.findByRole("alertdialog", { name: 'Fork "before the migration" of calm-otter' });
+  const name = within(dialog).getByRole("textbox", { name: "Name of the new box" });
+  expect(document.activeElement).toBe(name);
+  expect(await within(dialog).findByText(/^A new box with calm-otter's files as they were today at \d\d:\d\d\. It gets its own BB machine, address and keys, and never acts as calm-otter\. Everything else on its disk comes with it: project secrets, signed-in browsers and keychains\. It starts fresh: no apps are running\.$/)).toBeTruthy();
+  expect(within(dialog).getByText("2 cores, 4 GiB memory, 16 GiB disk, as the snapshot holds. The copy takes up to about 38 s and 17 GB on pve-1's local-lvm, then it starts, and BB Box checks that it reset its identity before handing it over.")).toBeTruthy();
+  expect((within(dialog).getByRole("radio", { name: /^In / }) as HTMLInputElement).checked).toBe(true);
+  expect((within(dialog).getByRole("radio", { name: "None" }) as HTMLInputElement).checked).toBe(true);
+  expect(within(dialog).queryByRole("radio", { name: "Whole" })).toBeNull();
+  fireEvent.change(name, { target: { value: "Bad" } });
+  const why = within(dialog).getByRole("alert");
+  expect(why.textContent).toMatch(/lower-case letter/);
+  expect(name.getAttribute("aria-describedby")).toBe(why.id);
+  expect(why.closest("label")).toBeNull();
+  expect(name.className).toContain("border-destructive");
+  fireEvent.click(within(dialog).getByRole("radio", { name: "As one of your machines" }));
+  fireEvent.change(name, { target: { value: "calm-otter" } });
+  fireEvent.click(await within(dialog).findByRole("radio", { name: "Shared" }));
+  const send = within(dialog).getByRole("button", { name: "Fork calm-otter" }) as HTMLButtonElement;
+  await waitFor(() => expect(send.disabled, "the plan for one of your machines is read first").toBe(false));
+  expect((within(dialog).getByRole("radio", { name: "Shared" }) as HTMLInputElement).checked).toBe(true);
+  fireEvent.click(send);
+  await waitFor(() => expect(changes).toContain(`snapshot.fork ${JSON.stringify({ box: "box_1", snapshot: "snaaaaaaaaaaaa", name: "calm-otter", asMachine: true, gpu: "shared" })}`));
+  await waitFor(() => expect(slot.queryByRole("alertdialog")).toBeNull());
+});
+
+test("070 unit 7: Fork is off with why where a snapshot cannot fork, and a row says when its take could not flush the box's writes", async () => {
+  const forkable = { holds: ["disk" as const], scope: "box" as const, whileRunning: "live" as const, restore: "in-place" as const, fork: "copy" as const, keeps: true, excludes: null, price: null };
+  const { handlers } = server([box()], {
+    snapshots: snapshotsView({ offer: forkable, records: [snapshotRow({ forkWhy: "calm-otter had no working identity reset when it was taken", unflushed: "sync: Input/output error" })] }),
+    forkPreview: () => ({ refusal: "No.", check: null }),
+  });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  expect(card.textContent).toContain("1.2 GB · may miss its last writes");
+  const off = within(card).getByRole("button", { name: "Fork: not now, as calm-otter had no working identity reset when it was taken" });
+  expect((off as HTMLButtonElement).disabled).toBe(true);
+});
+
+test("070 unit 10: a row says which snapshot it was taken after, in msb's chain", async () => {
+  const { handlers } = server([box()], { snapshots: snapshotsView({ records: [snapshotRow({ id: "snsecond", name: "after the build", after: ["before the migration"] }), snapshotRow()] }) });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  await waitFor(() => expect(card.textContent).toContain('after "before the migration"'));
+  expect(card.textContent?.match(/after "/g)?.length).toBe(1);
+});
+
+test("070 unit 7: a fork's page says where it came from among its facts", async () => {
+  clockAtLocalNoon();
+  const { handlers } = server([box({ forkedFrom: { name: "amber-fox", snapshot: "before the migration", takenAt: Date.now() - 60_000 } })]);
+  const slot = boxPageAt(handlers, "box/box_1");
+  const facts = await slot.findByRole("region", { name: "Facts" });
+  expect(facts.textContent).toMatch(/Forked from amber-fox, "before the migration" \(today at \d\d:\d\d\)/);
+});
+
+test("070 unit 6: Take snapshot asks for a name and note, says what it holds, costs and counts, and sends the take; focus starts on the name and returns to the button", async () => {
+  const { handlers, changes } = server([box()], { snapshots: snapshotsView({ screen: true }) });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const take = within(card).getByRole("button", { name: "Take snapshot" });
+  take.focus();
+  fireEvent.click(take);
+  const dialog = await slot.findByRole("alertdialog", { name: "Take a snapshot of calm-otter" });
+  const name = within(dialog).getByRole("textbox", { name: "Name" });
+  expect(document.activeElement).toBe(name);
+  await waitFor(() => expect(takeFactLines(dialog).map((line) => line.label)).toEqual(["Holds", "Takes", "Snapshots", "Picture", "Cost"]));
+  expect(takeFactLines(dialog).map((line) => line.value)).toEqual([
+    "the disk: files, installed apps and settings.",
+    "About 0.7 s. It does not pause calm-otter.",
+    "2 of 5 for calm-otter after this.",
+    "A picture of its screen around now is kept with it.",
+    "No charge: it is on the host's own storage.",
+  ]);
+  fireEvent.change(name, { target: { value: "before the upgrade" } });
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Note" }), { target: { value: "Node 24" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Take snapshot" }));
+  await waitFor(() => expect(changes).toContain(`snapshot.take ${JSON.stringify({ box: "box_1", name: "before the upgrade", note: "Node 24", memory: false })}`));
+  await waitFor(() => expect(slot.queryByRole("alertdialog")).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(take));
+});
+
+test("the take dialog lists Holds, Leaves out, Takes, Snapshots and Cost in that order, for disk, memory and a device", async () => {
+  const excludes = "/run, which lives in the box's memory, unless the snapshot holds its memory";
+  const offer = { holds: ["disk" as const, "disk-and-memory" as const], scope: "box" as const, whileRunning: "pauses" as const, restore: "in-place" as const, fork: "none" as const, keeps: false, excludes, price: { amount: 0.005, currency: "USD" as const, per: "day" as const, known: true } };
+  const { handlers } = server([box()], { snapshots: snapshotsView({ offer, screen: true, pictures: false, counted: 0 }) });
+  const slot = boxPageAt(handlers, "box/box_1");
+  fireEvent.click(within(await slot.findByRole("region", { name: "Snapshots" })).getByRole("button", { name: "Take snapshot" }));
+  const dialog = await slot.findByRole("alertdialog", { name: "Take a snapshot of calm-otter" });
+  await waitFor(() => expect(takeFactLines(dialog).map((line) => line.label)).toEqual(["Holds", "Leaves out", "Takes", "Snapshots", "Picture", "Cost"]));
+  const disk = takeFactLines(dialog);
+  expect(disk.map((line) => line.value)).toEqual([
+    "the disk: files, installed apps and settings.",
+    `${excludes}.`,
+    "About 0.7 s. It does not pause calm-otter.",
+    "1 of 5 for calm-otter after this.",
+    "Pictures are off in Settings, Snapshots.",
+    "It costs $0.005 a day until it is deleted.",
+  ]);
+  const described = document.getElementById(within(dialog).getByRole("textbox", { name: "Name" }).getAttribute("aria-describedby")!)!;
+  expect(described.querySelector("code")?.textContent).toBe("/run");
+  expect(described.querySelector("code")?.className).toContain("font-mono");
+  fireEvent.click(within(dialog).getByRole("checkbox", { name: "With its memory" }));
+  await waitFor(() => expect(takeFactLines(dialog)[0]?.value).toBe("the disk and the memory: a restore brings back its running apps, and the credentials in them. Up to 8 GiB more on pve-1's fast."));
+  expect(takeFactLines(dialog).map((line) => line.label)).toEqual(["Holds", "Leaves out", "Takes", "Snapshots", "Picture", "Cost"]);
+  expect(takeFactLines(dialog)[2]?.value).toBe("About 9.0 s. Pauses calm-otter for about 2 s while it saves 8.0 GB of memory.");
+  cleanup();
+
+  const device = server([box()], {
+    snapshots: snapshotsView({
+      offer: { holds: ["disk"], scope: "device", whileRunning: "suspends", restore: "in-place", fork: "none", keeps: false, excludes: "/tmp, ~/.cache, the build cache", price: null },
+      screen: false,
+      counted: 4,
+    }),
+  });
+  const deviceSlot = boxPageAt(device.handlers, "box/box_1");
+  fireEvent.click(within(await deviceSlot.findByRole("region", { name: "Snapshots" })).getByRole("button", { name: "Take snapshot" }));
+  const deviceDialog = await deviceSlot.findByRole("alertdialog", { name: "Take a snapshot of calm-otter" });
+  await waitFor(() => expect(takeFactLines(deviceDialog).map((line) => line.label)).toEqual(["Holds", "Leaves out", "Takes", "Snapshots", "Cost"]));
+  const lines = takeFactLines(deviceDialog);
+  expect(lines.map((line) => line.value)).toEqual([
+    "the device: its disk and memory, with the apps open on it. The rest of calm-otter is not in it.",
+    "/tmp, ~/.cache, the build cache.",
+    "About 0.7 s. It does not pause calm-otter.",
+    "5 of 5 for calm-otter after this.",
+    "No charge: it is on the host's own storage.",
+  ]);
+  const codes = Array.from(document.getElementById(within(deviceDialog).getByRole("textbox", { name: "Name" }).getAttribute("aria-describedby")!)!.querySelectorAll("code")).map((code) => code.textContent);
+  expect(codes).toEqual(["/tmp", "~/.cache"]);
+});
+
+test("the take dialog says how long the take pauses the box and what that is based on, before the take, and the row says how long it paused it after", async () => {
+  const takeCheck = { check: { holds: "disk" as const, aboutMs: 5_400, pause: { pauses: true as const, aboutMs: 5_200, basis: { bytes: 1.1e9, of: "disk" as const } }, addsBytes: 1.1e9, storage: "Docker's disk", host: null, memory: null, memoryWhy: null }, refusal: null };
+  const { handlers } = server([box()], { takeCheck, snapshots: snapshotsView({ records: [snapshotRow({ pausedMs: 3_240 })] }) });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+
+  fireEvent.click(within(card).getByRole("button", { name: "Take snapshot" }));
+  const dialog = await slot.findByRole("alertdialog", { name: "Take a snapshot of calm-otter" });
+
+  await waitFor(() => expect(takeFactLines(dialog).find((line) => line.label === "Takes")?.value).toBe("About 5.4 s. Pauses calm-otter for about 5 s while it copies 1.1 GB."));
+  expect(card.textContent).toContain("paused 3.2 s");
+});
+
+test("a snapshot row says its pause was not measured when the backend could not measure it, as the CLI does, and says nothing of a pause that did not happen", async () => {
+  const rows = [
+    snapshotRow({ id: "snbbbbbbbbbbbb", name: "unmeasured", pausedMs: null }),
+    snapshotRow({ id: "sncccccccccccc", name: "stopped", pausedMs: 0 }),
+  ];
+  const { handlers } = server([box()], { snapshots: snapshotsView({ records: rows }) });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+
+  const rowText = (id: string) => card.querySelector(`[data-snapshot-row="${id}"]`)?.textContent ?? "";
+
+  await waitFor(() => expect(rowText("snbbbbbbbbbbbb")).toContain("pause not measured"));
+  expect(rowText("sncccccccccccc")).not.toMatch(/pause/);
+});
+
+test("070 unit 6: a box whose plan refuses a take says why in the card with Take snapshot off, and a box whose backend has none says so", async () => {
+  const locked = server([box()], { snapshots: snapshotsView({ takeWhy: "Proxmox LXC on pve-1 left box calm-otter locked (rollback), so it takes no snapshot. Run `pct unlock 214` on pve-1." }) });
+  let slot = boxPageAt(locked.handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  expect(within(card).getByText(/Run `pct unlock 214` on pve-1\./)).toBeTruthy();
+  expect((within(card).getByRole("button", { name: "Take snapshot" }) as HTMLButtonElement).disabled).toBe(true);
+  const menu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  expect(items(menu).find((item) => item.startsWith("Take snapshot…"))).toMatch(/\(disabled\)$/);
+  fireEvent.keyDown(menu, { key: "Escape" });
+  cleanup();
+  const none = server([box()], { snapshots: snapshotsView({ offer: null, noneWhy: "Boxes on SSH host pool have no snapshots.", records: [], counted: 0 }) });
+  slot = boxPageAt(none.handlers, "box/box_1");
+  expect(await slot.findByText("Boxes on SSH host pool have no snapshots.")).toBeTruthy();
+  expect(slot.queryByRole("button", { name: "Take snapshot" })).toBeNull();
+  const noMenu = await openMenu(slot.getByRole("button", { name: "calm-otter actions" }));
+  expect(items(noMenu).some((item) => item.startsWith("Take snapshot"))).toBe(false);
+  fireEvent.keyDown(noMenu, { key: "Escape" });
+});
+
+test("070 unit 6: a guarded restore names every thread, the control and a terminal; a box threads run on is not restored, saying why", async () => {
+  const preview = restorePreviewOf({
+    refusal: "Box calm-otter is a box threads run on: \"Fix the sign-in flow\" (working) and \"Write the API guide\" (idle) run on it. A restore would take their worktrees, uncommitted files and sessions there with it, and BB Box does not restore such a box yet: that stays off until BB Box can hold every turn on it while it restores. Move those threads off it, or archive them, first. BB Box changed nothing.",
+    threads: [{ id: "thr_a", title: "Fix the sign-in flow", running: true }, { id: "thr_b", title: "Write the API guide", running: false }],
+    control: true,
+    terminals: 1,
+    check: null,
+  });
+  const { handlers, changes } = server([box()], { snapshots: snapshotsView(), restorePreview: preview });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const restore = within(card).getByRole("button", { name: "Restore calm-otter to before the migration" });
+  restore.focus();
+  fireEvent.click(restore);
+  const dialog = await slot.findByRole("alertdialog", { name: "Cannot restore calm-otter" });
+  await within(dialog).findByText(/BB Box does not restore such a box yet/);
+  const listed = within(dialog).getAllByRole("listitem").map((item) => item.textContent);
+  expect(listed).toEqual([
+    "\"Fix the sign-in flow\" is working on calm-otter: its worktree, uncommitted files and session there would go.",
+    "\"Write the API guide\" is idle on calm-otter: its worktree, uncommitted files and session there would go.",
+    "A person has control of its desktop.",
+    "A terminal is open on it.",
+  ]);
+  expect(within(dialog).queryByRole("button", { name: /^Restore/ })).toBeNull();
+  const close = within(dialog).getByRole("button", { name: "Close" });
+  expect(document.activeElement).toBe(close);
+  fireEvent.click(close);
+  await waitFor(() => expect(document.activeElement).toBe(restore));
+  expect(changes.some((change) => change.startsWith("snapshot.restore "))).toBe(false);
+});
+
+test("070 unit 9: where the backend suspends the box, the restore dialog says its undo is taken suspended and holds its memory", async () => {
+  const row = snapshotRow({ holds: "disk-and-memory" });
+  const preview = restorePreviewOf({ snapshot: row, check: { ...restorePreviewOf().check!, capture: "suspend" } });
+  const { handlers } = server([box()], { snapshots: snapshotsView({ records: [row] }), restorePreview: preview });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  fireEvent.click(within(card).getByRole("button", { name: "Restore calm-otter to before the migration" }));
+  const dialog = await slot.findByRole("alertdialog", { name: 'Restore calm-otter to "before the migration"?' });
+  expect(within(dialog).getByRole("checkbox", { name: /^Take a snapshot of it, once suspended, with its memory, so you can undo this\./ })).toBeTruthy();
+  expect(dialog.textContent).toContain("The undo holds its memory too: undoing brings it back running, as it is now, with the credentials its apps hold now.");
+  expect(dialog.textContent).not.toContain("Undo brings back its files, not its running apps.");
+});
+
+test("070 unit 6: the person restores anyway past a control and a terminal, keeps or unticks the undo, and the button says so", async () => {
+  clockAtLocalNoon();
+  const losses = ["a person holds control of its desktop", "a BB terminal is open on it"];
+  const preview = restorePreviewOf({ control: true, terminals: 1, check: { ...restorePreviewOf().check!, anyway: losses, from: { cores: 8, memoryMiB: 16384, diskGiB: 32 }, to: { cores: 4, memoryMiB: 8192, diskGiB: 32 } } });
+  const { handlers, changes } = server([box()], { snapshots: snapshotsView(), restorePreview: preview });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  fireEvent.click(within(card).getByRole("button", { name: "Restore calm-otter to before the migration" }));
+  const dialog = await slot.findByRole("alertdialog", { name: 'Restore calm-otter to "before the migration"?' });
+  expect(await within(dialog).findByText(/It goes back to today at \d\d:\d\d, 2 h ago\. Everything on its disk since then goes/)).toBeTruthy();
+  expect(within(dialog).getByText("calm-otter goes back to 4 cores and 8 GiB memory, as it was then.")).toBeTruthy();
+  expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Cancel" }));
+  const undo = within(dialog).getByRole("checkbox", { name: /Take a snapshot of it, once stopped, so you can undo this\. About 0\.7\ss\./ }) as HTMLInputElement;
+  expect(undo.checked).toBe(true);
+  expect(within(dialog).getByText(/Named "before the restore at 11:02"\. Undos do not count against the 5 for calm-otter\./)).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: "Restore calm-otter anyway" })).toBeTruthy();
+  fireEvent.click(undo);
+  const without = within(dialog).getByRole("button", { name: "Restore without undo" });
+  fireEvent.click(without);
+  await waitFor(() => expect(changes).toContain(`snapshot.restore ${JSON.stringify({ box: "box_1", snapshot: "snaaaaaaaaaaaa", undo: false, accept: losses, token: "tokenone" })}`));
+});
+
+test("070 unit 6: the restored notice says when, to what and by whom, and its Undo opens the restore dialog for the undo; restoring and an unconfirmed restore are said too", async () => {
+  clockAtLocalNoon();
+  const at = Date.now() - 10 * 60_000;
+  const restored = server([box()], { snapshots: snapshotsView({ restored: { operation: "opone", at, to: "before the migration", toTakenAt: Date.now() - 26 * 60 * 60_000, by: { is: "person" }, undo: { id: "snundo", name: "before the restore at 11:02", ready: true }, unflushed: null } }), restorePreview: restorePreviewOf({ snapshot: snapshotRow({ id: "snundo", name: "before the restore at 11:02" }) }) });
+  let slot = boxPageAt(restored.handlers, "box/box_1");
+  const notice = (await slot.findByText(/^Restored at \d\d:\d\d to "before the migration", taken yesterday at \d\d:\d\d, by you\.$/)).closest("section")!;
+  expect(within(notice).getByText('Undo restores "before the restore at 11:02".')).toBeTruthy();
+  const undo = within(notice).getByRole("button", { name: "Undo…" });
+  undo.focus();
+  fireEvent.click(undo);
+  const dialog = await slot.findByRole("alertdialog", { name: 'Restore calm-otter to "before the restore at 11:02"?' });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  await waitFor(() => expect(document.activeElement).toBe(undo));
+  fireEvent.click(within(notice).getByRole("button", { name: "Dismiss" }));
+  expect(slot.queryByText(/^Restored at/)).toBeNull();
+  cleanup();
+
+  const going = server([box()], { snapshots: snapshotsView({ restoring: { to: "before the migration", step: "the rollback" } }) });
+  slot = boxPageAt(going.handlers, "box/box_1");
+  expect(await slot.findByText('Restoring calm-otter to "before the migration"')).toBeTruthy();
+  expect(document.querySelector("[data-snapshot-announcer]")?.textContent).toBe('Restoring calm-otter to "before the migration": the rollback.');
+  expect((slot.getByRole("button", { name: "Take snapshot" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((slot.getByRole("button", { name: "Restore: not now, as calm-otter is being restored" }) as HTMLButtonElement).disabled).toBe(true);
+  cleanup();
+
+  const unsure = server([box()], { snapshots: snapshotsView({ unconfirmed: { to: "before the migration", words: "It was at the rollback when BB Box restarted." } }) });
+  slot = boxPageAt(unsure.handlers, "box/box_1");
+  expect(await slot.findByText('BB Box could not confirm the restore of calm-otter to "before the migration"')).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Check now" }));
+  await waitFor(() => expect(unsure.changes).toContain("snapshot.settle box_1"));
+});
+
+test("070 unit 6: Rename, Note and Delete from a row's menu, each with focus on its safe choice and back on the menu's button, or after a delete on Take snapshot", async () => {
+  const { handlers, changes } = server([box()], { snapshots: snapshotsView() });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const trigger = within(card).getByRole("button", { name: "before the migration actions" });
+  let menu = await openMenu(trigger);
+  expect(items(menu)).toEqual(["Rename…", "Note…", "Keep…", "Copy ID", "Delete…"]);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Rename…" }));
+  let dialog = await slot.findByRole("alertdialog", { name: 'Rename "before the migration"' });
+  const name = within(dialog).getByRole("textbox", { name: "Name" });
+  await waitFor(() => expect(document.activeElement).toBe(name));
+  fireEvent.change(name, { target: { value: "before the schema change" } });
+  fireEvent.keyDown(name, { key: "Enter" });
+  fireEvent.submit(name.closest("form")!);
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("snapshot.rename"))).toEqual(["snapshot.rename snaaaaaaaaaaaa before the schema change"]));
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+
+  menu = await openMenu(trigger);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Note…" }));
+  dialog = await slot.findByRole("alertdialog", { name: 'A note on "before the migration"' });
+  fireEvent.change(within(dialog).getByRole("textbox", { name: "Note" }), { target: { value: "Cookies set." } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes).toContain("snapshot.note snaaaaaaaaaaaa Cookies set."));
+
+  menu = await openMenu(trigger);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Delete…" }));
+  dialog = await slot.findByRole("alertdialog", { name: 'Delete "before the migration"?' });
+  expect(within(dialog).getByText("Frees 1.2 GB on pve-1. It cannot be undone.")).toBeTruthy();
+  await waitFor(() => expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Cancel" })));
+  fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+  await waitFor(() => expect(changes).toContain("snapshot.delete snaaaaaaaaaaaa"));
+  await waitFor(() => expect(document.activeElement).toBe(within(card).getByRole("button", { name: "Take snapshot" })));
+});
+
+test("070 unit 6: the pictures switch saves at once, and Find finds it", async () => {
+  const { handlers, changes } = snapshotServer(null);
+  const slot = settings(handlers, "#option/snapshots");
+  const pictures = await slot.findByRole("switch", { name: "Keep a picture of the screen with each snapshot" });
+  expect(pictures.getAttribute("aria-checked")).toBe("true");
+  fireEvent.click(pictures);
+  await waitFor(() => expect(changes.some((change) => change.includes('"pictures":false'))).toBe(true));
+  const entries = settingsIndex(stateOf(snapshotServer(null).handlers));
+  expect(foundBy(entries, "snapshots/pictures")).toMatchObject({ label: "Keep a picture of the screen with each snapshot", value: "On" });
+  expect(labelsFor(entries, "snapshot picture")[0]).toBe("Keep a picture of the screen with each snapshot | Options › Snapshots");
+});
+
+test("070 unit 6 review: the restore is bound to what the dialog showed; when it changed the dialog reads it again, and a failed flush is asked about before anything stops", async () => {
+  const shown = restorePreviewOf({ control: true, check: { ...restorePreviewOf().check!, anyway: ["a person holds control of its desktop"] } });
+  const fresh = restorePreviewOf({ control: true, terminals: 2, token: "tokentwo", check: { ...restorePreviewOf().check!, anyway: ["a person holds control of its desktop", "2 BB terminals are open on it"] } });
+  const flushWords = "BB Box could not flush box calm-otter's writes to its disk before stopping it (sync: Input/output error), so its undo could miss what was written in the last seconds before the restore. BB Box changed nothing.";
+  const { handlers, changes } = server([box()], {
+    snapshots: snapshotsView(),
+    restorePreview: shown,
+    restoreAnswers: [
+      { error: "What the restore would do or end changed since this dialog read it. Read it again below before you restore.", pending: false, preview: fresh },
+      { error: flushWords, pending: false, unflushed: flushWords },
+    ],
+  });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  fireEvent.click(within(card).getByRole("button", { name: "Restore calm-otter to before the migration" }));
+  const dialog = await slot.findByRole("alertdialog");
+  await within(dialog).findByText("A person has control of its desktop.");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Restore calm-otter anyway" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("snapshot.restore "))).toHaveLength(1));
+  expect(changes.at(-1)).toContain('"accept":["a person holds control of its desktop"],"token":"tokenone"');
+  expect(await within(dialog).findByText("2 terminals are open on it.")).toBeTruthy();
+  expect(within(dialog).getByText(/changed since this dialog read it/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Restore calm-otter anyway" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("snapshot.restore "))).toHaveLength(2));
+  expect(changes.at(-1)).toContain('"accept":["a person holds control of its desktop","2 BB terminals are open on it"],"token":"tokentwo"');
+  expect((await within(dialog).findByRole("alert")).textContent).toBe(flushWords);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Restore anyway, its undo may miss the last writes" }));
+  await waitFor(() => expect(changes.filter((change) => change.startsWith("snapshot.restore "))).toHaveLength(3));
+  expect(changes.at(-1)).toContain('"unflushed":true');
+});
+
+test("070 unit 6 review: notices say an undo may miss the last writes and a restore failed, and the card and its notice stay through a restore's start", async () => {
+  const at = Date.now() - 10 * 60_000;
+  const unflushed = server([box()], {
+    snapshots: snapshotsView({ restored: { operation: "opone", at, to: "one", toTakenAt: at - 60_000, by: { is: "person" }, undo: { id: "snundo", name: "before the restore at 11:02", ready: true }, unflushed: "sync: Input/output error" } }),
+    restorePreview: restorePreviewOf({ snapshot: snapshotRow({ id: "snundo", name: "before the restore at 11:02" }), undoUnflushed: "sync: Input/output error" }),
+  });
+  let slot = boxPageAt(unflushed.handlers, "box/box_1");
+  expect(await slot.findByText(/Its undo may miss what was written in the last seconds before the restore: BB Box could not flush the box's writes to its disk before stopping it \(sync: Input\/output error\)\./)).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Undo…" }));
+  const dialog = await slot.findByRole("alertdialog");
+  expect(await within(dialog).findByText(/This undo may miss what was written in the last seconds before its restore/)).toBeTruthy();
+  cleanup();
+
+  const failed = server([box()], { snapshots: snapshotsView({ failed: { operation: "opfail", at, to: "one", error: "Proxmox refused the stop: the guest would not stop. BB Box started it again as it was." } }) });
+  slot = boxPageAt(failed.handlers, "box/box_1");
+  expect(await slot.findByText(/^The restore of calm-otter to "one" failed at /)).toBeTruthy();
+  expect(document.querySelector('[data-notice="bad"]')?.textContent).toMatch(/the guest would not stop/);
+  expect(document.querySelector("[data-snapshot-announcer]")?.textContent).toMatch(/^The restore of calm-otter failed: /);
+  cleanup();
+
+  const starting = server([box({ state: "starting" })], { snapshots: snapshotsView({ restoring: { to: "one", step: "the start" } }) });
+  slot = boxPageAt(starting.handlers, "box/box_1");
+  expect(await slot.findByRole("region", { name: "Snapshots" })).toBeTruthy();
+  expect(slot.getByText('Restoring calm-otter to "one"')).toBeTruthy();
+  expect(document.querySelector("[data-snapshot-announcer]")?.textContent).toBe('Restoring calm-otter to "one": the start.');
+  expect(slot.getByRole("region", { name: "Facts" })).toBeTruthy();
+});
+
+test("070 unit 6 review: after a delete, focus goes to the next row, then the one before, then Take snapshot; the Pictures heading is at weight 400", async () => {
+  const { handlers } = server([box()], { snapshots: snapshotsView({ records: [snapshotRow({ id: "snfirst", name: "first" }), snapshotRow({ id: "snsecond", name: "second" })] }) });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const deleteRow = async (name: string) => {
+    const menu = await openMenu(within(card).getByRole("button", { name: `${name} actions` }));
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Delete…" }));
+    const dialog = await slot.findByRole("alertdialog", { name: `Delete "${name}"?` });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(within(card).queryByText(name)).toBeNull());
+  };
+  await deleteRow("first");
+  await waitFor(() => expect(document.activeElement).toBe(within(card).getByRole("button", { name: "second actions" })));
+  await deleteRow("second");
+  await waitFor(() => expect(document.activeElement).toBe(within(card).getByRole("button", { name: "Take snapshot" })));
+  cleanup();
+  const page = settings(snapshotServer(null).handlers, "#option/snapshots");
+  const heading = await page.findByRole("heading", { name: "Pictures" });
+  expect(heading.className).toContain("font-normal");
+  expect(heading.className).not.toContain("font-medium");
+});
+
+const MIN = 60_000;
+
+function busyFor(reason: Busy["reason"], value: number | null, minutes: number, extra: Partial<Busy> = {}): Busy {
+  const readAt = Date.now();
+  const at = readAt - 20_000;
+  return { reason, value, cores: null, since: at - minutes * MIN, at, slot: false, readAt, ...extra };
+}
+
+function shownBusy(reason: Busy["reason"], value: number | null, minutes: number): Busy {
+  return busyUntil(busyFor(reason, value, minutes), Date.now())!;
+}
+
+test("a row's second line says how the box is now: the state, what needs attention in its order, how long, then cores and memory (069 unit 4)", () => {
+  const now = Date.now();
+  const ready = box({ readyAt: now - 2 * 60 * MIN - 5_000, log: null });
+  const words = (view: BoxView, facts: Partial<Parameters<typeof rowLine>[1]> = {}) => rowWords(rowLine(view, { now, ...facts }));
+  expect(words(ready)).toBe("Ready · up 2 h · 2 cores · 4 GiB memory");
+  expect(words(box({ size: "8 cores, 16 GiB memory, 64 GiB disk", readyAt: now - 46 * MIN }), { busy: shownBusy("cpu", 96.4, 9) })).toBe("Ready · Busy: CPU 96% for 9 min · up 46 min · 8 cores · 16 GiB memory");
+  const held = desktopBox({ control: { owner: "human", holder: "viewer-1" }, readyAt: now - 2 * 60 * MIN });
+  expect(words(held, { viewers: new Set(["viewer-1"]) })).toBe("Ready · You have control · up 2 h · 2 cores · 4 GiB memory");
+  expect(words(desktopBox({ readyAt: now - 2 * 60 * MIN })), "the agent's control is the normal case, so it says nothing").toBe("Ready · up 2 h · 2 cores · 4 GiB memory");
+  const failedStop = box({ readyAt: now - 2 * 60 * MIN, log: { lastStart: null, lastStop: null, lastFailed: { operation: "stop", at: now - 2 * MIN, words: "Timed out waiting for the container to stop", observed: { state: "running", at: now - MIN, from: "Fake host" }, parts: [] } } });
+  const stopLine = rowLine(failedStop, { now });
+  expect(rowWords(stopLine)).toBe("Ready · Stop failed · up 2 h · 2 cores · 4 GiB memory");
+  expect(rowReasons(stopLine)[0]).toMatch(/^Stop failed: Timed out waiting for the container to stop\. It is still running \(checked .+\)\.$/);
+  expect(words(box({ reach: { is: "not-in-settings", backend: "Proxmox LXC on pve-old", lastAnswered: now - 2 * 24 * 60 * MIN } }))).toBe("Last seen ready · Its backend is not in settings · 2 d ago");
+  expect(words(box({ reach: { is: "not-answering", since: now - 12 * MIN, lastAnswered: now - 12 * MIN, nextCheckAt: now + 4 * MIN, checking: false, attempts: 2, error: "It did not answer a command.", host: "pve-3" } }))).toBe("Last seen ready · pve-3 does not answer · 12 min ago");
+  const unjoined = rowLine(box({ readyAt: now - 12_000, enrol: { state: "failed", hostId: null, error: "BB's server is not reachable from Proxmox LXC: turn the tailnet on" } }), { now });
+  expect(rowWords(unjoined)).toBe("Ready · Could not join BB · up 12 s · 2 cores · 4 GiB memory");
+  expect(rowReasons(unjoined)).toEqual(["Could not join BB: BB's server is not reachable from Proxmox LXC: turn the tailnet on. See Machine access in BB's settings, under Machines."]);
+  const passing = rowLine(box({ readyAt: now - 12_000, enrol: { state: "failed", hostId: null, error: "Enrolling box calm-otter failed: Machine bootstrap command failed:\n\ncurl: (28) Resolving timed out after 10001 milliseconds" } }), { now });
+  expect(rowReasons(passing)[0], "a failure that can pass gives no settings advice, even before BB Box plans its tries").not.toContain("Machine access");
+  const retrying = rowLine(box({ readyAt: now - 3 * MIN, enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 2, next: now + 10 * MIN, words: "This box could not reach BB's address in time: the connection timed out (curl: (28) Connection timed out).", of: 5, setup: false } }), { now });
+  expect(rowWords(retrying)).toBe("Ready · Joining BB, try 3 of 5 · up 3 min · 2 cores · 4 GiB memory");
+  expect(rowReasons(retrying)).toEqual(["Joining BB, try 3 of 5: Joining BB: try 3 of 5 starts in 10 min. Try 2 failed: This box could not reach BB's address in time: the connection timed out (curl: (28) Connection timed out)."]);
+  expect(words(box({ readyAt: now - 30_000, enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { failed: 0, next: null, words: "", of: 5, setup: false } }))).toBe("Ready · Joining BB, try 1 of 5 · up 30 s · 2 cores · 4 GiB memory");
+  const gaveUp = rowLine(box({ enrol: { state: "failed", hostId: null, error: "This box has no network route to BB's address (No route to host)." }, joinTries: { failed: 5, next: null, words: "", of: 5, setup: false } }), { now });
+  expect(rowReasons(gaveUp), "a problem that is not BB's setup gives no settings advice").toEqual(["Could not join BB: This box has no network route to BB's address (No route to host)."]);
+  expect(words(box({ state: "starting", createdAt: now - 7_000, log: null }))).toBe("Starting · 7 s");
+  expect(words(box({ state: "stopped", log: { lastStart: null, lastStop: { at: now - 3 * 60 * MIN - 5 * MIN, by: { is: "person" }, asked: true }, lastFailed: null } } as Partial<BoxView>))).toBe("Stopped · 3 h ago · 2 cores · 4 GiB memory");
+  const failed = rowLine(box({ state: "failed", error: "No GPU is left.", log: { lastStart: { askedAt: now - 53 * MIN, readyAt: null, failedAt: now - 52 * MIN, by: null, first: true }, lastStop: null, lastFailed: null } }), { now });
+  expect(rowWords(failed)).toBe("Failed · 52 min ago");
+  expect(rowReasons(failed)).toEqual(["Failed: No GPU is left."]);
+  const everything = rowLine(
+    desktopBox({ readyAt: now - 46 * MIN, control: { owner: "human", holder: "viewer-1" }, enrol: { state: "failed", hostId: null, error: "no route" }, log: failedStop.log }),
+    { now, busy: shownBusy("memory", 93, 6), viewers: new Set(["viewer-1"]) },
+  );
+  expect(everything.items.slice(1, 5).map((item) => item.text), "a failed operation, busy, a person's control, a failed join").toEqual(["Stop failed", "Busy: memory 93% for 6 min", "You have control", "Could not join BB"]);
+  const failedThenGone = rowLine(box({ readyAt: now - 2 * 60 * MIN, log: failedStop.log, reach: { is: "not-in-settings", backend: "Proxmox LXC on pve-old", lastAnswered: now - 2 * 24 * 60 * MIN } }), { now });
+  expect(rowWords(failedThenGone), "a failed stop, then its backend left settings: both, the failure first (review)").toBe("Last seen ready · Stop failed · Its backend is not in settings · 2 d ago");
+  expect(rowReasons(failedThenGone).map((reason) => reason.split(":")[0])).toEqual(["Stop failed", "Its backend is not in settings"]);
+  const failedThenSilent = rowLine(box({ readyAt: now - 2 * 60 * MIN, log: failedStop.log, reach: { is: "not-answering", since: now - 12 * MIN, lastAnswered: now - 12 * MIN, nextCheckAt: now + 4 * MIN, checking: false, attempts: 2, error: "It did not answer a command.", host: "pve-3" } }), { now });
+  expect(rowWords(failedThenSilent)).toBe("Last seen ready · Stop failed · pve-3 does not answer · 12 min ago");
+});
+
+test("a busy flag shows only until its point is 2 minutes old by the server's clock, however the client's clock and refreshes go (review)", () => {
+  const now = Date.now();
+  const read = busyFor("cpu", 96, 9);
+  expect(busyNow(read, now), "an answer the client did not stamp shows nothing").toBeNull();
+  const stamped = busyUntil({ ...read, readAt: read.at + 100_000 }, now)!;
+  expect(stamped.until, "20 s left by the server's clock, whatever the client's says").toBe(now + 20_000);
+  expect(busyNow(stamped, now + 19_000)).not.toBeNull();
+  expect(busyNow(stamped, now + 20_000)).toBeNull();
+  expect(rowWords(rowLine(box({ readyAt: now - 46 * MIN }), { now: now + 20_000, busy: stamped }))).toBe("Ready · up 46 min · 2 cores · 4 GiB memory");
+});
+
+test("busy words give the reason in the measure a person reads first: CPU, memory, load on its cores, a slot's share, or a full disk (069 unit 4)", () => {
+  expect(busyWords(busyFor("cpu", 96.4, 9))).toBe("Busy: CPU 96% for 9 min");
+  expect(busyWords(busyFor("cpuPressure", 71, 7)), "a container is judged by its pressure; the words give its use").toBe("Busy: CPU 71% for 7 min");
+  expect(busyWords(busyFor("memoryPressure", 93.2, 6))).toBe("Busy: memory 93% for 6 min");
+  expect(busyWords(busyFor("load", 7.94, 6, { cores: 4 }))).toBe("Busy: load 7.9 on 4 cores for 6 min");
+  expect(busyWords(busyFor("cpu", 95, 7, { slot: true }))).toBe("Busy: 95% of its share for 7 min");
+  expect(busyWords(busyFor("disk", 97.2, 30))).toBe("Disk 97% full");
+  expect(busyWords(busyFor("cpu", 99, 74))).toBe("Busy: CPU 99% for 1 h 14 min");
+});
+
+test("a long reason sits behind a warning mark on the second line, in its tooltip and the name's description, not as a paragraph under the row (069 unit 4)", async () => {
+  const reason = "BB's server is not reachable from Proxmox LXC: turn the tailnet on, or set Machine access to Manual. curl: (28) Resolving timed out after 5000 milliseconds";
+  const { handlers } = server([box({ enrol: { state: "failed", hostId: null, error: reason } })]);
+  const list = boxesPage(handlers);
+  const name = await list.findByRole("link", { name: "calm-otter" });
+  const row = rowOf(list, "calm-otter");
+  expect(row.querySelectorAll("p")).toHaveLength(0);
+  expect(within(row).queryByRole("link", { name: "How boxes join BB" })).toBeNull();
+  const line = row.querySelector<HTMLElement>("[data-row-line]")!;
+  expect(line.className).toContain("max-h-[2.75em]");
+  expect(line.textContent).toContain("Could not join BB");
+  expect(line.querySelector("[data-reason-mark]")).not.toBeNull();
+  const described = (name.getAttribute("aria-describedby") ?? "").split(" ").map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
+  expect(described).toContain("Could not join BB");
+  expect(described).toContain("curl: (28) Resolving timed out");
+  fireEvent.pointerMove(line);
+  expect((await screen.findByRole("tooltip")).textContent).toContain("curl: (28) Resolving timed out");
+  fireEvent.keyDown(document.body, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+  act(() => name.focus());
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  expect(screen.queryByRole("tooltip"), "a focus from the pointer, without :focus-visible, opens nothing").toBeNull();
+  act(() => name.blur());
+  const matches = name.matches.bind(name);
+  vi.spyOn(name, "matches").mockImplementation((selector: string) => selector === ":focus-visible" || matches(selector));
+  act(() => name.focus());
+  expect((await screen.findByRole("tooltip")).textContent, "a sighted keyboard user reads it while the name has focus").toContain("curl: (28) Resolving timed out");
+  fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+  act(() => name.blur());
+  act(() => name.focus());
+  expect(await screen.findByRole("tooltip")).toBeTruthy();
+  act(() => name.blur());
+  await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+});
+
+test("a thread's card shows a spinner while it works and nothing when idle, a row says when its box is busy, and the list asks again every 15 s while shown (069 unit 4)", async () => {
+  const now = Date.now();
+  const { handlers } = server([box(), box({ id: "box_6", name: "swift-fox" })], {
+    entries: (found) => (found.id === "box_1" ? { thread: { id: THREAD, title: "Fix the sign-in flow", running: true }, busy: busyFor("cpu", 96, 9) } : { thread: { id: THREAD, title: "Fix the sign-in flow", running: true } }),
+  });
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    let asked = 0;
+    const counted: typeof handlers = { ...handlers, allBoxes: (input) => (asked++, handlers.allBoxes!(input)) };
+    const list = boxesPage(counted);
+    await list.findByRole("link", { name: "calm-otter" });
+    const card = list.getByRole("region", { name: "Fix the sign-in flow" });
+    expect(within(card).getByRole("img", { name: "Working" })).toBeTruthy();
+    expect(card.textContent).not.toContain("Working");
+    expect(rowOf(list, "calm-otter").querySelector("[data-row-line]")!.textContent).toContain("Busy: CPU 96% for 9 min");
+    expect(rowOf(list, "swift-fox").querySelector("[data-row-line]")!.textContent).not.toContain("Busy");
+    const before = asked;
+    await act(async () => void vi.advanceTimersByTime(15_000));
+    expect(asked).toBeGreaterThan(before);
+  } finally {
+    vi.useRealTimers();
+  }
+  cleanup();
+  forgetLive();
+  const idle = server([box()], { entries: () => ({ thread: { id: THREAD, title: "Fix the sign-in flow", running: false, activeAt: now - 3 * 60 * MIN - 60_000 } }) });
+  const quiet = boxesPage(idle.handlers);
+  await quiet.findByRole("link", { name: "calm-otter" });
+  await waitFor(() => {
+    const quietCard = quiet.getByRole("region", { name: "Fix the sign-in flow" });
+    expect(within(quietCard).queryByRole("img", { name: "Working" })).toBeNull();
+    expect(quietCard.textContent).not.toMatch(/Idle|Working/);
+  });
+});
+
+test("removing one subscriber of a live key leaves the other's load", async () => {
+  forgetLive();
+  const pending: Array<() => void> = [];
+  const handlers = {
+    allBoxes: () =>
+      new Promise((resolve) => {
+        pending.push(() => resolve([{ threadId: THREAD, box: box(), owner: "thread" as const }]));
+      }),
+  } as unknown as PluginRpcTestHandlers<Contract>;
+  function Subscriber({ name }: { name: string }) {
+    const rpc = useRpc<Contract>();
+    const { value } = useLive("overlap", () => rpc.call("allBoxes"), () => false);
+    return <p data-subscriber={name}>{value ? "loaded" : "pending"}</p>;
+  }
+  function Pair() {
+    const [both, setBoth] = useState(true);
+    return (
+      <>
+        <button type="button" onClick={() => setBoth(false)}>
+          Remove first
+        </button>
+        {both ? <Subscriber name="first" /> : null}
+        <Subscriber name="second" />
+      </>
+    );
+  }
+  const slot = renderSlot({ component: Pair }, { threadId: THREAD, params: null }, { rpc: handlers, pluginId: "bb-box" });
+  await waitFor(async () => {
+    const before = pending.length;
+    expect(before).toBeGreaterThanOrEqual(2);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(pending.length).toBe(before);
+  });
+  const started = pending.splice(0, pending.length);
+  fireEvent.click(slot.getByRole("button", { name: "Remove first" }));
+  expect(slot.container.querySelector('[data-subscriber="first"]')).toBeNull();
+  expect(slot.container.querySelector('[data-subscriber="second"]')!.textContent).toBe("pending");
+  await act(async () => {
+    for (const finish of started) finish();
+  });
+  await waitFor(() => expect(slot.container.querySelector('[data-subscriber="second"]')!.textContent).toBe("loaded"));
+});
+
+test("Last active sorts the boxes used most recently first, and boxes nobody used for days last (069 unit 4)", () => {
+  const now = Date.now();
+  const rows = [
+    { box: box({ id: "a", name: "amber-fox" }), words: [], activeAt: now - 3 * 24 * 60 * MIN },
+    { box: box({ id: "b", name: "brisk-lake" }), words: [], activeAt: now },
+    { box: box({ id: "c", name: "calm-otter" }), words: [], activeAt: now - 60 * MIN },
+  ];
+  expect(firstSort("active")).toEqual({ key: "active", ascending: false });
+  expect(firstSort("name")).toEqual({ key: "name", ascending: true });
+  expect(shown(rows, "", NO_FILTERS, firstSort("active")).map((row) => row.box.name)).toEqual(["brisk-lake", "calm-otter", "amber-fox"]);
+});
+
+test("the box's page says busy in its header, as a link to its processes when it reads them, and nothing when it is not busy (069 unit 4)", async () => {
+  const { handlers } = server([box()], { busy: busyFor("cpu", 96, 9) });
+  const slot = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: handlers, pluginId: "bb-box" });
+  expect((await slot.findByText("Busy: CPU 96% for 9 min")).closest("[data-busy]")).not.toBeNull();
+  cleanup();
+  const calm = server([box()]);
+  const page = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: calm.handlers, pluginId: "bb-box" });
+  await page.findByRole("heading", { level: 1 });
+  expect(page.container.querySelector("[data-busy]")).toBeNull();
+});
+
+test("a row's and a page's busy words go at their deadline when refreshes fail, and on a cached page (review)", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    let failing = false;
+    const { handlers } = server([box()], { busy: busyFor("cpu", 96, 9), entries: () => ({ busy: busyFor("cpu", 96, 9) }) });
+    const flaky: typeof handlers = {
+      ...handlers,
+      allBoxes: (input) => (failing ? Promise.reject(new Error("BB is restarting")) : handlers.allBoxes!(input)),
+      boxPage: (input) => (failing ? Promise.reject(new Error("BB is restarting")) : handlers.boxPage!(input)),
+    };
+    const list = boxesPage(flaky);
+    await list.findByRole("link", { name: "calm-otter" });
+    expect(rowOf(list, "calm-otter").querySelector("[data-row-line]")!.textContent).toContain("Busy");
+    failing = true;
+    await act(async () => void vi.advanceTimersByTime(101_000));
+    expect(rowOf(list, "calm-otter").querySelector("[data-row-line]")!.textContent).not.toContain("Busy");
+    cleanup();
+
+    failing = false;
+    const page = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: flaky, pluginId: "bb-box" });
+    await page.findByText("Busy: CPU 96% for 9 min");
+    cleanup();
+    failing = true;
+    await act(async () => void vi.advanceTimersByTime(101_000));
+    const again = renderSlot(app.navPanels[0]!, { subPath: "box/box_1" }, { rpc: flaky, pluginId: "bb-box" });
+    await again.findByRole("heading", { level: 1 });
+    await act(async () => void vi.advanceTimersByTime(1000));
+    expect(again.container.querySelector("[data-busy]"), "the page kept from before says nothing past the deadline").toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("the list asks once at a time: a slow answer is applied, and a recheck that came meanwhile asks once more after it (review)", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    const { handlers } = server([box()]);
+    const pending: (() => void)[] = [];
+    let asked = 0;
+    let slow = false;
+    const slowAnswer: typeof handlers = {
+      ...handlers,
+      allBoxes: (input) => {
+        asked++;
+        const answer = handlers.allBoxes!(input);
+        if (!slow) return answer;
+        return new Promise((resolve) => pending.push(() => resolve(answer)));
+      },
+    };
+    const list = boxesPage(slowAnswer);
+    await list.findByRole("link", { name: "calm-otter" });
+    slow = true;
+    const before = asked;
+    await act(async () => void vi.advanceTimersByTime(15_000));
+    expect(asked).toBe(before + 1);
+    await act(async () => void vi.advanceTimersByTime(30_000));
+    expect(asked, "no second request while one is pending").toBe(before + 1);
+    slow = false;
+    await act(async () => pending.shift()!());
+    await waitFor(() => expect(asked, "one more after it, for the rechecks that came meanwhile").toBe(before + 2));
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+function keepPreviewOf(until: number, overrides: Partial<NonNullable<KeepPreview["check"]>> = {}): KeepPreview {
+  return {
+    refusal: null,
+    check: { keptUntil: until, current: null, renews: false, shortens: false, gone: false, cost: "If calm-otter is released, BB Box first copies this snapshot in full into a template that cannot start: up to about 38 s, and about 2.1 GB on pve-1's fast until 2026-11-29, at no charge.", warning: null, unflushed: null, defaultDays: 30, ...overrides },
+  };
+}
+
+test("070 unit 8: Keep… opens on the date BB Box plans, says what keeping costs, keeps until the date chosen, and returns focus to the menu's button", async () => {
+  const until = Date.UTC(2026, 10, 29, 23, 59, 59, 999);
+  const asked: { days?: number; until?: string }[] = [];
+  const { handlers, changes } = server([box()], {
+    snapshots: snapshotsView(),
+    keepPreview: (input) => {
+      asked.push(input);
+      return keepPreviewOf(input.until ? Date.parse(`${input.until}T23:59:59.999Z`) : until, input.until === "2026-12-24" ? { warning: "At today's size, a release would not finish: pve-1's storage fast has 6 GB free." } : {});
+    },
+  });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const trigger = within(card).getByRole("button", { name: "before the migration actions" });
+  const menu = await openMenu(trigger);
+  expect(items(menu)).toEqual(["Rename…", "Note…", "Keep…", "Copy ID", "Delete…"]);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Keep…" }));
+  const dialog = await slot.findByRole("alertdialog", { name: 'Keep "before the migration"' });
+  const date = within(dialog).getByLabelText("Keep it until the end of") as HTMLInputElement;
+  await waitFor(() => expect(date.value).toBe("2026-11-29"));
+  expect(document.activeElement).toBe(date);
+  expect(within(dialog).getByText(/copies this snapshot in full into a template that cannot start/)).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: "Keep until Sun 29 Nov" })).toBeTruthy();
+  fireEvent.change(date, { target: { value: "2026-12-24" } });
+  expect(await within(dialog).findByText(/a release would not finish/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Keep until Thu 24 Dec" }));
+  await waitFor(() => expect(changes).toContain('snapshot.keep {"box":"box_1","snapshot":"snaaaaaaaaaaaa","until":"2026-12-24"}'));
+  await waitFor(() => expect(slot.queryByRole("alertdialog")).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+  expect(asked[0]).toEqual({});
+});
+
+test("Enter in Keep waits for the check of the date in the field", async () => {
+  const until = Date.UTC(2026, 10, 29, 23, 59, 59, 999);
+  let release: (preview: KeepPreview) => void = () => {};
+  const { handlers, changes } = server([box()], {
+    snapshots: snapshotsView(),
+    keepPreview: (input) => {
+      if (input.until) {
+        return new Promise((resolve) => {
+          release = resolve;
+        });
+      }
+      return keepPreviewOf(until);
+    },
+  });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const menu = await openMenu(within(card).getByRole("button", { name: "before the migration actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Keep…" }));
+  const dialog = await slot.findByRole("alertdialog", { name: 'Keep "before the migration"' });
+  const date = within(dialog).getByLabelText("Keep it until the end of") as HTMLInputElement;
+  await waitFor(() => expect(date.value).toBe("2026-11-29"));
+  fireEvent.change(date, { target: { value: "2026-12-24" } });
+  fireEvent.submit(date.closest("form")!);
+  expect(changes.some((change) => change.startsWith("snapshot.keep"))).toBe(false);
+  await act(async () => release(keepPreviewOf(Date.parse("2026-12-24T23:59:59.999Z"))));
+  await waitFor(() => expect((within(dialog).getByRole("button", { name: "Keep until Thu 24 Dec" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.submit(date.closest("form")!);
+  await waitFor(() => expect(changes).toContain('snapshot.keep {"box":"box_1","snapshot":"snaaaaaaaaaaaa","until":"2026-12-24"}'));
+});
+
+test("Keep on a snapshot already kept opens on its renewal date", async () => {
+  const keptUntil = Date.UTC(2027, 0, 15, 23, 59, 59, 999);
+  const { handlers } = server([box()], {
+    snapshots: snapshotsView({ records: [snapshotRow({ keptUntil })] }),
+    keepPreview: () => new Promise<KeepPreview>(() => {}),
+  });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  const menu = await openMenu(within(card).getByRole("button", { name: "before the migration actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Keep 30 more days…" }));
+  const dialog = await slot.findByRole("alertdialog", { name: 'Keep "before the migration" longer' });
+  const date = within(dialog).getByLabelText("Keep it until the end of") as HTMLInputElement;
+  const renewal = keepOpeningDate(keptUntil, 30, Date.now());
+  expect(date.value).toBe(renewal);
+  expect(date.value).not.toBe(new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString().slice(0, 10));
+});
+
+test("a snapshot whose size is an estimate is shown as about that size, and Delete says it frees up to it, less what a fork or another image still uses", () => {
+  const estimated = { bytes: 42_000_000, means: "own" as const, estimated: true };
+
+  expect(snapshotSizeWords(estimated)).toBe("about 42 MB");
+  expect(freesWords(snapshotRow({ size: estimated, host: "docker-1" }), "calm-otter")).toBe("Frees up to about 42 MB on docker-1, less what a fork or another image still uses.");
+  expect(freesWords(snapshotRow({ size: { bytes: 42_000_000, means: "own" }, host: "docker-1" }), "calm-otter")).toBe("Frees 42 MB on docker-1.");
+});
+
+test("a failed restore check says the box cannot be restored, and only offers Close", async () => {
+  const slot = boxPageAt(server([box()], { snapshots: snapshotsView() }).handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  fireEvent.click(within(card).getByRole("button", { name: "Restore calm-otter to before the migration" }));
+  const dialog = await slot.findByRole("alertdialog", { name: "Cannot restore calm-otter" });
+  expect(within(dialog).getByRole("alert").textContent).toBe("No preview.");
+  expect(within(dialog).getByRole("button", { name: "Close" })).toBeTruthy();
+  expect(within(dialog).queryByRole("button", { name: /Restore/ })).toBeNull();
+});
+
+test("070 unit 8: Keep… is off with why where no fork could use it after a release; a kept snapshot offers a renewal and Stop keeping, and says when it goes", async () => {
+  const soon = Date.now() + 2 * 24 * 60 * 60_000 + 60_000;
+  const { handlers, changes } = server([box()], {
+    snapshots: snapshotsView({
+      offer: { holds: ["disk"], scope: "box", whileRunning: "live", restore: "in-place", fork: "none", keeps: true, excludes: null, price: null },
+      records: [
+        snapshotRow({ id: "snoldimageaaaa", name: "old image", keepWhy: "taken before calm-otter's image had the identity reset: it could not be forked after a release" }),
+        snapshotRow({ id: "snkeptsoonaaaa", name: "kept soon", keptUntil: soon }),
+      ],
+    }),
+  });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  let menu = await openMenu(within(card).getByRole("button", { name: "old image actions" }));
+  expect(items(menu)).toContain("Keep…Not now: taken before calm-otter's image had the identity reset: it could not be forked after a release (disabled)");
+  fireEvent.keyDown(menu, { key: "Escape" });
+  expect(within(card).getByText("goes in 3 days")).toBeTruthy();
+  expect(within(card).getAllByText("Kept")).toHaveLength(1);
+  menu = await openMenu(within(card).getByRole("button", { name: "kept soon actions" }));
+  expect(items(menu)).toEqual(["Rename…", "Note…", "Keep 30 more days…", "Stop keeping", "Copy ID", "Delete…"]);
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Stop keeping" }));
+  await waitFor(() => expect(changes).toContain('snapshot.unkeep {"box":"box_1","snapshot":"snkeptsoonaaaa"}'));
+  expect(within(card).getByText(/They go when calm-otter is released, unless kept\./)).toBeTruthy();
+});
+
+function tabView(): SnapshotsTabView {
+  const now = Date.now();
+  const living = snapshotRow({ id: "snlivingaaaaaa", name: "before the migration", by: { is: "agent", threadId: THREAD } });
+  const kept = snapshotRow({ id: "snreleasedaaaa", name: "release candidate", keptUntil: now + 20 * 24 * 60 * 60_000, guest: "held-copy", boxGone: { at: now - 24 * 60 * 60_000, how: "released" } });
+  const tabBox = { kind: "linux", kindLabel: "Linux", system: "linux", backend: "Proxmox LXC on pve-1", host: "pve-1", yours: false, screen: false, restores: true, forks: true, perBox: 5, restoring: false };
+  return {
+    groups: [
+      { box: { ...tabBox, id: "box_1", name: "calm-otter", threadId: THREAD, state: "ready", gone: null }, rows: [{ ...living, restoreWhy: null }] },
+      { box: { ...tabBox, id: "box_gone", name: "grey-ridge", threadId: "operator", yours: true, state: null, gone: { at: now - 24 * 60 * 60_000, how: "released" } }, rows: [{ ...kept, restoreWhy: "its box was released: fork it into a new box instead" }] },
+    ],
+    line: { count: 2, undos: 0, byAgents: 1, hosts: [{ host: "pve-1", bytes: 2.4e9, unknown: 0 }], paid: [], attention: [] },
+    keepDays: 30,
+    none: [],
+  };
+}
+
+test("070 unit 8: the Snapshots tab: its count, the line under the tabs, a card per box with a released box's kept snapshot, search, and Select with a bulk Keep that names what it skips", async () => {
+  const bulkAsked: string[] = [];
+  const { handlers, changes } = server([box()], {
+    tab: tabView,
+    bulkCheck: (input) => {
+      bulkAsked.push(`${input.change} ${input.snapshots.join(" ")}`);
+      return { allowed: [{ id: "snreleasedaaaa", name: "release candidate", box: "grey-ridge", words: "Its box was released, so it lives on as a held copy." }], skipped: [{ id: "snlivingaaaaaa", name: "before the migration", box: "calm-otter", words: '"before the migration" is in use by the restore that began at 10:42 UTC.' }] };
+    },
+  });
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const tab = await list.findByRole("tab", { name: "Snapshots 2" });
+  expect(tab.getAttribute("aria-selected")).toBe("true");
+  expect(await list.findByText("2 snapshots, 1 by agents · 2.4 GB on pve-1")).toBeTruthy();
+  expect(await list.findByRole("button", { name: "UI thread" })).toBeTruthy();
+  const released = await list.findByRole("region", { name: "grey-ridge's snapshots" });
+  expect(within(released).getByText(/released/)).toBeTruthy();
+  expect(within(released).getByText("Your machine")).toBeTruthy();
+  expect(within(released).getByText(/held copy on pve-1/)).toBeTruthy();
+  expect(within(released).getByRole("button", { name: "Restore: not now, as its box was released: fork it into a new box instead" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.change(list.getByRole("textbox", { name: "Search snapshots" }), { target: { value: "candidate" } });
+  expect(list.queryByRole("region", { name: "calm-otter's snapshots" })).toBeNull();
+  fireEvent.change(list.getByRole("textbox", { name: "Search snapshots" }), { target: { value: "" } });
+  fireEvent.click(list.getByRole("button", { name: "Select" }));
+  fireEvent.click(list.getByRole("checkbox", { name: "Select before the migration of calm-otter" }));
+  fireEvent.click(list.getByRole("checkbox", { name: "Select release candidate of grey-ridge" }));
+  expect(list.getByText("2 selected")).toBeTruthy();
+  fireEvent.click(list.getByRole("button", { name: "Keep…" }));
+  const dialog = await list.findByRole("alertdialog", { name: "Keep 2 snapshots" });
+  expect(await within(dialog).findByText(/is in use by the restore that began/)).toBeTruthy();
+  expect(within(dialog).getByText("Skipped, and why:")).toBeTruthy();
+  const keep = within(dialog).getByRole("button", { name: "Keep 1" });
+  fireEvent.submit(keep.closest("form")!);
+  await waitFor(() => expect(changes.find((change) => change.startsWith("snapshots.bulk "))).toBe('snapshots.bulk {"snapshots":["snreleasedaaaa"],"change":"keep"}'), { timeout: 2000 });
+  expect(bulkAsked[0]).toBe("keep snlivingaaaaaa snreleasedaaaa");
+});
+
+test("070 unit 8: a release that stopped for a snapshot you kept offers Release again, and Release and delete what you kept", async () => {
+  const stopped = box({ state: "releasing", error: 'Release did not finish: BB Box could not copy "kept one", which you kept: pve-1\'s storage fast has 6 GB free. BB Box tries again in a few minutes.', releaseHeldForKept: true });
+  const { handlers } = server([stopped]);
+  const slot = boxPageAt(handlers, "box/box_1");
+  const menu = await openMenu(await slot.findByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: /Release again/ }));
+  const dialog = await slot.findByRole("alertdialog", { name: "Release calm-otter again?" });
+  expect(within(dialog).getByText(/could not copy a snapshot you kept/)).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Release and delete what you kept" }));
+  await waitFor(() => expect(slot.inspection.rpcCalls.find((call) => call.method === "release")?.input).toEqual({ threadId: THREAD, box: "box_1", deleteKept: true }));
+});
+
+test("070 unit 8 review 7: a held copy found again with no known thread says so in plain words, with no button to a thread", async () => {
+  const base = tabView();
+  const found = base.groups[1]!;
+  const view: SnapshotsTabView = { ...base, groups: [{ ...found, box: { ...found.box, id: "box_found", name: "found-box", yours: false, threadId: null } }] };
+  const { handlers } = server([box()], { tab: () => view });
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const card = await list.findByRole("region", { name: "found-box's snapshots" });
+  expect(within(card).getByText("Found again on its host; its thread is not known")).toBeTruthy();
+  expect(within(card).queryByRole("button", { name: /unknown/ })).toBeNull();
+  expect(within(card).queryByText("Your machine")).toBeNull();
+});
+
+test("an empty Snapshots tab shows one empty state: no count line, and only where to take one", async () => {
+  const { handlers } = server([box()]);
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const empty = await list.findByText("No snapshots yet. Take one from a box's page.");
+  expect(empty).toBeTruthy();
+  expect(list.queryByText(/^0 snapshots/)).toBeNull();
+  expect(list.queryByText(/agent/i)).toBeNull();
+});
+
+test("070 unit 8 review: the Snapshots tab says it is reading them until its answer comes, and says why when it fails", async () => {
+  let answer!: (view: SnapshotsTabView) => void;
+  const { handlers } = server([box()], { tab: () => new Promise<SnapshotsTabView>((resolve) => (answer = resolve)) });
+  const [page] = app.navPanels;
+  const reading = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  expect((await reading.findByText("Reading the snapshots…")).closest('[role="status"]')).toBeTruthy();
+  answer(tabView());
+  await waitFor(() => expect(reading.queryByText("Reading the snapshots…")).toBeNull());
+  expect(await reading.findByRole("button", { name: "Select" })).toBeTruthy();
+  reading.unmount();
+  forgetLive();
+  const { handlers: failing } = server([box()], {
+    tab: () => {
+      throw new Error("BB Box cannot read snapshots.db.");
+    },
+  });
+  const failed = renderSlot(page!, { subPath: "snapshots" }, { rpc: failing, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  await waitFor(() => expect(failed.getAllByRole("alert").some((each) => /BB Box cannot read snapshots\.db/.test(each.textContent ?? ""))).toBe(true));
+  expect(failed.queryByText("Reading the snapshots…")).toBeNull();
+});
+
+test("070 unit 8 review: Release and delete what you kept, then Release anyway for the threads on it, keeps the choice", async () => {
+  const stopped = box({ state: "releasing", error: "Release did not finish: BB Box could not copy \"kept one\", which you kept.", releaseHeldForKept: true });
+  const { handlers } = server([stopped], { inUse: [{ id: "thr_other", title: "Run the tests", running: true }] });
+  const slot = boxPageAt(handlers, "box/box_1");
+  const menu = await openMenu(await slot.findByRole("button", { name: "calm-otter actions" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: /Release again/ }));
+  fireEvent.click(within(await slot.findByRole("alertdialog", { name: "Release calm-otter again?" })).getByRole("button", { name: "Release and delete what you kept" }));
+  const anyway = await slot.findByRole("alertdialog", { name: "Release calm-otter anyway?" });
+  expect(slot.getAllByRole("alertdialog")).toHaveLength(1);
+  fireEvent.click(within(anyway).getByRole("button", { name: "Release anyway" }));
+  await waitFor(() => expect(slot.inspection.rpcCalls.filter((call) => call.method === "release").map((call) => call.input)).toEqual([
+    { threadId: THREAD, box: "box_1", deleteKept: true },
+    { threadId: THREAD, box: "box_1", force: true, deleteKept: true },
+  ]));
+});
+
+test("070 unit 8 review: the bulk dialog checks the snapshots chosen when it opened, once, and keeps its answer after the selection empties", async () => {
+  const asked: string[] = [];
+  const { handlers } = server([box()], {
+    tab: tabView,
+    bulkCheck: (input) => {
+      asked.push(input.snapshots.join(" "));
+      return { allowed: [{ id: "snreleasedaaaa", name: "release candidate", box: "grey-ridge", words: "Until 2026-11-29." }], skipped: [] };
+    },
+  });
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  fireEvent.click(await list.findByRole("button", { name: "Select" }));
+  expect(list.getByRole("button", { name: "Select" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(list.getByRole("checkbox", { name: "Select release candidate of grey-ridge" }));
+  fireEvent.click(list.getByRole("button", { name: "Keep…" }));
+  const dialog = await list.findByRole("alertdialog", { name: "Keep 1 snapshot" });
+  expect(await within(dialog).findByText(/Until 2026-11-29\./)).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: "Keep 1" })).toBeTruthy();
+  expect(within(dialog).getByText(/30 days from today by default, or 30 more days for one kept already\./)).toBeTruthy();
+  fireEvent.click(list.getByRole("checkbox", { name: "Select release candidate of grey-ridge", hidden: true }));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(asked).toEqual(["snreleasedaaaa"]);
+  expect(within(dialog).getByText(/Until 2026-11-29\./)).toBeTruthy();
+});
+
+test("070 unit 11: a boat restore's dialog says the new guest, what it costs in starts and what its undo costs", async () => {
+  const at = Date.now() - 10 * 60_000;
+  const price = { amount: 0.056, currency: "USD" as const, per: "day" as const, known: true, included: 10 };
+  const preview = restorePreviewOf({
+    snapshot: snapshotRow({ id: "snundo", name: "before the restore at 11:02" }),
+    check: {
+      ...restorePreviewOf().check!,
+      swap: true,
+      fromSnapshot: true,
+      costWords: "boat.dev counts 2 sandbox starts for this: free within your plan's starts, 59 of 60 left this hour.",
+      undo: { kind: "snapshot", name: "before the restore at 11:02", aboutMs: 70_000, bytes: 0, price },
+    },
+  });
+  const restored = server([box()], { snapshots: snapshotsView({ restored: { operation: "opone", at, to: "before the migration", toTakenAt: Date.now() - 26 * 60 * 60_000, by: { is: "person" }, undo: { id: "snundo", name: "before the restore at 11:02", ready: true }, unflushed: null } }), restorePreview: preview });
+  const slot = boxPageAt(restored.handlers, "box/box_1");
+  const notice = (await slot.findByText(/^Restored at/)).closest("section")!;
+  fireEvent.click(within(notice).getByRole("button", { name: "Undo…" }));
+  const dialog = await slot.findByRole("alertdialog", { name: 'Restore calm-otter to "before the restore at 11:02"?' });
+  expect(within(dialog).getByText(/calm-otter comes back on a new guest made from the snapshot, with the box's own identity, and its old guest is deleted\. boat\.dev counts 2 sandbox starts for this: free within your plan's starts, 59 of 60 left this hour\./)).toBeTruthy();
+  expect(within(dialog).getByRole("checkbox", { name: /It costs \$0\.056 a day past the plan's 10 until it is deleted\./ })).toBeTruthy();
+});
+
+test("070 unit 11: Settings say how many saved snapshots the account holds and the plan includes, what is billed, and when the figure is an estimate", async () => {
+  let slot = settings(snapshotServer({ ceiling: 1, included: { included: 10, used: 3 }, billing: "billed", monthly: 0 }).handlers, "#option/snapshots");
+  expect(await slot.findByText(/The account holds 3 saved snapshots and the plan includes 10, so none are billed\./)).toBeTruthy();
+  expect(document.querySelector("[data-bill-slot]")?.className).toContain("min-h-[3lh]");
+  expect(slot.queryByText(/\$0\.00 a month/)).toBeNull();
+  expect(slot.queryByText(/Spent this month so far/)).toBeNull();
+  cleanup();
+  slot = settings(snapshotServer({ ceiling: 5, included: { included: 10, used: 12 }, billing: "billed", monthly: 3.36 }).handlers, "#option/snapshots");
+  expect(await slot.findByText(/The account holds 12 saved snapshots and the plan includes 10, so 2 are billed: about \$3\.36 a month\./)).toBeTruthy();
+  expect(slot.queryByText(/12 of the 10/)).toBeNull();
+  cleanup();
+  slot = settings(snapshotServer({ ceiling: 5, billing: "estimate", monthly: 5.04, count: 3 }).handlers, "#option/snapshots");
+  expect(await slot.findByText(/could not read what .* bills just now, so it counts each of the 3 saved snapshots it knows of at full price: about \$5\.04 a month, an estimate\./)).toBeTruthy();
+  expect(document.querySelector("[data-bill-slot]")?.className).toContain("min-h-[3lh]");
+  expect(slot.queryByText(/Spent this month so far/)).toBeNull();
+});
+
+const GPU_DRIVER: ConfigState["drivers"][number] = {
+  type: "lxc-gpu",
+  label: "Proxmox LXC",
+  description: "Containers on a Proxmox VE host.",
+  nature: "virtual",
+  kinds: ["linux", "linux-desktop"],
+  warmKinds: [],
+  fields: [
+    { key: "url", type: "string", label: "API URL", group: "connection", default: "" },
+    { key: "boxes-per-card", type: "number", label: "Boxes per card", description: "The most boxes running on one card, desktops and servers together. 0 means no limit.", group: "gpus", default: 4, replaces: "desktops-per-gpu" },
+    { key: "whole-cards", type: "boolean", label: "Whole cards", description: "Lets a box have a card to itself.", group: "gpus" },
+    { key: "gpu-memory-mib", type: "number", label: "GPU memory a new box needs (MiB)", description: "A start-up check, not a limit on what the box uses.", group: "gpus", default: 1024 },
+    { key: "desktops-per-gpu", type: "number", label: "Desktops per GPU (replaced)", description: "Replaced by boxes per card.", group: "advanced", replacedBy: "boxes-per-card" },
+  ],
+  hostFields: [],
+  setup: { guide: "setup/proxmox-lxc/README.md", scripts: [] },
+  several: false,
+};
+
+const shared = (name: string, box: string | null = null) => ({ box, name, part: "shared" as const, running: true, ours: true, counts: true });
+
+function gpuCards(limit: number | null, at = Date.now() - 5_000): SettingsCards {
+  return {
+    is: "read",
+    host: "pve-1",
+    source: "helper",
+    at,
+    limit,
+    counts: "this-install-running",
+    cards: [
+      { uuid: "GPU-3f9a2c1e-55b0-4c1d-9e2a-0b7d6c4a1f00", index: 0, model: null, totalMiB: 24_576, freeMiB: 3_480, outsideMiB: null, counted: 1, over: 0, overWords: null, holders: [{ box: "bxquietelm001", name: "quiet-elm", part: "whole", running: true, ours: true, counts: true }] },
+      {
+        uuid: "GPU-8c2d4e6f-0a1b-4c3d-9e8f-7a6b5c4d3e2f",
+        index: 1,
+        model: null,
+        totalMiB: 24_576,
+        freeMiB: 18_227,
+        outsideMiB: null,
+        counted: 4,
+        over: limit !== null && limit > 0 ? Math.max(0, 4 - limit) : 0,
+        overWords: limit === 3 ? "Card 1 has 4 of this install's boxes running, 1 over the limit of 3: amber-fox, lone-pine, calm-reef and tidy-glade. They keep running; no new box goes on card 1 until it has room." : null,
+        holders: [shared("amber-fox", "bxamberfox001"), shared("lone-pine"), shared("calm-reef"), shared("tidy-glade")],
+      },
+    ],
+    wholeKept: [{ box: "bxquietelm001", name: "quiet-elm" }],
+  };
+}
+
+function gpuDocument(fields: Record<string, unknown>, general: ConfigDocument["general"] = {}, kinds: ConfigDocument["kinds"] = {}): ConfigDocument {
+  return { schema: 1, revision: 3, backends: [{ id: "lxc-gpu", type: "lxc-gpu", enabled: true, fields: { url: "https://192.0.2.10:8006", ...fields } as ConfigDocument["backends"][number]["fields"] }], kinds, general };
+}
+
+test("071 unit 15 gate: the GPUs section shows an explicit old 0 as Boxes per card's value, names the boxes a lower limit puts over it before Save, and Save is confirmed by its receipt with the old key left in place", async () => {
+  applied = gpuDocument({ "desktops-per-gpu": 0 });
+  const { handlers, changes, operations } = server([], { config: { drivers: [...configState({}).drivers, GPU_DRIVER] }, cards: { "lxc-gpu": gpuCards(null) } });
+  const slot = settings(handlers, "#backend/lxc-gpu");
+  const gpus = await slot.findByRole("region", { name: "GPUs" });
+  const perCard = within(gpus).getByRole("textbox", { name: "Boxes per card" }) as HTMLInputElement;
+  expect(perCard.value).toBe("");
+  expect(perCard.placeholder).toBe("0");
+  expect(within(gpus).getByText(spanSaying("Empty: 0, from desktops-per-gpu, the field it replaces"))).toBeTruthy();
+  expect(slot.queryByText(/Desktops per GPU/)).toBeNull();
+  expect(slot.queryByRole("region", { name: "Advanced" })).toBeNull();
+  expect(await within(gpus).findByText("The cards on pve-1, as its GPU helper reported them just now.")).toBeTruthy();
+  expect(within(gpus).getByRole("link", { name: /amber-fox/ }).getAttribute("href")).toContain("bxamberfox001");
+  fireEvent.change(perCard, { target: { value: "3" } });
+  expect(within(gpus).getByText("With 3, card 1 has 4 of this install's boxes running, 1 over: amber-fox, lone-pine, calm-reef and tidy-glade. They keep running; no new box goes on a card over the limit until it has room.")).toBeTruthy();
+  expect(slot.getByText(/^1 change to .+ not saved$/)).toBeTruthy();
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(changes.some((change) => change.startsWith("apply 3 "))).toBe(true));
+  expect(bodyOf(changes.find((change) => change.startsWith("apply 3 "))!).backends[0].fields).toEqual({ url: "https://192.0.2.10:8006", "desktops-per-gpu": 0, "boxes-per-card": 3 });
+  expect(operations).toHaveLength(1);
+  expect(await slot.findByText("Saved.")).toBeTruthy();
+});
+
+test("071 unit 15 gate: the cards list names the boxes over a saved limit", async () => {
+  applied = gpuDocument({ "boxes-per-card": 3 });
+  const { handlers } = server([], { config: { drivers: [...configState({}).drivers, GPU_DRIVER] }, cards: { "lxc-gpu": gpuCards(3) } });
+  const slot = settings(handlers, "#backend/lxc-gpu");
+  const gpus = await slot.findByRole("region", { name: "GPUs" });
+  expect(await within(gpus).findByText("Card 1 has 4 of this install's boxes running, 1 over the limit of 3: amber-fox, lone-pine, calm-reef and tidy-glade. They keep running; no new box goes on card 1 until it has room.")).toBeTruthy();
+});
+
+test("071 unit 15 gate: a failed save of the GPUs section shows its problem at the field and keeps the change", async () => {
+  applied = gpuDocument({});
+  const { handlers } = server([], {
+    config: { drivers: [...configState({}).drivers, GPU_DRIVER] },
+    applyWith: { ok: false, reason: "problems", problems: [{ path: "backends.lxc-gpu.boxes-per-card", message: "Use a whole number from 0 to 1000 for the boxes per card, 0 for no limit." }] },
+  });
+  const slot = settings(handlers, "#backend/lxc-gpu");
+  const gpus = await slot.findByRole("region", { name: "GPUs" });
+  fireEvent.change(within(gpus).getByRole("textbox", { name: "Boxes per card" }), { target: { value: "5000" } });
+  fireEvent.click(slot.getByRole("button", { name: "Save" }));
+  expect(await within(gpus).findByText("Use a whole number from 0 to 1000 for the boxes per card, 0 for no limit.")).toBeTruthy();
+  expect(slot.getByText(/^Not saved: fix the field marked\. Your changes are still here\./)).toBeTruthy();
+  expect((within(gpus).getByRole("textbox", { name: "Boxes per card" }) as HTMLInputElement).value).toBe("5000");
+});
+
+test("071 unit 15 gate: Whole cards is a switch that acts at once on this backend's field alone; unset it shows the install-wide option, and off it names the boxes that keep their whole card", async () => {
+  applied = gpuDocument({});
+  const { handlers, changes } = server([], { config: { drivers: [...configState({}).drivers, GPU_DRIVER] }, cards: { "lxc-gpu": gpuCards(4) } });
+  const slot = settings(handlers, "#backend/lxc-gpu");
+  const gpus = await slot.findByRole("region", { name: "GPUs" });
+  const whole = within(gpus).getByRole("switch", { name: "Whole cards" });
+  expect(whole.getAttribute("aria-checked")).toBe("false");
+  expect(await within(gpus).findByText("Off: no box is given a whole card or changes to one. quiet-elm keeps its card until changed or released. From the install-wide option, general.wholeCards, as this backend's own is not set.")).toBeTruthy();
+  fireEvent.click(whole);
+  await waitFor(() => expect(changes.some((change) => change.startsWith("apply 3 "))).toBe(true));
+  const sent = bodyOf(changes.find((change) => change.startsWith("apply 3 "))!);
+  expect(sent.backends[0].fields).toEqual({ url: "https://192.0.2.10:8006", "whole-cards": true });
+  expect(sent.general).toEqual({});
+  expect(await within(gpus).findByText("Saved")).toBeTruthy();
+  expect(within(gpus).getByText("Lets a box have a card to itself.")).toBeTruthy();
+  expect(slot.queryByText(/not saved/)).toBeNull();
+});
+
+test("071 unit 15: a kind's GPU when not asked for is a menu on its page that acts at once; Whole card is listed only where a backend has whole cards on", async () => {
+  applied = gpuDocument({});
+  const { handlers, changes } = server([], { config: { drivers: [...configState({}).drivers, GPU_DRIVER] } });
+  const slot = settings(handlers, "#kind/linux");
+  const gpu = await slot.findByRole("region", { name: "GPU" });
+  const menu = within(gpu).getByRole("combobox", { name: "GPU when not asked for" });
+  expect(menu.textContent).toBe("None");
+  expect(within(gpu).getByText(/None is BB Box's own default for linux\./)).toBeTruthy();
+  fireEvent.keyDown(menu, { key: "ArrowDown" });
+  expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual(["None", "Shared"]);
+  fireEvent.click(screen.getAllByRole("option").find((option) => option.textContent === "Shared")!);
+  await waitFor(() => expect(changes.some((change) => change.startsWith("apply 3 "))).toBe(true));
+  expect(bodyOf(changes.find((change) => change.startsWith("apply 3 "))!).kinds).toEqual({ linux: { gpu: "shared" } });
+  expect(await within(gpu).findByText("Saved")).toBeTruthy();
+  cleanup();
+  applied = gpuDocument({ "whole-cards": true });
+  const on = settings(server([], { config: { drivers: [...configState({}).drivers, GPU_DRIVER] } }).handlers, "#kind/linux");
+  fireEvent.keyDown(within(await on.findByRole("region", { name: "GPU" })).getByRole("combobox", { name: "GPU when not asked for" }), { key: "ArrowDown" });
+  expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual(["None", "Shared", "Whole card"]);
+});
+
+test("071 unit 15, live: Whole cards turned off on a backend whose own field is unset saves false, so the install-wide option no longer turns them on there; an unticked GPU boxes saves false over an old key that was on", async () => {
+  applied = gpuDocument({}, { wholeCards: true });
+  const { handlers, changes } = server([], { config: { drivers: [...configState({}).drivers, GPU_DRIVER] }, cards: { "lxc-gpu": gpuCards(4) } });
+  const slot = settings(handlers, "#backend/lxc-gpu");
+  const gpus = await slot.findByRole("region", { name: "GPUs" });
+  const whole = within(gpus).getByRole("switch", { name: "Whole cards" });
+  expect(whole.getAttribute("aria-checked")).toBe("true");
+  expect(within(gpus).getByText(/^Lets a box have a card to itself\. From the install-wide option, general\.wholeCards, as this backend's own is not set\.$/)).toBeTruthy();
+  fireEvent.click(whole);
+  await waitFor(() => expect(changes.some((change) => change.startsWith("apply 3 "))).toBe(true));
+  expect(bodyOf(changes.find((change) => change.startsWith("apply 3 "))!).backends[0].fields).toEqual({ url: "https://192.0.2.10:8006", "whole-cards": false });
+  cleanup();
+  const replacing: ConfigState["drivers"][number] = { ...GPU_DRIVER, fields: [...GPU_DRIVER.fields, { key: "gpus", type: "boolean", label: "GPU boxes", group: "gpus", default: false, replaces: "gpu-desktops" }, { key: "gpu-desktops", type: "boolean", label: "GPU desktops (replaced)", group: "advanced", replacedBy: "gpus" }] };
+  applied = gpuDocument({ "gpu-desktops": true });
+  const old = server([], { config: { drivers: [...configState({}).drivers, replacing] } });
+  const page = settings(old.handlers, "#backend/lxc-gpu");
+  const boxes = within(await page.findByRole("region", { name: "GPUs" })).getByRole("checkbox", { name: "GPU boxes" }) as HTMLInputElement;
+  expect(boxes.checked).toBe(true);
+  fireEvent.click(boxes);
+  fireEvent.click(page.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(old.changes.some((change) => change.startsWith("apply 3 "))).toBe(true));
+  expect(bodyOf(old.changes.find((change) => change.startsWith("apply 3 "))!).backends[0].fields).toEqual({ url: "https://192.0.2.10:8006", "gpu-desktops": true, gpus: false });
+});
+
+test("071 unit 15, review: clearing Boxes per card names the boxes the limit it falls back to would put over it", async () => {
+  applied = gpuDocument({ "boxes-per-card": 8, "desktops-per-gpu": 2 });
+  const { handlers } = server([], { config: { drivers: [...configState({}).drivers, GPU_DRIVER] }, cards: { "lxc-gpu": gpuCards(8) } });
+  const slot = settings(handlers, "#backend/lxc-gpu");
+  const gpus = await slot.findByRole("region", { name: "GPUs" });
+  const perCard = within(gpus).getByRole("textbox", { name: "Boxes per card" }) as HTMLInputElement;
+  expect(perCard.value).toBe("8");
+  await within(gpus).findByText(/^The cards on pve-1/);
+  fireEvent.change(perCard, { target: { value: "" } });
+  expect(within(gpus).getByText("With 2, card 1 has 4 of this install's boxes running, 2 over: amber-fox, lone-pine, calm-reef and tidy-glade. They keep running; no new box goes on a card over the limit until it has room.")).toBeTruthy();
+});
+
+test("071 unit 15, review: the New box form's first GPU is the kind's setting, for a server and a desktop, until the person's own choice is remembered", async () => {
+  const room: GpuRoom = { readings: [], fullUntil: null, parts: ["none", "shared", "whole"], host: "pve-1", at: Date.now(), cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 21_000, totalMiB: 24_576, freeForWhole: true }] };
+  const serverBase = kindView("linux", "Linux", "A server.", 2, false);
+  const serverKind: KindView = { ...offered(serverBase, [{ ...serverBase.offers[0]!, hosts: ["pve-1"], gpuParts: ["none", "shared", "whole"], gpuRoom: room, resizing: ADDS_A_GPU }]), gpuWhenNotAsked: "shared" };
+  const desktopBase = kindView("linux-desktop", "Linux desktop", "A desktop on the GPU.", 4, true);
+  const desktopKind: KindView = { ...offered(desktopBase, [{ ...desktopBase.offers[0]!, hosts: ["pve-1"], gpuParts: ["shared", "whole"], gpuRoom: room }]), gpuWhenNotAsked: "whole" };
+  const { handlers, changes } = server([], { kinds: [serverKind, desktopKind] });
+  const slot = panel(handlers);
+  await slot.findByText("No boxes yet");
+  fireEvent.click(slot.getByRole("button", { name: "New box" }));
+  expect((await screen.findByRole("combobox", { name: "GPU" })).textContent).toBe("Shared");
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "GPU" }).textContent).toBe("Whole card"));
+  fireEvent.click(within(screen.getByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Server/ }));
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "GPU" }).textContent).toBe("Shared"));
+  await choose("GPU", "None");
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(changes.some((change) => change.startsWith("acquire linux"))).toBe(true));
+  expect(changes.find((change) => change.startsWith("acquire linux"))).toContain('"gpu":"none"');
+  cleanup();
+  const again = panel(server([], { kinds: [serverKind, desktopKind] }).handlers);
+  await again.findByText("No boxes yet");
+  fireEvent.click(again.getByRole("button", { name: "New box" }));
+  expect((await screen.findByRole("combobox", { name: "GPU" })).textContent).toBe("None");
+});
+
+test("071 unit 15, lead: Desktop opens on the GPU desktop with its part only when linux-desktop's GPU is set; unset, it opens on the CPU desktop; a remembered choice wins", async () => {
+  const room: GpuRoom = { readings: [], fullUntil: null, parts: ["shared", "whole"], host: "pve-1", at: Date.now(), cards: [{ index: 0, boxes: 0, whole: false, freeMiB: 21_000, totalMiB: 24_576, freeForWhole: true }] };
+  const serverKind = kindView("linux", "Linux", "A server.", 2, false);
+  const cpuBase = kindView("linux-desktop-cpu", "Linux desktop", "A desktop on the CPU.", 4, true);
+  const cpuKind: KindView = { ...cpuBase, gpu: false, windowing: "x11" };
+  const gpuBase = kindView("linux-desktop", "Linux desktop", "A desktop on the GPU.", 4, true);
+  const gpuOffered = offered(gpuBase, [{ ...gpuBase.offers[0]!, hosts: ["pve-1"], gpuParts: ["shared", "whole"], gpuRoom: room }]);
+  const opensOn = async (gpuKind: KindView) => {
+    const slot = panel(server([], { kinds: [serverKind, cpuKind, gpuKind] }).handlers);
+    await slot.findByText("No boxes yet");
+    fireEvent.click(slot.getByRole("button", { name: "New box" }));
+    fireEvent.click(within(await screen.findByRole("radiogroup", { name: "Type" })).getByRole("radio", { name: /^Desktop/ }));
+    return (await screen.findByRole("combobox", { name: "GPU" })).textContent;
+  };
+  expect(await opensOn({ ...gpuOffered, gpu: true, windowing: "x11", gpuWhenNotAsked: "whole", gpuSetting: "whole" })).toBe("Whole card");
+  cleanup();
+  expect(await opensOn({ ...gpuOffered, gpu: true, windowing: "x11", gpuWhenNotAsked: "shared" })).toBe("None");
+  cleanup();
+  const set: KindView = { ...gpuOffered, gpu: true, windowing: "x11", gpuWhenNotAsked: "shared", gpuSetting: "shared" };
+  expect(await opensOn(set)).toBe("Shared");
+  await choose("GPU", "Whole card");
+  expect(screen.getByRole("combobox", { name: "GPU" }).textContent).toBe("Whole card");
+  await choose("GPU", "None");
+  fireEvent.click(screen.getByRole("button", { name: "Create box" }));
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Create box" })).toBeNull());
+  cleanup();
+  expect(await opensOn(set)).toBe("None");
+});
+
+function gate(): { readonly opened: Promise<void>; readonly open: () => void } {
+  let open!: () => void;
+  const opened = new Promise<void>((resolve) => (open = resolve));
+  return { opened, open };
+}
+
+function skeletonRows(): Element[] {
+  return Array.from(document.querySelectorAll("[data-skeleton-row]"));
+}
+
+function loadingShown(): boolean {
+  return document.querySelector("[data-loading]") !== null;
+}
+
+async function passTime(ms: number): Promise<void> {
+  await act(async () => void (await vi.advanceTimersByTimeAsync(ms)));
+}
+
+async function waitRealTime(ms: number): Promise<void> {
+  await act(() => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+}
+
+const LAYOUT_CLASSES = /^(grid|grid-cols-.*|items-start|gap-3|py-3)$/;
+
+function layoutOf(element: Element): string[] {
+  return (element.getAttribute("class") ?? "").split(/\s+/).filter((name) => LAYOUT_CLASSES.test(name)).sort();
+}
+
+test("polish P1: the Boxes page shows 3 to 5 skeleton rows shaped as its box rows only after 150 ms while its lists load, with no pulse under reduced motion, then the rows", async () => {
+  vi.useFakeTimers();
+  const lists = gate();
+  const { handlers } = server([box()]);
+  const slow: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    allBoxes: async (input) => {
+      await lists.opened;
+      return handlers.allBoxes!(input);
+    },
+    "machines.list": async (input) => {
+      await lists.opened;
+      return handlers["machines.list"]!(input);
+    },
+  };
+  const list = boxesPage(slow);
+  await passTime(LOADING_SHOWN_AFTER_MS - 1);
+  expect(loadingShown(), "no skeleton before the delay, so a fast load does not flash").toBe(false);
+  expect(skeletonRows()).toHaveLength(0);
+  await passTime(1);
+  expect(list.getByText("Reading the boxes…").closest('[role="status"]')).toBeTruthy();
+  const rows = skeletonRows();
+  expect(rows.length).toBeGreaterThanOrEqual(3);
+  expect(rows.length).toBeLessThanOrEqual(5);
+  const bars = Array.from(list.container.querySelectorAll("[data-loading] .animate-pulse"));
+  expect(bars.length).toBeGreaterThan(0);
+  for (const bar of bars) expect(bar.getAttribute("class")).toContain("motion-reduce:animate-none");
+  const skeletonLayout = layoutOf(rows[0]!);
+  await act(async () => lists.open());
+  await passTime(10);
+  expect(list.getByText("calm-otter")).toBeTruthy();
+  expect(loadingShown()).toBe(false);
+  expect(skeletonRows()).toHaveLength(0);
+  expect(skeletonLayout).toEqual(layoutOf(list.container.querySelector("[data-resource-row]")!));
+});
+
+test("polish P1: the Snapshots tab shows skeleton snapshot rows after 150 ms, saying it reads them to screen readers, then the snapshots", async () => {
+  vi.useFakeTimers();
+  const answer = gate();
+  const { handlers } = server([box()], {
+    tab: async () => {
+      await answer.opened;
+      return tabView();
+    },
+  });
+  const list = renderSlot(app.navPanels[0]!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  await passTime(LOADING_SHOWN_AFTER_MS - 1);
+  expect(loadingShown()).toBe(false);
+  await passTime(1);
+  expect(list.getByText("Reading the snapshots…").closest('[role="status"]')).toBeTruthy();
+  expect(skeletonRows().length).toBeGreaterThanOrEqual(3);
+  await act(async () => answer.open());
+  await passTime(10);
+  expect(list.getByRole("region", { name: "calm-otter's snapshots" })).toBeTruthy();
+  expect(loadingShown()).toBe(false);
+});
+
+test("polish P1: an empty list after its skeleton keeps the empty-state words it had, on each tab", async () => {
+  vi.useFakeTimers();
+  const lists = gate();
+  const { handlers } = server([]);
+  const slow: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    allBoxes: async (input) => {
+      await lists.opened;
+      return handlers.allBoxes!(input);
+    },
+  };
+  const list = boxesPage(slow);
+  await passTime(LOADING_SHOWN_AFTER_MS);
+  expect(skeletonRows().length).toBeGreaterThanOrEqual(3);
+  await act(async () => lists.open());
+  await passTime(LOADING_SHOWN_AFTER_MS);
+  expect(list.getByText("You have no machines. New box adds one: a box of your own that shows in BB's machine list.")).toBeTruthy();
+  expect(skeletonRows()).toHaveLength(0);
+  fireEvent.click(list.getByRole("tab", { name: "Threads" }));
+  expect(list.getByText("No thread has a box.")).toBeTruthy();
+  fireEvent.click(list.getByRole("tab", { name: "Snapshots" }));
+  await passTime(10);
+  expect(list.getByText("No snapshots yet. Take one from a box's page.")).toBeTruthy();
+  expect(skeletonRows()).toHaveLength(0);
+  expect(loadingShown()).toBe(false);
+});
+
+test("polish P1: a Boxes page list that does not load says so with Try again, which loads it, and never leaves a skeleton", async () => {
+  let machinesFailures = 1;
+  const { handlers } = server([]);
+  const flaky: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    "machines.list": (input) => {
+      if (machinesFailures-- > 0) throw new Error("BB's server did not answer.");
+      return handlers["machines.list"]!(input);
+    },
+  };
+  const list = boxesPage(flaky);
+  const alert = await list.findByRole("alert");
+  expect(within(alert).getByText("The boxes did not load.")).toBeTruthy();
+  expect(within(alert).getByText("BB's server did not answer.")).toBeTruthy();
+  await waitRealTime(LOADING_SHOWN_AFTER_MS + 50);
+  expect(skeletonRows()).toHaveLength(0);
+  fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+  expect(await list.findByText("You have no machines. New box adds one: a box of your own that shows in BB's machine list.")).toBeTruthy();
+  expect(list.queryByRole("alert")).toBeNull();
+  cleanup();
+  forgetLive();
+
+  let tabFailures = 1;
+  const snapshots = server([box()], {
+    tab: () => {
+      if (tabFailures-- > 0) throw new Error("BB Box cannot read snapshots.db.");
+      return tabView();
+    },
+  });
+  const tab = renderSlot(app.navPanels[0]!, { subPath: "snapshots" }, { rpc: snapshots.handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  const failed = await tab.findByRole("alert");
+  expect(within(failed).getByText("The snapshots did not load.")).toBeTruthy();
+  expect(within(failed).getByText("BB Box cannot read snapshots.db.")).toBeTruthy();
+  fireEvent.click(within(failed).getByRole("button", { name: "Try again" }));
+  expect(await tab.findByRole("button", { name: "Select" })).toBeTruthy();
+  expect(tab.queryByRole("alert")).toBeNull();
+});
+
+test("polish P1: a box's page shows a skeleton of its header after 150 ms while it loads, and Try again when it does not load", async () => {
+  vi.useFakeTimers();
+  const answer = gate();
+  const { handlers } = server([box()]);
+  const slow: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    boxPage: async (input) => {
+      await answer.opened;
+      return handlers.boxPage!(input);
+    },
+  };
+  const page = boxPageAt(slow, "box/box_1");
+  await passTime(LOADING_SHOWN_AFTER_MS - 1);
+  expect(loadingShown()).toBe(false);
+  await passTime(1);
+  expect(page.getByText("Loading the box").closest('[role="status"]')).toBeTruthy();
+  expect(skeletonRows().length).toBeGreaterThan(0);
+  await act(async () => answer.open());
+  await passTime(10);
+  expect(page.getByRole("heading", { level: 1 }).textContent).toContain("calm-otter");
+  expect(loadingShown()).toBe(false);
+  cleanup();
+  forgetLive();
+  vi.useRealTimers();
+
+  let failures = 1;
+  const flaky: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    boxPage: (input) => {
+      if (failures-- > 0) throw new Error("BB's server did not answer.");
+      return handlers.boxPage!(input);
+    },
+  };
+  const again = boxPageAt(flaky, "box/box_1");
+  const alert = await again.findByRole("alert");
+  expect(within(alert).getByText("This box did not load.")).toBeTruthy();
+  fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+  expect((await again.findByRole("heading", { level: 1 })).textContent).toContain("calm-otter");
+});
+
+test("polish P1: BB Box's settings show skeleton rows after 150 ms while the configuration loads, and Try again when it does not load", async () => {
+  vi.useFakeTimers();
+  const answer = gate();
+  const { handlers } = server([]);
+  const slot = settings({
+    ...handlers,
+    "config.get": async (input) => {
+      await answer.opened;
+      return handlers["config.get"]!(input);
+    },
+  });
+  await passTime(LOADING_SHOWN_AFTER_MS - 1);
+  expect(loadingShown()).toBe(false);
+  await passTime(1);
+  expect(slot.getByText("Reading BB Box's settings…").closest('[role="status"]')).toBeTruthy();
+  expect(skeletonRows().length).toBeGreaterThanOrEqual(3);
+  await act(async () => answer.open());
+  await passTime(10);
+  expect(slot.getByText("Fake host is not working")).toBeTruthy();
+  expect(loadingShown()).toBe(false);
+  cleanup();
+  forgetLive();
+  vi.useRealTimers();
+
+  let failures = 1;
+  const flaky = settings({
+    ...handlers,
+    "config.get": (input) => {
+      if (failures-- > 0) throw new Error("BB's server did not answer.");
+      return handlers["config.get"]!(input);
+    },
+  });
+  const alert = await flaky.findByRole("alert");
+  expect(within(alert).getByText("BB Box's settings did not load.")).toBeTruthy();
+  fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+  expect(await flaky.findByText("Fake host is not working")).toBeTruthy();
+});
+
+test("polish P1: the Images page shows skeleton rows under Standard images while they load, and Try again when they do not load", async () => {
+  const images: ImagesStatus["images"] = [{ name: "fake/linux", kind: "linux", backend: "fake", built: "build.2026-10-01, 10 days old", due: "it is 10 days old, past its 7-day interval", last: null, outcome: null }];
+  const answer = gate();
+  const { handlers } = server([], { rebuildable: images });
+  const slow = settings({
+    ...handlers,
+    "images.list": async (input) => {
+      await answer.opened;
+      return handlers["images.list"]!(input);
+    },
+  }, "#option/images");
+  const reading = await slow.findByText("Reading the images…", { selector: ".sr-only" });
+  expect(reading.closest('[role="status"]')).toBeTruthy();
+  expect(skeletonRows().length).toBeGreaterThanOrEqual(2);
+  answer.open();
+  expect(await slow.findByText("1 of 1 image due.", { exact: false })).toBeTruthy();
+  await waitFor(() => expect(loadingShown()).toBe(false));
+  cleanup();
+
+  let failures = 1;
+  const flaky = settings({
+    ...handlers,
+    "images.list": (input) => {
+      if (failures-- > 0) throw new Error("BB Box could not list the images.");
+      return handlers["images.list"]!(input);
+    },
+  }, "#option/images");
+  const alert = await flaky.findByRole("alert");
+  expect(within(alert).getByText("The standard images did not load.")).toBeTruthy();
+  expect(within(alert).getByText("BB Box could not list the images.")).toBeTruthy();
+  fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+  expect(await flaky.findByText("1 of 1 image due.", { exact: false })).toBeTruthy();
+  expect(flaky.queryByRole("alert")).toBeNull();
+});
+
+test("a side-label field and a stacked field put the error directly under the control", () => {
+  render(
+    <SideLabelField label="Host" htmlFor="host" problem="Write a host." problemId="host-problem" help="The host BB Box reaches.">
+      <input id="host" aria-describedby="host-problem" />
+    </SideLabelField>,
+  );
+  const host = screen.getByLabelText("Host");
+  const hostAlert = screen.getByRole("alert");
+  expect(host.getAttribute("aria-describedby")).toBe("host-problem");
+  expect(host.nextElementSibling).toBe(hostAlert);
+  cleanup();
+  render(
+    <FieldShell label="Name" htmlFor="name" description="The name boxes show." problem="Write a name." problemId="name-problem">
+      <input id="name" aria-describedby="name-problem" />
+    </FieldShell>,
+  );
+  const name = screen.getByLabelText("Name");
+  const nameAlert = screen.getByRole("alert");
+  expect(name.nextElementSibling).toBe(nameAlert);
+  expect(nameAlert.nextElementSibling?.textContent).toBe("The name boxes show.");
+  cleanup();
+  render(
+    <SettingRow label="Port" htmlFor="port" problem="Write a port." problemId="port-problem">
+      <input id="port" aria-describedby="port-problem" />
+    </SettingRow>,
+  );
+  const port = screen.getByLabelText("Port");
+  const portAlert = screen.getByRole("alert");
+  expect(port.getAttribute("aria-describedby")).toBe("port-problem");
+  expect(port.parentElement?.nextElementSibling).toBe(portAlert);
+  cleanup();
+  render(
+    <SettingRow label="Export" description={<>The whole configuration, as <code>bb box config show --json</code> prints it.</>}>
+      <button type="button">Copy</button>
+    </SettingRow>,
+  );
+  const command = screen.getByText("bb box config show --json");
+  const help = command.closest("p");
+  expect(help?.className).toContain("text-xs");
+  expect(help?.className).toContain("text-subtle-foreground");
+});
+
+test("dialog buttons keep BB's own weight, and a closed dialog clears its refusal", async () => {
+  function Probe() {
+    const [open, setOpen] = useState(true);
+    const [refused, setRefused] = useState<string | null>("No.");
+    return (
+      <>
+        <button type="button" onClick={() => setOpen(true)}>
+          Open again
+        </button>
+        <BoxDialog
+          open={open}
+          title="Release calm-otter?"
+          refused={refused}
+          clearRefused={() => setRefused(null)}
+          onClose={() => setOpen(false)}
+          footer={
+            <>
+              <DialogCancel className="ml-auto">Cancel</DialogCancel>
+              <DialogButton onClick={() => setOpen(false)}>Release</DialogButton>
+            </>
+          }
+        >
+          <p>It stops.</p>
+        </BoxDialog>
+      </>
+    );
+  }
+  render(<Probe />);
+  const cancel = screen.getByRole("button", { name: "Cancel" });
+  const release = screen.getByRole("button", { name: "Release" });
+  expect(cancel.className).toContain("font-medium");
+  expect(cancel.className).not.toContain("font-normal");
+  expect(cancel.className).toContain("ml-auto");
+  expect(release.className).toContain("font-medium");
+  expect(release.className).not.toContain("font-normal");
+  expect(release.parentElement?.className).not.toContain("flex-col-reverse");
+  expect(release.parentElement?.lastElementChild).toBe(release);
+  expect(screen.getByRole("alert").textContent).toBe("No.");
+  fireEvent.click(release);
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "Open again" }));
+  expect(screen.getByRole("alertdialog", { name: "Release calm-otter?" })).toBeTruthy();
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("Stop anyway says Stopping while it runs", async () => {
+  const { handlers } = server([box()], { inUse: [{ id: "thr_worker", title: "Build the app", running: true }] });
+  let finish: (result: BoxResult) => void = () => {};
+  const hanging: PluginRpcTestHandlers<Contract> = {
+    ...handlers,
+    stop: (input) => {
+      if (!input.force) return handlers.stop!(input);
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    },
+  };
+  const slot = panel(hanging);
+  await slot.findByText("calm-otter");
+  await chooseMenuItem(slot.getByRole("button", { name: "calm-otter actions" }), "Stop");
+  const dialog = await screen.findByRole("alertdialog", { name: "Stop calm-otter anyway?" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Stop anyway" }));
+  expect(within(dialog).getByRole("button", { name: "Stopping…" })).toBeTruthy();
+  await act(async () => finish({ box: box(), error: null }));
+});
+
+test("Enter in Resize does nothing while the size is unchanged", async () => {
+  const resize = fakeResizer({ cores: 2, memoryGiB: 4, diskGiB: 20 }, { ways: { cores: "live", memory: "live", disk: "live" } });
+  const { handlers, changes } = server([box({ sizeNow: size(2, 4, 20), resizing: { cores: "live", memory: "live", disk: "live", shrinks: true } })], { resize });
+  const slot = panel(handlers);
+  await slot.findByText("calm-otter");
+  const dialog = await openResize(slot);
+  fireEvent.submit(dialog.querySelector("form")!);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(changes.filter((change) => !change.includes('"check":true'))).toEqual([]);
+});
+
+test("Enter in bulk Keep does nothing when the check failed, and Try again asks again", async () => {
+  let checks = 0;
+  const { handlers, changes } = server([box()], {
+    tab: tabView,
+    bulkCheck: () => {
+      checks += 1;
+      throw new Error("The host did not answer.");
+    },
+  });
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: "UI thread" }) } } });
+  await list.findByRole("tab", { name: "Snapshots 2" });
+  fireEvent.click(list.getByRole("button", { name: "Select" }));
+  fireEvent.click(list.getByRole("checkbox", { name: "Select before the migration of calm-otter" }));
+  fireEvent.click(list.getByRole("button", { name: "Keep…" }));
+  const dialog = await list.findByRole("alertdialog", { name: "Could not check these snapshots" });
+  expect(within(dialog).getByRole("button", { name: "Try again" })).toBeTruthy();
+  fireEvent.submit(dialog.querySelector("form")!);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(changes.filter((change) => change.startsWith("snapshots.bulk"))).toEqual([]);
+  const asked = checks;
+  fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(checks).toBe(asked + 1));
+});
+
+test("Fork leaves an untitled thread unquoted", async () => {
+  forgetThreadTitles();
+  const preview = (): ForkPreview => ({
+    refusal: null,
+    check: { snapshot: "before the migration", takenAt: Date.now() - 2 * 60 * 60_000, threadId: THREAD, asMachine: false, canBeMachine: true, size: "2 cores, 4 GiB memory, 16 GiB disk", aboutMs: 38_000, bytes: 17e9, host: "pve-1", storage: "local-lvm", unflushed: null, gpu: "none", offersGpu: false },
+  });
+  const { handlers } = server([box()], { snapshots: snapshotsView({ offer: { holds: ["disk"], scope: "box", whileRunning: "live", restore: "in-place", fork: "copy", keeps: true, excludes: null, price: null } }), forkPreview: preview });
+  const [page] = app.navPanels;
+  const slot = renderSlot(page!, { subPath: "box/box_1" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
+  const card = await slot.findByRole("region", { name: "Snapshots" });
+  fireEvent.click(within(card).getByRole("button", { name: "Fork before the migration into a new box" }));
+  const dialog = await slot.findByRole("alertdialog", { name: 'Fork "before the migration" of calm-otter' });
+  expect(await within(dialog).findByRole("radio", { name: "In this box's thread" })).toBeTruthy();
+  expect(within(dialog).queryByRole("radio", { name: 'In "this box\'s thread"' })).toBeNull();
+});
+
+test("a snapshot group with no thread title says Untitled thread", async () => {
+  forgetThreadTitles();
+  const { handlers } = server([box()], { tab: tabView });
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "snapshots" }, { rpc: handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
+  expect(await list.findByRole("button", { name: "Untitled thread" })).toBeTruthy();
+  expect(list.queryByRole("button", { name: "this box's thread" })).toBeNull();
+  cleanup();
+});
+
+test("a thread with no title is headed Untitled thread", async () => {
+  forgetThreadTitles();
+  const [page] = app.navPanels;
+  const list = renderSlot(page!, { subPath: "" }, { rpc: server([box()]).handlers, pluginId: "bb-box", sdk: { threads: { get: async () => makeThreadResponse({ title: null, titleFallback: null }) } } });
+  expect(await list.findByRole("button", { name: "Untitled thread" })).toBeTruthy();
+  expect(threadGroupHeading(undefined)).toBe("Thread");
+  expect(threadGroupHeading(null)).toBe("Untitled thread");
+  expect(threadGroupHeading("this box's thread")).toBe("Untitled thread");
+  expect(threadGroupHeading("UI thread")).toBe("UI thread");
+});
+
+test("an open link error sits under the field", async () => {
+  const model = deviceModel("iPhone 18 Pro");
+  const state: DeviceState = {
+    platform: "ios",
+    model: "iPhone 18 Pro",
+    power: { is: "booted", awake: true },
+    geometry: null,
+    at: 1,
+    settings: {
+      appearance: { known: true, value: "light", at: 1, by: "bb-box" },
+      textSize: { known: false, why: "not read" },
+      location: { set: null, at: null },
+      statusBar: { set: null, at: null },
+    },
+  };
+  render(
+    <DeviceToolbar
+      model={model}
+      state={state}
+      layout={{ arrangement: "below", device: { x: 0, y: 0, width: 200, height: 400 }, under: 0, area: { width: 390, height: 800 } }}
+      coarse={false}
+      compact={false}
+      connected
+      mine
+      takesFrom={null}
+      busy={null}
+      view={{ frame: true, pixelForPixel: false }}
+      hint={false}
+      onAsk={() => {}}
+      onScreenshot={() => {}}
+      onView={() => {}}
+    />,
+  );
+  const menu = await openMenu(screen.getByRole("button", { name: "More device controls" }));
+  fireEvent.click(within(menu).getByRole("menuitem", { name: "Open link…" }));
+  const dialog = await screen.findByRole("alertdialog", { name: `Open a link on the ${model.name}` });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Open" }));
+  const input = within(dialog).getByPlaceholderText("https://example.com");
+  const alert = within(dialog).getByRole("alert");
+  expect(input.closest("label")).toBeNull();
+  expect(alert.closest("label")).toBeNull();
+  expect(alert.textContent).toBe("Write a link to open.");
+  expect(input.getAttribute("aria-describedby")).toBe(alert.id);
+  expect(input.nextElementSibling).toBe(alert);
+  expect(within(dialog).getAllByRole("alert")).toHaveLength(1);
+});
+
+test("removing the old settings copy stays open when it fails", async () => {
+  const fake = server([]);
+  const get = fake.handlers["config.get"]!;
+  const handlers: PluginRpcTestHandlers<Contract> = {
+    ...fake.handlers,
+    "config.get": (input: null) => ({ ...(get(input) as ConfigState), migrated: { at: 1_790_000_000_000, version: "0.2.0" } }),
+    "config.migrated.remove": () => {
+      throw new Error("The configuration is locked.");
+    },
+  };
+  const slot = settings(handlers, "#option/configuration");
+  fireEvent.click(await slot.findByRole("button", { name: "Remove copy…" }));
+  fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove copy" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" });
+  expect((await within(dialog).findByRole("alert")).textContent).toContain("The copy was not removed: the configuration is locked.");
+  expect(screen.getByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" })).toBeTruthy();
+});
+
+test("removing the old settings copy keeps its last time while the dialog closes", async () => {
+  const fake = server([]);
+  const get = fake.handlers["config.get"]!;
+  const kept = { ...(get(null) as ConfigState), migrated: { at: Date.now() - 2 * 3_600_000, version: "0.2.0" } };
+  const cleared = { ...kept, migrated: null };
+  let reads = 0;
+  let releaseRead: (value: ConfigState) => void = () => {};
+  const handlers: PluginRpcTestHandlers<Contract> = {
+    ...fake.handlers,
+    "config.get": () => {
+      reads += 1;
+      if (reads === 1) return kept;
+      return new Promise<ConfigState>((resolve) => {
+        releaseRead = resolve;
+      });
+    },
+    "config.migrated.remove": () => ({ removed: true, state: cleared }),
+  };
+  const slot = settings(handlers, "#option/configuration");
+  fireEvent.click(await slot.findByRole("button", { name: "Remove copy…" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove the copy of BB's earlier settings?" });
+  expect(dialog.textContent).toMatch(/made it \d+ h ago, when/);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Remove copy" }));
+  await waitFor(() => expect(reads).toBeGreaterThan(1));
+  let broken = false;
+  const observer = new MutationObserver(() => {
+    if (document.body.textContent?.includes("made it ,")) broken = true;
+  });
+  observer.observe(document.body, { subtree: true, characterData: true, childList: true });
+  await act(async () => {
+    releaseRead(cleared);
+  });
+  observer.disconnect();
+  expect(broken).toBe(false);
+});
+
+test("Default kind and iOS video encoding point at their errors", async () => {
+  const boxes = settings(server([], { config: { problems: [{ path: "general.defaultKind", message: "Choose a kind that is on." }] } }).handlers, "#option/boxes");
+  const kind = await boxes.findByRole("combobox", { name: "Default kind" });
+  const kindAlert = document.getElementById(kind.getAttribute("aria-describedby")!)!;
+  expect(kindAlert.textContent).toBe("Choose a kind that is on.");
+  expect(kindAlert.getAttribute("role")).toBe("alert");
+  cleanup();
+  const devices = settings(server([], { config: { problems: [{ path: "general.iosEncoder", message: "Choose an encoder." }] } }).handlers, "#option/devices");
+  const encoder = await devices.findByRole("combobox", { name: "iOS video encoding" });
+  const encoderAlert = document.getElementById(encoder.getAttribute("aria-describedby")!)!;
+  expect(encoderAlert.textContent).toBe("Choose an encoder.");
+  expect(encoder.getAttribute("aria-describedby")).toBe(encoderAlert.id);
+});

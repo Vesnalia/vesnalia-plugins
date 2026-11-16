@@ -1,0 +1,407 @@
+// @vitest-environment jsdom
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import type { PluginNavPanelProps, PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { LANES_CHANGED, type LanesSnapshot } from "../../shared/model";
+import type { rpcContract } from "../../shared/rpc";
+import { installLayoutShims } from "../../test/layout";
+import { makeBlock, makeProject, makeThread } from "./testing/fixtures";
+
+beforeAll(installLayoutShims);
+
+const NOW = Date.now();
+
+const threads = [
+  makeThread({ id: "lead", title: "Plan the release", runtimeStatus: "active", status: "active", latestAttentionAt: NOW }),
+  makeThread({ id: "worker", title: "Write the migration", parentThreadId: "lead", runtimeStatus: "active", status: "active" }),
+  makeThread({ id: "asks", title: "Deploy to staging", hasPendingInteraction: true, runtimeStatus: "active", status: "active" }),
+  makeThread({ id: "done", title: "Tidy the docs", projectId: "proj_b", latestAttentionAt: NOW - 60_000 }),
+  makeThread({ id: "ancient", title: "Old experiment", projectId: "proj_b", latestAttentionAt: 1 }),
+];
+
+const sidebarThreads = {
+  status: "ready" as const,
+  threads,
+  projects: [makeProject({ id: "proj_a", name: "bb-lanes" }), makeProject({ id: "proj_b", name: "chillidonut" })],
+  sections: [],
+};
+
+function snapshot(blocks = [
+  makeBlock({ id: "t-lead", threadId: "lead", start: NOW - 5 * 60_000, title: "Spec the pane" }),
+  makeBlock({ id: "t-done", threadId: "done", start: NOW - 10 * 60_000, end: NOW - 8 * 60_000, status: "done", title: "Fix typos" }),
+]): LanesSnapshot {
+  return { generatedAt: Date.now(), since: NOW - 3_600_000, blocks, handoffs: [], indexing: false };
+}
+
+async function loadApp() {
+  return loadPluginApp(() => import("../../app"));
+}
+
+function rpc(windowSnapshot = snapshot()) {
+  return {
+    lanes_window: () => windowSnapshot,
+    lanes_neighbors: () => ({ neighbors: {} }),
+    lanes_block_detail: ({ threadId, blockId }: { threadId: string; blockId: string }) => ({
+      blockId,
+      threadId,
+      summary: [],
+      prompt: "",
+      recent: [],
+    }),
+    lanes_decide: () => ({ ok: true, message: null }),
+  };
+}
+
+describe("Lanes app registration", () => {
+  it("registers the Lanes pane, its header, accessory, and the team panel action", async () => {
+    const app = await loadApp();
+    expect(app.navPanels).toHaveLength(1);
+    expect(app.navPanels[0]).toMatchObject({ id: "lanes", path: "lanes", title: "Lanes", icon: "agent-lanes/lanes" });
+    expect(app.navPanels[0]?.headerContent).toBeTypeOf("function");
+    expect(app.navPanels[0]?.experimental_sidebarAccessory).toBeTypeOf("function");
+    expect(app.threadPanelActions[0]).toMatchObject({ id: "team-lanes", title: "Team lanes", layout: "flush" });
+  });
+});
+
+describe("Lanes nav panel", () => {
+  it("supports filter arrow keys, restores focus from search, and accepts span shortcuts inside the menu", async () => {
+    const app = await loadApp();
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-toolbar-keys", sidebarThreads, rpc: rpc(),
+    });
+    try {
+      await slot.findByText("Spec the pane");
+      const active = screen.getByRole("radio", { name: "Active" });
+      act(() => active.focus());
+      fireEvent.keyDown(active, { key: "ArrowRight" });
+      const needs = screen.getByRole("radio", { name: /Needs you/ });
+      expect(document.activeElement).toBe(needs);
+      expect(needs.getAttribute("aria-checked")).toBe("true");
+      expect(screen.queryByText("Fix typos")).toBeNull();
+      const search = screen.getByRole("searchbox");
+      act(() => search.focus());
+      fireEvent.change(search, { target: { value: "deploy" } });
+      fireEvent.keyDown(search, { key: "Escape" });
+      expect(document.activeElement).toBe(search);
+      fireEvent.keyDown(search, { key: "Escape" });
+      expect(document.activeElement).toBe(needs);
+      fireEvent.keyDown(needs, { key: "Home" });
+      expect(document.activeElement).toBe(screen.getByRole("radio", { name: "All" }));
+
+      const turn = screen.getByRole("button", { name: /Plan the release: Spec the pane/ });
+      act(() => turn.focus());
+      act(() => search.focus());
+      fireEvent.change(search, { target: { value: "no matching lanes" } });
+      await waitFor(() => expect(screen.queryByRole("button", { name: /Plan the release: Spec the pane/ })).toBeNull());
+      fireEvent.keyDown(search, { key: "Escape" });
+      const restored = await screen.findByRole("button", { name: /Plan the release: Spec the pane/ });
+      fireEvent.keyDown(search, { key: "Escape" });
+      expect(document.activeElement).toBe(restored);
+
+      const window = screen.getByRole("button", { name: "Window: Last 15m" });
+      fireEvent.keyDown(window, { key: "Enter" });
+      const menu = await screen.findByRole("menu");
+      expect(within(menu).getByRole("menuitemradio", { name: /15 minutes/ }).getAttribute("aria-checked")).toBe("true");
+      fireEvent.keyDown(menu, { key: "2" });
+      expect(screen.getByRole("button", { name: "Window: Last 1h" })).toBeTruthy();
+      await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    } finally { slot.lifecycle.unmount(); }
+  });
+
+  it("shows an unavailable history state with a working retry instead of claiming there is no activity", async () => {
+    const app = await loadApp();
+    let unavailable = true;
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-history-retry",
+      sidebarThreads: { ...sidebarThreads, threads: [makeThread({ id: "idle" })] },
+      rpc: { ...rpc(), lanes_window: () => {
+        if (unavailable) throw new Error("Connection dropped");
+        return snapshot([]);
+      } },
+    });
+    try {
+      const retry = await slot.findByRole("button", { name: "Retry history" });
+      expect(screen.queryByText(/No agent activity/)).toBeNull();
+      unavailable = false;
+      fireEvent.click(retry);
+      await slot.findByText("No agent activity in the last 15m");
+      expect(screen.queryByRole("button", { name: "Retry history" })).toBeNull();
+    } finally { slot.lifecycle.unmount(); }
+  });
+
+  it("restores the waiting turn when bb refuses an inline approval", async () => {
+    const app = await loadApp();
+    const waiting = makeBlock({ id: "approval", threadId: "asks", start: NOW - 60_000, status: "waiting", title: "Review deployment", ask: {
+      interactionId: "approval-id", kind: "approval", prompt: "Allow deployment?", canDecideInline: true,
+    } });
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-approval-rollback", sidebarThreads,
+      rpc: { ...rpc(snapshot([waiting])), lanes_decide: () => ({ ok: false, message: "Approval expired" }) },
+    });
+    try {
+      const turn = await slot.findByRole("button", { name: /Deploy to staging: Review deployment – Needs you/ });
+      fireEvent.click(turn);
+      fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+      await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "lanes_decide")).toBe(true));
+      await slot.findByRole("button", { name: /Deploy to staging: Review deployment – Needs you/ });
+      expect(document.activeElement).toBe(turn);
+    } finally { slot.lifecycle.unmount(); }
+  });
+
+  it("keeps viewport shortcuts working after closing help, without stealing typing or another pane's keys", async () => {
+    const rects = vi.spyOn(Element.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
+    const matchMedia = window.matchMedia;
+    const motion = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      ...matchMedia(query), matches: query === "(prefers-reduced-motion: reduce)",
+    }));
+    const app = await loadApp();
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-shortcuts", sidebarThreads, rpc: rpc(),
+    });
+    try {
+      await slot.findByText("Spec the pane");
+      const help = screen.getByRole("button", { name: "Keyboard shortcuts" });
+      fireEvent.click(help);
+      const dialog = await screen.findByRole("dialog", { name: "Keyboard shortcuts" });
+      expect(within(dialog).queryAllByRole("menuitem")).toHaveLength(0);
+      fireEvent.keyDown(dialog, { key: "Escape" });
+      await waitFor(() => expect(document.activeElement).toBe(help));
+      fireEvent.keyDown(help, { key: "2" });
+      expect(screen.getByRole("button", { name: "Window: Last 1h" })).toBeTruthy();
+      await waitFor(() => expect(screen.getByRole("region", { name: "Agent lanes" }).hasAttribute("data-moving")).toBe(false));
+      fireEvent.keyDown(help, { key: "=" });
+      await screen.findByRole("button", { name: "Window: Last 30m" });
+      fireEvent.keyDown(help, { key: "-" });
+      await screen.findByRole("button", { name: "Window: Last 1h" });
+      fireEvent.keyDown(help, { key: "[" });
+      await screen.findByRole("button", { name: /Window: .*not following the clock/ });
+      fireEvent.keyDown(help, { key: "n" });
+      await screen.findByRole("button", { name: "Window: Last 1h" });
+
+      // Clicking the card/ruler takes focus back from another pane. Shortcuts
+      // must also recover after zooming/panning until no turns are visible.
+      const otherPane = document.createElement("button");
+      document.body.append(otherPane);
+      otherPane.focus();
+      const pane = slot.container.querySelector<HTMLElement>(".lanes-tray")!;
+      fireEvent.pointerDown(slot.container.querySelector(".lanes-card")!);
+      expect(document.activeElement).toBe(pane);
+      fireEvent.keyDown(pane, { key: "[" });
+      await screen.findByRole("button", { name: /Window: .*not following the clock/ });
+      await waitFor(() => expect(screen.getByRole("region", { name: "Agent lanes" }).hasAttribute("data-moving")).toBe(false));
+      fireEvent.keyDown(pane, { key: "n" });
+      await screen.findByRole("button", { name: "Window: Last 1h" });
+      otherPane.remove();
+
+      fireEvent.keyDown(help, { key: "/" });
+      const search = screen.getByRole("searchbox");
+      expect(document.activeElement).toBe(search);
+      for (const key of ["1", "[", "-", "n", "g"]) fireEvent.keyDown(search, { key });
+      expect(screen.getByRole("button", { name: "Window: Last 1h" })).toBeTruthy();
+      expect(screen.queryByRole("menu")).toBeNull();
+
+      const outside = document.createElement("button");
+      document.body.append(outside);
+      outside.focus();
+      for (const key of ["1", "[", "-", "n", "/", "g"]) fireEvent.keyDown(outside, { key });
+      expect(screen.getByRole("button", { name: "Window: Last 1h" })).toBeTruthy();
+      expect(document.activeElement).toBe(outside);
+      outside.remove();
+
+      act(() => help.focus());
+      fireEvent.keyDown(help, { key: "1", ctrlKey: true });
+      fireEvent.keyDown(help, { key: "1", isComposing: true });
+      expect(screen.getByRole("button", { name: "Window: Last 1h" })).toBeTruthy();
+      fireEvent.keyDown(help, { key: "G" });
+      await screen.findByRole("menu");
+    } finally {
+      slot.lifecycle.unmount();
+      rects.mockRestore();
+      motion.mockRestore();
+    }
+  });
+
+  it("renders grouped lanes from sidebar threads and the lanes_window snapshot", async () => {
+    const app = await loadApp();
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-render",
+      sidebarThreads,
+      rpc: rpc(),
+    });
+    await slot.findByText("Spec the pane");
+    // Active is the default: the ancient idle lane with no turn in the window is hidden.
+    expect(screen.getByText("bb-lanes")).toBeTruthy();
+    expect(screen.getByText("chillidonut")).toBeTruthy();
+    expect(screen.queryByText("Old experiment")).toBeNull();
+    expect(screen.getByText("Write the migration")).toBeTruthy();
+    // Group headers summarise in upstream's words, hiding parts that are zero.
+    const group = screen.getByRole("button", { name: /^bb-lanes,/ });
+    expect(group.getAttribute("aria-label")).toBe("bb-lanes, 2 running, 1 need you, 3 lanes");
+    expect(within(group).getByText("1 need you")).toBeTruthy();
+    expect(within(group).queryByText(/failed/)).toBeNull();
+    expect(screen.getByRole("button", { name: /^chillidonut,/ }).getAttribute("aria-label")).toBe("chillidonut, 1 lane");
+    expect(screen.getAllByText("Needs you").length).toBeGreaterThan(0);
+    expect(slot.inspection.rpcCalls[0]).toMatchObject({ method: "lanes_window" });
+    slot.lifecycle.unmount();
+  });
+
+  it("merges realtime signals and refetches on an empty one and on reconnect", async () => {
+    const app = await loadApp();
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-realtime",
+      sidebarThreads,
+      rpc: rpc(),
+    });
+    await slot.findByText("Spec the pane");
+    await slot.behavior.emitRealtime(LANES_CHANGED, {
+      blocks: [makeBlock({ id: "t-worker", threadId: "worker", start: NOW - 60_000, title: "Draft the index" })],
+      handoffs: [],
+      generatedAt: Date.now(),
+    });
+    await slot.findByText("Draft the index");
+
+    const windowCalls = () => slot.inspection.rpcCalls.filter((call) => call.method === "lanes_window").length;
+    const before = windowCalls();
+    await slot.behavior.emitRealtime(LANES_CHANGED, { blocks: [], handoffs: [], generatedAt: Date.now() });
+    await waitFor(() => expect(windowCalls()).toBe(before + 1));
+
+    await slot.behavior.setRealtimeConnectionState("reconnecting");
+    expect(screen.getByText("Reconnecting")).toBeTruthy();
+    await slot.behavior.setRealtimeConnectionState("connected");
+    expect(screen.queryByText("Reconnecting")).toBeNull();
+    await waitFor(() => expect(windowCalls()).toBe(before + 2));
+    slot.lifecycle.unmount();
+  });
+
+  it("filters, searches, and opens threads from the lane header", async () => {
+    const app = await loadApp();
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-filter",
+      sidebarThreads,
+      rpc: rpc(),
+    });
+    await slot.findByText("Spec the pane");
+
+    fireEvent.click(screen.getByRole("radio", { name: /Needs you/ }));
+    await waitFor(() => expect(screen.queryByText("Write the migration")).toBeNull());
+    expect(screen.getByText("Deploy to staging")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("radio", { name: "All" }));
+    await slot.findByText("Old experiment");
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "docs" } });
+    await waitFor(() => expect(screen.queryByText("Deploy to staging")).toBeNull());
+    const docs = screen.getByRole("link", { name: /Tidy the docs/ });
+    // A plain click opens beside Lanes; ⌘-click opens in place.
+    fireEvent.click(docs);
+    fireEvent.click(docs, { metaKey: true });
+    expect(slot.inspection.sidebarActionCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({ method: "open", threadId: "done", options: { split: true } }),
+      expect.objectContaining({ method: "open", threadId: "done", options: { split: false } }),
+    ]));
+    slot.lifecycle.unmount();
+  });
+
+  it("shows the reason and a way out when nothing is in the window", async () => {
+    const app = await loadApp();
+    const quiet = { ...sidebarThreads, threads: [makeThread({ id: "idle", title: "Sleeping" })] };
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-empty",
+      sidebarThreads: quiet,
+      rpc: rpc(snapshot([])),
+    });
+    await slot.findByText("No agent activity in the last 15m");
+    fireEvent.click(screen.getByRole("button", { name: "Show last 1h" }));
+    await slot.findByText("No agent activity in the last 1h");
+    slot.lifecycle.unmount();
+  });
+
+  it("saves one opening preference for headers, turns and team panes", async () => {
+    const app = await loadApp();
+    const options = { pluginId: "lanes-test-opening", sidebarThreads, rpc: rpc() };
+    const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, options);
+    let team: ReturnType<typeof renderSlot> | undefined;
+    try {
+      await slot.findByText("Spec the pane");
+      fireEvent.click(screen.getByRole("button", { name: "Keyboard shortcuts" }));
+      const preference = screen.getByRole("checkbox", { name: "Open to the side by default" });
+      expect(preference.getAttribute("aria-checked")).toBe("true");
+      fireEvent.click(preference);
+      expect(preference.getAttribute("aria-checked")).toBe("false");
+      expect(window.localStorage.getItem("lanes-test-opening:openBeside")).toBe("false");
+      fireEvent.keyDown(preference, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Keyboard shortcuts" })).toBeNull());
+
+      const header = slot.getByRole("link", { name: "Plan the release" });
+      fireEvent.click(header);
+      expect(slot.inspection.sidebarActionCalls.at(-1)).toMatchObject({ method: "open", threadId: "lead", options: { split: false } });
+      fireEvent.click(header, { ctrlKey: true });
+      expect(slot.inspection.sidebarActionCalls.at(-1)).toMatchObject({ options: { split: true } });
+      fireEvent.keyDown(header, { key: "Enter", metaKey: true });
+      expect(slot.inspection.sidebarActionCalls.at(-1)).toMatchObject({ options: { split: true } });
+      const turn = slot.getByRole("button", { name: /Plan the release: Spec the pane/ });
+      fireEvent.click(turn, { detail: 2 });
+      expect(slot.inspection.sidebarActionCalls.at(-1)).toMatchObject({ options: { split: false } });
+
+      team = renderSlot<PluginThreadPanelProps, typeof rpcContract>(app.threadPanelActions[0]!, { threadId: "worker", params: null }, options);
+      const teamHeader = await within(team.container).findByRole("link", { name: "Plan the release" });
+      fireEvent.click(teamHeader);
+      expect(team.inspection.sidebarActionCalls.at(-1)).toMatchObject({ options: { split: false } });
+      fireEvent.click(teamHeader, { metaKey: true });
+      expect(team.inspection.sidebarActionCalls.at(-1)).toMatchObject({ options: { split: true } });
+    } finally { team?.lifecycle.unmount(); slot.lifecycle.unmount(); }
+  });
+});
+
+describe("Lanes chrome", () => {
+  it("summarises live work in the title bar, once, and leaves the window to the body", async () => {
+    const app = await loadApp();
+    const header = renderSlot({ component: app.navPanels[0]!.headerContent! }, { subPath: "" }, {
+      pluginId: "lanes-test-header",
+      sidebarThreads,
+    });
+    expect(header.getByRole("button", { name: "2 running" })).toBeTruthy();
+    expect(header.getByRole("button", { name: "1 need you" })).toBeTruthy();
+    expect(header.queryByRole("button", { name: /^Window:/ })).toBeNull();
+    header.lifecycle.unmount();
+
+    const body = renderSlot<PluginNavPanelProps, typeof rpcContract>(app.navPanels[0]!, { subPath: "" }, {
+      pluginId: "lanes-test-header",
+      sidebarThreads,
+      rpc: rpc(),
+    });
+    await body.findByText("Spec the pane");
+    expect(body.getByRole("button", { name: "Window: Last 15m" })).toBeTruthy();
+    expect(body.container.querySelector(".lanes-bar .lanes-summary")).toBeNull();
+    body.lifecycle.unmount();
+  });
+
+  it("shows a tiny live count on the sidebar row", async () => {
+    const app = await loadApp();
+    const accessory = renderSlot({ component: app.navPanels[0]!.experimental_sidebarAccessory! }, {}, {
+      pluginId: "lanes-test-accessory",
+      sidebarThreads,
+    });
+    expect(accessory.getByLabelText("2 running, 1 need you")).toBeTruthy();
+    accessory.lifecycle.unmount();
+  });
+
+  it("scopes the team panel to the thread's tree", async () => {
+    const app = await loadApp();
+    const panel = renderSlot<PluginThreadPanelProps, typeof rpcContract>(
+      app.threadPanelActions[0]!,
+      { threadId: "worker", params: null },
+      { pluginId: "lanes-test-team", sidebarThreads, rpc: rpc() },
+    );
+    await panel.findByText("Write the migration");
+    expect(panel.getByText("Plan the release")).toBeTruthy();
+    expect(panel.queryByText("Deploy to staging")).toBeNull();
+    const call = panel.inspection.rpcCalls.find((entry) => entry.method === "lanes_window");
+    expect((call?.input as { threadIds?: string[] }).threadIds).toContain("worker");
+    // Beside a thread there is no title bar, so the bar leads with the team's own summary.
+    expect(within(panel.container).getByRole("button", { name: "Window: Last 15m" })).toBeTruthy();
+    expect(panel.container.querySelector(".lanes-bar .lanes-summary")?.textContent).toBe("2 running");
+    panel.lifecycle.unmount();
+  });
+});

@@ -1,0 +1,8 @@
+.git/
+.gitignore
+.npmignore
+.playwright-cli/
+.playwright-mcp/
+node_modules/
+output/
+tests/

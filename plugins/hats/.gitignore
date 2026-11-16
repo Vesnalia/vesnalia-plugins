@@ -1,0 +1,7 @@
+dist/
+node_modules/
+.DS_Store
+*.log
+.playwright-mcp/
+media-out/
+.kata.local.toml

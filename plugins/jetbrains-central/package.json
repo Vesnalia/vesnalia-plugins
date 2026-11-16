@@ -1,0 +1,45 @@
+{
+  "name": "bb-plugin-jetbrains-central",
+  "version": "0.1.3",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "bb": ">=0.48",
+    "bbPluginSdk": ">=0.6.104"
+  },
+  "bb": {
+    "name": "JetBrains Central",
+    "description": "Unofficial enthusiast plugin for JetBrains Central work AI providers and shared credit tracking in BB.",
+    "branding": {
+      "icon": "./icons/jetbrains.svg"
+    },
+    "server": "./server.ts",
+    "host": "./host.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "@get-bb/plugin-sdk": "0.6.104",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.3.0",
+    "better-sqlite3": "^13.0.3",
+    "cron-parser": "^5.10.2",
+    "hono": "^4.13.14",
+    "jsdom": "^29.1.1",
+    "react": "19.3.1",
+    "react-dom": "^19.3.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "build": "bb plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "pretest": "bb plugin build"
+  },
+  "private": true
+}

@@ -1,0 +1,77 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": false
+  },
+  "include": [
+    "decisions.ts",
+    "awaiting.ts",
+    "leftovers.ts",
+    "release-wait.ts",
+    "prs.ts",
+    "activity.ts",
+    "watchers.ts",
+    "limits.ts",
+    "focus.ts",
+    "repo-commands.ts",
+    "repo-panel.tsx",
+    "when.ts",
+    "server.ts",
+    "app.tsx",
+    "flow-state.tsx",
+    "dialogs.tsx",
+    "thread-row.tsx",
+    "drag.tsx",
+    "triage-list.tsx",
+    "digest.tsx",
+    "settings-panels.tsx",
+    "plan-expander.ts",
+    "shell-appearance.tsx",
+    "live-activity.tsx",
+    "live-activity.ui.test.tsx",
+    "needs-me.ts",
+    "components",
+    "lib",
+    "hooks",
+    "shell-appearance.ui.test.tsx",
+    "needs-me.test.ts",
+    "vitest.config.ts",
+    "thread-status.test.ts",
+    "timeline-activity.ui.test.tsx",
+    "decision-choices.ui.test.tsx",
+    "workspaces.ts",
+    "workspace-client.tsx",
+    "workspace-ui.tsx",
+    "workspace-storage.ts",
+    "workspaces.test.ts",
+    "workspaces.ui.test.tsx",
+    "workspace-topbar.ts",
+    "palette-model.ts",
+    "palette.tsx",
+    "palette-model.test.ts",
+    "palette.ui.test.tsx",
+    "lanes.ts",
+    "catch-up-model.ts",
+    "catch-up-model.test.ts",
+    "catch-up.tsx",
+    "catch-up.ui.test.tsx"
+  ]
+}

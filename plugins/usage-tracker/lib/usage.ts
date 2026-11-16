@@ -1,0 +1,500 @@
+export const PROVIDER_IDS = [
+  "codex",
+  "claudeCode",
+  "cursor",
+  "grok",
+  "openCode",
+  "antigravity",
+  "deepSeek",
+] as const;
+
+export type ProviderId = (typeof PROVIDER_IDS)[number];
+export type RawProviderId =
+  | ProviderId
+  | "claude-code"
+  | "acp-cursor"
+  | "acp-grok"
+  | "acp-opencode"
+  | "acp-antigravity";
+export type ProviderStatus =
+  | "ok"
+  | "not_installed"
+  | "unauthenticated"
+  | "expired"
+  | "error";
+
+export interface UsageCost {
+  usedUsdCents: number;
+  limitUsdCents: number;
+}
+
+export interface UsageResetCredits {
+  availableCount: number;
+  /** Set when the count belongs to a login this server cannot spend from. */
+  readOnly?: boolean;
+}
+
+export interface RawUsageWindow {
+  label: string;
+  usedPercent: number;
+  resetsAt: string | null;
+  cost?: UsageCost;
+  kind?: "five-hour" | "daily" | "weekly" | "custom";
+}
+
+export interface RawHealthyProviderUsage {
+  status: "ok";
+  accountEmail: string | null;
+  planLabel: string | null;
+  windows: RawUsageWindow[];
+}
+
+export type RawProviderUsage =
+  | RawHealthyProviderUsage
+  | { status: "not_installed" }
+  | { status: "unauthenticated" }
+  | { status: "expired" }
+  | {
+      status: "error";
+      message: string;
+      planLabel?: string | null;
+      accountEmail?: string | null;
+    };
+
+export type RawUsageResponse = Partial<
+  Record<RawProviderId, RawProviderUsage>
+>;
+
+export interface UsageWindow {
+  label: string;
+  usedPercent: number;
+  barPercent: number;
+  resetsAt: string | null;
+  cost: UsageCost | null;
+  kind?: "five-hour" | "daily" | "weekly" | "custom";
+}
+
+export type UsageLevel = "normal" | "warning" | "critical";
+
+/** One account served by the Account Pooler plugin. */
+export interface PooledAccountUsage {
+  id: string;
+  label: string;
+  status: ProviderStatus;
+  accountEmail: string | null;
+  planLabel: string | null;
+  message: string | null;
+  observedAt: string | null;
+  windows: UsageWindow[];
+  resetCredits?: UsageResetCredits | null;
+}
+
+/** Prepaid API balance, as reported by DeepSeek and optionally measured against a budget. */
+export interface ProviderBalance {
+  currency: string;
+  total: number;
+  granted: number;
+  toppedUp: number;
+  available: boolean;
+  budget: number | null;
+  usedPercent: number | null;
+}
+
+export interface ProviderUsage {
+  id: ProviderId;
+  name: string;
+  status: ProviderStatus;
+  accountEmail: string | null;
+  planLabel: string | null;
+  message: string | null;
+  windows: UsageWindow[];
+  balance?: ProviderBalance;
+  resetCredits?: UsageResetCredits | null;
+  /**
+   * Present when the Account Pooler owns this provider's accounts. Provider-level
+   * windows and `accountEmail` are the current routed account.
+   */
+  accounts?: PooledAccountUsage[];
+  currentAccountId?: string;
+  /** True when a live thread or in-flight Account Pooler route is using this provider. */
+  inUse?: boolean;
+}
+
+export interface UsageSnapshot {
+  fetchedAt: string;
+  host: {
+    id: string | null;
+    name: string | null;
+  };
+  providers: ProviderUsage[];
+}
+
+/**
+ * Keeps one entry per account email (case-insensitive). A healthy reading beats
+ * an unhealthy one, then the fresher reading wins. Entries without an email stay.
+ */
+export function dedupeByAccountEmail<T>(
+  items: readonly T[],
+  identity: (item: T) => { email: string | null; ok: boolean; freshness: number },
+): T[] {
+  const kept: T[] = [];
+  const slotByEmail = new Map<string, number>();
+  for (const item of items) {
+    const { email, ok, freshness } = identity(item);
+    const key = email?.trim().toLowerCase() ?? "";
+    if (key === "") {
+      kept.push(item);
+      continue;
+    }
+    const slot = slotByEmail.get(key);
+    if (slot === undefined) {
+      slotByEmail.set(key, kept.length);
+      kept.push(item);
+      continue;
+    }
+    const current = identity(kept[slot]!);
+    const better = ok === current.ok ? freshness > current.freshness : ok;
+    if (better) kept[slot] = item;
+  }
+  return kept;
+}
+
+function resetCreditsForCount(
+  availableCount: number | null,
+): UsageResetCredits | null {
+  if (availableCount === null) return null;
+  if (!Number.isSafeInteger(availableCount) || availableCount < 0) {
+    throw new TypeError("Reset credit counts must be non-negative integers");
+  }
+  return { availableCount };
+}
+
+export function withCodexResetCredits(
+  snapshot: UsageSnapshot,
+  availableCount: number | null,
+  accountEmail: string | null = null,
+): UsageSnapshot {
+  const resetCredits = resetCreditsForCount(availableCount);
+  return {
+    ...snapshot,
+    providers: snapshot.providers.map((provider) => {
+      if (provider.id !== "codex") return provider;
+      // Resets belong to the Codex login on the server, so only that account row carries them.
+      const owner = provider.accounts?.find(
+        (account) =>
+          accountEmail !== null &&
+          account.accountEmail?.toLowerCase() === accountEmail.toLowerCase(),
+      );
+      if (provider.accounts === undefined || owner === undefined) {
+        return { ...provider, resetCredits };
+      }
+      return {
+        ...provider,
+        resetCredits: null,
+        accounts: provider.accounts.map((account) => ({
+          ...account,
+          resetCredits: account === owner ? resetCredits : null,
+        })),
+      };
+    }),
+  };
+}
+
+export interface ResetReading {
+  /** Null when the source does not name the account; it then belongs to the first row. */
+  email: string | null;
+  availableCount: number;
+}
+
+/** Adds read-only reset counts to rows of one provider that have none yet, matched by account email. */
+export function withReadOnlyResetCredits(
+  snapshot: UsageSnapshot,
+  providerId: ProviderId,
+  readings: readonly ResetReading[],
+): UsageSnapshot {
+  if (readings.length === 0) return snapshot;
+  const creditFor = (
+    email: string | null,
+    index: number,
+    current: UsageResetCredits | null | undefined,
+  ): UsageResetCredits | null => {
+    if (current != null) return current;
+    const reading = readings.find((candidate) =>
+      candidate.email === null
+        ? index === 0
+        : email?.toLowerCase() === candidate.email.toLowerCase(),
+    );
+    return reading === undefined
+      ? null
+      : { availableCount: reading.availableCount, readOnly: true };
+  };
+  return {
+    ...snapshot,
+    providers: snapshot.providers.map((provider) => {
+      if (provider.id !== providerId) return provider;
+      if (provider.accounts === undefined || provider.accounts.length === 0) {
+        return {
+          ...provider,
+          resetCredits: creditFor(provider.accountEmail, 0, provider.resetCredits),
+        };
+      }
+      return {
+        ...provider,
+        accounts: provider.accounts.map((account, index) => ({
+          ...account,
+          resetCredits: creditFor(account.accountEmail, index, account.resetCredits),
+        })),
+      };
+    }),
+  };
+}
+
+interface ProviderDefinition {
+  id: ProviderId;
+  wireIds: readonly RawProviderId[];
+  name: string;
+  loginCommand: string;
+}
+
+const PROVIDERS: readonly ProviderDefinition[] = [
+  {
+    id: "codex",
+    wireIds: ["codex"],
+    name: "Codex",
+    loginCommand: "codex login",
+  },
+  {
+    id: "claudeCode",
+    wireIds: ["claude-code", "claudeCode"],
+    name: "Claude Code",
+    loginCommand: "claude",
+  },
+  {
+    id: "cursor",
+    wireIds: ["acp-cursor", "cursor"],
+    name: "Cursor",
+    loginCommand: "cursor-agent login",
+  },
+  {
+    id: "grok",
+    wireIds: ["acp-grok", "grok"],
+    name: "Grok",
+    loginCommand: "grok login",
+  },
+  {
+    id: "openCode",
+    wireIds: ["acp-opencode", "openCode"],
+    name: "OpenCode",
+    loginCommand: "opencode auth login",
+  },
+];
+
+export function providerIdForWireId(wireId: string): ProviderId | null {
+  return (
+    PROVIDERS.find((provider) =>
+      (provider.wireIds as readonly string[]).includes(wireId),
+    )?.id ?? null
+  );
+}
+
+export const REQUEST_ERROR_MESSAGE =
+  "Usage could not be loaded. Check the agent session and try again.";
+
+export function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) {
+    throw new TypeError("Usage percentages must be finite numbers");
+  }
+  return Math.min(100, Math.max(0, value));
+}
+
+export function usageLevel(value: number | null): UsageLevel {
+  if (value === null) return "normal";
+  if (!Number.isFinite(value)) {
+    throw new TypeError("Usage percentages must be finite numbers");
+  }
+  if (value >= 95) return "critical";
+  if (value >= 80) return "warning";
+  return "normal";
+}
+
+function finiteNumber(value: number, label: string): number {
+  if (!Number.isFinite(value)) {
+    throw new TypeError(`${label} must be a finite number`);
+  }
+  return value;
+}
+
+function statusMessage(
+  provider: ProviderDefinition,
+  usage: Exclude<RawProviderUsage, RawHealthyProviderUsage>,
+): string {
+  switch (usage.status) {
+    case "not_installed":
+      return `${provider.name} is not installed on this machine.`;
+    case "unauthenticated":
+      return `Sign in with \`${provider.loginCommand}\`, then refresh usage.`;
+    case "expired":
+      return `The ${provider.name} session expired. Run \`${provider.loginCommand}\`, then refresh usage.`;
+    case "error":
+      return usage.message.trim() || `${provider.name} usage is unavailable.`;
+  }
+}
+
+function normalizeProvider(
+  definition: ProviderDefinition,
+  usage: RawProviderUsage | undefined,
+): ProviderUsage {
+  if (usage === undefined) {
+    return {
+      id: definition.id,
+      name: definition.name,
+      status: "error",
+      accountEmail: null,
+      planLabel: null,
+      message:
+        definition.id === "grok"
+          ? "Grok Build does not report subscription limits through bb yet."
+          : `${definition.name} usage was not reported by bb.`,
+      windows: [],
+    };
+  }
+
+  if (usage.status !== "ok") {
+    return {
+      id: definition.id,
+      name: definition.name,
+      status: usage.status,
+      accountEmail: usage.status === "error" ? (usage.accountEmail ?? null) : null,
+      planLabel: usage.status === "error" ? (usage.planLabel ?? null) : null,
+      message: statusMessage(definition, usage),
+      windows: [],
+    };
+  }
+
+  return {
+    id: definition.id,
+    name: definition.name,
+    status: "ok",
+    accountEmail: usage.accountEmail,
+    planLabel: usage.planLabel,
+    message: null,
+    windows: usage.windows.map((window) => ({
+      label: window.label,
+      usedPercent: finiteNumber(window.usedPercent, "usedPercent"),
+      barPercent: clampPercent(window.usedPercent),
+      resetsAt: window.resetsAt,
+      cost:
+        window.cost === undefined
+          ? null
+          : {
+              usedUsdCents: finiteNumber(
+                window.cost.usedUsdCents,
+                "usedUsdCents",
+              ),
+              limitUsdCents: finiteNumber(
+                window.cost.limitUsdCents,
+                "limitUsdCents",
+              ),
+            },
+      ...(window.kind === undefined ? {} : { kind: window.kind }),
+    })),
+  };
+}
+
+function providerUsage(
+  response: RawUsageResponse,
+  definition: ProviderDefinition,
+): RawProviderUsage | undefined {
+  for (const wireId of definition.wireIds) {
+    const usage = response[wireId];
+    if (usage !== undefined) return usage;
+  }
+  return undefined;
+}
+
+export function normalizeUsage(
+  response: RawUsageResponse,
+  host: UsageSnapshot["host"],
+  fetchedAt = new Date(),
+): UsageSnapshot {
+  return {
+    fetchedAt: fetchedAt.toISOString(),
+    host,
+    providers: PROVIDERS.map((provider) =>
+      normalizeProvider(provider, providerUsage(response, provider)),
+    ),
+  };
+}
+
+export function formatUsedPercent(value: number, locale?: string): string {
+  if (!Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+export function formatResetCredits(availableCount: number): string {
+  return `${availableCount} reset${availableCount === 1 ? "" : "s"} available`;
+}
+
+export function formatResetTime(
+  value: string | null,
+  locale?: string,
+): string {
+  if (value === null) return "Reset unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Reset unavailable";
+  return `Resets ${new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date)}`;
+}
+
+export function formatFetchedAt(value: string, locale?: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Updated recently";
+  return `Updated ${new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date)}`;
+}
+
+export function formatCurrencyAmount(
+  amount: number,
+  currency: string,
+  locale?: string,
+): string {
+  if (!Number.isFinite(amount)) return "—";
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
+
+export function formatCost(cost: UsageCost, locale?: string): string {
+  const format = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "USD",
+  });
+  return `${format.format(cost.usedUsdCents / 100)} of ${format.format(cost.limitUsdCents / 100)}`;
+}
+
+export function providerStatusLabel(status: ProviderStatus): string {
+  switch (status) {
+    case "ok":
+      return "Available";
+    case "not_installed":
+      return "Not installed";
+    case "unauthenticated":
+      return "Sign in required";
+    case "expired":
+      return "Session expired";
+    case "error":
+      return "Unavailable";
+  }
+}

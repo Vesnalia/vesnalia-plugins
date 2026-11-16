@@ -1,0 +1,1156 @@
+// The shapes GitHub returns and the pure mapping from them to what the page shows
+// (the GraphQL text itself is in queries.ts). No I/O here, so prs.test.ts can
+// exercise it directly.
+
+export type CiState = "passing" | "failing" | "pending" | "none";
+
+export interface FailingCheck {
+  name: string;
+  /** GitHub Actions workflow (the pipeline) the failing job belongs to. */
+  workflow: string | null;
+  url: string | null;
+}
+
+/** The open PR whose branch this one is based on. */
+export interface StackRef {
+  number: number;
+  title: string;
+  url: string;
+}
+
+export interface Pr {
+  id: string;
+  number: number;
+  title: string;
+  url: string;
+  repo: string;
+  author: string;
+  baseRefName: string;
+  /** False when the PR targets another branch rather than the repo's default. */
+  onDefaultBranch: boolean;
+  stackedOn: StackRef | null;
+  isDraft: boolean;
+  createdAt: string;
+  updatedAt: string;
+  mergedAt: string | null;
+  closedAt: string | null;
+  additions: number;
+  deletions: number;
+  ci: CiState;
+  failingChecks: FailingCheck[];
+  unresolvedThreads: number;
+  reviewDecision: string | null;
+  conflicts: boolean;
+  /** Why an open PR is not merged yet; empty means nothing is blocking it. */
+  blockers: string[];
+  /** Your latest review (Reviewed tab only); stale once the author pushed after it or it was dismissed. */
+  myReview: { state: string; stale: boolean } | null;
+}
+
+export interface PrList {
+  total: number;
+  items: Pr[];
+}
+
+
+// Loose shape of what the query returns; GitHub omits fields it skipped.
+interface RawContext {
+  __typename?: string;
+  name?: string;
+  status?: string;
+  conclusion?: string | null;
+  detailsUrl?: string | null;
+  title?: string | null;
+  summary?: string | null;
+  checkSuite?: {
+    app: { name: string } | null;
+    workflowRun: { workflow: { name: string } } | null;
+  } | null;
+  annotations?: {
+    nodes: {
+      message: string;
+      path: string;
+      annotationLevel: string | null;
+      location: { start: { line: number } } | null;
+    }[];
+  };
+  startedAt?: string | null;
+  context?: string;
+  createdAt?: string;
+  state?: string;
+  description?: string | null;
+  targetUrl?: string | null;
+}
+export interface RawPr {
+  id?: string;
+  additions?: number;
+  deletions?: number;
+  number: number;
+  title: string;
+  url: string;
+  isDraft: boolean;
+  createdAt: string;
+  updatedAt: string;
+  mergedAt: string | null;
+  closedAt: string | null;
+  author?: { login: string } | null;
+  baseRefName?: string;
+  repository: { nameWithOwner: string; defaultBranchRef?: { name: string } | null };
+  baseRef?: { associatedPullRequests: { nodes: StackRef[] } } | null;
+  reviewDecision?: string | null;
+  mergeable?: string;
+  headRefOid?: string;
+  viewerLatestReview?: { state: string; commit?: { oid: string } | null } | null;
+  reviewThreads?: { nodes: { isResolved: boolean; comments?: { nodes: { state?: string }[] } }[] };
+  commits?: {
+    nodes: {
+      commit: {
+        statusCheckRollup: {
+          state: string;
+          contexts: { nodes: RawContext[] };
+        } | null;
+      };
+    }[];
+  };
+}
+export interface RawSearch {
+  issueCount: number;
+  nodes: (RawPr | Record<string, never>)[];
+  pageInfo?: { hasNextPage: boolean; endCursor: string | null };
+}
+
+const FAILED_RUN = new Set([
+  "FAILURE",
+  "TIMED_OUT",
+  "CANCELLED",
+  "ACTION_REQUIRED",
+  "STARTUP_FAILURE",
+]);
+const FAILED_STATUS = new Set(["FAILURE", "ERROR"]);
+
+function ciState(rollup: string | undefined, checks: CheckDetail[]): CiState {
+  if (rollup === undefined) return "none";
+  // GitHub's rollup counts superseded runs, so judge by the latest runs when we have them.
+  if (checks.some((c) => c.status === "failing")) return "failing";
+  if (checks.some((c) => c.status === "pending")) return "pending";
+  if (checks.length > 0) return "passing";
+  if (rollup === "SUCCESS") return "passing";
+  if (rollup === "FAILURE" || rollup === "ERROR") return "failing";
+  return "pending"; // PENDING, EXPECTED
+}
+
+/** Stacked when the base is not the default branch; the parent PR may be gone if its branch was deleted. */
+export function stackOf(raw: Pick<RawPr, "baseRefName" | "repository" | "baseRef">): {
+  onDefaultBranch: boolean;
+  stackedOn: StackRef | null;
+} {
+  // GitHub links the default branch to unrelated PRs, so never treat it as a parent.
+  const onDefaultBranch = !raw.baseRefName || raw.baseRefName === raw.repository.defaultBranchRef?.name;
+  return { onDefaultBranch, stackedOn: onDefaultBranch ? null : (raw.baseRef?.associatedPullRequests.nodes[0] ?? null) };
+}
+
+export function toPr(raw: RawPr): Pr {
+  const rollup = raw.commits?.nodes[0]?.commit.statusCheckRollup ?? null;
+  const checks = latestChecks(rollup?.contexts.nodes ?? []);
+  const failingChecks: FailingCheck[] = checks
+    .filter((c) => c.status === "failing")
+    .map(({ name, workflow, url }) => ({ name, workflow, url }));
+  const pr: Pr = {
+    id: raw.id ?? raw.url,
+    number: raw.number,
+    title: raw.title,
+    url: raw.url,
+    repo: raw.repository.nameWithOwner,
+    author: raw.author?.login ?? "ghost",
+    baseRefName: raw.baseRefName ?? "",
+    ...stackOf(raw),
+    isDraft: raw.isDraft,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+    mergedAt: raw.mergedAt,
+    closedAt: raw.closedAt,
+    additions: raw.additions ?? 0,
+    deletions: raw.deletions ?? 0,
+    ci: ciState(rollup?.state, checks),
+    failingChecks,
+    // Threads still in your unsubmitted review are drafts, not open conversations.
+    unresolvedThreads:
+      raw.reviewThreads?.nodes.filter((t) => !t.isResolved && t.comments?.nodes[0]?.state !== "PENDING").length ?? 0,
+    reviewDecision: raw.reviewDecision ?? null,
+    // UNKNOWN means GitHub has not computed it yet; only CONFLICTING is a conflict.
+    conflicts: raw.mergeable === "CONFLICTING",
+    blockers: [],
+    myReview: raw.viewerLatestReview
+      ? {
+          state: raw.viewerLatestReview.state,
+          stale:
+            raw.viewerLatestReview.state === "DISMISSED" ||
+            (!!raw.headRefOid && raw.viewerLatestReview.commit?.oid !== raw.headRefOid),
+        }
+      : null,
+  };
+  pr.blockers = blockersOf(pr);
+  return pr;
+}
+
+export function blockersOf(pr: Pr): string[] {
+  if (pr.mergedAt !== null || pr.closedAt !== null) return [];
+  const out: string[] = [];
+  if (pr.isDraft) out.push("Draft");
+  if (pr.stackedOn) out.push(`Stacked on #${pr.stackedOn.number}`);
+  if (pr.conflicts) out.push("Merge conflicts");
+  if (pr.ci === "failing") {
+    const n = pr.failingChecks.length;
+    out.push(n > 0 ? `CI failing (${n} check${n === 1 ? "" : "s"})` : "CI failing");
+  }
+  if (pr.ci === "pending") out.push("CI running");
+  if (pr.reviewDecision === "CHANGES_REQUESTED") out.push("Changes requested");
+  if (pr.unresolvedThreads > 0) {
+    const n = pr.unresolvedThreads;
+    out.push(`${n} unresolved comment${n === 1 ? "" : "s"}`);
+  }
+  if (pr.reviewDecision === "REVIEW_REQUIRED") out.push("Awaiting review");
+  return out;
+}
+
+/** Whether a row matches every word of a search, in its title, #number, repo, author, base branch or blockers. */
+export function matchesSearch(pr: Pr, query: string): boolean {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return true;
+  const text = [pr.title, `#${pr.number}`, pr.repo, pr.author, pr.baseRefName, ...pr.blockers].join(" ").toLowerCase();
+  return words.every((w) => text.includes(w));
+}
+
+export function toList(search: RawSearch): PrList {
+  return {
+    total: search.issueCount,
+    // Search can return non-PR nodes as {} when the fragment does not match.
+    items: search.nodes.filter((n): n is RawPr => "url" in n).map(toPr),
+  };
+}
+
+// ---- CI checks (shared by the list and the detail view) ----
+
+export type CheckStatus = "failing" | "pending" | "passing" | "skipped";
+
+export interface Annotation {
+  path: string;
+  line: number | null;
+  level: string | null;
+  message: string;
+}
+
+export interface CheckDetail {
+  /** Job name for GitHub Actions, context name for commit statuses. */
+  name: string;
+  /** The pipeline: the Actions workflow, else the CI app (e.g. Jenkins). */
+  workflow: string | null;
+  status: CheckStatus;
+  conclusion: string | null;
+  url: string | null;
+  title: string | null;
+  summary: string | null;
+  annotations: Annotation[];
+}
+
+export function checkOf(c: RawContext): CheckDetail {
+  if (c.__typename === "StatusContext") {
+    const state = c.state ?? "";
+    return {
+      name: c.context ?? "status",
+      workflow: null,
+      status: FAILED_STATUS.has(state) ? "failing" : state === "SUCCESS" ? "passing" : "pending",
+      conclusion: state || null,
+      url: c.targetUrl ?? null,
+      title: c.description ?? null,
+      summary: null,
+      annotations: [],
+    };
+  }
+  const conclusion = c.conclusion ?? null;
+  const status: CheckStatus = FAILED_RUN.has(conclusion ?? "")
+    ? "failing"
+    : c.status !== undefined && c.status !== "COMPLETED"
+      ? "pending"
+      : conclusion === "SUCCESS"
+        ? "passing"
+        : "skipped"; // SKIPPED, NEUTRAL, STALE
+  return {
+    name: c.name ?? "check",
+    workflow:
+      c.checkSuite?.workflowRun?.workflow.name ?? c.checkSuite?.app?.name ?? null,
+    status,
+    conclusion,
+    url: c.detailsUrl ?? null,
+    title: c.title || null,
+    summary: c.summary || null,
+    annotations: (c.annotations?.nodes ?? []).map((a) => ({
+      path: a.path,
+      line: a.location?.start.line ?? null,
+      level: a.annotationLevel,
+      message: a.message,
+    })),
+  };
+}
+
+/**
+ * One check per pipeline job: the commit keeps every run of a job (re-runs,
+ * runs cancelled by a newer one), and only the latest decides, as in branch
+ * protection.
+ */
+export function latestChecks(contexts: RawContext[]): CheckDetail[] {
+  const latest = new Map<string, { at: string; check: CheckDetail }>();
+  for (const c of contexts) {
+    const check = checkOf(c);
+    const key = `${check.workflow ?? ""}|${check.name}`;
+    const at = c.startedAt ?? c.createdAt ?? "";
+    if ((latest.get(key)?.at ?? "") <= at) latest.set(key, { at, check });
+  }
+  return [...latest.values()].map((v) => v.check);
+}
+
+// ---- Detail view ----
+
+export interface Comment {
+  /** GraphQL node id, used to delete; empty for a review summary or the description. */
+  id: string;
+  /** GitHub lets the viewer delete it: in practice, your own comments. */
+  canDelete: boolean;
+  author: string;
+  avatarUrl: string | null;
+  body: string;
+  createdAt: string;
+  url: string;
+}
+
+export interface Thread {
+  /** GraphQL node id, used to reply. */
+  id: string;
+  path: string;
+  /** Which side of the diff the line number refers to. */
+  side: "LEFT" | "RIGHT";
+  /** First line of a multi-line comment; null for a single line. */
+  startLine: number | null;
+  /** Part of your unsubmitted review: only you can see it. */
+  isPending: boolean;
+  line: number | null;
+  isResolved: boolean;
+  isOutdated: boolean;
+  resolvedBy: string | null;
+  /** GitHub lets the viewer resolve it (or unresolve it, once resolved). */
+  canToggleResolved: boolean;
+  /** Last lines of the diff the thread is attached to. */
+  diffHunk: string | null;
+  comments: Comment[];
+  /** Unresolved and the last word is not the PR author's. */
+  awaitingReply: boolean;
+}
+
+export interface TimelineEntry extends Comment {
+  /** APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED; null for a plain comment. */
+  reviewState: string | null;
+}
+
+export interface PrCommit {
+  oid: string;
+  shortOid: string;
+  headline: string;
+  author: string;
+  avatarUrl: string | null;
+  committedDate: string;
+  /** The commit's CI rollup; null when it ran none. */
+  ci: CheckStatus | null;
+}
+
+const ROLLUP: Record<string, CheckStatus> = {
+  SUCCESS: "passing", FAILURE: "failing", ERROR: "failing", PENDING: "pending", EXPECTED: "pending",
+};
+
+export interface Reviewer {
+  /** A login, or a team's name. */
+  name: string;
+  avatarUrl: string | null;
+  team: boolean;
+  /** REQUESTED while their review is still asked for; else their latest review's state. */
+  state: string;
+}
+
+export interface Label {
+  name: string;
+  /** Six hex digits, or null when GitHub sent something else. */
+  color: string | null;
+}
+
+export interface PrDetail {
+  /** GraphQL node id, used to comment. */
+  id: string;
+  /** The signed-in GitHub user looking at the PR. */
+  viewer: string;
+  number: number;
+  title: string;
+  url: string;
+  repo: string;
+  author: string;
+  authorAvatarUrl: string | null;
+  state: string;
+  isDraft: boolean;
+  headRefName: string;
+  baseRefName: string;
+  onDefaultBranch: boolean;
+  stackedOn: StackRef | null;
+  changedFiles: number;
+  additions: number;
+  deletions: number;
+  /** Your unsubmitted review on this PR, if you started one. */
+  pendingReviewId: string | null;
+  reviewDecision: string | null;
+  conflicts: boolean;
+  /** Description first, then comments and reviews, oldest first. */
+  timeline: TimelineEntry[];
+  /** Unresolved first, in GitHub's order within each group. */
+  threads: Thread[];
+  /** Failing first, then running, passing, skipped. */
+  checks: CheckDetail[];
+  /** Asked-for reviewers first, then everyone else who reviewed; never the author. */
+  reviewers: Reviewer[];
+  labels: Label[];
+  /** The description as Markdown source, for editing. */
+  body: string;
+  /** GitHub lets the viewer edit the title and description. */
+  canEdit: boolean;
+  /** The latest 100 commits, newest first. */
+  commits: PrCommit[];
+  commitCount: number;
+  /** The commit your latest review was on, to mark what came after it. */
+  myReviewOid: string | null;
+}
+
+
+type RawAuthor = { login: string; avatarUrl?: string } | null;
+interface RawComment {
+  id?: string;
+  viewerCanDelete?: boolean;
+  author: RawAuthor;
+  body: string;
+  createdAt: string;
+  url: string;
+  diffHunk?: string;
+  state?: string;
+}
+export interface RawDetail {
+  id?: string;
+  pendingReview?: { nodes: { id: string }[] };
+  changedFiles?: number;
+  additions?: number;
+  deletions?: number;
+  baseRef?: { associatedPullRequests: { nodes: StackRef[] } } | null;
+  number: number;
+  title: string;
+  url: string;
+  isDraft: boolean;
+  state: string;
+  createdAt: string;
+  body: string;
+  author: RawAuthor;
+  headRefName: string;
+  baseRefName: string;
+  reviewDecision: string | null;
+  mergeable: string;
+  repository: { nameWithOwner: string; defaultBranchRef?: { name: string } | null };
+  reviewThreads: {
+    nodes: {
+      id?: string;
+      diffSide?: string;
+      startLine?: number | null;
+      isResolved: boolean;
+      isOutdated: boolean;
+      viewerCanResolve?: boolean;
+      viewerCanUnresolve?: boolean;
+      path: string;
+      line: number | null;
+      originalLine: number | null;
+      resolvedBy: RawAuthor;
+      comments: { nodes: RawComment[] };
+    }[];
+  };
+  comments: { nodes: RawComment[] };
+  reviews: {
+    nodes: {
+      author: RawAuthor;
+      state: string;
+      body: string;
+      submittedAt: string | null;
+      url: string;
+    }[];
+  };
+  commits: {
+    nodes: { commit: { statusCheckRollup: { contexts: { nodes: RawContext[] } } | null } }[];
+  };
+  viewerLatestReview?: { commit: { oid: string } | null } | null;
+  viewerCanUpdate?: boolean;
+  labels?: { nodes: { name: string; color: string }[] };
+  latestReviews?: { nodes: { author: RawAuthor; state: string }[] };
+  reviewRequests?: {
+    nodes: {
+      requestedReviewer: { __typename: string; login?: string; name?: string; avatarUrl?: string | null } | null;
+    }[];
+  };
+  history?: {
+    totalCount: number;
+    nodes: {
+      commit: {
+        oid: string;
+        abbreviatedOid: string;
+        messageHeadline: string;
+        committedDate: string;
+        statusCheckRollup: { state: string } | null;
+        author: { name: string | null; avatarUrl?: string | null; user: { login: string } | null } | null;
+      };
+    }[];
+  };
+}
+
+const login = (a: RawAuthor) => a?.login ?? "ghost";
+const comment = (c: RawComment): Comment => ({
+  id: c.id ?? "",
+  canDelete: c.viewerCanDelete ?? false,
+  author: login(c.author),
+  avatarUrl: c.author?.avatarUrl ?? null,
+  body: c.body,
+  createdAt: c.createdAt,
+  url: c.url,
+});
+const CHECK_ORDER: Record<CheckStatus, number> = { failing: 0, pending: 1, passing: 2, skipped: 3 };
+
+function reviewersOf(raw: RawDetail, author: string): Reviewer[] {
+  const requested: Reviewer[] = (raw.reviewRequests?.nodes ?? []).flatMap(({ requestedReviewer: r }) => {
+    const name = r?.login ?? r?.name;
+    return name ? [{ name, avatarUrl: r?.avatarUrl ?? null, team: r?.__typename === "Team", state: "REQUESTED" }] : [];
+  });
+  const asked = new Set(requested.map((r) => r.name));
+  const reviewed: Reviewer[] = (raw.latestReviews?.nodes ?? [])
+    .filter((r) => r.author && r.author.login !== author && !asked.has(r.author.login))
+    .map((r) => ({ name: r.author!.login, avatarUrl: r.author!.avatarUrl ?? null, team: false, state: r.state }));
+  return [...requested, ...reviewed];
+}
+
+export function toDetail(raw: RawDetail, viewer = ""): PrDetail {
+  const author = login(raw.author);
+  const threads: Thread[] = raw.reviewThreads.nodes.map((t) => {
+    const comments = t.comments.nodes.map(comment);
+    const hunk = t.comments.nodes[0]?.diffHunk;
+    return {
+      id: t.id ?? "",
+      path: t.path,
+      side: t.diffSide === "LEFT" ? "LEFT" : "RIGHT",
+      startLine: t.startLine ?? null,
+      isPending: t.comments.nodes[0]?.state === "PENDING",
+      line: t.line ?? t.originalLine,
+      isResolved: t.isResolved,
+      isOutdated: t.isOutdated,
+      resolvedBy: t.resolvedBy ? login(t.resolvedBy) : null,
+      canToggleResolved: !!(t.isResolved ? t.viewerCanUnresolve : t.viewerCanResolve),
+      diffHunk: hunk ? hunk.split("\n").slice(-8).join("\n") : null,
+      comments,
+      awaitingReply: !t.isResolved && comments.at(-1)?.author !== author,
+    };
+  });
+  const timeline: TimelineEntry[] = [
+    ...(raw.body.trim() === ""
+      ? []
+      : [{ ...comment(raw), id: "", canDelete: false, reviewState: null }]),
+    ...raw.comments.nodes.map((c) => ({ ...comment(c), reviewState: null })),
+    ...raw.reviews.nodes
+      // A bare COMMENTED review only wraps thread comments, shown under threads.
+      .filter((r) => r.submittedAt !== null && (r.body.trim() !== "" || r.state !== "COMMENTED"))
+      .map((r) => ({
+        id: "",
+        canDelete: false,
+        author: login(r.author),
+        avatarUrl: r.author?.avatarUrl ?? null,
+        body: r.body,
+        createdAt: r.submittedAt!,
+        url: r.url,
+        reviewState: r.state,
+      })),
+  ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const contexts = raw.commits.nodes[0]?.commit.statusCheckRollup?.contexts.nodes ?? [];
+  return {
+    id: raw.id ?? "",
+    viewer,
+    number: raw.number,
+    title: raw.title,
+    url: raw.url,
+    repo: raw.repository.nameWithOwner,
+    author,
+    authorAvatarUrl: raw.author?.avatarUrl ?? null,
+    state: raw.state,
+    isDraft: raw.isDraft,
+    headRefName: raw.headRefName,
+    baseRefName: raw.baseRefName,
+    ...stackOf(raw),
+    changedFiles: raw.changedFiles ?? 0,
+    pendingReviewId: raw.pendingReview?.nodes[0]?.id ?? null,
+    additions: raw.additions ?? 0,
+    deletions: raw.deletions ?? 0,
+    reviewDecision: raw.reviewDecision,
+    conflicts: raw.mergeable === "CONFLICTING",
+    timeline,
+    // Array sort is stable, so GitHub's order survives within each group.
+    threads: threads.sort((a, b) => Number(a.isResolved) - Number(b.isResolved)),
+    checks: latestChecks(contexts).sort((a, b) => CHECK_ORDER[a.status] - CHECK_ORDER[b.status]),
+    commits: (raw.history?.nodes ?? [])
+      .map(({ commit: c }) => ({
+        oid: c.oid,
+        shortOid: c.abbreviatedOid,
+        headline: c.messageHeadline,
+        author: c.author?.user?.login ?? c.author?.name ?? "unknown",
+        avatarUrl: c.author?.avatarUrl ?? null,
+        committedDate: c.committedDate,
+        ci: c.statusCheckRollup ? (ROLLUP[c.statusCheckRollup.state] ?? null) : null,
+      }))
+      .reverse(),
+    commitCount: raw.history?.totalCount ?? 0,
+    reviewers: reviewersOf(raw, author),
+    labels: (raw.labels?.nodes ?? []).map((l) => ({ name: l.name, color: /^[0-9a-f]{6}$/i.test(l.color) ? l.color : null })),
+    body: raw.body,
+    canEdit: raw.viewerCanUpdate ?? false,
+    myReviewOid: raw.viewerLatestReview?.commit?.oid ?? null,
+  };
+}
+
+// ---- Watcher: what changed since the last poll ----
+
+/** Realtime channels: new alerts, and alerts marked seen. */
+export const ALERTS_NEW = "pr-alerts";
+export const ALERTS_SEEN = "pr-alerts-seen";
+
+
+interface RawWho {
+  author: { __typename?: string; login: string } | null;
+  createdAt?: string;
+  submittedAt?: string | null;
+  url: string;
+}
+export interface RawWatchPr {
+  id: string;
+  number: number;
+  title: string;
+  url: string;
+  author: { login: string } | null;
+  repository: { nameWithOwner: string };
+  comments: { nodes: RawWho[] };
+  reviews: { nodes: RawWho[] };
+  reviewThreads: { nodes: { comments: { nodes: RawWho[] } }[] };
+  commits: { nodes: { commit: { statusCheckRollup: { contexts: { nodes: RawContext[] } } | null } }[] };
+}
+
+export interface Watched {
+  id: string;
+  repo: string;
+  number: number;
+  title: string;
+  url: string;
+  /** Latest-run failing jobs as "workflow › job". */
+  failing: string[];
+  /** Newest comment or review by someone other than you, bots and ignored people. */
+  lastComment: { author: string; at: string; url: string } | null;
+}
+
+export function toWatched(raw: RawWatchPr, ignore: Set<string>): Watched {
+  const me = raw.author?.login;
+  const contexts = raw.commits.nodes[0]?.commit.statusCheckRollup?.contexts.nodes ?? [];
+  const candidates = [
+    ...raw.comments.nodes,
+    ...raw.reviews.nodes,
+    ...raw.reviewThreads.nodes.flatMap((t) => t.comments.nodes),
+  ].flatMap((w) => {
+    const at = w.createdAt ?? w.submittedAt;
+    const who = w.author;
+    if (!who || !at || who.login === me || who.__typename === "Bot" || ignore.has(who.login.toLowerCase())) return [];
+    return [{ author: who.login, at, url: w.url }];
+  });
+  return {
+    id: raw.id,
+    repo: raw.repository.nameWithOwner,
+    number: raw.number,
+    title: raw.title,
+    url: raw.url,
+    failing: latestChecks(contexts)
+      .filter((c) => c.status === "failing")
+      .map((c) => (c.workflow ? `${c.workflow} › ${c.name}` : c.name)),
+    lastComment: candidates.reduce<Watched["lastComment"]>((a, b) => (a && a.at >= b.at ? a : b), null),
+  };
+}
+
+export interface WatchState {
+  failing: string[];
+  lastCommentAt: string | null;
+}
+
+export interface Alert {
+  id: string;
+  kind: "ci" | "comment" | "test";
+  repo: string;
+  number: number;
+  url: string;
+  headline: string;
+  detail: string;
+  at: string;
+  seen: boolean;
+}
+
+/**
+ * Alerts for what changed since `prev`. A null `prev` (first poll, or a new
+ * GitHub account) only records a baseline, so installing never floods you.
+ */
+export function diffWatch(
+  prev: Record<string, WatchState> | null,
+  prs: Watched[],
+  now: string,
+  notify: { ci: boolean; comments: boolean },
+): { alerts: Alert[]; next: Record<string, WatchState> } {
+  const next: Record<string, WatchState> = {};
+  const alerts: Alert[] = [];
+  for (const pr of prs) {
+    next[pr.id] = { failing: pr.failing, lastCommentAt: pr.lastComment?.at ?? null };
+    if (prev === null) continue;
+    // A PR first seen now: its CI counts from clean, its old comments do not.
+    const was = prev[pr.id] ?? { failing: [], lastCommentAt: pr.lastComment?.at ?? null };
+    const ref = { repo: pr.repo, number: pr.number, seen: false };
+    const newlyFailing = pr.failing.filter((f) => !was.failing.includes(f));
+    if (notify.ci && newlyFailing.length > 0) {
+      alerts.push({
+        ...ref,
+        id: `${pr.id}:ci:${newlyFailing.join("|")}:${now}`,
+        kind: "ci",
+        url: pr.url,
+        headline: `CI failing · ${pr.repo}#${pr.number}`,
+        detail: `${newlyFailing.join(", ")} — ${pr.title}`,
+        at: now,
+      });
+    }
+    const c = pr.lastComment;
+    if (notify.comments && c && (was.lastCommentAt === null || c.at > was.lastCommentAt)) {
+      alerts.push({
+        ...ref,
+        id: `${pr.id}:comment:${c.at}`,
+        kind: "comment",
+        url: c.url,
+        headline: `${c.author} commented · ${pr.repo}#${pr.number}`,
+        detail: pr.title,
+        at: c.at,
+      });
+    }
+  }
+  return { alerts, next };
+}
+
+/** One system notification for a whole check, so a busy poll does not send a burst. */
+export function pushText(alerts: Alert[]): { title: string; body: string } {
+  if (alerts.length === 1) return { title: alerts[0]!.headline, body: alerts[0]!.detail };
+  return { title: `${alerts.length} new PR alerts`, body: alerts.map((a) => a.headline).join("\n") };
+}
+
+/** Who a thread is waiting on, from the point of view of whoever is looking. */
+export type ThreadStatus = "resolved" | "waiting-on-you" | "you-replied" | "waiting-on-author" | "author-replied";
+
+export function threadStatus(t: Thread, viewer: string, author: string): ThreadStatus {
+  if (t.isResolved) return "resolved";
+  // awaitingReply: the last word is not the PR author's.
+  if (viewer === author) return t.awaitingReply ? "waiting-on-you" : "you-replied";
+  return t.awaitingReply ? "waiting-on-author" : "author-replied";
+}
+
+// ---- Changed files (REST /pulls/{n}/files) ----
+
+export interface RestFile {
+  filename: string;
+  previous_filename?: string;
+  status: string;
+  additions: number;
+  deletions: number;
+  patch?: string;
+}
+
+export interface PrFile {
+  path: string;
+  previousPath: string | null;
+  /** added, removed, modified, renamed, copied, changed, unchanged */
+  status: string;
+  additions: number;
+  deletions: number;
+  /** Null for binary files, files GitHub will not diff, or very large patches. */
+  patch: string | null;
+}
+
+const MAX_PATCH = 200_000;
+
+export function toFiles(files: RestFile[]): PrFile[] {
+  return files.map((f) => ({
+    path: f.filename,
+    previousPath: f.previous_filename ?? null,
+    status: f.status,
+    additions: f.additions,
+    deletions: f.deletions,
+    patch: f.patch && f.patch.length <= MAX_PATCH ? f.patch : null,
+  }));
+}
+
+
+// ---- Reviewing: line comments and submitting a review ----
+
+export interface DiffLine {
+  kind: "hunk" | "add" | "del" | "ctx";
+  text: string;
+  oldLine: number | null;
+  newLine: number | null;
+}
+
+/** GitHub's per-file REST patch, as rows with the line numbers a comment needs. */
+export function parsePatch(patch: string): DiffLine[] {
+  const out: DiffLine[] = [];
+  let oldLine = 0;
+  let newLine = 0;
+  const rows = patch.split("\n");
+  if (rows.at(-1) === "") rows.pop(); // a trailing newline is not a context line
+  for (const row of rows) {
+    const hunk = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(row);
+    if (hunk) {
+      oldLine = Number(hunk[1]);
+      newLine = Number(hunk[2]);
+      out.push({ kind: "hunk", text: row, oldLine: null, newLine: null });
+    } else if (row.startsWith("\\")) {
+      continue; // "\ No newline at end of file" belongs to neither side
+    } else if (row.startsWith("+")) {
+      out.push({ kind: "add", text: row.slice(1), oldLine: null, newLine: newLine++ });
+    } else if (row.startsWith("-")) {
+      out.push({ kind: "del", text: row.slice(1), oldLine: oldLine++, newLine: null });
+    } else {
+      out.push({ kind: "ctx", text: row.slice(1), oldLine: oldLine++, newLine: newLine++ });
+    }
+  }
+  return out;
+}
+
+/** Where GitHub anchors a comment on this row: removed lines on the old side, the rest on the new. */
+export function commentTarget(row: DiffLine): { side: "LEFT" | "RIGHT"; line: number } | null {
+  if (row.kind === "hunk") return null;
+  return row.kind === "del" ? { side: "LEFT", line: row.oldLine! } : { side: "RIGHT", line: row.newLine! };
+}
+
+export interface CommentRange {
+  side: "LEFT" | "RIGHT";
+  line: number;
+  /** Set only when the comment spans more than one line. */
+  start: { side: "LEFT" | "RIGHT"; line: number } | null;
+}
+
+/**
+ * The comment for rows `a`..`b` (either order), anchored on the lower row like
+ * GitHub. Null when a hunk header sits between them: GitHub only accepts a
+ * range inside one hunk.
+ */
+export function commentRange(rows: DiffLine[], a: number, b: number): CommentRange | null {
+  const [from, to] = a <= b ? [a, b] : [b, a];
+  const end = rows[to] ? commentTarget(rows[to]!) : null;
+  const begin = rows[from] ? commentTarget(rows[from]!) : null;
+  if (!end || !begin) return null;
+  if (rows.slice(from, to + 1).some((r) => r.kind === "hunk")) return null;
+  return { ...end, start: from === to ? null : begin };
+}
+
+export type ReviewEvent = "COMMENT" | "APPROVE" | "REQUEST_CHANGES";
+
+/** GitHub refuses Approve and Request changes on your own pull request. */
+export function reviewEvents(viewer: string, author: string): ReviewEvent[] {
+  return viewer === author ? ["COMMENT"] : ["COMMENT", "APPROVE", "REQUEST_CHANGES"];
+}
+
+/** Mirrors GitHub: changes need a reason, a comment review needs a body or line comments. */
+export function canSubmitReview(event: ReviewEvent, body: string, pendingComments: number): boolean {
+  if (event === "APPROVE") return true;
+  if (event === "REQUEST_CHANGES") return body.trim() !== "";
+  return body.trim() !== "" || pendingComments > 0;
+}
+
+
+// ---- Mapping the diff viewer's line selection to a GitHub comment ----
+
+/** @pierre/diffs names the old side "deletions" and the new side "additions". */
+export type ViewerSide = "deletions" | "additions";
+export const toViewerSide = (side: "LEFT" | "RIGHT"): ViewerSide => (side === "LEFT" ? "deletions" : "additions");
+
+/**
+ * The comment range for a selection in the diff viewer, or null when a line is
+ * not in the patch or the selection crosses a hunk (GitHub would refuse it).
+ */
+export function rangeFromSelection(
+  rows: DiffLine[],
+  selection: { start: number; side?: ViewerSide; end: number; endSide?: ViewerSide },
+): CommentRange | null {
+  const rowOf = (side: ViewerSide, line: number) =>
+    rows.findIndex((r) => (side === "deletions" ? r.kind !== "add" && r.oldLine === line : r.kind !== "del" && r.newLine === line));
+  const side = selection.side ?? "additions";
+  const a = rowOf(side, selection.start);
+  const b = rowOf(selection.endSide ?? side, selection.end);
+  return a < 0 || b < 0 ? null : commentRange(rows, a, b);
+}
+
+/**
+ * GitHub's REST patch is only the hunks; the diff viewer needs one complete
+ * file patch, so add the git headers it expects.
+ */
+export function fullPatch(file: Pick<PrFile, "path" | "previousPath" | "status" | "patch">): string {
+  const before = file.previousPath ?? file.path;
+  return [
+    `diff --git a/${before} b/${file.path}`,
+    file.status === "added" ? "--- /dev/null" : `--- a/${before}`,
+    file.status === "removed" ? "+++ /dev/null" : `+++ b/${file.path}`,
+    file.patch ?? "",
+  ].join("\n");
+}
+
+/**
+ * A plain github.com pull request link → the PR it names. Null for anything else: other hosts,
+ * sub-pages (/files, /checks) and #comment links, which only GitHub can land on.
+ */
+export function prFromUrl(href: string): { repo: string; number: number } | null {
+  let url: URL;
+  try {
+    url = new URL(href);
+  } catch {
+    return null;
+  }
+  // Same owner/name rule as the server's prRef.
+  const m = /^\/([\w.-]+)\/([\w.-]+)\/pull\/([1-9]\d{0,9})\/?$/.exec(url.pathname);
+  if (url.protocol !== "https:" || url.hostname !== "github.com" || url.hash || !m) return null;
+  return { repo: `${m[1]}/${m[2]}`, number: Number(m[3]) };
+}
+
+// ---- Fix with agent ----
+
+/** What a "Fix with agent" button hands over: one review thread, or one failed check. */
+export type FixSubject = { kind: "thread"; thread: Thread } | { kind: "check"; check: CheckDetail };
+
+const MAX_QUOTE = 6000;
+const MAX_ANNOTATIONS = 20;
+
+/** Text from GitHub, fenced one backtick longer than any run inside it so a bot's ``` blocks stay whole. */
+function quote(text: string): string {
+  const trimmed = text.trim();
+  const body = trimmed.length > MAX_QUOTE ? `${trimmed.slice(0, MAX_QUOTE)}\n… (cut here, the rest is on GitHub)` : trimmed;
+  const fence = "`".repeat(Math.max(2, ...(body.match(/`+/g) ?? []).map((run) => run.length)) + 1);
+  return `${fence}\n${body}\n${fence}`;
+}
+
+/** The prompt an agent gets: the PR and its branch, then the comment with its replies, or the failed job with its errors. */
+export function fixPrompt(pr: Pick<PrDetail, "url" | "repo" | "headRefName">, subject: FixSubject): string {
+  const head = `Pull request ${pr.url} (${pr.repo}, branch \`${pr.headRefName}\`).`;
+  if (subject.kind === "thread") {
+    const t = subject.thread;
+    const where = t.line === null ? "" : t.startLine && t.startLine !== t.line ? ` at lines ${t.startLine}–${t.line}` : ` at line ${t.line}`;
+    const notes = [t.side === "LEFT" ? "a line of the old version" : "", t.isOutdated ? "outdated: the code has changed since" : ""].filter(Boolean);
+    const [first, ...replies] = t.comments;
+    return [
+      head,
+      "",
+      `In \`${t.path}\`${where}${notes.length > 0 ? ` (${notes.join("; ")})` : ""} — review comment from @${first?.author ?? "unknown"}${first ? ` (${first.url})` : ""}:`,
+      quote(first?.body ?? ""),
+      ...replies.flatMap((c) => ["", `Reply from @${c.author}:`, quote(c.body)]),
+      "",
+      `Address this comment on branch \`${pr.headRefName}\`. If it is wrong, say why instead of changing the code.`,
+    ].join("\n");
+  }
+  const c = subject.check;
+  const errors = c.annotations
+    .slice(0, MAX_ANNOTATIONS)
+    .map((a) => `${a.path}${a.line ? `:${a.line}` : ""}${a.level ? ` ${a.level}` : ""}: ${a.message}`);
+  const more = c.annotations.length > MAX_ANNOTATIONS ? ` (the first ${MAX_ANNOTATIONS} of ${c.annotations.length})` : "";
+  return [
+    head,
+    "",
+    `The CI job "${c.workflow ? `${c.workflow} / ${c.name}` : c.name}" failed${c.conclusion ? ` (${c.conclusion.toLowerCase().replace(/_/g, " ")})` : ""}${c.title ? `: ${c.title}` : "."}`,
+    ...(errors.length > 0 ? ["", `Errors from the run${more}:`, quote(errors.join("\n"))] : []),
+    ...(c.url ? ["", `Logs: ${c.url}`] : []),
+    "",
+    `Find why it fails and fix it on branch \`${pr.headRefName}\`.`,
+  ].join("\n");
+}
+
+/** "owner/name", lowercased, from a GitHub git remote (https or ssh); null for anything else. */
+export function repoOfRemote(remote: string | null): string | null {
+  const match = remote?.match(/github\.com[:/]+([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i);
+  return match ? `${match[1]}/${match[2]}`.toLowerCase() : null;
+}
+
+/** The fields of bb's `threads.list` rows that pick a PR's thread. */
+export interface AgentThread {
+  id: string;
+  projectId: string;
+  environmentId: string | null;
+  environmentBranchName: string | null;
+  archivedAt: number | null;
+  updatedAt: number;
+  title: string | null;
+  titleFallback: string | null;
+}
+
+/**
+ * Where "Fix with agent" goes: the most recently updated thread whose environment is on the PR's head
+ * branch in the PR's repo, confirmed by bb's GitHub PR Status answer for that environment when it has one,
+ * else by the project's git remote; and, for a new thread, the project whose remote is the PR's repo.
+ */
+export function agentTarget(
+  pr: { url: string; repo: string; headRefName: string },
+  threads: readonly AgentThread[],
+  projects: readonly { id: string; gitRemoteUrl: string | null; name?: string }[],
+  prUrlByEnvironment: Readonly<Record<string, string>>,
+): { thread: { id: string; title: string } | null; projectId: string | null } {
+  const repo = pr.repo.toLowerCase();
+  const remotes = new Map(projects.map((p) => [p.id, repoOfRemote(p.gitRemoteUrl)]));
+  const owner = threads
+    .filter((t) => {
+      if (t.archivedAt !== null || t.environmentId === null || t.environmentBranchName !== pr.headRefName) return false;
+      const known = prUrlByEnvironment[t.environmentId];
+      return known !== undefined ? known.toLowerCase() === pr.url.toLowerCase() : remotes.get(t.projectId) === repo;
+    })
+    .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  return {
+    thread: owner ? { id: owner.id, title: owner.title ?? owner.titleFallback ?? "the PR's thread" } : null,
+    projectId: projectFor(pr.repo, projects),
+  };
+}
+
+const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * The bb project a PR belongs to: the one whose git remote is the repo; else one named like the repo
+ * ("Billing API" for acme/billing-api); else one whose name contains it or is contained in it.
+ */
+export function projectFor(repo: string, projects: readonly { id: string; gitRemoteUrl: string | null; name?: string }[]): string | null {
+  const lower = repo.toLowerCase();
+  const byRemote = projects.find((p) => repoOfRemote(p.gitRemoteUrl) === lower);
+  if (byRemote) return byRemote.id;
+  const name = squash(repo.split("/")[1] ?? repo);
+  if (name.length < 3) return null;
+  const named = projects.filter((p) => p.name);
+  const exact = named.find((p) => squash(p.name!) === name);
+  if (exact) return exact.id;
+  // Only a single close match counts: two candidates means guessing.
+  const close = named.filter((p) => {
+    const n = squash(p.name!);
+    return n.length >= 4 && (n.includes(name) || name.includes(n));
+  });
+  return close.length === 1 ? close[0]!.id : null;
+}
+
+/** Threads to offer under "Link to thread": the PR's branch thread, then its project's, then the rest, newest first. */
+export function linkCandidates(
+  threads: readonly AgentThread[],
+  projects: readonly { id: string; name?: string }[],
+  target: { thread: { id: string } | null; projectId: string | null },
+  limit = 60,
+): { id: string; title: string; project: string; updatedAt: number }[] {
+  const names = new Map(projects.map((p) => [p.id, p.name ?? ""]));
+  const rank = (t: AgentThread) => (t.id === target.thread?.id ? 0 : t.projectId === target.projectId ? 1 : 2);
+  return threads
+    .filter((t) => t.archivedAt === null)
+    .sort((a, b) => rank(a) - rank(b) || b.updatedAt - a.updatedAt)
+    .slice(0, limit)
+    .map((t) => ({ id: t.id, title: t.title ?? t.titleFallback ?? "Untitled thread", project: names.get(t.projectId) ?? "", updatedAt: t.updatedAt }));
+}
+
+type PromptPr = Pick<PrDetail, "url" | "repo" | "title" | "headRefName" | "baseRefName" | "author">;
+const about = (pr: PromptPr) =>
+  `Pull request ${pr.url}: "${pr.title}" (${pr.repo}, \`${pr.headRefName}\` into \`${pr.baseRefName}\`, by @${pr.author}).`;
+
+/** Starting prompts for the PR menu's thread actions. */
+export const prPrompts = {
+  link: (pr: PromptPr) => `${about(pr)}\n\nLinking this pull request to this thread for context. No action needed yet.`,
+  ask: (pr: PromptPr) => `${about(pr)}\n\nQuestion: `,
+  explain: (pr: PromptPr) =>
+    `${about(pr)}\n\nExplain this pull request. Read its description and diff (\`gh pr view\`, \`gh pr diff\`), then walk me through the change in a sensible reading order: what it does, why, and how the pieces fit. Point out what deserves a close read: risky logic, edge cases, missing tests, anything surprising.`,
+};
+
+/** Every unresolved review thread and failed job in one prompt; each section is what its own Fix with agent would send. */
+export function findingsPrompt(pr: PromptPr, subjects: readonly FixSubject[]): string {
+  const sections = subjects.map((s, i) => {
+    // fixPrompt is [head, "", ...body, "", instruction]: keep the body.
+    const body = fixPrompt(pr, s).split("\n").slice(2, -2);
+    return [`### ${i + 1}. ${s.kind === "thread" ? "Review comment" : "Failed CI job"}`, ...body].join("\n");
+  });
+  return [
+    about(pr),
+    "",
+    `Fix what is blocking it on branch \`${pr.headRefName}\`:`,
+    "",
+    sections.join("\n\n"),
+    "",
+    "Work through them in order. If a review comment is wrong, say why instead of changing the code. Finish with a short summary of what you changed.",
+  ].join("\n");
+}
+
+// ---- Jira links ----
+
+const JIRA_URL = /^https?:\/\/[\w.-]+\.atlassian\.net\/browse\/([A-Z][A-Z0-9]{1,9}-\d+)\/?(?:[?#]\S*)?$/;
+const JIRA_SITE = /(https?:\/\/[\w.-]+\.atlassian\.net)\/browse\/[A-Z][A-Z0-9]{1,9}-\d+/;
+
+/** Jira project prefixes this PR names (title, branch, Jira URLs), so `UTF-8` or `SHA-256` never become links. */
+export function jiraPrefixes(...texts: string[]): Set<string> {
+  const prefixes = new Set<string>();
+  for (const text of texts) {
+    for (const m of text.matchAll(/(?:^|[^A-Za-z0-9])([A-Z][A-Z0-9]{1,9})-\d+(?![A-Za-z0-9])/g)) {
+      const bracketed = new RegExp(`\\[${m[1]}-\\d+\\]|/browse/${m[1]}-\\d+|(?:^|/)${m[1]}-\\d+(?:/|$)`).test(text);
+      if (bracketed) prefixes.add(m[1]!);
+    }
+  }
+  return prefixes;
+}
+
+/** The Jira site a PR links to, from the first Jira issue URL in it. */
+export function jiraSite(...texts: string[]): string | null {
+  for (const t of texts) {
+    const m = t.match(JIRA_SITE);
+    if (m) return m[1]!;
+  }
+  return null;
+}
+
+/** Where a Jira issue key opens: My Jira's ticket page when it runs, else the issue on its site; null when neither is known. */
+export function jiraHref(key: string, target: { plugin: boolean; siteUrl: string | null }): string | null {
+  if (target.plugin) return `/plugins/my-jira/tickets/${key}`;
+  return target.siteUrl ? `${target.siteUrl.replace(/\/+$/, "")}/browse/${key}` : null;
+}
+
+/**
+ * Markdown with its Jira issues linked: bare keys of the given prefixes become links, and Jira issue URLs
+ * point at My Jira when it runs. Code, and text already inside a link, stay as they are.
+ */
+export function linkJira(markdown: string, prefixes: ReadonlySet<string>, href: (key: string) => string | null, plugin: boolean): string {
+  const token = /(```[\s\S]*?```|`[^`\n]*`|\[[^\]\n]*\]\([^)\s]*\)|<https?:[^>\s]+>|https?:\/\/[^\s)<>\]]+)/g;
+  const keys = prefixes.size > 0 ? new RegExp(`(^|[^A-Za-z0-9/_-])((?:${[...prefixes].join("|")})-\\d+)(?![A-Za-z0-9_-])`, "g") : null;
+  const plain = (text: string) =>
+    keys ? text.replace(keys, (all, pre: string, key: string) => {
+      const to = href(key);
+      return to ? `${pre}[${key}](${to})` : all;
+    }) : text;
+  let out = "";
+  let last = 0;
+  for (const m of markdown.matchAll(token)) {
+    out += plain(markdown.slice(last, m.index));
+    const t = m[0];
+    if (plugin && t.startsWith("[")) {
+      const url = t.slice(t.indexOf("](") + 2, -1);
+      const key = url.match(JIRA_URL)?.[1];
+      out += key ? `${t.slice(0, t.indexOf("](") + 2)}${href(key)})` : t;
+    } else if (plugin && !t.startsWith("`")) {
+      const key = t.replace(/^<|>$/g, "").match(JIRA_URL)?.[1];
+      out += key ? `[${key}](${href(key)})` : t;
+    } else {
+      out += t;
+    }
+    last = m.index! + t.length;
+  }
+  return out + plain(markdown.slice(last));
+}

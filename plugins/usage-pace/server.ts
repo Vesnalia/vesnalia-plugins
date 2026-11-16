@@ -1,0 +1,460 @@
+// bb-plugin-usage-pace — backend entry. Forked from Usage Bar by Dmitrii
+// Kapustin (MIT).
+//
+// Reads agent-provider usage limits (weekly windows and friends) through
+// bb.sdk.system.usageLimits, caches them per host, and exposes them to the
+// frontend over RPC and to shells/agents via `bb usage-pace`. Pace is not
+// cached: it depends on the current time, so each reader computes it.
+import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { z } from "zod";
+import { registerGrokProvider } from "./lib/grok-provider";
+import {
+  grokSessionContract,
+  RENEW_AFTER_MS,
+  RENEW_CHECK_MS,
+  type GrokRenewResult,
+} from "./lib/grok-session";
+import { createGrokUsageSource, grokUsageSourceContract } from "./lib/grok-usage-source";
+import { describePace, paceForWindows } from "./lib/pace";
+import { createTokenTotals } from "./lib/token-totals";
+
+const windowSchema = z.object({
+  label: z.string(),
+  usedPercent: z.number(),
+  resetsAt: z.string().nullable(),
+  /** True when the label looks like a 7-day / weekly window. */
+  weekly: z.boolean(),
+});
+export type UsageWindow = z.infer<typeof windowSchema>;
+
+const providerSchema = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  hostId: z.string(),
+  hostName: z.string(),
+  logoUrl: z.string().nullable(),
+  icon: z.object({ glyph: z.string() }).nullable(),
+  iconTint: z.object({ light: z.string(), dark: z.string() }).nullable(),
+  status: z.enum(["ok", "not_installed", "unauthenticated", "expired", "error"]),
+  message: z.string().nullable(),
+  accountEmail: z.string().nullable(),
+  planLabel: z.string().nullable(),
+  windows: z.array(windowSchema),
+});
+export type UsageProvider = z.infer<typeof providerSchema>;
+
+const snapshotSchema = z.object({
+  providers: z.array(providerSchema),
+  fetchedAt: z.string(),
+  error: z.string().nullable(),
+  /** The `showStrip` setting, sent with the snapshot so the app can read it. */
+  showStrip: z.boolean().optional(),
+});
+export type UsageSnapshot = z.infer<typeof snapshotSchema>;
+
+export const rpcContract = defineRpcContract({
+  getTokens: {
+    input: z.object({ timeZone: z.string().max(100), force: z.boolean().optional() }),
+    output: z.object({ day: z.number(), month: z.number(), timeZone: z.string(), fetchedAt: z.string().nullable(), error: z.string().nullable() }),
+  },
+  getUsage: {
+    input: z.object({ force: z.boolean().optional() }).nullable(),
+    output: snapshotSchema,
+  },
+  getCardSettings: {
+    input: z.object({}).nullable(),
+    output: z.object({ hiddenProviders: z.array(z.string()) }),
+  },
+});
+
+/** "Cursor, opencode" -> ["cursor", "opencode"]. */
+export function parseProviderList(value: string): string[] {
+  return value
+    .split(",")
+    .map((name) => name.trim().toLowerCase())
+    .filter((name) => name !== "");
+}
+
+const WEEKLY_PATTERN = /(week|7\s*[-‑]?\s*day|7d\b|weekly)/iu;
+
+export function isWeeklyLabel(label: string): boolean {
+  return WEEKLY_PATTERN.test(label);
+}
+
+type Host = Awaited<ReturnType<BbPluginApi["sdk"]["hosts"]["list"]>>[number];
+type Provider = Awaited<
+  ReturnType<BbPluginApi["sdk"]["providers"]["list"]>
+>[number];
+type UsageResponse = Awaited<
+  ReturnType<BbPluginApi["sdk"]["system"]["usageLimits"]>
+>;
+
+function normalizeProvider(
+  host: Host,
+  provider: Provider,
+  usage: UsageResponse[string] | undefined,
+): UsageProvider {
+  const tint = provider.strings?.iconTint;
+  const base = {
+    id: provider.id,
+    displayName: provider.displayName,
+    hostId: host.id,
+    hostName: host.name,
+    logoUrl: provider.logoUrl ?? null,
+    icon: provider.icon?.glyph ? { glyph: provider.icon.glyph } : null,
+    iconTint: tint ? { light: tint.light, dark: tint.dark } : null,
+    accountEmail: null,
+    planLabel: null,
+    message: null,
+    windows: [] as UsageWindow[],
+  };
+  if (usage === undefined) {
+    return { ...base, status: "error", message: "No usage reported." };
+  }
+  switch (usage.status) {
+    case "ok":
+      return {
+        ...base,
+        status: "ok",
+        accountEmail: usage.accountEmail,
+        planLabel: usage.planLabel,
+        windows: usage.windows.map((window) => ({
+          label: window.label,
+          usedPercent: Math.max(0, Math.min(100, window.usedPercent)),
+          resetsAt: window.resetsAt,
+          weekly: isWeeklyLabel(window.label),
+        })),
+      };
+    case "error":
+      return { ...base, status: "error", message: usage.message };
+    default:
+      return { ...base, status: usage.status };
+  }
+}
+
+export default async function plugin(bb: BbPluginApi) {
+  const getTokens = createTokenTotals(bb);
+  const settings = bb.settings.define({
+    cacheMinutes: {
+      type: "number",
+      label: "Cache usage for (minutes)",
+      default: 5,
+    },
+    showStrip: {
+      type: "boolean",
+      label: "Also show the Usage Pace strip above the sidebar footer",
+      default: false,
+    },
+    hiddenCardProviders: {
+      type: "string",
+      label: "Hide these providers in bb's usage card",
+      description: "Provider names as the card shows them, separated by commas. For example: Cursor",
+      default: "",
+    },
+    grokUsage: {
+      type: "boolean",
+      label: "Add Grok Build usage to bb's usage card (takes effect after a plugin reload)",
+      default: true,
+    },
+    renewGrokSession: {
+      type: "boolean",
+      label: "Renew the Grok Build login every 5 hours",
+      description:
+        "On each connected machine, refreshes ~/.grok/auth.json before the 6-hour access token expires. This does not open a browser.",
+      default: true,
+    },
+  });
+  let cacheMs = 5 * 60_000;
+  let showStrip = false;
+  let hiddenProviders: string[] = [];
+  const applySettings = async () => {
+    const values = await settings.get();
+    cacheMs = Math.max(0.5, Number(values.cacheMinutes) || 5) * 60_000;
+    showStrip = values.showStrip === true;
+    hiddenProviders = parseProviderList(String(values.hiddenCardProviders ?? ""));
+  };
+  await applySettings();
+  // bb registers providers when the plugin loads, so this setting applies
+  // after a reload.
+  if ((await settings.get()).grokUsage !== false) {
+    registerGrokProvider(bb);
+    // bb's usage card shows the providers of plugins that serve this
+    // discoverable contract; the provider alone does not add a Grok tab.
+    bb.rpc.register(grokUsageSourceContract, createGrokUsageSource(bb), {
+      experimental_discoverable: true,
+      experimental_description:
+        "Grok Build usage from Usage Pace. Inventory reads metadata only.",
+    });
+  }
+  const grokHosts = bb.hosts.experimental_client({ contract: grokSessionContract });
+
+  async function renewGrokOnConnectedHosts(force: boolean): Promise<string[]> {
+    const lines: string[] = [];
+    if ((await settings.get()).renewGrokSession === false && !force) {
+      return ["Grok login renewal is off. Set renewGrokSession to turn it on."];
+    }
+    let hosts: Host[] = [];
+    try {
+      hosts = await bb.sdk.hosts.list();
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      bb.log.warn(`Grok login renewal could not list machines: ${message}`);
+      return [`Could not list machines: ${message}`];
+    }
+    const connected = hosts.filter((host) => host.status !== "disconnected");
+    if (connected.length === 0) return ["No connected machine to renew."];
+    for (const host of connected) {
+      try {
+        const result = await grokHosts.call(
+          "renewGrokSession",
+          { force },
+          { hostId: host.id, timeoutMs: 45_000 },
+        );
+        lines.push(formatGrokRenewal(host.name, result));
+        if (result.status === "renewed") {
+          bb.log.info(`Grok login renewed on ${host.name} until ${result.expiresAt}.`);
+        } else if (result.status === "failed") {
+          bb.log.warn(`Grok login renewal failed on ${host.name}: ${result.message}`);
+        }
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : String(cause);
+        bb.log.warn(`Grok login renewal failed on ${host.name}: ${message}`);
+        lines.push(`${host.name}: failed — ${message}`);
+      }
+    }
+    return lines;
+  }
+
+  bb.background.service("grok-session", {
+    async start(signal) {
+      while (!signal.aborted) {
+        if ((await settings.get()).renewGrokSession !== false) {
+          await renewGrokOnConnectedHosts(false);
+        }
+        await sleep(RENEW_CHECK_MS, signal);
+      }
+    },
+  });
+
+  settings.onChange?.(() => {
+    void applySettings().then(() => {
+      bb.realtime.publish("usage-changed", { fetchedAt: new Date().toISOString() });
+    });
+  });
+
+  let cached: { at: number; snapshot: UsageSnapshot; dirty: boolean } | null =
+    null;
+  let pending: Promise<UsageSnapshot> | null = null;
+
+  async function loadSnapshot(): Promise<UsageSnapshot> {
+    const providers: UsageProvider[] = [];
+    let error: string | null = null;
+    let hosts: Host[] = [];
+    try {
+      hosts = await bb.sdk.hosts.list();
+    } catch (cause) {
+      error = cause instanceof Error ? cause.message : String(cause);
+    }
+    await Promise.all(
+      hosts.map(async (host) => {
+        if (host.status === "disconnected") return;
+        try {
+          const [list, usage] = await Promise.all([
+            bb.sdk.providers.list({ hostId: host.id, capability: "usage" }),
+            bb.sdk.system.usageLimits({ hostId: host.id }),
+          ]);
+          for (const provider of list) {
+            providers.push(normalizeProvider(host, provider, usage[provider.id]));
+          }
+        } catch (cause) {
+          error ??= `${host.name}: ${
+            cause instanceof Error ? cause.message : String(cause)
+          }`;
+        }
+      }),
+    );
+    providers.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    return { providers, fetchedAt: new Date().toISOString(), error };
+  }
+
+  async function getUsage(force: boolean): Promise<UsageSnapshot> {
+    const maxAge = cached?.dirty ? Math.min(cacheMs, 60_000) : cacheMs;
+    if (!force && cached !== null && Date.now() - cached.at < maxAge) {
+      return cached.snapshot;
+    }
+    if (pending !== null) return pending;
+    pending = loadSnapshot()
+      .then((snapshot) => {
+        cached = { at: Date.now(), snapshot, dirty: false };
+        bb.realtime.publish("usage-changed", { fetchedAt: snapshot.fetchedAt });
+        return snapshot;
+      })
+      .finally(() => {
+        pending = null;
+      });
+    return pending;
+  }
+
+  const markDirty = () => {
+    if (cached !== null) cached.dirty = true;
+  };
+  bb.events.on("thread.idle", markDirty);
+  bb.events.on("thread.failed", markDirty);
+
+  bb.rpc.register(rpcContract, {
+    getTokens: (input) => getTokens(input.timeZone, input.force),
+    getCardSettings: () => ({ hiddenProviders }),
+    getUsage: async (input) => ({
+      ...(await getUsage(input?.force === true)),
+      showStrip,
+    }),
+  });
+
+  function formatReset(resetsAt: string | null): string {
+    if (resetsAt === null) return "";
+    const ms = new Date(resetsAt).getTime() - Date.now();
+    if (!Number.isFinite(ms) || ms <= 0) return "resets now";
+    const hours = Math.floor(ms / 3_600_000);
+    const days = Math.floor(hours / 24);
+    const rest = hours % 24;
+    const minutes = Math.floor((ms % 3_600_000) / 60_000);
+    if (days > 0) return `resets in ${days}d ${rest}h`;
+    if (hours > 0) return `resets in ${hours}h ${minutes}m`;
+    return `resets in ${minutes}m`;
+  }
+
+  function formatSnapshot(snapshot: UsageSnapshot, weeklyOnly: boolean): string {
+    const lines: string[] = [];
+    for (const provider of snapshot.providers) {
+      if (provider.status !== "ok") {
+        lines.push(
+          `${provider.displayName} (${provider.hostName}): ${provider.status}${
+            provider.message ? ` — ${provider.message}` : ""
+          }`,
+        );
+        continue;
+      }
+      // Pace needs every window: a window can take its length from a sibling.
+      const paces = paceForWindows(provider.windows);
+      const shown = provider.windows
+        .map((window, index) => ({ window, pace: paces[index]! }))
+        .filter(({ window }) => !weeklyOnly || window.weekly);
+      if (shown.length === 0) continue;
+      lines.push(
+        `${provider.displayName}${provider.planLabel ? ` · ${provider.planLabel}` : ""} (${provider.hostName})`,
+      );
+      for (const { window, pace } of shown) {
+        lines.push(
+          `  ${window.label.padEnd(18)} ${String(Math.round(window.usedPercent)).padStart(3)}%  ${formatReset(window.resetsAt)}`,
+        );
+        const paceText = describePace(pace);
+        if (paceText) lines.push(`  ${"".padEnd(18)} ${paceText}`);
+      }
+    }
+    if (snapshot.error) lines.push(`warning: ${snapshot.error}`);
+    return lines.length === 0 ? "No usage available." : lines.join("\n");
+  }
+
+  const usageText = [
+    "Usage:",
+    "  bb usage-pace [--all] [--force] [--json]",
+    "  bb usage-pace renew-grok [--force]",
+    "",
+    "  --tokens total tokens across BB for today and this month (JSON)",
+    "  --all    show every window, not only weekly ones",
+    "  --force  bypass the cache and query providers now",
+    "  --json   machine-readable output; each window has a `pace` field",
+  ].join("\n");
+
+  bb.cli.register({
+    name: "usage-pace",
+    summary: "Show agent-provider usage limits and pace (weekly windows by default)",
+    commands: [
+      {
+        name: "show",
+        summary: "Print usage windows with pace",
+        usage: "bb usage-pace [show] [--all] [--force] [--json]",
+      },
+      {
+        name: "renew-grok",
+        summary: "Renew the Grok Build login on each connected machine when it is 5 hours old",
+        usage: "bb usage-pace renew-grok [--force]",
+      },
+    ],
+    async run(argv) {
+      if (argv.includes("--tokens")) {
+        const snapshot = await getTokens(Intl.DateTimeFormat().resolvedOptions().timeZone, argv.includes("--force"));
+        return { exitCode: snapshot.error ? 1 : 0, stdout: JSON.stringify(snapshot) };
+      }
+      const flags = new Set(argv.filter((arg) => arg.startsWith("--")));
+      const positional = argv.filter((arg) => !arg.startsWith("--"));
+      if (positional[0] === "help" || flags.has("--help")) {
+        return { exitCode: 0, stdout: usageText };
+      }
+      if (positional[0] === "renew-grok") {
+        const lines = await renewGrokOnConnectedHosts(flags.has("--force"));
+        const failed = lines.some((line) => line.includes(": failed"));
+        return { exitCode: failed ? 1 : 0, stdout: `${lines.join("\n")}\n` };
+      }
+      if (positional.length > 0 && positional[0] !== "show") {
+        return { exitCode: 1, stderr: usageText };
+      }
+      const snapshot = await getUsage(flags.has("--force"));
+      if (flags.has("--json")) {
+        const withPace = {
+          ...snapshot,
+          providers: snapshot.providers.map((provider) => {
+            const paces = paceForWindows(provider.windows);
+            return {
+              ...provider,
+              windows: provider.windows.map((window, index) => ({
+                ...window,
+                pace: paces[index]!,
+              })),
+            };
+          }),
+        };
+        return { exitCode: 0, stdout: JSON.stringify(withPace) };
+      }
+      return {
+        exitCode: 0,
+        stdout: formatSnapshot(snapshot, !flags.has("--all")),
+      };
+    },
+  });
+
+  bb.onDispose(() => {
+    cached = null;
+  });
+}
+
+function formatGrokRenewal(hostName: string, result: GrokRenewResult): string {
+  if (result.status === "renewed") return `${hostName}: renewed until ${result.expiresAt}`;
+  if (result.status === "waiting") {
+    const renewsAt =
+      result.createdAt === null
+        ? result.expiresAt
+        : new Date(Date.parse(result.createdAt) + RENEW_AFTER_MS).toISOString();
+    return `${hostName}: waiting — renews after ${renewsAt}`;
+  }
+  if (result.status === "missing") return `${hostName}: no saved Grok login`;
+  return `${hostName}: failed — ${result.message ?? "Grok did not extend the saved login."}`;
+}
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}

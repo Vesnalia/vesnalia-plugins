@@ -1,0 +1,178 @@
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import { CLI_NOT_FOUND } from "../src/cli.js";
+import hostEntry from "../src/host-entry.js";
+import { MAX_OUTPUT, findSyns, runSyns } from "../src/syns-process.js";
+
+// The SDK's host bundle loads only inside bb's host worker ("Dynamic require of child_process").
+vi.mock("@get-bb/plugin-sdk/host", () => ({ experimental_defineHostEntry: (entry: unknown) => entry }));
+
+const source = (name: string): string => readFileSync(new URL(`../src/${name}`, import.meta.url), "utf8");
+const imports = (text: string): { names: string[]; from: string }[] =>
+  [...text.matchAll(/(?:import|export)\s+(?:type\s+)?(?:\{([^}]*)\}|\*(?:\s+as\s+\w+)?|\w+)\s+from\s+"([^"]+)"|import\s+"([^"]+)"/g)].map((match) => ({ names: (match[1] ?? "*").split(",").map((name) => name.trim()).filter(Boolean), from: (match[2] ?? match[3])! }));
+
+describe("the plugin opens no repository file (A5, S2.5, S2.6)", () => {
+  it("the host half's only file-system access is looking for the executable", () => {
+    const text = source("syns-process.ts");
+    const fromFs = imports(text).filter((entry) => entry.from.startsWith("node:fs") || entry.from === "fs" || entry.from.startsWith("fs/"));
+    expect(fromFs.flatMap((entry) => entry.names).sort()).toEqual(["access", "constants"]);
+    expect(text).not.toMatch(/\brequire\s*\(|\bimport\s*\(/);
+    expect(text).not.toMatch(/readFile|readdir|createReadStream|writeFile|\bopen(Sync)?\s*\(|opendir|\bstat(Sync)?\s*\(/);
+  });
+  it("the scope check resolves paths and reads nothing: realpath, lstat and stat alone (D43, D85)", () => {
+    const text = source("scope.ts");
+    const fromFs = imports(text).filter((entry) => entry.from.startsWith("node:fs") || entry.from === "fs" || entry.from.startsWith("fs/"));
+    expect(fromFs.flatMap((entry) => entry.names).sort()).toEqual(["lstat", "realpath", "stat"]);
+    expect(text).not.toMatch(/readFile|readdir|createReadStream|writeFile|\bopen(Sync)?\s*\(|opendir/);
+  });
+  it("starts the CLI with an argument array and no shell (S2.10)", () => {
+    const text = source("syns-process.ts");
+    const fromChild = imports(text).filter((entry) => entry.from === "node:child_process");
+    expect(fromChild.flatMap((entry) => entry.names)).toEqual(["spawn"]);
+    expect(text).not.toMatch(/shell\s*:/);
+  });
+  it("nothing else in the plugin touches the file system or starts a process", () => {
+    const files = [...readdirSync(new URL("../src/", import.meta.url), { recursive: true })].map(String).filter((name) => name.endsWith(".ts") && name !== "syns-process.ts" && name !== "scope.ts"); // both guarded above (D43)
+    expect(files.length).toBeGreaterThan(8);
+    for (const name of files) {
+      for (const entry of imports(source(name))) expect(entry.from, name).not.toMatch(/^(node:)?(fs|child_process)(\/|$)/);
+    }
+  });
+  it("only the host entry reaches the two that do, and no file loads a module at run time (S2.5, S2.6)", () => {
+    const files = [...readdirSync(new URL("../src/", import.meta.url), { recursive: true })].map(String).filter((name) => name.endsWith(".ts"));
+    for (const name of files) {
+      const text = source(name);
+      expect(text, name).not.toMatch(/\brequire\s*\(|\bimport\s*\(/);
+      if (name === "host-entry.ts") continue;
+      expect(imports(text).map((entry) => entry.from.replace(/^\.\.?\//, "")), name).not.toEqual(expect.arrayContaining([expect.stringMatching(/^(syns-process|scope)\.js$/)]));
+    }
+  });
+});
+
+describe("the Claude Code glue opens no repository file either (hosts/claude)", () => {
+  const glue = (name: string): string => readFileSync(new URL(`../hosts/claude/${name}`, import.meta.url), "utf8");
+  it("its only file-system access is its own endpoint's folder, and it starts no process: the CLI runs through syns-process.ts", () => {
+    const files = [...readdirSync(new URL("../hosts/claude/", import.meta.url))].map(String).filter((name) => name.endsWith(".ts"));
+    expect(files.sort()).toEqual(["main.ts", "process.ts", "runner.ts"]);
+    for (const name of files) {
+      const found = imports(glue(name));
+      expect(found.map((entry) => entry.from), name).not.toContain("node:child_process");
+      const fromFs = found.filter((entry) => /^(node:)?fs(\/|$)/.test(entry.from)).flatMap((entry) => entry.names);
+      expect(fromFs, name).toEqual(name === "process.ts" ? ["mkdtempSync", "rmSync"] : []);
+      expect(glue(name), name).not.toMatch(/\brequire\s*\(|\bimport\s*\(/);
+      // Only the runner reaches the CLI and the scope check, as only host-entry.ts does in src.
+      if (name !== "runner.ts") expect(found.map((entry) => entry.from), name).not.toEqual(expect.arrayContaining([expect.stringMatching(/\/(syns-process|scope)\.js$/)]));
+    }
+  });
+});
+
+describe("the host half, run against a stand-in executable", () => {
+  const dir = mkdtempSync(join(tmpdir(), "syns-bb-plugin-host-"));
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+  /** An executable named `syns` in its own folder under the temporary one. */
+  const script = (name: string, body: string): string => {
+    const file = join(dir, name, "syns");
+    mkdirSync(join(dir, name), { recursive: true });
+    writeFileSync(file, `#!/bin/sh\n${body}\n`);
+    chmodSync(file, 0o755);
+    return file;
+  };
+  const signal = new AbortController().signal;
+
+  it("finds syns on PATH first, then in the named folders under home, else not at all (S2.8)", async () => {
+    const onPath = script("onpath", "exit 0");
+    expect(await findSyns(undefined, { PATH: join(dir, "onpath") }, join(dir, "nohome"))).toBe(onPath);
+    const inHome = script(join("home", ".cargo", "bin"), "exit 0");
+    expect(await findSyns(undefined, { PATH: "" }, join(dir, "home"))).toBe(inHome);
+  });
+
+  it("a synsPath setting names the executable outright; one that is not there is not found (S2.8)", async () => {
+    const named = script("named", "exit 0");
+    expect(await findSyns(named, { PATH: "" }, join(dir, "nohome"))).toBe(named);
+    expect(await findSyns(join(dir, "absent", "syns"), { PATH: join(dir, "onpath") }, join(dir, "nohome"))).toBeNull();
+  });
+
+  it("hands the provenance it is given to the process's environment, over what it inherited (D44)", async () => {
+    const bin = script("env", 'printf "%s|%s|%s" "$SYNS_INTEGRATION" "$SYNS_RUN" "$SYNS_TRIGGER"');
+    const result = await runSyns(bin, [], dir, undefined, 5000, signal, "bb-plugin", { SYNS_INTEGRATION: "syns-pages", SYNS_RUN: "thr_1", SYNS_TRIGGER: "page" });
+    expect(result.stdout).toBe("syns-pages|thr_1|page");
+  });
+
+  it("passes arguments as they are, standard input, and the folder; returns exit code and output", async () => {
+    const bin = script("echo", 'printf "%s|" "$@"; printf "cwd=%s|" "$(pwd -P)"; cat; echo oops >&2; exit 3');
+    const result = await runSyns(bin, ["a b", "$(id)", "; rm -rf x", "--", "-n"], dir, "from stdin", 5000, signal, "bb-plugin");
+    expect(result.exitCode).toBe(3);
+    expect(result.stdout).toContain("a b|$(id)|; rm -rf x|--|-n|");
+    expect(result.stdout).toContain("from stdin");
+    expect(result.stdout).toMatch(/cwd=.*syns-bb-plugin-host-/);
+    expect(result.stderr).toBe("oops\n");
+    expect(result).toMatchObject({ timedOut: false, spawnError: null, overflowed: false });
+  });
+
+  it("stops a process that outlives its limit (S2.14, A38)", async () => {
+    const bin = script("slow", "sleep 10");
+    const started = Date.now();
+    const result = await runSyns(bin, [], dir, undefined, 150, signal, "bb-plugin");
+    expect(result.timedOut).toBe(true);
+    expect(Date.now() - started).toBeLessThan(3000);
+  });
+
+  it("stops a process that prints more than MAX_OUTPUT, 40 MiB, and says so (S2.16, D27)", async () => {
+    const bin = script("loud", `head -c ${MAX_OUTPUT + 2_000_000} /dev/zero | tr '\\0' 'x'; sleep 10`);
+    const started = Date.now();
+    const result = await runSyns(bin, [], dir, undefined, 8000, signal, "bb-plugin");
+    expect(result.overflowed).toBe(true);
+    expect(result.stdout.length).toBeLessThanOrEqual(MAX_OUTPUT);
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
+
+  it("hands bytes on standard input to the process exactly (D25)", async () => {
+    const bin = script("bytes", "od -An -tx1 | tr -d ' \\n'");
+    const bytes = Buffer.from([0xff, 0xd8, 0x00, 0x0a, 0x0d, 0x80, 0xff, 0xd9]);
+    const result = await runSyns(bin, [], dir, bytes, 5000, signal, "bb-plugin");
+    expect(result.stdout).toBe("ffd8000a0d80ffd9");
+  });
+
+  it("reports a process that could not be started, in words that are not CLI_NOT_FOUND", async () => {
+    const bin = script("fine", "exit 0");
+    const result = await runSyns(bin, [], join(dir, "no-such-folder"), undefined, 1000, signal, "bb-plugin");
+    expect(result.spawnError).toBeTruthy();
+    expect(result.spawnError).not.toBe(CLI_NOT_FOUND);
+  });
+
+  it("with no executable to be found, answers CLI_NOT_FOUND and starts nothing (S3.6, A39)", async () => {
+    const entry = hostEntry as unknown as { handlers: { run(input: Record<string, unknown>, context: { signal: AbortSignal }): Promise<Record<string, unknown>> } };
+    const result = await entry.handlers.run({ cwd: dir, args: ["repo", "--json"], timeoutMs: 1000, synsPath: join(dir, "absent", "syns") }, { signal });
+    expect(result).toEqual({ exitCode: null, stdout: "", stderr: "", timedOut: false, spawnError: CLI_NOT_FOUND, overflowed: false });
+  });
+
+  it("a scope parameter outside the folder, a link out, starts nothing on either host; a plain folder runs the CLI at the folder itself (S2.31, D85)", async () => {
+    const { mkdirSync: mk, symlinkSync } = await import("node:fs");
+    const { createLocalRunner } = await import("../hosts/claude/runner.js");
+    const work = join(dir, "work");
+    mk(join(work, "apps", "todo"), { recursive: true });
+    mk(join(dir, "elsewhere"));
+    symlinkSync(join(dir, "elsewhere"), join(work, "escape"));
+    const marker = join(dir, "started");
+    const bin = script("scoped", `touch "${marker}"; printf "cwd=%s" "$(pwd -P)"`);
+    const entry = hostEntry as unknown as { handlers: { run(input: Record<string, unknown>, context: { signal: AbortSignal }): Promise<Record<string, unknown>> } };
+    const local = createLocalRunner(bin);
+    for (const scope of ["escape", "escape/inner"]) {
+      expect(await entry.handlers.run({ cwd: work, scope, args: ["ls", "--json"], timeoutMs: 5000, synsPath: bin }, { signal }), scope).toMatchObject({ exitCode: null, spawnError: "scope_outside" });
+      expect(await local.run({ hostId: "local", cwd: work, scope, args: ["ls", "--json"], timeoutMs: 5000 }), scope).toMatchObject({ exitCode: null, spawnError: "scope_outside" });
+    }
+    expect(readdirSync(dir)).not.toContain("started");
+    const real = (await import("node:fs")).realpathSync(work);
+    expect(await entry.handlers.run({ cwd: work, scope: "apps/todo", args: ["ls", "--json"], timeoutMs: 5000, synsPath: bin }, { signal })).toMatchObject({ exitCode: 0, stdout: `cwd=${real}` });
+    expect(await local.run({ hostId: "local", cwd: work, scope: "apps/todo", args: ["ls", "--json"], timeoutMs: 5000 })).toMatchObject({ exitCode: 0, stdout: `cwd=${real}` });
+  });
+
+  it("the handler runs the executable the setting names", async () => {
+    const entry = hostEntry as unknown as { handlers: { run(input: Record<string, unknown>, context: { signal: AbortSignal }): Promise<Record<string, unknown>> } };
+    const bin = script("handler", 'printf "%s " "$@"');
+    const result = await entry.handlers.run({ cwd: dir, args: ["repo", "--json"], timeoutMs: 5000, synsPath: bin }, { signal });
+    expect(result).toMatchObject({ exitCode: 0, stdout: "repo --json " });
+  });
+});

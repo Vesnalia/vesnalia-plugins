@@ -1,0 +1,17 @@
+# tokenmaxx
+
+Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+
+- Оригинальный автор: Pedro Filho (https://github.com/pedroapfilho)
+- Исходный репозиторий: https://github.com/pedroapfilho/bb-plugin-tokenmaxx
+- Каталог в репозитории: (корень)
+- Версия: v0.1.3, коммит 3f90fe614180b35c718d9a4a80ed1d33dbb0ac37
+- Ссылка на исходник: https://github.com/pedroapfilho/bb-plugin-tokenmaxx/tree/3f90fe614180b35c718d9a4a80ed1d33dbb0ac37
+- Лицензия: MIT (текст в файле LICENSE рядом)
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

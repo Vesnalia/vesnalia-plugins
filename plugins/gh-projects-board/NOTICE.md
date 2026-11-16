@@ -1,0 +1,17 @@
+# GitHub Projects Board
+
+Плагин адаптирован для VesnALIA из открытого каталога плагинов bb.
+
+- Оригинальный автор: James Klein (https://github.com/kleinjm)
+- Исходный репозиторий: https://github.com/kleinjm/bb-plugin-gh-projects-board
+- Каталог в репозитории: (корень)
+- Версия: v0.1.5, коммит e3413a824351e77018d4292abda5b1c2a96c96c5
+- Ссылка на исходник: https://github.com/kleinjm/bb-plugin-gh-projects-board/tree/e3413a824351e77018d4292abda5b1c2a96c96c5
+- Лицензия: MIT (текст в файле LICENSE рядом)
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

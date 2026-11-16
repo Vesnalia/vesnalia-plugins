@@ -1,0 +1,245 @@
+.jf-choices {
+  padding: 4px 2px 6px;
+  color: var(--foreground);
+}
+.jf-choices-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 3px 5px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.jf-choices-title {
+  text-transform: uppercase;
+}
+.jf-choices-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+/* "Pick several": switches a one-click decision to ticking. */
+.jf-choices-toggle {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+.jf-choices-toggle:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+  color: var(--foreground);
+}
+.jf-choices-toggle[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 11%, transparent);
+  color: var(--primary);
+}
+.jf-choices-toggle:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.jf-choices-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.jf-choices-list {
+  display: flex;
+  flex-direction: column;
+  max-height: min(220px, 32dvh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+.jf-choice {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.jf-choice + .jf-choice {
+  border-top: 1px solid var(--border);
+}
+.jf-choice-number {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--foreground) 3%, var(--card));
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.jf-choice-text {
+  display: -webkit-box;
+  flex: 1;
+  min-width: 0;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.jf-choice-meta {
+  flex-shrink: 0;
+  color: var(--primary);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.jf-choice[data-recommended="true"] {
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+}
+.jf-choice[data-recommended="true"] .jf-choice-number {
+  background: color-mix(in srgb, var(--primary) 11%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  color: var(--primary);
+}
+.jf-choice:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 9%, var(--card));
+}
+.jf-choice:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.jf-choice:disabled {
+  cursor: default;
+}
+.jf-choice:disabled:not([data-selected="true"]) {
+  opacity: 0.5;
+}
+.jf-choice[data-selected="true"] {
+  background: color-mix(in srgb, var(--primary) 11%, var(--card));
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+.jf-choice-spinner {
+  animation: jf-choice-spin 1.2s linear infinite;
+}
+/* Ticking (go-list, several numbers): picked rows keep the selected look; Go or Send sits under the list. */
+.jf-choices-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.jf-choices-submit {
+  padding: 4px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 7px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.jf-choices-submit:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--primary) 88%, var(--foreground));
+}
+.jf-choices-submit:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.jf-choices-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.jf-choices-submit[aria-busy="true"] {
+  cursor: wait;
+}
+/* A tickable row's number reads as a checkbox. */
+.jf-choices:is([data-mode="go"], [data-mode="multi"]) .jf-choice-number {
+  border-radius: 5px;
+}
+.jf-choices:is([data-mode="go"], [data-mode="multi"]) .jf-choice[data-selected="true"] .jf-choice-number {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.jf-choices-error {
+  margin: 6px 3px 0;
+  font-size: 11px;
+  color: var(--destructive-text);
+}
+.jf-choices-confirmation {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+@keyframes jf-choice-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jf-choice,
+  .jf-choices-toggle {
+    transition: none;
+  }
+  .jf-choice-spinner {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .jf-choices-list {
+    border-color: ButtonText;
+    background: Canvas;
+  }
+  .jf-choice[data-recommended="true"],
+  .jf-choice[data-selected="true"] {
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
+  .jf-choices-toggle[aria-pressed="true"] {
+    border-color: Highlight;
+    color: Highlight;
+  }
+}
+
+/* The message's own copy of these options is hidden, so show each option in full. */
+.jf-choices[data-full] .jf-choice-text {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+[data-jf-choices-repeated] {
+  display: none !important;
+}

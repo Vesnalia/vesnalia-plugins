@@ -1,0 +1,713 @@
+import { setTimeout as sleep } from "node:timers/promises";
+import type { AttachmentFile } from "./attachments.js";
+import { z } from "zod";
+import { EndpointByMethod } from "../generated/korey-api.js";
+
+const DEFAULT_BASE_URL = "https://api.korey.ai/api/v1";
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_RESPONSE_TIMEOUT_MS = 5 * 60_000;
+const DEFAULT_POLL_INTERVAL_MS = 1_000;
+
+const identityEndpoint = EndpointByMethod.get["/me"];
+const listThreadsEndpoint = EndpointByMethod.get["/threads"];
+const getThreadEndpoint = EndpointByMethod.get["/threads/{thread-id}"];
+const listMessagesEndpoint =
+  EndpointByMethod.get["/threads/{thread-id}/messages"];
+const createThreadEndpoint = EndpointByMethod.post["/threads"];
+const sendMessageEndpoint =
+  EndpointByMethod.post["/threads/{thread-id}/messages"];
+const uploadEndpoint =
+  EndpointByMethod.post["/threads/{thread-id}/attachments"];
+const responseEndpoint =
+  EndpointByMethod.get["/threads/{thread-id}/messages/{message-id}/response"];
+
+// Accept additive response changes without weakening request validation or
+// changing the pinned API contract. Known fields still use generated schemas.
+const identitySchema = identityEndpoint.responses[200].strip();
+const koreyThreadSchema = getThreadEndpoint.responses[200].strip().extend({
+  owner: getThreadEndpoint.responses[200].shape.owner.strip(),
+});
+const threadPageSchema = listThreadsEndpoint.responses[200].strip().extend({
+  data: z.array(koreyThreadSchema),
+});
+const generatedMessageSchema =
+  listMessagesEndpoint.responses[200].shape.data.element;
+const knownContentSchemas =
+  generatedMessageSchema.shape.contents.element.options;
+const knownContentTypes = new Set<string>(
+  knownContentSchemas.map((schema) => schema.shape.type.value),
+);
+const contentSchema = z.union([
+  ...knownContentSchemas.map((schema) => schema.strip()),
+  z
+    .object({ type: z.string().min(1) })
+    .refine((content) => !knownContentTypes.has(content.type))
+    .transform((content) => ({
+      type: "unknown" as const,
+      originalType: content.type,
+    })),
+]);
+const messageSchema = generatedMessageSchema.strip().extend({
+  contents: z.array(contentSchema),
+});
+const messagePageSchema = listMessagesEndpoint.responses[200].strip().extend({
+  data: z.array(messageSchema),
+});
+const createThreadResponseSchema = createThreadEndpoint.responses[201].strip();
+const sendMessageResponseSchema = sendMessageEndpoint.responses[201].strip();
+const uploadResponseSchema = z.array(
+  uploadEndpoint.responses[201].element.strip(),
+);
+const completeResponseSchema = responseEndpoint.responses[200].strip().extend({
+  messages: z.array(messageSchema),
+});
+const processingResponseSchema = responseEndpoint.responses[202].strip();
+
+export type KoreyIdentity = z.infer<typeof identitySchema>;
+export type KoreyThread = z.infer<typeof koreyThreadSchema>;
+export type KoreyThreadPage = z.infer<typeof threadPageSchema>;
+export type KoreyMessagePage = z.infer<typeof messagePageSchema>;
+export type KoreyMessage = KoreyMessagePage["data"][number];
+
+type CreateThreadBody = z.input<typeof createThreadEndpoint.parameters.body>;
+type CreateThreadResponse = z.infer<typeof createThreadResponseSchema>;
+type SendMessageBody = z.input<typeof sendMessageEndpoint.parameters.body>;
+type SendMessageResponse = z.infer<typeof sendMessageResponseSchema>;
+type UploadResponse = z.infer<typeof uploadResponseSchema>;
+
+export class KoreyApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number | null = null,
+    readonly mutationRejected: boolean = false,
+  ) {
+    super(message);
+    this.name = "KoreyApiError";
+  }
+}
+
+export class KoreyResponsePendingError extends KoreyApiError {
+  constructor() {
+    super(
+      "Korey response is still pending; resume polling for the existing message",
+    );
+    this.name = "KoreyResponsePendingError";
+  }
+}
+
+/** A bearer token held for one request. */
+export interface KoreyTokenLease {
+  token: string;
+  /** Called once the response arrives, so the token can be replaced. */
+  release(): void;
+}
+
+/** Supplies bearer tokens that can change while a client is in use. */
+export interface KoreyCredentials {
+  acquire(signal?: AbortSignal): Promise<KoreyTokenLease>;
+  /** Replaces a token Korey rejected with 401. */
+  replaceRejectedToken?(token: string, signal?: AbortSignal): Promise<void>;
+}
+
+function isTransient(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    Object.getOwnPropertyDescriptor(error, "transient")?.value === true
+  );
+}
+
+interface KoreyClientOptions {
+  token: string | KoreyCredentials;
+  baseUrl?: string;
+  fetch?: typeof globalThis.fetch;
+  requestTimeoutMs?: number;
+  responseTimeoutMs?: number;
+  pollIntervalMs?: number;
+}
+
+interface RequestOptions {
+  form?: FormData;
+  body?: unknown;
+  method?: "GET" | "POST";
+  mutationResponses?: Readonly<Record<number, z.ZodType>>;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
+
+function parseJson(text: string, context: string, status: number): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new KoreyApiError(
+      `Korey returned invalid JSON for ${context}`,
+      status,
+    );
+  }
+}
+
+function stringField(value: unknown, key: string): string | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const field = Object.getOwnPropertyDescriptor(value, key)?.value;
+  return typeof field === "string" ? field : undefined;
+}
+
+function errorDetail(text: string): string {
+  if (text.trim().length === 0) return "";
+  try {
+    const value: unknown = JSON.parse(text);
+    return stringField(value, "message") ?? stringField(value, "error") ?? text;
+  } catch {
+    return text;
+  }
+}
+
+function parseResponse<T>(
+  schema: z.ZodType<T>,
+  text: string,
+  context: string,
+  status: number,
+): T {
+  try {
+    return schema.parse(parseJson(text, context, status));
+  } catch (error) {
+    if (error instanceof KoreyApiError) throw error;
+    throw new KoreyApiError(
+      `Korey returned an invalid response for ${context}: ${error instanceof Error ? error.message : String(error)}`,
+      status,
+    );
+  }
+}
+
+function endpointPath(
+  template: string,
+  parameters: Readonly<Record<string, string>> = {},
+): string {
+  return template.replace(/\{([^}]+)\}/gu, (_match, name: string) => {
+    const value = parameters[name];
+    if (value === undefined) {
+      throw new Error(`Missing Korey API path parameter ${name}`);
+    }
+    return encodeURIComponent(value);
+  });
+}
+
+export function formatKoreyMessages(messages: readonly KoreyMessage[]): string {
+  const parts: string[] = [];
+  for (const message of messages) {
+    if (message.role === "user") continue;
+    for (const content of message.contents) {
+      switch (content.type) {
+        case "text":
+          if (content.text.trim().length > 0) parts.push(content.text.trim());
+          break;
+        case "user_get_choice":
+          parts.push(
+            `${content.question}\nChoices: ${content.choices.join(", ")}`,
+          );
+          break;
+        case "image":
+          parts.push(`[Korey image attachment ${content.attachment_id}]`);
+          break;
+        case "document":
+          parts.push(`[Korey document attachment ${content.attachment_id}]`);
+          break;
+        case "unknown":
+          parts.push(
+            `[Unsupported Korey content: ${content.originalType}; view the message in Korey: ${message.app_url}]`,
+          );
+          break;
+      }
+    }
+  }
+  return parts.join("\n\n");
+}
+
+// Maps a failure to obtain a token. No request was sent, so a write is a
+// definite rejection. Network failures while refreshing stay retryable for
+// reads; a rejected or missing sign-in is final.
+function credentialError(
+  error: unknown,
+  method: string,
+  callerSignal: AbortSignal | undefined,
+  timeoutSignal: AbortSignal,
+): unknown {
+  const notSent = method !== "GET";
+  if (callerSignal?.aborted) {
+    return new KoreyApiError("Korey request was cancelled", null, notSent);
+  }
+  if (timeoutSignal.aborted) {
+    return new KoreyApiError("Korey request timed out", null, notSent);
+  }
+  if (!notSent && !isTransient(error)) return error;
+  return new KoreyApiError(
+    error instanceof Error ? error.message : String(error),
+    null,
+    notSent,
+  );
+}
+
+export class KoreyClient {
+  private readonly baseUrl: string;
+  private readonly fetchImpl: typeof globalThis.fetch;
+  private readonly requestTimeoutMs: number;
+  private readonly responseTimeoutMs: number;
+  private readonly pollIntervalMs: number;
+  private readonly credentials: KoreyCredentials;
+
+  constructor(options: KoreyClientOptions) {
+    if (typeof options.token === "string") {
+      const token = options.token.trim();
+      if (token.length === 0) throw new Error("Korey API token is empty");
+      this.credentials = {
+        acquire: async () => ({ token, release: () => undefined }),
+      };
+    } else {
+      this.credentials = options.token;
+    }
+    this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/u, "");
+    this.fetchImpl = options.fetch ?? globalThis.fetch;
+    this.requestTimeoutMs =
+      options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+    this.responseTimeoutMs =
+      options.responseTimeoutMs ?? DEFAULT_RESPONSE_TIMEOUT_MS;
+    this.pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+  }
+
+  private async fetchPath(
+    path: string,
+    options: RequestOptions = {},
+    retryDeadline?: number,
+  ): Promise<{ headers: Headers; status: number; text: string }> {
+    // A retry after a 401 shares the original request's deadline.
+    const deadline =
+      retryDeadline ??
+      Date.now() +
+        Math.max(1, Math.floor(options.timeoutMs ?? this.requestTimeoutMs));
+    const timeoutSignal = AbortSignal.timeout(
+      Math.max(1, deadline - Date.now()),
+    );
+    const signal = options.signal
+      ? AbortSignal.any([options.signal, timeoutSignal])
+      : timeoutSignal;
+    const method = options.method ?? "GET";
+    let lease: KoreyTokenLease;
+    try {
+      lease = await this.credentials.acquire(signal);
+    } catch (error) {
+      throw credentialError(error, method, options.signal, timeoutSignal);
+    }
+    let result: { headers: Headers; status: number; text: string };
+    try {
+      signal.throwIfAborted();
+      const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+        method,
+        // A redirect can replay a POST or hide its outcome behind a later GET.
+        redirect: method === "GET" ? "follow" : "manual",
+        headers: {
+          accept: "application/json",
+          authorization: `Bearer ${lease.token}`,
+          ...(options.body === undefined || options.form !== undefined
+            ? {}
+            : { "content-type": "application/json" }),
+        },
+        ...(options.form !== undefined
+          ? { body: options.form }
+          : options.body === undefined
+            ? {}
+            : { body: JSON.stringify(options.body) }),
+        signal,
+      });
+      result = {
+        headers: response.headers,
+        status: response.status,
+        text: await response.text(),
+      };
+    } catch (error) {
+      if (options.signal?.aborted) {
+        throw new KoreyApiError("Korey request was cancelled");
+      }
+      if (timeoutSignal.aborted) {
+        throw new KoreyApiError("Korey request timed out");
+      }
+      throw new KoreyApiError(
+        `Could not reach Korey: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    } finally {
+      lease.release();
+    }
+    if (result.status !== 401 || !this.credentials.replaceRejectedToken) {
+      return result;
+    }
+    // A 401 is a documented rejection, but mutations are still never resent
+    // automatically. Replacing the token lets the next request succeed.
+    if (method !== "GET") {
+      await this.credentials
+        .replaceRejectedToken(lease.token, signal)
+        .catch(() => undefined);
+      return result;
+    }
+    if (retryDeadline !== undefined) return result;
+    try {
+      await this.credentials.replaceRejectedToken(lease.token, signal);
+    } catch (error) {
+      throw credentialError(error, method, options.signal, timeoutSignal);
+    }
+    return this.fetchPath(path, options, deadline);
+  }
+
+  private async request<T>(
+    path: string,
+    expectedStatus: number,
+    schema: z.ZodType<T>,
+    options: RequestOptions = {},
+  ): Promise<T> {
+    const response = await this.fetchPath(path, options);
+    if (response.status !== expectedStatus) {
+      const unexpectedSuccess = response.status >= 200 && response.status < 300;
+      const detail = unexpectedSuccess
+        ? ""
+        : errorDetail(response.text).trim().slice(0, 500);
+      const mutationRejected =
+        options.method === "POST" &&
+        response.status >= 400 &&
+        response.status < 500 &&
+        options.mutationResponses?.[response.status] !== undefined;
+      const uncertain = options.method === "POST" && !mutationRejected;
+      throw new KoreyApiError(
+        `Korey API returned ${response.status}${unexpectedSuccess ? `; expected ${expectedStatus}` : ""}${detail.length > 0 ? `: ${detail}` : ""}${uncertain ? "; this is not a documented rejection, so the write outcome is unknown" : ""}`,
+        response.status,
+        mutationRejected,
+      );
+    }
+    return parseResponse(schema, response.text, path, response.status);
+  }
+
+  identity(signal?: AbortSignal): Promise<KoreyIdentity> {
+    return this.request(identityEndpoint.path.value, 200, identitySchema, {
+      method: identityEndpoint.method.value,
+      signal,
+    });
+  }
+
+  listThreads(
+    options: {
+      after?: string;
+      limit?: number;
+      query?: string;
+      signal?: AbortSignal;
+    } = {},
+  ): Promise<KoreyThreadPage> {
+    const query = new URLSearchParams({
+      owned: "true",
+      limit: String(options.limit ?? 50),
+    });
+    if (options.query?.trim()) query.set("q", options.query.trim());
+    if (options.after) query.set("after", options.after);
+    return this.request(
+      `${listThreadsEndpoint.path.value}?${query.toString()}`,
+      200,
+      threadPageSchema,
+      { method: listThreadsEndpoint.method.value, signal: options.signal },
+    );
+  }
+
+  getThread(threadId: string, signal?: AbortSignal): Promise<KoreyThread> {
+    return this.request(
+      endpointPath(getThreadEndpoint.path.value, { "thread-id": threadId }),
+      200,
+      koreyThreadSchema,
+      { method: getThreadEndpoint.method.value, signal },
+    );
+  }
+
+  listMessages(
+    threadId: string,
+    options: { after?: string; limit?: number; signal?: AbortSignal } = {},
+  ): Promise<KoreyMessagePage> {
+    const query = new URLSearchParams({ limit: String(options.limit ?? 200) });
+    if (options.after) query.set("after", options.after);
+    return this.request(
+      `${endpointPath(listMessagesEndpoint.path.value, {
+        "thread-id": threadId,
+      })}?${query.toString()}`,
+      200,
+      messagePageSchema,
+      { method: listMessagesEndpoint.method.value, signal: options.signal },
+    );
+  }
+
+  async listAllMessages(
+    threadId: string,
+    signal?: AbortSignal,
+    maxMessages = 10_000,
+  ): Promise<KoreyMessage[]> {
+    const messages: KoreyMessage[] = [];
+    let after: string | undefined;
+    while (messages.length < maxMessages) {
+      const page = await this.listMessages(threadId, {
+        after,
+        limit: Math.min(200, maxMessages - messages.length),
+        signal,
+      });
+      messages.push(...page.data);
+      if (!page.has_more) return messages;
+      if (page.last_id === null || page.last_id === after) {
+        throw new KoreyApiError("Korey message pagination did not advance");
+      }
+      after = page.last_id;
+    }
+    throw new KoreyApiError(
+      `Korey conversation exceeds the ${maxMessages}-message reconciliation limit`,
+    );
+  }
+
+  createThread(
+    input: { text: string; name: string; isPrivate: boolean },
+    signal?: AbortSignal,
+  ): Promise<CreateThreadResponse> {
+    const body = {
+      text: input.text,
+      name: input.name,
+      is_private: input.isPrivate,
+    } satisfies CreateThreadBody;
+    return this.request(
+      createThreadEndpoint.path.value,
+      201,
+      createThreadResponseSchema,
+      {
+        method: createThreadEndpoint.method.value,
+        mutationResponses: createThreadEndpoint.responses,
+        body,
+        signal,
+      },
+    );
+  }
+
+  sendMessage(
+    threadId: string,
+    text: string,
+    signal?: AbortSignal,
+    attachmentIds: readonly string[] = [],
+  ): Promise<SendMessageResponse> {
+    const body = {
+      text,
+      ...(attachmentIds.length ? { attachment_ids: [...attachmentIds] } : {}),
+    } satisfies SendMessageBody;
+    return this.request(
+      endpointPath(sendMessageEndpoint.path.value, { "thread-id": threadId }),
+      201,
+      sendMessageResponseSchema,
+      {
+        method: sendMessageEndpoint.method.value,
+        mutationResponses: sendMessageEndpoint.responses,
+        body,
+        signal,
+      },
+    );
+  }
+
+  createEmptyThread(
+    input: { name: string; isPrivate: boolean },
+    signal?: AbortSignal,
+  ): Promise<CreateThreadResponse> {
+    const body = {
+      name: input.name,
+      is_private: input.isPrivate,
+    } satisfies CreateThreadBody;
+    return this.request(
+      createThreadEndpoint.path.value,
+      201,
+      createThreadResponseSchema,
+      {
+        method: createThreadEndpoint.method.value,
+        mutationResponses: createThreadEndpoint.responses,
+        body,
+        signal,
+      },
+    );
+  }
+
+  async uploadAttachments(
+    threadId: string,
+    files: readonly AttachmentFile[],
+    signal?: AbortSignal,
+  ): Promise<UploadResponse> {
+    const form = new FormData();
+    files.forEach((file, index) => {
+      const bytes = new Uint8Array(Buffer.from(file.base64, "base64"));
+      form.append(
+        `attachments[${index}]`,
+        new Blob([bytes], { type: file.contentType }),
+        file.filename,
+      );
+    });
+    const uploaded = await this.request(
+      endpointPath(uploadEndpoint.path.value, { "thread-id": threadId }),
+      201,
+      uploadResponseSchema,
+      {
+        method: uploadEndpoint.method.value,
+        mutationResponses: uploadEndpoint.responses,
+        form,
+        signal,
+      },
+    );
+    if (uploaded.length !== files.length) {
+      throw new KoreyApiError(
+        `Korey uploaded ${uploaded.length} of ${files.length} attachments`,
+      );
+    }
+    if (new Set(uploaded.map((file) => file.id)).size !== uploaded.length) {
+      throw new KoreyApiError("Korey returned duplicate attachment IDs");
+    }
+    return uploaded;
+  }
+
+  async waitForResponse(
+    threadId: string,
+    messageId: string,
+    signal?: AbortSignal,
+  ): Promise<KoreyMessage[]> {
+    const path = endpointPath(responseEndpoint.path.value, {
+      "thread-id": threadId,
+      "message-id": messageId,
+    });
+    const deadline = Date.now() + this.responseTimeoutMs;
+    const threadPath = endpointPath(getThreadEndpoint.path.value, {
+      "thread-id": threadId,
+    });
+    let readyObserved = false;
+    while (true) {
+      const response = await this.fetchPollingPath(path, deadline, signal);
+      let messages: KoreyMessage[] | null = null;
+      if (response.status === 200) {
+        messages = parseResponse(
+          completeResponseSchema,
+          response.text,
+          path,
+          response.status,
+        ).messages;
+        // Fetch after observing ready: an earlier 200 can contain only an
+        // intermediate answer, even when the subsequent state read is ready.
+        if (readyObserved) return messages;
+      } else if (response.status === 202) {
+        parseResponse(processingResponseSchema, response.text, path, 202);
+      } else if (!isPendingResponse(response.status, response.text)) {
+        throw pollingError(response.status, response.text);
+      }
+
+      const threadResponse = await this.fetchPollingPath(
+        threadPath,
+        deadline,
+        signal,
+      );
+      if (threadResponse.status !== 200) {
+        throw pollingError(threadResponse.status, threadResponse.text);
+      }
+      const thread = parseResponse(
+        koreyThreadSchema,
+        threadResponse.text,
+        threadPath,
+        200,
+      );
+      if (thread.state === "error" || thread.state === "interrupted") {
+        throw new KoreyApiError(
+          `Korey processing ${thread.state} for message ${messageId}; inspect the conversation before continuing`,
+        );
+      }
+      readyObserved = messages !== null && thread.state === "ready";
+      if (!readyObserved) {
+        await this.waitBeforeRetry(deadline, 1, signal, this.pollIntervalMs);
+      }
+    }
+  }
+
+  private async fetchPollingPath(
+    path: string,
+    deadline: number,
+    signal?: AbortSignal,
+  ): Promise<Awaited<ReturnType<KoreyClient["fetchPath"]>>> {
+    let transientFailures = 0;
+    while (true) {
+      const remainingBeforeRequest = deadline - Date.now();
+      if (remainingBeforeRequest <= 0) {
+        throw new KoreyResponsePendingError();
+      }
+      let response: Awaited<ReturnType<KoreyClient["fetchPath"]>>;
+      try {
+        response = await this.fetchPath(path, {
+          method: responseEndpoint.method.value,
+          signal,
+          timeoutMs: Math.min(this.requestTimeoutMs, remainingBeforeRequest),
+        });
+      } catch (error) {
+        if (signal?.aborted || !(error instanceof KoreyApiError)) throw error;
+        transientFailures += 1;
+        await this.waitBeforeRetry(deadline, transientFailures, signal);
+        continue;
+      }
+      if (response.status === 429 || response.status >= 500) {
+        transientFailures += 1;
+        await this.waitBeforeRetry(
+          deadline,
+          transientFailures,
+          signal,
+          retryAfterMilliseconds(response.headers.get("retry-after")),
+        );
+        continue;
+      }
+      return response;
+    }
+  }
+
+  private async waitBeforeRetry(
+    deadline: number,
+    attempt: number,
+    signal?: AbortSignal,
+    requestedDelayMs?: number,
+  ): Promise<void> {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      throw new KoreyResponsePendingError();
+    }
+    const backoff = Math.min(
+      10_000,
+      Math.max(this.pollIntervalMs, 250) * 2 ** Math.min(attempt - 1, 5),
+    );
+    const delay = requestedDelayMs ?? backoff;
+    if (delay >= remaining) {
+      throw new KoreyResponsePendingError();
+    }
+    await sleep(delay, undefined, { signal });
+  }
+}
+
+function isPendingResponse(status: number, text: string): boolean {
+  if (status !== 404) return false;
+  try {
+    const value: unknown = JSON.parse(text);
+    return (
+      stringField(value, "error") === "not-found" &&
+      stringField(value, "message") === "No response yet"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function pollingError(status: number, text: string): KoreyApiError {
+  const detail = errorDetail(text).trim().slice(0, 500);
+  return new KoreyApiError(
+    `Korey response polling returned ${status}${detail.length > 0 ? `: ${detail}` : ""}`,
+    status,
+  );
+}
+
+function retryAfterMilliseconds(value: string | null): number | undefined {
+  if (value === null) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return undefined;
+  return Math.max(0, timestamp - Date.now());
+}

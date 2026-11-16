@@ -1,0 +1,21 @@
+dist/
+node_modules/
+coverage/
+*.scaffold
+*.log
+.cache/
+.tmp/
+tmp/
+.env
+.env.*
+!.env.example
+*.sqlite*
+*.db
+*.db-*
+.DS_Store
+
+# Local diagnostics and runtime evidence
+*.tsbuildinfo
+evidence/
+playwright-report/
+test-results/

@@ -1,0 +1,200 @@
+/* Integrations — other plugins' panels and BB's diff view in the Pokecut look.
+   Only colors, radii and elevation are restyled; layout and behavior stay theirs. */
+
+/* ── Git History (yusuf8834/bb-git-history) ─────────────────────────────────
+   The plugin exposes its palette as --gh-* / --git-ref-* variables on
+   .git-history-panel; re-pointing them at our tokens repaints everything. */
+.git-history-workspace .git-history-panel {
+  --gh-surface: var(--pk-panel);
+  --gh-surface-subtle: var(--pk-well);
+  --gh-hover: var(--state-hover);
+  --gh-border: var(--pk-hairline);
+  --gh-hairline: var(--pk-hairline);
+  --gh-rail: color-mix(in oklab, var(--ink) 16%, var(--pk-panel));
+  --gh-node: color-mix(in oklab, var(--ink) 38%, var(--pk-panel));
+  --gh-accent: var(--primary);
+  --gh-accent-foreground: var(--primary-foreground);
+  --gh-accent-tint: var(--pk-card);
+  --gh-accent-border: var(--pk-outline);
+  --gh-tag: #8c69c3;
+  --git-ref-head-bg: var(--pk-accent-gradient);
+  --git-ref-remote-bg: color-mix(in oklab, var(--ink) 58%, var(--pk-panel));
+  --git-ref-tag-bg: #8c69c3;
+  --git-ref-filled-fg: #ffffff;
+  background-color: var(--pk-panel);
+}
+
+.git-history-workspace .git-toolbar {
+  border-bottom: 0;
+}
+
+.git-history-workspace .git-search-wrap {
+  border-bottom: 0;
+  padding: 2px 10px 8px;
+}
+
+.git-history-workspace .git-search-wrap input {
+  height: 30px;
+  border-color: var(--pk-outline);
+  border-radius: 10px;
+  background-color: var(--pk-card);
+}
+
+.git-history-workspace .git-commit-row {
+  border-radius: 9px;
+}
+
+.git-history-workspace .git-commit-row:hover {
+  background-color: var(--state-hover);
+}
+
+.git-history-workspace .git-commit-row[data-expanded="true"] {
+  background-color: var(--pk-card);
+  box-shadow: inset 0 0 0 1px var(--pk-outline), var(--pk-card-drop);
+}
+
+.git-history-workspace .git-graph-node[data-head="true"] {
+  background: var(--pk-accent-gradient);
+}
+
+.git-history-workspace .git-ref {
+  border-radius: 6px;
+}
+
+.git-history-workspace .git-date-header {
+  letter-spacing: 0.04em;
+  color: var(--subtle-foreground);
+}
+
+.git-history-workspace .git-file-row:hover,
+.git-history-workspace .git-uncommitted-file-row:hover {
+  background-color: var(--state-hover);
+}
+
+/* ── BB diff view ("All changes"): file cards ───────────────────────────────
+   Each changed file is a card (the one holding a "Copy path for" button).
+   diff-paths.ts splits the path so the folder reads quiet, the name strong. */
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) {
+  border-color: var(--pk-hairline);
+  border-radius: 12px;
+  background-color: var(--pk-card);
+  box-shadow: var(--pk-card-drop);
+  transition: border-color 150ms ease;
+}
+
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]):hover {
+  border-color: var(--pk-outline);
+}
+
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) > div:nth-child(2),
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) > div:nth-child(2) > div {
+  border-top-color: transparent;
+  background-color: var(--pk-card);
+}
+
+[data-pk-path-dir] {
+  color: var(--subtle-foreground);
+  font-weight: 400;
+}
+
+[data-pk-path-name] {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+/* Copy / open-in-editor appear with the card's hover. */
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) button[aria-label^="Copy path for"],
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) button[aria-label^="Open "][aria-label$=" in editor"] {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]):is(:hover, :focus-within) button:is([aria-label^="Copy path for"], [aria-label$=" in editor"]) {
+  opacity: 1;
+}
+
+/* +N −M as small tinted chips. */
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) :is(.text-diff-added, .text-diff-removed) {
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) .text-diff-added {
+  background-color: color-mix(in oklab, var(--diff-added) 12%, transparent);
+}
+
+.overflow-clip.rounded-lg.border:has(button[aria-label^="Copy path for"]) .text-diff-removed {
+  background-color: color-mix(in oklab, var(--diff-removed) 12%, transparent);
+}
+
+/* Repository navigator (several repositories in one workspace). */
+.git-history-workspace .git-repository-navigator {
+  margin: 0 8px 6px;
+  border: 1px solid var(--pk-hairline);
+  border-radius: 12px;
+  background-color: var(--pk-card);
+  box-shadow: var(--pk-card-drop);
+  overflow: hidden;
+}
+
+.git-history-workspace .git-repository-row {
+  border-radius: 8px;
+}
+
+.git-history-workspace .git-repository-row:hover {
+  background-color: var(--state-hover);
+}
+
+.git-history-workspace .git-repository-row[data-selected="true"] {
+  background-color: var(--pk-panel);
+  box-shadow: inset 0 0 0 1px var(--pk-outline);
+}
+
+.git-history-workspace .git-repository-status[data-dirty="true"] {
+  color: var(--warning-text);
+}
+
+.git-history-workspace .git-repository-search input {
+  border-color: var(--pk-outline);
+  border-radius: 10px;
+  background-color: var(--pk-card);
+}
+
+/* ── Composer attachments as file cards ─────────────────────────────────────
+   BB's attachment chip (name + remove button) becomes a small Pokecut file
+   card: white, outlined, a leading document tile. Text files from the
+   Paste as File plugin (pasted-*.md / .json / .txt) get the accent tile. */
+[data-app-composer] span.inline-flex.rounded-full.border:has(> span > button[aria-label^="Remove "]) {
+  gap: 6px;
+  padding: 3px 6px 3px 3px;
+  border-color: var(--pk-outline);
+  border-radius: 10px;
+  background-color: var(--pk-card);
+  box-shadow: var(--pk-card-drop), 0 2px 6px -3px color-mix(in oklab, var(--ink) 22%, transparent);
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+[data-app-composer] span.inline-flex.rounded-full.border:has(> span > button[aria-label^="Remove "])::before {
+  content: "";
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background:
+    var(--pk-icon-doc) center / 13px 13px no-repeat,
+    color-mix(in oklab, var(--ink) 8%, var(--pk-card));
+  -webkit-mask: none;
+}
+
+[data-app-composer] span.inline-flex.rounded-full.border:has(> span > button:is([aria-label^="Remove pasted-"][aria-label$=".md"], [aria-label^="Remove pasted-"][aria-label$=".json"], [aria-label^="Remove pasted-"][aria-label$=".txt"]))::before {
+  background:
+    var(--pk-icon-doc-light) center / 13px 13px no-repeat,
+    var(--pk-accent-gradient);
+}
+
+:root {
+  --pk-icon-doc: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a6b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E");
+  --pk-icon-doc-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E");
+}

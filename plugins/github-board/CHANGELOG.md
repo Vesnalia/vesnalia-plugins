@@ -1,0 +1,127 @@
+# Changelog
+
+Notable changes to `github-board`. The other plugins in this repository version separately.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version numbers
+follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## 0.6.1
+
+### Changed
+
+- **GitHub requests nobody is waiting for any more are stopped** instead of running to the end: those
+  of a board, card, comment or image load when the plugin is reloaded, turned off or removed, or when
+  the window that asked closes before the answer arrives. A load cut short is not remembered, so the
+  next look loads it afresh. This needs bb 0.48.1 or newer; on an older bb the requests finish as
+  before.
+
+## 0.6.0
+
+### Added
+
+- **A thread started from a card shows that card in its Info tab**: the repository and number, which
+  open the card on GitHub, and its title. A thread a card was only added to shows nothing there.
+- **The card on the thread's sidebar row**, as the repository and number with the title on hover. bb
+  draws this only while its "thread row metadata" experiment is on and Organize → Rows → Metadata is
+  enabled, and needs bb 0.48 or newer; with either off, nothing changes.
+- The prompt template page is named **Prompt templates** in the window title, split panes and history.
+
+### Changed
+
+- **Needs bb 0.47 or newer.** On an older bb this version is not offered as an update, and GitHub Board
+  stays on the version you have.
+- The GitHub CLI is found the way bb finds its own tools, so a `gh` installed with mise, asdf, Volta or
+  into `~/.local/bin` works, and one installed after bb started is picked up on the board's next
+  refresh, without reloading the plugin.
+
+## 0.5.1
+
+### Changed
+
+- **Add to chat** opens a thread that is not on screen in the board's place, as clicking it in the
+  sidebar does, with the card's prompt at the end of its draft, ready to send. It used to open each one
+  in a new split beside the board, so the window filled up with panes.
+
+## 0.5.0
+
+### Changed
+
+- **Needs bb 0.46 or newer.** On an older bb this version is not offered as an update, and GitHub Board
+  stays on the version you have.
+- **Add to chat** opens a thread that is not on screen through bb's own "open beside" rule, so where it
+  lands follows how you have set up split views, and it still opens in place where the window cannot be
+  split.
+
+## 0.4.0
+
+### Changed
+
+- **Add to chat** now writes the same prompt **Send to chat** starts a thread with: the template for the
+  card's column, using the per-project template of the chat you add it to when that project has one.
+  Until the templates have loaded, the chats in its menu wait. It used to write only the card's kind,
+  number, title and link.
+
+## 0.3.0
+
+### Changed
+
+- **Add to chat** is always in a card's detail panel, also when the board fills the window. It lists the
+  chats on screen first, then your recent threads, those in the card's repository first. Picking a
+  thread that is not on screen opens it, beside the board where the window can be split, and adds the
+  card to the end of its draft. Nothing is sent, and what you have typed stays.
+
+### Fixed
+
+- **Add to chat** no longer appears only while the **Send to chat** dialog is open, hidden behind it,
+  and never offers to add the card to that dialog.
+
+## 0.2.0
+
+Needs bb 0.45 or later. On bb 0.44, stay on 0.1.
+
+### Added
+
+- **Add to chat** in a card's detail panel puts the card — its kind, number, title and GitHub link — at
+  the end of a chat that is already open beside the board, without starting a thread or sending
+  anything. With several chats open it asks which one. It only shows while a chat is open, and it
+  never replaces what you have already typed.
+
+## 0.1.1
+
+### Changed
+
+- Built and tested against bb 0.45. Nothing you can see changes, and it still runs on bb 0.44.
+
+## 0.1.0
+
+The first release: GitHub Board for bb, ported from the Paseo plugin of the same name (0.9.2).
+
+### Added
+
+- **A board of your GitHub work** in the sidebar: Issues, Draft PRs, Open PRs and Discussions, covering
+  what you wrote, what is open on your own repositories, and what is assigned to you. On a narrow window
+  the columns become tabs, each with its count.
+- **One card per piece of work.** An issue that a pull request closes shows on the pull request's card
+  instead of on its own.
+- **Checks and branch status on pull requests**, with an Update branch button wherever you can push to
+  the repository — including repositories that have "Always suggest updating pull request branches"
+  off, where GitHub's own page, and the Paseo board, offered none. It looks again before updating, so
+  a branch with conflicts is not touched, and a failed update says why on the card.
+- **A detail panel** for each card, with its description, comments and images. Private images load;
+  images from outside GitHub wait until you ask. The panel can be widened or narrowed by dragging its
+  edge, and keeps that width.
+- **Labels from a right-click menu**, applied as you press them.
+- **Send to chat**, which opens bb's own new-thread composer on the card with a prompt for its column,
+  in the project that has the card's repository checked out — including a fork, through its
+  `upstream` remote. The next card opens with the same model and environment.
+- **Prompt templates** per column and per project, on the plugin's settings page and behind the board's
+  gear.
+- **A repository filter**, remembered across windows.
+
+### Changed from the Paseo plugin
+
+- The send dialog is bb's composer, so the model, reasoning, environment, project and permission
+  pickers are bb's own. A prompt you were editing is kept if you close the dialog.
+- The board no longer adds a card row to the new thread's transcript; bb has no way for a plugin to add
+  one. The card's details are in the prompt and stored with the thread.
+- Sending a card to another machine is done through the composer's environment picker.

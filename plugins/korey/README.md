@@ -1,0 +1,109 @@
+# bb-plugin-korey
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/5ee52bd2-9906-4cb5-90e2-06008258fad2">
+  <img src="https://github.com/user-attachments/assets/1f1e0286-a3eb-4e67-950a-a5952358a9e7" alt="Korey Flow">
+</picture>
+
+**Ask Korey to work with your connected tools from any bb harness.**
+
+bb lets you work across coding harnesses. Korey brings your connectors with you.
+Connect services such as Shortcut, Sentry, and LaunchDarkly in Korey, and use them
+from your bb conversations. Korey manages connector access and reauthentication
+in one place. Your bb harnesses share that access, without a separate MCP server
+to configure for each connector.
+
+Give Korey the outcome and the context. It knows how to talk to the connected
+services and can use your workspace’s conventions to do the work. For example,
+you can delegate Story creation to Korey instead of walking your coding agent
+through Shortcut’s fields and workflow one step at a time.
+
+## Ask Korey…
+
+> Ask Korey to create a Shortcut Story for the bug we just investigated, with
+> reproduction steps and acceptance criteria.
+
+> Ask Korey to summarize the Sentry errors introduced in our latest release.
+
+> Ask Korey which LaunchDarkly flags control the new checkout flow and who has
+> access to it.
+
+> Ask Korey to enable the checkout-v2 LaunchDarkly flag in the shop project's
+> staging environment.
+
+> Ask Korey to compare this implementation plan with the existing Shortcut
+> Stories and point out what we missed.
+
+The plugin keeps a private Korey conversation linked to each bb thread, so you
+can follow up with more context, attach workspace files, and continue the same
+conversation as you change harnesses.
+
+The plugin supports research, analysis, drafts, and user-requested changes across
+Korey’s connected services, including feature-flag updates. Shortcut Story
+creation and updates retain a dedicated tool. Requested changes go straight to
+Korey. Available data and actions depend on the connectors and permissions in
+your Korey workspace.
+
+## Get started
+
+Requires a Korey account and bb 0.43.4 or newer. See
+[compatibility and validation](docs/development.md) for the limits of those checks.
+
+1. Connect the services you want to use in [Korey](https://korey.ai). See
+   [Korey’s connector guides](https://korey.ai/docs/connectors/overview) for setup.
+2. Install the plugin:
+
+   ```sh
+   bb plugin install https://github.com/useshortcut/bb-plugin-korey
+   ```
+
+3. Select **Connect Korey** under **Settings → Installed plugins → Korey** in
+   bb, or run `bb korey login`, and approve access in the browser. See
+   [connecting your Korey account](docs/usage.md#connecting-your-korey-account).
+
+   Alternatively, [create a Korey personal access token](https://app.korey.ai/settings/api-tokens)
+   with `threads:read` and `threads:write` scopes and add it in the same
+   settings page.
+
+4. Ask your agent: “Ask Korey…”
+
+Only the Korey connection is configured in bb. Keep each service’s connector
+settings and credentials in Korey, where reauthentication is handled across
+harnesses.
+
+Check your connection with:
+
+```sh
+bb korey status
+```
+
+## From the CLI
+
+```sh
+bb korey ask "Summarize the Sentry errors introduced in our latest release"
+bb korey ask "Review this rollout plan against our LaunchDarkly flags" --file plan.md
+bb korey ask --change "Enable checkout-v2 in the shop project's staging environment"
+bb korey shortcut create "Create a Story for the bug investigated in this conversation"
+```
+
+Use `ask --change` for a requested connector action, and `shortcut create` or
+`shortcut update` for Stories. Plain `ask` requests research or a draft without
+changes. When talking to an agent, just say “Ask Korey…” and describe the desired
+outcome; the agent selects the appropriate tool and mode.
+
+Requested changes go directly to Korey without an extra approval form. Both
+change routes use the same operation journal. If an earlier operation has an
+unknown outcome, the plugin provides recovery steps before another change is sent.
+You can also link an existing private Korey conversation and continue work you
+started there.
+
+Consultations are also recorded. If an answer is still pending, resume the
+existing operation to retrieve it without sending the request again. See
+[operation recovery](docs/usage.md#operation-recovery).
+
+## Reference
+
+- [CLI, conversations, files, and operation recovery](docs/usage.md)
+- [Development, CI, and the API contract](docs/development.md)
+
+Maintained by Shortcut. MIT licensed; see [LICENSE](LICENSE).
