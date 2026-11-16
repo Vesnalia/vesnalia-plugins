@@ -1,0 +1,239 @@
+import { join } from "node:path";
+import { contractForBuildArtifact, contractForExplore } from "../../../lib/artifact-contracts.mjs";
+import {
+  parseArtifactManifest,
+  resolveArtifactPath,
+} from "../../../lib/artifact-manifest.mjs";
+import { validateArtifact } from "../../../lib/artifact-validation.mjs";
+import { exploreArtifactFile } from "../../../lib/research-artifacts.mjs";
+import {
+  exploreVerifyReport,
+  exploreVerifyText,
+  researchVerifyReport,
+  researchVerifyText,
+} from "../../../lib/research-artifacts.mjs";
+import { researchStrategyById } from "../../../lib/research-strategies.mjs";
+import { techniqueById } from "../../../lib/technique-catalog.mjs";
+import { refuse, type CliResult, type Refusal } from "./cli-contract.js";
+import type { CliDeps } from "./cli-deps.js";
+import type { ResearchReadiness } from "../research-artifacts.js";
+import type { WorkerCard } from "../../workers-types.js";
+
+export type ReviewSubject = {
+  artifactText: string;
+  contractLabel: string;
+  evidence: "verified" | "hypothesis-only";
+  fingerprint: string | null;
+  /** The resolved depth contract, when there is one. The reviewer's excerpt is
+   * chosen from the headings this names, so a long document's required sections
+   * survive the cost cap (lib/review-excerpt.mjs). Null for subjects with no
+   * contract — research deliverables — where the head slice is used and said so. */
+  contract: unknown;
+};
+
+
+/** Deterministic precondition: review only sees verify-PASS artifacts. The
+ * document must be registered, readable, and pass its stage contract — thin
+ * files never reach the reviewer. */
+/** A refusal names the exit: without a workflow state there is nothing to
+ * review, and the action that creates one is seeding the card. */
+const NO_WORKFLOW_STATE =
+  "No workflow state for this card yet — seed the card's workflow (`alia stelow seed`), then retry.";
+
+export async function buildDocumentSubject(
+  deps: CliDeps,
+  card: WorkerCard,
+  artifactArg: string,
+): Promise<ReviewSubject | Refusal> {
+  const workspace = await deps.cardWorkspace(card);
+  if (!workspace?.path || !card.dir_hash)
+    return refuse({ exitCode: 1, stderr: NO_WORKFLOW_STATE });
+  const stateDir = await deps
+    .workflowStateDir(workspace.path, card.id, card.dir_hash)
+    .catch(() => null);
+  if (!stateDir)
+    return refuse({ exitCode: 1, stderr: NO_WORKFLOW_STATE });
+  const stateBlob = await deps.alia.sdk.files
+    .read({ path: join(stateDir, "state.md") })
+    .then((file) => file.content)
+    .catch(() => null);
+  const registered = stateBlob
+    ? parseArtifactManifest(stateBlob).some((fields) => fields.path === artifactArg)
+    : false;
+  if (!registered)
+    return refuse({
+      exitCode: 2,
+      stderr: `Unknown artifact "${artifactArg}" — review only registered manifest documents (see the card Artifacts).`,
+    });
+  const content = await readArtifact(deps, workspace.path, artifactArg);
+  if (typeof content !== "string")
+    return refuse({
+      exitCode: 1,
+      stderr: `Artifact "${artifactArg}" is missing or empty — write it first, then review.`,
+    });
+  const contract = contractForBuildArtifact(artifactArg, content);
+  if (!contract)
+    return refuse({
+      exitCode: 2,
+      stderr: `Artifact "${artifactArg}" matches no known stage contract — review covers spec-product, spec-tech, interfaces, testing-strategy, \
+and critique reports.`,
+    });
+  const depth = validateArtifact(content, contract);
+  if (!depth.pass)
+    return refuse(depthRefusal(artifactArg, depth.failures as DepthFailure[]));
+  return {
+    artifactText: content,
+    contractLabel: `build document (${contract.id})`,
+    evidence: "verified",
+    fingerprint: null,
+    contract,
+  };
+}
+
+function readArtifact(
+  deps: CliDeps,
+  workspacePath: string,
+  artifactArg: string,
+): Promise<string | null> {
+  const full = resolveArtifactPath(workspacePath, artifactArg);
+  if (!full) return Promise.resolve(null);
+  return deps.alia.sdk.files
+    .read({ path: full })
+    .then((file) => file.content)
+    .catch(() => null);
+}
+
+type DepthFailure = { detail: string };
+
+function depthRefusal(artifactArg: string, failures: DepthFailure[]): CliResult {
+  return {
+    exitCode: 1,
+    stderr: `Review refused: deterministic depth fails — fix first, then review (review budget is never spent on thin files).\nFAIL ${artifactArg}: \
+${failures
+      .map((failure) => failure.detail)
+      .slice(0, 3)
+      .join("; ")}`,
+  };
+}
+
+/** The card deliverable for research and explore: the primary round plus the
+ * index, or the stage artifact. Both read through the same deterministic
+ * verify the sync gate uses, so a non-PASS card never spends review budget. */
+export async function deliverableSubject(
+  deps: CliDeps,
+  card: WorkerCard,
+): Promise<ReviewSubject | Refusal> {
+  if (card.kind === "research") return researchSubject(deps, card);
+  const artifact = await deps.researchArtifacts
+    .exploreArtifact(card)
+    .catch(() => ({
+      ready: false as const,
+      fingerprint: null as string | null,
+      failures: [] as string[],
+    }));
+  if (!artifact.ready) {
+    const report = exploreVerifyReport(
+      card.id,
+      card.explore_stage,
+      artifact.ready,
+      artifact.failures,
+    );
+    return refuse(verifyRefusal(exploreVerifyText(report)));
+  }
+  const techniqueLabel =
+    techniqueById(card.explore_stage ?? "")?.label ??
+    card.explore_stage ??
+    "explore";
+  const stateDir = await exploreStateDir(deps, card);
+  const content = stateDir
+    ? await deps.alia.sdk.files
+        .read({
+          path: join(stateDir, exploreArtifactFile(card.explore_stage ?? "")),
+        })
+        .then((file) => file.content)
+        .catch(() => null)
+    : null;
+  return {
+    artifactText: typeof content === "string" ? content : "",
+    contractLabel: `${techniqueLabel} stage deliverable`,
+    evidence: "verified",
+    fingerprint: artifact.fingerprint,
+    contract: contractForExplore(card.explore_stage ?? ""),
+  };
+}
+
+/**
+ * A research card's deliverable: its index plus the newest round.
+ *
+ * Split out of `deliverableSubject` when the explore branch and this one
+ * together crossed the function budget. There is no depth contract for a
+ * research round — the readiness check is the deterministic gate instead — so
+ * `contract` is explicitly null and the reviewer gets the head slice, reported
+ * as such rather than as a contract-aware excerpt.
+ */
+async function researchSubject(deps: CliDeps, card: WorkerCard): Promise<ReviewSubject | Refusal> {
+  const readiness = await deps.researchArtifacts
+    .researchReadiness(card)
+    .catch(() => null);
+  if (!readiness)
+    return refuse({ exitCode: 1, stderr: "Unable to read card state — retry review." });
+  if (!readiness.ready || readiness.invalid.length > 0)
+    return refuse(researchVerifyRefusal(deps, card, readiness));
+  const history = deps.strategyRounds(card);
+  const latest = history[history.length - 1];
+  const strategyLabel =
+    researchStrategyById(latest?.id ?? "")?.label ?? latest?.id ?? "research";
+  const workspace = await deps.cardWorkspace(card);
+  const index = await deps.readResearchIndex(card).catch(() => null);
+  const indexText = index && index.ok === true ? index.content : "";
+  const primary =
+    workspace?.path && latest?.file
+      ? await deps.alia.sdk.files
+          .read({ path: resolveArtifactPath(workspace.path, latest.file) ?? "" })
+          .then((file) => file.content)
+          .catch(() => null)
+      : null;
+  return {
+    artifactText: `Research index:\n${typeof indexText === "string" ? indexText : ""}\n\nPrimary round:\n${typeof primary === "string" ? primary : ""}`,
+    contractLabel: `${strategyLabel} primary round`,
+    evidence: readiness.evidence,
+    fingerprint: readiness.fingerprint,
+    contract: null,
+  };
+}
+
+function researchVerifyRefusal(
+  deps: CliDeps,
+  card: WorkerCard,
+  readiness: ResearchReadiness,
+): CliResult {
+  const report = researchVerifyReport(
+    card.id,
+    deps.strategyRounds(card).length,
+    readiness.ready || readiness.invalid.length > 0,
+    readiness.invalid,
+    readiness.evidence,
+  );
+  return verifyRefusal(researchVerifyText(report));
+}
+
+function verifyRefusal(textOut: { stdout?: string; stderr?: string }): CliResult {
+  return {
+    exitCode: 1,
+    stderr: `Review refused: deterministic verify fails — fix first, then review \
+(review budget is never spent on thin files).\n${
+      textOut.stderr ?? textOut.stdout ?? ""
+    }`,
+  };
+}
+
+async function exploreStateDir(
+  deps: CliDeps,
+  card: WorkerCard,
+): Promise<string | null> {
+  const workspace = await deps.cardWorkspace(card);
+  if (!card.dir_hash || !workspace?.path) return null;
+  return deps
+    .workflowStateDir(workspace.path, card.id, card.dir_hash)
+    .catch(() => null);
+}

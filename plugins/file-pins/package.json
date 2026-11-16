@@ -1,0 +1,51 @@
+{
+  "name": "alia-plugin-file-pins",
+  "version": "0.1.11",
+  "description": "Keep local files and web links within reach in each VesnALIA thread.",
+  "type": "module",
+  "files": [
+    "assets",
+    "dist",
+    "docs",
+    "README.md",
+    "PLUGIN_OVERVIEW.md",
+    "skills"
+  ],
+  "engines": {
+    "alia": ">=0.43.4",
+    "aliaPluginSdk": ">=0.5.9"
+  },
+  "alia": {
+    "name": "Pinned Files & Links",
+    "description": "Pin local files and web links to a thread and open them from a persistent strip above the chat composer.",
+    "branding": {
+      "icon": "./assets/file-pins.svg",
+      "logo": {
+        "light": "./assets/file-pins.svg"
+      }
+    },
+    "server": "./dist/install-server.mjs",
+    "app": "./dist/install-app.mjs",
+    "host": "./dist/install-host.mjs",
+    "skills": [
+      "skills"
+    ]
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/file-pins#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/file-pins"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

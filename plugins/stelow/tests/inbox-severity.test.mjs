@@ -1,0 +1,142 @@
+import assert from "node:assert/strict";
+import Database from "better-sqlite3";
+import {
+  SEVERITY_ROUTINE, SEVERITY_ACTION, SEVERITY_ESCALATING, SEVERITY_STALL_MS, SEVERITY_OLD_MS,
+  SEVERITY_REVIEW_WAIT_MS, scoreEventSeverity, parseSeverityReasons,
+} from "../lib/inbox-severity.mjs";
+import {
+  ensureInboxQuestionColumns, ensureInboxSeverityColumns, insertInboxEvent, listInboxEvents, refreshEventSeverity,
+  sweepEventSeverity, countsForInboxBadge,
+} from "../lib/inbox-events.mjs";
+import { ensureInboxOccurrencesColumn } from "../lib/inbox-error-event.mjs";
+
+// Severity tiers reorder the queue without changing what counts: a 3-day
+// stall must outrank a fresh question while the badge keeps counting both.
+// The test that would catch a regression that re-flattens the queue, loses
+// reasons, or lets ordering touch the badge.
+
+// Scorer boundaries: fresh actions act, old/repeated escalate, completions
+// review quietly. Reasons ride every tier — never a bare number.
+assert.deepEqual(scoreEventSeverity({ kind: "question", ageMs: 0 }), { severity: SEVERITY_ACTION, reasons: ["needs decision"] }, "fresh questions act");
+assert.deepEqual(scoreEventSeverity({ kind: "error", ageMs: 0, errorRepetitions: 1 }), { severity: SEVERITY_ACTION, reasons: ["needs recovery"] }, "first errors act");
+assert.deepEqual(scoreEventSeverity({ kind: "paused", ageMs: 0, stallCount: 0 }), { severity: SEVERITY_ACTION, reasons: ["paused"] }, "fresh pauses act");
+assert.deepEqual(scoreEventSeverity({ kind: "completed", ageMs: 0 }), { severity: SEVERITY_ROUTINE, reasons: ["review"] }, "completions review quietly");
+assert.deepEqual(
+  scoreEventSeverity({ kind: "completed", ageMs: SEVERITY_REVIEW_WAIT_MS - 1 }),
+  { severity: SEVERITY_ROUTINE, reasons: ["review"] },
+  "a completion inside the review window stays routine",
+);
+assert.deepEqual(
+  scoreEventSeverity({ kind: "completed", ageMs: SEVERITY_REVIEW_WAIT_MS }),
+  { severity: SEVERITY_ESCALATING, reasons: ["unreviewed 2d"] },
+  "a finished card nobody opened escalates, naming how long it has waited",
+);
+const stalled = scoreEventSeverity({ kind: "paused", ageMs: SEVERITY_STALL_MS + 1 });
+assert.equal(stalled.severity, SEVERITY_ESCALATING, "pauses past 72h escalate");
+assert.ok(stalled.reasons[0].startsWith("stalled "), "stalls name their age");
+assert.deepEqual(scoreEventSeverity({ kind: "paused", ageMs: SEVERITY_STALL_MS - 1 }).severity, SEVERITY_ACTION, "pauses under 72h stay action");
+assert.deepEqual(scoreEventSeverity({ kind: "error", ageMs: 0, errorRepetitions: 2 }), { severity: SEVERITY_ESCALATING, reasons: ["error ×2"] }, "second errors escalate");
+assert.deepEqual(scoreEventSeverity({ kind: "question", ageMs: SEVERITY_OLD_MS + 1 }).severity, SEVERITY_ESCALATING, "week-old actions escalate regardless of kind");
+assert.deepEqual(scoreEventSeverity({ kind: "paused", ageMs: 0, stallCount: 3 }), { severity: SEVERITY_ACTION, reasons: ["paused", "stall ×3"] }, "stall counts ride fresh pauses as context");
+assert.deepEqual(scoreEventSeverity({ kind: "mystery", ageMs: 0 }), { severity: SEVERITY_ACTION, reasons: [] }, "unknown kinds degrade to action, never to a throw");
+
+// Reason parsing never throws on the read path.
+assert.deepEqual(parseSeverityReasons('["a", 1, null]'), ["a"], "only strings survive");
+assert.deepEqual(parseSeverityReasons("not json"), [], "garbage parses to no reasons");
+assert.deepEqual(parseSeverityReasons(null), [], "missing parses to no reasons");
+assert.deepEqual(parseSeverityReasons(["a", "b", "c", "d", "e", "f", "g"]), ["a", "b", "c", "d", "e", "f"], "reasons cap at six");
+
+// Write path against real SQLite: severity is scored at insert from
+// observable signals (error repetitions count unresolved errors including
+// the row itself; stalls come from the worker ledger).
+const db = new Database(":memory:");
+db.exec(`CREATE TABLE cards (id TEXT PRIMARY KEY, display_name TEXT, name TEXT NOT NULL, project_id TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'build');
+  CREATE TABLE inbox_events (
+    id TEXT PRIMARY KEY, card_id TEXT NOT NULL, kind TEXT NOT NULL, summary TEXT NOT NULL,
+    dedupe_key TEXT NOT NULL UNIQUE, occurred_at INTEGER NOT NULL, read_at INTEGER,
+    archived_at INTEGER, resolved_at INTEGER, holder_card_id TEXT, holder_file TEXT
+  );`);
+ensureInboxSeverityColumns(db);
+ensureInboxOccurrencesColumn(db);
+ensureInboxQuestionColumns(db);
+assert.ok(db.prepare("PRAGMA table_info(inbox_events)").all().some((column) => column.name === "severity"), "pre-tier databases gain the severity column");
+assert.ok(db.prepare("PRAGMA table_info(inbox_events)").all().some((column) => column.name === "severity_reasons"), "pre-tier databases gain the reasons column");
+db.prepare("INSERT INTO cards (id, display_name, name, project_id, kind) VALUES ('c1', 'C1', 'c1', 'p1', 'build')").run();
+const now = 1_000_000_000_000;
+assert.equal(insertInboxEvent(db, { id: "q1", cardId: "c1", kind: "question", summary: "s", dedupeKey: "q:1", occurredAt: now }), true, "inserts still report");
+assert.deepEqual(db.prepare("SELECT severity, severity_reasons FROM inbox_events WHERE id = 'q1'").get(), { severity: 1, severity_reasons: '["needs decision"]' }, "questions score at write");
+assert.equal(insertInboxEvent(db, { id: "e1", cardId: "c1", kind: "error", summary: "s", dedupeKey: "e:1", occurredAt: now }), true, "first errors insert");
+assert.equal(db.prepare("SELECT severity FROM inbox_events WHERE id = 'e1'").get().severity, 1, "first errors act");
+assert.equal(insertInboxEvent(db, { id: "e2", cardId: "c1", kind: "error", summary: "s", dedupeKey: "e:2", occurredAt: now }), true, "second errors insert");
+// The repetition count is a fact about the EVENT now, not a count of rows.
+// This assertion is deliberately the opposite shape from the one it replaced:
+// a lone row that has recurred three times must escalate, which under a
+// row-counting scorer is impossible — there is nothing to count. Under the old
+// behaviour the score was a measurement of how many duplicate rows the bug had
+// produced, so a card whose worker fell over once but whose inbox had been
+// duplicated twice outranked a card that had actually failed twice.
+db.prepare("UPDATE inbox_events SET occurrences = 3 WHERE id = 'e1'").run();
+db.prepare("UPDATE inbox_events SET severity_reasons = ? WHERE id = 'e1'").run("[]");
+assert.equal(refreshEventSeverity(db, { cardId: "c1", nowMs: now }), 1, "the repetition crossing re-scores in place");
+assert.deepEqual(
+  db.prepare("SELECT severity, severity_reasons FROM inbox_events WHERE id = 'e1'").get(),
+  { severity: 2, severity_reasons: '["error ×3"]' },
+  "one row that recurred three times escalates, because the count is the event's own",
+);
+
+// Ordering: open escalations top every read; resolved history stays
+// chronological below them (a resolved old fire never outranks fresh work,
+// and a fresh completion still reads as the recent update).
+db.prepare("INSERT INTO inbox_events (id, card_id, kind, summary, dedupe_key, occurred_at, severity, severity_reasons) VALUES ('old', 'c1', 'paused', 's', 'old:1', 1, 2, '[]')").run();
+// e1 leads because it is the row that recurred. Under the row-counting scorer
+// the order was decided by which duplicate happened to be inserted second, so
+// the queue could promote a failure that had happened once over one that had
+// happened three times.
+assert.deepEqual(
+  listInboxEvents(db, false).map((row) => row.id),
+  ["e1", "old", "q1", "e2"],
+  "open escalations top (newest first within a tier), then lower tiers newest-first",
+);
+db.prepare("UPDATE inbox_events SET resolved_at = ? WHERE id = 'old'").run(now);
+assert.deepEqual(listInboxEvents(db, false).map((row) => row.id), ["e1", "q1", "e2", "old"], "resolved history sinks below open items, newest first");
+
+// Sweep recompute: age crossings upgrade in place with fresh reasons and
+// report the count for realtime publishing; idempotent on re-run.
+db.prepare("INSERT INTO inbox_events (id, card_id, kind, summary, dedupe_key, occurred_at, severity, severity_reasons) VALUES ('aging', 'c1', 'paused', 's', 'aging:1', ?, 1, '[]')").run(now - SEVERITY_STALL_MS - 1000);
+assert.equal(refreshEventSeverity(db, { cardId: "c1", nowMs: now }), 1, "the aging pause upgrades; e1 already carries its own repetition score");
+assert.deepEqual(db.prepare("SELECT severity, severity_reasons FROM inbox_events WHERE id = 'aging'").get(), { severity: 2, severity_reasons: '["stalled 3d"]' }, "upgrades carry fresh reasons");
+assert.deepEqual(
+  db.prepare("SELECT severity, severity_reasons FROM inbox_events WHERE id = 'e1'").get(),
+  { severity: 2, severity_reasons: '["error ×3"]' },
+  "the sweep re-derives from the row's own count, not from how many error rows exist",
+);
+assert.equal(refreshEventSeverity(db, { cardId: "c1", nowMs: now }), 0, "re-running without new aging changes nothing");
+assert.equal(refreshEventSeverity(db, { cardId: "absent", nowMs: now }), 0, "unknown cards upgrade nothing");
+
+// The fleet sweep is the door the per-card one cannot reach: `shouldSyncThread`
+// skips completed cards, so a completion nobody opened would otherwise never be
+// re-scored and its review-wait tier could never fire.
+db.prepare(
+  "INSERT INTO inbox_events (id, card_id, kind, summary, dedupe_key, occurred_at, severity, severity_reasons)"
+  + " VALUES ('unseen', 'c1', 'completed', 's', 'unseen:1', ?, 0, '[\"review\"]')",
+).run(now - SEVERITY_REVIEW_WAIT_MS - 1000);
+assert.equal(sweepEventSeverity(db, { nowMs: now }), 1, "the fleet sweep reaches a completion no live sync watches");
+assert.deepEqual(
+  db.prepare("SELECT severity, severity_reasons FROM inbox_events WHERE id = 'unseen'").get(),
+  { severity: 2, severity_reasons: '["unreviewed 2d"]' },
+  "an old completion escalates on the fleet tick",
+);
+assert.equal(sweepEventSeverity(db, { nowMs: now }), 0, "the fleet sweep is idempotent on re-run");
+assert.equal(
+  db.prepare("SELECT resolved_at FROM inbox_events WHERE id = 'unseen'").get().resolved_at,
+  null,
+  "escalating a review request never resolves it — the badge still counts it",
+);
+
+// Badge rule frozen: severity never enters the count — unresolved actions
+// count at every tier, completions only while unread.
+assert.equal(countsForInboxBadge({ kind: "paused", archivedAt: null, resolvedAt: null }), true, "escalating pauses still count");
+assert.equal(countsForInboxBadge({ kind: "completed", archivedAt: null, resolvedAt: null, readAt: 1 }), false, "read completions never count");
+assert.equal(countsForInboxBadge({ kind: "question", archivedAt: 1, resolvedAt: null }), false, "archived items never count");
+
+console.log("inbox severity test ok: tiers, reasons, write scoring, ordering, sweep recompute, frozen badge");

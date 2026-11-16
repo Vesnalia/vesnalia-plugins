@@ -1,0 +1,22 @@
+import type { ProviderIconStyle } from "./settings.ts";
+
+export interface Tint {
+  light: string;
+  dark: string;
+}
+
+/** Brand tints per agent provider id: darker on light themes, lighter on dark, so the mask keeps contrast. */
+const PROVIDER_TINT: Record<string, Tint> = {
+  "claude-code": { light: "#C15F3C", dark: "#E08A6D" },
+  claude: { light: "#C15F3C", dark: "#E08A6D" },
+  codex: { light: "#6E6E80", dark: "#ACACBE" },
+  openai: { light: "#6E6E80", dark: "#ACACBE" },
+  gemini: { light: "#3367D6", dark: "#8AB4F8" },
+  cursor: { light: "#6E56CF", dark: "#B4A6F5" },
+};
+
+/** The icon's colour as an inline value following VesnALIA's colour scheme; null draws it in the row's full text colour. */
+export function providerTintColor(providerId: string, style: ProviderIconStyle): string | null {
+  const tint = style === "tint" ? PROVIDER_TINT[providerId] : undefined;
+  return tint ? `light-dark(${tint.light}, ${tint.dark})` : null;
+}

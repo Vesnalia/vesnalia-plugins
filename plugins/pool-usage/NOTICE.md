@@ -1,0 +1,17 @@
+# Pool Usage
+
+Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
+
+- Оригинальный автор: Yurii Rebryk (https://github.com/rebryk)
+- Исходный репозиторий: https://github.com/rebryk/bb-plugins
+- Каталог в репозитории: pool-usage
+- Версия: pool-usage/v0.2.7, коммит be9eefb2a52c16b8b212f3dc8ea117da06c821b0
+- Ссылка на исходник: https://github.com/rebryk/bb-plugins/tree/be9eefb2a52c16b8b212f3dc8ea117da06c821b0/pool-usage
+- Лицензия: лицензия не указана в исходном репозитории
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

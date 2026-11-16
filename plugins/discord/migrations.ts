@@ -1,0 +1,121 @@
+// VesnALIA uses each statement's array index as its migration id. Keep this v0.0.4
+// prefix byte-for-byte and append every new migration after it so upgrades
+// cannot reinterpret an already-applied id as a different statement.
+export const legacyMigrations = [
+  `CREATE TABLE IF NOT EXISTS discord_threads (
+    discord_channel_id TEXT PRIMARY KEY,
+    discord_thread_id TEXT NOT NULL,
+    guild_id TEXT NOT NULL,
+    alia_thread_id TEXT NOT NULL UNIQUE,
+    alia_project_id TEXT,
+    title TEXT,
+    created_at INTEGER NOT NULL,
+    last_activity_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS discord_threads_alia_idx ON discord_threads(alia_thread_id)`,
+  `CREATE TABLE IF NOT EXISTS discord_seen_messages (
+    discord_message_id TEXT PRIMARY KEY,
+    discord_channel_id TEXT NOT NULL,
+    seen_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS discord_posted_replies (
+    alia_thread_id TEXT NOT NULL,
+    reply_hash TEXT NOT NULL,
+    posted_at INTEGER NOT NULL,
+    PRIMARY KEY (alia_thread_id, reply_hash)
+  )`,
+  `CREATE TABLE IF NOT EXISTS discord_posted_interactions (
+    alia_thread_id TEXT NOT NULL,
+    interaction_id TEXT NOT NULL,
+    posted_at INTEGER NOT NULL,
+    PRIMARY KEY (alia_thread_id, interaction_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS discord_pairing (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    guild_id TEXT NOT NULL,
+    guild_name TEXT,
+    channel_id TEXT NOT NULL,
+    channel_name TEXT,
+    user_id TEXT NOT NULL,
+    user_tag TEXT,
+    paired_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS discord_allowed_users (
+    user_id TEXT PRIMARY KEY,
+    user_tag TEXT,
+    added_at INTEGER NOT NULL
+  )`,
+  `ALTER TABLE discord_threads ADD COLUMN discord_parent_channel_id TEXT`,
+  `CREATE TABLE IF NOT EXISTS discord_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    permission_mode TEXT NOT NULL DEFAULT 'auto',
+    server_access TEXT NOT NULL DEFAULT 'messages',
+    allow_destructive INTEGER NOT NULL DEFAULT 0,
+    default_project_id TEXT,
+    machine_host_id TEXT,
+    provider_id TEXT,
+    model TEXT,
+    spawn_channel_id TEXT,
+    home_channel_id TEXT
+  )`,
+  `ALTER TABLE discord_config ADD COLUMN reasoning_level TEXT`,
+  `ALTER TABLE discord_config ADD COLUMN service_tier TEXT`,
+] as const;
+
+export const interactionActionMigrations = [
+  `CREATE TABLE IF NOT EXISTS discord_interaction_actions (
+    token TEXT PRIMARY KEY,
+    alia_thread_id TEXT NOT NULL,
+    interaction_id TEXT NOT NULL,
+    discord_channel_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    decision TEXT,
+    resolved_by_user_id TEXT,
+    created_at INTEGER NOT NULL,
+    resolved_at INTEGER
+  )`,
+  `CREATE INDEX IF NOT EXISTS discord_interaction_actions_thread_idx
+    ON discord_interaction_actions(alia_thread_id, interaction_id)`,
+] as const;
+
+export const interactionRouteMigrations = [
+  `CREATE TABLE IF NOT EXISTS discord_interaction_routes (
+    alia_thread_id TEXT PRIMARY KEY,
+    owner_alia_thread_id TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    last_activity_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS discord_interaction_routes_owner_idx
+    ON discord_interaction_routes(owner_alia_thread_id, last_activity_at)`,
+] as const;
+
+export const interactionMessageMigrations = [
+  `ALTER TABLE discord_interaction_actions ADD COLUMN discord_message_id TEXT`,
+] as const;
+
+export const replyOutboxMigrations = [
+  `CREATE TABLE IF NOT EXISTS discord_reply_outbox (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    alia_thread_id TEXT NOT NULL,
+    idle_at INTEGER NOT NULL,
+    guild_id TEXT NOT NULL,
+    discord_channel_id TEXT NOT NULL,
+    output_id TEXT,
+    chunks_json TEXT NOT NULL,
+    next_chunk INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    delivered_at INTEGER,
+    UNIQUE(alia_thread_id, idle_at),
+    UNIQUE(alia_thread_id, output_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS discord_reply_outbox_pending_idx
+    ON discord_reply_outbox(delivered_at, id)`,
+] as const;
+
+export const migrations = [
+  ...legacyMigrations,
+  ...interactionActionMigrations,
+  ...interactionRouteMigrations,
+  ...interactionMessageMigrations,
+  ...replyOutboxMigrations,
+];

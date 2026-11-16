@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build plugin
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies from lockfile
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build production plugin
+        run: npm run build
+
+      - name: Validate build metadata
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+
+          const expected = {
+            pluginId: "web-push-notify",
+            sdkVersion: "0.4.1",
+          };
+
+          for (const target of ["server", "app"]) {
+            const metadata = JSON.parse(
+              await readFile(`dist/${target}.meta.json`, "utf8"),
+            );
+
+            if (metadata.pluginId !== expected.pluginId) {
+              throw new Error(
+                `${target} artifact has plugin id ${metadata.pluginId}`,
+              );
+            }
+
+            if (metadata.sdkVersion !== expected.sdkVersion) {
+              throw new Error(
+                `${target} artifact has SDK version ${metadata.sdkVersion}`,
+              );
+            }
+          }
+          NODE
+
+      - name: Pack production package
+        run: |
+          mkdir -p package-output
+          npm pack --pack-destination package-output
+
+      - name: Upload production package
+        uses: actions/upload-artifact@v4
+        with:
+          name: alia-plugin-web-push-notify
+          path: package-output/*.tgz
+          if-no-files-found: error
+
+  verify-distribution:
+    name: Verify distribution / ${{ matrix.os }}
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download production package
+        uses: actions/download-artifact@v4
+        with:
+          name: alia-plugin-web-push-notify
+          path: package-output
+
+      - name: Inspect package contents
+        run: |
+          tarballs=(package-output/*.tgz)
+          test "${#tarballs[@]}" -eq 1
+          tar -tzf "${tarballs[0]}" > package-output/contents.txt
+
+          grep -qx "package/dist/server.js" package-output/contents.txt
+          grep -qx "package/dist/server.meta.json" package-output/contents.txt
+          grep -qx "package/dist/app.js" package-output/contents.txt
+          grep -qx "package/dist/app.css" package-output/contents.txt
+          grep -qx "package/dist/app.meta.json" package-output/contents.txt
+
+      - name: Install package from tarball
+        run: |
+          mkdir -p consumer
+          cd consumer
+          npm init -y >/dev/null
+          npm install ../package-output/*.tgz
+          test -f node_modules/alia-plugin-web-push-notify/dist/server.js
+          test -f node_modules/alia-plugin-web-push-notify/dist/app.js

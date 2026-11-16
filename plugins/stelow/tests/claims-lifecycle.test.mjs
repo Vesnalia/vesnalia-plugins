@@ -1,0 +1,291 @@
+import assert from "node:assert/strict";
+import Database from "better-sqlite3";
+import {
+  acquireWorkspaceClaims,
+  addClaimWaiters,
+  checkWorkspaceClaims,
+  clearClaimWaiters,
+  CLAIM_TTL_MS,
+  ensureCardClaimsTables,
+  liveClaimsForWorkspace,
+  releaseAllCardClaims,
+  releaseWorkspaceClaims,
+  renewCardClaims,
+  sweepExpiredClaims,
+  waitersForFiles,
+} from "../lib/card-claims.mjs";
+import { acquireScopeClaims } from "../lib/scope-claims.mjs";
+import { matchScopeClaims, scopeClaimRoom } from "../lib/scope-claim-room.mjs";
+import { isClaimTerminal } from "../lib/card-terminal.mjs";
+
+// Full claim lifecycle at the lib level, mirroring exactly the calls
+// server.ts makes. Each block names the server path it guards.
+
+// --- Terminal release matrix (moveCard / cancelCard / deleteCard / done) ----
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/checkout";
+  const T0 = 2_000_000;
+  for (const status of ["completed", "archived", "blocked"]) {
+    assert.equal(isClaimTerminal(status), true, `${status} is claim-terminal`);
+    acquireWorkspaceClaims(db, { cardId: "holder", workspacePath: WS, files: ["src/a.ts"], nowMs: T0 });
+    // Server terminal paths all funnel into releaseAllCardClaims(holder).
+    const released = releaseAllCardClaims(db, "holder");
+    assert.equal(released.length, 1, `${status}: terminal release drops the claim`);
+    assert.equal(liveClaimsForWorkspace(db, { workspacePath: WS, nowMs: T0 }).length, 0, `${status}: nothing live remains`);
+  }
+  for (const status of ["draft", "pending", "in-progress"]) {
+    assert.equal(isClaimTerminal(status), false, `${status} is not claim-terminal`);
+  }
+}
+
+// --- Blocked → release → waiter resume (notifyClaimWaiters contract) ---------
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/checkout";
+  const T0 = 3_000_000;
+  const a = acquireWorkspaceClaims(db, { cardId: "card_a", workspacePath: WS, files: ["src/a.ts"], scope: "scope-1", nowMs: T0 });
+  assert.equal(a.conflicts.length, 0, "first acquirer holds the file");
+  const b = acquireWorkspaceClaims(db, { cardId: "card_b", workspacePath: WS, files: ["src/a.ts"], scope: "scope-9", nowMs: T0 });
+  assert.equal(b.conflicts.length, 1, "sibling card hits a live foreign claim");
+  assert.equal(b.conflicts[0].heldBy, "card_a", "the conflict names the holder");
+  addClaimWaiters(db, { cardId: "card_b", workspacePath: WS, files: ["src/a.ts"], scope: "scope-9", nowMs: T0 });
+  assert.equal(waitersForFiles(db, { workspacePath: WS, files: ["src/a.ts"] }).length, 1, "waiter is registered");
+  // check() heartbeat must not clear someone else's hold.
+  const seen = checkWorkspaceClaims(db, { cardId: "card_b", workspacePath: WS, files: ["src/a.ts"], nowMs: T0 });
+  assert.equal(seen.conflicts.length, 1, "room check still sees the wall");
+  // Holder releases (lock release / done / archive / sweep): the exact rows
+  // notifyClaimWaiters needs to wake precisely the blocked cards.
+  const released = releaseWorkspaceClaims(db, { cardId: "card_a", workspacePath: WS, files: ["src/a.ts"] });
+  assert.deepEqual(released, [{ workspacePath: WS, file: "src/a.ts" }], "release names workspace + file for waiter lookup");
+  const woken = waitersForFiles(db, { workspacePath: WS, files: released.map((row) => row.file) });
+  assert.deepEqual(woken.map((row) => row.card_id), ["card_b"], "exactly the blocked card wakes");
+  clearClaimWaiters(db, { cardId: "card_b", workspacePath: WS, files: ["src/a.ts"] });
+  const retry = acquireWorkspaceClaims(db, { cardId: "card_b", workspacePath: WS, files: ["src/a.ts"], nowMs: T0 + 1 });
+  assert.equal(retry.conflicts.length, 0, "waiter re-acquires after release");
+}
+
+// --- Ghost holders never block live cards (acquire-path reap) ---------------
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/checkout";
+  const T0 = 4_000_000;
+  acquireWorkspaceClaims(db, { cardId: "ghost", workspacePath: WS, files: ["src/g.ts"], nowMs: T0 });
+  // Server deletes claims whose holder is archived/gone before re-acquiring;
+  // a foreign card can never release another card's claim, so the host does
+  // the delete directly (same statement shape as server.ts).
+  const foreign = releaseWorkspaceClaims(db, { cardId: "live", workspacePath: WS, files: ["src/g.ts"] });
+  assert.equal(foreign.length, 0, "a foreign card releases nothing");
+  db.prepare("DELETE FROM card_claims WHERE workspace_path = ? AND file_path = ? AND card_id = ?").run(WS, "src/g.ts", "ghost");
+  const retry = acquireWorkspaceClaims(db, { cardId: "live", workspacePath: WS, files: ["src/g.ts"], nowMs: T0 + 1 });
+  assert.equal(retry.conflicts.length, 0, "ghost claim reaped, live card proceeds");
+}
+
+// --- Expired claims are swept and reported for waiter notify ----------------
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/checkout";
+  const T0 = 5_000_000;
+  acquireWorkspaceClaims(db, { cardId: "crashed", workspacePath: WS, files: ["src/old.ts"], ttlMs: 60_000, nowMs: T0 });
+  acquireWorkspaceClaims(db, { cardId: "live", workspacePath: WS, files: ["src/new.ts"], nowMs: T0 + 61_000 });
+  addClaimWaiters(db, { cardId: "waiter", workspacePath: WS, files: ["src/old.ts"], nowMs: T0 + 61_000 });
+  const swept = sweepExpiredClaims(db, T0 + 61_000);
+  assert.equal(swept.length, 1, "only the expired claim is reaped");
+  assert.deepEqual(
+    swept.map((row) => ({ workspacePath: row.workspacePath, file: row.file })),
+    [{ workspacePath: WS, file: "src/old.ts" }],
+    "the sweep names workspace + file for waiter notify",
+  );
+  assert.equal(
+    waitersForFiles(db, { workspacePath: WS, files: ["src/old.ts"] }).length, 1,
+    "waiters survive the sweep until the host notifies them",
+  );
+  assert.equal(liveClaimsForWorkspace(db, { workspacePath: WS, nowMs: T0 + 61_000 }).length, 1, "live claims survive");
+}
+
+// --- Scope matching: one rule for claimed projection and lapsed probe ----
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/match";
+  const T0 = 5_000_000;
+  acquireWorkspaceClaims(db, { cardId: "c1", workspacePath: WS, files: ["src/a.ts"], scope: "scope-1", nowMs: T0 });
+  const live = liveClaimsForWorkspace(db, { workspacePath: WS, nowMs: T0 });
+  assert.equal(matchScopeClaims(live, { ownerId: "c1", scopeId: "scope-1", files: [], nowMs: T0 }).length, 1, "scope tag matches");
+  // A row TAGGED for another scope is that scope's claim, not this one's. This
+  // used to read 1 — "file overlap matches" — which is how scope-1 came to
+  // render "Holding 1 file" for a file the registry had just refused it, with
+  // the Inbox reporting the same file as ALIA-LOCK-BLOCKED. File overlap is the
+  // ownership test only for an UNTAGGED claim, where the card is the holder.
+  assert.equal(
+    matchScopeClaims(live, { ownerId: "c1", scopeId: "scope-9", files: ["src/a.ts"], nowMs: T0 }).length,
+    0,
+    "a row tagged for a different scope is not this scope's claim",
+  );
+  assert.equal(
+    matchScopeClaims(
+      [{ file_path: "src/a.ts", card_id: "c1", scope: null, expires_at: T0 + 1_000_000, fencing: 1 }],
+      { ownerId: "c1", scopeId: "scope-9", files: ["src/a.ts"], nowMs: T0 },
+    ).length,
+    1,
+    "an untagged claim is the card's, so overlap does match it",
+  );
+  assert.equal(matchScopeClaims(live, { ownerId: "c1", scopeId: "scope-9", files: ["src/z.ts"], nowMs: T0 }).length, 0, "unrelated misses");
+  assert.equal(matchScopeClaims(live, { ownerId: "c2", scopeId: "scope-1", files: [], nowMs: T0 }).length, 0, "foreign cards miss");
+  assert.equal(matchScopeClaims(live, { ownerId: "c1", scopeId: "scope-1", files: [], nowMs: T0 + 1_900_000 }).length, 0, "expired leases miss");
+  assert.deepEqual(matchScopeClaims(null, { ownerId: "c1", scopeId: "scope-1" }), [], "junk rows miss");
+}
+
+// --- The room: one pass names what a scope holds AND what blocks it -------
+// The card used to know a scope had claims and nothing else — the file names
+// were dropped at the boolean. So the room is a projection, not a filter: a
+// scope can only be shown holding a file it is not also blocked on.
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/room";
+  const T0 = 7_000_000;
+  // c2 is already working on the shared file; c1's scope-1 names it plus one of
+  // its own, and has claimed only its own.
+  acquireWorkspaceClaims(db, { cardId: "c2", workspacePath: WS, files: ["src/shared.ts"], scope: "other", nowMs: T0 });
+  acquireWorkspaceClaims(db, { cardId: "c1", workspacePath: WS, files: ["src/own.ts"], scope: "scope-1", nowMs: T0 });
+  const live = liveClaimsForWorkspace(db, { workspacePath: WS, nowMs: T0 });
+  const room = scopeClaimRoom(live, { ownerId: "c1", scopeId: "scope-1", files: ["src/own.ts", "src/shared.ts"], nowMs: T0 });
+  assert.deepEqual(room.held.map((row) => row.file_path), ["src/own.ts"], "c1 sees the file it holds");
+  assert.deepEqual(
+    room.blocked,
+    [{
+      file: "src/shared.ts",
+      heldBy: "c2",
+      heldScope: "other",
+      holderLabel: null,
+      expiresAt: T0 + CLAIM_TTL_MS,
+    }],
+    "and the one it cannot have, named with its holder and the scope it holds under; holderLabel null, since another card is another card",
+  );
+  const holders = new Set([...room.held.map((row) => row.file_path), ...room.blocked.map((row) => row.file)]);
+  assert.equal(holders.size, 2, "the two halves never name the same file: a scope cannot hold what it is blocked on");
+  assert.deepEqual(
+    scopeClaimRoom(live, { ownerId: "c2", scopeId: "other", files: ["src/shared.ts"], nowMs: T0 }).blocked,
+    [],
+    "the holder is blocked on nothing",
+  );
+  assert.deepEqual(
+    scopeClaimRoom(live, { ownerId: "c1", scopeId: "scope-1", files: ["src/own.ts", "src/shared.ts"], nowMs: T0 + CLAIM_TTL_MS }).blocked,
+    [],
+    "an expired lease blocks nothing",
+  );
+  assert.deepEqual(scopeClaimRoom(null, { ownerId: "c1" }), { held: [], blocked: [] }, "junk rows block nothing");
+  assert.deepEqual(
+    scopeClaimRoom(live, { ownerId: "c1", scopeId: "scope-9", files: [], nowMs: T0 }).blocked,
+    [],
+    "a scope that names no files is never blocked",
+  );
+}
+
+// --- A sibling scope of the SAME card is a distinct holder ----------------
+// `acquireScopeClaims` refuses a scope whose files a sibling scope holds, even
+// when both belong to one card, and parks the loser as ALIA-LOCK-BLOCKED. The
+// card's room has to agree, or the Inbox says blocked and the card says
+// holding — two answers to one question, which is the whole thing the room
+// exists to prevent.
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/sibling";
+  const T0 = 8_000_000;
+  const sibling = acquireScopeClaims(db, {
+    cardId: "c1", batchId: "b1", scopeId: "scope-2", files: ["src/shared.ts"], workspacePath: WS, nowMs: T0,
+  });
+  assert.equal(sibling.ok, true, "the first scope takes the file");
+  const loser = acquireScopeClaims(db, {
+    cardId: "c1", batchId: "b1", scopeId: "scope-1", files: ["src/shared.ts"], workspacePath: WS, nowMs: T0,
+  });
+  assert.equal(loser.ok, false, "the sibling is refused");
+  assert.match(loser.park[0].stderr, /ALIA-LOCK-BLOCKED/, "and the Inbox is told so");
+
+  const live = liveClaimsForWorkspace(db, { workspacePath: WS, nowMs: T0 });
+  const room = scopeClaimRoom(live, { ownerId: "c1", scopeId: "scope-1", files: ["src/shared.ts"], nowMs: T0 });
+  assert.deepEqual(room.held, [], "the refused scope holds nothing — it was refused");
+  assert.equal(room.blocked.length, 1, "and it is blocked on the file it wanted");
+  assert.equal(room.blocked[0].file, "src/shared.ts");
+  assert.equal(room.blocked[0].heldScope, "b1::scope-2", "naming the holder's scope, which is what the registry used");
+  assert.equal(
+    room.blocked[0].holderLabel,
+    "another scope on this card",
+    "so the card says a sibling scope, not another card — pointing the reader at their own card name would be a false accusation",
+  );
+  // And the holder still sees its own claim, by tag.
+  assert.deepEqual(
+    scopeClaimRoom(live, { ownerId: "c1", scopeId: "scope-2", files: ["src/shared.ts"], nowMs: T0 }).held.map((row) => row.file_path),
+    ["src/shared.ts"],
+    "the holder sees itself as the holder",
+  );
+}
+
+// --- Lease renewal: the heartbeat is a lease extension, not an acquisition ---
+// A claim that only counted down lapsed under a card that was still working:
+// a research or build scope routinely outlives the 30-minute TTL, and its
+// files became takeable mid-run. The reconcile pass renews supervised holders,
+// so exclusivity lasts as long as the work does — without turning the tick
+// into a write amplifier, and without promoting a short `--ttl` to the default.
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/renew";
+  const T0 = 9_000_000;
+  const TTL = 60_000;
+  acquireWorkspaceClaims(db, { cardId: "holder", workspacePath: WS, files: ["src/a.ts"], ttlMs: TTL, nowMs: T0 });
+  acquireWorkspaceClaims(db, { cardId: "bystander", workspacePath: WS, files: ["src/b.ts"], ttlMs: TTL, nowMs: T0 });
+  assert.equal(
+    renewCardClaims(db, { cardId: "holder", nowMs: T0 + 20_000 }),
+    0,
+    "a lease above half its length is not rewritten: the heartbeat is not a write per tick",
+  );
+  assert.equal(renewCardClaims(db, { cardId: "holder", nowMs: T0 + 40_000 }), 1, "only the claim that is due is extended");
+  const holder = db.prepare("SELECT acquired_at, expires_at, fencing FROM card_claims WHERE card_id = 'holder'").get();
+  assert.equal(holder.expires_at, T0 + 40_000 + TTL, "the lease slides by its own length, not by a new default");
+  assert.equal(holder.acquired_at, T0, "renewal never rewrites the acquisition time");
+  assert.equal(holder.fencing, 1, "renewal never moves the fencing epoch");
+  const bystander = db.prepare("SELECT expires_at FROM card_claims WHERE card_id = 'bystander'").get();
+  assert.equal(bystander.expires_at, T0 + TTL, "another card's lease is never extended by this heartbeat");
+  assert.equal(
+    liveClaimsForWorkspace(db, { workspacePath: WS, nowMs: T0 + TTL + 1 }).length,
+    1,
+    "the renewed claim is still live past the TTL the original acquire granted",
+  );
+  assert.equal(renewCardClaims(db, { cardId: "", nowMs: T0 + 40_000 }), 0, "junk in extends nothing");
+}
+
+// --- A takeover of a lapsed lease names the holder it took from ------------
+// `acquireScopeClaims` overwrote an expired foreign row and reported it as an
+// ordinary acquisition, so no caller could tell a steal from a clean claim and
+// the previous holder heard about it only by failing later.
+{
+  const db = new Database(":memory:");
+  ensureCardClaimsTables(db);
+  const WS = "/repo/steal";
+  const T0 = 10_000_000;
+  const TTL = 60_000;
+  const first = acquireScopeClaims(db, {
+    cardId: "c1", batchId: "b1", scopeId: "scope-1", files: ["src/a.ts"], workspacePath: WS, ttlMs: TTL, nowMs: T0,
+  });
+  assert.equal(first.ok, true, "the first holder acquires");
+  assert.deepEqual(first.stolen, [], "a clean acquisition steals nothing");
+  const takeover = acquireScopeClaims(db, {
+    cardId: "c2", batchId: "b2", scopeId: "scope-2", files: ["src/a.ts"], workspacePath: WS, ttlMs: TTL, nowMs: T0 + TTL + 1,
+  });
+  assert.equal(takeover.ok, true, "a lapsed lease is takeable — that is what the TTL is for");
+  assert.equal(takeover.acquired.length, 0, "and the file is reported as taken over, not as freshly acquired");
+  assert.deepEqual(
+    takeover.stolen.map((row) => ({ file: row.file, previousHolder: row.previousHolder, previousScope: row.previousScope })),
+    [{ file: "src/a.ts", previousHolder: "c1", previousScope: "b1::scope-1" }],
+    "the takeover names the file, the card and the scope it took from",
+  );
+}
+
+console.log("claims-lifecycle: ok");

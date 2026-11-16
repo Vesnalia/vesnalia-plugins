@@ -1,0 +1,338 @@
+/**
+ * Published views and what the user did with each item, in the plugin's own
+ * database.
+ *
+ * A view belongs to the thread that published it and is named by a key, so a
+ * skill that publishes again under the same key replaces its view instead of
+ * adding a second one. What the user did to an item is kept by item id, so it
+ * survives the replacement.
+ *
+ * Views quote the user's own work, which is why they live in the database VesnALIA
+ * keeps under its data directory and never in a file inside this checkout.
+ */
+import type { Database } from "better-sqlite3";
+import type { Feedback } from "./review.js";
+import { dismissLabelOf, isQuiet, type Action, type Item, type View } from "./schema.js";
+
+export const MIGRATIONS = [
+  `CREATE TABLE views (
+     id           INTEGER PRIMARY KEY AUTOINCREMENT,
+     thread_id    TEXT NOT NULL,
+     key          TEXT NOT NULL,
+     body         TEXT NOT NULL,
+     cwd          TEXT,
+     published_at TEXT NOT NULL,
+     UNIQUE (thread_id, key)
+   )`,
+  `CREATE TABLE item_states (
+     view_id    INTEGER NOT NULL REFERENCES views(id) ON DELETE CASCADE,
+     item_id    TEXT NOT NULL,
+     state      TEXT NOT NULL,
+     result     TEXT,
+     updated_at TEXT NOT NULL,
+     PRIMARY KEY (view_id, item_id)
+   )`,
+  // A visual review's images, copied at publish so the review keeps showing
+  // what was proposed.
+  `CREATE TABLE images (
+     view_id  INTEGER NOT NULL REFERENCES views(id) ON DELETE CASCADE,
+     item_id  TEXT NOT NULL,
+     idx      INTEGER NOT NULL,
+     mime     TEXT NOT NULL,
+     data     BLOB NOT NULL,
+     PRIMARY KEY (view_id, item_id, idx)
+   )`,
+  // Set when the user hides a view from above the composer; the next publish
+  // under its key clears it, since that brings something new to look at.
+  `ALTER TABLE views ADD COLUMN hidden_at TEXT`,
+  // What each related entry's button did, by entry id, as JSON. The item's
+  // own buttons leave it alone.
+  `ALTER TABLE item_states ADD COLUMN related TEXT`,
+  // When the user hid a view from above another thread's composer, one that
+  // shows some of the view's items. Hiding it there leaves it in the thread
+  // that published it, and the next publish shows it again.
+  `CREATE TABLE linked_hidden (
+     view_id   INTEGER NOT NULL REFERENCES views(id) ON DELETE CASCADE,
+     thread_id TEXT NOT NULL,
+     hidden_at TEXT NOT NULL,
+     PRIMARY KEY (view_id, thread_id)
+   )`,
+];
+
+export type ItemState = "open" | "done" | "dismissed";
+
+/** What the last action on an item did, shown on its card. */
+export interface ActionResult {
+  label: string;
+  at: string;
+  /** A thread the action opened. */
+  threadId?: string;
+  /** Another thread a message went to, instead of the one that published the view. */
+  sentTo?: string;
+  /** A command's exit code and the tail of its output. */
+  exitCode?: number;
+  output?: string;
+  error?: string;
+  /** The user changed the text before sending it. */
+  edited?: boolean;
+  /** The draft as sent, when the user changed it or typed it into a one-line field. */
+  draft?: string;
+  /** The push-back note the user sent with the button, when it used one. */
+  note?: string;
+  /** What a visual review sent back. */
+  feedback?: Feedback;
+}
+
+export interface StoredImage {
+  mime: string;
+  data: Buffer;
+}
+
+export interface ItemRecord {
+  state: ItemState;
+  result: ActionResult | null;
+  /** What each related entry's button did, by entry id. */
+  related?: Record<string, ActionResult>;
+}
+
+export interface StoredView {
+  id: number;
+  threadId: string;
+  key: string;
+  view: View;
+  /** Where `publish` ran, the default directory for command actions. */
+  cwd: string | null;
+  publishedAt: string;
+  /** When the user hid it from above the composer, until the next publish. */
+  hiddenAt: string | null;
+  items: Record<string, ItemRecord>;
+}
+
+export interface Store {
+  publish(threadId: string, key: string, view: View, cwd: string | null, now: string): StoredView;
+  get(id: number): StoredView | null;
+  forThread(threadId: string): StoredView[];
+  /** Views another thread published with items that show in this one, each narrowed to those items, newest first. */
+  linkedTo(threadId: string): StoredView[];
+  /** Sets an item's state and last result, leaving what its related entries' buttons did. */
+  setItem(viewId: number, itemId: string, record: ItemRecord, now: string): StoredView | null;
+  setRelated(viewId: number, itemId: string, entryId: string, result: ActionResult, now: string): StoredView | null;
+  setHidden(viewId: number, hidden: boolean, now: string): StoredView | null;
+  /** Hides a view from above a thread that shows some of its items, leaving it in the thread that published it. */
+  setLinkedHidden(viewId: number, threadId: string, hidden: boolean, now: string): void;
+  /** Replaces every image a view holds, as one publish's set. */
+  putImages(viewId: number, images: Array<{ itemId: string; index: number } & StoredImage>): void;
+  image(viewId: number, itemId: string, index: number): StoredImage | null;
+}
+
+/**
+ * What an item is once one of its buttons went through. A failure leaves it
+ * open to try again. A button marked `repeat`, or any button on an item whose
+ * status the agent sets, leaves it open too: the agent finishes it.
+ */
+export function stateAfterAction(item: Item, action: Action, failed: boolean): ItemState {
+  return failed || action.repeat === true || item.status !== undefined ? "open" : "done";
+}
+
+/**
+ * The view's items with each agent-set status applied: complete is done,
+ * anything else open. A dismissal is the user's, so it stands, and the last
+ * button's result stays on the item.
+ */
+export function applyStatus(view: View, items: Record<string, ItemRecord>): Record<string, ItemRecord> {
+  const next = { ...items };
+  for (const item of view.sections.flatMap((section) => section.items)) {
+    if (item.status === undefined) continue;
+    const record = items[item.id];
+    if (record?.state === "dismissed") continue;
+    next[item.id] = { ...record, state: item.status.complete ? "done" : "open", result: record?.result ?? null };
+  }
+  return next;
+}
+
+/**
+ * The view as a thread sees it. The thread that published it sees all of it;
+ * a thread its items name sees only those items, without the page map, which
+ * lays out items it does not have.
+ */
+export function viewFor(stored: StoredView, threadId: string): StoredView {
+  if (stored.threadId === threadId) return stored;
+  const sections = stored.view.sections
+    .map((section) => ({ ...section, items: section.items.filter((item) => item.thread === threadId) }))
+    .filter((section) => section.items.length > 0);
+  const kept = new Set(sections.flatMap((section) => section.items.map((item) => item.id)));
+  const { map: _map, ...view } = stored.view;
+  return {
+    ...stored,
+    view: { ...view, sections },
+    items: Object.fromEntries(Object.entries(stored.items).filter(([itemId]) => kept.has(itemId))),
+  };
+}
+
+type ViewRow = {
+  id: number;
+  thread_id: string;
+  key: string;
+  body: string;
+  cwd: string | null;
+  published_at: string;
+  hidden_at: string | null;
+};
+
+type StateRow = { item_id: string; state: ItemState; result: string | null; related: string | null };
+
+export function createStore(db: Database): Store {
+  function hydrate(row: ViewRow): StoredView {
+    const view = JSON.parse(row.body) as View;
+    const known = new Set(view.sections.flatMap((section) => section.items.map((item) => item.id)));
+    const items: Record<string, ItemRecord> = {};
+    for (const state of db
+      .prepare("SELECT item_id, state, result, related FROM item_states WHERE view_id = ?")
+      .all(row.id) as StateRow[]) {
+      if (!known.has(state.item_id)) continue;
+      items[state.item_id] = {
+        state: state.state,
+        result: state.result === null ? null : (JSON.parse(state.result) as ActionResult),
+        ...(state.related === null ? {} : { related: JSON.parse(state.related) as Record<string, ActionResult> }),
+      };
+    }
+    return {
+      id: row.id,
+      threadId: row.thread_id,
+      key: row.key,
+      view,
+      cwd: row.cwd,
+      publishedAt: row.published_at,
+      hiddenAt: row.hidden_at,
+      items: applyStatus(view, items),
+    };
+  }
+
+  function get(id: number): StoredView | null {
+    const row = db.prepare("SELECT * FROM views WHERE id = ?").get(id) as ViewRow | undefined;
+    return row === undefined ? null : hydrate(row);
+  }
+
+  return {
+    publish(threadId, key, view, cwd, now) {
+      // An upsert keeps the row id, so item states and any open tab that
+      // names the view by id carry over to the new version.
+      db.prepare(
+        `INSERT INTO views (thread_id, key, body, cwd, published_at) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT (thread_id, key) DO UPDATE SET body = excluded.body, cwd = excluded.cwd,
+           published_at = excluded.published_at, hidden_at = NULL`,
+      ).run(threadId, key, JSON.stringify(view), cwd, now);
+      const row = db
+        .prepare("SELECT * FROM views WHERE thread_id = ? AND key = ?")
+        .get(threadId, key) as ViewRow;
+      return hydrate(row);
+    },
+
+    get,
+
+    forThread(threadId) {
+      return (
+        db
+          .prepare("SELECT * FROM views WHERE thread_id = ? ORDER BY published_at DESC, id DESC")
+          .all(threadId) as ViewRow[]
+      ).map(hydrate);
+    },
+
+    setItem(viewId, itemId, record, now) {
+      if (get(viewId) === null) return null;
+      db.prepare(
+        `INSERT INTO item_states (view_id, item_id, state, result, updated_at) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT (view_id, item_id) DO UPDATE SET state = excluded.state,
+           result = excluded.result, updated_at = excluded.updated_at`,
+      ).run(viewId, itemId, record.state, record.result === null ? null : JSON.stringify(record.result), now);
+      return get(viewId);
+    },
+
+    setRelated(viewId, itemId, entryId, result, now) {
+      const stored = get(viewId);
+      if (stored === null) return null;
+      const related = { ...stored.items[itemId]?.related, [entryId]: result };
+      db.prepare(
+        `INSERT INTO item_states (view_id, item_id, state, result, related, updated_at) VALUES (?, ?, 'open', NULL, ?, ?)
+         ON CONFLICT (view_id, item_id) DO UPDATE SET related = excluded.related, updated_at = excluded.updated_at`,
+      ).run(viewId, itemId, JSON.stringify(related), now);
+      return get(viewId);
+    },
+
+    linkedTo(threadId) {
+      // The body is JSON, so a view naming the thread has its id in quotes.
+      const rows = db
+        .prepare("SELECT * FROM views WHERE thread_id != ? AND instr(body, ?) > 0 ORDER BY published_at DESC, id DESC")
+        .all(threadId, JSON.stringify(threadId)) as ViewRow[];
+      const hiddenAt = db.prepare("SELECT hidden_at FROM linked_hidden WHERE view_id = ? AND thread_id = ?");
+      return rows.flatMap((row) => {
+        const stored = viewFor(hydrate(row), threadId);
+        if (stored.view.sections.length === 0) return [];
+        const hidden = (hiddenAt.get(row.id, threadId) as { hidden_at: string } | undefined)?.hidden_at ?? null;
+        // A publish since it was hidden brings something new to look at.
+        return [{ ...stored, hiddenAt: hidden !== null && hidden >= stored.publishedAt ? hidden : null }];
+      });
+    },
+
+    setLinkedHidden(viewId, threadId, hidden, now) {
+      if (hidden) {
+        db.prepare(
+          `INSERT INTO linked_hidden (view_id, thread_id, hidden_at) VALUES (?, ?, ?)
+           ON CONFLICT (view_id, thread_id) DO UPDATE SET hidden_at = excluded.hidden_at`,
+        ).run(viewId, threadId, now);
+      } else {
+        db.prepare("DELETE FROM linked_hidden WHERE view_id = ? AND thread_id = ?").run(viewId, threadId);
+      }
+    },
+
+    setHidden(viewId, hidden, now) {
+      db.prepare("UPDATE views SET hidden_at = ? WHERE id = ?").run(hidden ? now : null, viewId);
+      return get(viewId);
+    },
+
+    putImages(viewId, images) {
+      const insert = db.prepare("INSERT INTO images (view_id, item_id, idx, mime, data) VALUES (?, ?, ?, ?, ?)");
+      db.transaction(() => {
+        db.prepare("DELETE FROM images WHERE view_id = ?").run(viewId);
+        for (const image of images) insert.run(viewId, image.itemId, image.index, image.mime, image.data);
+      })();
+    },
+
+    image(viewId, itemId, index) {
+      const row = db
+        .prepare("SELECT mime, data FROM images WHERE view_id = ? AND item_id = ? AND idx = ?")
+        .get(viewId, itemId, index) as StoredImage | undefined;
+      return row ?? null;
+    },
+  };
+}
+
+/**
+ * Where an item stands, for the CLI and the agent reading it back. A quiet row
+ * has no decision on it, so it reads as listed rather than open.
+ */
+export function describeItems(stored: StoredView): string[] {
+  return stored.view.sections.flatMap((section) =>
+    section.items.flatMap((item) => {
+      if (isQuiet(stored.view, item)) return [`[listed] ${item.id}  ${item.title}`];
+      const record = stored.items[item.id];
+      const state = record?.state ?? "open";
+      const result = record?.result;
+      const dismissLabel = dismissLabelOf(stored.view, item);
+      const detail =
+        state === "dismissed" && dismissLabel !== "Dismiss"
+          ? `  (${dismissLabel})`
+          : result === null || result === undefined
+          ? ""
+          : `  (${result.label}${result.note === undefined ? "" : `, note: "${result.note}"`}${result.edited ? (result.draft === undefined ? ", edited" : `, edited to "${result.draft}"`) : result.draft === undefined ? "" : `: "${result.draft}"`}${result.sentTo === undefined ? "" : `, sent to ${result.sentTo}`}${result.threadId === undefined ? "" : ` → ${result.threadId}`}${
+              result.exitCode === undefined ? "" : `, exit ${result.exitCode}`
+            }${result.error === undefined ? "" : `, failed: ${result.error}`}${
+              result.feedback?.pick == null ? "" : `, picked ${item.variations[result.feedback.pick]?.label ?? result.feedback.pick}`
+            })`;
+      const related = Object.entries(record?.related ?? {}).map(
+        ([entryId, entry]) => `    [related] ${entryId}  (${entry.label}${entry.sentTo === undefined ? "" : `, sent to ${entry.sentTo}`}${entry.error === undefined ? "" : `, failed: ${entry.error}`})`,
+      );
+      return [`[${state}] ${item.id}  ${item.title}${item.status === undefined ? "" : `  {${item.status.label}}`}${detail}`, ...related];
+    }),
+  );
+}

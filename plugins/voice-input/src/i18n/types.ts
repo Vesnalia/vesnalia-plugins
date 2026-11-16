@@ -1,0 +1,197 @@
+// Словарь интерфейса. Английский — эталон и язык по умолчанию: плагин
+// рассчитан не только на русскоязычных, хотя распознавание русского у него
+// сильная сторона.
+
+export type Dictionary = {
+  tabs: { general: string; dictation: string; vocabulary: string; cloud: string; data: string };
+  language: { label: string; auto: string };
+
+  engines: {
+    whisper: { title: string; hint: string };
+    gigaam: { title: string; hint: string };
+    groq: { title: string; hint: string };
+    openai: { title: string; hint: string };
+    google: { title: string; hint: string };
+  };
+  status: { ready: string; notInstalled: string; needsKey: string; broken: string; loading: string };
+
+  general: {
+    model4bit: string;
+    modelFull: string;
+    installEngine: string;
+    installing: string;
+    whisperModel: string;
+    whisperModelHint: string;
+    speechLanguage: string;
+    speechLanguageHint: string;
+    languageAuto: string;
+    /** Названия языков речи; ключ — код из LANGUAGES. */
+    speechLanguages: Record<string, string>;
+    machineLine: (machine: string, python: string, ffmpeg: string) => string;
+    notFound: string;
+    downloading: (engine: string) => string;
+  };
+
+  dictation: {
+    fillers: string;
+    fillersHint: string;
+    quotes: string;
+    quotesHint: string;
+    hotkey: string;
+    hotkeyHint: string;
+    hotkeyFnNote: string;
+    hotkeyListen: string;
+    hotkeyListening: string;
+    hotkeyClear: string;
+    hotkeyPresetCustom: string;
+    hotkeyPresetAltRight: string;
+    hotkeyPresetAltLeft: string;
+    hotkeyPresetMetaRight: string;
+    hotkeyPresetMetaLeft: string;
+    hotkeyPresetCtrl: string;
+    hotkeyWindows: string;
+    hotkeyWindowsHint: string;
+    hotkeyPresetWinCtrlRight: string;
+    hotkeyPresetWinCtrlLeft: string;
+    hotkeyPresetWinAltRight: string;
+    hotkeyPresetWinAltLeft: string;
+    hotkeyPresetWinCapsLock: string;
+    autoSend: string;
+    autoSendHint: string;
+    silenceStop: string;
+    silenceStopHint: string;
+    silenceStopOff: string;
+    silenceStopSeconds: (seconds: number) => string;
+    hotkeyPresetWinF8: string;
+  };
+
+  vocabulary: {
+    placeholder: string;
+    counter: (used: number, limit: number) => string;
+    hint: string;
+    repair: string;
+    repairHint: string;
+    prompt: string;
+    promptHint: string;
+    aiPass: string;
+    aiPassHint: string;
+    aiTrigger: string;
+    aiTriggerHint: string;
+    aiTriggerManual: string;
+    aiTriggerAutomatic: string;
+    aiMode: string;
+    aiModeHint: string;
+    aiModeTerms: string;
+    aiModeIntent: string;
+    aiPrompt: string;
+    aiPromptHint: string;
+    aiPromptReset: string;
+    provider: string;
+    providerCustom: string;
+    model: string;
+    apiUrl: string;
+    apiUrlHint: string;
+    keyAt: string;
+  };
+
+  cloud: {
+    notice: string;
+    freeTier: string;
+    select: string;
+    selected: string;
+    model: string;
+    apiUrl: string;
+    key: string;
+    keySaved: string;
+    keyMissing: string;
+    keyBorrowed: (provider: string) => string;
+    keyPlaceholder: string;
+    /** Первый пункт списка Env Catalog: ключ вводится в поле ниже. */
+    keyManual: string;
+    keyFromCatalog: (name: string) => string;
+    replace: string;
+    save: string;
+  };
+
+  improvement: {
+    command: string; configure: string; empty: string; incomplete: string; httpError: (status: number) => string;
+    improve: string; busy: string; hint: string; changed: string; apply: string;
+    dismiss: string; undo: string; done: string; failed: string; mentions: string;
+  };
+
+  data: {
+    saveRecordings: string;
+    saveRecordingsHint: string;
+    keepDays: string;
+    keepDaysHint: string;
+    recordingsCount: (count: number) => string;
+    modelsTitle: string;
+    modelsEmpty: string;
+    inUse: string;
+    delete: string;
+    freed: (size: string) => string;
+    nothingToDelete: string;
+    noModelSize: string;
+  };
+
+  /** Пояснения к облачным провайдерам: чем берёт и что с лимитами. */
+  providerNotes: {
+    transcribe: Record<"groq" | "openai" | "google", string>;
+    aiPass: Record<"groq" | "opencode" | "openai", string>;
+  };
+
+  credits: {
+    /** Плагин — адаптация приложения Voica для VesnALIA; авторство за Voica. */
+    borrowed: string;
+    authorship: string;
+    website: string;
+    source: string;
+    author: string;
+  };
+
+  /** Тосты и подписи записи в окне приложения (frontend). */
+  voice: {
+    destinationChanged: string;
+    micError: string;
+    micFailed: string;
+    micDenied: string;
+    micNotFound: string;
+    tooShort: string;
+    notRecognized: string;
+    timeout: string;
+    movedToChat: (name: string) => string;
+    pasted: string;
+    originChat: string;
+    chat: string;
+    newChat: string;
+    cancelRecording: string;
+    finishRecording: string;
+    transcribing: string;
+    badgeLabel: (title: string) => string;
+    badgeTitle: (title: string) => string;
+  };
+  machine: { label: string; hint: string; auto: string; cloudOnly: (name: string) => string };
+
+  system: {
+    cloudSetup: string;
+    pythonMissing: string;
+    ffmpegMissing: string;
+    engineInstalled: (engine: string) => string;
+    cloudNoModel: string;
+    modelReady: (engine: string) => string;
+    noSpeech: string;
+    transcribeTimeout: string;
+    fileMissing: (path: string) => string;
+    engineMissing: (engine: string) => string;
+    daemonFailed: (seconds: number, path: string) => string;
+    downloadTimeout: string;
+    downloadFailed: (code: number | null, detail: string) => string;
+    localUnsupported: (platform: string) => string;
+  };
+
+  errors: {
+    machineUnreachable: (reason: string) => string;
+    keyRequired: (engine: string) => string;
+    keyEnvMissing: (name: string) => string;
+  };
+};

@@ -1,0 +1,148 @@
+// alia-plugin-references — Visual references and moodboard panel frontend
+import { useEffect } from "react";
+import {
+  definePluginApp,
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
+import { ReferencesPanel } from "./src/components/ReferencesPanel.tsx";
+import { ErrorBoundary } from "./src/components/ErrorBoundary.tsx";
+import { InlineReferenceDirective } from "./src/components/InlineReferenceDirective.tsx";
+import { InlineReferencesGalleryDirective } from "./src/components/InlineReferencesGalleryDirective.tsx";
+import { mountReferenceLinksContentScript } from "./src/content-scripts/reference-links.ts";
+import { Button } from "./components/ui/button.tsx";
+import { Icon } from "./components/ui/icon.tsx";
+
+/**
+ * Component that listens for explicit chat hyperlink clicks
+ * ("VesnALIA:references:open-reference") to open the references panel on demand.
+ */
+function ReferencesLinkHandler() {
+  const navigate = useAliaNavigate();
+
+  useEffect(() => {
+    const handleCustomOpen = (e: Event) => {
+      const detail = (e as CustomEvent<{ id: string; projectId?: string }>).detail;
+      if (detail?.id) {
+        navigate.openThreadPanel({
+          actionId: "project-references",
+          title: "References",
+          params: { initialSelectedId: detail.id, initialProjectId: detail.projectId || null },
+        });
+      }
+    };
+
+    window.addEventListener("alia:references:open-reference", handleCustomOpen);
+    return () => {
+      window.removeEventListener("alia:references:open-reference", handleCustomOpen);
+    };
+  }, [navigate]);
+
+  return null;
+}
+
+/**
+ * Thread header button to quickly toggle or open the references panel in 1 click.
+ */
+function ReferencesHeaderButton() {
+  const navigate = useAliaNavigate();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-7 p-0 text-muted-foreground hover:text-foreground hover:bg-state-hover cursor-pointer transition-colors"
+      onClick={() =>
+        navigate.openThreadPanel({
+          actionId: "project-references",
+          title: "References",
+          params: { initialSelectedId: null },
+        })
+      }
+      title="Визуальные референсы (References) — мудборды и палитры"
+      aria-label="Визуальные референсы (References)"
+    >
+      <Icon name="Palette" className="size-3.5" />
+    </Button>
+  );
+}
+
+/**
+ * Panel tab opened in the right side of the VesnALIA IDE thread view.
+ */
+function ThreadPanelComponent(props: { threadId: string; params?: unknown }) {
+  const params = props.params as { initialSelectedId?: string; initialProjectId?: string } | null;
+  return (
+    <ErrorBoundary fallbackTitle="References Panel Error">
+      <ReferencesPanel
+        threadId={props.threadId}
+        initialSelectedId={params?.initialSelectedId ?? null}
+        initialProjectId={params?.initialProjectId ?? null}
+      />
+    </ErrorBoundary>
+  );
+}
+
+/**
+ * Nav panel for full-page project moodboard in VesnALIA sidebar.
+ */
+function NavPanelComponent() {
+  return (
+    <ErrorBoundary fallbackTitle="References Moodboard Error">
+      <div className="h-full w-full overflow-hidden">
+        <ReferencesPanel />
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+export default definePluginApp((app) => {
+  // 1. Overlay handler for explicit chat hyperlinks
+  app.slots.experimental_appOverlay({
+    id: "references-link-handler",
+    component: ReferencesLinkHandler,
+  });
+
+  // 2. Right thread panel tab
+  app.slots.experimental_tab({
+    context: { kind: "thread" },
+    availability: "action",
+    id: "project-references",
+    title: "References",
+    icon: "Palette",
+    layout: "flush",
+    component: ThreadPanelComponent,
+  });
+
+  // 3. Quick button in thread header
+  app.slots.experimental_threadHeaderAction({
+    id: "references-header-button",
+    title: "References",
+    component: ReferencesHeaderButton,
+  });
+
+  // 4. Sidebar nav panel for project-wide moodboard
+  app.slots.navPanel({
+    id: "project-references-nav",
+    title: "References",
+    icon: "Palette",
+    path: "references",
+    component: NavPanelComponent,
+  });
+
+  // 5. Chat message directives for rich inline reference previews
+  app.slots.messageDirective({
+    id: "reference",
+    component: InlineReferenceDirective,
+  });
+
+  app.slots.messageDirective({
+    id: "references",
+    component: InlineReferencesGalleryDirective,
+  });
+
+  // 6. Content script for clickable reference hyperlinks in chat
+  app.contentScripts.register({
+    id: "reference-links",
+    mount: mountReferenceLinksContentScript,
+  });
+});

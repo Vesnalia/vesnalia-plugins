@@ -1,0 +1,362 @@
+---
+name: stelow-workflow-ux-critique
+description: >
+  [stelow] Full UX critique for visual interfaces. Accepts a live URL, source code directory,
+  or screenshot image. Evaluates accessibility (WCAG AA), Nielsen's 10 heuristics, visual
+  hierarchy, cognitive load, consistency, mobile responsiveness, AI slop, emotional journey,
+  and design personas — then generates a classified gap report.
+  Standalone or integrated into stelow and stelow-workflow-testing-execution.
+metadata:
+  frequency: weekly
+  category: workflow
+  execution:
+    mode: orchestrated
+    recipe: ux-critique
+    capabilities: [fanout, structured-output]
+    write_policy: artifact
+    permission_profile: inherit
+  context-cost: medium
+  author: calionauta
+  author-url: https://github.com/calionauta
+---
+
+**Standalone awareness:** inside stelow, quality gates critique depth (experimental → static a11y baseline, production → live site). Standalone defaults to production quality (live-site mode when a URL exists, else codebase/browserless mode, ~80% coverage). Works with URL, source directory, or screenshot — no stelow dependency for core audit logic.
+
+# UX Critique
+
+> **Focus:** Complete UX audit of interfaces — visual accessibility, usability, design,
+> emotional journey, and AI slop detection.
+> **Inputs:** URL (live site), directory (source code), or screenshot (image).
+> **Output:** Classified report with gaps (🚨/🤔/🔎) + actionable recommendations.
+
+> **Tools:** See `../stelow-workflow-orchestrator/references/cli-tools/agent_browser.md` and `../stelow-workflow-orchestrator/references/cli-tools/subagents.md` for tool patterns, and `../stelow-workflow-orchestrator/references/cli-tools/ui-design-research.md` for reference exemplars. The browser is the only source of rendered evidence about the build under review; a design-reference MCP is an archive of other sites and cannot supply it.
+
+## Overview
+
+Full UX audit for visual interfaces — accessibility (WCAG AA), Nielsen heuristics, visual hierarchy,
+cognitive load, consistency, mobile/responsive, AI slop, emotional journey, and design personas.
+
+Accepts **3 input types**, each activating a different subset of dimensions:
+
+| Input | Detects | Dimensions covered |
+|-------|---------|-------------------|
+| **URL** | `http://` or `https://` | **All** — full live audit |
+| **Codebase** | Source code directory | **~80%** without browser (except exact contrast, real keyboard, screen reader) |
+| **Screenshot** | `.png` `.jpg` `.webp` file | **~60%** — visual hierarchy, AI slop, estimated contrast, cognitive load |
+
+### Quality Gate (auto-skip for scopes without UI changes)
+
+**Before running UX critique**, check if the scope involves visual UI changes
+and if quality warrants a full audit.
+
+```bash
+# Read quality from stelow context or env var; default production (via canonical helper).
+WF_DIR="$(ls -td .stelow/*/*/ 2>/dev/null | head -1)"
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]:-$0}")/../../stelow-workflow-orchestrator/references/cli-tools/read-config.sh"
+QUALITY="${QUALITY:-$(stelow_read_quality)}"
+# Check if any visual files changed (entity evidence first, churn count fallback)
+UI_FILES=$(sem diff --format json HEAD~1 2>/dev/null | python3 -c "import sys,json; print(sum(1 for e in json.load(sys.stdin).get('entities', []) if str(e.get('file','')).endswith(('.templ','.html','.tsx','.jsx','.css'))))" 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null | grep -cE '\.(templ|html|tsx|jsx|css)$' || echo "0")
+```
+
+| Quality | UI files changed | Action |
+|----------|-----------------|--------|
+| `experimental` | any | **Static a11y/lint baseline.** No browser/live audit unless upgraded. Probes only. |
+| `production` | 0 | **Skip** (no UI to audit) |
+| `production` | 1+ | **Live Site mode.** Full audit with browser + real a11y. Human reviews report in Product Spec + Interface + Scopes / Product Spec + Interface + Tech Review mode. |
+
+**Rationale:** UX critique with a browser is expensive (opens URL, navigates, captures screenshots). At experimental quality, keep the static a11y/lint baseline. At production quality, run live-site audit when UI exists. Quality changes audit depth, not whether UI quality matters.
+
+### Standalone
+Read this file and jump to the relevant mode.
+
+### Via stelow-workflow-testing-execution (Phase 3)
+The testing-execution orchestrator loads this skill automatically when `Has visual UI? → YES`.
+
+### Via stelow (Stage Verification)
+The `ui-quality` stage in `../stelow-workflow-orchestrator/stages/verification.md` delegates to this skill.
+
+---
+
+## 🔀 Input Router
+
+```
+Provided input:
+  ├── Is it a URL (http:// or https://)?
+  │   └→ 🌐 Mode: Live Site Audit (all dimensions)
+  ├── Is it a source directory or code file?
+  │   └→ 📁 Mode: Codebase Audit (~80% coverage)
+  ├── Is it an image (.png/.jpg/.webp)?
+  │   └→ 🖼️ Mode: Screenshot Audit (~60% coverage)
+  └── User described the interface/component verbally?
+      └→ Use description as context. Scan current directory for
+         visual source files. If none found, ask: "What interface do
+         you want reviewed? Provide a URL, directory, screenshot, or
+         describe the component."
+```
+
+---
+
+## 🌐 Mode: Live Site Audit
+
+Audita um site ao vivo abrindo no browser e avaliando a UX completa.
+
+### 1. Read reference files
+
+| File | Covers |
+|------|--------|
+| `references/ui-audit-dimensions.md` | Accessibility (WCAG) + Design Quality checklists |
+| `references/ux-frameworks.md` | Nielsen 10, Emotional Journey, Personas |
+| `references/output-format.md` | Report format |
+
+### 2. Open and explore
+
+Use the browser tool (see `../stelow-workflow-orchestrator/references/cli-tools/agent_browser.md`) to open the URL and explore main flows (login, primary action, empty state, error state, destructive confirmation, forms).
+
+When the browser tier is unavailable, nothing replaces it. The design-reference MCP is an **archive of other people's shipped sites**, not a page inspector: it cannot render, capture, or measure the interface under review. It is still worth reading for exemplars when judging Design Quality or Aesthetics, but it is not evidence about this build. So with no browser, mark the rendered dimensions — actual contrast, hover/focus states, interaction and animation behaviour — **unverified** rather than inferring them from the source or from a reference site. See `../stelow-workflow-orchestrator/references/cli-tools/ui-design-research.md`.
+
+### 3. Run audit via subagent
+
+Use the subagents tool (see `../stelow-workflow-orchestrator/references/cli-tools/subagents.md`) to audit the live site:
+
+```
+Agent: reviewer
+Task: Audit live site for UX quality (Live Site mode)
+Reads: ui-audit-dimensions.md, ux-frameworks.md
+Mode: {URL}
+Output: .stelow-ux-critique/live-audit-report.md (per output-format.md)
+Context: fresh — never audit a page you built in your own context
+```
+
+The reviewer applies all checklists from the reference files and produces a report
+with severity-classified findings (P0-P3), dimension tags, and actionable recommendations.
+
+### 4. Gap Resolution
+
+| Severity | Action |
+|------------|------|
+| **P0 — Blocking** | Fix immediately |
+| **P1 — Major** | Fix before release |
+| **P2 — Minor** | Next cycle |
+| **P3 — Polish** | If time permits |
+
+---
+
+## 📁 Mode: Codebase Audit
+
+Audits source code of UI components without needing a browser.
+Cobre ~80% dos issues (AccessGuru arXiv 2025).
+
+### 1. Read references
+
+| File | Covers |
+|------|--------|
+| `references/ui-audit-dimensions.md` | Accessibility + Design Quality checklists |
+| `references/ux-frameworks.md` | Nielsen heuristics, AI slop, cognitive load |
+
+### 2. Discover structure
+
+```bash
+# Typed symbol inventory as JSON (unranked find misses hierarchy)
+cymbal outline -s --names --no-federate --json {INPUT_PATH} 2>/dev/null || \
+  find {INPUT_PATH} -maxdepth 3 -type f \( -name "*.templ" -o -name "*.html" -o -name "*.tsx" -o -name "*.jsx" -o -name "*.css" -o -name "*.py" \) | head -50
+```
+
+### 3. Run audit via subagent
+
+Use the subagents tool (see `../stelow-workflow-orchestrator/references/cli-tools/subagents.md`) to audit the codebase:
+
+```
+Agent: reviewer
+Task: Audit codebase for UX quality (Codebase mode)
+Reads: ui-audit-dimensions.md, ux-frameworks.md
+Input: {INPUT_PATH}
+Output: .stelow-ux-critique/codebase-audit-report.md (per output-format.md)
+Context: fresh — never audit code you wrote in your own context
+```
+
+The reviewer applies checklists adapted for source code analysis:
+- ARIA attributes, heading hierarchy, alt text, form labels, keyboard event handlers
+- Visual hierarchy via component structure, cognitive load via props/state complexity
+- Consistency via design tokens, responsiveness via media queries
+- AI slop detection (generic patterns, redundant microcopy, icon-only buttons)
+
+For each issue: severity, dimension, if it can be verified from source or [needs browser].
+
+### 4. Flag what needs browser
+
+Issues marked as `[needs browser]` must be verified live.
+
+---
+
+## 🖼️ Mode: Screenshot Audit
+
+Audits a screenshot image for quick visual analysis (~60% coverage).
+
+### 1. Read references
+
+| File | Covers |
+|------|--------|
+| `references/ui-audit-dimensions.md` | Design Quality (visual) |
+| `references/ux-frameworks.md` | Nielsen, personas, AI slop |
+
+### 2. Analyze screenshot
+
+Read the image file for visual analysis. Use o subagents tool (see `../stelow-workflow-orchestrator/references/cli-tools/subagents.md`) to audit:
+
+```
+Agent: reviewer
+Task: Audit screenshot for UX quality (Screenshot mode)
+Reads: ui-audit-dimensions.md, ux-frameworks.md
+Input: {INPUT_PATH}
+Output: .stelow-ux-critique/screenshot-audit-report.md (per output-format.md)
+```
+
+The reviewer is limited to what's visible: estimated contrast, alt text presence,
+heading hierarchy, visual density. Notes limitations: [needs live testing] for
+keyboard, screen reader, focus, interactive states, animation.
+
+### 3. Limitations
+
+| Covers | Does not cover |
+|-------|-----------|
+| Estimated contrast | Exact contrast |
+| Visual hierarchy | Keyboard navigation |
+| AI slop detection | Screen reader |
+| Cognitive load | Focus management |
+| Nielsen heuristics (visual) | Interactive states |
+| Personas (visual) | ARIA attributes |
+| Layout/spacing | Animations |
+
+---
+
+## Output
+
+| Mode | Output Path |
+|------|-------------|
+| **Live Site** | `.stelow-ux-critique/live-audit-report.md` |
+| **Codebase** | `.stelow-ux-critique/codebase-audit-report.md` |
+| **Screenshot** | `.stelow-ux-critique/screenshot-audit-report.md` |
+
+```
+.stelow-ux-critique/
+  {mode}-audit-report.md     ← main report
+```
+
+Completeness contract (the host validates these minima — never submit fewer):
+all five body sections per `references/output-format.md` (Executive Summary,
+Critical, Important, Minor, Strengths); at least 600 words.
+
+criteria:
+  - id: body-sections
+    kind: count
+    text: "All five body sections present per output-format"
+  - id: word-count
+    kind: count
+    text: "At least 600 words"
+  - id: finding-specificity
+    kind: semantic
+    text: "Critical findings name the screen, element, and violated heuristic"
+
+---
+
+## Edge Cases
+
+### Live URL unreachable
+- Fall back to codebase or screenshot mode; never invent the interface from the URL.
+
+### Screenshot without flow context
+- Mark unknown flows explicitly in state coverage; score only what is visible.
+
+## When to Use & Test Cases
+
+Use for heuristic and accessibility review of a live URL, codebase UI, or screenshot.
+
+Should activate: "audit this checkout flow", "accessibility pass on the pricing page".
+Should NOT activate: "redesign the page" (execution).
+
+## Integration with Other Skills
+
+### stelow-workflow-testing-execution (Phase 3)
+
+Phase 3 delegates to this skill:
+
+```
+Phase 3: UI/UX Quality
+  └── stelow-workflow-ux-critique (URL or codebase mode)
+       ├── Accessibility (WCAG AA)
+       ├── Nielsen 10 Heuristics
+       ├── Design Quality (hierarchy, consistency, mobile)
+       ├── Emotional Journey
+       ├── Design Personas
+       └── AI Slop Detection
+```
+
+### stelow (Stage Verification)
+
+The `ui-quality` stage in `../stelow-workflow-orchestrator/stages/verification.md` delegates to this skill on tiers
+Quick (codebase mode) and Full (live site mode).
+
+### stelow-workflow-scope-executor
+
+When a visual scope is executed, the executor delegates UX verification to
+this skill.
+
+---
+
+## Environment Adaptation
+
+If agent_browser is not available (e.g. other CLIs), use Codebase mode
+(~80% coverage) and note in the report what could not be verified.
+
+See `../stelow-workflow-orchestrator/references/cli-tools/agent_browser.md` for availability details.
+
+<!-- stelow:scope3:begin -->
+## Entry (mode detection)
+
+When this skill loads, check for the stelow workflow marker:
+
+```bash
+if [ -n "$STELOW_WORKFLOW" ] && [ -n "$STELOW_STATE" ]; then
+  echo "stelow: workflow mode (state=$STELOW_STATE)"
+else
+  echo "stelow: standalone mode (no STELOW_WORKFLOW marker)"
+fi
+```
+
+In **standalone mode** (no marker), run the existing skill body unchanged.
+In **workflow mode**, skip to `### Workflow slice` and emit a complete
+`## Hand-off (workflow mode)` block at the end. See
+`../stelow-workflow-entry/SKILL.md` for the full marker protocol.
+
+## Hand-off (workflow mode)
+
+```
+stage          : int-gate
+description    : Interface gate. Visual review of all interface proposals. Use `visual_review` tool (not bash).
+status         : <done|partial|blocked>
+artifacts      : <paths created or modified>
+next-candidate : <the stage scripts/stelow next reports — run `scripts/stelow next`>
+gate           : approval-required (visual_review)
+rework-on      : interface
+```
+
+Workflow mode: emit the above Hand-off block verbatim, then stop. Fill
+`next-candidate` from `scripts/stelow next`: it is the workflow's own
+answer, already accounting for this run's intent route and review mode.
+The router skill consumes the next-candidate field and calls
+`scripts/stelow advance <next-candidate>` to move state forward.
+
+### Workflow slice
+
+Workflow mode for the **int-gate** stage. Standalone behavior lives in
+the rest of this file (unchanged). Summary:
+
+> Interface gate. Visual review of all interface proposals. Use `visual_review` tool (not bash).
+
+Primary actions (per stages.yaml): `read`. Run only the actions that
+produce the artifacts promised in `## Hand-off`; skip anything that does
+not advance the workflow.
+
+<!-- stelow:scope3:end -->
+

@@ -1,0 +1,1795 @@
+// alia-plugin-code-review — frontend.
+//
+// Two surfaces:
+//   - the nav panel: a home screen listing a repo's pull requests, each row
+//     carrying the state of this plugin's review of it and one button —
+//     Start review, or Open review;
+//   - the review tab: one review's issues in that review's own thread's right
+//     panel, with an issue's detail and the code it points at below it.
+//
+// The panel remembers the repo and filter server-side, so re-opening the tab
+// resumes where it left off instead of asking again.
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  definePluginApp,
+  experimental_Diff as AliaDiff,
+  experimental_useAppPanel,
+  Markdown,
+  ThreadChat,
+  useAliaNavigate,
+  useRealtime,
+  useRpc,
+} from "@vesnalia/plugin-sdk/app";
+import { toast } from "sonner";
+import type { FindingDto, PullRequestDto, ReviewDto, rpcContract } from "./server";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Icon, type IconName } from "@/components/ui/icon";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+
+const PANEL_ID = "code-review";
+/** Panel position only; the broad "changed" signal is for review data. */
+const PANEL_STATE_CHANGED = "code-review-panel-state-changed";
+const PANEL_PATH = "code-review";
+const ANY_TEAM = "__any__";
+/** Context ladder for the snippet "more context" control. */
+const CONTEXT_STEPS = [3, 25, 100] as const;
+
+type Rpc = ReturnType<typeof useRpc<typeof rpcContract>>;
+type PrFilter =
+  // "mine" is a review requested from you; "authored" is a PR you opened.
+  | { kind: "all" }
+  | { kind: "mine" }
+  | { kind: "my-teams" }
+  | { kind: "team"; teamSlug: string }
+  | { kind: "authored" };
+
+/** One place a finding points at, with its code. Mirrors the RPC output. */
+interface LocationDto {
+  file: string;
+  startLine: number | null;
+  endLine: number | null;
+  note: string;
+  isPrimary: boolean;
+  diffUrl: string;
+  blobUrl: string;
+  /** Markdown quoting this location, for a comment that cannot be anchored. */
+  contextBlock: string;
+  firstLine: number;
+  lines: string[];
+  inDiff: boolean;
+  addedLines: number[];
+  removals: Array<{ afterLine: number; lines: string[] }>;
+  hasMoreAbove: boolean;
+  hasMoreBelow: boolean;
+  error: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Shared bits
+// ---------------------------------------------------------------------------
+
+function reportError(cause: unknown): void {
+  toast.error(cause instanceof Error ? cause.message : String(cause));
+}
+
+const SEVERITY_STYLES: Record<string, string> = {
+  blocker: "border-destructive/50 text-destructive",
+  high: "border-destructive/40 text-destructive",
+  medium: "border-border text-foreground",
+  low: "border-border text-muted-foreground",
+  nit: "border-border text-muted-foreground",
+};
+
+function SeverityBadge({ severity }: { severity: string }) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn("shrink-0 font-medium", SEVERITY_STYLES[severity] ?? SEVERITY_STYLES.medium)}
+    >
+      {severity}
+    </Badge>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  detail,
+}: {
+  icon: IconName;
+  title: string;
+  detail?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border px-6 py-10 text-center">
+      <Icon name={icon} className="size-5 text-muted-foreground" />
+      <p className="text-sm font-medium">{title}</p>
+      {detail === undefined ? null : (
+        <div className="max-w-md text-xs text-muted-foreground">{detail}</div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A link out to GitHub. Opens through VesnALIA's own URL routing — the in-app
+ * browser when this client prefers it — but stays a real anchor so copy-link
+ * and modifier-clicks still behave, which matters when you want to paste a
+ * file link into a review.
+ */
+function GithubLink({
+  href,
+  className,
+  title,
+  children,
+}: {
+  href: string;
+  className?: string;
+  title?: string;
+  children: ReactNode;
+}) {
+  const navigate = useAliaNavigate();
+  return (
+    <a
+      href={href}
+      className={className}
+      title={title}
+      onClick={(event) => {
+        // Leave "open in a new tab" and friends to the browser.
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+        // A false return means this client will not handle the URL, so fall
+        // through to the anchor rather than swallowing the click.
+        if (navigate.openUrl(href)) event.preventDefault();
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+/** "just now" / "12m ago" / "3h ago" / "2d ago". */
+function relativeTime(iso: string): string {
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return "";
+  const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
+
+function locationLabel(target: {
+  file: string;
+  startLine: number | null;
+  endLine: number | null;
+}): string {
+  if (target.startLine === null) return target.file;
+  const range =
+    target.endLine !== null && target.endLine !== target.startLine
+      ? `${target.startLine}-${target.endLine}`
+      : `${target.startLine}`;
+  return `${target.file}:${range}`;
+}
+
+/**
+ * Where posting this finding actually puts the comment. GitHub anchors a
+ * multi-line comment at the end of the range, and a finding with no line
+ * anchor can only become a general PR comment — so say which it will be
+ * rather than leaving the reviewer to find out after pressing the button.
+ */
+function postTargetLabel(finding: FindingDto): { text: string; note: string | null } {
+  const anchor = finding.postAnchor;
+  if (anchor.kind === "pull-request") {
+    return {
+      text: "as a comment on the pull request",
+      note: "This pull request does not touch that file, so the comment cannot be attached to it.",
+    };
+  }
+  if (anchor.kind === "file") {
+    return {
+      text: `on the file ${finding.file}`,
+      note:
+        finding.startLine === null
+          ? "This issue names no line, so the comment attaches to the file."
+          : `GitHub anchors comments only to lines inside the diff, and ${locationLabel(finding)} ` +
+            "is not one, so the comment attaches to the file instead.",
+    };
+  }
+  const range =
+    anchor.startLine !== null ? `lines ${anchor.startLine}–${anchor.line}` : `line ${anchor.line}`;
+  const side = finding.side === "LEFT" ? " of the old file" : "";
+  return {
+    text: `on ${finding.file}, ${range}${side}`,
+    note: anchor.adjusted
+      ? `Narrowed from ${locationLabel(finding)}: the rest of that range is not in the diff, ` +
+        "and GitHub only anchors comments inside it."
+      : null,
+  };
+}
+
+/**
+ * Grow a textarea to fit its content. A suggested comment is usually one long
+ * wrapped paragraph, so counting newlines under-sizes it and clips the text
+ * the reviewer is about to publish.
+ */
+function useAutoSizedTextarea(value: string) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (node === null) return;
+    node.style.height = "auto";
+    node.style.height = `${node.scrollHeight}px`;
+  }, [value]);
+  return ref;
+}
+
+/**
+ * The panel's stored position, following a change made anywhere — the selector
+ * here, "Discuss" or "diff" on an issue, or another window.
+ */
+function usePanelState(rpc: Rpc) {
+  const query = useLiveQuery(() => rpc.call("getPanelState"), [rpc]);
+  useRealtime(PANEL_STATE_CHANGED, query.refetch);
+  return query;
+}
+
+/** Refetches on mount and on every server "code-review-changed" signal. */
+function useLiveQuery<T>(load: () => Promise<T>, deps: readonly unknown[]) {
+  const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  // A slow gh call must not overwrite a newer result that already landed.
+  const generation = useRef(0);
+
+  const refetch = useCallback(() => {
+    const mine = ++generation.current;
+    setIsLoading(true);
+    load().then(
+      (result) => {
+        if (mine !== generation.current) return;
+        setData(result);
+        setError(null);
+        setIsLoading(false);
+      },
+      (cause: unknown) => {
+        if (mine !== generation.current) return;
+        setError(cause instanceof Error ? cause.message : String(cause));
+        setIsLoading(false);
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+
+  useEffect(refetch, [refetch]);
+  useRealtime("code-review-changed", refetch);
+  return { data, error, isLoading, refetch };
+}
+
+// ---------------------------------------------------------------------------
+// The PR list
+// ---------------------------------------------------------------------------
+
+type FilterTab = "mine" | "teams" | "all" | "authored";
+
+function tabAndTeamFor(filter: PrFilter): { tab: FilterTab; team: string } {
+  switch (filter.kind) {
+    case "all":
+      return { tab: "all", team: ANY_TEAM };
+    case "mine":
+      return { tab: "mine", team: ANY_TEAM };
+    case "my-teams":
+      return { tab: "teams", team: ANY_TEAM };
+    case "team":
+      return { tab: "teams", team: filter.teamSlug };
+    case "authored":
+      return { tab: "authored", team: ANY_TEAM };
+  }
+}
+
+function reviewBadge(pr: PullRequestDto): ReactNode {
+  switch (pr.reviewStatus) {
+    case "running":
+    case "queued":
+      return (
+        <Badge variant="outline" className="gap-1 border-border text-muted-foreground">
+          <Icon name="Spinner" className="size-3 animate-spin" />
+          reviewing
+        </Badge>
+      );
+    case "reported":
+      return (
+        <Badge variant="outline" className="border-border">
+          {pr.openFindings} open
+          {pr.postedFindings > 0 ? ` · ${pr.postedFindings} posted` : ""}
+        </Badge>
+      );
+    case "failed":
+      return (
+        <Badge variant="outline" className="border-destructive/40 text-destructive">
+          review failed
+        </Badge>
+      );
+    default:
+      return null;
+  }
+}
+
+/**
+ * One pull request, with the single deliberate action it offers. The row body
+ * is not a button: a review spends an agent run, so starting one takes a press
+ * on something that says so.
+ */
+function PrRow({
+  pr,
+  onStart,
+  onOpen,
+  onOpenArchivedThread,
+}: {
+  pr: PullRequestDto;
+  onStart: () => void;
+  onOpen: () => void;
+  onOpenArchivedThread: () => void;
+}) {
+  const requestedTeams = pr.reviewRequests
+    .map((request) => request.teamSlug)
+    .filter((slug): slug is string => slug !== null)
+    .map((slug) => slug.split("/").pop() ?? slug);
+  // An archived thread cannot be worked in until VesnALIA can unarchive it, so a
+  // review stranded in one reads as no review at all: the action is a new one.
+  const hasReview = pr.reviewStatus !== "none" && !pr.reviewThreadArchived;
+  const archivedThread = pr.reviewThreadArchived ? pr.reviewThreadId : null;
+  return (
+    <div className="flex w-full flex-col gap-1.5 rounded-lg border border-border bg-card px-3 py-2.5 text-left">
+      <div className="flex items-start gap-2">
+        <Icon
+          name={pr.isDraft ? "GitPullRequestDraft" : "GitPullRequest"}
+          className={cn(
+            "mt-0.5 size-4 shrink-0",
+            pr.isDraft ? "text-muted-foreground" : "text-foreground",
+          )}
+        />
+        <span className="min-w-0 flex-1 text-sm font-medium leading-snug">{pr.title}</span>
+        {reviewBadge(pr)}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-6 text-xs text-muted-foreground">
+        <span>#{pr.number}</span>
+        <span>·</span>
+        <span>{pr.author}</span>
+        <span>·</span>
+        <span className="text-foreground/70">+{pr.additions}</span>
+        <span className="text-foreground/70">−{pr.deletions}</span>
+        <span>
+          in {pr.changedFiles} file{pr.changedFiles === 1 ? "" : "s"}
+        </span>
+        {requestedTeams.length > 0 ? (
+          <>
+            <span>·</span>
+            <span>team: {requestedTeams.join(", ")}</span>
+          </>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 pl-6 pt-0.5">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1.5 text-xs"
+          onClick={hasReview ? onOpen : onStart}
+        >
+          <Icon name={hasReview ? "Bug" : "Bot"} className="size-3.5" />
+          {hasReview ? "Open review" : "Start review"}
+        </Button>
+        {archivedThread === null ? null : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={onOpenArchivedThread}
+          >
+            <Icon name="Archive" className="size-3.5" />
+            Archived thread
+          </Button>
+        )}
+        <GithubLink
+          href={pr.url}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent"
+        >
+          <Icon name="Github" className="size-3.5" />
+          Open on GitHub
+        </GithubLink>
+      </div>
+    </div>
+  );
+}
+
+function PrListView({
+  rpc,
+  repo,
+  repos,
+  filter,
+  onRepoChange,
+  onFilterChange,
+  myTeams,
+  onStartReview,
+  onOpenReview,
+  onOpenArchivedThread,
+}: {
+  rpc: Rpc;
+  repo: string | null;
+  repos: string[];
+  filter: PrFilter;
+  onRepoChange: (repo: string) => void;
+  onFilterChange: (filter: PrFilter) => void;
+  myTeams: string[];
+  onStartReview: (repo: string, number: number) => void;
+  onOpenReview: (repo: string, number: number) => void;
+  onOpenArchivedThread: (threadId: string) => void;
+}) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { tab, team } = tabAndTeamFor(filter);
+
+  const filterKey = JSON.stringify(filter);
+  const { data, error, isLoading, refetch } = useLiveQuery(
+    async () =>
+      repo === null
+        ? { fetchedAt: "", pullRequests: [] as PullRequestDto[] }
+        : rpc.call("listPullRequests", { repo, filter }),
+    [rpc, repo, filterKey],
+  );
+
+  const refresh = useCallback(() => {
+    if (repo === null) return;
+    setIsRefreshing(true);
+    rpc
+      .call("listPullRequests", { repo, filter, refresh: true })
+      .then(() => refetch(), reportError)
+      .finally(() => setIsRefreshing(false));
+  }, [repo, rpc, filter, refetch]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={repo ?? ""} onValueChange={onRepoChange}>
+          <SelectTrigger className="h-8 w-[16rem] text-xs">
+            <SelectValue placeholder="Pick a repository" />
+          </SelectTrigger>
+          <SelectContent>
+            {repos.map((name) => (
+              <SelectItem key={name} value={name} className="text-xs">
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Tabs
+          value={tab}
+          onValueChange={(next) => {
+            if (next === "all") onFilterChange({ kind: "all" });
+            else if (next === "mine") onFilterChange({ kind: "mine" });
+            else if (next === "authored") onFilterChange({ kind: "authored" });
+            else {
+              onFilterChange(
+                team === ANY_TEAM ? { kind: "my-teams" } : { kind: "team", teamSlug: team },
+              );
+            }
+          }}
+        >
+          <TabsList className="h-8">
+            <TabsTrigger value="mine" className="text-xs">
+              Asked me
+            </TabsTrigger>
+            <TabsTrigger value="teams" className="text-xs">
+              Asked my team
+            </TabsTrigger>
+            <TabsTrigger value="all" className="text-xs">
+              All open
+            </TabsTrigger>
+            <TabsTrigger value="authored" className="text-xs">
+              Mine
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {tab === "teams" ? (
+          <Select
+            value={team}
+            onValueChange={(next) =>
+              onFilterChange(
+                next === ANY_TEAM ? { kind: "my-teams" } : { kind: "team", teamSlug: next },
+              )
+            }
+          >
+            <SelectTrigger className="h-8 w-[15rem] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ANY_TEAM} className="text-xs">
+                Any of my teams
+              </SelectItem>
+              {myTeams.map((slug) => (
+                <SelectItem key={slug} value={slug} className="text-xs">
+                  {slug}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 text-xs"
+          onClick={refresh}
+          disabled={repo === null || isRefreshing}
+        >
+          <Icon
+            name="ArrowReloadHorizontal"
+            className={cn("size-3.5", isRefreshing && "animate-spin")}
+          />
+          Refresh
+        </Button>
+        {/* The list never refreshes on its own now, so say how old it is. */}
+        {data?.fetchedAt ? (
+          <span className="text-xs text-muted-foreground">
+            updated {relativeTime(data.fetchedAt)}
+          </span>
+        ) : null}
+      </div>
+
+      {tab === "teams" && myTeams.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          No teams found. `gh api /user/teams` needs the `read:org` scope — run{" "}
+          <code className="font-mono">gh auth refresh -s read:org</code>, or list your teams in
+          the plugin&apos;s Teams setting.
+        </p>
+      ) : null}
+
+      {repo === null ? (
+        <EmptyState
+          icon="FolderGit"
+          title="No repositories"
+          detail="Add owner/repo lines to the plugin's Repositories setting, or open a VesnALIA project whose checkout has a GitHub origin remote."
+        />
+      ) : error !== null ? (
+        <EmptyState icon="AlertTriangle" title="Could not list pull requests" detail={error} />
+      ) : isLoading && data === null ? (
+        <div className="flex flex-col gap-2">
+          {[0, 1, 2].map((index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : data === null || data.pullRequests.length === 0 ? (
+        <EmptyState
+          icon="GitPullRequest"
+          title={tab === "authored" ? "Nothing here" : "Nothing to review"}
+          detail={
+            tab === "mine"
+              ? "No open pull request in this repo has a review request for you."
+              : tab === "teams"
+                ? "No open pull request in this repo has a review request for these teams."
+                : tab === "authored"
+                  ? "You have no open pull requests in this repo."
+                  : "This repo has no open pull requests from anyone else."
+          }
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {data.pullRequests.map((pr) => (
+            <PrRow
+              key={pr.number}
+              pr={pr}
+              onStart={() => onStartReview(pr.repo, pr.number)}
+              onOpen={() => onOpenReview(pr.repo, pr.number)}
+              onOpenArchivedThread={() => {
+                if (pr.reviewThreadId !== null) onOpenArchivedThread(pr.reviewThreadId);
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// A PR's issue list
+// ---------------------------------------------------------------------------
+
+function FindingRow({ finding, onOpen }: { finding: FindingDto; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        "flex w-full flex-col gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-accent/50",
+        finding.state === "dismissed" && "opacity-55",
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <SeverityBadge severity={finding.severity} />
+        <span className="min-w-0 flex-1 text-sm font-medium leading-snug">{finding.title}</span>
+        {finding.state === "posted" ? (
+          <Badge variant="outline" className="shrink-0 gap-1 border-border">
+            <Icon name="Check" className="size-3" />
+            {finding.postedAs === "pending-review" ? "drafted" : "posted"}
+          </Badge>
+        ) : null}
+        <Icon name="ChevronRight" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      </div>
+      {/* The gist, clamped to three lines — the point of this row. */}
+      <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">{finding.gist}</p>
+      <p className="font-mono text-[11px] text-muted-foreground/80">{locationLabel(finding)}</p>
+    </button>
+  );
+}
+
+function ReviewControls({
+  rpc,
+  repo,
+  number,
+  review,
+  skills,
+}: {
+  rpc: Rpc;
+  repo: string;
+  number: number;
+  review: ReviewDto | null;
+  skills: string[];
+}) {
+  const [isStarting, setIsStarting] = useState(false);
+  const isRunning = review !== null && (review.status === "running" || review.status === "queued");
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 text-xs"
+          disabled={isStarting || isRunning}
+          onClick={() => {
+            setIsStarting(true);
+            rpc
+              .call("startReview", { repo, number })
+              .then(() => toast.success("Review started"), reportError)
+              .finally(() => setIsStarting(false));
+          }}
+        >
+          <Icon
+            name={isRunning ? "Spinner" : "Bot"}
+            className={cn("size-3.5", isRunning && "animate-spin")}
+          />
+          {isRunning ? "Reviewing…" : review === null ? "Review this PR" : "Re-run review"}
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          {skills.length === 0 ? "Generic review" : `Skills: ${skills.join(", ")}`}
+        </span>
+      </div>
+      {review?.error != null ? <p className="text-xs text-destructive">{review.error}</p> : null}
+    </div>
+  );
+}
+
+function PrFindingsView({
+  rpc,
+  repo,
+  number,
+  skills,
+  onOpenFinding,
+}: {
+  rpc: Rpc;
+  repo: string;
+  number: number;
+  skills: string[];
+  onOpenFinding: (findingId: string) => void;
+}) {
+  const { data, error, isLoading } = useLiveQuery(
+    () => rpc.call("getPullRequest", { repo, number }),
+    [rpc, repo, number],
+  );
+
+  const grouped = useMemo(() => {
+    const findings = data?.findings ?? [];
+    return {
+      open: findings.filter((finding) => finding.state === "open"),
+      posted: findings.filter((finding) => finding.state === "posted"),
+      dismissed: findings.filter((finding) => finding.state === "dismissed"),
+    };
+  }, [data]);
+
+  if (error !== null) {
+    return (
+      <div className="flex flex-col gap-3">
+        <EmptyState icon="AlertTriangle" title="Could not load this pull request" detail={error} />
+      </div>
+    );
+  }
+  if (isLoading && data === null) {
+    return (
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-32 w-full rounded-lg" />
+      </div>
+    );
+  }
+  const pr = data?.pullRequest ?? null;
+  const isEmpty =
+    grouped.open.length === 0 && grouped.posted.length === 0 && grouped.dismissed.length === 0;
+
+  const section = (title: string, findings: FindingDto[]) =>
+    findings.length === 0 ? null : (
+      <Section key={title} title={`${title} (${findings.length})`}>
+        <div className="flex flex-col gap-2">
+          {findings.map((finding) => (
+            <FindingRow
+              key={finding.id}
+              finding={finding}
+              onOpen={() => onOpenFinding(finding.id)}
+            />
+          ))}
+        </div>
+      </Section>
+    );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-start gap-2">
+          <Icon name="GitPullRequest" className="mt-1 size-4 shrink-0" />
+          <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug">
+            {pr?.title ?? `Pull request #${number}`}
+          </h2>
+          {pr === null ? null : (
+            <GithubLink
+              href={pr.url}
+              className="mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent"
+            >
+              <Icon name="Github" className="size-3.5" />
+              Open on GitHub
+            </GithubLink>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-6 text-xs text-muted-foreground">
+          <span>
+            {repo}#{number}
+          </span>
+          {pr === null ? null : (
+            <>
+              <span>·</span>
+              <span>{pr.author}</span>
+              <span>·</span>
+              <span>
+                {pr.headRefName} → {pr.baseRefName}
+              </span>
+              <span>·</span>
+              <span className="text-foreground/70">+{pr.additions}</span>
+              <span className="text-foreground/70">−{pr.deletions}</span>
+              <span>
+                in {pr.changedFiles} file{pr.changedFiles === 1 ? "" : "s"}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <ReviewControls
+        rpc={rpc}
+        repo={repo}
+        number={number}
+        review={data?.review ?? null}
+        skills={data?.review?.skills ?? skills}
+      />
+
+      {isEmpty ? (
+        <EmptyState
+          icon="Bug"
+          title={
+            data?.review == null
+              ? "No review yet"
+              : data.review.status === "reported"
+                ? "No issues found"
+                : "Review in progress"
+          }
+          detail={
+            data?.review == null
+              ? 'Press "Review this PR" to run your review skills against this change.'
+              : data.review.status === "reported"
+                ? "The review finished without raising anything."
+                : "The review thread is working. Issues appear here as soon as it submits them."
+          }
+        />
+      ) : (
+        <>
+          {section("Issues", grouped.open)}
+          {section("Posted", grouped.posted)}
+          {section("Dismissed", grouped.dismissed)}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// One issue, with the code it points at
+// ---------------------------------------------------------------------------
+
+/**
+ * A snippet with real file line numbers. VesnALIA's SourceCode component numbers an
+ * excerpt from 1, which would misreport every line — and these line numbers
+ * are exactly what the reviewer is checking against the finding.
+ */
+/** One rendered row: a line of the file, or a line the pull request deleted. */
+interface SnippetRow {
+  key: string;
+  /** Null for a deleted line, which has no place in the file being shown. */
+  lineNumber: number | null;
+  text: string;
+  change: "added" | "removed" | "unchanged";
+}
+
+/**
+ * The file at the reviewed commit, with the pull request's own changes marked.
+ *
+ * This is deliberately the file rather than a patch — that is what makes the
+ * line numbers match the finding and lets the reader ask for more context —
+ * but a plain file cannot say whether a line is new, and the lines the change
+ * deleted are not in it at all. Both are folded back in here, in VesnALIA's own diff
+ * colours, so it is obvious which code the pull request is responsible for.
+ */
+function snippetRows(location: LocationDto): SnippetRow[] {
+  const added = new Set(location.addedLines);
+  const removedAfter = new Map(location.removals.map((entry) => [entry.afterLine, entry.lines]));
+  const rows: SnippetRow[] = [];
+
+  const pushRemovals = (afterLine: number) => {
+    (removedAfter.get(afterLine) ?? []).forEach((text, index) => {
+      rows.push({ key: `-${afterLine}.${index}`, lineNumber: null, text, change: "removed" });
+    });
+  };
+
+  // Deletions above the first line shown belong at the top of the window.
+  pushRemovals(location.firstLine - 1);
+  location.lines.forEach((text, index) => {
+    const lineNumber = location.firstLine + index;
+    rows.push({
+      key: `${lineNumber}`,
+      lineNumber,
+      text,
+      change: added.has(lineNumber) ? "added" : "unchanged",
+    });
+    pushRemovals(lineNumber);
+  });
+  return rows;
+}
+
+const CHANGE_MARKS: Record<SnippetRow["change"], string> = {
+  added: "+",
+  removed: "−",
+  unchanged: " ",
+};
+
+/**
+ * One background per row: the diff colour where the pull request touched the
+ * line, the citation tint where it did not.
+ *
+ * A cited line that is also a changed line keeps the diff colour — losing it
+ * there would hide the change on exactly the lines the finding is about — and
+ * is marked as cited by the rule down its left edge instead.
+ */
+function rowBackground(change: SnippetRow["change"], isCited: boolean): string {
+  if (change === "added") return isCited ? "bg-diff-added/30" : "bg-diff-added/15";
+  if (change === "removed") {
+    return cn("text-muted-foreground", isCited ? "bg-diff-removed/30" : "bg-diff-removed/15");
+  }
+  return isCited ? "bg-accent/60" : "";
+}
+
+function CodeSnippet({ location }: { location: LocationDto }) {
+  const from = location.startLine;
+  const to = location.endLine ?? location.startLine;
+  const rows = useMemo(() => snippetRows(location), [location]);
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse font-mono text-xs">
+        <tbody>
+          {rows.map((row) => {
+            const isCited =
+              row.lineNumber !== null &&
+              from !== null &&
+              row.lineNumber >= from &&
+              row.lineNumber <= (to ?? from);
+            return (
+              <tr key={row.key} className={rowBackground(row.change, isCited)}>
+                <td
+                  className={cn(
+                    "w-[1%] select-none whitespace-nowrap border-r border-l-2 border-border px-2 py-px text-right align-top text-muted-foreground/70",
+                    // Transparent when not cited, so every row stays aligned.
+                    isCited ? "border-l-foreground/40" : "border-l-transparent",
+                  )}
+                >
+                  {row.lineNumber ?? ""}
+                </td>
+                <td
+                  className={cn(
+                    "w-[1%] select-none px-1 py-px text-center align-top",
+                    row.change === "added" && "text-diff-added",
+                    row.change === "removed" && "text-diff-removed",
+                  )}
+                  aria-label={
+                    row.change === "unchanged" ? undefined : `Line ${row.change} by this pull request`
+                  }
+                >
+                  {CHANGE_MARKS[row.change]}
+                </td>
+                <td className="whitespace-pre px-2 py-px">{row.text === "" ? " " : row.text}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** What this pull request did to the lines on show, in a few words. */
+function locationChangeLabel(location: LocationDto): string {
+  if (!location.inDiff) return "Not changed by this PR";
+  const added = location.addedLines.length;
+  const removed = location.removals.reduce((total, entry) => total + entry.lines.length, 0);
+  if (added === 0 && removed === 0) return "Changed elsewhere in this file";
+  const parts: string[] = [];
+  if (added > 0) parts.push(`+${added}`);
+  if (removed > 0) parts.push(`−${removed}`);
+  return `${parts.join(" ")} here`;
+}
+
+function LocationCard({ location }: { location: LocationDto }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/30 px-3 py-1.5">
+        <GithubLink
+          href={location.diffUrl}
+          className="min-w-0 flex-1 truncate font-mono text-xs underline-offset-4 hover:underline"
+          title={`Open ${location.file} in the pull request diff on GitHub`}
+        >
+          {locationLabel(location)}
+        </GithubLink>
+        {/* Every card says where it stands, so an uncoloured snippet is never
+            left ambiguous between "the PR did not touch this" and "the PR
+            touched this file, but not the lines you are looking at". */}
+        <Badge variant="outline" className="shrink-0 text-[11px] font-normal">
+          {locationChangeLabel(location)}
+        </Badge>
+      </div>
+      {location.note === "" ? null : (
+        <p className="border-b border-border px-3 py-1.5 text-xs text-muted-foreground">
+          {location.note}
+        </p>
+      )}
+      {location.error !== null ? (
+        <p className="px-3 py-2 text-xs text-muted-foreground">{location.error}</p>
+      ) : location.lines.length === 0 ? (
+        <p className="px-3 py-2 text-xs text-muted-foreground">No lines to show.</p>
+      ) : (
+        <CodeSnippet location={location} />
+      )}
+    </div>
+  );
+}
+
+function FindingActions({
+  rpc,
+  finding,
+  diffUrl,
+  primaryLocation,
+  hasPendingReview,
+  onAsk,
+}: {
+  rpc: Rpc;
+  finding: FindingDto;
+  /** The finding's own place in the PR diff, when the code has been resolved. */
+  diffUrl?: string;
+  /** The finding's own code, for quoting into a general comment. */
+  primaryLocation?: LocationDto;
+  /** The reviewer already has an unsubmitted review open on this PR. */
+  hasPendingReview: boolean;
+  /** Puts a question about this finding to the thread that ran the review. */
+  onAsk: (question: string) => Promise<void>;
+}) {
+  const stored = finding.draftComment ?? finding.suggestedComment;
+  const [comment, setComment] = useState(stored);
+  const [isBusy, setIsBusy] = useState(false);
+  const [inlineFailed, setInlineFailed] = useState(false);
+  // null while the question box is closed, so "Discuss" opens it rather than
+  // sending anything: the thread is shared with every other finding, and an
+  // unprompted message in it is noise the reviewer did not ask for.
+  const [question, setQuestion] = useState<string | null>(null);
+  const [isAsking, setIsAsking] = useState(false);
+  // Adopt server-side changes (a re-run, another window) without clobbering an
+  // edit in progress: the stored value is the identity of the draft.
+  const lastStored = useRef(stored);
+  useEffect(() => {
+    if (lastStored.current !== stored) {
+      lastStored.current = stored;
+      setComment(stored);
+    }
+  }, [stored]);
+
+  const isDirty = comment !== stored;
+  const isPosted = finding.state === "posted";
+  const commentRef = useAutoSizedTextarea(comment);
+  const target = postTargetLabel(finding);
+  const attachesToFile = finding.postAnchor.kind !== "line";
+  // A general comment lands at the bottom of the conversation with no code
+  // beside it, so a comment written about a line needs to carry its own
+  // context. Offered rather than applied: the body is posted verbatim, and
+  // that stays true only if what is in the box is all there is.
+  // A comment that is not anchored to the lines has to carry them, or it reads
+  // as a remark about nothing. Added automatically rather than offered: there
+  // is no case where the reviewer wants the contextless version.
+  const contextBlock =
+    attachesToFile && primaryLocation !== undefined && primaryLocation.contextBlock !== ""
+      ? primaryLocation.contextBlock
+      : null;
+  const hasContext = contextBlock !== null && comment.includes(contextBlock);
+  const bodyToPost = contextBlock !== null && !hasContext ? `${contextBlock}\n\n${comment}` : comment;
+  // A comment added to an unsubmitted review is a draft: nobody else can see
+  // it until the review is submitted on GitHub.
+  const isDraft = isPosted && finding.postedAs === "pending-review";
+
+  const save = useCallback(
+    () =>
+      rpc
+        .call("setFindingComment", { findingId: finding.id, comment })
+        .then(() => undefined, reportError),
+    [rpc, finding.id, comment],
+  );
+
+  const ask = useCallback(async () => {
+    const text = question?.trim() ?? "";
+    if (text === "") return;
+    setIsAsking(true);
+    try {
+      await onAsk(text);
+      // Closing on success keeps the box a one-question affair; the
+      // conversation itself continues in the discussion pane.
+      setQuestion(null);
+    } catch (cause) {
+      reportError(cause);
+    } finally {
+      setIsAsking(false);
+    }
+  }, [question, onAsk]);
+
+  const post = useCallback(
+    async (mode: "inline" | "issue" | "review") => {
+      setIsBusy(true);
+      try {
+        // Persist exactly what is posted, so the record matches GitHub.
+        if (isDirty || bodyToPost !== stored) {
+          await rpc
+            .call("setFindingComment", { findingId: finding.id, comment: bodyToPost })
+            .then(() => undefined, reportError);
+        }
+        await rpc.call("postFinding", { findingId: finding.id, mode });
+        toast.success("Comment posted");
+        setInlineFailed(false);
+      } catch (cause) {
+        reportError(cause);
+        if (mode === "inline") setInlineFailed(true);
+      } finally {
+        setIsBusy(false);
+      }
+    },
+    [rpc, finding.id, isDirty, stored, bodyToPost],
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {isPosted ? (isDraft ? "Draft comment" : "Posted comment") : "Comment to post"}
+        </p>
+        {isDirty && !isPosted ? (
+          <span className="text-xs text-muted-foreground">unsaved edit</span>
+        ) : finding.draftComment !== null ? (
+          <span className="text-xs text-muted-foreground">edited</span>
+        ) : null}
+      </div>
+      <p className="-mt-1 text-xs text-muted-foreground">
+        {isPosted ? (isDraft ? "Drafted " : "Posted ") : "Posts "}
+        {diffUrl === undefined || attachesToFile ? (
+          <span className="font-mono">{target.text}</span>
+        ) : (
+          <GithubLink href={diffUrl} className="font-mono underline-offset-4 hover:underline">
+            {target.text}
+          </GithubLink>
+        )}
+      </p>
+      {target.note === null ? null : (
+        <p className="-mt-1 text-xs text-muted-foreground/80">{target.note}</p>
+      )}
+      {!isPosted && contextBlock !== null && !hasContext ? (
+        <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          The lines this is about are not shown beside a {finding.postAnchor.kind === "file"
+            ? "file"
+            : "pull request"}{" "}
+          comment, so a link and the code will be added above your text when you post.
+        </p>
+      ) : null}
+      {!isPosted && hasPendingReview && !attachesToFile ? (
+        <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          You have a review open on this pull request, so this joins it as a draft alongside the
+          comments you made on GitHub. Submit that review on GitHub to publish them together.
+        </p>
+      ) : null}
+      {isDraft ? (
+        <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          You have a review open on this pull request, so this was added to it as a draft.
+          Submit that review on GitHub to publish it.
+        </p>
+      ) : null}
+      {isPosted ? (
+        <div className="whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-2 text-sm">
+          {comment}
+        </div>
+      ) : (
+        <Textarea
+          ref={commentRef}
+          value={comment}
+          onChange={(event) => setComment(event.target.value)}
+          onBlur={() => {
+            if (isDirty) void save();
+          }}
+          rows={1}
+          // Height is managed by useAutoSizedTextarea; hide the scrollbar it
+          // would otherwise show while growing.
+          className="resize-none overflow-hidden text-sm"
+          aria-label={`Comment for ${finding.title}`}
+        />
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {isPosted ? (
+          finding.commentUrl === null ? null : (
+            <GithubLink
+              href={finding.commentUrl}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:underline"
+            >
+              <Icon name="ExternalLink" className="size-3.5" />
+              View on GitHub
+            </GithubLink>
+          )
+        ) : (
+          <>
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              disabled={isBusy || comment.trim() === ""}
+              onClick={() => void post(attachesToFile ? "issue" : "inline")}
+            >
+              <Icon name="Sent" className="size-3.5" />
+              {attachesToFile
+                ? finding.postAnchor.kind === "file"
+                  ? "Comment on the file"
+                  : "Comment on the pull request"
+                : hasPendingReview
+                  ? "Add to my review"
+                  : "Post comment"}
+            </Button>
+            {/* Mirrors GitHub's own split: publish now, or batch into a review.
+                With a review already open, GitHub allows only the batched form,
+                so the single button above already does that. */}
+            {!attachesToFile && !hasPendingReview ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 text-xs"
+                disabled={isBusy || comment.trim() === ""}
+                onClick={() => void post("review")}
+              >
+                Start a review
+              </Button>
+            ) : null}
+            {inlineFailed && !attachesToFile ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 text-xs"
+                disabled={isBusy || comment.trim() === ""}
+                onClick={() => void post("issue")}
+              >
+                Post as a general PR comment
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 gap-1.5 text-xs"
+              disabled={isBusy}
+              onClick={() => setQuestion((open) => (open === null ? "" : null))}
+            >
+              <Icon name="SideChat" className="size-3.5" />
+              Discuss
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs text-muted-foreground"
+              disabled={isBusy}
+              onClick={() => {
+                rpc
+                  .call("setFindingState", {
+                    findingId: finding.id,
+                    state: finding.state === "dismissed" ? "open" : "dismissed",
+                  })
+                  .then(() => undefined, reportError);
+              }}
+            >
+              {finding.state === "dismissed" ? "Restore" : "Dismiss"}
+            </Button>
+          </>
+        )}
+      </div>
+
+      {question === null ? null : (
+        <div className="flex flex-col gap-2 rounded-md border border-border bg-muted/30 p-2">
+          <Textarea
+            autoFocus
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                event.preventDefault();
+                void ask();
+              }
+            }}
+            rows={2}
+            className="resize-none text-sm"
+            placeholder="What do you want to ask about this issue?"
+            aria-label={`Question about ${finding.title}`}
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              disabled={isAsking || question.trim() === ""}
+              onClick={() => void ask()}
+            >
+              <Icon
+                name={isAsking ? "Spinner" : "SideChat"}
+                className={cn("size-3.5", isAsking && "animate-spin")}
+              />
+              Ask the review thread
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs text-muted-foreground"
+              disabled={isAsking}
+              onClick={() => setQuestion(null)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FindingDetailView({
+  rpc,
+  repo,
+  number,
+  findingId,
+  onBack,
+}: {
+  rpc: Rpc;
+  repo: string;
+  number: number;
+  findingId: string;
+  onBack: () => void;
+}) {
+  const [contextStep, setContextStep] = useState(0);
+  const context = CONTEXT_STEPS[contextStep] ?? CONTEXT_STEPS[0];
+
+  const pr = useLiveQuery(() => rpc.call("getPullRequest", { repo, number }), [rpc, repo, number]);
+  const code = useLiveQuery(
+    () => rpc.call("getFindingCode", { findingId, context }),
+    [rpc, findingId, context],
+  );
+
+  const finding = useMemo(
+    () => (pr.data?.findings ?? []).find((entry) => entry.id === findingId) ?? null,
+    [pr.data, findingId],
+  );
+
+  const ask = useCallback(
+    async (target: FindingDto, question: string) => {
+      await rpc.call("askAboutFinding", { findingId: target.id, question });
+      // The answer arrives in the review's own thread, which is the chat
+      // beside this tab, so there is nowhere to send the reader.
+      toast.success("Asked in the review thread");
+    },
+    [rpc],
+  );
+
+  if (pr.isLoading && pr.data === null) {
+    return (
+      <div className="flex flex-col gap-3">
+        <BackButton onBack={onBack} label="All issues" />
+        <Skeleton className="h-40 w-full rounded-lg" />
+      </div>
+    );
+  }
+  if (finding === null) {
+    return (
+      <div className="flex flex-col gap-3">
+        <BackButton onBack={onBack} label="All issues" />
+        <EmptyState
+          icon="Bug"
+          title="This issue is gone"
+          detail="It was probably replaced by a re-run of the review."
+        />
+      </div>
+    );
+  }
+
+  const locations: LocationDto[] = code.data?.locations ?? [];
+  const primary = locations.find((location) => location.isPrimary);
+  const others = locations.filter((location) => !location.isPrimary);
+  const nextContext = CONTEXT_STEPS[contextStep + 1];
+  const isStale = code.data !== null && !code.data.isReviewedCommit && locations.length > 0;
+
+  const contextButton =
+    locations.length === 0 ? null : (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 text-xs"
+        onClick={() => setContextStep((step) => (step + 1) % CONTEXT_STEPS.length)}
+      >
+        {nextContext === undefined ? "Less context" : `More context (±${nextContext})`}
+      </Button>
+    );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <BackButton onBack={onBack} label="All issues" />
+
+      {/* The decision unit: what is wrong, the code it is about, and the
+          comment to post about it — in that order, so the comment is read
+          against the code rather than from memory. */}
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3">
+        <div className="flex items-start gap-2">
+          <SeverityBadge severity={finding.severity} />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold leading-snug">{finding.title}</h2>
+            <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+              {locationLabel(finding)}
+              {finding.category === "" ? "" : ` · ${finding.category}`}
+            </p>
+          </div>
+          {finding.state === "posted" ? (
+            <Badge variant="outline" className="shrink-0 gap-1 border-border">
+              <Icon name="Check" className="size-3" />
+              {finding.postedAs === "pending-review" ? "drafted" : "posted"}
+            </Badge>
+          ) : null}
+        </div>
+
+        {/* For the reviewer, not the author: the comment below is what the
+            author sees, and this is what you would do about it. */}
+        {finding.suggestedFix === "" ? null : (
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Suggested fix
+            </p>
+            <Markdown content={finding.suggestedFix} />
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {finding.postAnchor.kind === "line"
+                ? "Code the comment attaches to"
+                : "Code this issue is about"}
+            </p>
+            {contextButton}
+          </div>
+          {isStale ? (
+            <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              This code is the pull request&apos;s current head, not the commit the review ran
+              against — that commit was not recorded. Line numbers may have moved since the issue
+              was written.
+            </p>
+          ) : null}
+          {code.error !== null ? (
+            <EmptyState icon="AlertTriangle" title="Could not load the code" detail={code.error} />
+          ) : code.isLoading && code.data === null ? (
+            <Skeleton className="h-32 w-full rounded-lg" />
+          ) : primary === undefined ? (
+            <EmptyState icon="Code" title="No code to show" detail="This issue cites no file." />
+          ) : (
+            <LocationCard
+              location={primary}
+            />
+          )}
+        </div>
+
+        <FindingActions
+          rpc={rpc}
+          finding={finding}
+          diffUrl={primary?.diffUrl}
+          primaryLocation={primary}
+          hasPendingReview={pr.data?.hasPendingReview ?? false}
+          onAsk={(question) => ask(finding, question)}
+        />
+      </div>
+
+      {others.length === 0 ? null : (
+        <Section title={`Other code this issue points at (${others.length})`}>
+          <div className="flex flex-col gap-3">
+            {others.map((location) => (
+              <LocationCard
+                key={`${location.file}:${location.startLine ?? ""}`}
+                location={location}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The review tab, and opening it in a thread
+// ---------------------------------------------------------------------------
+
+/**
+ * The thread the home screen last sent the user to.
+ * Writing the tab onto the thread server-side makes it exist; it does not open
+ * it, because which tab is showing is client panel state that only
+ * `openThreadPanel` reaches — and that call works only from inside the thread
+ * surface, which the home screen is not. So the panel leaves this note and the
+ * thread header slot picks it up when VesnALIA mounts the thread.
+ *
+ * It is a one-shot keyed by thread id, not per-thread state: every mounted
+ * header instance reads it, and only the one whose thread matches acts.
+ */
+let pendingTabOpenThreadId: string | null = null;
+
+function notePendingTabOpen(threadId: string): void {
+  pendingTabOpenThreadId = threadId;
+}
+
+/** Read and clear the note, saying whether it was for this thread. */
+function takePendingTabOpen(threadId: string): boolean {
+  if (pendingTabOpenThreadId !== threadId) return false;
+  // One shot: coming back to the thread later must respect a tab the user has
+  // since closed.
+  pendingTabOpenThreadId = null;
+  return true;
+}
+
+/**
+ * A thread's review tab. It carries no params — a review thread holds one
+ * review, so the thread says which. Tabs saved by earlier versions do carry
+ * the PR in their params; those are ignored, since the thread gives the same
+ * answer.
+ */
+function ReviewTab({ threadId }: { threadId: string }) {
+  const rpc = useRpc<typeof rpcContract>();
+  const review = useLiveQuery(() => rpc.call("getReviewForThread", { threadId }), [rpc, threadId]);
+  const subject = review.data;
+  const [openFindingId, setOpenFindingId] = useState<string | null>(null);
+  const status = useLiveQuery(() => rpc.call("status"), [rpc]);
+
+  if (subject === null) {
+    return review.isLoading ? (
+      <Skeleton className="h-32 w-full rounded-lg" />
+    ) : (
+      <EmptyState
+        icon="Search"
+        title="Not a code review"
+        detail="This thread has no review attached. Start one from the Code Review panel."
+      />
+    );
+  }
+  if (openFindingId !== null) {
+    return (
+      <FindingDetailView
+        rpc={rpc}
+        repo={subject.repo}
+        number={subject.number}
+        findingId={openFindingId}
+        onBack={() => setOpenFindingId(null)}
+      />
+    );
+  }
+  return (
+    <PrFindingsView
+      rpc={rpc}
+      repo={subject.repo}
+      number={subject.number}
+      skills={status.data?.skills ?? []}
+      onOpenFinding={setOpenFindingId}
+    />
+  );
+}
+
+/**
+ * A control in a review thread's header, and the thing that actually opens the
+ * review tab when the home screen sends the user here.
+ */
+function ReviewThreadHeaderAction({ threadId }: { threadId: string }) {
+  const rpc = useRpc<typeof rpcContract>();
+  const navigate = useAliaNavigate();
+  const pending = useMemo(() => takePendingTabOpen(threadId), [threadId]);
+  const review = useLiveQuery(
+    () => rpc.call("getReviewForThread", { threadId }),
+    [rpc, threadId],
+  );
+
+  // The tab has no params, so this matches the one written server-side and
+  // focuses it rather than opening a second.
+  const open = useCallback(() => {
+    navigate.openThreadPanel({ actionId: "review" });
+  }, [navigate]);
+
+  // The panel only sends you here for a review thread, so there is no need to
+  // wait for the lookup before opening.
+  useEffect(() => {
+    if (pending) open();
+  }, [pending, open]);
+
+  if (review.data === null) return null;
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 gap-1.5 px-2 text-xs"
+      onClick={open}
+    >
+      <Icon name="Bug" className="size-3.5" />
+      Code review
+    </Button>
+  );
+}
+
+function BackButton({ onBack, label }: { onBack: () => void; label: string }) {
+  return (
+    <Button variant="ghost" size="sm" className="h-7 w-fit gap-1 px-1.5 text-xs" onClick={onBack}>
+      <Icon name="ChevronLeft" className="size-3.5" />
+      {label}
+    </Button>
+  );
+}
+
+function Section({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {title}
+        </h3>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The panel
+// ---------------------------------------------------------------------------
+
+/**
+ * The home screen. It owns the whole route under the panel's path but has one
+ * view, so a link from the routed panel this replaced lands here.
+ */
+function CodeReviewPanel() {
+  const rpc = useRpc<typeof rpcContract>();
+  const navigate = useAliaNavigate();
+
+  const status = useLiveQuery(() => rpc.call("status"), [rpc]);
+  const repos = useMemo(() => status.data?.repos ?? [], [status.data]);
+  const hasRepos = status.data !== null;
+
+  // Repo and filter live on the server, so re-opening the tab resumes instead
+  // of asking again.
+  const [repo, setRepo] = useState<string | null>(null);
+  const [filter, setFilter] = useState<PrFilter>({ kind: "mine" });
+  const [isRestored, setIsRestored] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const done = () => {
+      if (!cancelled) setIsRestored(true);
+    };
+    rpc.call("getPanelState").then((state) => {
+      if (cancelled) return;
+      if (state.repo !== null) setRepo(state.repo);
+      if (state.filter !== null) setFilter(state.filter as PrFilter);
+      done();
+    }, done);
+    return () => {
+      cancelled = true;
+    };
+  }, [rpc]);
+
+  // Fall back to the first known repo only once BOTH the saved repo and the
+  // repo list have arrived. `status` runs a gh auth probe, so it lands well
+  // after `getPanelState`; acting on an empty list in that gap threw the saved
+  // repo away and always landed on the first one.
+  const repoKey = repos.join("\n");
+  useEffect(() => {
+    if (!isRestored || !hasRepos) return;
+    setRepo((current) =>
+      current !== null && repos.includes(current) ? current : (repos[0] ?? null),
+    );
+    // `repos` is rebuilt on every status refetch; its contents are what matter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRestored, hasRepos, repoKey]);
+
+  const persist = useCallback(
+    (next: { repo?: string; filter?: PrFilter }) => {
+      rpc
+        .call("setPanelState", {
+          repo: next.repo ?? repo,
+          filter: next.filter ?? filter,
+        })
+        // Losing the saved position is not worth interrupting the user for.
+        .catch(() => undefined);
+    },
+    [rpc, repo, filter],
+  );
+
+  // Both actions end in the same place: standing in the review's thread with
+  // its review tab beside it. They differ in whether an agent run is spent.
+  const goToReview = useCallback(
+    (threadId: string) => {
+      notePendingTabOpen(threadId);
+      navigate.toThread(threadId);
+    },
+    [navigate],
+  );
+
+  // No review tab and no pending-tab note: the thread is archived, so this is
+  // a read-only trip into the old conversation, not a place to keep working.
+  const openArchivedThread = useCallback(
+    (threadId: string) => {
+      navigate.toThread(threadId);
+    },
+    [navigate],
+  );
+
+  const openReview = useCallback(
+    (nextRepo: string, number: number) => {
+      rpc.call("openReview", { repo: nextRepo, number }).then(
+        (opened) => goToReview(opened.threadId),
+        reportError,
+      );
+    },
+    [rpc, goToReview],
+  );
+
+  const startReview = useCallback(
+    (nextRepo: string, number: number) => {
+      rpc.call("startReview", { repo: nextRepo, number }).then((started) => {
+        if (started.review.threadId === null) {
+          toast.error("The review started but has no thread yet.");
+          return;
+        }
+        goToReview(started.review.threadId);
+      }, reportError);
+    },
+    [rpc, goToReview],
+  );
+
+  const ghState = status.data?.state ?? "checking";
+  const blocked = ghState === "needs_configuration" || ghState === "unavailable";
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto w-full max-w-4xl p-4 md:p-5">
+        {blocked ? (
+          <EmptyState
+            icon={ghState === "needs_configuration" ? "Settings" : "AlertTriangle"}
+            title={
+              ghState === "needs_configuration"
+                ? "The GitHub CLI needs setting up"
+                : "GitHub is not reachable"
+            }
+            detail={
+              <>
+                <p>{status.data?.detail ?? "gh could not be reached."}</p>
+                <p className="mt-2">
+                  Install the GitHub CLI and run <code className="font-mono">gh auth login</code>,
+                  then reload the plugin.
+                </p>
+              </>
+            }
+          />
+        ) : (
+          <PrListView
+            rpc={rpc}
+            repo={repo}
+            repos={repos}
+            filter={filter}
+            onRepoChange={(next) => {
+              setRepo(next);
+              persist({ repo: next });
+            }}
+            onFilterChange={(next) => {
+              setFilter(next);
+              persist({ filter: next });
+            }}
+            myTeams={status.data?.myTeams ?? []}
+            onStartReview={startReview}
+            onOpenReview={openReview}
+            onOpenArchivedThread={openArchivedThread}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default definePluginApp((app) => {
+  app.slots.navPanel({
+    id: PANEL_ID,
+    title: "Code Review",
+    // Only a fallback: the manifest icon asset wins on compact surfaces.
+    icon: "Search",
+    path: PANEL_PATH,
+    component: CodeReviewPanel,
+  });
+  // One tab per review, in that review's own thread. No `run`: its context
+  // carries no RPC client, so it could not work out which review a thread is
+  // for — the component resolves that itself from `threadId`.
+  app.slots.threadPanelAction({
+    id: "review",
+    title: "Code review",
+    icon: "Bug",
+    component: ReviewTab,
+    layout: "padded",
+  });
+  // Runs inside the thread, which is the only place `openThreadPanel` works —
+  // so this is what opens the tab the home screen wrote.
+  app.slots.experimental_threadHeaderAction({
+    id: "review",
+    title: "Code review",
+    component: ReviewThreadHeaderAction,
+  });
+});

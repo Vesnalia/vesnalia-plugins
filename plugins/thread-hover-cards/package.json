@@ -1,0 +1,42 @@
+{
+  "name": "alia-plugin-thread-hover-cards",
+  "version": "0.1.5",
+  "description": "Concise status previews for VesnALIA sidebar threads.",
+  "type": "module",
+  "files": [
+    "dist",
+    "docs",
+    "README.md"
+  ],
+  "engines": {
+    "alia": ">=0.0.34",
+    "aliaPluginSdk": ">=0.6"
+  },
+  "alia": {
+    "name": "Thread Hover Cards",
+    "description": "Preview thread status, the latest agent update, and repository or PR context from the sidebar.",
+    "branding": {
+      "icon": "ZoomIn"
+    },
+    "server": "./dist/install-server.mjs",
+    "app": "./dist/install-app.mjs",
+    "skills": []
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-hover-cards#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-hover-cards"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

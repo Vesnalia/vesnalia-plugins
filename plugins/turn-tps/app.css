@@ -1,0 +1,45 @@
+/* 1. Turn duration button indicator (e.g. Worked for 10s · 40.2 tps) */
+button[data-alia-tps]::after {
+  content: " · " attr(data-alia-tps);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--muted-foreground, #a1a1aa);
+  opacity: 0.85;
+  margin-left: 0.2rem;
+  pointer-events: none;
+}
+
+/* 2. Turn TPS Badge pill for Assistant Messages - Greyscale */
+.alia-turn-tps-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--muted-foreground, #a1a1aa);
+  background-color: rgba(160, 160, 160, 0.08);
+  border: 1px solid rgba(160, 160, 160, 0.2);
+  cursor: default;
+  user-select: none;
+  width: fit-content;
+  transition: all 0.15s ease;
+}
+
+.alia-turn-tps-badge:hover {
+  color: var(--foreground, #e4e4e7);
+  background-color: rgba(160, 160, 160, 0.15);
+  border-color: rgba(160, 160, 160, 0.35);
+}
+
+.alia-turn-tps-badge .alia-tps-icon {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}

@@ -1,0 +1,290 @@
+---
+name: stelow-workflow-codebase-critique
+description: >
+  [stelow] Structural critique for codebases. Accepts a directory of source code and
+  evaluates architecture, data flow, API contracts, performance, theming, responsive
+  patterns, and AI slop in code — then generates a classified gap report.
+  Part of stelow (pre-implementation codebase review) but usable standalone.
+  For codebases with visual UI, use stelow-workflow-ux-critique instead.
+metadata:
+  frequency: weekly
+  category: workflow
+  execution:
+    mode: orchestrated
+    recipe: codebase-critique
+    capabilities: [fanout, structured-output]
+    write_policy: artifact
+    permission_profile: inherit
+  context-cost: medium
+  author: calionauta
+  author-url: https://github.com/calionauta
+---
+
+# Codebase Critique
+
+> **Focus:** Critically analyze source code structure — architecture,
+> data flow, API contracts, performance, theming, responsive patterns, and AI slop in code.
+> **Input:** Source code directory.
+> **Output:** Classified gap report (🚨/🤔/🔎) with recommendations.
+
+> **Tools:** See `../stelow-workflow-orchestrator/references/cli-tools/subagents.md` for subagent patterns.
+
+**Standalone awareness:** inside stelow, quality gates critique depth (experimental → light, production → full). Standalone defaults to production quality (full single-reviewer). Works with any source directory — no stelow dependency for the audit logic.
+
+## Overview
+
+Structural codebase critique — evaluates architecture, data flow, API contracts, performance,
+theming, responsive patterns, and AI slop in code.
+
+This skill performs a source code audit using checklists focused on
+technical and structural aspects (non-visual):
+
+| Dimension | What it evaluates |
+|----------|-------------|
+| 🏗️ **Architecture** | Module structure, dependency flow, coupling |
+| 🔄 **Data Flow** | Call chains, state management, event propagation |
+| 📡 **System Contracts** | API definitions, error handling, logging |
+| ⚡ **Performance** | Bundle size, re-renders, lazy loading |
+| 🎨 **Theming** | Design tokens, dark mode support |
+| 📱 **Responsive** | CSS breakpoints, media queries |
+| 🤖 **AI Slop in Code** | Over-generated patterns, redundant code, boilerplate |
+
+**Important:** This skill is for analyzing source code of components and logic.
+If you need visual UI auditing (accessibility, design, UX), use
+`stelow-workflow-ux-critique` em Codebase mode.
+
+### Quality Gate (auto-skip for small scopes)
+
+**Before running codebase critique**, check if quality warrants it.
+Codebase critique is for structural analysis — if the scope is 1 file,
+the value is minimal.
+
+```bash
+# Read quality from stelow context or env var; default production (via canonical helper).
+WF_DIR="$(ls -td .stelow/*/*/ 2>/dev/null | head -1)"
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]:-$0}")/../../stelow-workflow-orchestrator/references/cli-tools/read-config.sh"
+QUALITY="${QUALITY:-$(stelow_read_quality)}"
+DIFF_FILES=$(git diff --name-only HEAD~1 2>/dev/null | wc -l | tr -d ' ')
+# Entity-level gate when sem is available (files undercount refactors that touch few files broadly)
+DIFF_ENTITIES=$(sem diff --format json HEAD~1 2>/dev/null | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('entities', [])))" 2>/dev/null || echo "$DIFF_FILES")
+```
+
+| Quality | Files changed | Action |
+|----------|--------------|--------|
+| `experimental` | any | **Light.** Single reviewer runs a basic structural check (architecture, dead code, naming). Quality floor. Probes only. |
+| `production` | 1-2 | **Light.** Single reviewer with standard checklist. |
+| `production` | 3+ | **Full.** One reviewer analyzes all dimensions with detailed recommendations, or parallel reviewers when scope warrants. |
+
+**Rationale:** Codebase critique is quality protection — quality controls depth, not whether it runs. At experimental the reviewer uses a lighter checklist (basic structural, dead code, naming) instead of architectural analysis, but the audit always runs. Code review is correctness; codebase critique is structure — they're complementary, not substitutes.
+
+### Standalone
+```
+I received a code directory and want to review the architecture.
+```
+
+### Via stelow-workflow-scope-executor
+When a technical scope is executed and needs code review.
+
+### Via stelow (Stage Verification)
+
+Use this skill when the workflow needs a structural codebase audit beyond the
+normal fresh-context code review. The default `code-review` step launches a
+fresh reviewer; use this skill when architecture, data flow, API contracts,
+performance, theming, responsive patterns, or AI slop need deeper analysis.
+
+---
+
+## 🔀 Input Detection
+
+```
+Input received:
+  ├── Is it a source code directory (no visual UI)?
+  │   └→ ✅ Mode: Codebase Critique
+  ├── Is it a directory containing visual components?
+  │   └→ Use stelow-workflow-ux-critique (Codebase mode) — also covers architecture
+  ├── User described the code/architecture verbally?
+  │   └→ Use description as context anchor. Try to find matching
+  │      source directories in the current workspace. If none found,
+  │      run a lightweight critique based on the description.
+  └── No structured input given?
+      └→ Ask: "What codebase do you want to critique? Provide a directory
+         path or describe the architecture/component."
+```
+
+---
+
+## How to Run
+
+### 1. Discover structure
+
+Tool ladder first (`../stelow-workflow-orchestrator/references/cli-tools/code-map.md`): orient unfamiliar
+code with ripwire, navigate symbols with cymbal, fall back to find/grep.
+For structural questions (nesting shapes, API misuse patterns, god-function
+candidates), query with ast-grep (`ast-grep run -p '<pattern>' -l <lang> --json`); install via
+`brew install ast-grep` if absent.
+
+```bash
+# Ranked orientation first, typed inventory second (blind find|head truncates by filesystem order)
+ripwire orient {INPUT_PATH} 2>/dev/null
+sem entities --json 2>/dev/null | head -50
+# Fallback only when both tools are absent:
+find {INPUT_PATH} -maxdepth 3 -type f \( -name "*.templ" -o -name "*.go" -o -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.css" -o -name "*.html" \) | head -50
+```
+
+### 2. Read reference files
+
+| File | Covers |
+|------|--------|
+| `references/codebase-audit-dimensions.md` | Architecture, Data Flow, System, Performance, Theming, Responsive, AI Slop |
+| `references/auto-resolve-rules.md` | Rules for auto-resolving gaps with defaults |
+| `references/output-format.md` | Report format |
+
+### 3. Run critique via subagent
+
+Use the subagents tool (see `../stelow-workflow-orchestrator/references/cli-tools/subagents.md`) to critique the codebase:
+
+```
+Agent: reviewer
+Task: Critique codebase (Codebase mode)
+Reads: references/*.md
+Input: {INPUT_PATH}
+Context: fresh — never critique code you wrote in your own context
+```
+- codebase-audit-dimensions.md: Run ALL dimensions systematically:
+  1. Architecture — module structure, dependency direction, coupling, abstraction layers
+  2. Data Flow — call chains, state management (global vs local), event propagation
+  3. System Contracts — API interfaces, error handling (typed vs untyped), logging patterns
+  4. Performance — bundle size indicators, re-render triggers, lazy loading, memoization
+  5. Theming — design tokens (CSS vars vs hardcoded values), dark mode coverage
+  6. Responsive — media queries, breakpoint strategy, container queries
+  7. AI Slop in Code — over-generated code, duplicate patterns, dead code, unnecessary
+     abstraction, large identical blocks (>15 lines repeated)
+
+For each issue: severity (P0/P1/P2/P3), what was observed, which dimension flagged it,
+  actionable recommendation. Note if issue is structural (hard to fix) or cosmetic (easy fix).
+
+Output per output-format.md.
+Save to .stelow-codebase-critique/critique-report.md.
+
+### 4. Gap Resolution
+
+| Severity | Action |
+|------------|------|
+| **P0 — Blocking** | Fix immediately (e.g., security, data loss) |
+| **P1 — Major** | Fix before release |
+| **P2 — Minor** | Next cycle |
+| **P3 — Polish** | If time permits |
+
+---
+
+## Output
+
+```
+.stelow-codebase-critique/
+  critique-report.md     ← gap report
+```
+
+Completeness contract (the host validates these minima — never submit fewer):
+all five body sections per `references/output-format.md` (Executive Summary,
+Critical, Important, Minor, Strengths); at least 600 words.
+
+criteria:
+  - id: body-sections
+    kind: count
+    text: "All five body sections present per output-format"
+  - id: word-count
+    kind: count
+    text: "At least 600 words"
+  - id: finding-evidence
+    kind: semantic
+    text: "Critical and Important findings cite file paths or symbols, not impressions"
+
+---
+
+## Edge Cases
+
+### Non-code directory
+- Refuse with the fix (point at a source root); never review a docs-only tree as code.
+
+### Monorepo with several stacks
+- One report per detected stack; shared findings cross-link instead of duplicating.
+
+## When to Use & Test Cases
+
+Use for structural review of a codebase: coupling, hotspots, maintenance risk.
+
+Should activate: "where is the coupling in this repo", "structural risks before refactor".
+Should NOT activate: "fix the flagged hotspot" (execution).
+
+## Integration with Other Skills
+
+### stelow-workflow-scope-executor
+
+When a technical scope is executed, the executor can delegate code verification
+to this skill.
+
+### stelow (Stage Verification)
+
+The default `code-review` step launches a fresh-context reviewer. Use this skill
+when the workflow needs a deeper structural audit of non-visual code, or when
+the normal review finds architecture/data-flow/performance concerns that need
+specialized analysis.
+
+---
+
+## Related Skills
+
+- **stelow-workflow-ux-critique**: For visual/interface critique (use instead when you have UI)
+- **stelow-workflow-plan-critique**: For product plan critique (use instead when you have spec-product.md)
+- **stelow-workflow-execution-critique**: Post-implementation audit
+
+<!-- stelow:scope3:begin -->
+## Entry (mode detection)
+
+When this skill loads, check for the stelow workflow marker:
+
+```bash
+if [ -n "$STELOW_WORKFLOW" ] && [ -n "$STELOW_STATE" ]; then
+  echo "stelow: workflow mode (state=$STELOW_STATE)"
+else
+  echo "stelow: standalone mode (no STELOW_WORKFLOW marker)"
+fi
+```
+
+In **standalone mode** (no marker), run the existing skill body unchanged.
+In **workflow mode**, skip to `### Workflow slice` and emit a complete
+`## Hand-off (workflow mode)` block at the end. See
+`../stelow-workflow-entry/SKILL.md` for the full marker protocol.
+
+## Hand-off (workflow mode)
+
+```
+stage          : diff-gate
+description    : Code diff review. visual review review of working tree diff. Only in Product Spec + Interface + Tech Review + Code Diff mode.
+status         : <done|partial|blocked>
+artifacts      : <paths created or modified>
+next-candidate : <the stage scripts/stelow next reports — run `scripts/stelow next`>
+gate           : approval-required (visual_review)
+rework-on      : execution
+```
+
+Workflow mode: emit the above Hand-off block verbatim, then stop. Fill
+`next-candidate` from `scripts/stelow next`: it is the workflow's own
+answer, already accounting for this run's intent route and review mode.
+The router skill consumes the next-candidate field and calls
+`scripts/stelow advance <next-candidate>` to move state forward.
+
+### Workflow slice
+
+Workflow mode for the **diff-gate** stage. Standalone behavior lives in
+the rest of this file (unchanged). Summary:
+
+> Code diff review. visual review review of working tree diff. Only in Product Spec + Interface + Tech Review + Code Diff mode.
+
+Primary actions (per stages.yaml): `read`. Run only the actions that
+produce the artifacts promised in `## Hand-off`; skip anything that does
+not advance the workflow.
+
+<!-- stelow:scope3:end -->
+

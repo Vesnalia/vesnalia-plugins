@@ -1,0 +1,172 @@
+# alia-plugin-cloud-sandbox
+
+**Vercel Sandboxes** — spin up and manage cloud machines in VesnALIA, backed by
+[Vercel Sandboxes](https://vercel.com/docs/vercel-sandbox).
+
+Each cloud machine is a sandbox that installs VesnALIA and enrols itself over VesnALIA
+connect, so it appears alongside your local machines and can run threads. There
+is currently no CLI interface.
+
+- **Vercel Sandboxes page** — a table of machines with status, created and
+  last-used times, sortable by name or either date and filterable by status.
+  Each row shows the image it was created from and has a menu to wake, stop or
+  delete it.
+- **Settings** — two tabs: **Templates** (what a machine is made of) and
+  **Authentication** (the Vercel account, and the git identity every machine
+  commits as).
+
+![The Vercel Sandboxes page, listing machines with their status, template, and session uptime](docs/cloud-machines.png)
+
+Create a machine from the template named on the button, or pick another from
+the chevron.
+
+## Environment picker
+
+The plugin also adds **Vercel Sandbox** entries to the new-thread environment
+picker: one for Vercel's default image, and one per template that has built
+(**Vercel Sandbox · &lt;template&gt;**). Choosing one makes VesnALIA create a fresh
+sandbox for that thread, enroll it, and check the project out on it.
+
+These machines are VesnALIA's, not the Vercel Sandboxes page's. They are *ephemeral*:
+they never appear in the picker as a machine a new thread could run on, and VesnALIA
+removes each one a few minutes after its thread ends.
+
+They are listed on the Vercel Sandboxes page all the same, with a clock icon
+marking them as ephemeral, and a **Thread machines** filter to show only
+those. Wake, Stop and Delete on such a row go through VesnALIA — resume, suspend and
+machine removal — so VesnALIA stays the owner of the lifecycle. VesnALIA refuses to delete
+a machine whose thread is still live, and says so.
+
+**When Vercel stops one at its lifetime limit**, a once-a-minute check records
+the machine as suspended in VesnALIA. Vercel keeps the sandbox filesystem, so the
+next message in that thread resumes the sandbox, restarts the daemon and
+carries on; Wake does the same by hand.
+
+A template built or renamed while the plugin runs updates its entry at once.
+A deleted template's entry stays until the plugin next loads and refuses to
+launch meanwhile. Requires VesnALIA with Plugin SDK 0.4.88 or newer.
+
+## Setup
+
+```sh
+alia plugin install .
+```
+
+Then open the plugin's settings page and click **Sign in with Vercel**.
+
+## Configuration
+
+Everything is optional and lives in the plugin's settings page.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `machineTimeoutSeconds` | `2700` | How long a machine lives before Vercel terminates it |
+| `machineVcpus` | `2` | vCPUs per machine (2 GB memory each) |
+| `githubIdentity` | — | Managed by the Authentication tab's GitHub section; do not edit by hand |
+| `templateSecrets` | — | Managed by each template's environment editor; do not edit by hand |
+| `vercelSession` | — | Managed by the sign-in flow; do not edit by hand |
+
+Vercel caps sandbox lifetime at **45 minutes on Hobby** and 24 hours on
+Pro/Enterprise. When you sign in, the plugin reads the team's plan and sets
+`machineTimeoutSeconds` to that plan's ceiling (`2700` or `86400`). A custom
+value you have entered yourself is left alone.
+
+**A cloud machine is therefore not long-lived.** Vercel terminates it at that
+limit whatever it is doing, and the machine goes `Inactive`.
+
+## Development
+
+```sh
+alia plugin dev        # rebuild + reload on every save
+npm run typecheck
+npm run build
+alia plugin logs cloud-sandbox -f
+```
+
+## Layout
+
+| File | Role |
+| --- | --- |
+| `machines.ts` | Cloud machine lifecycle: create, enrol, list, stop, wake, delete. No VesnALIA dependency. |
+| `machine-provider.ts` | The environment picker's Vercel Sandbox entries: a machine provider per template that VesnALIA calls to create, suspend, resume and remove thread machines. |
+| `scripts/*.sh` | What a machine runs on itself: prerequisites, enrolment, wake, the injected-credential file, and the daemon supervisor that stands in for the service manager a container has none of. |
+| `templates.ts` | Template presets, the Dockerfile, the image build, and registry cleanup. No VesnALIA dependency. |
+| `agents.ts` | Agent providers and the values each one reads from the environment. No VesnALIA dependency. |
+| `github.ts` | Reads the host's `gh` login into the git identity every machine gets. No VesnALIA dependency. |
+| `auth.ts` | Vercel OAuth device authorization (RFC 8628). No VesnALIA dependency. |
+| `server.ts` | Settings, RPC, sign-in orchestration, template and machine state, debug log. |
+| `app.tsx` | The Vercel Sandboxes page and the settings tabs. |
+
+## Environment and credentials
+
+Each template holds its own environment: the values listed by agent provider
+(Claude Code and pi.dev), plus any other variable you add. All of it is
+injected into a machine's environment **when the machine is created**, so
+nothing reaches an image layer, and changing a value takes effect on the next
+machine rather than the next build.
+
+Each variable is either secret or not. A secret is write-only — the plugin
+reports that it is set and never returns it, so it can only be replaced or
+cleared — while an ordinary variable is shown and edited in place. A provider
+decides for its own keys; you choose for the ones you add.
+
+## Git identity and GitHub
+
+The identity a machine commits as is **account-level, not per-template** — one
+person has one git identity — and lives in the **Authentication** tab, next to
+the Vercel sign-in. It injects `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL` (neither
+secret) and `GH_TOKEN` (secret) into every machine, whatever template it was
+created from, including none.
+
+**Import from local gh** reads the GitHub CLI's own login on the VesnALIA host, so a
+machine gets exactly the access `gh` already has.
+
+**Waking re-injects them.** A sandbox's own environment is fixed when it is
+created, so a token rotated afterwards would never reach a machine that
+already exists. Waking hands the machine the environment it *would* get if it
+were created now.
+
+## Templates
+
+![The Templates tab, with one template building and one ready to use](docs/templates.png)
+
+A template is what a cloud machine is made of: an image, plus the environment
+its machines are given.
+
+**Create template** starts from a preset — Blank, Claude Code, or
+[pi.dev](https://pi.dev). A preset only seeds a new template's name and
+commands; it is ordinary editable configuration afterwards, not a link that
+keeps updating. Each template has a name, a block of custom commands, and its
+environment; building publishes its image to the container registry and the
+template becomes `Ready`.
+
+Every image starts from `docker.io/library/ubuntu:26.04` and installs VesnALIA's
+prerequisites first: Node (the host daemon needs 22.19+ and the stock base
+ships none), a C toolchain (alia-app's `node-pty` is a native add-on built
+from source at enrolment), and the GitHub CLI (`gh`, from GitHub's apt repo,
+since Ubuntu's archive does not carry it). A sandbox created without a
+template installs the same prerequisites at enrolment instead.
+
+Nothing from a template's environment enters the image: an image is a shared
+artifact anyone able to pull it can read, so credentials are injected when a
+machine is created instead.
+
+Templates and their build logs live in the plugin's SQLite database rather
+than `alia.storage.kv`, because a build log routinely exceeds the 256KB kv value
+cap.
+
+**Creating a machine** uses the template most recently used, changeable from
+the chevron beside the button; the dropdown also offers "No template" for
+Vercel's default managed image.
+
+Deleting a template removes it, its build history and its environment from VesnALIA
+**and deletes its image from the container registry**.
+
+## Building custom images
+
+Vercel Sandbox boots from OCI images in
+[Vercel Container Registry](https://vercel.com/docs/sandbox/concepts/images).
+Images are built **inside a throwaway sandbox**. 
+
+The registry is `vcr.vercel.com`, images live at
+`<teamSlug>/<projectId>/<repo>:<tag>`.

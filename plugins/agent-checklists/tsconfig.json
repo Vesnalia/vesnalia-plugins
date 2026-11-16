@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "paths": {
+      "better-sqlite3": ["node_modules/@types/better-sqlite3/index.d.ts"]
+    },
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["server.ts", "app.tsx", "src"]
+}

@@ -1,0 +1,202 @@
+/**
+ * The reads every surface shares.
+ *
+ * Checkout, stage, ask evidence, open questions, claims, git, staleness,
+ * preview, and the research artifacts: each is a read, and each is read the
+ * same way on purpose. Card preview must resolve the same checkout the diff
+ * RPC diffs and publication publishes, an ask must resolve the same stage
+ * the done gates check, and a claim wait must be released by the same writer
+ * that took it — so these are constructed once and reached for by name.
+ */
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createQuestionStaleness } from "./question-staleness.js";
+import { createWorkers } from "../workers.js";
+import { createCardPreview } from "./card-preview.js";
+import { createResearchArtifactRuntime } from "./research-artifacts.js";
+import { createGitEvidence } from "./git-evidence.js";
+import { createQuestionInbox } from "./question-inbox.js";
+import { createClaimCoordination } from "./claim-coordination.js";
+import { createCardSeams } from "./card-seams.js";
+import { createAskArtifacts } from "./ask-artifacts.js";
+import { createPendingQuestions } from "./pending-questions.js";
+import { createPreviewHost } from "./preview-host.js";
+import { createTrackProjection, strategyRounds } from "./track-projection.js";
+import { listNestedFiles } from "./board-read.js";
+import { roundFileName, roundTimestamp } from "../../lib/research-rounds.mjs";
+import { boundaryIdFromQuestion } from "../../lib/execution-boundary-marker.mjs";
+import { listExecutionRuns } from "../../lib/execution-run-ledger.mjs";
+import { workspaceRelative } from "./card-files.js";
+import { join } from "./root-paths.js";
+import { workflowStateDir } from "./workflow-state.js";
+import { ERRORS } from "./card-errors.js";
+import type { RuntimeServices } from "./runtime-services.js";
+import type { CardLedger } from "./card-ledger.js";
+import type { WorkerCard } from "../workers-types.js";
+
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
+
+export type ReadRuntimeDeps = {
+  alia: AliaPluginApi;
+  db: Db;
+  now: () => number;
+  services: RuntimeServices;
+  ledger: CardLedger;
+  workerEnvironmentOf: ReturnType<typeof createWorkers>["workerEnvironmentOf"];
+};
+
+export function createReadRuntime(deps: ReadRuntimeDeps) {
+  const workspace = createWorkspaceReads(deps);
+  return { ...workspace, ...createCardReads(deps, workspace) };
+}
+
+/** The host-only reads: git, the card's open questions, and claim waits. */
+export function createWorkspaceReads(deps: ReadRuntimeDeps) {
+  const { alia, db, now, services } = deps;
+  const git = createGitEvidence({ alia, db, cardWorkspace: services.cardWorkspace });
+  const questions = createQuestionInbox({
+    alia,
+    db,
+    syncPendingQuestionInbox: services.syncPendingQuestionInbox,
+  });
+  const claims = createClaimCoordination({
+    alia,
+    db,
+    getCard: services.getCard,
+    notifyClaimWaiters: services.notifyClaimWaiters,
+    now,
+  });
+  return { git, questions, claims };
+}
+
+export type WorkspaceReads = ReturnType<typeof createWorkspaceReads>;
+
+/** The card-facing reads built on the workspace ones, plus their projections. */
+function createCardReads(
+  deps: ReadRuntimeDeps,
+  workspace: WorkspaceReads,
+) {
+  const { alia, db, now, services, ledger } = deps;
+  const { git, questions } = workspace;
+  const seams = createCardSeams({
+    alia,
+    db,
+    getCard: services.getCard,
+    cardWorkspace: services.cardWorkspace,
+    workerEnvironmentOf: deps.workerEnvironmentOf,
+  });
+  const asks = createAskArtifacts(askDeps(deps, seams, git));
+  const previewHost = createPreviewHost({ alia, now });
+  return {
+    seams,
+    asks,
+    previewHost,
+    ...questionProjection(deps, workspace, asks),
+    stalenessForQuestions: createQuestionStaleness({
+      db,
+      recoveryGitEvidence: git.recoveryGitEvidence,
+      sha256OfHostFile: git.sha256OfHostFile,
+      gitTouchedSince: git.gitTouchedSince,
+    }),
+    cardPreview: createCardPreview({
+      getCard: services.getCard,
+      cardCheckout: seams.cardCheckout,
+      runtime: previewHost.preview,
+      cardNotFoundError: ERRORS.cardNotFound,
+    }),
+    trackProjection: createTrackProjection({
+      alia,
+      db,
+      now,
+      updateCard: services.updateCard,
+      logCardComment: ledger.logCardComment,
+      cardWorkspace: services.cardWorkspace,
+      syncOpenQuestionInbox: questions.syncOpenQuestionInbox,
+    }),
+    researchArtifacts: createResearchArtifacts(deps),
+  };
+}
+
+/**
+ * The question projection, and the round vocabulary it travels with.
+ *
+ * Both are owned here rather than by whichever surface needed them first: the
+ * pending-question read uses only core seams, so the card server, the detail
+ * RPC, and the CLI can share one projection without any of them deferring the
+ * others' boot. The round pair is quoted by every surface that writes or reads
+ * a research round, so it is exported once and named the same everywhere.
+ */
+function questionProjection(
+  deps: ReadRuntimeDeps,
+  workspace: WorkspaceReads,
+  asks: ReturnType<typeof createAskArtifacts>,
+) {
+  return {
+    fetchPendingQuestions: createPendingQuestions({
+      fetchPendingAsks: workspace.questions.fetchPendingAsks,
+      getCardByWorkerThread: deps.ledger.getCardByWorkerThread,
+      resolveAskOptions: asks.resolveAskOptions,
+      boundaryForQuestion: (card, question) => boundaryForQuestionOnCard(deps, card, question),
+    }),
+    roundFileName,
+    roundTimestamp,
+  };
+}
+
+/**
+ * The boundary a card question belongs to, found by its marker.
+ *
+ * The card's runs are read once per question, which is a single indexed query
+ * against a table of a handful of rows per card — cheaper than threading a run
+ * list through the read path for a lookup that almost always misses: most card
+ * questions are ordinary ones and carry no marker at all, so that case returns
+ * before touching the database.
+ */
+async function boundaryForQuestionOnCard(
+  deps: ReadRuntimeDeps,
+  card: WorkerCard | null,
+  question: string,
+): Promise<{ kind: string } | null> {
+  const boundaryId = boundaryIdFromQuestion(question);
+  if (!boundaryId || !card) return null;
+  const run = listExecutionRuns(deps.db, card.id).find(
+    (entry) => entry.boundaryId === boundaryId,
+  );
+  const contract = run?.boundaryContract;
+  const kind = contract && typeof contract === "object" ? (contract as { kind?: unknown }).kind : null;
+  return typeof kind === "string" ? { kind } : null;
+}
+
+/** The research round artifacts a lightweight track writes and reads back. */
+function createResearchArtifacts(deps: ReadRuntimeDeps) {
+  return createResearchArtifactRuntime({
+    alia: deps.alia,
+    cardWorkspace: deps.services.cardWorkspace,
+    workflowStateDir: (rootPath, workflowId, dirHash) =>
+      workflowStateDir(deps.alia, rootPath, workflowId, dirHash),
+    strategyRounds,
+    joinPath: join,
+    workspaceRelative,
+    // One walk of the round directory — the same walk the board uses, so a
+    // substep nested one level down is found here exactly as it is there.
+    roundFiles: async (dir: string) => listNestedFiles(deps.alia.sdk.files, dir).catch(() => []),
+    errors: { workspaceUnavailable: ERRORS.workspaceUnavailable },
+  });
+}
+
+/** The ask seam reads the card's stage and digests through the git seam. */
+function askDeps(
+  deps: ReadRuntimeDeps,
+  seams: ReturnType<typeof createCardSeams>,
+  git: WorkspaceReads["git"],
+) {
+  return {
+    alia: deps.alia,
+    db: deps.db,
+    now: deps.now,
+    getCard: deps.services.getCard,
+    cardWorkspace: deps.services.cardWorkspace,
+    cardStageSlug: seams.cardStageSlug,
+    gitEvidence: git.recoveryGitEvidence,
+    sha256OfHostFile: git.sha256OfHostFile,
+  };
+}

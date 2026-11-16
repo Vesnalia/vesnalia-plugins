@@ -1,0 +1,29 @@
+// Type declarations for lib/workflow-skills-sync.mjs
+
+export interface SyncResult {
+  changed: boolean;
+  updated: string[];
+  created: string[];
+  removed: string[];
+  errors: string[];
+}
+
+export function syncWorkflowSkills(
+  targetDir: string,
+  opts: { ref: string; log?: (msg: string) => void; statePath?: string },
+): Promise<SyncResult>;
+
+export function readPinnedStelowSource(repoRoot: string): { version: string; commit: string };
+
+export function syncHelperScript(
+  repoRoot: string,
+  opts?: { log?: (msg: string) => void; statePath?: string },
+): Promise<SyncResult>;
+
+export function gitBlobSha(content: Uint8Array | string): string;
+
+export const WORKFLOW_SKILLS: string[];
+
+export const SYNC_TIMESTAMP_KEY: string;
+
+export function readLastSyncAt(stateFile: string): number | null;

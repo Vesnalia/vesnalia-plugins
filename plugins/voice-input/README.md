@@ -1,0 +1,77 @@
+# VesnALIA Voice Input
+
+VesnALIA Voice Input adds speech transcription to VesnALIA chat. It can run Whisper or GigaAM on a recognition host, or send audio to Groq, OpenAI, or Google. Transcripts can be cleaned, matched against a vocabulary, and inserted into the original composer draft.
+
+Optional [contextual post-processing](docs/features/intent-postprocessing.md) adds
+on-demand **Improve / Undo** and configurable speaker-intent editing. Dictation
+also offers opt-in stop-on-silence and automatic sending bound to the original
+composer. These options are off by default. Automatic sending is skipped for
+manual or intent AI editing. Requires **VesnALIA 0.48.1+ / SDK 0.6.104+**.
+
+Live preview and switching to VesnALIA's native recorder are deferred. Recording
+continues to use the plugin recorder and existing hotkeys.
+
+## Quick start
+
+```sh
+alia plugin install .
+alia settings ai-services set voice local-voice
+alia voice-input setup
+alia voice-input status
+```
+
+Local engines need Python 3 and `ffmpeg` on the recognition host. Cloud engines need a provider key. See [Deployment](docs/deployment.md) for the full setup.
+
+## Interface language
+
+Settings, recording controls, notifications and plugin error messages support English, Russian, Portuguese, Spanish, German, French, Chinese and Japanese. New installations follow the VesnALIA interface language; choose **Same as VesnALIA** or an explicit language in the plugin settings. Existing language choices are preserved. Speech language is a separate setting.
+
+Regional interface codes such as `pt-BR` and `ru-RU` use the matching translation; unsupported languages use English. The recording language travels with its request, without changing the saved configuration. Technical diagnostics returned by third-party services may remain in their original language.
+
+Thanks to [@masalles](https://github.com/masalles) for the missing-key and recording-interface translations in [PR #1](https://github.com/VKirill/bb-plugin-voice-input/pull/1) and [PR #2](https://github.com/VKirill/bb-plugin-voice-input/pull/2).
+
+To verify translations and the built recognition host:
+
+```sh
+npm test
+npm run typecheck
+npm run build
+npm run test:host
+npm run test:ui
+npm run test:server
+```
+
+## Documentation
+
+- [Project overview](docs/overview.md)
+- [Architecture](docs/architecture.md)
+- [Dictation](docs/features/dictation.md)
+- [Transcription and text processing](docs/features/transcription.md)
+- [Settings and engine management](docs/features/settings-and-engine-management.md)
+- [Plugin API and commands](docs/api.md)
+- [Data model](docs/data-model.md)
+- [Deployment](docs/deployment.md)
+- [Gotchas](docs/gotchas.md)
+- [Decisions](docs/decisions.md)
+- [Agent project facts](PROJECT.md)
+
+## Screenshots
+
+| Engines and speech language | Vocabulary and AI correction |
+| --- | --- |
+| ![Engine settings](screenshots/engines.png) | ![Vocabulary settings](screenshots/vocabulary.png) |
+| Cloud providers and API keys | Recordings and disk models |
+| ![Cloud settings](screenshots/cloud.png) | ![Data settings](screenshots/data.png) |
+
+## Contributor updates
+
+Thanks to [@aryadovoy](https://github.com/aryadovoy) for recording-session isolation
+in [#4](https://github.com/VKirill/bb-plugin-voice-input/pull/4) and contextual/manual
+editing in [#5](https://github.com/VKirill/bb-plugin-voice-input/pull/5), and to
+[@pierosavi](https://github.com/pierosavi) for the dictation, touch/hotkey and daemon
+improvements in [#3](https://github.com/VKirill/bb-plugin-voice-input/pull/3).
+The latter two proposals were integrated selectively with additional safety checks.
+
+## Credits and license
+
+Adapted from [Voica](https://voica.ru/), created by Ivan Ushakov. The vocabulary repair algorithm, AI correction prompts, and text cleanup heuristics originate from Voica ([source](https://github.com/Inhum/voica)). This project is licensed under MIT; see [LICENSE](LICENSE).

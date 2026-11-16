@@ -1,0 +1,17 @@
+# Factory Droid
+
+Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
+
+- Оригинальный автор: Ben Tossell (https://github.com/bentossell)
+- Исходный репозиторий: https://github.com/bentossell/bb-plugin-factory-droid
+- Каталог в репозитории: (корень)
+- Версия: v0.2.1, коммит e89974d6f6e24bdd26d37d3a3c7c845ebe5df76c
+- Ссылка на исходник: https://github.com/bentossell/bb-plugin-factory-droid/tree/e89974d6f6e24bdd26d37d3a3c7c845ebe5df76c
+- Лицензия: лицензия не указана в исходном репозитории
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

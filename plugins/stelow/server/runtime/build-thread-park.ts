@@ -1,0 +1,108 @@
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { projectIdleTimestamp, projectNoProgress } from "./thread-state-projection.js";
+import { recordPausedAfter } from "./paused-inbox.js";
+import type { WorkerCard } from "../workers-types.js";
+
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
+
+/**
+ * What a card is written as when it parks with unfinished work.
+ *
+ * Its own module because parking is a distinct decision from deciding to park,
+ * and because the sync that makes the decision had no room left to also describe
+ * what the park looks like. Every reader of the card meets this sentence; the
+ * sync only chooses to call it.
+ *
+ * It is also the LAST place that can still be honest about a card that stopped.
+ * By the time this runs the host has been asked to resume and declined, the
+ * budget is spent or vetoed, and the only truth still available is what the
+ * thread did — so the comment written for a silent stop names the inspection
+ * that would actually help, rather than reporting a symptom.
+ */
+export type ParkSnapshot = {
+  card: WorkerCard;
+  lastOutput: string | null;
+};
+
+/** Everything persistStandardIdle needs, and nothing else. */
+/** Everything persistStandardIdle needs, and nothing else. */
+export type ParkDeps = {
+  db: Db;
+  now: () => number;
+  getCard: (cardId: string) => WorkerCard | undefined;
+  logComment: (cardId: string, body: string) => void;
+  updateCard: (cardId: string, fields: Record<string, unknown>) => void;
+  recordInbox: (
+    card: WorkerCard,
+    kind: "paused",
+    message: string,
+    key: string,
+    at: number,
+  ) => void;
+  idleAttentionMs: number;
+};
+
+const NO_PROGRESS_COMMENT =
+  "Worker stopped with no new output — treated as paused. If this repeats, inspect "
+  + "the thread before retrying: a silent stop usually means the worker is waiting on "
+  + "input it never asked for.";
+
+/** Whether the card already carries this exact sentence.
+ *
+ * The park is decided by more than one trigger (a thread lifecycle event, the
+ * startup reconcile, and a card-detail read all reach the sync), and two of them
+ * can see the same running→idle transition inside one tick. Without this the
+ * trail gets the same line twice — observed on a real card, both at 09:54:11 —
+ * and the trail is a record only while each line is a distinct fact.
+ *
+ * A dead handle or a missing table answers "no": an advisory sentence must not
+ * end the pass.
+ */
+function alreadySaid(db: Db, cardId: string, body: string): boolean {
+  try {
+    return db.prepare("SELECT 1 FROM comments WHERE card_id = ? AND body = ? LIMIT 1").get(cardId, body) !== undefined;
+  } catch {
+    return false;
+  }
+}
+
+export function persistStandardIdle(
+  deps: ParkDeps,
+  snapshot: ParkSnapshot,
+  transitioning: boolean,
+  vetoed: boolean,
+): void {
+  const noProgress = projectNoProgress(
+    snapshot.card,
+    transitioning,
+    snapshot.lastOutput,
+  );
+  if (noProgress && !alreadySaid(deps.db, snapshot.card.id, NO_PROGRESS_COMMENT)) {
+    deps.logComment(snapshot.card.id, NO_PROGRESS_COMMENT);
+  }
+  const idleAt = projectIdleTimestamp(
+    snapshot.card,
+    transitioning,
+    noProgress,
+    deps.now(),
+    deps.idleAttentionMs,
+  );
+  deps.updateCard(snapshot.card.id, {
+    activity: "idle",
+    last_assistant_text: snapshot.lastOutput,
+    last_idle_text: snapshot.lastOutput,
+    last_error: null,
+    last_idle_at: idleAt,
+  });
+  if (idleAt == null) return;
+  const suffix = vetoed
+    ? " Auto-continue vetoed the resume: the last output showed no real progress."
+    : "";
+  recordPausedAfter(
+    deps,
+    snapshot.card.id,
+    idleAt,
+    `Idle with unfinished work — retry continues in place, restart begins fresh.${suffix}`,
+  );
+}
+

@@ -1,0 +1,18 @@
+# Muse AI connector
+
+Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
+
+- Оригинальный автор: Kirill Vechkasov (https://github.com/VKirill)
+- Исходный репозиторий: https://github.com/VKirill/muse-ai-connector
+- Каталог в репозитории: (корень)
+- Версия: v0.3.22, коммит 78bcbfafca02b223a21fccb99817f857df6f09b2
+- Ссылка на исходник: https://github.com/VKirill/muse-ai-connector/tree/78bcbfafca02b223a21fccb99817f857df6f09b2
+- Лицензия: лицензия не указана в исходном репозитории
+- Примечание о лицензии: в package.json указано "Apache-2.0", в репозитории permission
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

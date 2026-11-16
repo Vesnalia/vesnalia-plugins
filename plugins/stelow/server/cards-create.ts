@@ -1,0 +1,290 @@
+import { mkdirSync } from "node:fs";
+import { join as nodeJoin } from "node:path";
+import { composerPresetOverride, composerSpawnInput } from "../lib/composer-execution.mjs";
+import { selectCardEnvironment } from "../lib/card-environment.mjs";
+import { heuristicDisplayName } from "../lib/draft-burst.mjs";
+import { bandForKind } from "../lib/tracks.mjs";
+import { normalizeBuildSeedIntent } from "../lib/workflow-intent-policy.mjs";
+import { formatReviewGates, legacyLabelForGates, normalizeReviewGates } from "../lib/review-gates.mjs";
+import { resolveKnobInput } from "../lib/workflow-config.mjs";
+import { buildBuildPrompt } from "./cards-create-prompt.js";
+import { workerEnvironment } from "./workers.js";
+import { finishCard, insertCard } from "./cards-create-persist.js";
+
+import type {
+  CardCreateInput,
+  CardsCreateDeps,
+  ExploreStage,
+  Prepared,
+  Preset,
+  PresetParams,
+  ResolvedTrack,
+  Seed,
+  SpawnArgs,
+  Workspace,
+} from "./cards-create-types.js";
+
+export type {
+  CardCreateInput,
+  CardsCreateDeps,
+  ExploreStage,
+  Prepared,
+  Preset,
+  PresetParams,
+  ResolvedTrack,
+  Seed,
+  SpawnArgs,
+  Workspace,
+};
+
+function recordOf(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? value as Record<string, unknown> : {};
+}
+
+async function resolveWorkspace(
+  deps: CardsCreateDeps,
+  input: CardCreateInput,
+  cardId: string,
+): Promise<Workspace> {
+  const project = await deps.alia.sdk.projects.get({ projectId: input.projectId }).catch(() => null);
+  const exploratory = input.projectId === "proj_personal" || project?.kind === "personal";
+  if (exploratory && (input.kind ?? "build") === "build") {
+    throw new Error(
+      "Build cards require a project workspace with a Git source. "
+      + "Choose the code project in VesnALIA before starting; use Research or Explore "
+      + "for personal, document-only work.",
+    );
+  }
+  const projectSource = project?.sources.find((entry) => entry.isDefault) ?? project?.sources[0];
+  if (!exploratory && !projectSource?.path) throw new Error("Project workspace path is unavailable.");
+  return resolveExploratoryWorkspace(deps, input, cardId, projectSource, exploratory);
+}
+
+async function resolveExploratoryWorkspace(
+  deps: CardsCreateDeps,
+  input: CardCreateInput,
+  cardId: string,
+  projectSource: { path: string; hostId: string } | undefined,
+  exploratory: boolean,
+): Promise<Workspace> {
+  const workspace = { projectId: input.projectId, rootPath: projectSource?.path ?? "", source: projectSource, exploratory };
+  if (!exploratory) return requireWorkspace(workspace);
+  const requestedHostId = typeof recordOf(input.environment).hostId === "string" ? recordOf(input.environment).hostId as string : null;
+  const hosts = await deps.alia.sdk.hosts.list();
+  if (hosts.length !== 1) throw new Error("Exploratory work currently requires a single local VesnALIA host.");
+  const hostId = hosts[0]?.id ?? null;
+  if (requestedHostId && requestedHostId !== hostId) throw new Error("Exploratory work currently requires the local host.");
+  if (!hostId) return requireWorkspace(workspace);
+  const rootPath = nodeJoin(process.env.HOME ?? "/tmp", ".vesnalia", "stelow", "exploratory", cardId);
+  mkdirSync(rootPath, { recursive: true });
+  const basePath = nodeJoin(process.env.HOME ?? "/tmp", ".vesnalia", "stelow", "exploratory");
+  const projects = await deps.alia.sdk.projects.list();
+  const existing = projects.find((entry) => entry.name === "Stelow exploratory work"
+    && entry.sources.some((candidate) => candidate.hostId === hostId && candidate.path === basePath));
+  const exploratoryProject = existing ?? await deps.alia.sdk.projects.create({
+    name: "Stelow exploratory work",
+    source: { type: "local_path", hostId, path: basePath },
+  });
+  return { projectId: exploratoryProject.id, rootPath, source: { path: rootPath, hostId }, exploratory: true };
+}
+
+function requireWorkspace(workspace: {
+  projectId: string;
+  rootPath: string;
+  source: { path: string; hostId: string } | undefined;
+  exploratory: boolean;
+}): Workspace {
+  if (!workspace.rootPath || !workspace.source) throw new Error("A workspace path is unavailable for this card.");
+  return workspace as Workspace;
+}
+
+async function resolveTrack(
+  deps: CardsCreateDeps,
+  input: CardCreateInput,
+  workspace: Workspace,
+  slug: string,
+  cardId: string,
+) {
+  const research = input.kind === "research";
+  const explore = input.kind === "explore";
+  const researchStrategy = research ? deps.researchStrategy(input.strategy ?? "") : null;
+  if (research && !researchStrategy) {
+    throw new Error(`Unknown research strategy "${input.strategy ?? ""}". Pick one of: ${deps.researchIds().join(", ")}.`);
+  }
+  const exploreStage = explore ? deps.exploreStage(input.stageId ?? "") : null;
+  if (explore && !exploreStage) {
+    throw new Error(`Unknown explore technique "${input.stageId ?? ""}". Pick one of: ${deps.exploreIds().join(", ")}.`);
+  }
+  const explicitIntent = normalizeBuildSeedIntent(input.intent);
+  const intent = research ? "investigate" : explore ? "explore"
+    : explicitIntent !== "unknown" ? explicitIntent
+      : await deps.seedBuildIntent(input.prompt, workspace.projectId);
+  const reviewGates = normalizeReviewGates(input.reviewMode);
+  const reviewRung = legacyLabelForGates(reviewGates)
+    ?? (reviewGates.length === 0 ? "Auto" : `Custom ${formatReviewGates(reviewGates)}`);
+  const knobs = resolveKnobInput(input);
+  const seed = await deps.seedWorkflow(
+    deps.alia,
+    workspace.rootPath,
+    cardId,
+    slug,
+    intent,
+    knobs,
+    reviewGates,
+  );
+  if (seed.error) throw new Error(seed.error);
+  return { research, explore, researchStrategy, exploreStage, intent, reviewGates, reviewRung, seed };
+}
+
+function resolvePreset(
+  deps: CardsCreateDeps,
+  input: CardCreateInput,
+  cardId: string,
+) {
+  const selected = input.presetId
+    ? deps.getPreset(input.presetId) ?? deps.defaultPreset()
+    : deps.defaultPreset();
+  const bandId = deps.getBandPresetId(bandForKind(input.kind ?? "build"));
+  const reliableId = deps.getReliablePresetId();
+  const bandPreset = bandId ? deps.getPreset(bandId) : null;
+  const reliablePreset = reliableId ? deps.getPreset(reliableId) : null;
+  const base = reliablePreset ?? bandPreset ?? selected;
+  const override = composerPresetOverride(base, input.execution ?? null);
+  if (!override?.providerId || !override.modelId || !override.reasoningLevel || !override.permissionMode) {
+    return { preset: base, pinnedId: null };
+  }
+  const preset = deps.createCardOverride(cardId, base, override);
+  return { preset, pinnedId: preset.id === base.id ? null : preset.id };
+}
+
+async function preparePrompts(
+  deps: CardsCreateDeps,
+  input: CardCreateInput,
+  workspace: Workspace,
+  track: ResolvedTrack,
+  slug: string,
+  preset: Preset,
+) {
+  const displayName = heuristicDisplayName(input.prompt, slug);
+  const params = deps.presetParams(preset);
+  const environment = workspace.exploratory
+    ? workerEnvironment(workspace.source, params, true)
+    : selectCardEnvironment(input.environment, workerEnvironment(workspace.source, params));
+  const creationStamp = deps.roundTimestamp();
+  const roundFile = track.research && track.researchStrategy && track.seed.stateDir
+    ? deps.roundPath(track.seed.stateDir, workspace.rootPath, deps.roundFile(track.researchStrategy.id, 1, creationStamp))
+    : "";
+  if (roundFile) await deps.ensureParent(workspace.rootPath, roundFile);
+  return {
+    displayName,
+    params,
+    environment,
+    roundFile,
+    prompt: await promptForTrack(
+      deps,
+      input,
+      workspace,
+      track,
+      displayName,
+      params.instructions,
+      environment,
+      creationStamp,
+      roundFile,
+    ),
+  };
+}
+
+async function promptForTrack(
+  deps: CardsCreateDeps,
+  input: CardCreateInput,
+  workspace: Workspace,
+  track: ResolvedTrack,
+  displayName: string,
+  instructions: string | null,
+  environment: unknown,
+  creationStamp: string,
+  roundFile: string,
+): Promise<string> {
+  const shared = {
+    displayName,
+    prompt: input.prompt,
+    stateDirText: textValue(track.seed.stateDir),
+    workspaceRoot: workspace.rootPath,
+    instructions,
+    flavor: "initial",
+    previousThreadId: null,
+  };
+  if (track.research && track.researchStrategy) {
+    return deps.researchPrompt({
+      ...shared,
+      strategyLabel: track.researchStrategy.label,
+      strategyId: track.researchStrategy.id,
+      strategySkill: track.researchStrategy.skill,
+      roundNo: 1,
+      roundStamp: creationStamp,
+      roundFile,
+    });
+  }
+  if (track.explore && track.exploreStage) return deps.explorePrompt({ ...shared, stage: track.exploreStage });
+  return buildBuildPrompt({
+    stateDir: textValue(track.seed.stateDir),
+    intent: track.intent,
+    managedWorktree: deps.describeManagedWorktree(environment),
+    knobs: resolveKnobInput(input),
+    reviewGates: formatReviewGates(track.reviewGates),
+    reviewRung: track.reviewRung,
+    instructions,
+    prompt: input.prompt,
+  }, deps.rules);
+}
+
+function textValue(value: string | null | undefined): string {
+  return value ?? "<project>/.stelow/<date>/<dirHash>";
+}
+
+async function spawnInitial(
+  deps: CardsCreateDeps,
+  input: CardCreateInput,
+  workspace: Workspace,
+  prepared: Awaited<ReturnType<typeof preparePrompts>>,
+): Promise<{ id: string } | null> {
+  if (input.start === false) return null;
+  const execution = composerSpawnInput(prepared.params, input.execution ?? null);
+  return await deps.spawnInitial({
+    projectId: workspace.projectId,
+    environment: prepared.environment as SpawnArgs["environment"],
+    visibility: "hidden",
+    title: `Stelow: ${prepared.displayName}`,
+    providerId: execution.providerId ?? prepared.params.providerId,
+    model: execution.model ?? prepared.params.modelId,
+    reasoningLevel: (execution.reasoningLevel ?? prepared.params.reasoningLevel) as SpawnArgs["reasoningLevel"],
+    permissionMode: (execution.permissionMode ?? prepared.params.permissionMode) as SpawnArgs["permissionMode"],
+    ...(execution.serviceTier ? { serviceTier: execution.serviceTier } : {}),
+    executionInputSources: execution.executionInputSources,
+    input: [
+      { type: "text", mentions: [], text: prepared.prompt },
+      ...input.attachments.map((attachment) => ({ type: attachment.type, path: attachment.path })),
+    ],
+  });
+}
+
+export function createCardInternal(deps: CardsCreateDeps) {
+  return async (input: CardCreateInput): Promise<{ cardId: string; threadId: string | null }> => {
+    const cardId = deps.randomId("card");
+    const workspace = await resolveWorkspace(deps, input, cardId);
+    const slug = input.prompt.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "stelow";
+    const track = await resolveTrack(deps, input, workspace, slug, cardId);
+    const resolvedPreset = resolvePreset(deps, input, cardId);
+    const prepared = await preparePrompts(deps, input, workspace, track, slug, resolvedPreset.preset);
+    const trackWithEnvironment = { ...track, preset: resolvedPreset.preset, environment: prepared.environment };
+    let thread: { id: string } | null = null;
+    try {
+      thread = await spawnInitial(deps, input, workspace, prepared);
+    } catch (error) {
+      if (resolvedPreset.pinnedId) deps.removeCardPreset(cardId);
+      throw error;
+    }
+    const timestamp = await insertCard(deps, input, cardId, workspace, prepared, trackWithEnvironment, resolvedPreset.preset, resolvedPreset.pinnedId, thread);
+    return finishCard(deps, input, cardId, workspace, prepared, trackWithEnvironment, resolvedPreset.preset, resolvedPreset.pinnedId, thread, timestamp);
+  };
+}

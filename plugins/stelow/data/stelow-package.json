@@ -1,0 +1,83 @@
+{
+  "name": "@calionauta/stelow",
+  "version": "0.86.0-alpha",
+  "description": "stelow — opinionated product workflow. stellar clarity. low friction.",
+  "keywords": [
+    "ai-coding-agent",
+    "agent-skills",
+    "workflow",
+    "shape-up",
+    "product-planning",
+    "product-management",
+    "calionauta"
+  ],
+  "license": "MIT",
+  "author": "calionauta",
+  "type": "module",
+  "exports": {
+    "./skills": "./skills/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/calionauta/stelow.git"
+  },
+  "homepage": "https://github.com/calionauta/stelow#readme",
+  "bugs": {
+    "url": "https://github.com/calionauta/stelow/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "gen:transitions": "python3 scripts/generate-transitions.py",
+    "gen:transitions:check": "python3 scripts/generate-transitions.py --check",
+    "gen:catalog": "python3 scripts/generate-stage-catalog.py",
+    "gen:catalog:check": "python3 scripts/generate-stage-catalog.py --check",
+    "gen:recipes": "python3 scripts/generate-recipe-catalog.py",
+    "gen:recipes:check": "python3 scripts/generate-recipe-catalog.py --check",
+    "gen:policies": "python3 scripts/generate-stage-policies.py",
+    "gen:policies:check": "python3 scripts/generate-stage-policies.py --check",
+    "gen:handoff:check": "python3 scripts/scope3_blocks.py --check",
+    "gen:handoff": "python3 scripts/scope3_blocks.py",
+    "gen:site": "node site/build.mjs",
+    "gen:site:check": "node site/build.mjs --check",
+    "validate:stages": "python3 scripts/validate-stages.py",
+    "verify:execution": "npm run validate:stages && npm run gen:transitions:check && npm run gen:catalog:check && npm run gen:recipes:check && npm run gen:policies:check && npm run gen:handoff:check",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:skills": "vitest run tests/skills",
+    "test:artifacts": "vitest run tests/artifacts",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "./scripts/test-ci.sh",
+    "test:rigor": "bash scripts/rigor-scan.sh 60",
+    "test:mutation": "python3 scripts/mutation-gate.py",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck && oxlint .",
+    "deadcode": "knip --no-exit-code --include files,dependencies,unlisted,unresolved",
+    "duplicates": "jscpd --min-lines 30 --min-tokens 150 --reporters console --silent scripts tests types",
+    "quality:report": "npm run lint && npm run deadcode && npm run duplicates",
+    "quality": "npm run typecheck && npm test && npm run quality:report && npm run verify:execution",
+    "security:full": "npm audit --audit-level=high",
+    "verify:generated": "npm run verify:execution"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "4.1.11",
+    "fast-check": "4.9.0",
+    "jscpd": "5.2.0",
+    "knip": "6.35.1",
+    "oxlint": "1.82.0",
+    "pele": "1.8.0",
+    "playwright": "1.64.1",
+    "typescript": "^6.0.3",
+    "vitest": "4.1.11"
+  },
+  "overrides": {
+    "typed-rest-client": {
+      "qs": "6.16.0"
+    }
+  }
+}

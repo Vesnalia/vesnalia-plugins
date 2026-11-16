@@ -1,0 +1,94 @@
+---
+title: VesnALIA Voice Input — Project Facts
+updated: 2026-10-30
+sources:
+  - package.json
+  - README.md
+  - server.ts
+  - host.ts
+  - app.tsx
+  - src/contract.ts
+  - src/settings-store.ts
+  - src/paths.ts
+  - src/secret-store.ts
+  - src/setup.ts
+  - src/frontend/voice-interceptor.ts
+  - src/frontend/global-voice-session.ts
+  - python/voiced.py
+  - scripts/embed-assets.mjs
+  - src/daemon.ts
+  - src/embedded-assets.generated.ts
+  - src/ai-service-compat.ts
+  - src/frontend/hotkey.ts
+  - src/frontend/words.ts
+  - src/i18n/index.ts
+  - src/frontend/composer-insert.ts
+  - src/cleanup.ts
+  - src/term-repair.ts
+  - docs/architecture.md
+  - docs/gotchas.md
+---
+# VesnALIA Voice Input — Project Facts
+
+## Identity
+
+- VesnALIA plugin package `alia-plugin-voice-input`, version `0.2.13` (`package.json:1-3`).
+- Registers the `local-voice` AI service, plugin page, and `voice-input` CLI group (`package.json:17-27`, `server.ts:534-591`).
+- Recognition engines: local Whisper/GigaAM; cloud Groq/OpenAI/Google (`src/contract.ts:8-9`).
+
+## Entry points
+
+- Plugin server: `plugin()` in `server.ts`; registers page RPC handlers, AI service, and CLI (`server.ts:159-218`, `server.ts:359-519`, `server.ts:543-591`).
+- Host entry: `host.ts`; handles management RPC and voice transcription (`host.ts:432-557`).
+- Settings page: `app.tsx`; uses `rpcContract` (`app.tsx:431-469`).
+- Browser dictation: `src/frontend/voice-interceptor.ts`, `src/frontend/global-voice-session.ts` (`src/frontend/voice-interceptor.ts:187-249`, `src/frontend/global-voice-session.ts:105-164`).
+- Local daemon: `python/voiced.py`; one JSON request and response per newline-delimited Unix socket connection (`python/voiced.py:86-104`, `python/voiced.py:119-149`). Host lifecycle and socket client: `src/daemon.ts` (`src/daemon.ts:41-83`, `src/daemon.ts:100-154`).
+
+## Critical invariants
+
+- User settings are stored in VesnALIA plugin KV; host configuration and secrets are separate files (`server.ts:160-169`, `src/paths.ts:8-21`).
+- API key values are excluded from server-pushed config and stored on the recognition host with mode `0600` (`server.ts:194-230`, `src/secret-store.ts:36-53`).
+- Config changes stop local daemons no longer matching the selected engine/model (`host.ts:465-481`).
+- Transcription output is vocabulary-repaired, cleaned, optionally guarded after an AI pass, then recorded in JSONL history (`host.ts:192-229`, `host.ts:363-384`).
+- Browser dictation reads a platform-specific hotkey: Windows uses `hotkeyWin*` fields and defaults to right Control; macOS and other platforms use `hotkey*` fields and default to right Option (`src/frontend/hotkey.ts:26-53`, `src/frontend/hotkey.ts:149-205`, `src/settings-store.ts:101-115`).
+- A short hotkey press waits for a second press; if none arrives within 420 ms, it cancels without transcription (`src/frontend/hotkey.ts:4-8`, `src/frontend/hotkey.ts:398-402`).
+- Interface text resolves VesnALIA's regional language code to one of eight dictionaries; unsupported codes use English (`src/frontend/words.ts:7-10`, `src/i18n/index.ts:13-35`).
+- Details and rationale: [Architecture](docs/architecture.md), [Data model](docs/data-model.md).
+
+## Conventions
+
+- Shared contracts and settings validation live in `src/contract.ts` and `src/settings-store.ts` (`src/contract.ts:8-210`, `src/settings-store.ts:20-143`).
+- Python assets are embedded by `scripts/embed-assets.mjs` into `EMBEDDED_ASSETS`; the host writes `.py` assets before starting a daemon (`package.json:57-60`, `scripts/embed-assets.mjs:8-29`, `src/embedded-assets.generated.ts:3-8`, `src/daemon.ts:32-39`).
+- AI voice-service registration tries the declaration shapes in `src/ai-service-compat.ts` order and throws the last registration error if all fail (`src/ai-service-compat.ts:1-27`).
+- Keep API keys out of settings RPC responses; expose configured flags only (`server.ts:410-416`, `src/contract.ts:81-86`).
+- Project docs are in `docs/`; feature behavior belongs in the relevant `docs/features/` page.
+
+## Common gotchas
+
+- Local setup requires Python 3 and ffmpeg on the recognition host (`src/setup.ts:79-97`).
+- Browser fallback times out at 60 seconds; server-to-host transcription timeout is 10 minutes (`src/frontend/global-voice-session.ts:390-410`, `server.ts:31-37`).
+- Recording cleanup does not prune JSONL history (`host.ts:176-190`, `host.ts:527-544`).
+- More: [Gotchas](docs/gotchas.md).
+
+## Useful commands
+
+| Command | Purpose |
+|---|---|
+| `npm ci` | Install locked package dependencies. |
+| `npm run build` | Embed Python assets and build VesnALIA plugin bundles (`package.json:57-60`). |
+| `npm run typecheck` | Run TypeScript compiler without emitting output (`package.json:60`). |
+| `npm test` | Run `node --test tests/*.test.ts` (`package.json:61`). |
+| `alia voice-input status` | Inspect recognition host and engine state (`server.ts:610-629`). |
+| `alia voice-input setup` | Set up the configured engine (`server.ts:632-645`). |
+| `alia voice-input history 5` | Read recent successful transcriptions (`server.ts:712-730`). |
+
+## Where to look next
+
+- [Overview](docs/overview.md) — product shape and package parts.
+- [Architecture](docs/architecture.md) — component boundaries and runtime paths.
+- [Dictation](docs/features/dictation.md) — browser recording and draft insertion.
+- [Transcription](docs/features/transcription.md) — providers and text pipeline.
+- [Settings and engine management](docs/features/settings-and-engine-management.md) — configuration, keys, and model operations.
+- [API and commands](docs/api.md) — plugin RPC, host RPC, AI service, and CLI.
+- [Data model](docs/data-model.md) — persistent records and retention.
+- [Deployment](docs/deployment.md) — install and operation procedure.

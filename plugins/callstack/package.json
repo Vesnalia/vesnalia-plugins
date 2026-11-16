@@ -1,0 +1,57 @@
+{
+  "name": "alia-plugin-callstack",
+  "version": "0.3.1",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
+  },
+  "alia": {
+    "name": "Call Stacks",
+    "description": "Call-stack-driven development: the agent publishes call-stack + type-flow diagrams of code paths, rendered live in a thread panel with before/after change markers.",
+    "branding": {
+      "icon": "Layers"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "@hugeicons/core-free-icons": "^4.1.3",
+    "@hugeicons/react": "^1.1.6",
+    "@radix-ui/react-slot": "^1.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@pierre/diffs": "^1.3.5",
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.10.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/callstack#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/callstack"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

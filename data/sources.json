@@ -182,6 +182,32 @@
       "screenshots/day.png"
     ]
   },
+  "agent-checklists": {
+    "id": "agent-checklists",
+    "displayName": "Checklists",
+    "description": "Keeps a persisted set of agent-owned steps attached to each BB thread and continues incomplete work automatically.",
+    "icon": "ClipboardCheck",
+    "category": "tasks-and-workflows",
+    "tags": [
+      "agent-tools",
+      "checklists",
+      "threads",
+      "automation",
+      "productivity"
+    ],
+    "author": {
+      "name": "Patrick Lee",
+      "github": "patleeman"
+    },
+    "originalRepo": "https://github.com/patleeman/bb-plugins",
+    "subdir": "packages/bb-plugin-agent-checklists",
+    "ref": "agent-checklists/v0.2.0",
+    "commit": "046a11b6088068ccccaf6da5b51b10deeb166094",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "agent-graph": {
     "id": "agent-graph",
     "displayName": "Agent Graph",
@@ -313,6 +339,33 @@
       "docs/fidelity/parity-static-light.png",
       "docs/fidelity/jumps/harness-zip-frames-light.png"
     ]
+  },
+  "agent-plugins": {
+    "id": "agent-plugins",
+    "displayName": "Agent Plugins",
+    "description": "Installs plugins that follow the Agent Plugins spec in BB, making their skills and approved MCP tools available to Codex and other BB providers; it is not a Claude marketplace integration.",
+    "icon": "Puzzle",
+    "category": "agents-and-providers",
+    "tags": [
+      "agent-tools",
+      "skills",
+      "mcp",
+      "integrations",
+      "providers",
+      "developer-tools"
+    ],
+    "author": {
+      "name": "Patrick Lee",
+      "github": "patleeman"
+    },
+    "originalRepo": "https://github.com/patleeman/bb-plugins",
+    "subdir": "packages/bb-plugin-agent-plugins",
+    "ref": "agent-plugins/v0.3.1",
+    "commit": "a956b4792b991f6ef2a183de8166d935db2d3c45",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "agent-proxy": {
     "id": "agent-proxy",
@@ -565,6 +618,48 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "aif-chat": {
+    "id": "aif-chat",
+    "displayName": "BB AIF Helper",
+    "description": "Keep research, plans, checks and commits within reach in every BB thread. A persistent panel tracks tasks, gate results and versions, while buttons launch the next step or a command suggested by your agent. Use the bundled five-step workflow without AI Factory; full AI Factory/AIFHub workflows require separate project installation. Requires BB 0.48+; the interface is Russian, Windows is verified, and actions use your configured agent's quota or billing.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/aif-chat-75852d16.svg"
+    },
+    "category": "tasks-and-workflows",
+    "tags": [
+      "ai-factory",
+      "aifhub",
+      "planning",
+      "verification",
+      "qa",
+      "git",
+      "workflow-navigation"
+    ],
+    "author": {
+      "name": "ichinya",
+      "github": "ichinya"
+    },
+    "originalRepo": "https://github.com/ichinya/bb-aif-helper",
+    "subdir": "",
+    "ref": "v0.8.0",
+    "commit": "e99cfefed5f4d1ee6eb69d9046315e876dc53a0c",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshots/command-suggestions.png",
+      "docs/screenshots/checks-and-qa.png",
+      "docs/screenshots/marketplace-workflow.png",
+      "docs/screenshots/check-row-actions.png",
+      "docs/screenshots/aifhub-extensions.png",
+      "docs/screenshots/marketplace-basic-flow.png",
+      "docs/screenshots/header-and-panel.png",
+      "docs/screenshots/workflow-progress.png",
+      "docs/screenshots/marketplace-checks.png",
+      "docs/screenshots/gate-result.png",
+      "docs/screenshots/header-menu.png"
+    ]
+  },
   "airbender": {
     "id": "airbender",
     "displayName": "Airbender",
@@ -659,6 +754,35 @@
       "screenshots/animation/queue-drain.png"
     ]
   },
+  "antigravity": {
+    "id": "antigravity",
+    "displayName": "Antigravity",
+    "description": "Runs bb threads on Google Antigravity through the agy CLI and ACP adapter, with Gemini 3.x models and native reasoning effort.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/antigravity-89be99cb.svg"
+    },
+    "category": "agents-and-providers",
+    "tags": [
+      "acp",
+      "providers",
+      "agents",
+      "google",
+      "antigravity",
+      "gemini"
+    ],
+    "author": {
+      "name": "Amr Tawfik",
+      "github": "amrtawfik160"
+    },
+    "originalRepo": "https://github.com/amrtawfik160/bb-plugin-antigravity",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "686d8adb4a49bc944867fadc045727c264d41b01",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "antigravity-cli": {
     "id": "antigravity-cli",
     "displayName": "Antigravity CLI [Experimental]",
@@ -687,6 +811,60 @@
       "assets/screenshots/model-picker.png",
       "assets/screenshots/usage.png"
     ]
+  },
+  "app-preview": {
+    "id": "app-preview",
+    "displayName": "App Preview",
+    "description": "Detects the app in a thread worktree, starts the detected recipe in a BB terminal, and can open it in the in-app browser. Ports can share a listener over BB Connect or send SIGTERM/SIGKILL.",
+    "icon": "Play",
+    "category": "utilities",
+    "tags": [
+      "preview",
+      "dev-server",
+      "worktree",
+      "browser",
+      "interface",
+      "developer-tools"
+    ],
+    "author": {
+      "name": "Hung Vinh",
+      "github": "hungv47"
+    },
+    "originalRepo": "https://github.com/hungv47/bb-plugin-app-preview",
+    "subdir": "app",
+    "ref": "v0.2.9",
+    "commit": "daea8cba1b6ecc78b0fbdb69f80ec51d5bbad719",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "demo.gif"
+    ]
+  },
+  "arc-switcher": {
+    "id": "arc-switcher",
+    "displayName": "Arc Switcher",
+    "description": "Cycles through your seven most recently opened BB chats with an Arc-style Command-D switcher.",
+    "icon": "Layers",
+    "category": "thread-management",
+    "tags": [
+      "interface",
+      "keyboard-shortcuts",
+      "navigation",
+      "threads"
+    ],
+    "author": {
+      "name": "Elliott McNary",
+      "github": "bighitbiker3"
+    },
+    "originalRepo": "https://github.com/bighitbiker3/bb-plugin-arc-switcher",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "76a64ea6738f94102bede6565524de7a0dd88885",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "archive-section": {
     "id": "archive-section",
@@ -744,6 +922,37 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "artifacts": {
+    "id": "artifacts",
+    "displayName": "Artifacts",
+    "description": "Open your published Claude Code artifacts and Codex Sites from bb, without going back to the Claude app or ChatGPT. Both lists show as one grid of preview cards, newest first, with a filter; a click opens the item in bb's browser. An agent can also show an artifact or site in chat as the same card. Reads the Claude Code login from the macOS keychain and the Codex login from ~/.codex/auth.json, and sends them only to api.anthropic.com and chatgpt.com.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/artifacts-3049b55d.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "claude",
+      "codex",
+      "artifacts",
+      "sites",
+      "published",
+      "preview",
+      "chat-card",
+      "macos"
+    ],
+    "author": {
+      "name": "Dmitrii Maksimov",
+      "github": "kartollikaa"
+    },
+    "originalRepo": "https://github.com/kartollikaa/bb-plugins",
+    "subdir": "plugins/artifacts",
+    "ref": "artifacts/v0.1.1",
+    "commit": "0dc5005496c5c0c50132302c61ea06b24f7a6482",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
   "asana": {
     "id": "asana",
     "displayName": "Asana Tasks",
@@ -769,6 +978,37 @@
     "commit": "fb66e24e791af2ff21f11293fea49f4209ba4bdf",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "asciimoji": {
+    "id": "asciimoji",
+    "displayName": "Asciimoji",
+    "description": "Give every thread a familiar text face that stays with the conversation. Choose from five generated face families, 12 presets, or custom text through a focused four-tab picker, with thread, project, and global default precedence. Add sidebar faces with adjustable width, theme colors, and expression or marker activity styles plus a live appearance preview; saved choices sync between connected windows. Includes shell controls and needs no external service or account.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/asciimoji-fd5c4fe5.svg"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "faces",
+      "customization",
+      "threads",
+      "sidebar",
+      "animation",
+      "activity",
+      "face-families",
+      "project-defaults"
+    ],
+    "author": {
+      "name": "rigerc",
+      "github": "rigerc"
+    },
+    "originalRepo": "https://github.com/rigerc/bb-plugin-asciimoji",
+    "subdir": "",
+    "ref": "v1.0.0",
+    "commit": "f208645354555fff1c2e6c866e8688216aa542db",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -1094,6 +1334,35 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "automation-palette": {
+    "id": "automation-palette",
+    "displayName": "Automation Palette",
+    "description": "Run any bb automation from the quick palette, without opening the Automations page. Each row names the automation and its project, so typing either name finds it, and selecting it starts the run as its schedule would. Every project's automations are listed in every window, and a paused automation keeps its row. Requires bb 0.42 or later and the bb CLI on the machine running the bb server.",
+    "icon": "Play",
+    "category": "tasks-and-workflows",
+    "tags": [
+      "cron",
+      "scheduler",
+      "scheduled-jobs",
+      "command-palette",
+      "keyboard-shortcuts",
+      "quick-actions",
+      "run-on-demand",
+      "sweeps"
+    ],
+    "author": {
+      "name": "Daniel Bachhuber",
+      "github": "danielbachhuber"
+    },
+    "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
+    "subdir": "bb-plugin-automation-palette",
+    "ref": "automation-palette/v0.1.2",
+    "commit": "c20341c5fa5087ace5be3df77f9579c1a85b2bcc",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "autoresearch-self-loop": {
     "id": "autoresearch-self-loop",
     "displayName": "Autoresearch Self Loop",
@@ -1120,6 +1389,32 @@
     "commit": "7186fb1a2f5e7d24c7a0ec766608ef3976569949",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "autorouter": {
+    "id": "autorouter",
+    "displayName": "Autorouter",
+    "description": "Routes new BB threads using task difficulty, live provider quota, benchmark capability, and a configurable cost preference. Each submission first runs a short hidden classification turn on one of your installed providers, which may not be the one the thread ends up on.",
+    "icon": "Workflow",
+    "category": "agents-and-providers",
+    "tags": [
+      "routing",
+      "models",
+      "agents",
+      "automation",
+      "cost-control"
+    ],
+    "author": {
+      "name": "Jacob Miller",
+      "github": "jjcm"
+    },
+    "originalRepo": "https://github.com/jjcm/bb-plugin-autorouter",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "edb0c26cdfa0ac9cd6f0a409448ed131b1dbf53a",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -1228,6 +1523,97 @@
       "docs/screenshots/board.jpg",
       "docs/screenshots/decisions-edit.jpg"
     ]
+  },
+  "ballast": {
+    "id": "ballast",
+    "displayName": "Ballast",
+    "description": "Know which thread is eating your RAM before the machine starts paging. Reads vm_stat page classes rather than the free percentage macOS reports, which counts inactive pages as free and stays reassuring while the box holds gigabytes of swap — pressure is graded on headroom, paging rate, compression and the kernel's own verdict, and the banner names the signal that decided. Consumers roll up by process tree and by BB thread, matched through worktree paths, so a 2.4GB row names a thread you can steer instead of six identical node processes. A guard can throttle BB concurrency, ask the hungriest threads to release memory, stop orphaned processes, or hand the problem to an agent — every one of those is off until you turn it on. Nothing is stopped unless nothing can still be waiting on it, and the apply step takes only ids the plan minted, re-checked against the live process table. macOS and Linux, no account or external service.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/ballast-23a89a80.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "memory",
+      "ram",
+      "memory-pressure",
+      "swap",
+      "monitoring",
+      "performance",
+      "processes",
+      "resource-usage"
+    ],
+    "author": {
+      "name": "Braedon Saunders",
+      "github": "braedonsaunders"
+    },
+    "originalRepo": "https://github.com/braedonsaunders/bb-plugin-ballast",
+    "subdir": "",
+    "ref": "v0.1.4",
+    "commit": "1ee2a84823e8c5c5396eb3977fd7bcf0c588aa60",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
+  "bang-shell": {
+    "id": "bang-shell",
+    "displayName": "Bang Shell",
+    "description": "Run a shell command from a thread's composer and hand the agent the command and its output in one message. Use it when the agent's sandbox or permission mode blocks a command that needs your secrets or access: the agent proposes it, you run it, and the agent only sees the output. Send with Mod+Alt+Enter or Send menu → Run in terminal; the command runs once in the thread's own environment, on whichever machine the session uses, local or remote. You can also highlight a command in an agent's answer and pick Run in terminal next to Add to chat. The message waits in the queue while the command runs, then reaches the agent as a sh block and an output block, so its next answer starts from the real result. Commands that outlast the wait (30 seconds by default) keep running in the thread's Terminal panel, and pagers are off so git log and git diff print in full. Messages from agents, other plugins and bb thread tell never run a command; commands run with your account's full rights, outside the agent's permission mode. Requires bb 0.49+.",
+    "icon": "Terminal",
+    "category": "command-line",
+    "tags": [
+      "shell",
+      "terminal",
+      "run-command",
+      "bang",
+      "composer",
+      "command-output",
+      "remote-machines",
+      "git",
+      "scripts"
+    ],
+    "author": {
+      "name": "JonniK",
+      "github": "JonniK"
+    },
+    "originalRepo": "https://github.com/jonnik-bb-plugins/bb-plugin-bang-shell",
+    "subdir": "",
+    "ref": "v0.3.0",
+    "commit": "cb2a875ece1fe7d8abfc5a1544f70cd3fc45f547",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "battery": {
+    "id": "battery",
+    "displayName": "Battery",
+    "description": "See your laptop's charge in bb's sidebar without switching to the menu bar. A battery icon and percentage sit at the right end of the sidebar footer, filled red at 20% or less, yellow up to 50% and green above. A click opens a popup with each device's state and charge, including the phone or tablet you opened bb on when its browser reports a battery. `bb battery status` prints the same reading for terminals and agents. Reads the charge of the machine running the bb server, which must be a Mac; no account or external service.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/battery-6ffec35d.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "battery",
+      "charge",
+      "laptop",
+      "power",
+      "sidebar",
+      "macos",
+      "status"
+    ],
+    "author": {
+      "name": "Dmitrii Maksimov",
+      "github": "kartollikaa"
+    },
+    "originalRepo": "https://github.com/kartollikaa/bb-plugins",
+    "subdir": "plugins/battery",
+    "ref": "battery/v0.1.0",
+    "commit": "32e33c976aa94c8de5cd440cbae318095de8d080",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
   },
   "bb-agent-toolbox": {
     "id": "bb-agent-toolbox",
@@ -2367,6 +2753,35 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "beacon": {
+    "id": "beacon",
+    "displayName": "Beacon",
+    "description": "See CPU, memory, disk, and processes on the BB server from the footer. Optional toasts after a minute of high load. Network rates are Linux-only.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/beacon-ef5cb673.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "monitoring",
+      "cpu",
+      "memory",
+      "disk",
+      "processes",
+      "linux"
+    ],
+    "author": {
+      "name": "Johan Gafaro",
+      "github": "g4f4r0"
+    },
+    "originalRepo": "https://github.com/g4f4r0/bb-plugins",
+    "subdir": "bb-plugin-beacon",
+    "ref": "beacon/v0.1.3",
+    "commit": "6af00945c3c1cd3e99e5bb7e00fb87757451898d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "beads": {
     "id": "beads",
     "displayName": "Beads",
@@ -2500,6 +2915,37 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "bookmarks": {
+    "id": "bookmarks",
+    "displayName": "Bookmarks",
+    "description": "Bookmark any chat message and jump back to it from a Bookmarks tab in the thread's right panel. Clicking a bookmark opens its thread scrolled to the message, however far back it sits. A saved message keeps a filled bookmark button, and a selected passage can be saved as the bookmark's quote. The tab lists bookmarks from every thread, with search and a This thread filter.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/bookmarks-426bb701.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "saved-messages",
+      "save",
+      "favorites",
+      "star",
+      "like",
+      "messages",
+      "quotes",
+      "navigation"
+    ],
+    "author": {
+      "name": "Yurii Rebryk",
+      "github": "rebryk"
+    },
+    "originalRepo": "https://github.com/rebryk/bb-plugins",
+    "subdir": "bookmarks",
+    "ref": "bookmarks/v0.1.1",
+    "commit": "baae20ce5e0f448f51a70e8b0bc3ebe971704f4f",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "bots": {
     "id": "bots",
     "displayName": "Bots",
@@ -2533,6 +2979,58 @@
       "assets/screenshots/front-page-dark.png",
       "assets/screenshots/bot-creation-light.png",
       "assets/screenshots/front-page-light.png"
+    ]
+  },
+  "bots-sidebar": {
+    "id": "bots-sidebar",
+    "displayName": "Bots Sidebar",
+    "description": "Keep specialist bots, their memory, and their conversations together across projects. Organize chats in activity-aware trees, complete finished work, and move a thread between bots from its header. Route new project conversations to an owner and coordinate bots with @ mentions or attributed messages. Uses your configured BB providers with no additional service or account. Project-folder creation requires POSIX paths.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/bots-sidebar-92e81b44.svg"
+    },
+    "category": "agents-and-providers",
+    "tags": [
+      "personas",
+      "memory",
+      "conversations",
+      "project-routing",
+      "agent-coordination"
+    ],
+    "author": {
+      "name": "Tobias Lütke",
+      "github": "tobi"
+    },
+    "originalRepo": "https://github.com/tobi/bb-bots-sidebar",
+    "subdir": "",
+    "ref": "v1.1.0",
+    "commit": "ff5853061ea1cffda1992b85dd4dc6631a1f085a",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshots/bot-state.png",
+      "docs/screenshots/bot-memory-limit.png",
+      "docs/screenshots/bot-projects.png",
+      "docs/screenshots/conversation-hover.png",
+      "docs/screenshots/bot-new-chat-hover.png",
+      "docs/screenshots/bot-soul-only.png",
+      "docs/screenshots/project-create.png",
+      "docs/screenshots/bot-instructions.png",
+      "docs/screenshots/bot-create.png",
+      "docs/screenshots/bot-editor.png",
+      "docs/screenshots/create-menu.png",
+      "docs/screenshots/conversation-drop.png",
+      "docs/screenshots/audit-create-menu.png",
+      "docs/screenshots/audit-machine-dropdown.png",
+      "docs/screenshots/bot-activity.png",
+      "docs/screenshots/bot-new-project.png",
+      "docs/screenshots/audit-conversation-hover.png",
+      "docs/screenshots/bot-appearance.png",
+      "docs/screenshots/privacy-preview.png",
+      "docs/screenshots/community/project-roles.png",
+      "docs/screenshots/community/sidebar-and-instructions.png",
+      "docs/screenshots/community/appearance.png",
+      "docs/screenshots/sidebar.png"
     ]
   },
   "branch-graph": {
@@ -2596,6 +3094,32 @@
       "assets/screenshots/wave.jpg",
       "assets/breathe-demo.gif"
     ]
+  },
+  "browser-annotate": {
+    "id": "browser-annotate",
+    "displayName": "Browser Annotate",
+    "description": "Give your agent page-specific feedback with a screenshot for every annotated element. Select an element in BB's desktop Browser, write a comment, and send up to 50 annotations together. Review saved comments in the composer and sent message history. Requires BB 0.43.4 or newer with the desktop Browser.",
+    "icon": "MessageSquare",
+    "category": "thread-content",
+    "tags": [
+      "browser",
+      "annotations",
+      "screenshots",
+      "visual-feedback",
+      "agent-context"
+    ],
+    "author": {
+      "name": "Timur Khakhalev",
+      "github": "timurkhakhalev"
+    },
+    "originalRepo": "https://github.com/timurkhakhalev/timurkhakhalev-bb-plugins",
+    "subdir": "plugins/browser-annotate",
+    "ref": "browser-annotate/v0.1.1",
+    "commit": "c1a1a263256ab482347118b9b6248096ce5d8c5d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "browser-copy": {
     "id": "browser-copy",
@@ -2777,6 +3301,38 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "bureaucat": {
+    "id": "bureaucat",
+    "displayName": "Bureaucat",
+    "description": "Bring assigned and project tasks into your BB workflow. Sort and filter complete task lists, inspect details, update supported task fields, and prepare agent drafts. Requires an authenticated Bureaucat CLI and configured service URL; complete scans are limited to 5,000 tasks.",
+    "icon": "ListTodo",
+    "category": "tasks-and-workflows",
+    "tags": [
+      "tasks",
+      "projects",
+      "sorting",
+      "filters",
+      "bcat"
+    ],
+    "author": {
+      "name": "Oddship",
+      "github": "rhnvrm"
+    },
+    "originalRepo": "https://github.com/oddship/bb-plugins",
+    "subdir": "plugins/bureaucat",
+    "ref": "bureaucat/v0.2.0",
+    "commit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/step-1.jpg",
+      "screenshots/step-3.jpg",
+      "screenshots/walkthrough.gif",
+      "screenshots/step-2.jpg",
+      "screenshots/walkthrough.webp"
+    ]
+  },
   "burn": {
     "id": "burn",
     "displayName": "Burn",
@@ -2847,6 +3403,35 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "callstack": {
+    "id": "callstack",
+    "displayName": "Call Stacks",
+    "description": "Agents publish call-stack flow diagrams — types moving through calls, with conditions, loops, and before/after change markers — into a live thread panel with tree, diagram, and swimlane views, drift tracking against the workspace, inline code snippets, and diffs.",
+    "icon": "Layers",
+    "category": "code-and-reviews",
+    "tags": [
+      "call-stack",
+      "diagrams",
+      "types",
+      "code-review",
+      "planning",
+      "agent-tools",
+      "threads",
+      "visualization"
+    ],
+    "author": {
+      "name": "Ethan Greenfeld",
+      "github": "ebg1223"
+    },
+    "originalRepo": "https://github.com/ebg1223/bb-plugin-callstack",
+    "subdir": "",
+    "ref": "v0.3.1",
+    "commit": "e41776b93332bf84ba6d9f5a36562e0bcad029c4",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "calm": {
     "id": "calm",
     "displayName": "Calm",
@@ -2883,6 +3468,35 @@
       "assets/crew.gif"
     ]
   },
+  "canvas": {
+    "id": "canvas",
+    "displayName": "Canvas",
+    "description": "Gives every thread a shared tldraw canvas that agents draw diagrams on, animate as a step-by-step walkthrough, and read back — including the shapes you add yourself.",
+    "icon": "Palette",
+    "category": "thread-content",
+    "tags": [
+      "canvas",
+      "diagrams",
+      "tldraw",
+      "whiteboard",
+      "visualization",
+      "architecture"
+    ],
+    "author": {
+      "name": "Borja MPM",
+      "github": "Borjampm"
+    },
+    "originalRepo": "https://github.com/Borjampm/bb-plugin-canvas",
+    "subdir": "",
+    "ref": "v0.1.5",
+    "commit": "da1c1a36fdc03993e4d4b1bdd2cea328f0776cff",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "docs/canvas.png"
+    ]
+  },
   "captains-deck": {
     "id": "captains-deck",
     "displayName": "Captain's Deck",
@@ -2911,6 +3525,40 @@
     "license": "MIT",
     "licenseNote": null,
     "omittedMedia": []
+  },
+  "career-hub": {
+    "id": "career-hub",
+    "displayName": "Career Hub",
+    "description": "Keep every application and its tailored CV in one place. Build a complete career profile from multiple CVs and reusable interview stories. Tailor concise CVs with a reference document's section order, then save versions and download PDFs. The optional embedded assistant uses your configured BB provider and its normal quota or charges.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/career-hub-8bf7f932.svg"
+    },
+    "category": "tasks-and-workflows",
+    "tags": [
+      "job-search",
+      "applications",
+      "cv",
+      "resume",
+      "interview-prep",
+      "career",
+      "ats"
+    ],
+    "author": {
+      "name": "Rustambek Umarov",
+      "github": "Rustam1010"
+    },
+    "originalRepo": "https://github.com/Rustam1010/ai-agents",
+    "subdir": "plugins/career-hub",
+    "ref": "career-hub/v0.2.1",
+    "commit": "f77d5fa89e78b100fbde7b493004c6f3525fbca3",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "screenshots/cv-builder.jpg",
+      "screenshots/profile.jpg",
+      "screenshots/jobs.jpg"
+    ]
   },
   "cascade": {
     "id": "cascade",
@@ -3060,6 +3708,37 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "chat-search": {
+    "id": "chat-search",
+    "displayName": "Chat Search",
+    "description": "Find any word in the chat you are reading and see every occurrence highlighted in the messages themselves. A Find in chat tab in the thread panel lists each hit with context, and Enter steps through them while the current one glows brighter. Hits cover the whole thread, including messages scrolled far out of view, and highlights follow new messages as they stream in. Match case, regular expressions, a Mod+Shift+F shortcut, and a bb chat-search command for agents are included. Runs locally with no external service.",
+    "icon": "Search",
+    "category": "thread-content",
+    "tags": [
+      "search",
+      "find",
+      "find-in-page",
+      "highlight",
+      "messages",
+      "threads",
+      "regex",
+      "thread-panel"
+    ],
+    "author": {
+      "name": "Yusuf Akbulut",
+      "github": "yusuf8834"
+    },
+    "originalRepo": "https://github.com/yusuf8834/bb-chat-search",
+    "subdir": "",
+    "ref": "v0.1.4",
+    "commit": "0efa59d9fb48a8af4e7520d25f6909aae8e83788",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshot.png"
+    ]
+  },
   "chat-sidebar": {
     "id": "chat-sidebar",
     "displayName": "Chat Sidebar",
@@ -3129,6 +3808,37 @@
       "docs/screenshots/fill.jpg",
       "docs/screenshots/presets.jpg"
     ]
+  },
+  "chatgpt-skin": {
+    "id": "chatgpt-skin",
+    "displayName": "ChatGPT Skin",
+    "description": "Dress bb in the ChatGPT desktop app's look, from the canvas and sidebar down to every button state, in light and dark. Both palettes ship, so switching modes changes the light and not the layout. Hover, active, focus-visible, and disabled states are themed across buttons, menu rows, tabs, switches, chips, and icon buttons. Menus, dialogs, popovers, tooltips, and the command palette share one surface ramp, and matching code themes carry the palette into syntax highlighting. No account and no network request: bb reads the stylesheet straight from the plugin directory.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/chatgpt-skin-e949df20.svg"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "chatgpt",
+      "theme",
+      "dark-mode",
+      "light-mode",
+      "colors",
+      "syntax-highlighting",
+      "appearance",
+      "desktop"
+    ],
+    "author": {
+      "name": "Euan Guo",
+      "github": "euanguo"
+    },
+    "originalRepo": "https://github.com/euanguo/euanguo-plugins",
+    "subdir": "plugins/chatgpt-skin",
+    "ref": "chatgpt-skin/v0.2.0",
+    "commit": "8e64ca31c9cdeea4aa2cb81d213daf821de6b2b0",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
   },
   "chief": {
     "id": "chief",
@@ -3206,6 +3916,65 @@
     "commit": "05403bb1cea6f25d4270abd4adea375e227e362d",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "claude-accounts": {
+    "id": "claude-accounts",
+    "displayName": "Fast Switch Accounts",
+    "description": "Switch Claude Code or Codex logins when quota runs out, and start a new BB thread with a saved account. Check remaining limits before choosing an account, or add one through the provider's browser sign-in. Runs on macOS and Windows, with snapshots stored in Keychain or encrypted with Windows DPAPI; tokens go to Anthropic and OpenAI, while Cursor and other providers show limits only. Requires provider accounts; Codex switching also needs the Codex CLI signed in with ChatGPT, and saving Codex logins on macOS needs Xcode Command Line Tools.",
+    "icon": "Users",
+    "category": "agents-and-providers",
+    "tags": [
+      "accounts",
+      "switch-account",
+      "limits",
+      "quota",
+      "claude-code",
+      "codex",
+      "chatgpt",
+      "keychain",
+      "macos",
+      "windows"
+    ],
+    "author": {
+      "name": "Yuriy Egorov",
+      "github": "fzrx-ego"
+    },
+    "originalRepo": "https://github.com/fzrx-ego/bb-plugin-claude-accounts",
+    "subdir": "",
+    "ref": "v0.5.0",
+    "commit": "27a4ff17d4505ed57fd27dacab308119a2254297",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "claude-auth": {
+    "id": "claude-auth",
+    "displayName": "Claude Auth",
+    "description": "Authenticate Claude Code CLI remotely or on mobile via Tailscale, inspect token expiration, and renew sessions.",
+    "icon": "Zap",
+    "category": "agents-and-providers",
+    "tags": [
+      "claude-code",
+      "authentication",
+      "oauth",
+      "remote",
+      "tailscale",
+      "tokens",
+      "providers"
+    ],
+    "author": {
+      "name": "Roger Serra",
+      "github": "Hazihell"
+    },
+    "originalRepo": "https://github.com/Hazihell/bb-plugin-claude-auth",
+    "subdir": "",
+    "ref": "v0.1.1",
+    "commit": "d242a8b7ba46511c0edb072772c56162e46da2bf",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -3377,6 +4146,96 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "close-tab": {
+    "id": "close-tab",
+    "displayName": "Close Tab",
+    "description": "Keep the preview down to the files you still need, and close each tab like in a browser instead of aiming at a tiny ×. Double-click or middle-click a tab you have read; on a Mac trackpad a three-finger click works too. Control+W and a palette command close the active tab, because ⌘W closes the window. A × at the right of the preview header hides the panel when you are back to the chat.",
+    "icon": "X",
+    "category": "thread-content",
+    "tags": [
+      "tabs",
+      "preview",
+      "close",
+      "gestures",
+      "keyboard",
+      "double-click",
+      "middle-click",
+      "document-tabs",
+      "panel",
+      "macos"
+    ],
+    "author": {
+      "name": "Yuriy Egorov",
+      "github": "fzrx-ego"
+    },
+    "originalRepo": "https://github.com/fzrx-ego/bb-plugin-close-tab",
+    "subdir": "",
+    "ref": "v0.3.1",
+    "commit": "f2853ff1470f1ed07b16f0a85f63de0b5681e0a6",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "cloud-sandbox": {
+    "id": "cloud-sandbox",
+    "displayName": "Vercel Sandboxes",
+    "description": "Creates bb machines on Vercel Sandboxes from reusable templates that bake in tooling and inject agent credentials at creation, so a remote machine is ready to run threads without manual setup.",
+    "icon": "Cloud",
+    "category": "cloud-and-remote",
+    "tags": [
+      "machines",
+      "vercel",
+      "sandboxes",
+      "remote-development",
+      "agents",
+      "infrastructure"
+    ],
+    "author": {
+      "name": "Andrew Chan",
+      "github": "andrewkchan"
+    },
+    "originalRepo": "https://github.com/andrewkchan/bb-plugin-cloud-sandbox",
+    "subdir": "",
+    "ref": "v0.1.7",
+    "commit": "249b36c44739e5fcb027ac2e1efc00a1c7ef309a",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/templates.png",
+      "docs/cloud-machines.png"
+    ]
+  },
+  "code-review": {
+    "id": "code-review",
+    "displayName": "Code Review",
+    "description": "Lists the GitHub pull requests awaiting your review, runs your own review skills over one in a BB thread, and turns what it finds into individual review comments you edit and post yourself, each shown beside the code it refers to.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/code-review-10dcfdf9.svg"
+    },
+    "category": "code-and-reviews",
+    "tags": [
+      "code-review",
+      "pull-requests",
+      "github",
+      "agents",
+      "review",
+      "comments"
+    ],
+    "author": {
+      "name": "Rob Ennals",
+      "github": "robennals"
+    },
+    "originalRepo": "https://github.com/robennals/bb-plugins",
+    "subdir": "plugins/code-review",
+    "ref": "code-review/v0.2.0",
+    "commit": "fe0fd2636f2a45c64e6f1ad21bc6bd782a2cbe18",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "code-review-workspace": {
     "id": "code-review-workspace",
     "displayName": "Code Review Workspace",
@@ -3422,6 +4281,34 @@
       "docs/screenshots/finish-review-dark.webp",
       "docs/screenshots/ci-in-code-dark.webp"
     ]
+  },
+  "codex-migrate": {
+    "id": "codex-migrate",
+    "displayName": "Codex Migrate",
+    "description": "Keep your existing Codex projects and chats together in BB. Preview selected folders and follow the import progress for each one. Preserve conversations, available attachments, dates, and archive state with a BB database backup before changes. Requires BB 0.44, Git, and a separate Codex CLI installation on the same computer.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/codex-migrate-b68a86e9.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "codex",
+      "migration",
+      "projects",
+      "chat-history",
+      "import"
+    ],
+    "author": {
+      "name": "aotd1",
+      "github": "aotd1"
+    },
+    "originalRepo": "https://github.com/aotd1/bb-plugin-codex-migrate",
+    "subdir": "",
+    "ref": "v0.3.13",
+    "commit": "f136cd8613ae999b06137e3bc19fdace059764b8",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "codex-realtime": {
     "id": "codex-realtime",
@@ -3512,6 +4399,68 @@
       "screenshots/expanded.png"
     ]
   },
+  "color-swatches": {
+    "id": "color-swatches",
+    "displayName": "Color Swatches",
+    "description": "Shows a color chip beside CSS values in messages, code, and diffs, so you can recognize colors without copying them into another tool.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/color-swatches-6c3084ca.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "colors",
+      "css",
+      "code",
+      "timeline",
+      "interface",
+      "design"
+    ],
+    "author": {
+      "name": "brsbl",
+      "github": "brsbl"
+    },
+    "originalRepo": "https://github.com/brsbl/bb-plugins",
+    "subdir": "plugins/color-swatches",
+    "ref": "color-swatches/v0.1.1",
+    "commit": "eda4308b68d07ed34bc22a262d777ebb37ae6d45",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshot.png"
+    ]
+  },
+  "command-center": {
+    "id": "command-center",
+    "displayName": "Command Center",
+    "description": "Boards every dispatched request and open question as a card, lets you reply or comment on an agent's work straight from the board, and sends macOS notifications when a card's status changes. Includes Chief: one global Chief, a project chief per project, and task architects, for routing dispatched work through an org instead of a flat worker thread. Requires the Tasks plugin — the board offers a one-click install if it isn't already there, but never installs it silently — and, for voice input, microphone access. If you also run the `notify` plugin, expect two macOS banners for overlapping events — this one fires on board-card status, `notify` on thread lifecycle.",
+    "icon": "Mail",
+    "category": null,
+    "tags": [
+      "kanban",
+      "board",
+      "tasks",
+      "notifications",
+      "voice",
+      "productivity"
+    ],
+    "author": {
+      "name": "Dilip Venkatesh",
+      "github": "dilipgv"
+    },
+    "originalRepo": "https://github.com/dilipgv/bb-plugin-command-center",
+    "subdir": "",
+    "ref": "v0.7.1",
+    "commit": "48292143517cd389c6831ec8920400048e02ccac",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshots/question-card.png",
+      "docs/screenshots/board.png",
+      "docs/screenshots/reading-view.png"
+    ]
+  },
   "command-code": {
     "id": "command-code",
     "displayName": "Command Code",
@@ -3565,6 +4514,62 @@
     "commit": "d4c32e3ebb9f0a962e6ba566cf71505bcf1fdc8e",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "compact-panes": {
+    "id": "compact-panes",
+    "displayName": "Compact UI",
+    "description": "Fit more threads and pane content on screen with tighter spacing and a composer that stays put. Reduce sidebar, header, tool-card and composer spacing. Choose a preset, custom color, monochrome or saved per-project colors, with controls for sidebar accents. Compact sizing targets desktop widths with a fine pointer; requires bb 0.42+ and uses internal styling hooks.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/compact-panes-fe876c6a.svg"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "density",
+      "sidebar",
+      "composer",
+      "accent-color",
+      "split-panes"
+    ],
+    "author": {
+      "name": "MattBot",
+      "github": "mgmobrien"
+    },
+    "originalRepo": "https://github.com/mgmobrien/bb-plugin-compact-ui",
+    "subdir": "",
+    "ref": "v0.9.5",
+    "commit": "e7b023439097b1771c27db286c125eefa37ac615",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "compact-rail": {
+    "id": "compact-rail",
+    "displayName": "Compact Rail",
+    "description": "Make more room on a small desktop screen with compact navigation and narrower window gutters. Use a 40 px navigation rail with full-size icons and frame gutters at 60% of their default size. Resize the thread sidebar while its list fills the available width. Requires BB 0.46+ and Plugin SDK 0.6.37+; applies to desktop widths with a fine pointer and uses internal layout selectors.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/compact-rail-71a3b6e5.svg"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "desktop",
+      "small-screen",
+      "sidebar",
+      "navigation",
+      "density"
+    ],
+    "author": {
+      "name": "Yuriy Egorov",
+      "github": "fzrx-ego"
+    },
+    "originalRepo": "https://github.com/fzrx-ego/bb-plugin-compact-rail",
+    "subdir": "",
+    "ref": "v0.1.3",
+    "commit": "f58a927107a5a48896d3e1b467031c3627bf6409",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -3755,6 +4760,34 @@
       "assets/screenshots/context-health-skills.png"
     ]
   },
+  "context-meter": {
+    "id": "context-meter",
+    "displayName": "Context Meter",
+    "description": "Keeps threads in the smart zone, by tracking context against a limit you set rather than the provider's full window.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/context-meter-929a505a.svg"
+    },
+    "category": "token-usage-and-limits",
+    "tags": [
+      "interface",
+      "composer",
+      "context",
+      "tokens",
+      "smart-zone"
+    ],
+    "author": {
+      "name": "Roger Serra",
+      "github": "Hazihell"
+    },
+    "originalRepo": "https://github.com/Hazihell/bb-plugin-context-meter",
+    "subdir": "",
+    "ref": "v0.1.6",
+    "commit": "78008be560d8f58ea96f19c84064bdfbc6d8fe34",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
   "copilot-aic-usage": {
     "id": "copilot-aic-usage",
     "displayName": "Copilot AI Credits",
@@ -3808,6 +4841,30 @@
     "commit": "3654c14cecef57f748965e258888fa23871d6c31",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "copy-session-id": {
+    "id": "copy-session-id",
+    "displayName": "Copy Session ID",
+    "description": "Copy a thread's session ID from its left-sidebar context menu.",
+    "icon": "Copy",
+    "category": "thread-management",
+    "tags": [
+      "clipboard",
+      "threads",
+      "sidebar"
+    ],
+    "author": {
+      "name": "Patrick Lee",
+      "github": "patleeman"
+    },
+    "originalRepo": "https://github.com/patleeman/bb-plugins",
+    "subdir": "packages/bb-plugin-copy-session-id",
+    "ref": "copy-session-id/v0.1.1",
+    "commit": "05c933a272b7dd2077897a6a0fbb64a4e78dc1e3",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -3869,6 +4926,34 @@
     "commit": "70d89a913f8c1033771066dbb78be1726078bf47",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "ctrl-enter-send": {
+    "id": "ctrl-enter-send",
+    "displayName": "Ctrl+Enter Send",
+    "description": "Send messages with the shortcut you choose: Ctrl+Enter, Enter, or Shift+Enter. Use the same choice in new threads, replies, queued messages, and sent-message editors. Hover over the send button to see the active shortcut; Ctrl+Enter mode also accepts Command+Enter on macOS. Requires BB 0.46+.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/ctrl-enter-send-c406380e.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "keyboard",
+      "shortcuts",
+      "composer",
+      "messages",
+      "line-breaks"
+    ],
+    "author": {
+      "name": "artbear",
+      "github": "artbear"
+    },
+    "originalRepo": "https://github.com/artbear/bb-plugin-ctrl-enter-send",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "3df55a0310581fc992037d5265d5a33302ca702c",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -3964,6 +5049,34 @@
     "omittedMedia": [
       "docs/images/bbdesk-overview.png"
     ]
+  },
+  "decisions": {
+    "id": "decisions",
+    "displayName": "Decisions",
+    "description": "Gets a probability for a typed question, and keeps the TypeSafe API key in one place. A thread or another plugin sends state and questions and gets probabilities back. The Decisions page shows ask counts, callers, cost, and yes/no confidence for 24 hours, 7 days, or 30 days. Named asks stay in the plugin database, and the inbox sends the ask marked in use. A TypeSafe API key is required, and the page prices input tokens at $0.042 per million.",
+    "icon": "Scale",
+    "category": "token-usage-and-limits",
+    "tags": [
+      "typesafe",
+      "jev",
+      "classification",
+      "probabilities",
+      "yes-no",
+      "cost",
+      "callers"
+    ],
+    "author": {
+      "name": "Robert Sinke",
+      "github": "robertsinke"
+    },
+    "originalRepo": "https://github.com/robertsinke/bb-plugin-decisions",
+    "subdir": "",
+    "ref": "v0.1.1",
+    "commit": "cc2c6cca2de763b50cb5ad68195f97a0a8da73e1",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "deepseek-harness": {
     "id": "deepseek-harness",
@@ -4126,6 +5239,67 @@
       "docs/screenshots/src/s5-machines.png"
     ]
   },
+  "devin": {
+    "id": "devin",
+    "displayName": "Devin",
+    "description": "Run coding tasks with Devin from a BB thread. Devin appears in the provider picker, and BB discovers models from the local ACP session while rendering responses, tool calls, and file changes. Install the Devin CLI and authenticate it on each BB host with `devin auth login`.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/devin.svg"
+    },
+    "category": "agents-and-providers",
+    "tags": [
+      "coding-agent",
+      "acp",
+      "cli",
+      "developer-tools",
+      "model-provider"
+    ],
+    "author": {
+      "name": "Alg0rix",
+      "github": "Alg0rix"
+    },
+    "originalRepo": "https://github.com/Alg0rix/bb-plugin-devin",
+    "subdir": "",
+    "ref": "v0.2.7",
+    "commit": "ae298b4b203f17929699058033df8f4820cb6a27",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "diagram-fences": {
+    "id": "diagram-fences",
+    "displayName": "Diagram Fences",
+    "description": "Draws PlantUML, Graphviz, D2 and the rest of the Kroki diagram family in chat and in Markdown file previews. Mermaid stays with bb. PlantUML and D2 install from the plugin's settings screen; Graphviz uses dot when it exists and a bundled WASM renderer otherwise. Diagrams go to kroki.io only when no local engine can draw them, and a self-hosted Kroki URL can replace it. Diagram source is capped at 64 KB and every render is cached.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/diagram-fences-07a1ee9b.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "plantuml",
+      "graphviz",
+      "d2",
+      "diagrams",
+      "uml",
+      "diagram-as-code",
+      "kroki",
+      "structurizr",
+      "dot",
+      "markdown"
+    ],
+    "author": {
+      "name": "Artur",
+      "github": "architawr"
+    },
+    "originalRepo": "https://github.com/architawr/bb-plugin-diagram-fences",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "db63c397f4964f764b3e71f8a6075650817441e1",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "dictation-shortcuts": {
     "id": "dictation-shortcuts",
     "displayName": "Dictation Shortcuts",
@@ -4274,6 +5448,99 @@
     "license": "MIT",
     "licenseNote": null,
     "omittedMedia": []
+  },
+  "diff-viewed": {
+    "id": "diff-viewed",
+    "displayName": "Diff Viewed Enhanced",
+    "description": "See how much of a long diff you've read, with a viewed count beside bb's own Viewed checkboxes and the same marks on GitHub. The changes panel toolbar counts the files you have checked, such as 3/6 viewed, across every file in the range. On a thread with an open pull request, checking a file in bb marks it viewed on GitHub, and a file marked viewed on GitHub is checked in bb. A file with edits you have not pushed shows a Local icon until a push makes its diff match the pull request's. Requires bb 0.47 or later, and GitHub sync needs the gh CLI signed in.",
+    "icon": "CircleCheck",
+    "category": "code-and-reviews",
+    "tags": [
+      "code-review",
+      "changes-panel",
+      "file-diff",
+      "review-progress",
+      "line-wrap",
+      "split-view",
+      "git",
+      "github",
+      "pull-request"
+    ],
+    "author": {
+      "name": "Daniel Bachhuber",
+      "github": "danielbachhuber"
+    },
+    "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
+    "subdir": "bb-plugin-diff-viewed",
+    "ref": "diff-viewed/v0.2.3",
+    "commit": "a52b84b536ca1c16194c0c018cc375a04f78ca19",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/changes-panel--local.png",
+      "screenshots/changes-panel--viewed.png"
+    ]
+  },
+  "diffdad": {
+    "id": "diffdad",
+    "displayName": "Diff Dad",
+    "description": "See only the pull requests that ask for you by name, and read each one as a narrated review instead of a raw diff. The sidebar page lists your direct review requests with criticality tags, approvals, verdict, and age, sorted the way Diff Dad's own queue is, with a repo filter. An All tab embeds Diff Dad's command center, and a thread panel action opens the thread's own pull request review. Agents get a diffdad_review tool that returns a PR's verdict, TL;DR, and concerns as text. Requires Diff Dad's daemon running locally with its own GitHub token and AI provider, and the GitHub CLI logged in.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/diffdad-801e61c7.png"
+    },
+    "category": "code-and-reviews",
+    "tags": [
+      "pull-requests",
+      "github",
+      "review",
+      "narrated-review",
+      "queue",
+      "diff",
+      "code-review"
+    ],
+    "author": {
+      "name": "Jonas Brusman",
+      "github": "himynameisjonas"
+    },
+    "originalRepo": "https://github.com/himynameisjonas/bb-plugin-diffdad",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "26e56f4f94d07cd579b0b8cf84ccc07d7e3fc1ac",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "discord": {
+    "id": "discord",
+    "displayName": "Discord",
+    "description": "Run bb agent threads from Discord, answer approvals, and manage your server with permission-gated tools. Start a dedicated conversation with a bot mention and receive final answers in its Discord thread. Choose the project, machine, model, and permission mode in bb. Requires a Discord bot with Message Content Intent and a configured bb agent provider.",
+    "icon": "Discord",
+    "category": "cloud-and-remote",
+    "tags": [
+      "chat",
+      "remote-access",
+      "approvals",
+      "agent-tools",
+      "server-management"
+    ],
+    "author": {
+      "name": "Mayank",
+      "github": "MayankBansal12"
+    },
+    "originalRepo": "https://github.com/MayankBansal12/bb-plugin-discord",
+    "subdir": "",
+    "ref": "v0.1.2",
+    "commit": "61aa2855a232ba7aead0f0e35df50b0afcfa4cc1",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/images/bb-bot-pair.png",
+      "docs/images/test-run-discord.png",
+      "docs/images/discord-settings.png"
+    ]
   },
   "disk-usage": {
     "id": "disk-usage",
@@ -4529,6 +5796,35 @@
       "screenshots/elephant-goldfish/project-page.png"
     ]
   },
+  "emoji-react": {
+    "id": "emoji-react",
+    "displayName": "Emoji React",
+    "description": "Answer an agent with one click: pick an emoji reaction and it drafts your reply. Select text in a reply to quote it with your reaction from the selection menu, or use the reaction buttons under each message. Turn on smart reactions and the agent adds reactions that fit its question, such as SQLite or Postgres, as buttons in its reply. Smart reactions add a short instruction to each thread.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/emoji-react-61419fba.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "emoji",
+      "reactions",
+      "quick-replies",
+      "smart-reactions",
+      "chat",
+      "interface"
+    ],
+    "author": {
+      "name": "Patrick Lee",
+      "github": "patleeman"
+    },
+    "originalRepo": "https://github.com/patleeman/bb-plugins",
+    "subdir": "packages/bb-plugin-emoji-react",
+    "ref": "emoji-react/v0.2.1",
+    "commit": "a56f9d5e064eefc7c7167a2dd9746513aa5ab7c7",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "env-catalog": {
     "id": "env-catalog",
     "displayName": "Env Catalog",
@@ -4624,6 +5920,34 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "factory-droid": {
+    "id": "factory-droid",
+    "displayName": "Factory Droid",
+    "description": "Use Factory Droid as a native agent provider in bb: live model catalog, reasoning controls, and autonomy mapping over ACP.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/factory-droid.svg"
+    },
+    "category": "agents-and-providers",
+    "tags": [
+      "agents",
+      "providers",
+      "acp",
+      "droid",
+      "factory"
+    ],
+    "author": {
+      "name": "Ben Tossell",
+      "github": "bentossell"
+    },
+    "originalRepo": "https://github.com/bentossell/bb-plugin-factory-droid",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "e89974d6f6e24bdd26d37d3a3c7c845ebe5df76c",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "fast-archive": {
     "id": "fast-archive",
     "displayName": "Fast Archive",
@@ -4705,6 +6029,33 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "feature-flags": {
+    "id": "feature-flags",
+    "displayName": "LaunchDarkly Feature Flags",
+    "description": "See and manage LaunchDarkly feature flags from the bb sidebar: toggle each flag per environment and filter by maintainer, status, type, and tag.",
+    "icon": "SlidersHorizontal",
+    "category": "code-and-reviews",
+    "tags": [
+      "launchdarkly",
+      "feature-flags",
+      "feature-toggles",
+      "flags",
+      "devops",
+      "release-management"
+    ],
+    "author": {
+      "name": "Maciej Kucharek",
+      "github": "mkucharek"
+    },
+    "originalRepo": "https://github.com/mkucharek/bb-plugin-feature-flags",
+    "subdir": "",
+    "ref": "v0.3.1",
+    "commit": "18f9258f0801aa34349b4f7c249a078b44d11485",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "feed": {
     "id": "feed",
     "displayName": "Feed",
@@ -4731,6 +6082,35 @@
     "commit": "d51e16b480d27f3230c0f6c457cc1cff7d51699a",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "file-explorer": {
+    "id": "file-explorer",
+    "displayName": "File Explorer",
+    "description": "Keeps a file explorer pinned to any project or thread while you switch between BB threads. Search by file name or path and jump the tree to matches, including bare file names resolved across configured search roots. Search and replace text inside files under the pinned root with case, whole-word, and regex options, guarded by read-time hashes. Right-click files to preview, create, rename, delete, copy paths to chat drafts, or reveal in the system file manager.",
+    "icon": "FileText",
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "files",
+      "file-explorer",
+      "search",
+      "replace",
+      "preview",
+      "workspace",
+      "paths",
+      "git-ignore"
+    ],
+    "author": {
+      "name": "mifhud",
+      "github": "mifhud"
+    },
+    "originalRepo": "https://github.com/mifhud/bb-plugin-file-explorer",
+    "subdir": "",
+    "ref": "v0.1.1",
+    "commit": "dbae6b1367732a41fc7a5554702ca78e4a8cc84e",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -4794,6 +6174,43 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "file-pins": {
+    "id": "file-pins",
+    "displayName": "Pinned Files & Links",
+    "description": "Keep a thread's key files and links one click away, in a strip right above the composer. Each pin shows its file icon or site icon and is as wide as its label, with extra pins waiting in a ⋯ list. Type file names or URLs after the Pin pill and the agent finds and pins them; agents also pin the PR, issue, spec and dev server they work with on their own. Right-click a pin to preview, copy, unpin or remove it.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/file-pins-6c0372df.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "pins",
+      "files",
+      "links",
+      "bookmarks",
+      "composer",
+      "pull-requests",
+      "dev-server",
+      "moss",
+      "agents"
+    ],
+    "author": {
+      "name": "brsbl",
+      "github": "brsbl"
+    },
+    "originalRepo": "https://github.com/brsbl/bb-plugins",
+    "subdir": "",
+    "ref": "file-pins/v0.1.11",
+    "commit": "e312e6d73644b509b89dbbcf496e9956dd3a3329",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/pin-files-pill.png",
+      "docs/pin-menu-dark.png",
+      "docs/strip.png",
+      "docs/phone-strip.png"
+    ]
+  },
   "file-pretty": {
     "id": "file-pretty",
     "displayName": "Pretty",
@@ -4818,6 +6235,37 @@
     "commit": "62e66a9f66284e627f5ad8338e447a482309095f",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "file-tree": {
+    "id": "file-tree",
+    "displayName": "File Tree",
+    "description": "Keep project files in view while you move between BB threads. Pin a project source or thread workspace, search by name or path, and preview files. Send a file path to a chosen chat draft, create a blank markdown file, or delete a file after confirmation. Copy paths or files, and reveal files in Finder. Requires access to the files on the BB machine; Finder reveal is macOS-only.",
+    "icon": "Folder",
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "files",
+      "workspace",
+      "finder",
+      "clipboard",
+      "preview",
+      "paths",
+      "explorer",
+      "file-tree",
+      "file-preview",
+      "navigation"
+    ],
+    "author": {
+      "name": "Yuriy Egorov",
+      "github": "fzrx-ego"
+    },
+    "originalRepo": "https://github.com/fzrx-ego/bb-plugin-file-tree",
+    "subdir": "",
+    "ref": "v0.19.14",
+    "commit": "17c6fe948404835ddbf35f39e116bece29665773",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -4911,6 +6359,45 @@
       "docs/preview.png",
       "docs/md-preview.png",
       "docs/find-in-file.png"
+    ]
+  },
+  "finder": {
+    "id": "finder",
+    "displayName": "Finder",
+    "description": "Browse, edit, and review the files an agent is working on without leaving BB. Every changed file carries a git status letter in the tree, and one click opens its diff, unified or side by side. An outline panel lists every class, function, and heading in the open file and puts the caret on the one you click. The CodeMirror editor saves with compare-and-swap, so a change the agent made while you were typing stops the save instead of overwriting it. Search in files reads every file in the workspace and opens a hit at its line, an @ mention attaches a file, or the lines you selected, resolved at send time, and markdown renders Mermaid diagrams. A workspace on another machine works the same way.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/finder-8026aab0.svg"
+    },
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "files",
+      "file-tree",
+      "editor",
+      "code-editor",
+      "search-in-files",
+      "git",
+      "diff",
+      "outline",
+      "workspace-files",
+      "at-mentions"
+    ],
+    "author": {
+      "name": "Naufal Riza Fatahillah",
+      "github": "rayzalzero"
+    },
+    "originalRepo": "https://github.com/rayzalzero/bb-plugin-finder",
+    "subdir": "",
+    "ref": "v0.4.0",
+    "commit": "1dac98f95ec8bce18819f00c52fbfc9525b184cf",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshots/overview.png",
+      "docs/screenshots/markdown-preview.png",
+      "docs/screenshots/at-mention.png",
+      "docs/screenshots/search-in-files.png",
+      "docs/screenshots/thread-panel.png"
     ]
   },
   "firstmate": {
@@ -5913,6 +7400,34 @@
       "assets/screenshots/git-panel-1.png"
     ]
   },
+  "git-worktrees": {
+    "id": "git-worktrees",
+    "displayName": "Git worktrees",
+    "description": "Pick any existing git worktree for a project and start a thread there in one click. Lists paths from git worktree list on the selected machine, excluding BB-managed worktrees. Attaches the picked path with ownsPath: false, so bb never deletes it when the thread retires. Requires a project checkout and Git on the selected machine.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/git-worktrees-d466b436.svg"
+    },
+    "category": "code-and-reviews",
+    "tags": [
+      "git",
+      "worktrees",
+      "environments",
+      "branches",
+      "attach"
+    ],
+    "author": {
+      "name": "Fabricio Ereche",
+      "github": "fabricioereche"
+    },
+    "originalRepo": "https://github.com/fabricioereche/bb-plugin-git-worktrees",
+    "subdir": "",
+    "ref": "v0.1.2",
+    "commit": "ee229fd9dafd6ddf433619cba0e2a574556b18fd",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "gitea": {
     "id": "gitea",
     "displayName": "Gitea",
@@ -6061,6 +7576,63 @@
       "docs/screenshots/automations.jpg"
     ]
   },
+  "github-folder": {
+    "id": "github-folder",
+    "displayName": "GitHub Folder",
+    "description": "The open GitHub pull requests that need you, as a folder at the top of the sidebar: review requests, then your own PRs with changes requested, failing checks or conflicts, and the ones ready to merge. Click a PR to start a thread with its title, status, branch and description as context, in the project whose remote is that repository. Snooze a PR until it changes, and pick sources, drafts and organizations. Reads GitHub through the gh CLI on the bb server; Thread Tree draws the folder in its own list when installed.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/github-folder-91ac9888.svg"
+    },
+    "category": "code-and-reviews",
+    "tags": [
+      "github",
+      "pull-requests",
+      "code-review",
+      "sidebar",
+      "gh"
+    ],
+    "author": {
+      "name": "Dmitrii Maksimov",
+      "github": "kartollikaa"
+    },
+    "originalRepo": "https://github.com/kartollikaa/bb-plugins",
+    "subdir": "plugins/github-folder",
+    "ref": "github-folder/v0.1.0",
+    "commit": "3943d870efd4cdbba9d0b57668712e0dcc10bd05",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
+  "github-projects": {
+    "id": "github-projects",
+    "displayName": "GitHub Projects",
+    "description": "Creates and imports GitHub repositories directly from BB's native project picker. Injects dedicated creation and import options into the project dropdown. Automatically initializes private repositories, clones locally, and registers projects in BB with one click. Also provides the bb gh-project CLI and agent skill.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/github-projects-ebbef250.svg"
+    },
+    "category": "code-and-reviews",
+    "tags": [
+      "github",
+      "projects",
+      "git",
+      "workspace",
+      "import",
+      "picker"
+    ],
+    "author": {
+      "name": "bottlebrushes",
+      "github": "bottlebrushes"
+    },
+    "originalRepo": "https://github.com/bottlebrushes/bb-plugin-github-projects",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "8d80fd13e686c034ee1a5a2ee8f0a233fcde9de6",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "gitlab": {
     "id": "gitlab",
     "displayName": "GitLab",
@@ -6126,6 +7698,35 @@
       "docs/screenshots/pipeline.png",
       "docs/screenshots/branches.png"
     ]
+  },
+  "glass": {
+    "id": "glass",
+    "displayName": "Transparency",
+    "description": "Translucent BB surfaces with six animated backdrops, custom GLSL shaders, wallpaper, and adjustable frost. Preview your look and tune colors, surfaces, and motion.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/glass-a2f59fa3.svg"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "themes",
+      "appearance",
+      "glass",
+      "shaders",
+      "wallpaper",
+      "customization"
+    ],
+    "author": {
+      "name": "Pritam Sharma",
+      "github": "notpritam"
+    },
+    "originalRepo": "https://github.com/notpritam/bb-plugin-glass",
+    "subdir": "",
+    "ref": "v0.2.0",
+    "commit": "795d69b1773b1c04b1c84395f02badfb920bba34",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "goals": {
     "id": "goals",
@@ -6245,6 +7846,41 @@
     "license": "MIT",
     "licenseNote": null,
     "omittedMedia": []
+  },
+  "graphite-mono": {
+    "id": "graphite-mono",
+    "displayName": "Graphite Mono",
+    "description": "Set BB in JetBrains Mono at Light weight with a compact reading scale and a rounded composer, in Graphite and Matrix palettes.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/graphite-mono-1147403c.svg"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "theme",
+      "palette",
+      "monospace",
+      "jetbrains-mono",
+      "light-mode",
+      "dark-mode",
+      "typography"
+    ],
+    "author": {
+      "name": "ponomr",
+      "github": "ponomr"
+    },
+    "originalRepo": "https://github.com/ponomr/bb-plugin-graphite-mono",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "838270d6088af668e28b71a218844db8186c48de",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "screenshots/graphite-mono/2-dark.png",
+      "screenshots/graphite-mono/3-matrix-dark.png",
+      "screenshots/graphite-mono/4-matrix-light.png",
+      "screenshots/graphite-mono/1-light.png"
+    ]
   },
   "graphite-stack": {
     "id": "graphite-stack",
@@ -6443,6 +8079,59 @@
       "assets/screenshots/adopt-session.png"
     ]
   },
+  "hands-free": {
+    "id": "hands-free",
+    "displayName": "Hands-Free",
+    "description": "Talk to BB threads on iPhone and hear replies in Microsoft Edge neural voices. Choose a thread, dictate, and send with a tap; speech is sent without review. Requires microphone access and configured voice transcription; spoken replies send text to Microsoft. No Read Aloud installation is needed.",
+    "icon": "Mic",
+    "category": "thread-content",
+    "tags": [
+      "voice",
+      "dictation",
+      "speech",
+      "iphone",
+      "accessibility",
+      "audio"
+    ],
+    "author": {
+      "name": "Matt Wynne",
+      "github": "mattwynne"
+    },
+    "originalRepo": "https://github.com/mattwynne/bb-plugin-hands-free",
+    "subdir": "",
+    "ref": "v0.2.3",
+    "commit": "9ce2e9815883a15be5b96dcf306acd98925d187b",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "handsfree": {
+    "id": "handsfree",
+    "displayName": "Handsfree",
+    "description": "Adds a hands-free voice operator to bb: talk to an agent that focuses threads, sends messages, starts work, and shows diffs.",
+    "icon": "AudioLines",
+    "category": "agents-and-providers",
+    "tags": [
+      "voice",
+      "realtime",
+      "agent",
+      "interface",
+      "audio"
+    ],
+    "author": {
+      "name": "Swair Shah",
+      "github": "swairshah"
+    },
+    "originalRepo": "https://github.com/swairshah/bb-handsfree",
+    "subdir": "",
+    "ref": "v0.1.6",
+    "commit": "a1cf21c64a0a27e4046d7d67f0af4d12ec33055a",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "harness": {
     "id": "harness",
     "displayName": "Harness",
@@ -6469,6 +8158,34 @@
     "commit": "d1a096edcd7ff7be6ea572963450c2904ea70a24",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "hashstash": {
+    "id": "hashstash",
+    "displayName": "HashStash",
+    "description": "Reuse saved prompts in any BB chat and edit them before sending. Type # to search by name and insert a template. Keep your library as Markdown files in a folder you choose. No external service or API key is required.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/hashstash-630090c4.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "prompts",
+      "templates",
+      "markdown",
+      "composer",
+      "snippets"
+    ],
+    "author": {
+      "name": "Streamlined Startup",
+      "github": "StreamlinedStartup"
+    },
+    "originalRepo": "https://github.com/StreamlinedStartup/hashstash",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "539378ed21d5895ee876576b832857c490cf242d",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -6567,6 +8284,33 @@
     "commit": "8fe8b8b4f7c8a8cf04d39e404eb7d69ae81c1a80",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "headroom": {
+    "id": "headroom",
+    "displayName": "Headroom",
+    "description": "Context budget monitoring — tells agents how much of the model's context window is used (real usage events, not estimates) and when to summarise or start fresh.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/headroom-ccf7001b.svg"
+    },
+    "category": "token-usage-and-limits",
+    "tags": [
+      "context",
+      "tokens",
+      "monitoring",
+      "agent-interaction"
+    ],
+    "author": {
+      "name": "prismatic7",
+      "github": "prismatic7"
+    },
+    "originalRepo": "https://github.com/prismatic7/bb-plugin-headroom",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "4caa7546bdab0aa900234c3909eb1e383b4c0d23",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -6872,6 +8616,39 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "host-pulse": {
+    "id": "host-pulse",
+    "displayName": "Host Pulse",
+    "description": "Keep server load, provider quotas, reset countdowns, and DeepSeek balance in view while you work in BB. Pin a draggable card with per-core CPU, disk busy time and IOPS, network speed, and CPU/RAM process leaders; detailed activity needs Linux. Quotas use BB's Provider usage plugin and configured accounts; the optional balance row needs local DSH with a DeepSeek API key and calls DeepSeek's balance API. Open charts and diagnostics, or enable background CPU and memory alerts.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/host-pulse-f612033a.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "monitoring",
+      "cpu",
+      "memory",
+      "disk",
+      "network",
+      "processes",
+      "provider-usage",
+      "quotas",
+      "deepseek",
+      "floating-monitor"
+    ],
+    "author": {
+      "name": "maryanovas",
+      "github": "maryanovas"
+    },
+    "originalRepo": "https://github.com/maryanovas/bb-plugin-host-pulse",
+    "subdir": "",
+    "ref": "v0.1.9",
+    "commit": "66eab00e161ad7c647526101973aa90763cacadc",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "hotspot": {
     "id": "hotspot",
     "displayName": "Hotspot",
@@ -6972,6 +8749,33 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "image-preview": {
+    "id": "image-preview",
+    "displayName": "Image Preview",
+    "description": "Adds responsive image grids and a click-to-expand gallery to BB chat messages.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/image-preview-dc6681e8.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "chat",
+      "images",
+      "gallery",
+      "interface"
+    ],
+    "author": {
+      "name": "Dwite",
+      "github": "Dwite"
+    },
+    "originalRepo": "https://github.com/Dwite/bb-plugin-image-preview",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "6c730433b20826c6359b0ae733b8eb00d539ffae",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "image-studio": {
     "id": "image-studio",
     "displayName": "Image Studio",
@@ -7007,6 +8811,37 @@
       "tests/fixtures/model/scepter-guide.png",
       "tests/fixtures/model/blueprint-mop-sheet.png"
     ]
+  },
+  "impromptu-ui": {
+    "id": "impromptu-ui",
+    "displayName": "Impromptu UI",
+    "description": "Turn your agent's walls of text into interfaces you can click. Triage a milestone from rows that each carry a drafted comment and Post and close, Post, and Start thread buttons. Split one review comment into several pull requests, each waiting on its own card with its diff until you click Commit, push, and open PR. Find a design by picking from screenshots of the original and its variations, with a note on each. Requires bb 0.43 or later, and needs no account or external service.",
+    "icon": "GridView",
+    "category": "thread-content",
+    "tags": [
+      "agent-output",
+      "triage",
+      "action-items",
+      "side-panel",
+      "composer",
+      "drafts",
+      "design-review",
+      "pull-requests",
+      "skills",
+      "interactive"
+    ],
+    "author": {
+      "name": "Daniel Bachhuber",
+      "github": "danielbachhuber"
+    },
+    "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
+    "subdir": "bb-plugin-impromptu-ui",
+    "ref": "impromptu-ui/v0.1.2",
+    "commit": "f88fc03ef1c1ab5ee086fe255bd6947e05fa87e7",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "inbox": {
     "id": "inbox",
@@ -7104,6 +8939,37 @@
       "docs/screenshots/inline-review-02-add-comment.png",
       "docs/screenshots/inline-review-01-select-feedback.png"
     ]
+  },
+  "inline-terminal": {
+    "id": "inline-terminal",
+    "displayName": "Inline Terminal",
+    "description": "Run the commands an agent suggests right under its reply, and have the agent read the result and answer on its own. Every bash, sh, zsh or console code block in a reply gets a Run button that opens a live terminal beneath it, where you can answer prompts, type passwords and press Ctrl-C. When the block finishes, its exit code and output reach the agent as hidden context, so it replies without you pasting anything and the chat gets no extra message. The shell starts in the thread's workspace with your startup files loaded and keeps cd, virtualenvs and variables for follow-up commands. Needs a macOS or Linux machine; no account or external service.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/inline-terminal-f64ad521.svg"
+    },
+    "category": "command-line",
+    "tags": [
+      "terminal",
+      "shell",
+      "run-command",
+      "code-blocks",
+      "interactive",
+      "xterm",
+      "command-output",
+      "agent-context"
+    ],
+    "author": {
+      "name": "Dmitrii Maksimov",
+      "github": "kartollikaa"
+    },
+    "originalRepo": "https://github.com/kartollikaa/bb-plugins",
+    "subdir": "plugins/inline-terminal",
+    "ref": "inline-terminal/v0.1.2",
+    "commit": "652f364df9e5e633d30717cf1c2cb0e22346df53",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
   },
   "ios-simulator": {
     "id": "ios-simulator",
@@ -8089,6 +9955,32 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "limits": {
+    "id": "limits",
+    "displayName": "Limits — usage rings",
+    "description": "A floating pill in the bottom-right corner shows how much of your coding-plan quota is left: Claude Code, Codex and Cursor through bb's own collectors, plus GLM (Z.AI) and Kimi Code fetched directly. One ring per limit window, follows the open thread's harness, inline per-provider refresh, a two-column popup with Refresh-all, and a manual mode that makes no background requests at all. Requires BB 0.46+.",
+    "icon": "Gauge",
+    "category": "token-usage-and-limits",
+    "tags": [
+      "quota",
+      "coding-plans",
+      "usage",
+      "glm",
+      "kimi"
+    ],
+    "author": {
+      "name": "Aleksandr Poliakov",
+      "github": "artwist-polyakov"
+    },
+    "originalRepo": "https://github.com/artwist-polyakov/bb-plugins",
+    "subdir": "limits",
+    "ref": "limits/v1.1.8",
+    "commit": "d91e9adf5242beb3d6f58fdb3a1c47a5a8955cb7",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "linear": {
     "id": "linear",
     "displayName": "Linear",
@@ -8405,6 +10297,46 @@
       "docs/screenshot-overview.png"
     ]
   },
+  "machine-monitor": {
+    "id": "machine-monitor",
+    "displayName": "Machine Monitor",
+    "description": "Check CPU, GPU, memory, disk, network and battery on any of your bb machines from one sidebar panel. Pick the bb server, your own machines or BB Box boxes from a searchable list, and each opens with live charts and its five busiest processes. On Apple silicon Macs it adds CPU and GPU temperature and power, read by a small bundled helper that needs no root. Tailscale name, address and tags sit at the bottom, each with a copy button. Works on Linux, macOS and WSL, and optional in-app alerts warn when the bb server stays overloaded.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/machine-monitor-f44b9ee5.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "monitoring",
+      "machines",
+      "cpu",
+      "gpu",
+      "memory",
+      "battery",
+      "temperature",
+      "tailscale",
+      "macos",
+      "system-health"
+    ],
+    "author": {
+      "name": "Victor Aremu",
+      "github": "ahkohd"
+    },
+    "originalRepo": "https://github.com/ahkohd/bb-plugin-machine-monitor",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "5e3210e26f866f074a3243a1607c60377b6d557e",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "assets/screenshots/tooltip-dark.png",
+      "assets/screenshots/panel-dark.png",
+      "assets/screenshots/picker-light.png",
+      "assets/screenshots/tooltip-light.png",
+      "assets/screenshots/picker-dark.png",
+      "assets/screenshots/panel-light.png"
+    ]
+  },
   "machine-sidebar": {
     "id": "machine-sidebar",
     "displayName": "Machine Sidebar",
@@ -8562,6 +10494,69 @@
     "licenseNote": "файла лицензии нет на v0.1.2; текст взят с ветки по умолчанию (коммит 518f559e257cb4bade45bcd26c6a9cdb5bc36ce8)",
     "omittedMedia": []
   },
+  "markdown-editor": {
+    "id": "markdown-editor",
+    "displayName": "Markdown Editor",
+    "description": "Edit a markdown file in the tab you were already reading it in, and save it with Cmd+S. Preview renders the file the way bb renders a chat message, including the images it points at, and Raw gives you the source in an editable pane, with unsaved text carrying between the two. Selecting text in Preview offers an Add to chat button that quotes it into the composer under the file's path. A pencil on markdown files in the changes panel opens the one you are reading a diff of. Every save checks the file's hash first, so an edit an agent made while you were typing gives you a choice between reloading and overwriting instead of a silent clobber. Works on files in a project workspace, on a host, or in a thread's storage. Requires bb 0.43 or later, and needs no account or external service.",
+    "icon": "EditFile",
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "markdown",
+      "editor",
+      "file-editor",
+      "file-viewers",
+      "preview",
+      "notes",
+      "readme",
+      "documentation"
+    ],
+    "author": {
+      "name": "Daniel Bachhuber",
+      "github": "danielbachhuber"
+    },
+    "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
+    "subdir": "bb-plugin-markdown-editor",
+    "ref": "markdown-editor/v0.2.1",
+    "commit": "a19866ae3e29de627c2538bd5af6eadc3a72d768",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/preview.png",
+      "screenshots/raw-unsaved.png",
+      "screenshots/add-to-chat.png",
+      "screenshots/changes-panel-pencil.png",
+      "screenshots/conflict.png"
+    ]
+  },
+  "markdown-reader": {
+    "id": "markdown-reader",
+    "displayName": "Markdown Reader",
+    "description": "Markdown source mixes document content with formatting syntax. Markdown Reader provides formatted Preview, exact Raw text, and heading navigation in the same read-only BB file tab. Open workspace, host, and thread-storage files, follow supported links, preview images, and refresh content without editing it. Remote images contact their source servers; no paid account or separate service is required. Requires BB 0.45+ and Plugin SDK >=0.6.15 <0.7; supports UTF-8 text up to 1 MiB, with BB preview available for unsupported files.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/markdown-reader-ca48f6fc.svg"
+    },
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "markdown",
+      "documents",
+      "preview",
+      "read-only",
+      "outline"
+    ],
+    "author": {
+      "name": "koenvg",
+      "github": "koenvg"
+    },
+    "originalRepo": "https://github.com/koenvg/bb-plugins",
+    "subdir": "bb-plugin-markdown-reader",
+    "ref": "markdown-reader/v0.1.0",
+    "commit": "49a194105ced945b85727f23ac7347f2092488ba",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
   "matt-pocock-skills-for-bb": {
     "id": "matt-pocock-skills-for-bb",
     "displayName": "Matt Pocock skills for bb",
@@ -8590,6 +10585,130 @@
     "commit": "5057eb30fd60e2f29e7ac147d09d09770e2099f0",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "mattermost": {
+    "id": "mattermost",
+    "displayName": "Mattermost",
+    "description": "Bring work conversations into your BB threads. Search and link conversations, quote context, preview attachments, and keep personal starred and pinned conversations. Requires the mm CLI on an enrolled BB host and a signed-in Mattermost account.",
+    "icon": "MessageSquare",
+    "category": "memory-and-context",
+    "tags": [
+      "chat",
+      "search",
+      "context",
+      "conversations",
+      "inbox"
+    ],
+    "author": {
+      "name": "Oddship",
+      "github": "rhnvrm"
+    },
+    "originalRepo": "https://github.com/oddship/bb-plugins",
+    "subdir": "plugins/mattermost",
+    "ref": "mattermost/v0.4.0",
+    "commit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/step-1.jpg",
+      "screenshots/step-3.jpg",
+      "screenshots/walkthrough.gif",
+      "screenshots/step-2.jpg",
+      "screenshots/walkthrough.webp"
+    ]
+  },
+  "maxwell": {
+    "id": "maxwell",
+    "displayName": "Maxwell",
+    "description": "Keep Maxwell beside your BB conversations.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/maxwell-e05ac182.svg"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "fun",
+      "cat",
+      "useless",
+      "maxwell"
+    ],
+    "author": {
+      "name": "Mikołaj Nowak",
+      "github": "m3nowak"
+    },
+    "originalRepo": "https://github.com/m3nowak/bb-plugin-maxwell",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "2f37df53013c7b43c13247172fe2d3a462767c7d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "docs/images/maxwell.png"
+    ]
+  },
+  "mcp-hub": {
+    "id": "mcp-hub",
+    "displayName": "MCP Hub",
+    "description": "Keeps MCP servers for Claude Code, Cursor, Codex, Kimi and OpenCode in one file and writes each harness its own config. Edit URL or command, headers and environment variables as key/value rows. Secrets live in a git-ignored mcp.local.json and are referenced as ${VAR}. Import servers already defined in opencode.json, .mcp.json or .cursor/mcp.json, including SSE. Works per host, including remote machines, and reads variables from the target host. Requires bb 0.49+ and the harnesses you enable.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/mcp-hub-5a28296c.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "mcp",
+      "model-context-protocol",
+      "claude-code",
+      "opencode",
+      "cursor",
+      "codex",
+      "kimi-code",
+      "configuration",
+      "secrets",
+      "remote-hosts"
+    ],
+    "author": {
+      "name": "Vladislav Chmelyuk",
+      "github": "fgbm"
+    },
+    "originalRepo": "https://github.com/fgbm/bb-plugin-mcp-hub",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "32da66b04f80bcf83dcc1e39ddc887264d555a17",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
+  "mcp-manager": {
+    "id": "mcp-manager",
+    "displayName": "MCP Manager",
+    "description": "Find and manage MCP connections across five coding harnesses. Filter by harness, organize with tags, reconnect, or remove a configuration with a backup. Requires an enrolled BB host and installed harness CLIs for status checks and sign-in.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/mcp-manager-43a95a45.png"
+    },
+    "category": "agents-and-providers",
+    "tags": [
+      "mcp",
+      "connections",
+      "claude-code",
+      "codex",
+      "gemini",
+      "opencode",
+      "cursor"
+    ],
+    "author": {
+      "name": "Sankalpa Acharya",
+      "github": "sankalpaacharya"
+    },
+    "originalRepo": "https://github.com/sankalpaacharya/bb-mcp-manager",
+    "subdir": "",
+    "ref": "v0.1.1",
+    "commit": "c42f91fa8343691002412f7e2307fdc6f9f667e7",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -8795,6 +10914,31 @@
     "commit": "8ae8f4257ad8f244f24578add87da23afb96dcca",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "message-timestamps": {
+    "id": "message-timestamps",
+    "displayName": "Message Timestamps",
+    "description": "Shows the time you sent each message next to your bubbles in BB chat windows.",
+    "icon": "Clock",
+    "category": "thread-content",
+    "tags": [
+      "interface",
+      "chat",
+      "messages",
+      "threads"
+    ],
+    "author": {
+      "name": "Elliott McNary",
+      "github": "bighitbiker3"
+    },
+    "originalRepo": "https://github.com/bighitbiker3/bb-plugin-message-timestamps",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "fc365a7dde2cc12eef9fdc952c810b9798df8784",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -9190,6 +11334,37 @@
       "docs/screenshots/workspace-menu.png"
     ]
   },
+  "muse": {
+    "id": "muse",
+    "displayName": "Muse AI connector",
+    "description": "Runs BB chats on the Muse personal assistant (muse.ai) through your own signed-in Muse accounts. Tools, MCP servers and skills run on your machine; replies stream into the BB chat. Several accounts with parallel chats, each account's weekly limit on the settings screen, and one Chrome sign-in copied to every connected machine. Not the Muse Code CLI plugin.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/muse-674c8507.svg"
+    },
+    "category": "agents-and-providers",
+    "tags": [
+      "muse",
+      "muse-ai",
+      "meta",
+      "provider",
+      "agents",
+      "muse-spark",
+      "mcp",
+      "multi-account"
+    ],
+    "author": {
+      "name": "Kirill Vechkasov",
+      "github": "VKirill"
+    },
+    "originalRepo": "https://github.com/VKirill/muse-ai-connector",
+    "subdir": "",
+    "ref": "v0.3.22",
+    "commit": "78bcbfafca02b223a21fccb99817f857df6f09b2",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"Apache-2.0\", в репозитории permission",
+    "omittedMedia": []
+  },
   "my-jira": {
     "id": "my-jira",
     "displayName": "Jira Board",
@@ -9303,6 +11478,44 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "nested-sidebar": {
+    "id": "nested-sidebar",
+    "displayName": "Nest",
+    "description": "Give every project a stable place in the sidebar, with its worktrees and agent threads underneath it. A thread family expands inline under the workspace it runs in, so work starting never reorders the row you were about to click. Each row reports the worst state under it, which puts a failed child agent on the project row without opening anything. Snooze a thread until a time you pick, or settle it when the work is done, and both shelves collapse to one counted header. Eighteen semantic colours, three ready-made presets and a Custom palette, each colour drawn as the thing it paints. Nest also reads which repository each workspace really belongs to from the machine holding it, and reports worktrees bb has no environment for. No account and no network request; requires bb 0.36 or newer and uses bb's experimental thread-list slot.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/nested-sidebar-49489ca2.svg"
+    },
+    "category": "thread-management",
+    "tags": [
+      "sidebar",
+      "projects",
+      "threads",
+      "groups",
+      "worktrees",
+      "snooze",
+      "organize",
+      "agents"
+    ],
+    "author": {
+      "name": "Euan Guo",
+      "github": "euanguo"
+    },
+    "originalRepo": "https://github.com/euanguo/euanguo-plugins",
+    "subdir": "plugins/nested-sidebar",
+    "ref": "nested-sidebar/v0.5.0",
+    "commit": "8e64ca31c9cdeea4aa2cb81d213daf821de6b2b0",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "docs/media/enable.png",
+      "docs/media/nest-dark.png",
+      "docs/media/nest-subagents.png",
+      "docs/media/hero.png",
+      "docs/media/nest-light.png",
+      "docs/media/sidebar.png"
+    ]
+  },
   "next-prompt": {
     "id": "next-prompt",
     "displayName": "Next Prompt",
@@ -9357,6 +11570,60 @@
     "commit": "b650928fb34c8d146edfa332b53c6aabebccc9d3",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "noema": {
+    "id": "noema",
+    "displayName": "Noema",
+    "description": "Bridges BB threads to your own Noema server over its Streamable HTTP MCP endpoint for durable, searchable memory across sessions.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/noema-858265a4.svg"
+    },
+    "category": "memory-and-context",
+    "tags": [
+      "memory",
+      "mcp",
+      "federation",
+      "agent-interaction"
+    ],
+    "author": {
+      "name": "prismatic7",
+      "github": "prismatic7"
+    },
+    "originalRepo": "https://github.com/prismatic7/bb-plugin-noema",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "e2d25eace305b460951b44e268ba1f821d220269",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "noisegate": {
+    "id": "noisegate",
+    "displayName": "Noisegate",
+    "description": "Agent-invoked noise suppression — the agent can check short acknowledgements and filler against known noise patterns before sending.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/noisegate-d31ed357.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "output",
+      "tokens",
+      "filtering",
+      "agent-interaction"
+    ],
+    "author": {
+      "name": "prismatic7",
+      "github": "prismatic7"
+    },
+    "originalRepo": "https://github.com/prismatic7/bb-plugin-noisegate",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "bd3de8e2c5a19454be4d8a253fbadee909207442",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -9608,6 +11875,68 @@
       "screenshots/ocean-dark/appearance.jpg"
     ]
   },
+  "oddship-gitea": {
+    "id": "oddship-gitea",
+    "displayName": "Gitea CLI",
+    "description": "Read Gitea issues and pull requests and prepare agent work without leaving BB. Choose an account and repository, filter the current page, and read descriptions and comments. Requires the tea CLI with an authenticated login on the selected BB host.",
+    "icon": "GitPullRequest",
+    "category": "code-and-reviews",
+    "tags": [
+      "tea-cli",
+      "issues",
+      "pull-requests",
+      "reviews"
+    ],
+    "author": {
+      "name": "Oddship",
+      "github": "rhnvrm"
+    },
+    "originalRepo": "https://github.com/oddship/bb-plugins",
+    "subdir": "plugins/gitea",
+    "ref": "oddship-gitea/v0.1.0",
+    "commit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/step-1.jpg",
+      "screenshots/step-3.jpg",
+      "screenshots/walkthrough.gif",
+      "screenshots/step-2.jpg",
+      "screenshots/walkthrough.webp"
+    ]
+  },
+  "oddship-gitlab": {
+    "id": "oddship-gitlab",
+    "displayName": "GitLab CLI",
+    "description": "Work through GitLab issues and merge requests inside BB. Read discussions, inspect pipeline status, update supported item fields, and start agent work or reviews. Requires glab installed and authenticated on the BB server.",
+    "icon": "GitPullRequest",
+    "category": "code-and-reviews",
+    "tags": [
+      "glab",
+      "issues",
+      "merge-requests",
+      "reviews"
+    ],
+    "author": {
+      "name": "Oddship",
+      "github": "rhnvrm"
+    },
+    "originalRepo": "https://github.com/oddship/bb-plugins",
+    "subdir": "plugins/gitlab",
+    "ref": "oddship-gitlab/v0.1.0",
+    "commit": "808c188fd1fcc8c53630b396ccee9ffe9ecedf9d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/step-1.jpg",
+      "screenshots/step-3.jpg",
+      "screenshots/walkthrough.gif",
+      "screenshots/step-2.jpg",
+      "screenshots/walkthrough.webp"
+    ]
+  },
   "office-viewer": {
     "id": "office-viewer",
     "displayName": "Office Viewer",
@@ -9730,6 +12059,35 @@
       "media/tokyo-night-dark.png",
       "media/lupine-light.png",
       "media/showcase.mp4"
+    ]
+  },
+  "omp-agents": {
+    "id": "omp-agents",
+    "displayName": "OMP Agents",
+    "description": "Name an OMP subagent in the composer instead of describing it. Type @, pick a row, and the pill carries the agent's specialization, tools, model, and definition file to the model at send time. The menu appears only on OMP threads; on another provider a send carrying an OMP mention is refused with the reason. Requires the omp CLI and a thread on the omp provider.",
+    "icon": "Bot",
+    "category": "agents-and-providers",
+    "tags": [
+      "subagents",
+      "composer",
+      "mentions",
+      "omp",
+      "delegation"
+    ],
+    "author": {
+      "name": "Naufal Riza Fatahillah",
+      "github": "rayzalzero"
+    },
+    "originalRepo": "https://github.com/rayzalzero/bb-plugin-omp-agent",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "0f5306b1c612aba1f4e720127feb3759c88b0556",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/omp-agents/agents-page.png",
+      "screenshots/omp-agents/mention-menu.png"
     ]
   },
   "omp-subagents": {
@@ -10059,6 +12417,96 @@
       "docs/screenshots/review-light.jpg"
     ]
   },
+  "pane-workspaces": {
+    "id": "pane-workspaces",
+    "displayName": "Workspaces",
+    "description": "Switch whole pane arrangements for projects, thread groups and personal threads. Create thread workspaces, switch from sidebar controls or a searchable picker, and recover the previous layout. Layouts remain browser-local; stock bb reloads on a switch. Requires bb 0.42+ and uses internal host interfaces; disable the previous workspaces plugin before installing this renamed package.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/pane-workspaces-012e731c.svg"
+    },
+    "category": "thread-management",
+    "tags": [
+      "pane-layouts",
+      "projects",
+      "keyboard-shortcuts",
+      "session-restore"
+    ],
+    "author": {
+      "name": "MattBot",
+      "github": "mgmobrien"
+    },
+    "originalRepo": "https://github.com/mgmobrien/bb-plugin-pane-workspaces",
+    "subdir": "",
+    "ref": "v0.3.5",
+    "commit": "b4047517c1b3e4b8ed420eb88f333378b40b4f1a",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshots/workspace-picker.png",
+      "docs/screenshots/workspace-colors-dark.png"
+    ]
+  },
+  "password-gate": {
+    "id": "password-gate",
+    "displayName": "Password Gate",
+    "description": "Locks the bb app behind a password, so an unattended window stops exposing your threads. Set the password in Settings, and every window shows an unlock panel until someone enters it. Tick Trust this device once and that browser skips the prompt until the trust window ends. Forgot it? The panel covers the Settings page, so run `bb password-gate reset` in a terminal to open the app again. The lock is the app window, not your data: it does not stop anyone who can run commands on the bb machine or reach its port.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/password-gate-bd3a1fa6.svg"
+    },
+    "category": "security",
+    "tags": [
+      "password",
+      "passcode",
+      "lock-screen",
+      "app-lock",
+      "unlock",
+      "trusted-device",
+      "access-control",
+      "privacy"
+    ],
+    "author": {
+      "name": "rayzalzero",
+      "github": "rayzalzero"
+    },
+    "originalRepo": "https://github.com/rayzalzero/bb-plugin-password-gate",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "f4a68ab869a466b6b6ebdca1d613175b26d27d34",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "peek": {
+    "id": "peek",
+    "displayName": "Peek",
+    "description": "See what a plugin would change in bb before you install it. Every card in the plugin store gets a Preview button that lists the surfaces the plugin would add — a sidebar page, a thread-header button, a settings section — each with the plugin's own name for it. The same report names the settings it would create and flags wide access: a full-trust daemon, a script that can rewrite any part of the bb UI, or permission to run commands on your machine. Nothing is installed or executed to produce it, because Peek reads the exact release's files as text from the bb app, npm, or GitHub. No account or token is required, and the same report is available to you and your agents through bb peek show.",
+    "icon": "Eye",
+    "category": "plugin-development",
+    "tags": [
+      "preview",
+      "marketplace",
+      "install",
+      "inspect",
+      "permissions",
+      "audit",
+      "plugins",
+      "discovery"
+    ],
+    "author": {
+      "name": "Valentino Bonato",
+      "github": "valentino-bonato"
+    },
+    "originalRepo": "https://github.com/valentino-bonato/bb-plugin-peek",
+    "subdir": "",
+    "ref": "v1.0.1",
+    "commit": "2c9f16f09fda6bd9b88d8660ff5e18e68e8b6db3",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "pets": {
     "id": "pets",
     "displayName": "Pets",
@@ -10226,6 +12674,67 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "plan-mode": {
+    "id": "plan-mode",
+    "displayName": "Plan Mode",
+    "description": "Lock agents into a read-only planning phase before they touch code or run commands. Refuses execution requests and directs you to switch to Implement mode when ready to proceed. Features instant toggling via Shift+Tab or the composer button, a distinctive dashed border while active, and configurable default-on settings for new chats. Injects instructions silently at turn submit without displaying in the prompt or timeline.",
+    "icon": "ClipboardCheck",
+    "category": "tasks-and-workflows",
+    "tags": [
+      "plan-mode",
+      "planning",
+      "workflow",
+      "safety",
+      "composer",
+      "read-only"
+    ],
+    "author": {
+      "name": "Daniel Walker",
+      "github": "bottlebrushes"
+    },
+    "originalRepo": "https://github.com/bottlebrushes/bb-plugin-plan-mode",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "4ebc33d5b51b12973dc1ac83cf78be72850df2f1",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
+  "plan-progress": {
+    "id": "plan-progress",
+    "displayName": "Plan Progress",
+    "description": "Follow the agent's plan above the message box, with stages, steps and status for questions, errors and completion. Fold the progress block or hide and restore individual plans. See observed helper activity and estimated answer speed. Bounded reminders can prompt agents to create or update plans. Plan data stays on your bb server; no extra account or API key.",
+    "icon": "ListTodo",
+    "category": "thread-content",
+    "tags": [
+      "progress",
+      "progress-bar",
+      "plan",
+      "steps",
+      "subagents",
+      "status",
+      "agents"
+    ],
+    "author": {
+      "name": "Yuri Smirnov",
+      "github": "mrsu-smirnov"
+    },
+    "originalRepo": "https://github.com/mrsu-smirnov/bb-plugin-plan-progress",
+    "subdir": "",
+    "ref": "v0.6.0",
+    "commit": "3be8ee2702021f73db6919bc024834254304b8f3",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "media/steps.png",
+      "media/question.png",
+      "media/compact-mobile.jpg",
+      "media/agents.png",
+      "media/compact-desktop.jpg"
+    ]
+  },
   "play-continue": {
     "id": "play-continue",
     "displayName": "Play Continue",
@@ -10284,6 +12793,31 @@
     "commit": "856436dafedd1edac584a00d5d515e03da0c9eb6",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "plugin-vault": {
+    "id": "plugin-vault",
+    "displayName": "Plugin Vault",
+    "description": "Label and annotate BB plugins right on the Plugins page. Custom labels, an automatic Installed label, and blurred names for plugins you rejected.",
+    "icon": "Archive",
+    "category": "utilities",
+    "tags": [
+      "plugins",
+      "labels",
+      "notes",
+      "organization"
+    ],
+    "author": {
+      "name": "Maxim Tkachenko",
+      "github": "mtkachenk0"
+    },
+    "originalRepo": "https://github.com/mtkachenk0/bb-plugin-plugin-vault",
+    "subdir": "",
+    "ref": "v0.2.0",
+    "commit": "4ee9eaa4a787d3687e3cf44cfcc9eb9ed06e24fa",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -10452,6 +12986,62 @@
       "screenshots/model-picker.png",
       "screenshots/thread-spend.png"
     ]
+  },
+  "pool-usage": {
+    "id": "pool-usage",
+    "displayName": "Pool Usage",
+    "description": "See how much of each provider's capacity is in use and when it frees up, right in the sidebar footer. Each provider gets its logo and one percentage, with accounts weighed by their plans, so a Claude Max 20x seat counts twenty times a Pro seat. Clicking a number opens a card with the account count and when the total drops next. When Account Pooler's Claude or Codex accounts hold resets, the card offers the one that frees the most capacity and spends it only after you confirm. Covers Account Pooler's accounts and any provider that reports usage to BB, such as Cursor; Account Pooler is optional.",
+    "icon": "ChartColumn",
+    "category": "token-usage-and-limits",
+    "tags": [
+      "account-pooler",
+      "quota",
+      "limits",
+      "usage",
+      "claude",
+      "codex"
+    ],
+    "author": {
+      "name": "Yurii Rebryk",
+      "github": "rebryk"
+    },
+    "originalRepo": "https://github.com/rebryk/bb-plugins",
+    "subdir": "pool-usage",
+    "ref": "pool-usage/v0.2.7",
+    "commit": "be9eefb2a52c16b8b212f3dc8ea117da06c821b0",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "pr-manager": {
+    "id": "pr-manager",
+    "displayName": "PR Manager",
+    "description": "Shows your open GitHub pull requests and recent merges, one project at a time, with their CI and review state summarised as failing, feedback, draft, open, approved, part approved, waiting or merged, and opens or links the BB worktree thread for the one you pick.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/pr-manager-64645e85.svg"
+    },
+    "category": "code-and-reviews",
+    "tags": [
+      "pull-requests",
+      "github",
+      "worktrees",
+      "threads",
+      "ci",
+      "status"
+    ],
+    "author": {
+      "name": "Rob Ennals",
+      "github": "robennals"
+    },
+    "originalRepo": "https://github.com/robennals/bb-plugins",
+    "subdir": "plugins/pr-manager",
+    "ref": "pr-manager/v0.2.0",
+    "commit": "fe0fd2636f2a45c64e6f1ad21bc6bd782a2cbe18",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "pr-notes": {
     "id": "pr-notes",
@@ -10664,6 +13254,33 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "project-colors": {
+    "id": "project-colors",
+    "displayName": "Project Colors",
+    "description": "Organize busy sidebars by giving every project its own color. Choose from seven colors; project headings, nested threads, and conversation titles carry the project's visual identity. Choices stay local to each BB client, and the plugin uses no external service or account.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/project-colors-00a6c1a5.png"
+    },
+    "category": "themes-and-appearance",
+    "tags": [
+      "color-coding",
+      "project-organization",
+      "sidebar",
+      "visual-labels"
+    ],
+    "author": {
+      "name": "NinjasWeb",
+      "github": "ninjasweb"
+    },
+    "originalRepo": "https://github.com/ninjasweb/bb-project-colors",
+    "subdir": "",
+    "ref": "v0.1.4",
+    "commit": "aca04c16703421365f160369f7af8edd604cc246",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "project-explorer": {
     "id": "project-explorer",
     "displayName": "Project Explorer",
@@ -10847,6 +13464,33 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "prolepsia": {
+    "id": "prolepsia",
+    "displayName": "Prolepsia",
+    "description": "Create probabilistic forecasts and check their progress from BB with your Prolepsia account. Discover and call forecasting and question tools through your agent or the bb prolepsia command. Requires a Prolepsia API key; forecast runs consume Prolepsia credits.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/prolepsia-8f813b8d.png"
+    },
+    "category": "tasks-and-workflows",
+    "tags": [
+      "forecasting",
+      "probability",
+      "predictions",
+      "mcp"
+    ],
+    "author": {
+      "name": "Daniel Proskurka",
+      "github": "danielproj"
+    },
+    "originalRepo": "https://github.com/danielproj/bb-plugin-prolepsia",
+    "subdir": "",
+    "ref": "v0.1.1",
+    "commit": "6df9a39fda719d0d4388c494bb325299fbfdc439",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "prompt-enhancer": {
     "id": "prompt-enhancer",
     "displayName": "Prompt Enhancer",
@@ -10886,6 +13530,67 @@
       "assets/screenshots/hero-dark.png",
       "assets/screenshots/follow-up.png",
       "assets/screenshots/settings-dark.png"
+    ]
+  },
+  "prompt-log": {
+    "id": "prompt-log",
+    "displayName": "Prompt Log",
+    "description": "Lists every prompt you sent in a thread in a Prompts side-panel tab, newest first and grouped by day, with a filter, a marker on the prompt being worked on, and a button that puts any earlier prompt back in the composer.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/prompt-log-f852a04d.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "prompt",
+      "history",
+      "threads",
+      "sidebar",
+      "interface",
+      "composer",
+      "filtering"
+    ],
+    "author": {
+      "name": "Pablo Oliva",
+      "github": "pablooliva"
+    },
+    "originalRepo": "https://github.com/pablooliva/bb-ide-session-prompts",
+    "subdir": "bb-plugin-prompt-log",
+    "ref": "prompt-log/v0.1.0",
+    "commit": "8b64f80c2d5330cfd0d8ff6d26c5f87147dd8e98",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "prompt-shaper": {
+    "id": "prompt-shaper",
+    "displayName": "Prompt Improver",
+    "description": "Turns a rough draft into a clear, complete prompt that you review before sending. Choose Improve prompt and a hidden helper agent rewrites only the draft, then returns it in place of your text. Attachments stay attached, and you can undo the rewrite. Each rewrite runs one short turn on a provider you already use.",
+    "icon": "AiContentGenerator01",
+    "category": "thread-content",
+    "tags": [
+      "prompts",
+      "prompt-engineering",
+      "composer",
+      "rewrite",
+      "writing",
+      "drafts",
+      "skills"
+    ],
+    "author": {
+      "name": "brsbl",
+      "github": "brsbl"
+    },
+    "originalRepo": "https://github.com/brsbl/bb-plugins",
+    "subdir": "plugins/improve-prompt",
+    "ref": "prompt-shaper/v0.1.6",
+    "commit": "8c694a3a66b20191f13683c30bed69043057d8cb",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshot-running.png",
+      "docs/screenshot-result.png"
     ]
   },
   "prompts": {
@@ -10933,6 +13638,32 @@
       "assets/screenshots/fill-ins.png",
       "assets/screenshots/quick-replies-failed-dark.png"
     ]
+  },
+  "provider-authentication": {
+    "id": "provider-authentication",
+    "displayName": "Provider Authentication",
+    "description": "Authenticates and reauthenticates Claude Code on connected bb machines from BB settings.",
+    "icon": "Lock",
+    "category": "agents-and-providers",
+    "tags": [
+      "providers",
+      "authentication",
+      "oauth",
+      "claude-code",
+      "settings"
+    ],
+    "author": {
+      "name": "wjin17",
+      "github": "wjin17"
+    },
+    "originalRepo": "https://github.com/wjin17/bb-plugin-provider-authentication",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "e0fb7fdcefcb60a846b18202f9b45bded3e33382",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "provider-brand-marks": {
     "id": "provider-brand-marks",
@@ -11089,6 +13820,43 @@
       "docs/guide/images/router.jpg"
     ]
   },
+  "pstack-for-bb": {
+    "id": "pstack-for-bb",
+    "displayName": "pstack for bb",
+    "description": "Use Lauren Tan's pstack skills in bb, synced daily from cursor/plugins with Cursor locations adapted for bb.",
+    "icon": "Layers",
+    "category": "code-and-reviews",
+    "tags": [
+      "skills",
+      "poteto",
+      "playbooks",
+      "engineering",
+      "code-review",
+      "verification",
+      "principles",
+      "per-project",
+      "upstream-sync"
+    ],
+    "author": {
+      "name": "Erik MacKinnon",
+      "github": "erikmackinnon"
+    },
+    "originalRepo": "https://github.com/erikmackinnon/bb-plugin-pstack-for-bb",
+    "subdir": "",
+    "ref": "v0.1.13",
+    "commit": "701c50207f1ae2719e3318a758c753ee7969dd8d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "pstack/docs/guide/images/design.jpg",
+      "pstack/docs/guide/images/verification.jpg",
+      "pstack/docs/guide/images/overnight.jpg",
+      "pstack/docs/guide/images/recipes.jpg",
+      "pstack/docs/guide/images/understanding.jpg",
+      "pstack/docs/guide/images/router.jpg"
+    ]
+  },
   "pulse": {
     "id": "pulse",
     "displayName": "Pulse",
@@ -11121,6 +13889,66 @@
     "licenseNote": null,
     "omittedMedia": [
       "screenshots/board.png"
+    ]
+  },
+  "px0": {
+    "id": "px0",
+    "displayName": "px0",
+    "description": "Review and edit a thread's codebase without leaving its BB conversation. Browse files, search the workspace, inspect symbols and references, and review Git diffs in a full-tab px0 workspace. px0's native editor saves changes and creates files or folders while refreshing Git, search, and language-server state. Requires px0 0.1.20 or newer on each workspace machine; remote panels require BB Connect.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/px0-b1e76fa6.png"
+    },
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "code-review",
+      "file-browser",
+      "editor",
+      "git",
+      "workspace",
+      "search"
+    ],
+    "author": {
+      "name": "Kavii Suri",
+      "github": "KaviiSuri"
+    },
+    "originalRepo": "https://github.com/KaviiSuri/bb-plugin-px0",
+    "subdir": "",
+    "ref": "v0.1.3",
+    "commit": "9c25f947fc57fda78e2efeefbb39bb0305d50c31",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
+  "px0-review": {
+    "id": "px0-review",
+    "displayName": "px0 Review",
+    "description": "Review changes in your active worktree and send selected-code feedback to its BB thread. Browse files and diffs, edit code, and keep the existing conversation and provider. Downloads a pinned px0 fork on first use; remote access uses BB Connect.",
+    "icon": "FileText",
+    "category": "code-and-reviews",
+    "tags": [
+      "code-review",
+      "diffs",
+      "git",
+      "feedback"
+    ],
+    "author": {
+      "name": "Oddship",
+      "github": "rhnvrm"
+    },
+    "originalRepo": "https://github.com/oddship/bb-plugins",
+    "subdir": "plugins/px0-review",
+    "ref": "px0-review/v0.1.1",
+    "commit": "7d415870acba6b05e6b0209053f04148ccb01f68",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/step-1.jpg",
+      "screenshots/step-3.jpg",
+      "screenshots/walkthrough.gif",
+      "screenshots/step-2.jpg",
+      "screenshots/walkthrough.webp"
     ]
   },
   "qlik-sense": {
@@ -11530,6 +14358,35 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "references": {
+    "id": "references",
+    "displayName": "References",
+    "description": "Organize visual moodboards, design references, and inspirational websites directly beside your thread in BB IDE. Opens automatically in the thread panel when agents collect UI references. Extracts website metadata with OpenGraph previews and serves local project images with path-traversal protection. Lets you pin key stylistic anchors to your desk and inspect images in a full-screen lightbox.",
+    "icon": "Images",
+    "category": "thread-content",
+    "tags": [
+      "moodboard",
+      "references",
+      "design",
+      "ui",
+      "inspiration",
+      "images",
+      "lightbox",
+      "thread-panel"
+    ],
+    "author": {
+      "name": "Ivan Afanasov",
+      "github": "VanDalkvist"
+    },
+    "originalRepo": "https://github.com/VanDalkvist/bb-plugin-references",
+    "subdir": "",
+    "ref": "v0.1.3",
+    "commit": "d1f1b1868b9fd0b91ae17518149e98685d31b2d5",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "rephrase": {
     "id": "rephrase",
     "displayName": "Re-phrase",
@@ -11602,6 +14459,36 @@
     "refNote": null,
     "license": "MIT",
     "licenseNote": null,
+    "omittedMedia": []
+  },
+  "reveal-in-finder": {
+    "id": "reveal-in-finder",
+    "displayName": "Reveal In Finder",
+    "description": "Open the files an agent builds or exports with one click, instead of copying a path out of its reply. Each file or folder the agent hands over shows as a card with an icon, its name, format and size. A click on a file opens bb's preview, and Open in reveals it in Finder or opens it in its default app. A bundled skill tells agents when to hand over files this way. Finder and the default app open on the Mac running the bb server; no account or external service.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/reveal-in-finder-27ce539c.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "files",
+      "finder",
+      "file-card",
+      "open-file",
+      "preview",
+      "attachments",
+      "macos"
+    ],
+    "author": {
+      "name": "Dmitrii Maksimov",
+      "github": "kartollikaa"
+    },
+    "originalRepo": "https://github.com/kartollikaa/bb-plugins",
+    "subdir": "plugins/reveal-in-finder",
+    "ref": "reveal-in-finder/v0.1.1",
+    "commit": "d9e817dd743812366a207d363f8d38e3285eb222",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
     "omittedMedia": []
   },
   "rewind": {
@@ -11697,6 +14584,33 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "rtk": {
+    "id": "rtk",
+    "displayName": "Rtk",
+    "description": "Agent-invoked shell tool — rewrites commands through the external rtk CLI for filtered output on verbose builds, tests, and git diffs. Requires the rtk CLI; unrestricted shell access.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/rtk-9f6bac05.svg"
+    },
+    "category": "token-usage-and-limits",
+    "tags": [
+      "terminal",
+      "tokens",
+      "shell",
+      "filtering"
+    ],
+    "author": {
+      "name": "prismatic7",
+      "github": "prismatic7"
+    },
+    "originalRepo": "https://github.com/prismatic7/bb-plugin-rtk",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "9d68b55f6a029e34b2c4f3739d055ebf67a63d9e",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "save-my-model": {
     "id": "save-my-model",
     "displayName": "Save My Model",
@@ -11787,6 +14701,34 @@
     "commit": "bab2ef0e9400fc6914ebc4f339681f63aa3f0576",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "screenshot": {
+    "id": "screenshot",
+    "displayName": "Screenshot",
+    "description": "Attach a selected area of your Mac's screen directly to a BB message. Use the native macOS crosshair from the camera button beside Send. Capture runs on the Mac displaying BB and preserves your draft text and attachments. Requires macOS, a connected BB host, screen recording permission, and browser local network access; no external service or paid account.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/screenshot-b7c053d7.svg"
+    },
+    "category": "utilities",
+    "tags": [
+      "macos",
+      "screen-capture",
+      "attachments",
+      "visual-context",
+      "native-capture"
+    ],
+    "author": {
+      "name": "strelov1",
+      "github": "strelov1"
+    },
+    "originalRepo": "https://github.com/strelov1/bb-plugin-screenshot",
+    "subdir": "",
+    "ref": "3e837910a531e4e927b71da7371e4a14a0b6070f",
+    "commit": "3e837910a531e4e927b71da7371e4a14a0b6070f",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -12055,6 +14997,39 @@
     "omittedMedia": [
       "assets/shell-tasks-demo.png"
     ]
+  },
+  "shipyard": {
+    "id": "shipyard",
+    "displayName": "Shipyard",
+    "description": "Drive coding tasks from idea to merge on a Kanban board, and nothing reaches your branch until you review it. Save ideas, brainstorm them with an agent, then queue them. Each task runs in its own bb thread and git worktree: a short triage picks the model and effort, an optional plan waits for your approval, and the agent builds, runs the checks, and reviews its own diff. Add skills to each stage, such as a planning skill for Plan. When an agent is stuck, it asks you, and your answer continues the same stage. Review in a side panel, request changes in the same session, open a pull request, or merge. Agents use the bb providers you already have; pull requests need a GitHub remote and the gh CLI.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/shipyard-f7ef5ccb.svg"
+    },
+    "category": "tasks-and-workflows",
+    "tags": [
+      "kanban",
+      "task-board",
+      "parallel-agents",
+      "worktrees",
+      "brainstorming",
+      "planning",
+      "code-review",
+      "pull-requests",
+      "model-routing",
+      "orchestration"
+    ],
+    "author": {
+      "name": "Chris Abra",
+      "github": "chrisabra-co"
+    },
+    "originalRepo": "https://github.com/chrisabra-co/bb-plugin-shipyard",
+    "subdir": "",
+    "ref": "v0.2.0",
+    "commit": "b8dac3e5aee3ef1b02a49def8d97f0a49c6b7a04",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
   },
   "shop-kanban": {
     "id": "shop-kanban",
@@ -12357,6 +15332,63 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "skiff": {
+    "id": "skiff",
+    "displayName": "Skiff VM",
+    "description": "Gives every thread its own throwaway Linux VM on your Mac, so nothing the agent installs or runs touches macOS. Claude Code and GitHub tokens stay in the macOS Keychain; the VM only holds placeholders that the skiff broker swaps for the real tokens on the way out. A fresh Ubuntu VM boots in about 4 seconds, is ready for the agent in under a minute, and is deleted when you archive the thread. Requires Apple Silicon, macOS 26, the open-source skiff CLI, a bb server access the VM can reach, such as bb Connect, and bb's own GitHub forwarding turned off.",
+    "icon": "Server",
+    "category": "cloud-and-remote",
+    "tags": [
+      "vm",
+      "virtual-machine",
+      "sandbox",
+      "isolation",
+      "linux",
+      "ubuntu",
+      "macos",
+      "apple-silicon",
+      "machines",
+      "credentials"
+    ],
+    "author": {
+      "name": "Florian Fiedler",
+      "github": "flo-sovyn-eu"
+    },
+    "originalRepo": "https://github.com/sovyn-eu/bb-plugin-skiff",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "6c06102e1db6c2ba97d7de1b65be546e630a3e2b",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"Apache-2.0\", в репозитории permission",
+    "omittedMedia": []
+  },
+  "skill-library": {
+    "id": "skill-library",
+    "displayName": "Skill Library",
+    "description": "Edit any skill bb discovers straight from the sidebar, so a downloaded skill becomes yours before it runs. Every skill on the machine — provider, plugin, built-in, and user — sits in one filterable list. Save carries a revision check, so a file changed on disk is refused instead of overwritten. Create new skills under ~/.bb/skills, search skills.sh, and install registry entries without opening a terminal. Registry search and install need network access to skills.sh; everything else works offline.",
+    "icon": "BookOpen",
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "skills",
+      "markdown",
+      "editing",
+      "registry",
+      "sidebar"
+    ],
+    "author": {
+      "name": "Ayan Masood",
+      "github": "Ayan-M-Dev"
+    },
+    "originalRepo": "https://github.com/Ayan-M-Dev/bb-plugin-skill-library",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "a99c584fe57719ee396c7a3bbda4f349795ca19d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "skill-manager": {
     "id": "skill-manager",
     "displayName": "Skill Manager",
@@ -12441,6 +15473,34 @@
     "commit": "99cf957220eb4998cf7d918326a1b0f380b77822",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "smart-queue": {
+    "id": "smart-queue",
+    "displayName": "Smart Queue",
+    "description": "Routes each message you send to a busy thread: corrections steer the running turn, and new tasks wait until it ends. TypeSafe's Jev model decides, reached with a TypeSafe, Vercel AI Gateway, OpenRouter, or OpenCode Zen key, or through any endpoint that speaks its System One API. Without a key, a model from a BB provider you already use decides in a hidden thread, and if nothing answers the message waits. Each decision sends the thread title, your recent requests, and the new message to that provider, which bills the usage.",
+    "icon": "ListEnd",
+    "category": "thread-content",
+    "tags": [
+      "steer",
+      "follow-up",
+      "message-queue",
+      "busy-threads",
+      "jev",
+      "typesafe",
+      "classifier"
+    ],
+    "author": {
+      "name": "Patrick Lee",
+      "github": "patleeman"
+    },
+    "originalRepo": "https://github.com/patleeman/bb-plugins",
+    "subdir": "packages/bb-plugin-smart-queue",
+    "ref": "smart-queue/v0.2.0",
+    "commit": "ce940fc22f50129210cd76a083f0db732701d08a",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -12628,6 +15688,37 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "stelow": {
+    "id": "stelow",
+    "displayName": "Stelow",
+    "description": "Stelow turns humans and AI agents into a cross-functional product team: research opportunity spaces, shape proposals with explicit trade-offs before code, plan typed scopes, and execute with gated reviews and agent workers. One board, one quiet inbox that only interrupts when you are needed.",
+    "icon": "Star",
+    "category": "tasks-and-workflows",
+    "tags": [
+      "product-workflow",
+      "tasks",
+      "reviews",
+      "ai-agents",
+      "project-management",
+      "research",
+      "kanban",
+      "discovery",
+      "build",
+      "strategy"
+    ],
+    "author": {
+      "name": "calionauta",
+      "github": "calionauta"
+    },
+    "originalRepo": "https://github.com/calionauta/bb-plugin-stelow",
+    "subdir": "",
+    "ref": "v0.104.0",
+    "commit": "3dd14dc2ccc866f0ffec74c354353f072996f8f4",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "sticky-prompt": {
     "id": "sticky-prompt",
     "displayName": "Sticky Prompt",
@@ -12728,6 +15819,37 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "subscriptions": {
+    "id": "subscriptions",
+    "displayName": "Subscriptions",
+    "description": "Get a short message in your thread when a GitHub pull request or Linear issue you follow changes. Subscribe from the agent or the bb subscriptions command, in bulk, and a count in the thread heading shows how many items you follow. Changes to a busy thread are coalesced into one message and rewritten in place, so a fast-moving issue never floods the queue. GitHub uses the gh CLI already authenticated on the bb server, and Linear needs one read-only personal API key.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/subscriptions-6e735f31.svg"
+    },
+    "category": "tasks-and-workflows",
+    "tags": [
+      "github",
+      "linear",
+      "pull-requests",
+      "issues",
+      "notifications",
+      "threads",
+      "agent-tools",
+      "cli"
+    ],
+    "author": {
+      "name": "grrowl",
+      "github": "grrowl"
+    },
+    "originalRepo": "https://github.com/grrowl/bb-subscriptions",
+    "subdir": "",
+    "ref": "v0.3.4",
+    "commit": "b7fac1bf046f63141b76084cab6be4896f3b7dfb",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "subthread-columns": {
     "id": "subthread-columns",
     "displayName": "Subthread Columns",
@@ -12747,6 +15869,41 @@
     "license": "MIT",
     "licenseNote": null,
     "omittedMedia": []
+  },
+  "super-diff": {
+    "id": "super-diff",
+    "displayName": "Super Diff",
+    "description": "Read a long diff one concern at a time, with each group explained and notes under the lines a reviewer might misread. Click Generate Super Diff in the Diff tab, and the thread's agent groups the changed files into concerns in place of bb's file list, with a line on what each file's change does. Hover any other line, removed ones included, and click Explain this line for a note written on request. Each file keeps bb's Viewed checkbox, each concern counts its viewed files, and the list offers Regenerate when files change after it was written. Requires bb 0.48 or later; generating sends one message to the thread's agent.",
+    "icon": "Layers",
+    "category": "code-and-reviews",
+    "tags": [
+      "code-review",
+      "diff",
+      "changes-panel",
+      "file-diff",
+      "annotations",
+      "explain-code",
+      "review-progress",
+      "git"
+    ],
+    "author": {
+      "name": "Daniel Bachhuber",
+      "github": "danielbachhuber"
+    },
+    "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
+    "subdir": "bb-plugin-super-diff",
+    "ref": "super-diff/v0.1.1",
+    "commit": "a6071fc842fcb3177920d84ae2323de4cf424ccd",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/super-diff--overview.png",
+      "screenshots/super-diff--not-generated.png",
+      "screenshots/super-diff--removed-line-note.png",
+      "screenshots/super-diff--concern-file-list.png",
+      "screenshots/super-diff--out-of-date.png"
+    ]
   },
   "switchboard": {
     "id": "switchboard",
@@ -13219,6 +16376,36 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "theme-glass": {
+    "id": "theme-glass",
+    "displayName": "Theme Glass",
+    "description": "Turns bb's chrome into frosted glass over a soft mesh wallpaper, in light and dark mode. Sidebar, main pane, composer, popovers, dialogs, and cards become translucent sheets that keep text readable through the tint. No surface draws a border or shadow, so the window reads as one continuous material divided by tone alone. Works in the browser and the desktop app; requires backdrop-filter support and falls back to a solid palette without it.",
+    "icon": "Layers",
+    "category": "themes-and-appearance",
+    "tags": [
+      "theme",
+      "appearance",
+      "translucent",
+      "frosted-glass",
+      "blur",
+      "wallpaper",
+      "light-mode",
+      "dark-mode",
+      "aesthetics"
+    ],
+    "author": {
+      "name": "rayzalzero",
+      "github": "rayzalzero"
+    },
+    "originalRepo": "https://github.com/rayzalzero/bb-plugin-theme-glass",
+    "subdir": "",
+    "ref": "v0.1.2",
+    "commit": "a468cec9d43aac3980284d1f929fe48e80a6ebba",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
   "theme-toggle": {
     "id": "theme-toggle",
     "displayName": "Theme Toggle",
@@ -13247,6 +16434,63 @@
     "license": "MIT",
     "licenseNote": null,
     "omittedMedia": []
+  },
+  "thread-glow": {
+    "id": "thread-glow",
+    "displayName": "Thread Glow",
+    "description": "Find threads after their agents stop working. See an orange highlight in the thread list and on open split-pane titles. Select a thread to clear its highlight. Middle-click an open pane title to close it.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/thread-glow-aefc1716.svg"
+    },
+    "category": "thread-management",
+    "tags": [
+      "threads",
+      "sidebar",
+      "split-view",
+      "status"
+    ],
+    "author": {
+      "name": "aMoonshine",
+      "github": "aMoonshine"
+    },
+    "originalRepo": "https://github.com/aMoonshine/bb-plugin-thread-glow",
+    "subdir": "",
+    "ref": "v0.1.1",
+    "commit": "38037b5795e2a2ebe88df923fea67cdc91909f09",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "thread-hover-cards": {
+    "id": "thread-hover-cards",
+    "displayName": "Thread Hover Cards",
+    "description": "See what any thread or section is doing without opening it. Hover a thread in the sidebar for its status, model, run time, latest agent message, and pull request. Hover a section header to see open questions, failed runs, and unread threads without expanding it.",
+    "icon": "ZoomIn",
+    "category": "thread-management",
+    "tags": [
+      "sidebar",
+      "threads",
+      "status",
+      "hover",
+      "pull-requests",
+      "interface"
+    ],
+    "author": {
+      "name": "brsbl",
+      "github": "brsbl"
+    },
+    "originalRepo": "https://github.com/brsbl/bb-plugins",
+    "subdir": "plugins/thread-hover-cards",
+    "ref": "thread-hover-cards/v0.1.5",
+    "commit": "242abb67d257e45b89c0423e3cc7743b167a6e4f",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/screenshot.png",
+      "docs/screenshot-section.png"
+    ]
   },
   "thread-images": {
     "id": "thread-images",
@@ -13336,6 +16580,33 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "thread-nicknames": {
+    "id": "thread-nicknames",
+    "displayName": "Thread nicknames",
+    "description": "Identify threads by persistent numbers such as @27. New threads keep their number across title changes and reloads, while forks receive their own numbers. Browse numbered threads from the sidebar or Settings, then open one directly. Requires bb 0.42+; prefixes change actual thread titles and remain after disabling the plugin.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/thread-nicknames-f79e48ce.svg"
+    },
+    "category": "thread-management",
+    "tags": [
+      "thread-numbers",
+      "titles",
+      "identifiers",
+      "navigation"
+    ],
+    "author": {
+      "name": "MattBot",
+      "github": "mgmobrien"
+    },
+    "originalRepo": "https://github.com/mgmobrien/bb-plugin-thread-nicknames",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "a35393aff02144cd88ada3158ade04eb49d496f3",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "thread-pages": {
     "id": "thread-pages",
     "displayName": "Thread Pages",
@@ -13396,6 +16667,67 @@
     "omittedMedia": [
       "assets/thread-reference-demo.gif"
     ]
+  },
+  "thread-reveal": {
+    "id": "thread-reveal",
+    "displayName": "Thread Reveal",
+    "description": "Find the open thread in your sidebar without changing grouping or filters. Use the button beside its title or Ctrl+Shift+L (Command+Shift+L on macOS) to expand its branch, scroll to its row, and focus it. Reassign the shortcut in Settings. Requires BB 0.48.0+ and the built-in Thread list.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/thread-reveal-1d7f2947.svg"
+    },
+    "category": "thread-management",
+    "tags": [
+      "sidebar",
+      "navigation",
+      "keyboard",
+      "nested-threads"
+    ],
+    "author": {
+      "name": "artbear",
+      "github": "artbear"
+    },
+    "originalRepo": "https://github.com/artbear/bb-plugin-thread-reveal",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "5d2093cd86885ca9e12ef6be5dda0e7db89581ed",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/header.png"
+    ]
+  },
+  "thread-switcher": {
+    "id": "thread-switcher",
+    "displayName": "Thread Switcher",
+    "description": "Jump between your recent threads from the keyboard and see at a glance which one needs you. Hold Control and press Tab to step through a row of cards, each with the latest messages of that chat, its project, branch and status; let go to open the selected thread. On a phone, pinch two fingers together in a chat to open the same cards as a grid. A thread waiting for your answer shows the question it asked, and threads that need input or failed come first. A thread with subthreads counts how many are still running. The hotkey, the number of cards and the order are settings; no account or external service.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/thread-switcher-d80991d0.svg"
+    },
+    "category": "thread-management",
+    "tags": [
+      "threads",
+      "switcher",
+      "keyboard",
+      "hotkey",
+      "shortcut",
+      "control-tab",
+      "navigation",
+      "recent-threads",
+      "preview"
+    ],
+    "author": {
+      "name": "Dmitrii Maksimov",
+      "github": "kartollikaa"
+    },
+    "originalRepo": "https://github.com/kartollikaa/bb-plugins",
+    "subdir": "plugins/thread-switcher",
+    "ref": "thread-switcher/v0.1.1",
+    "commit": "22458de3fefc47ea8b2b115c6274a06e227548d9",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
   },
   "thread-tabs": {
     "id": "thread-tabs",
@@ -13492,6 +16824,69 @@
       "docs/screenshots/edit.png"
     ]
   },
+  "thread-tree": {
+    "id": "thread-tree",
+    "displayName": "Thread Tree",
+    "description": "See which agent spawned which thread. A sidebar thread list where child threads nest under the thread that started them, at any depth, and a parent folds its subtree into one line that counts each state. A search field on top (or /) finds threads by title, branch, PR number or project, above counts of threads that need input, failed, are running or are unread. Needs you collects threads asking a question, failed turns, threads stuck with no progress, unread results with their diff stat, failing PRs and failed automations, with Retry, Stop and snooze in place. Running rows show the current step, a turn timer and a high context fill. Orchestrations gives a shortcut to each thread running subthreads, with its progress. Provider subagents (Claude Code Agent calls, Codex subagents) show as a counter on the parent's row with type, state, duration and tokens on hover. Threads group by project or status and sort by last activity, creation date or status, with per-folder overrides; quiet threads fold into an \"N older\" line you can archive at once. Folded Pull requests (with the GitHub Folder plugin) and Automations sections summarize themselves in the header; hover a PR to merge it or start an agent review. Each row stays one line: bb's own status glyph, the title and the agent provider, plus a tinted PR icon only when the pull request needs action. A ⚠ marks a thread whose branch or worktree another live thread is using. Hovering a row shows Archive and its menu; hovering a running spinner lets you stop it. Reads thread data on the bb server; PR status comes from GitHub.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/thread-tree-80ed9973.svg"
+    },
+    "category": "thread-management",
+    "tags": [
+      "threads",
+      "sidebar",
+      "subagents",
+      "tree",
+      "nesting",
+      "projects",
+      "automations",
+      "github"
+    ],
+    "author": {
+      "name": "Dmitrii Maksimov",
+      "github": "kartollikaa"
+    },
+    "originalRepo": "https://github.com/kartollikaa/bb-plugins",
+    "subdir": "plugins/thread-tree",
+    "ref": "thread-tree/v0.2.37",
+    "commit": "0d651ee9062d79f58dcf0743e2d5c1ff4e57487d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": []
+  },
+  "threadline": {
+    "id": "threadline",
+    "displayName": "Threadline",
+    "description": "Jump to any point in a long conversation from a minimap of your own prompts. A slim rail on the right edge of a thread shows one marker per prompt you sent, and the current prompt stays highlighted as you scroll. Hover the rail to read each prompt's preview and click to jump straight to it, even when the message is far off-screen. Choose whether the rail sits at the top, middle, or bottom of the conversation. Runs entirely inside BB with no account or external service.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/threadline-b9678a75.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "navigation",
+      "minimap",
+      "conversation",
+      "prompts",
+      "scroll",
+      "timeline",
+      "outline"
+    ],
+    "author": {
+      "name": "frankieshakes",
+      "github": "frankieshakes"
+    },
+    "originalRepo": "https://github.com/frankieshakes/bb-plugin-threadline",
+    "subdir": "",
+    "ref": "v0.1.6",
+    "commit": "b0371efd9159622eecd149a4c702ed8053e742a2",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "docs/threadline.png"
+    ]
+  },
   "threadspace": {
     "id": "threadspace",
     "displayName": "Threadspace",
@@ -13524,6 +16919,35 @@
       "screenshots/light.jpg",
       "screenshots/picker.jpg"
     ]
+  },
+  "timer": {
+    "id": "timer",
+    "displayName": "Floating Timer",
+    "description": "Run floating focus timers, custom sprints, and pomodoro blocks anywhere in BB. Tracks multiple concurrent sessions with minute presets, draggable overlay positioning, and Web Audio completion chimes. Mounts as an app-wide overlay that collapses into a compact status pill and integrates with the thread header.",
+    "icon": "Timer",
+    "category": "tasks-and-workflows",
+    "tags": [
+      "timer",
+      "pomodoro",
+      "productivity",
+      "focus",
+      "sprints",
+      "overlay",
+      "floating",
+      "audio"
+    ],
+    "author": {
+      "name": "Ivan Afanasov",
+      "github": "VanDalkvist"
+    },
+    "originalRepo": "https://github.com/VanDalkvist/bb-plugin-timer",
+    "subdir": "",
+    "ref": "v0.1.4",
+    "commit": "95c5220e7c52d05e68b09cccecbf0e5334adc785",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "tinted-threads": {
     "id": "tinted-threads",
@@ -13638,6 +17062,45 @@
     "license": "MIT",
     "licenseNote": null,
     "omittedMedia": []
+  },
+  "tokenomics": {
+    "id": "tokenomics",
+    "displayName": "Tokenomics",
+    "description": "See what your threads cost in tokens and time, and whether your subscription's session and weekly limits will last until they reset. Each thread's header shows a sparkline of its token use that opens a summary of which of your messages used the most tokens and time. bb's title bar shows how much of your session and week you have used, in amber or red when either is on pace to run out before it resets. Once a thread's context passes a size you set, a meter above the composer offers to compact it. A Tokenomics page charts tokens by hour or day, shows where turn time went, and ranks threads by use. Counts tokens, not dollars, needs bb 0.43 or later, and counts Claude Code subagents only for threads that ran on the same machine as bb.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/tokenomics-db56ebad.svg"
+    },
+    "category": "token-usage-and-limits",
+    "tags": [
+      "tokens",
+      "token-cost",
+      "usage-limits",
+      "context-window",
+      "compaction",
+      "prompt-cache",
+      "turn-time",
+      "subagents",
+      "claude-code",
+      "codex"
+    ],
+    "author": {
+      "name": "Daniel Bachhuber",
+      "github": "danielbachhuber"
+    },
+    "originalRepo": "https://github.com/danielbachhuber/bb-plugins",
+    "subdir": "bb-plugin-tokenomics",
+    "ref": "tokenomics/v0.2.2",
+    "commit": "b5614806ae4456546fcf00d25ea6be302ada4382",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": [
+      "screenshots/page--window-with-limits.png",
+      "screenshots/page--header-open.png",
+      "screenshots/page--context-meter-in-thread.png",
+      "screenshots/page--title-bar-in-window.png",
+      "screenshots/page--limit-runs-out.png"
+    ]
   },
   "tokyo-night": {
     "id": "tokyo-night",
@@ -13754,6 +17217,67 @@
     "commit": "5d1f74e9d62776d527fcb4574951eb26ea6456cd",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "traces": {
+    "id": "traces",
+    "displayName": "Traces",
+    "description": "Indexes local agent session files and opens searchable trajectories with message, tool, error, and provider filters.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/traces-9bdd0463.svg"
+    },
+    "category": "plugin-development",
+    "tags": [
+      "traces",
+      "observability",
+      "agent-sessions",
+      "trajectories",
+      "developer-tools"
+    ],
+    "author": {
+      "name": "Patrick Lee",
+      "github": "patleeman"
+    },
+    "originalRepo": "https://github.com/patleeman/bb-plugins",
+    "subdir": "packages/bb-plugin-traces",
+    "ref": "traces/v0.1.1",
+    "commit": "05c933a272b7dd2077897a6a0fbb64a4e78dc1e3",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "tracing": {
+    "id": "tracing",
+    "displayName": "Tracing",
+    "description": "See where every second of an agent turn went, one click from the answer it produced. A chip under each answer opens the turn on a timeline: every command, tool call, thinking block and response in its own color, with the full command, output, arguments or diff of any step. Silences become named steps: Generating shows what the model had just read and what it wrote next, and API retries shows failed provider calls with each backoff. Each turn records its token spend split into cache reads, cache writes, uncached input and output, and a Tracing page sums turn time, failures and tokens across threads. Spans are kept on the bb server as NDJSON files in OpenBot's trace format, and the bb tracing command answers the same questions for agents. Nothing leaves the bb server. Needs bb 0.48 or newer.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/tracing-a2132e34.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "tracing",
+      "timeline",
+      "waterfall",
+      "observability",
+      "performance",
+      "profiling",
+      "token-usage",
+      "api-retries",
+      "ndjson",
+      "cli"
+    ],
+    "author": {
+      "name": "Vyacheslav Artemyev",
+      "github": "viartemev"
+    },
+    "originalRepo": "https://github.com/viartemev/bb-tracing",
+    "subdir": "bb-plugin-tracing",
+    "ref": "v0.1.0",
+    "commit": "52880a364a8778b02f511dcebc96cee9ee7eec66",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -13918,6 +17442,33 @@
     "commit": "e980afd55f2ac31d1feafb682fcb948dcb057e27",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "turn-tps": {
+    "id": "turn-tps",
+    "displayName": "Turn TPS",
+    "description": "Show tokens per second on every completed turn, so a slow answer is visible without opening a log. Each finished turn gets a badge under the assistant message with output tokens, wall-clock duration, and the resulting rate, and the turn header carries the same figure in short form. Reads usage the provider reports where BB has it, and the local OMP session file for ACP and OMP threads, which report none. The rate divides output tokens by the full turn duration, so tool calls and provider waits count against it; it is not a model decode benchmark. Needs a completed turn, and the ACP and OMP path needs that thread's OMP session file on the machine running BB.",
+    "icon": "Gauge",
+    "category": "token-usage-and-limits",
+    "tags": [
+      "tps",
+      "tokens-per-second",
+      "throughput",
+      "output-tokens",
+      "turn-stats",
+      "benchmark"
+    ],
+    "author": {
+      "name": "Daniel Walker",
+      "github": "bottlebrushes"
+    },
+    "originalRepo": "https://github.com/bottlebrushes/bb-plugin-turn-tps",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "2ce207b1b7bff3a8cc78c3ea78679cd1ebcb0e01",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -14098,6 +17649,63 @@
     "commit": "9d26e51f1069b8834d5f55216f5ef2fafdb019e6",
     "refNote": null,
     "license": "MIT",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "unified-inbox": {
+    "id": "unified-inbox",
+    "displayName": "Unified Inbox",
+    "description": "Read Gmail, WhatsApp, Messages, and LinkedIn in one list beside the thread. Reply where that source can send, and mute a conversation without removing it. A mail image shows in the message, and a shared LinkedIn post shows its words and picture. Gmail needs your own Google Cloud client, WhatsApp pairs as a linked device, LinkedIn uses this plugin's Chrome window, and Messages needs imsg plus Full Disk Access on a Mac.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/unified-inbox-e26ff423.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "gmail",
+      "whatsapp",
+      "imessage",
+      "linkedin",
+      "inbox",
+      "mail",
+      "chat"
+    ],
+    "author": {
+      "name": "Robert Sinke",
+      "github": "robertsinke"
+    },
+    "originalRepo": "https://github.com/robertsinke/bb-plugin-unified-inbox",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "bff38d885ea29373e091e5185d668bea2f456b8c",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "unslop": {
+    "id": "unslop",
+    "displayName": "Unslop",
+    "description": "Agent-invoked filter — the agent can strip overused AI patterns like hedging, filler, and corporate affect from text before sending.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/unslop-5d90a179.svg"
+    },
+    "category": "thread-content",
+    "tags": [
+      "output",
+      "filtering",
+      "writing",
+      "agent-interaction"
+    ],
+    "author": {
+      "name": "prismatic7",
+      "github": "prismatic7"
+    },
+    "originalRepo": "https://github.com/prismatic7/bb-plugin-unslop",
+    "subdir": "",
+    "ref": "v0.2.1",
+    "commit": "89c3a24b3867f313ce92e3206aa450f730bacba9",
+    "refNote": null,
+    "license": "permission",
     "licenseNote": null,
     "omittedMedia": []
   },
@@ -14523,6 +18131,32 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "vim": {
+    "id": "vim",
+    "displayName": "Vim",
+    "description": "Write BB prompts with Vim motions, modes, selections, and operators while BB keeps its native composer behavior. Insert mode leaves attachments, image paste, model controls, voice input, and submission to BB. Normal, Visual, and Visual Line modes add counts, text objects, search, yank, paste, undo, and redo. Terminals, search fields, command palettes, and opted-out plugin surfaces stay native. Requires BB 0.41+ and Plugin SDK 0.4.34+; no external service or paid account is required.",
+    "icon": "EditFile",
+    "category": "thread-content",
+    "tags": [
+      "vim",
+      "editing",
+      "keybindings",
+      "composer",
+      "modal-editing"
+    ],
+    "author": {
+      "name": "John Debay",
+      "github": "jad"
+    },
+    "originalRepo": "https://github.com/jad/bb-plugin-vim",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "0c4a253de1886f67b644b003cdef02fdf313024d",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "visual-workflows": {
     "id": "visual-workflows",
     "displayName": "Visual Workflows",
@@ -14548,6 +18182,42 @@
     "license": "MIT",
     "licenseNote": null,
     "omittedMedia": []
+  },
+  "voice-input": {
+    "id": "voice-input",
+    "displayName": "Voice Input",
+    "description": "Dictate into any BB chat and get clean text back, with your product names spelled right. Choose which machine does the recognition: Whisper (MLX) and GigaAM v3 keep the audio on that machine, while Groq, OpenAI and Google transcribe in the cloud with your own API key. A term vocabulary repairs garbled product and tool names, and an optional AI pass fixes the ones the rules miss. Recordings are written to disk before transcription, so a failed run never loses what you said. Local engines need Python 3, ffmpeg and macOS on Apple silicon; cloud engines need a paid API key.",
+    "icon": "Mic",
+    "category": "agents-and-providers",
+    "tags": [
+      "voice",
+      "speech-to-text",
+      "transcription",
+      "dictation",
+      "whisper",
+      "gigaam",
+      "groq",
+      "vocabulary",
+      "offline"
+    ],
+    "author": {
+      "name": "VKirill",
+      "github": "VKirill"
+    },
+    "originalRepo": "https://github.com/VKirill/bb-plugin-voice-input",
+    "subdir": "",
+    "ref": "v0.2.20",
+    "commit": "4813ec7afacb3ddbd04721b3c7797591652e8c0b",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
+    "omittedMedia": [
+      "screenshots/dictation.png",
+      "screenshots/engines.png",
+      "screenshots/vocabulary.png",
+      "screenshots/cloud.png",
+      "screenshots/data.png"
+    ]
   },
   "voice-mode": {
     "id": "voice-mode",
@@ -14699,6 +18369,61 @@
     "licenseNote": null,
     "omittedMedia": []
   },
+  "web-push-notify": {
+    "id": "web-push-notify",
+    "displayName": "Web Push Notify",
+    "description": "Sends browser notifications when BB agents finish or fail, even while BB is closed.",
+    "icon": "Mail",
+    "category": "notifications",
+    "tags": [
+      "agents",
+      "notifications",
+      "web-push"
+    ],
+    "author": {
+      "name": "Mayank Bansal",
+      "github": "MayankBansal12"
+    },
+    "originalRepo": "https://github.com/MayankBansal12/bb-plugin-web-push-notify",
+    "subdir": "",
+    "ref": "v0.2.0",
+    "commit": "f10d3d68c852f8ff6031f266f828ac4676d376a8",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
+  "wiki": {
+    "id": "wiki",
+    "displayName": "Wiki",
+    "description": "Gives your agents a wiki of Markdown notes, so what one thread learns the next one can find. Agents search, cite and save notes with two tools, and each new thread starts with up to three notes that fit its first message. Citations open the note in the side panel and preview it on hover, and an @ mention adds a whole note as context. A Wiki panel lists the notes linked to the thread, and one button saves what's worth keeping and archives the thread. Needs a local folder of Markdown notes. git and mempalace are optional.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/wiki-3ddf60cf.svg"
+    },
+    "category": "memory-and-context",
+    "tags": [
+      "notes",
+      "markdown",
+      "knowledge-base",
+      "search",
+      "obsidian",
+      "mempalace",
+      "citations",
+      "memory"
+    ],
+    "author": {
+      "name": "Jonas Brusman",
+      "github": "himynameisjonas"
+    },
+    "originalRepo": "https://github.com/himynameisjonas/bb-plugin-wiki",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "b37c2b96995d26c5a012093ed9b6da871ea4419f",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "wikilinks": {
     "id": "wikilinks",
     "displayName": "Obsidian at Home",
@@ -14726,6 +18451,33 @@
     "refNote": null,
     "license": "MIT",
     "licenseNote": null,
+    "omittedMedia": []
+  },
+  "wizbar": {
+    "id": "wizbar",
+    "displayName": "WizBar",
+    "description": "An agent-first sidebar for fleets of agent threads. Cards show the issue or pull request link and child count, children open from a hover list, a live running count sits below the list with a stats panel on the footer bolt, drag pins and reorders, and every WizBar action has a wizbar CLI command with JSON. Derived from T3 Sidebar.",
+    "icon": "Zap",
+    "category": "thread-management",
+    "tags": [
+      "sidebar",
+      "threads",
+      "inbox",
+      "agents",
+      "fleet",
+      "cli"
+    ],
+    "author": {
+      "name": "OpenWiz",
+      "github": "openwizdev"
+    },
+    "originalRepo": "https://github.com/openwizdev/WizPlugins",
+    "subdir": "wizbar",
+    "ref": "wizbar/v0.3.0",
+    "commit": "db759b971f90c0d31452ef9557e7ac8c60c525a5",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": "в package.json указано \"MIT\", в репозитории permission",
     "omittedMedia": []
   },
   "work-map": {
@@ -14827,6 +18579,33 @@
       "assets/readme/demo.gif"
     ]
   },
+  "workspace-skills": {
+    "id": "workspace-skills",
+    "displayName": "Workspace Skills",
+    "description": "Connect external skill repositories and workspace folders directly to BB without hardcoding paths or copying files. Discovers nested skill packages across your configured directories and registers them into BB's shared skill roots. Discovered skills appear in the slash menu and session instructions across all projects and providers. Configure paths via Settings or the workspace-skills CLI subcommand. Changes to skills in their source repositories reflect immediately without re-installing.",
+    "icon": "FolderKanban",
+    "category": "memory-and-context",
+    "tags": [
+      "skills",
+      "workspace",
+      "monorepo",
+      "context",
+      "prompt-injection",
+      "configuration"
+    ],
+    "author": {
+      "name": "VanDalkvist",
+      "github": "VanDalkvist"
+    },
+    "originalRepo": "https://github.com/VanDalkvist/bb-plugin-workspace-skills",
+    "subdir": "",
+    "ref": "v0.1.2",
+    "commit": "1baa7415f01904cf2a7eefdf156680391e62c8e6",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
+  },
   "workspaces": {
     "id": "workspaces",
     "displayName": "Workspaces",
@@ -14894,6 +18673,32 @@
       "screenshots/card-dark.png",
       "screenshots/sidebar-dark.png"
     ]
+  },
+  "worktree-setup": {
+    "id": "worktree-setup",
+    "displayName": "Worktree Setup",
+    "description": "Runs per-repo setup scripts when bb creates a worktree, using a global git post-checkout hook so nothing needs to live in your repositories.",
+    "icon": "GitBranch",
+    "category": "tasks-and-workflows",
+    "tags": [
+      "worktree",
+      "git-hooks",
+      "provisioning",
+      "setup",
+      "automation"
+    ],
+    "author": {
+      "name": "Kavii Suri",
+      "github": "KaviiSuri"
+    },
+    "originalRepo": "https://github.com/KaviiSuri/bb-plugin-worktree-setup",
+    "subdir": "",
+    "ref": "v0.1.1",
+    "commit": "3302d7bd01326f765b67158c06981fabe4cecf2f",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "wterm-terminal-preview": {
     "id": "wterm-terminal-preview",
@@ -15019,6 +18824,35 @@
       "docs/screenshots/builds.png",
       "docs/screenshots/live-picker.png"
     ]
+  },
+  "xlsx-preview": {
+    "id": "xlsx-preview",
+    "displayName": "Xlsx Preview",
+    "description": "Read Excel workbooks directly in BB’s file panel. Switch between sheets and view merged cells, dates, and up to 1,000 rows × 100 columns per sheet. Find workbooks in your workspace and thread files from the Spreadsheets button. Supports .xlsx and .xlsm without an external account or separate spreadsheet application.",
+    "icon": {
+      "url": "https://getbb.app/marketplace/v1/icons/xlsx-preview-ed49cf11.svg"
+    },
+    "category": "file-viewers-and-editors",
+    "tags": [
+      "excel",
+      "spreadsheets",
+      "xlsx",
+      "xlsm",
+      "workbooks",
+      "tables"
+    ],
+    "author": {
+      "name": "must-aero",
+      "github": "must-aero"
+    },
+    "originalRepo": "https://github.com/must-aero/bb-plugin-xlsx-preview",
+    "subdir": "",
+    "ref": "v0.1.0",
+    "commit": "ff36a029ee1facce150a9eda1008ef8c9e716f30",
+    "refNote": null,
+    "license": "permission",
+    "licenseNote": null,
+    "omittedMedia": []
   },
   "zcode": {
     "id": "zcode",

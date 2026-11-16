@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@vesnalia/plugin-sdk": [
+        "./types/alia-plugin-sdk.d.ts"
+      ],
+      "@vesnalia/plugin-sdk/app": [
+        "./types/alia-plugin-sdk-app.d.ts"
+      ],
+      "@/*": [
+        "./*"
+      ]
+    },
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "*.ts",
+    "*.tsx",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "types/**/*.d.ts"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "name": "alia-plugin-shipyard",
+  "version": "0.2.0",
+  "description": "A Kanban board for coding agents: each task runs in its own VesnALIA thread and git worktree, then waits for your review.",
+  "license": "MIT",
+  "author": "Chris Abra (https://github.com/chrisabra-co)",
+  "keywords": [
+    "alia-plugin",
+    "kanban",
+    "agents",
+    "worktrees",
+    "code-review"
+  ],
+  "type": "module",
+  "engines": {
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
+  },
+  "alia": {
+    "name": "Shipyard",
+    "description": "Capture ideas, brainstorm them with an agent, and queue tasks on a Kanban board. Each task runs in its own thread and git worktree: triage, an optional plan, implementation, and validation run before your review. Then you merge.",
+    "branding": {
+      "icon": "./assets/shipyard.svg",
+      "experimental_icons": {
+        "ship": "./assets/shipyard.svg"
+      }
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "dependencies": {
+    "@radix-ui/react-checkbox": "^1.3.7",
+    "@radix-ui/react-slot": "^1.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0",
+    "@pierre/diffs": "^1.2.9",
+    "@radix-ui/react-alert-dialog": "^1.1.19",
+    "@radix-ui/react-context-menu": "^2.3.3",
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@radix-ui/react-dropdown-menu": "^2.1.20",
+    "@radix-ui/react-hover-card": "^1.1.19",
+    "@radix-ui/react-menubar": "^1.1.20",
+    "@radix-ui/react-navigation-menu": "^1.2.18",
+    "@radix-ui/react-popover": "^1.1.19",
+    "@radix-ui/react-select": "^2.3.3",
+    "@radix-ui/react-tooltip": "^1.2.12",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "sonner": "^1.7.4",
+    "tailwind-merge": "^3.4.0",
+    "vaul": "^1.1.2"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "build": "alia plugin build"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/shipyard#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/shipyard"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

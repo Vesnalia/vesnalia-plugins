@@ -1,0 +1,55 @@
+import { existsSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import plugin, { devinProvider } from "../server";
+import { experimental_providerBridge } from "../host";
+
+describe("Devin provider", () => {
+  it("registers the local Devin ACP launch spec", async () => {
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "devin",
+      experimental_hostEntry: true,
+    });
+
+    try {
+      await plugin(alia);
+
+      expect(harness.registrations.providerRegistrations).toHaveLength(1);
+      const registration = harness.registrations.providerRegistrations[0];
+      expect(registration).toMatchObject({
+        id: "devin",
+        displayName: "Devin",
+        experimental_visibility: "installed",
+        capabilities: {
+          fork: "none",
+          permissionModes: ["accept-edits", "full"],
+        },
+        composerActions: [],
+        experimental_bridgeOptions: {
+          acpDialect: "generic",
+          acpLaunchSpec: {
+            displayName: "Devin",
+            command: process.execPath,
+            args: [
+              expect.stringMatching(/acp-stdio-shim\.mjs$/),
+              "devin",
+              "acp",
+            ],
+            env: {},
+          },
+        },
+      });
+      expect(
+        existsSync(devinProvider.experimental_bridgeOptions.acpLaunchSpec.args[0]),
+      ).toBe(true);
+    } finally {
+      await harness.dispose();
+    }
+  });
+
+  it("exports VesnALIA's generic ACP bridge", () => {
+    expect(devinProvider.experimental_bridgeOptions?.acpDialect).toBe("generic");
+    expect(experimental_providerBridge.experimental_apiVersion).toBe(1);
+    expect(typeof experimental_providerBridge.handleLine).toBe("function");
+  });
+});

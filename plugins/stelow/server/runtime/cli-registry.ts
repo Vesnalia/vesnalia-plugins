@@ -1,0 +1,184 @@
+import { cliHelpText, cliUsageLine, nearestCommand } from "../../lib/cli-suggest.mjs";
+
+export type CliCommand = {
+  name: string;
+  summary: string;
+  usage: string;
+};
+
+const command = (name: string, summary: string, ...usage: string[]): CliCommand => ({
+  name,
+  summary,
+  usage: usage.join(" "),
+});
+
+export const stelowCliCommands: CliCommand[] = [
+  command("status", "Show Stelow workflows", "alia stelow status [--project <proj_id>] [--json]"),
+  command(
+    "ask",
+    "Ask blocking structured questions",
+    "alia stelow ask --thread <thr_id> --question <text> [--multiple] --option <label>",
+    "[--desc <text>] [--preview <text>] [--artifact <path>]...",
+    "(repeat --question groups to ask several at once; write all content in English)",
+  ),
+  command(
+    "answer",
+    "Answer a card's pending questions programmatically (same rules as answering on the card)",
+    "alia stelow answer --card <card_id> --question <question_id> --answer <text>",
+    "[--question <question_id> --answer <text>]... [--json]",
+    "(repeat pairs; every open question must be answered in one call)",
+  ),
+  command(
+    "seed",
+    "Seed state.md, transitions.md, stelow.json",
+    "alia stelow seed --project <proj_id> --name <name>",
+    "--intent <new-product|feature|bugfix|refactor|investigate>",
+  ),
+  command(
+    "preview",
+    "Run and inspect a card workspace's dev server",
+    "alia stelow preview [status|start|stop] [--card <card_id>] [--json]",
+  ),
+  command("advance", "Advance to the next Stelow stage", "alia stelow advance [--project <proj_id>] [--dry-run] [--json] <stage>"),
+  command("next", "Print the next stage the workflow allows (read-only)", "alia stelow next [--json] [--project <proj_id>]"),
+  command(
+    "audit-trail",
+    "Build, check or print the portable audit trail (read-only unless build)",
+    "alia stelow audit-trail build|check|path [--strict] [--json] [--project <proj_id>]",
+  ),
+  command(
+    "check",
+    "Check a breadboard map against the interface rule (read-only)",
+    "alia stelow check breadboard <map.json> [--json] [--strict] [--project <proj_id>]",
+  ),
+  command(
+    "decide",
+    "Record a decided selection, or open a challenge against a receipt",
+    "alia stelow decide --selected <option> [--rejected a,b] [--scopes s1,s2]",
+    "[--reason <text>] [--supersedes r-old] [--challenge ch-id] [--card <id>]",
+    "| VesnALIA stelow decide --open-challenge --against <receipt> --reason <text>",
+  ),
+  command("done", "Commit workflow completion (verified in code)", "alia stelow done [--card <card_id>]"),
+  command("split", "Execute the approved card-split proposal (no content args)", "alia stelow split [--card <card_id>]"),
+  command("playbook", "Print this card's exact state and playbook paths", "alia stelow playbook [--card <card_id>]"),
+  command("doctor", "Detect workflow drift (locks, intent, state vs transitions)", "alia stelow doctor [--project <proj_id>] [--json]"),
+  command("schema", "Show machine-readable subcommand contracts", "alia stelow schema [command]"),
+  command(
+    "sync-scopes",
+    "Parse spec-tech scopes into tracking (idempotent)",
+    "alia stelow sync-scopes [--project <proj_id>] [--name <workflow>] [--json]",
+  ),
+  command(
+    "scope",
+    "Validated scope transitions (single writer)",
+    "alia stelow scope <start|done|seed-tasks> --scope <id>",
+    "[--project <proj_id>] [--name <workflow>] [--iteration <n>] [--actual-files <a,b>]",
+    "[--tasks <json>] [--start-sha <sha>] [--json]",
+  ),
+  command(
+    "scope-approve",
+    "Approve a card's scope map on the host (no content args)",
+    "alia stelow scope-approve [--card <card_id>]",
+  ),
+  command(
+    "lock",
+    "File-reservation locks for parallel scopes",
+    "alia stelow lock <acquire|release|check> [--project <proj_id>] --scope <id>",
+    "[--file <f>...] [--ttl N] [--json]",
+  ),
+  command("config", "Read workflow config from tracking", "alia stelow config get <field> [default] [--project <proj_id>]"),
+  command(
+    "fan-out",
+    "Fan out index opportunities into build cards",
+    "alia stelow fan-out --opportunity <id> [--opportunity ...] [--card <card_id>] [--project <proj_id>]",
+  ),
+  command(
+    "verify",
+    "Verify artifacts, or run the Build card's host-recorded tests",
+    "alia stelow verify [--card <card_id>] [--tests] [--json]",
+  ),
+  command(
+    "scan",
+    "Record a security report as clean / failed / did-not-run (Build checkout)",
+    "alia stelow scan --report <path> [--format auto|sarif|neutral]",
+    "[--fail-on <severity>] [--require-scanners <a,b>] [--card <card_id>] [--json]",
+  ),
+  command("gap-scopes", "Convert escalated gaps into rework scopes (idempotent)", "alia stelow gap-scopes [--card <card_id>]"),
+  command(
+    "metrics",
+    "Lead/cycle time and gap rates per card, or fleet-wide without --card (read-only)",
+    "alia stelow metrics [--json] [--card <card_id>]",
+  ),
+  command("storage", "Worktree disk usage attributed to cards, heaviest first (read-only)", "alia stelow storage [--json] [--card <card_id>]"),
+  command(
+    "prune",
+    "Remove workflow tracking entries whose card no longer exists (dry run unless --apply)",
+    "alia stelow prune [--json] [--apply]",
+  ),
+  command(
+    "log",
+    "What the plugin recorded doing: RPCs, CLI verbs, decisions and effects (read-only)",
+    "alia stelow log [--json] [--card <card_id>] [--kind <kind>] [--cause <code>]",
+    "[--outcome <o>] [--layer <l>] [--since 6h|7d|6w] [--limit <n>] [--replay]",
+  ),
+  command(
+    "manifest",
+    "Paste-ready Stelow-Artifacts trailer block for commit messages (read-only)",
+    "alia stelow manifest [--json] [--card <card_id>]",
+  ),
+  command(
+    "export",
+    "Refresh docs/runs/<card> plus manifest.md (idempotent, also automatic at done);",
+    "--check reports content drift and uncommitted state without writing",
+    "alia stelow export [--json] [--check] [--card <card_id>] [--dir <relpath>]",
+  ),
+  command(
+    "draft",
+    "Disposable Tier G draft burst on the generation preset (text-in/text-out)",
+    "alia stelow draft --prompt <brief> [--json] [--card <card_id>]",
+  ),
+  command(
+    "review",
+    "Independent artifact review by the designated reviewer preset (opt-in, read-only)",
+    "alia stelow review [--card <card_id>] [--artifact <path>]",
+  ),
+  command(
+    "criteria",
+    "Score an artifact against its skill's semantic criteria (advisory, read-only)",
+    "alia stelow criteria --skill <skill-id> --artifact <path> [--card <card_id>] [--json]",
+  ),
+  command("verify-tasks", "Judge completed tasks against the working diff (advisory, read-only)", "alia stelow verify-tasks [--card <card_id>] [--json]"),
+  command(
+    "verify-delegation",
+    "Count worker subagent delegations in the thread timeline (advisory, read-only)",
+    "alia stelow verify-delegation [--card <card_id>] [--json]",
+  ),
+  command("gap-triage", "Second-opinion escalated critique gaps via the judge (advisory, read-only)", "alia stelow gap-triage [--card <card_id>] [--json]"),
+  command(
+    "gaps",
+    "What has already been flagged, grouped by area, across the fleet (read-only)",
+    "alia stelow gaps [--card <card_id>] [--area <glob>] [--status documented|escalated] [--json]",
+  ),
+  command(
+    "wake",
+    "Whether a scheduled visit should spend a model turn on this card (read-only, free)",
+    "alia stelow wake [--card <card_id>] [--json]",
+    "(prints {\"wakeAgent\": false} when the tick should be skipped, else the reason it should not)",
+  ),
+  command("preset", "Manage agent presets", "alia stelow preset list|add|remove|assign"),
+  command("help", "Show help for a subcommand", "alia stelow help [command]"),
+];
+
+export function cliUnknownResult(argv: string[]) {
+  const requested = argv[0];
+  const suggestion = requested
+    ? nearestCommand(requested, stelowCliCommands.map((entry) => entry.name))
+    : null;
+  const stderr = `Unknown command "${requested ?? ""}".${suggestion ? ` Did you mean "${suggestion}"?` : ""}\n${cliUsageLine(stelowCliCommands)}`;
+  return { exitCode: 2, stderr };
+}
+
+export function cliHelpResult(argv: string[]) {
+  const text = cliHelpText(stelowCliCommands, argv[1]);
+  return text === null ? cliUnknownResult(argv.slice(1)) : { exitCode: 0, stdout: text };
+}

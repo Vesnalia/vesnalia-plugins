@@ -1,0 +1,48 @@
+{
+  "name": "alia-plugin-thread-switcher",
+  "version": "0.1.1",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
+  },
+  "alia": {
+    "name": "Thread Switcher",
+    "description": "Switch between recent threads with a hotkey (Control+Tab by default) and see a preview of each chat.",
+    "branding": {
+      "icon": "./icons/thread-switcher.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "hono": "^4.13.16",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc -p ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-switcher#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-switcher"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

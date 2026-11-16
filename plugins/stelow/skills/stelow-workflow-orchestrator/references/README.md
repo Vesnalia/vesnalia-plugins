@@ -1,0 +1,40 @@
+# References Index
+
+This directory contains reference files used by the stelow stages.
+All paths below are relative to `skills/stelow-workflow-orchestrator/references/` (or `~/.agents/skills/stelow-workflow-orchestrator/references/`).
+
+## CLI Tools (`cli-tools/`)
+
+| File | Purpose |
+|------|---------|
+| `cli-tools/goals.md` | Acceptance contracts, optimization goals, scope iteration |
+| `cli-tools/intercom.md` | Inter-session communication |
+| `cli-tools/visual_review.md` | visual review gate command + after-approval workflow |
+| `cli-tools/safe-change.md` | Safe-change tool reference |
+| `cli-tools/stage-status.md` | Status display, `/sw-next`, `/sw-setphase` |
+| `cli-tools/ask.md` | `ask_user_question` pattern reference |
+| `cli-tools/subagents.md` | Subagent delegation patterns |
+| `cli-tools/todo.md` | Task management tool reference |
+
+## Other References
+
+| File | Purpose |
+|------|---------|
+| `capabilities.md` | Capability reference (informational only) |
+| `output-expectations.md` | Expected outputs per stage |
+| `permissions.md` | Tool permissions and stage restrictions |
+| `strategic-exploration.md` | Strategic approach details |
+
+## Key Stage Files (sibling to `references/`)
+
+| File (relative to skill root) | Purpose |
+|------|---------|
+| `stages.yaml` | Stage metadata, blocked/allowed tools per stage |
+| `stages/` | All stage instruction files (`setup.md`, `ask-patterns.md`, etc.) |
+| `SKILL.md` | Orchestrator skill — entry point |
+
+## Common Path Mistakes (what NOT to use)
+
+- There is no `stages.yml` — the stage model lives in `../stages.yaml` (skill root).
+- There is no `workflow.md` — the entry point is `../SKILL.md` (skill root).
+- From inside `references/`, reach stage files as `../stages/…` (with `../`), never as a bare relative that drops the parent step.

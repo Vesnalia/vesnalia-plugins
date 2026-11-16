@@ -1,0 +1,1147 @@
+{
+  "schemaVersion": 1,
+  "skills": [
+    {
+      "aliaName": "architect",
+      "compatRules": [
+        "alia-path-architect-models"
+      ],
+      "description": "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for /architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape.",
+      "displayName": "architect",
+      "group": "workflow",
+      "hasScripts": false,
+      "id": "architect",
+      "prerequisites": [
+        "git"
+      ],
+      "requiredBy": [
+        "figure-it-out",
+        "no-comments",
+        "poteto-mode"
+      ],
+      "requires": [
+        "arena",
+        "how",
+        "interrogate",
+        "why"
+      ],
+      "upstreamHash": "358ddd88b3091f5e7edcd6fcf5cbcf757ada9e1a5a33d17b6145e25a276b3de1",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "arena",
+      "compatRules": [
+        "alia-path-arena-models"
+      ],
+      "description": "Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for /arena, 'arena this', 'throw it in the arena', or when one attempt at a non-trivial artifact would lock in the wrong shape.",
+      "displayName": "arena",
+      "group": "workflow",
+      "hasScripts": false,
+      "id": "arena",
+      "prerequisites": [
+        "git"
+      ],
+      "requiredBy": [
+        "architect",
+        "blast-radius",
+        "figure-it-out",
+        "interrogate",
+        "poteto-mode"
+      ],
+      "requires": [
+        "poteto-mode"
+      ],
+      "upstreamHash": "af1d9345489674db4605484e9deca78e24d49d0c14df5e8cf6240659a822b7f2",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "automate-me",
+      "compatRules": [
+        "alia-path-mode-discovery",
+        "alia-path-mode-history",
+        "alia-path-mode-placement",
+        "alia-path-mode-slices"
+      ],
+      "description": "Use for \"automate me\", \"create/update/refresh my -mode skill\", \"turn/capture my preferences or working style into a skill\", or wanting agents to follow how the user works. Drafts or revises a personal -mode skill via create-skill + unslop, optionally pulling fresh evidence from recent transcripts.",
+      "displayName": "automate-me",
+      "group": "workflow",
+      "hasScripts": false,
+      "id": "automate-me",
+      "prerequisites": [
+        "git"
+      ],
+      "requiredBy": [
+        "recall"
+      ],
+      "requires": [
+        "poteto-mode",
+        "unslop"
+      ],
+      "upstreamHash": "ac7bd720c50fe9fd464c902310aa43ed01ef225040ce3bf8d1c6a616d276d721",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "benchmark-checklist",
+      "compatRules": [],
+      "description": "Vet a perf measurement (limiter, tuning, limits, errors, repeatability, relevance, and whether the work happened) before you report or act on it. Use when you run a benchmark or report a speedup or regression you measured.",
+      "displayName": "benchmark-checklist",
+      "group": "verification",
+      "hasScripts": false,
+      "id": "benchmark-checklist",
+      "prerequisites": [
+        "node"
+      ],
+      "requiredBy": [
+        "poteto-mode",
+        "principle-explain-the-number"
+      ],
+      "requires": [],
+      "upstreamHash": "d46351115b48d534edd477681abc57fc6a77b91bcd6c7ea1dbb5fa6757796ec5",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "blast-radius",
+      "compatRules": [],
+      "description": "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust.",
+      "displayName": "blast-radius",
+      "group": "investigation",
+      "hasScripts": false,
+      "id": "blast-radius",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [
+        "arena",
+        "how",
+        "unslop",
+        "why"
+      ],
+      "upstreamHash": "52d3571ab2677dcff2431cde2c5ff31fa517b9526dda4c11df87291b5c6aabbf",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "bro",
+      "compatRules": [],
+      "description": "Restate the last message in plain human language, with no jargon.",
+      "displayName": "bro",
+      "group": "style",
+      "hasScripts": false,
+      "id": "bro",
+      "prerequisites": [],
+      "requiredBy": [
+        "ketchup"
+      ],
+      "requires": [],
+      "upstreamHash": "6255c984fb300214dcd2ad78e8de2053826342c1903de73d633fc8ffb7d32e2e",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "correct",
+      "compatRules": [],
+      "description": "Find the mistakes agents keep repeating in this repo and make each one impossible. Try architecture first, then types, then a lint whose error names the fix, then a test, and write docs last. Prove each check fails on a real past mistake. Repeat this each time the operator corrects you. Use for /correct.",
+      "displayName": "correct",
+      "group": "workflow",
+      "hasScripts": false,
+      "id": "correct",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "4490a11cf88e3626e561d70f04e90d9e2c1ef254073c6f064cccb52a9e4a0cf1",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "create-formal-verification-skill",
+      "compatRules": [
+        "alia-path-create-formal-verification-skill"
+      ],
+      "description": "Generate a project-local skill that formally verifies the code where a bug costs the most and tests reach the least, in any language, with whichever verification tool fits. Use for /create-formal-verification-skill, \"model-check this race\", \"prove this invariant\", or when concurrency, retries, state machines, parsers, or unsafe code need more than tests.",
+      "displayName": "create-formal-verification-skill",
+      "group": "verification",
+      "hasScripts": false,
+      "id": "create-formal-verification-skill",
+      "prerequisites": [],
+      "requiredBy": [
+        "maintain-formal-verification-skill",
+        "setup-pstack"
+      ],
+      "requires": [
+        "maintain-formal-verification-skill",
+        "statechart"
+      ],
+      "upstreamHash": "c1c1fe37930ce3fa7cb31d06c452f8b65bea895e646820fa52f656bb6835f039",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "create-verification-skill",
+      "compatRules": [
+        "alia-path-create-verification-skill"
+      ],
+      "description": "Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform. Use for /create-verification-skill, \"make a control skill for this repo\", or when a project has no scripted way to prove UI/CLI/service behavior.",
+      "displayName": "create-verification-skill",
+      "group": "verification",
+      "hasScripts": false,
+      "id": "create-verification-skill",
+      "prerequisites": [],
+      "requiredBy": [
+        "maintain-verification-skill",
+        "setup-pstack"
+      ],
+      "requires": [
+        "maintain-verification-skill"
+      ],
+      "upstreamHash": "3b40443ffc2ec628683b79515f22fe9b6f8bdeeaf4932f60cf319d07e0f376c8",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "figure-it-out",
+      "compatRules": [],
+      "description": "Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /figure-it-out or 'figure it out'.",
+      "displayName": "figure-it-out",
+      "group": "entry-points",
+      "hasScripts": false,
+      "id": "figure-it-out",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [
+        "architect",
+        "arena",
+        "poteto-mode",
+        "show-me-your-work"
+      ],
+      "upstreamHash": "81f55cd6e9744f4f15937fc6d9dcd8c43c09e3a8ea666b8c4726607934114431",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "how",
+      "compatRules": [
+        "alia-path-how-models"
+      ],
+      "description": "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use why for motivation.",
+      "displayName": "how",
+      "group": "investigation",
+      "hasScripts": false,
+      "id": "how",
+      "prerequisites": [],
+      "requiredBy": [
+        "architect",
+        "blast-radius",
+        "no-comments",
+        "poteto-mode",
+        "teach",
+        "why"
+      ],
+      "requires": [
+        "poteto-mode",
+        "why"
+      ],
+      "upstreamHash": "b421a9866b0127069c58c61ffe7b4a3116a62dd2399a56f9de4fce30d6ee4c44",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "in-your-own-words",
+      "compatRules": [],
+      "description": "Restate in your own words what you think the user's goals are and what problem they're trying to solve. Use for /in-your-own-words.",
+      "displayName": "in-your-own-words",
+      "group": "entry-points",
+      "hasScripts": false,
+      "id": "in-your-own-words",
+      "prerequisites": [],
+      "requiredBy": [
+        "interrogate"
+      ],
+      "requires": [],
+      "upstreamHash": "3206e955b8764cc58df2d7baa79f32a480ddb729b5c6d44ff823cf01a2a6e454",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "interrogate",
+      "compatRules": [],
+      "description": "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Adversaries try to break a change or design, and only findings proven by a run survive.",
+      "displayName": "interrogate",
+      "group": "verification",
+      "hasScripts": false,
+      "id": "interrogate",
+      "prerequisites": [],
+      "requiredBy": [
+        "architect",
+        "poteto-mode"
+      ],
+      "requires": [
+        "arena",
+        "in-your-own-words"
+      ],
+      "upstreamHash": "cb397079935cc4dddb540bf7fd2a5d701b65058725b55e6ba8710446b5db1998",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "ketchup",
+      "compatRules": [],
+      "description": "Catch the user up on what changed in this chat since their last message, in plain words and small visuals. List every item waiting on them with what they need to decide it from the reply alone. Use for /ketchup.",
+      "displayName": "ketchup",
+      "group": "other",
+      "hasScripts": false,
+      "id": "ketchup",
+      "prerequisites": [],
+      "requiredBy": [
+        "ketchup-video",
+        "poteto-mode"
+      ],
+      "requires": [
+        "bro"
+      ],
+      "upstreamHash": "8039aa0c9f05b71f39d04aaa80ad5da60ffe7ca7edb72e40553128d9b24e4f25",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "ketchup-video",
+      "compatRules": [],
+      "description": "Catch the user up like /ketchup, with a short subtitled video of slides for what happened and the waiting calls as text under it. Use for /ketchup-video.",
+      "displayName": "ketchup-video",
+      "group": "other",
+      "hasScripts": false,
+      "id": "ketchup-video",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [
+        "ketchup"
+      ],
+      "upstreamHash": "390625742ece074a458b05f684bf4bcb765d54486beb9bec2d982d6c703beb9a",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "maintain-formal-verification-skill",
+      "compatRules": [],
+      "description": "Bring a project's formal verification back in line with the code after the code changes: find the commits that touched verified code, update the model, harness, or properties to describe the code as it is now, rerun, and say whether each failure is drift in the verification or a bug in the code. Use for /maintain-formal-verification-skill, \"is the model still true to the code\", or after merges and refactors that touched verified code without rechecking it.",
+      "displayName": "maintain-formal-verification-skill",
+      "group": "verification",
+      "hasScripts": false,
+      "id": "maintain-formal-verification-skill",
+      "prerequisites": [],
+      "requiredBy": [
+        "create-formal-verification-skill"
+      ],
+      "requires": [
+        "create-formal-verification-skill"
+      ],
+      "upstreamHash": "759f8818a9889ce88a8ae6e2d1fff92e5743bad771dd0708655ddbddae9c4850",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "maintain-verification-skill",
+      "compatRules": [
+        "alia-path-maintain-verification-skill"
+      ],
+      "description": "Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections. Use for /maintain-verification-skill or \"audit the verify skill\".",
+      "displayName": "maintain-verification-skill",
+      "group": "verification",
+      "hasScripts": false,
+      "id": "maintain-verification-skill",
+      "prerequisites": [],
+      "requiredBy": [
+        "create-verification-skill"
+      ],
+      "requires": [
+        "create-verification-skill"
+      ],
+      "upstreamHash": "5cf2efed11a292628139fdb47ea753d4194ff76318303d15fb0c0fc726bd6317",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "make-bot-ui",
+      "compatRules": [],
+      "description": "Use when building a custom UI (page, dashboard, buttons) that should wake a Grok Bot over a webhook, when the user must provide a webhook sender key, or when exposing that UI on Tailscale.",
+      "displayName": "make-bot-ui",
+      "group": "workflow",
+      "hasScripts": false,
+      "id": "make-bot-ui",
+      "prerequisites": [
+        "curl",
+        "node"
+      ],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "717968e75caa1e55a5c42614c4ec2bf0e18902db6903eca992fb739e9cf55ad8",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "no-comments",
+      "compatRules": [],
+      "description": "Spawn Comment Sicko, fix accepted findings, and offer encodings for claimed constraints.",
+      "displayName": "no-comments",
+      "group": "style",
+      "hasScripts": false,
+      "id": "no-comments",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [
+        "architect",
+        "how",
+        "poteto-mode",
+        "principle-fix-root-causes",
+        "principle-redesign-from-first-principles",
+        "why"
+      ],
+      "upstreamHash": "ca0715c91db5351ad87e468387a130bb583f0e303bbf69401849736a615f6eea",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "poteto-help",
+      "compatRules": [
+        "alia-path-help-models"
+      ],
+      "description": "Guides users through pstack setup, /poteto-mode, and picking the skill, playbook, or principle for a task. Type /poteto-help with a question.",
+      "displayName": "poteto-help",
+      "group": "entry-points",
+      "hasScripts": false,
+      "id": "poteto-help",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "329e70ddc0260673c370f43d50949fc7b1b8ad490c144553c25cafd631f45a07",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "poteto-mode",
+      "compatRules": [
+        "alia-path-eval-history",
+        "alia-path-pickup-history",
+        "alia-worktree-usage-gate"
+      ],
+      "description": "poteto's agent style for concise, detailed responses, deliberate subagents, unslopped prose, simple code, and verified work. Use for poteto, /poteto-mode, or requests to work in this style.",
+      "displayName": "poteto-mode",
+      "group": "entry-points",
+      "hasScripts": true,
+      "id": "poteto-mode",
+      "prerequisites": [
+        "awk",
+        "bash",
+        "bun",
+        "gh",
+        "git",
+        "jq",
+        "node",
+        "rg",
+        "sed"
+      ],
+      "requiredBy": [
+        "arena",
+        "automate-me",
+        "figure-it-out",
+        "how",
+        "no-comments",
+        "recall",
+        "reflect",
+        "show-me-your-work",
+        "swarm",
+        "why"
+      ],
+      "requires": [
+        "architect",
+        "arena",
+        "benchmark-checklist",
+        "figure-it-out",
+        "how",
+        "interrogate",
+        "ketchup",
+        "no-comments",
+        "principle-build-the-lever",
+        "principle-encode-lessons-in-structure",
+        "principle-foundational-thinking",
+        "principle-guard-the-context-window",
+        "principle-laziness-protocol",
+        "principle-migrate-callers-then-delete-legacy-apis",
+        "principle-minimize-reader-load",
+        "principle-model-the-domain",
+        "principle-prove-it-works",
+        "principle-redesign-from-first-principles",
+        "principle-sequence-verifiable-units",
+        "principle-subtract-before-you-add",
+        "reflect",
+        "setup-pstack",
+        "show-me-your-work",
+        "swarm",
+        "tdd",
+        "technical-writing",
+        "unslop",
+        "why"
+      ],
+      "upstreamHash": "43f5c733322e0e4fd707d67194a29e6403109b8c744293e2178241bcb2cc0368",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-attack-the-premise",
+      "compatRules": [],
+      "description": "Apply when two or more fixes that share one premise have failed the same gate. Write the premise down and test it directly before you write another fix that assumes it.",
+      "displayName": "principle-attack-the-premise",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-attack-the-premise",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [
+        "principle-build-the-lever",
+        "principle-fix-root-causes",
+        "principle-laziness-protocol",
+        "principle-redesign-from-first-principles"
+      ],
+      "upstreamHash": "af82d78088bf768f9ecad9a1ea31608c90b47208601d198ca11279522a602d9f",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-boundary-discipline",
+      "compatRules": [],
+      "description": "Apply when wiring validation, error handling, or framework adapters. Concentrate guards at system boundaries (CLI, config, network, external APIs); trust internal types and keep business logic in pure functions.",
+      "displayName": "principle-boundary-discipline",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-boundary-discipline",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "9102df447d165e6f610df5a326e2ccd18e90259dad3950527cb00b06557165de",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-build-the-lever",
+      "compatRules": [],
+      "description": "Apply to any non-trivial work, not just bulk work: edits, migrations, analyses, checks. Build the tool that does it or proves it (codemod, script, generator, or a skill your subagents follow) instead of working by hand. The tool is the artifact a reviewer can rerun.",
+      "displayName": "principle-build-the-lever",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-build-the-lever",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode",
+        "principle-attack-the-premise"
+      ],
+      "requires": [
+        "principle-encode-lessons-in-structure",
+        "principle-laziness-protocol",
+        "principle-prove-it-works"
+      ],
+      "upstreamHash": "7f40d57c4aaa162b202be6c5beee57d126f19ab174fe95f6815010af8aa5b3a9",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-encode-lessons-in-structure",
+      "compatRules": [],
+      "description": "Apply when you catch yourself writing the same instruction a second time, or notice a recurring correction. Encode the rule as a lint, metadata flag, runtime check, or script instead of more text.",
+      "displayName": "principle-encode-lessons-in-structure",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-encode-lessons-in-structure",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode",
+        "principle-build-the-lever"
+      ],
+      "requires": [],
+      "upstreamHash": "665aa6c415069ccfa281ec9ff4b6b9540705c69911f3fad87dd93e888e3cea8e",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-exhaust-the-design-space",
+      "compatRules": [],
+      "description": "Apply when facing a novel UI interaction or architectural decision with no precedent in the codebase. Build 2-3 competing prototypes and compare side by side before committing.",
+      "displayName": "principle-exhaust-the-design-space",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-exhaust-the-design-space",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "02445d81cac6a6873e4f33b4b2e441f918aa1ef327fcf74ff19789e327d36307",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-experience-first",
+      "compatRules": [],
+      "description": "Apply when product, UX, or feature-scope tradeoffs come up. Choose user delight over implementation convenience; ship fewer polished features over more rough ones.",
+      "displayName": "principle-experience-first",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-experience-first",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "bb7ebd9979c3d68f8b69a82e285aaedfa89ad2d4bfe47e3bb4656d0912f299ee",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-explain-the-number",
+      "compatRules": [],
+      "description": "Apply before you measure, and before you trust, report, or act on a number you measured: a speedup, a regression, a throughput, a latency, or an eval result. Find what limits it, and rule out that it measured something other than the work you think.",
+      "displayName": "principle-explain-the-number",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-explain-the-number",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [
+        "benchmark-checklist",
+        "principle-prove-it-works"
+      ],
+      "upstreamHash": "fe9e539182225f9c998f464496e45b2597908bcf45530af736e0e3ea11c11d86",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-fix-root-causes",
+      "compatRules": [],
+      "description": "Apply when debugging. Trace each symptom back to the first place the system went wrong and fix it there. A guard is a fix only when the state it handles is legitimate.",
+      "displayName": "principle-fix-root-causes",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-fix-root-causes",
+      "prerequisites": [],
+      "requiredBy": [
+        "no-comments",
+        "principle-attack-the-premise"
+      ],
+      "requires": [],
+      "upstreamHash": "4ee417cdf3baa12b47bf9e04f3f7c97f6dcd29712522b06cbb0f89df9d4322ba",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-foundational-thinking",
+      "compatRules": [],
+      "description": "Apply before writing logic: choosing core types and data structures, sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the data structures right so downstream code becomes obvious.",
+      "displayName": "principle-foundational-thinking",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-foundational-thinking",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [],
+      "upstreamHash": "f9fa2a9bf54060fbc305f2a01a77072c50c92397e644c31fb0295984705e1c2f",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-guard-the-context-window",
+      "compatRules": [],
+      "description": "Apply when context is filling up: large outputs, long files, repeated reads, fan-out planning. Route bulk to subagents; keep summaries in the main thread, not raw payloads.",
+      "displayName": "principle-guard-the-context-window",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-guard-the-context-window",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode",
+        "principle-minimize-reader-load"
+      ],
+      "requires": [],
+      "upstreamHash": "6d522a49e303c98201f581010e0cad4936c0291d6bb36e81d57c0d37465cf4fe",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-laziness-protocol",
+      "compatRules": [],
+      "description": "Apply when refactoring, evaluating diff size, or tempted to add abstractions, layers, or signal threading. Bias toward deletion and the smallest change that solves the problem.",
+      "displayName": "principle-laziness-protocol",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-laziness-protocol",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode",
+        "principle-attack-the-premise",
+        "principle-build-the-lever"
+      ],
+      "requires": [],
+      "upstreamHash": "1441db1526f4da6be5e05ff36eafad3b1d771596449d9a1e93543b46efa82081",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-make-operations-idempotent",
+      "compatRules": [],
+      "description": "Apply when designing commands, lifecycle steps, or processing loops that run amid crashes, restarts, and retries. Converge to the same end state regardless of partial prior runs.",
+      "displayName": "principle-make-operations-idempotent",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-make-operations-idempotent",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "7b7a21363d05dcbf5a0e3b59d42c69d34d231316ff001d3e48851ad6725eacf1",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-migrate-callers-then-delete-legacy-apis",
+      "compatRules": [],
+      "description": "Apply when introducing a new internal API while old callers still exist. Migrate callers and delete the old API in the same wave instead of preserving compatibility layers.",
+      "displayName": "principle-migrate-callers-then-delete-legacy-apis",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-migrate-callers-then-delete-legacy-apis",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [],
+      "upstreamHash": "2ab5a2b767bd4f02b923e01d07598e471d291845f5995c705d14f0bd9825b0fc",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-minimize-reader-load",
+      "compatRules": [],
+      "description": "Apply when reviewing or shaping code that's hard to trace. Count layers between question and answer, and hidden state in the reader's head; collapse one-caller wrappers and shrink mutable scope.",
+      "displayName": "principle-minimize-reader-load",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-minimize-reader-load",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [
+        "principle-guard-the-context-window"
+      ],
+      "upstreamHash": "61186bf0a33088f7c4e10aab1faee9296bb0a66c736fdf7be0a48818166d5848",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-model-the-domain",
+      "compatRules": [],
+      "description": "Apply when writing stateful logic, or when code branches a lot or repeats a shape assumption across files.",
+      "displayName": "principle-model-the-domain",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-model-the-domain",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [],
+      "upstreamHash": "fcd6891a8874874fc0c6ab4e0b81d2e0f3cd5eb71b5d68d4d4b16199f3c5a240",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-never-block-on-the-human",
+      "compatRules": [],
+      "description": "Apply when tempted to ask 'should I do X?' on reversible work.",
+      "displayName": "principle-never-block-on-the-human",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-never-block-on-the-human",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "c6e596ce19eb9d303cee8d7849bffc0fb12d0c48ac8cc23bd71944ab1a6511a4",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-outcome-oriented-execution",
+      "compatRules": [],
+      "description": "Apply during planned rewrites and migrations with explicit phase boundaries. Converge on the target architecture; don't preserve smooth intermediate states with throwaway compatibility code.",
+      "displayName": "principle-outcome-oriented-execution",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-outcome-oriented-execution",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "7bd8ed897c6bd0c4eea5b64353803eb4bf9feeb2a540758897ff7e0fdfb2b541",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-prove-it-works",
+      "compatRules": [],
+      "description": "Apply after completing a task, before declaring done. Verify against the real artifact (run the feature, read the actual value, inspect the diff), not a proxy, self-report, or 'it compiles.'",
+      "displayName": "principle-prove-it-works",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-prove-it-works",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode",
+        "principle-build-the-lever",
+        "principle-explain-the-number"
+      ],
+      "requires": [
+        "show-me-your-work"
+      ],
+      "upstreamHash": "cec7bb6c4016606b1e03d980e38050266b4d2220dd81c89dd313d6cabe83f995",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-redesign-from-first-principles",
+      "compatRules": [],
+      "description": "Apply when integrating a new requirement into an existing design.",
+      "displayName": "principle-redesign-from-first-principles",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-redesign-from-first-principles",
+      "prerequisites": [],
+      "requiredBy": [
+        "no-comments",
+        "poteto-mode",
+        "principle-attack-the-premise"
+      ],
+      "requires": [],
+      "upstreamHash": "66e2f6b8c0ff402399a9ba97e6788b9e8a88eea1b90931e904f0c4872352e7de",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-separate-before-serializing-shared-state",
+      "compatRules": [],
+      "description": "Apply when concurrent actors might write to the same file, branch, key, or state object. Eliminate the sharing first; serialize structurally only when one shared writer is a real invariant.",
+      "displayName": "principle-separate-before-serializing-shared-state",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-separate-before-serializing-shared-state",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "f2717e80bfbea9ae0ed18ecc81631983e39d1201a82c02331f3b65500ca67c39",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-sequence-verifiable-units",
+      "compatRules": [],
+      "description": "Apply to multi-step work (sweeps, migrations, runs of similar edits) and to how you stack commits and PRs. Break work into small units that each end in a verifiable state, check each before the next, and order delivery so the sequence proves itself to a reviewer.",
+      "displayName": "principle-sequence-verifiable-units",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-sequence-verifiable-units",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [],
+      "upstreamHash": "91dd9f04a999e6467b119631523c160550ce70e9c27f2c20245afea57f7969f5",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-subtract-before-you-add",
+      "compatRules": [],
+      "description": "Apply when sequencing an addition, refactor, or rewrite. Remove dead code, redundant validators, and stub references first, then build on the simpler base.",
+      "displayName": "principle-subtract-before-you-add",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-subtract-before-you-add",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [],
+      "upstreamHash": "968d8ba8e79902b238f8bcef8f271bcf2905bc723c1efcef34ea78e3b6f64409",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-test-behavior-not-implementation",
+      "compatRules": [],
+      "description": "Apply when you write, change, or keep a test. Assert what the code's users can observe, so that the test fails when that behavior breaks and keeps passing when only the internals change.",
+      "displayName": "principle-test-behavior-not-implementation",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-test-behavior-not-implementation",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "46ab85961ede9dc8f13dfe274727dc89fed4b10e9602a03d649060a91713045b",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "principle-type-system-discipline",
+      "compatRules": [],
+      "description": "Apply when designing types, reviewing a function signature, or writing code in any statically-typed language. Make illegal states unrepresentable, brand semantic primitives, parse external data at boundaries, exhaust variants, derive from authoritative schemas.",
+      "displayName": "principle-type-system-discipline",
+      "group": "principles",
+      "hasScripts": false,
+      "id": "principle-type-system-discipline",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [
+        "typescript-best-practices"
+      ],
+      "upstreamHash": "acadd54aceafd3f629528a9445a3af2a0ef2e125b9eb161bafd1f27db3e1066a",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "recall",
+      "compatRules": [
+        "alia-path-recall-citations",
+        "alia-path-recall-history",
+        "alia-path-recall-order",
+        "alia-path-recall-output-citations"
+      ],
+      "description": "Reconstruct your recent working context from your own chat history, live state, and the shared record (user reports, prior fixes, incidents), then hand back a tight current-state brief. Use for 'recall my work on X', 'catch me up', 'what have I been working on', 'where did I leave off', before starting or resuming work.",
+      "displayName": "recall",
+      "group": "investigation",
+      "hasScripts": false,
+      "id": "recall",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [
+        "automate-me",
+        "poteto-mode",
+        "unslop",
+        "why"
+      ],
+      "upstreamHash": "1991c642818b47ae84e65ee90d0314bc2fe743165693b60bb3efa72b111b2958",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "reflect",
+      "compatRules": [
+        "alia-path-reflect-divergent-roots",
+        "alia-path-reflect-edit-destination",
+        "alia-path-reflect-history",
+        "alia-path-reflect-judgment-roots",
+        "alia-path-reflect-models",
+        "alia-path-reflect-tooling-roots"
+      ],
+      "description": "Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect.",
+      "displayName": "reflect",
+      "group": "workflow",
+      "hasScripts": false,
+      "id": "reflect",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [
+        "poteto-mode"
+      ],
+      "upstreamHash": "a5eaf0a6507092f436e507a98694a128fa587bccdc57ef8ce714a8b4b90b01c4",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "setup-pstack",
+      "compatRules": [
+        "alia-path-setup-intro",
+        "alia-path-setup-load",
+        "alia-path-setup-section"
+      ],
+      "description": "Configure which models pstack uses per role and at what reasoning budget. Detects your available models and writes an always-applied rule that overrides the skill defaults. Use for /setup-pstack, \"configure pstack models\", \"pstack budget\", or changing pstack's model choices.",
+      "displayName": "setup-pstack",
+      "group": "entry-points",
+      "hasScripts": false,
+      "id": "setup-pstack",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [
+        "create-formal-verification-skill",
+        "create-verification-skill"
+      ],
+      "upstreamHash": "c47e248d80b4b730f81e9f2c526afad9122fa0b822bd776875932af3fc026e55",
+      "userInvocableOnly": false
+    },
+    {
+      "aliaName": "sharpen",
+      "compatRules": [],
+      "description": "Make a task deeper, not bigger, then rewrite the prompt. Use for /sharpen.",
+      "displayName": "sharpen",
+      "group": "entry-points",
+      "hasScripts": false,
+      "id": "sharpen",
+      "prerequisites": [],
+      "requiredBy": [],
+      "requires": [],
+      "upstreamHash": "e7f889cf592f8260808571648d73936672a6eccb365c7b410f288beb6dcf8348",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "show-me-your-work",
+      "compatRules": [
+        "alia-path-work-log-history"
+      ],
+      "description": "Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result). Local by default; commit it when a reviewer needs the trail to trust the result. Use for /show-me-your-work, autonomous or multi-phase runs, or work a human reviews after stepping away.",
+      "displayName": "show-me-your-work",
+      "group": "workflow",
+      "hasScripts": true,
+      "id": "show-me-your-work",
+      "prerequisites": [
+        "bash"
+      ],
+      "requiredBy": [
+        "figure-it-out",
+        "poteto-mode",
+        "principle-prove-it-works"
+      ],
+      "requires": [
+        "poteto-mode",
+        "unslop"
+      ],
+      "upstreamHash": "20b9432ca83027a2e59f4b66880e43fbc8145d8251bd6376984a5d265258a4d2",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "statechart",
+      "compatRules": [],
+      "description": "Check a TLA+ model of a system that moves between states, such as a product flow, a protocol, or a service, and draw it as a Mermaid statechart. The report gives the shortest path to each state that breaks a rule. Use for /statechart, or to show a bug as a path through states.",
+      "displayName": "statechart",
+      "group": "verification",
+      "hasScripts": true,
+      "id": "statechart",
+      "prerequisites": [
+        "node",
+        "sed"
+      ],
+      "requiredBy": [
+        "create-formal-verification-skill"
+      ],
+      "requires": [],
+      "upstreamHash": "bae4a7e3656ad7e7369ec0d86bf0587631f46dad24ddb6f674d29371761ead37",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "swarm",
+      "compatRules": [
+        "alia-path-swarm-models"
+      ],
+      "description": "Fan out N parallel workers, drain them, and return one report. Use for /swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration.",
+      "displayName": "swarm",
+      "group": "workflow",
+      "hasScripts": false,
+      "id": "swarm",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [
+        "poteto-mode"
+      ],
+      "upstreamHash": "d578ced93f2e9d44a77d9bf39780e83a54e2c333683186156a18c0fcddbd26da",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "tdd",
+      "compatRules": [],
+      "description": "Use only when the user explicitly asks for TDD, a failing test, or a regression test, OR when the bug has an obvious cheap local test target. Skip when the test path is unclear, expensive, integration-heavy, or not requested.",
+      "displayName": "tdd",
+      "group": "verification",
+      "hasScripts": false,
+      "id": "tdd",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [],
+      "upstreamHash": "808d0f79a8349d081a1e5cec2f7c0975efecb07b03a3638846bc287919210e0d",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "teach",
+      "compatRules": [],
+      "description": "Explain a body of work plainly so a person actually understands it. Runs the `how` and `why` skills and weaves what they find into one clear explanation. Use for 'teach me this', 'help me really understand X', 'explain this change or subsystem to me'.",
+      "displayName": "teach",
+      "group": "investigation",
+      "hasScripts": false,
+      "id": "teach",
+      "prerequisites": [
+        "node"
+      ],
+      "requiredBy": [],
+      "requires": [
+        "how",
+        "unslop",
+        "why"
+      ],
+      "upstreamHash": "4c711ae08461faf4e039fd861c0d349496f24e51670e037d3e7fd87858a56d43",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "technical-writing",
+      "compatRules": [],
+      "description": "Layered technical-writing standard: Diátaxis structure, Google developer style sentences, STE instruction rules, Global English syntax. Use for /technical-writing or when writing or reviewing docs, RFCs, readmes, PR descriptions, or commit messages.",
+      "displayName": "technical-writing",
+      "group": "style",
+      "hasScripts": false,
+      "id": "technical-writing",
+      "prerequisites": [],
+      "requiredBy": [
+        "poteto-mode"
+      ],
+      "requires": [
+        "unslop"
+      ],
+      "upstreamHash": "a51340942203b775f252ab8f91aa5c4f0c7cebfb9aa22de967e2303284966041",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "typescript-best-practices",
+      "compatRules": [],
+      "description": "TypeScript best practices. Use when reading or editing any .ts or .tsx file.",
+      "displayName": "typescript-best-practices",
+      "group": "style",
+      "hasScripts": false,
+      "id": "typescript-best-practices",
+      "prerequisites": [],
+      "requiredBy": [
+        "principle-type-system-discipline"
+      ],
+      "requires": [],
+      "upstreamHash": "4da6dd91e382b65f8b066120b2a3520f6716a24a4e38a3c3cea020c2d3bdec80",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "unslop",
+      "compatRules": [],
+      "description": "Cut AI tells from any writing.",
+      "displayName": "unslop",
+      "group": "style",
+      "hasScripts": false,
+      "id": "unslop",
+      "prerequisites": [],
+      "requiredBy": [
+        "automate-me",
+        "blast-radius",
+        "poteto-mode",
+        "recall",
+        "show-me-your-work",
+        "teach",
+        "technical-writing"
+      ],
+      "requires": [],
+      "upstreamHash": "ab509ab7222e351abb190d0a87a27be9776dadbf2bf3a610a18f1b27584c9563",
+      "userInvocableOnly": true
+    },
+    {
+      "aliaName": "why",
+      "compatRules": [
+        "alia-path-why-models"
+      ],
+      "description": "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, postmortems, or data-backed thresholds. Discovers available MCPs and queries each evidence category (source control, issue tracker, long-form docs, real-time chat, infrastructure observability, error tracking, product analytics warehouse) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior.",
+      "displayName": "why",
+      "group": "investigation",
+      "hasScripts": false,
+      "id": "why",
+      "prerequisites": [
+        "gh",
+        "git",
+        "rg"
+      ],
+      "requiredBy": [
+        "architect",
+        "blast-radius",
+        "how",
+        "no-comments",
+        "poteto-mode",
+        "recall",
+        "teach"
+      ],
+      "requires": [
+        "how",
+        "poteto-mode"
+      ],
+      "upstreamHash": "6496af02031a7ae63583aa37101c7dc3223b3092ad9797bf40efdfd742a22653",
+      "userInvocableOnly": true
+    }
+  ],
+  "upstream": {
+    "author": "Lauren Tan",
+    "commit": "c742dd61706fbacc1b95f1a20b7b988cf096ce6c",
+    "committedAt": "2026-10-27T16:12:40-07:00",
+    "license": "MIT",
+    "path": "pstack",
+    "repo": "cursor/plugins",
+    "version": "0.15.36"
+  }
+}

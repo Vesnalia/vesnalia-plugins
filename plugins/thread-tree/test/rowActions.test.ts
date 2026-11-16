@@ -1,0 +1,98 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { actionsInline, canStop, END_SLOT_MIN_PX, hoverActionsClass, ROW_ACTION_BUTTON, ROW_ACTION_PX, ROW_END_PAD_PX, rowHeightPx, STRIP_END_PAD_PX, STRIP_GAP_PX, stopsFromGlyph } from "../src/rowActions.ts";
+import { headerChevronMotion, ROW_TINT } from "../src/rowStyles.ts";
+
+const idle = { backgroundAgents: 0, backgroundCommands: 0, workflows: 0 };
+const leaf = { glyph: { indicator: "runtime", rowStatus: null }, canHover: true };
+const t = (status: string, extra: { indicator?: string; activity?: typeof idle } = {}) => ({ status, indicator: "none", activity: idle, ...extra });
+
+test("Stop is offered while work runs, including a stop the machine never confirmed, and not when idle", () => {
+  assert.equal(canStop(t("active")), true);
+  assert.equal(canStop(t("starting")), true);
+  assert.equal(canStop(t("idle", { activity: { ...idle, backgroundAgents: 1 } })), true);
+  assert.equal(canStop(t("idle", { indicator: "workflow" })), true);
+  assert.equal(canStop(t("stopping")), true, "a stuck stopping thread can be stopped again");
+  assert.equal(canStop(t("idle")), false);
+  assert.equal(canStop(t("error")), false);
+});
+
+test("a parent row keeps its glyph as the fold toggle, so only a leaf row's glyph turns into Stop", () => {
+  assert.equal(stopsFromGlyph(t("active"), { ...leaf, hasChildren: false, isCompactViewport: false }), true);
+  assert.equal(stopsFromGlyph(t("active"), { ...leaf, hasChildren: true, isCompactViewport: false }), false);
+  assert.equal(stopsFromGlyph(t("idle"), { ...leaf, hasChildren: false, isCompactViewport: false }), false);
+});
+
+test("on a touch-first compact viewport the glyph never stops a thread in one tap; Stop stays in the menus", () => {
+  assert.equal(stopsFromGlyph(t("active"), { ...leaf, hasChildren: false, isCompactViewport: true }), false);
+  assert.equal(canStop(t("active")), true);
+});
+
+test("on any screen without hover, such as a wide tablet, the glyph never stops a thread in one tap", () => {
+  assert.equal(stopsFromGlyph(t("active"), { ...leaf, canHover: false, hasChildren: false, isCompactViewport: false }), false);
+});
+
+test("compact viewports get taller rows than the fixed 32px", () => {
+  assert.equal(rowHeightPx(false), 32);
+  assert.ok(rowHeightPx(true) > 32);
+});
+
+test("hover actions appear at once on hover, keyboard focus or an open menu, fade in 80ms at most, and never resize the row", () => {
+  for (const reduceMotion of [false, true]) {
+    const classes = hoverActionsClass(reduceMotion).split(" ");
+    assert.ok(classes.includes("invisible") && classes.includes("opacity-0"));
+    for (const state of ["group-hover/row", "group-data-[keyboard-focus]/row", "group-data-[menu-open]/row"]) {
+      assert.ok(classes.includes(`${state}:visible`) && classes.includes(`${state}:opacity-100`), state);
+    }
+    assert.equal(classes.some((c) => /delay/.test(c)), false);
+    const duration = classes.map((c) => /^duration-(\d+)$/.exec(c)?.[1]).find(Boolean);
+    assert.ok(duration === undefined || Number(duration) <= 80, `duration ${duration}`);
+    assert.equal(classes.some((c) => /max-w|(^|:)w-|(^|:)hidden$|(^|:)flex$/.test(c)), false);
+  }
+  assert.ok(hoverActionsClass(true).includes("transition-none"));
+});
+
+test("Stop replaces only a glyph that shows running work, not a question, failure or another plugin's status", () => {
+  const row = (indicator: string, rowStatus: { label: string } | null = null) => ({ glyph: { indicator, rowStatus }, hasChildren: false, isCompactViewport: false, canHover: true });
+  for (const indicator of ["runtime", "background-agent", "background-command", "workflow", "working-draft"]) {
+    assert.equal(stopsFromGlyph(t("active"), row(indicator)), true, indicator);
+  }
+  for (const indicator of ["waiting-for-input", "queued-failed", "unread-error", "draft", "none"]) {
+    assert.equal(stopsFromGlyph(t("active"), row(indicator)), false, indicator);
+  }
+  assert.equal(stopsFromGlyph(t("active"), row("background-agent", { label: "Deploying" })), false);
+});
+
+test("the overlay lets clicks through to the row and its controls; only its own buttons catch them", () => {
+  for (const reduceMotion of [false, true]) assert.ok(hoverActionsClass(reduceMotion).split(" ").includes("pointer-events-none"));
+});
+
+test("the provider and age slot reserves the button strip's width, so Archive and ⋯ never cover Retry, a PR icon, ⚠ or the badge", () => {
+  const sizes = [...ROW_ACTION_BUTTON.matchAll(/(?:^|\s)(?:size|w)-(\d+(?:\.\d+)?)(?=\s|$)/g)].map((match) => Number(match[1]) * 4);
+  assert.deepEqual(sizes, [ROW_ACTION_PX], "the strip math must use the buttons' real width");
+  assert.ok(END_SLOT_MIN_PX + ROW_END_PAD_PX >= 2 * sizes[0]! + STRIP_GAP_PX + STRIP_END_PAD_PX);
+});
+
+test("every state that shows the overlay also tints the row, so its solid end never sits on an untinted row", () => {
+  const tint = ROW_TINT.split(" ");
+  for (const state of ["hover", "data-[keyboard-focus]", "data-[menu-open]"]) {
+    assert.ok(tint.includes(`${state}:bg-sidebar-accent/60`), state);
+  }
+});
+
+test("a header chevron fades in within 80ms and animates its 150ms fold on the rotate property rotate-90 sets", () => {
+  const motion = headerChevronMotion(false);
+  assert.ok(Number(/opacity_(\d+)ms/.exec(motion)?.[1]) <= 80);
+  assert.equal(/(?:^|[[,])rotate_(\d+)ms/.exec(motion)?.[1], "150", "Tailwind v4's rotate-90 sets `rotate`, not `transform`");
+  assert.ok(motion.split(" ").includes("motion-reduce:transition-none"));
+});
+
+test("a header chevron holds still under the plugin's Reduce motion setting", () => {
+  assert.deepEqual(headerChevronMotion(true).split(" "), ["transition-none"]);
+});
+
+test("row actions sit inline where the hover strip can never show: a compact viewport or a screen without hover", () => {
+  assert.equal(actionsInline({ isCompactViewport: false, canHover: true }), false);
+  assert.equal(actionsInline({ isCompactViewport: true, canHover: true }), true);
+  assert.equal(actionsInline({ isCompactViewport: false, canHover: false }), true);
+});

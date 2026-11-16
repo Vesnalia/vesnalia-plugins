@@ -1,0 +1,287 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createCardAdvance } from "../server/execution-advance-card.ts";
+import { createCardDiff } from "../server/runtime/card-diff.ts";
+import { createAuditTrailStatus } from "../server/runtime/card-audit-trail.ts";
+import { createCardReseed } from "../server/runtime/card-reseed.ts";
+import { auditDeps, card, reseedDeps } from "./card-handler-fixtures.mjs";
+
+test("card advance preserves refusal, helper, respawn, update, publish order", async () => {
+  const calls = [];
+  const services = {
+    prepareAdvance: async () => ({ route: null, note: "", evidence: "" }),
+    dispatchAdvance: async () => ({ stdout: "", error: null }),
+    applyBand: async (card, stage, deferred) => {
+      calls.push(["respawn-via-band", card.id, stage, deferred]);
+    },
+  };
+  const advance = createCardAdvance({
+    getCard: () => card(),
+    isArchivedCard: (value) => value.status === "archived",
+    cardWorkspace: async () => ({ path: "/project", hostId: "host_1" }),
+    stateDir: async () => "/project/state",
+    ensureArtifacts: async () => null,
+    questionGate: async () => null,
+    runHelper: async (args) => {
+      calls.push(["helper", args]);
+      return { code: 0, stdout: "advanced", stderr: "" };
+    },
+    updateCard: (...args) => calls.push(["update", ...args]),
+    recordStageEvent: (...args) => calls.push(["stage", ...args]),
+    publishCard: (cardId) => calls.push(["publish", cardId]),
+    requestGatePreReview: async () => undefined,
+    errors: { cardNotFound: "missing", cardArchived: "archived", workspaceUnavailable: "workspace" },
+  }, services).advanceCard;
+  assert.deepEqual(await advance({ cardId: "card_1", stage: "execution" }), {
+    ok: true,
+    stdout: "advanced",
+    error: null,
+  });
+  assert.deepEqual(calls.map(([name]) => name), ["helper", "respawn-via-band", "update", "stage", "publish"]);
+});
+
+test("card advance refuses an archived card before any workspace or helper work", async () => {
+  // The vendored helper has no terminal guard — run by hand, `stelow advance`
+  // moves an archived card to the next stage (recorded in .auto/prompt.md). The
+  // host is the guard, so this test pins the ORDER, not just the answer: an
+  // archived card must be refused before the workspace is resolved, before the
+  // artifact/question gates run, and before `runHelper` is ever called. A guard
+  // that fires after the helper has already mutated state is not a guard.
+  const reached = [];
+  const guard = (name) => async () => {
+    reached.push(name);
+    return null;
+  };
+  const advance = createCardAdvance({
+    getCard: () => ({ ...card(), status: "archived" }),
+    isArchivedCard: (value) => value.status === "archived",
+    cardWorkspace: async () => {
+      reached.push("workspace");
+      return { path: "/project", hostId: "host_1" };
+    },
+    stateDir: async () => "/project/state",
+    ensureArtifacts: guard("artifacts"),
+    questionGate: guard("question"),
+    runHelper: async () => {
+      reached.push("helper");
+      return { code: 0, stdout: "", stderr: "" };
+    },
+    updateCard: () => reached.push("update"),
+    recordStageEvent: () => reached.push("stage"),
+    publishCard: () => reached.push("publish"),
+    requestGatePreReview: async () => undefined,
+    errors: { cardNotFound: "missing", cardArchived: "This card is archived.", workspaceUnavailable: "workspace" },
+  }, {
+    prepareAdvance: async () => ({ route: null, note: "", evidence: "" }),
+    dispatchAdvance: async () => ({ stdout: "", error: null }),
+    applyBand: async () => undefined,
+  }).advanceCard;
+  assert.deepEqual(await advance({ cardId: "card_1", stage: "execution" }), {
+    ok: false,
+    stdout: "",
+    error: "This card is archived.",
+  });
+  assert.deepEqual(reached, [], "an archived card touches no workspace, gate, helper, or row");
+});
+
+test("card advance question refusal is a negative control", async () => {
+  let helperRan = false;
+  const services = {
+    prepareAdvance: async () => ({ route: null, note: "", evidence: "" }),
+    dispatchAdvance: async () => ({ stdout: "", error: null }),
+    applyBand: async () => undefined,
+  };
+  const advance = createCardAdvance({
+    getCard: () => card(),
+    isArchivedCard: (value) => value.status === "archived",
+    cardWorkspace: async () => ({ path: "/project", hostId: "host_1" }),
+    stateDir: async () => "/project/state",
+    ensureArtifacts: async () => null,
+    questionGate: async () => "Answer the open question first.",
+    runHelper: async () => {
+      helperRan = true;
+      return { code: 0, stdout: "", stderr: "" };
+    },
+    updateCard: () => undefined,
+    recordStageEvent: () => undefined,
+    publishCard: () => undefined,
+    requestGatePreReview: async () => undefined,
+    errors: { cardNotFound: "missing", cardArchived: "archived", workspaceUnavailable: "workspace" },
+  }, services).advanceCard;
+  assert.equal((await advance({ cardId: "card_1", stage: "execution" })).error,
+    "Answer the open question first.");
+  assert.equal(helperRan, false);
+});
+
+test("card diff combines tracked and untracked files while optional summaries fail soft", async () => {
+  const commands = [];
+  const diff = createCardDiff({
+    execFile: (binary, args, _options, callback) => {
+      commands.push([binary, args]);
+      if (args[0] === "rev-parse") return callback(null, "/project\n");
+      if (args[0] === "diff") return callback(null, "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-old\n+new\n");
+      if (args.includes("status")) return callback(null, "?? new.ts\0");
+      callback(new Error("missing optional tool"), "");
+    },
+    getCard: () => card(),
+    cardCheckout: async () => ({ path: "/project", hostId: "host_1" }),
+    recoveredIntegrity: async () => null,
+    resolveLocalBin: (name) => `/bin/${name}`,
+    errors: { cardNotFound: "missing", workspaceUnavailable: "workspace" },
+  });
+  const result = await diff({ cardId: "card_1" });
+  assert.deepEqual(result.files.map((file) => [file.path, file.isNew]), [
+    ["a.ts", false],
+    ["new.ts", true],
+  ]);
+  assert.equal(result.entitySummary, null);
+  assert.equal(result.changedSymbols, null);
+  assert.equal(result.affectedTests, null);
+  assert.equal(result.testGate, null);
+  assert.equal(result.qualityGate, null);
+  assert.ok(commands.some(([binary]) => binary === "/bin/sem"));
+});
+
+test("card diff enriches changed symbols with affected tests and ripwire gates", async () => {
+  const enriched = createCardDiff({
+    execFile: (binary, args, _options, callback) => {
+      if (args[0] === "rev-parse") return callback(null, "/project\n");
+      if (binary === "git" && args[0] === "diff") return callback(null, "");
+      if (args.includes("status")) return callback(null, "");
+      if (binary === "/bin/cymbal") {
+        return callback(null, JSON.stringify({
+          results: { results: [{ symbol: "foo", files: ["a.ts"], impact: { total_callers: 1, test_callers: 0 } }] },
+        }));
+      }
+      if (binary === "/bin/sem" && args[0] === "diff") {
+        return callback(null, JSON.stringify({
+          summary: { fileCount: 1, added: 1, modified: 0, deleted: 0, renamed: 0, moved: 0, total: 1 },
+          changes: [{ structuralChange: true }],
+        }));
+      }
+      if (binary === "/bin/sem" && args[0] === "impact") {
+        assert.ok(args.includes("--tests"), "affected tests query sem impact --tests");
+        assert.ok(args.includes("--file"), "ambiguous symbols disambiguate by file");
+        return callback(null, JSON.stringify({
+          entity: { entityId: "a.ts::function::foo", file: "a.ts", lines: [1, 2], name: "foo", type: "function" },
+          tests: [{ entityId: "t.ts::test::covers foo", file: "t.ts", lines: [3, 4], name: "covers foo", type: "test" }],
+        }));
+      }
+      if (binary === "/bin/ripwire" && args.includes("--test-gate")) {
+        return callback(null, JSON.stringify({ changed: 1, impacted: 1, tests: 1, untested: 0, tests_to_run: ["t.ts"], untested_blast_radius: [] }));
+      }
+      if (binary === "/bin/ripwire" && args.includes("--quality-delta")) {
+        return callback(null, JSON.stringify({ baseline: "git-HEAD", regressions: 0, minor: 0, gating: 0 }));
+      }
+      callback(new Error("unexpected command"), "");
+    },
+    getCard: () => card(),
+    cardCheckout: async () => ({ path: "/project", hostId: "host_1" }),
+    recoveredIntegrity: async () => null,
+    resolveLocalBin: (name) => `/bin/${name}`,
+    errors: { cardNotFound: "missing", workspaceUnavailable: "workspace" },
+  });
+  const result = await enriched({ cardId: "card_1" });
+  assert.equal(result.entitySummary?.total, 1);
+  assert.deepEqual(result.changedSymbols?.map((row) => row.symbol), ["foo"]);
+  assert.deepEqual(result.affectedTests?.map((test) => test.id), ["t.ts::test::covers foo"]);
+  assert.equal(result.testGate?.obligations, true);
+  assert.equal(result.qualityGate?.blocked, false);
+});
+
+test("card diff ignores partial status output after a failed status command", async () => {
+  const diff = createCardDiff({
+    execFile: (binary, args, _options, callback) => {
+      if (args[0] === "rev-parse") return callback(null, "/project\n");
+      if (args[0] === "diff") return callback(null, "");
+      if (args.includes("status")) return callback(new Error("failed"), "?? leaked.ts\0");
+      callback(new Error("missing optional tool"), "");
+    },
+    getCard: () => card(),
+    cardCheckout: async () => ({ path: "/project", hostId: "host_1" }),
+    recoveredIntegrity: async () => null,
+    resolveLocalBin: (name) => name,
+    errors: { cardNotFound: "missing", workspaceUnavailable: "workspace" },
+  });
+  assert.deepEqual((await diff({ cardId: "card_1" })).files, []);
+});
+
+test("audit trail status delegates classification and refuses unowned state", async () => {
+  const files = [];
+  const audit = createAuditTrailStatus({
+    alia: { sdk: { files: { read: async (input) => {
+      files.push(input.path);
+      return { content: "missing" };
+    } } } },
+    getCard: () => card(),
+    cardWorkspace: async () => ({ path: "/project", hostId: "host_1" }),
+    workflowStateDir: async () => "/project/state",
+    runHelper: async () => ({
+      code: 0,
+      stdout: JSON.stringify({ ok: true, contract: "v3", snapshot: { head: "abc123" } }),
+      stderr: "",
+    }),
+    errors: { cardNotFound: "missing", workspaceUnavailable: "workspace" },
+  });
+  const result = await audit({ cardId: "card_1" });
+  assert.equal(result.state, "verified");
+  assert.equal(result.head, "abc123");
+  assert.deepEqual(files, ["/project/state/context/recon-receipt.json"]);
+
+  const unowned = createAuditTrailStatus({
+    ...auditDeps(),
+    workflowStateDir: async () => null,
+  });
+  assert.match((await unowned({ cardId: "card_1" })).detail, /ownership cannot be verified/);
+});
+
+test("reseed preserves archived refusal and reclassified intent ordering", async () => {
+  let seeded = false;
+  const reseed = createCardReseed(reseedDeps({
+    getCard: () => card({ status: "archived" }),
+    seedWorkflow: async () => {
+      seeded = true;
+      return { error: null, dirHash: "new", stateDir: "/state" };
+    },
+  }));
+  assert.deepEqual(await reseed({ cardId: "card_1", intent: "bugfix" }), {
+    reseeded: false,
+    error: "archived",
+    reclassified: false,
+  });
+  assert.equal(seeded, false);
+
+  const calls = [];
+  const sqlDb = {
+    prepare: (sql) => ({ run: (args) => calls.push(["write", sql, args]) }),
+  };
+  const success = createCardReseed(reseedDeps({
+    db: sqlDb,
+    getCard: () => card({ status: "draft", stage: "triage", intent: "unknown" }),
+    seedWorkflow: async (args) => {
+      calls.push(["seed", args.intent]);
+      return { error: null, dirHash: "new_hash", stateDir: "/state" };
+    },
+    replacePrepared: async (args) => {
+      calls.push(["replace", args]);
+      return { id: "thread_2" };
+    },
+    updateCard: (...args) => calls.push(["update", ...args]),
+    recordThread: (...args) => calls.push(["record", ...args]),
+    lineage: async (...args) => calls.push(["lineage", ...args]),
+    publishCard: (...args) => calls.push(["publish", ...args]),
+  }));
+  assert.deepEqual(await success({ cardId: "card_1", intent: "bugfix" }), {
+    reseeded: true,
+    error: null,
+    reclassified: true,
+  });
+  assert.deepEqual(calls.map(([name]) => name), [
+    "seed", "write", "write", "replace", "write", "update", "record", "lineage", "publish",
+  ]);
+  assert.equal(calls[1][1].includes("dir_hash"), true);
+  assert.equal(calls[2][1].includes("ask_contracts"), true);
+  assert.match(calls[3][1].input[0].text, /Batch independent questions into ONE ask call/);
+  assert.match(calls[3][1].input[0].text, /each with its own --option labels/);
+  assert.equal(calls[4][2], "bugfix");
+});

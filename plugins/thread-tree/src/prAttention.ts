@@ -1,0 +1,90 @@
+// Which of a thread's PRs earns the row's PR icon, and why.
+import type { Attention, GithubFolderItem } from "./githubFolder.ts";
+import type { ThreadPullRequest } from "./threadPullRequests.ts";
+
+export type PrReason = "failing" | "conflicts" | "changes" | "ready";
+
+/** Most urgent first; it also picks the one PR a row shows. */
+export const PR_REASONS: readonly PrReason[] = ["failing", "conflicts", "changes", "ready"];
+
+/** `chipClassName`: the row icon's tinted square, as in the v2 prototype. */
+export const PR_REASON_LOOK: Record<PrReason, { label: string; icon: string; className: string; chipClassName: string }> = {
+  failing: { label: "Checks failing", icon: "GitPullRequest", className: "text-red-600 dark:text-red-400", chipClassName: "bg-red-500/15" },
+  conflicts: { label: "Has conflicts", icon: "GitPullRequest", className: "text-orange-600 dark:text-orange-400", chipClassName: "bg-orange-500/15" },
+  changes: { label: "Changes requested", icon: "GitPullRequest", className: "text-amber-600 dark:text-amber-400", chipClassName: "bg-amber-500/15" },
+  ready: { label: "Ready to merge", icon: "GitMerge", className: "text-green-600 dark:text-green-400", chipClassName: "bg-green-500/15" },
+};
+
+export type FolderAttention = ReadonlyMap<string, readonly Attention[]>;
+
+/** GitHub Folder's attention per PR URL; empty when that plugin is absent. */
+export function folderAttentionByUrl(items: readonly GithubFolderItem[]): FolderAttention {
+  return new Map(items.map((item) => [item.pr.url.toLowerCase(), item.attention]));
+}
+
+/** Failing and Conflicts come from VesnALIA's PR status; Changes and Ready only from GitHub Folder. */
+export function prActionReason(pr: ThreadPullRequest, folder: FolderAttention): PrReason | null {
+  if (pr.state !== "open" && pr.state !== "draft" && pr.state !== "unknown") return null;
+  const attention = folder.get(pr.url.toLowerCase()) ?? [];
+  if (pr.state !== "unknown" && pr.checks.state === "failing") return "failing";
+  if (attention.includes("ci_failed")) return "failing";
+  if (pr.attention === "conflicts" || attention.includes("conflicts")) return "conflicts";
+  if (attention.includes("changes_requested")) return "changes";
+  if (attention.includes("ready")) return "ready";
+  return null;
+}
+
+export interface RowPullRequest {
+  pr: ThreadPullRequest;
+  reason: PrReason;
+}
+
+/** The most urgent actionable PR; null for a failed thread, which shows Retry instead. */
+export function rowPullRequest(prs: readonly ThreadPullRequest[], folder: FolderAttention, threadFailed: boolean): RowPullRequest | null {
+  if (threadFailed) return null;
+  let best: RowPullRequest | null = null;
+  for (const pr of prs) {
+    const reason = prActionReason(pr, folder);
+    if (reason && (!best || PR_REASONS.indexOf(reason) < PR_REASONS.indexOf(best.reason))) best = { pr, reason };
+  }
+  return best;
+}
+
+export function prTooltip({ pr, reason }: RowPullRequest): string {
+  return `PR #${pr.number}: ${pr.title} · ${PR_REASON_LOOK[reason].label}`;
+}
+
+export interface ListedPullRequest {
+  pr: ThreadPullRequest;
+  reason: PrReason | null;
+}
+
+const STATE_ORDER: readonly ThreadPullRequest["state"][] = ["open", "draft", "unknown", "merged", "closed"];
+const STATE_LABEL: Record<ThreadPullRequest["state"], string> = {
+  open: "Open",
+  draft: "Draft",
+  unknown: "Status unknown",
+  merged: "Merged",
+  closed: "Closed",
+};
+
+/** Every PR of the row, one per URL: those needing action by urgency, then the rest by state. */
+export function rowPullRequestList(prs: readonly ThreadPullRequest[], folder: FolderAttention): ListedPullRequest[] {
+  const byUrl = new Map<string, ListedPullRequest>();
+  for (const pr of prs) {
+    const key = pr.url.toLowerCase();
+    if (!byUrl.has(key)) byUrl.set(key, { pr, reason: prActionReason(pr, folder) });
+  }
+  const rank = ({ pr, reason }: ListedPullRequest) =>
+    reason ? PR_REASONS.indexOf(reason) : PR_REASONS.length + STATE_ORDER.indexOf(pr.state);
+  return [...byUrl.values()].sort((a, b) => rank(a) - rank(b) || b.pr.number - a.pr.number);
+}
+
+export function listedPullRequestStatus({ pr, reason }: ListedPullRequest): string {
+  return reason ? PR_REASON_LOOK[reason].label : STATE_LABEL[pr.state];
+}
+
+export function pullRequestListLabel(list: readonly ListedPullRequest[]): string {
+  const needAction = list.filter((item) => item.reason).length;
+  return `${list.length} pull requests · ${needAction} need${needAction === 1 ? "s" : ""} action`;
+}

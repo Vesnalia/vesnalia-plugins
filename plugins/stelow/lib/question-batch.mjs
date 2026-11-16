@@ -1,0 +1,400 @@
+/**
+ * Batched question logic (pure): CLI `--question` groups become ONE
+ * requestInput interaction; every pending interaction expands into
+ * addressable sub-questions answered atomically. Skipped submits an
+ * empty array (multiSelect "none"; single-select "use recommendation").
+ */
+
+const QUESTION_ID_SEP = "#";
+export const QUESTION_KINDS = ["standard", "split"];
+/** The one pending-interaction renderer this plugin raises. */
+export const QUESTION_RENDERER_ID = "stelow-question";
+
+export function questionKind(raw) {
+  return raw === "split" ? "split" : "standard";
+}
+
+// Bounds keep interaction payloads (and the expired-questions rows that
+// mirror them) small: previews are glances, not documents.
+const MAX_DESC_CHARS = 500;
+const MAX_PREVIEW_CHARS = 4000;
+const MAX_ARTIFACT_CHARS = 500;
+// Optional contract declaration: --contract <id> after --question links the
+// group to a question contract (e.g. interface-pick) for later matching.
+// Slug ids only; semantic validation (known id for this stage) happens
+// host-side, where the stage checklist is readable.
+const CONTRACT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,59}$/i;
+
+/**
+ * Parse `alia stelow ask` argv into question groups. `--question` starts a new
+ * group; `--option` appends to the current group; `--multiple` flags the
+ * current group; `--selected` preselects the most recent `--option` (opt-out
+ * confirms: starts checked, unchecking removes; refused without `--multiple`);
+ * `--contract` optionally names the question contract the
+ * group answers; `--desc` / `--preview` / `--artifact` attach to the most
+ * recent `--option`. `--thread` is consumed elsewhere and ignored here.
+ * Options are objects so descriptions, inline previews, and openable
+ * artifact paths travel with the label end to end.
+ * Returns `{ groups }` or `{ error }` (usage text, English).
+ *
+ * The argv loop is a dispatcher: each flag has one take* helper so no
+ * branch grows past its flag. Complexity lives in the helpers, never in
+ * the loop.
+ */
+const ASK_USAGE = "Usage: VesnALIA stelow ask --thread <thr_id>"
+  + " --question <text> [--contract <id>] [--multiple]"
+  + " --option <label> [--selected] [--recommended] [--needs-note] [--desc <text>] [--preview <text>] [--artifact <path>]...";
+
+function takeQuestion(groups, state, text) {
+  if (typeof text !== "string" || text.trim().length === 0) {
+    return "Each --question needs a non-empty text.";
+  }
+  groups.push({ question: text, multiple: state.nextMultiple, options: [], contract: null });
+  state.nextMultiple = false;
+  return null;
+}
+
+function takeContract(groups, id) {
+  if (groups.length === 0) {
+    return "Contract ids follow a --question: --question <text> --contract <id>...";
+  }
+  if (typeof id !== "string" || !CONTRACT_ID_PATTERN.test(id.trim())) {
+    return "Each --contract needs a slug id (letters, digits, dashes, up to 60 chars).";
+  }
+  groups[groups.length - 1].contract = id.trim();
+  return null;
+}
+
+function takeOption(groups, label) {
+  if (groups.length === 0) {
+    return "Options must follow a --question: --question <text> --option <label>...";
+  }
+  if (typeof label !== "string" || label.trim().length === 0) {
+    return "Each --option needs a non-empty label.";
+  }
+  groups[groups.length - 1].options.push({ label, description: "", preview: null, artifact: null });
+  return null;
+}
+
+function takeMultiple(groups, state) {
+  if (groups.length === 0) state.nextMultiple = true;
+  else groups[groups.length - 1].multiple = true;
+  return null;
+}
+
+function dispatchAskArg(groups, state, argv, i) {
+  const arg = argv[i];
+  if (arg === "--question") return { error: takeQuestion(groups, state, argv[i + 1]), skip: 1 };
+  if (arg === "--contract") return { error: takeContract(groups, argv[i + 1]), skip: 1 };
+  if (arg === "--option") return { error: takeOption(groups, argv[i + 1]), skip: 1 };
+  if (arg === "--selected" || arg === "--needs-note" || arg === "--recommended") {
+    return { error: attachOptionFlag(groups, arg), skip: 0 };
+  }
+  if (arg === "--desc" || arg === "--preview" || arg === "--artifact") {
+    return { error: applyOptionDetail(groups, arg, argv[i + 1]), skip: 1 };
+  }
+  if (arg === "--multiple") return { error: takeMultiple(groups, state), skip: 0 };
+  return { error: null, skip: 0 };
+}
+
+export function parseAskGroups(argv) {
+  const groups = [];
+  const state = { nextMultiple: false };
+  const list = Array.isArray(argv) ? argv : [];
+  for (let i = 0; i < list.length; i++) {
+    const stepped = dispatchAskArg(groups, state, list, i);
+    if (stepped.error) return { error: stepped.error };
+    i += stepped.skip;
+  }
+  if (groups.length === 0) return { error: ASK_USAGE };
+  const invalid = validateAskGroups(groups);
+  if (invalid) return { error: invalid };
+  return { groups };
+}
+
+/** Detail flags attach to the most recent --option. Returns a refusal or null. */
+function applyOptionDetail(groups, arg, value) {
+  const options = groups.length === 0 ? [] : groups[groups.length - 1].options;
+  const option = options.length > 0 ? options[options.length - 1] : null;
+  if (!option) {
+    return `${arg} must follow a --option.`;
+  }
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return `Each ${arg} needs a non-empty value.`;
+  }
+  if (arg === "--desc") option.description = value.slice(0, MAX_DESC_CHARS);
+  if (arg === "--preview") option.preview = value.slice(0, MAX_PREVIEW_CHARS);
+  if (arg === "--artifact") {
+    const path = value.trim().replace(/^\.\//, "");
+    if (!path || path.length > MAX_ARTIFACT_CHARS) {
+      return "Each --artifact needs a workspace-relative path under 500 chars.";
+    }
+    option.artifact = { path };
+  }
+  return null;
+}
+
+/** Structural validation shared by every parse path: groups stay small,
+// options stay comparable, and opt-out confirms stay opt-out. Returns the
+// first refusal, or null when the batch is well-formed. */
+function validateAskGroups(groups) {
+  for (const [index, group] of groups.entries()) {
+    if (group.options.length < 2) {
+      return `Question ${index + 1} needs at least 2 --option labels.`;
+    }
+    if (!group.multiple && group.options.some((option) => option.selected === true)) {
+      return `Question ${index + 1}: --selected needs --multiple (preselection is an opt-out confirm).`;
+    }
+  }
+  return null;
+}
+
+function cleanArtifact(raw) {
+  return normalizeAskArtifactPath(
+    typeof raw === "string"
+      ? raw
+      : (raw !== null && typeof raw === "object" && !Array.isArray(raw) && typeof raw.path === "string" ? raw.path : ""),
+  );
+}
+
+/**
+ * Preselected answers, resolved once per batch: options the asker marked
+ * selected start checked (opt-out confirms). Unchecking removes; the submit
+ * carries whatever remains. Only multiple-choice questions participate —
+ * preselection is refused without --multiple upstream, and a stray flag on
+ * a single-select group reads as unchecked rather than inventing consent.
+ */
+export function preselectedAnswers(questions) {
+  const answers = {};
+  for (const question of questions ?? []) {
+    if (!question || question.multiple !== true || !Array.isArray(question.options)) continue;
+    const checked = question.options
+      .filter((option) => option && option.selected === true && typeof option.label === "string")
+      .map((option) => option.label);
+    if (checked.length > 0) answers[question.id] = checked;
+  }
+  return answers;
+}
+
+/**
+ * The single-pick rules moved to lib/question-single-pick.mjs, re-exported here
+ * so every existing import keeps one home. `toggleSinglePick` had grown a
+ * docstring twice its body, and this file sits at its size budget.
+ */
+export { toggleSinglePick, pickedLabels, exclusivePickRefusal } from "./question-single-pick.mjs";
+
+/**
+ * Normalize a worker-authored artifact path into { path, display }.
+ * Pure: trim, strip leading ./, enforce the length cap. Returns null for
+ * anything unusable — callers degrade to no affordance, never block.
+ * Single definition shared by the CLI parser, the server resolver, and
+ * the thread renderer, so the three can never disagree on validity.
+ */
+export function normalizeAskArtifactPath(raw) {
+  if (typeof raw !== "string") return null;
+  const path = raw.trim().replace(/^\.\//, "");
+  if (!path || path.length > MAX_ARTIFACT_CHARS) return null;
+  return { path, display: path.split("/").pop() || path };
+}
+
+export function cleanOptions(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((entry) => (typeof entry === "string" ? { label: entry } : entry))
+    .filter((entry) => entry !== null && typeof entry === "object" && !Array.isArray(entry))
+    .map((entry) => {
+      const label = typeof entry.label === "string" ? entry.label : "";
+      const description = typeof entry.description === "string" ? entry.description.slice(0, MAX_DESC_CHARS) : "";
+      const preview = typeof entry.preview === "string" && entry.preview.trim().length > 0
+        ? entry.preview.slice(0, MAX_PREVIEW_CHARS)
+        : null;
+      // Preselection survives cleaning only as an explicit true, and only
+      // then does it travel — absence reads as unchecked everywhere, so a
+      // malformed flag can never silently confirm work the human did not
+      // see checked, and unused payloads stay byte-identical.
+      const checked = entry.selected === true;
+      // Explicit true travels like selected: absence means no note needed.
+      const needsNote = entry.needsNote === true;
+      // The recommendation is a FIELD, not a phrase in the label. A marker that
+      // only exists as prose inside `label` could be counted (by scanning the
+      // text) but never acted on: nothing could sort recommendations first,
+      // preselect them, or offer "take the recommendations" as one click, and
+      // "accept the advice" stayed seven separate picks on a radio. As a field
+      // it is data the form can reason about (issue #384). The label keeps
+      // whatever marker the author wrote, so nothing that reads labels changes.
+      const recommended = entry.recommended === true;
+      return {
+        label,
+        description,
+        preview,
+        artifact: cleanArtifact(entry.artifact),
+        ...(checked ? { selected: true } : {}),
+        ...(needsNote ? { needsNote: true } : {}),
+        ...(recommended ? { recommended: true } : {}),
+      };
+    })
+    .filter((entry) => entry.label.length > 0);
+}
+
+/**
+ * Per-option evidence inheritance: who may read ONE document before deciding.
+ *
+ * `--artifact` is authored per option, so a worker that attaches it to a
+ * single option (typically "Request changes") leaves the approval option —
+ * the one that most needs the document — with nothing to open. The evidence
+ * gate only asks for SOMETHING attached, so that payload is accepted and the
+ * human can then approve a plan they were never offered a way to read.
+ *
+ * Policy: within one question, an option without an artifact of its own
+ * inherits the first artifact attached to its siblings — one decision, one
+ * document. Options carrying their own keep it, so competing proposals stay
+ * distinct. When no option carries one, every entry is null and the caller
+ * may recover the document from the card's manifest instead.
+ * Pure: returns what each option should resolve, never does I/O.
+ */
+export function inheritAskArtifact(options) {
+  const list = Array.isArray(options) ? options : [];
+  const owned = list.map((option) => normalizeAskArtifactPath(
+    option !== null && typeof option === "object" && !Array.isArray(option) ? option.artifact?.path ?? null : null,
+  ));
+  const inherited = owned.find((artifact) => artifact !== null) ?? null;
+  return owned.map((artifact) => artifact ?? inherited);
+}
+
+/**
+ * True when a requestInput payload carries a multi-question batch instead of
+ * the single-question shape.
+ */
+export function isBatchPayload(data) {
+  return data !== null && typeof data === "object" && !Array.isArray(data) && Array.isArray(data.questions);
+}
+
+/**
+ * Expand one pending interaction into addressable questions.
+ * Single-question payloads yield one entry whose questionId IS the
+ * interaction id; batch payloads yield one entry per sub-question with id
+ * `<interactionId>#<index>`. Malformed entries are dropped, never thrown.
+ */
+export function expandInteractionQuestions(interaction) {
+  const data = interaction !== null && typeof interaction === "object" && !Array.isArray(interaction)
+    ? (interaction.payload !== null && typeof interaction.payload === "object" && !Array.isArray(interaction.payload)
+      ? interaction.payload
+      : {})
+    : {};
+  const dataRecord = data.data !== null && typeof data.data === "object" && !Array.isArray(data.data) ? data.data : null;
+  // Some hosts nest the payload under `data`; be lenient and read
+  // questions/options from either level.
+  const root = dataRecord ?? data;
+  if (Array.isArray(root.questions)) {
+    const out = [];
+    root.questions.forEach((entry, index) => {
+      if (entry === null || typeof entry !== "object" || Array.isArray(entry)) return;
+      const options = cleanOptions(entry.options);
+      if (options.length === 0) return;
+      out.push({
+        questionId: `${interaction.id}${QUESTION_ID_SEP}${index}`,
+        interactionId: interaction.id,
+        index,
+        title: typeof entry.title === "string" && entry.title ? entry.title : (interaction.title ?? "Question"),
+        question: typeof entry.question === "string" ? entry.question : "",
+        multiple: entry.multiple === true,
+        kind: questionKind(entry.kind),
+        options,
+      });
+    });
+    return out;
+  }
+  const options = cleanOptions(root.options);
+  if (options.length === 0) return [];
+  return [{
+    questionId: interaction.id,
+    interactionId: interaction.id,
+    index: 0,
+    title: interaction.title ?? "Question",
+    question: typeof root.question === "string" ? root.question : "",
+    multiple: root.multiple === true,
+    kind: questionKind(root.kind),
+    options,
+  }];
+}
+
+/**
+ * Split an expanded questionId back into its interaction id + sub-index.
+ * Single-question interactions carry the bare interaction id (no separator).
+ */
+export function splitQuestionId(questionId) {
+  const at = questionId.lastIndexOf(QUESTION_ID_SEP);
+  if (at <= 0) return { interactionId: questionId, index: 0 };
+  const index = Number(questionId.slice(at + 1));
+  if (!Number.isInteger(index) || index < 0) return { interactionId: questionId, index: 0 };
+  return { interactionId: questionId.slice(0, at), index };
+}
+
+/**
+ * Group atomic card answers (`[{ questionId, answers }]`) by interaction so
+ * the server responds exactly once per interaction. Single-question
+ * interactions resolve to `{ kind: "single", answers }`; batch interactions
+ * to `{ kind: "batch", answers }` where `answers` is a dense string[][] in
+ * sub-question order (unanswered slots become []). Unknown/duplicate
+ * questionIds collapse deterministically: first write wins per slot.
+ */
+export function groupBatchAnswers(items) {
+  const byInteraction = new Map();
+  for (const item of items) {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) continue;
+    const { interactionId, index } = splitQuestionId(typeof item.questionId === "string" ? item.questionId : "");
+    if (!interactionId) continue;
+    const answers = Array.isArray(item.answers) ? item.answers.filter((a) => typeof a === "string") : [];
+    let slot = byInteraction.get(interactionId);
+    if (!slot) {
+      slot = { single: null, slots: new Map() };
+      byInteraction.set(interactionId, slot);
+    }
+    if (index === 0 && !item.questionId.includes(QUESTION_ID_SEP)) {
+      if (slot.single === null) slot.single = answers;
+    } else {
+      if (!slot.slots.has(index)) slot.slots.set(index, answers);
+    }
+  }
+  const out = new Map();
+  for (const [interactionId, slot] of byInteraction) {
+    if (slot.single !== null && slot.slots.size === 0) {
+      out.set(interactionId, { kind: "single", answers: slot.single });
+    } else {
+      const max = Math.max(0, ...slot.slots.keys());
+      const answers = [];
+      for (let i = 0; i <= max; i++) answers.push(slot.slots.get(i) ?? []);
+      if (slot.single !== null && answers.length > 0 && answers[0].length === 0) answers[0] = slot.single;
+      out.set(interactionId, { kind: "batch", answers });
+    }
+  }
+  return out;
+}
+
+/**
+ * One worker continuation summarizing every answered question (English).
+ * Atomic submit => exactly one thread.send => the worker resumes once.
+ */
+export function formatBatchContinuation(decisions) {
+  const lines = decisions.map(({ question, answers }) => {
+    const q = question && question.length > 0 ? question : "(untitled question)";
+    const a = answers.length > 0 ? answers.join(", ") : "(skipped — use your recommendation)";
+    return `Q: ${q}\nA: ${a}`;
+  });
+  return `The user answered ${decisions.length === 1 ? "the pending question" : `all ${decisions.length} pending questions at once`}. Continue the workflow now: persist the decisions, advance the appropriate stage with VesnALIA stelow advance, and keep working.\n\n${lines.join("\n\n")}`;
+}
+
+/**
+ * Boolean per-option flags (--selected, --needs-note, --recommended): attach to
+ * the most recent option, or refuse naming the flag. One shape for all three.
+ */
+export function attachOptionFlag(groups, arg) {
+  const current = Array.isArray(groups) && groups.length > 0 ? groups[groups.length - 1] : null;
+  const options = current && Array.isArray(current.options) ? current.options : [];
+  const option = options.length > 0 ? options[options.length - 1] : null;
+  if (!option) return `"${arg}" must follow a --option.`;
+  if (arg === "--selected") option.selected = true;
+  else if (arg === "--recommended") option.recommended = true;
+  else option.needsNote = true;
+  return null;
+}

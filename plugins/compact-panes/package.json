@@ -1,0 +1,48 @@
+{
+  "name": "alia-plugin-compact-panes",
+  "version": "0.9.5",
+  "type": "module",
+  "description": "Tighter desktop panes, composer and sidebar, plus a configurable workspace accent.",
+  "engines": {
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
+  },
+  "alia": {
+    "name": "Compact UI",
+    "description": "Tighter desktop panes, composer and sidebar, plus a themeable workspace accent.",
+    "branding": {
+      "icon": "GridView"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/compact-panes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/compact-panes"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

@@ -1,0 +1,369 @@
+import { z } from "zod";
+import { NO_INPUT } from "./rpc-input.js";
+import { HOST_TOOL_IDS } from "../lib/host-tools.mjs";
+import { PRESET_REASONING_LEVELS } from "../lib/preset-reasoning-level.mjs";
+import { PREVIEW_STATES } from "../lib/preview-session.mjs";
+import { githubReleaseSchema, pluginUpdateSchema } from "./contracts.js";
+
+/**
+ * Whether durable native execution is possible at all. The workflow dependency
+ * is a host plugin, not a Stelow setting, so the card cannot fix it — the
+ * About tab reports it and the install/enable verbs act on the user's explicit
+ * request, never on their own.
+ */
+const workflowDependencyStatusSchema = z.object({
+  id: z.literal("workflows"),
+  name: z.literal("VesnALIA Workflows"),
+  installed: z.boolean(),
+  enabled: z.boolean(),
+  running: z.boolean(),
+  available: z.boolean(),
+  version: z.string().nullable(),
+  action: z.enum(["install", "enable"]).nullable(),
+  detail: z.string(),
+});
+
+const uiDesignMcpRegistrationSchema = z.enum([
+  "registered",
+  "unregistered",
+  "not-installed",
+  "not-allowed",
+  "unsupported",
+]);
+
+/**
+ * Whether a live node graph of a card's worker thread is possible at all.
+ * Agent Graph is a host plugin, not a Stelow setting, so the card cannot fix
+ * it — the About tab reports it, and the card offers a thread-scoped action
+ * only while it runs. Deliberately no install/enable verbs: a plugin install
+ * changes the host, and this capability must never change the host on its
+ * own.
+ */
+const agentGraphCapabilityStatusSchema = z.object({
+  id: z.literal("agent-graph"),
+  name: z.literal("Agent Graph"),
+  installed: z.boolean(),
+  enabled: z.boolean(),
+  running: z.boolean(),
+  available: z.boolean(),
+  version: z.string().nullable(),
+  detail: z.string(),
+});
+
+const uiDesignMcpClientSchema = z.object({
+  client: z.string(),
+  name: z.string(),
+  state: uiDesignMcpRegistrationSchema,
+  detail: z.string(),
+});
+
+const uiDesignMcpServerSchema = z.object({
+  id: z.enum(["inspo"]),
+  name: z.string(),
+  repo: z.string(),
+  package: z.string(),
+  register: z.string(),
+  plain: z.string(),
+  feeds: z.string(),
+  note: z.string(),
+  clients: z.array(uiDesignMcpClientSchema),
+  usable: z.number(),
+  pending: z.number(),
+  missing: z.array(z.string()),
+  state: z.enum(["ready", "available", "absent"]),
+});
+
+const uiDesignMcpUnsupportedSchema = z.object({
+  client: z.string(),
+  name: z.string(),
+  note: z.string(),
+});
+
+const uiDesignMcpStatusSchema = z.object({
+  servers: z.array(uiDesignMcpServerSchema),
+  aliaProviders: z.array(z.string()),
+  unmappedProviders: z.array(z.string()),
+  unsupported: z.array(uiDesignMcpUnsupportedSchema),
+});
+
+export const platformRpcContract = {
+  listPresets: {
+    experimental_description: "Agent presets: provider, model, reasoning, permission, environment",
+    input: NO_INPUT,
+    output: z.object({
+      presets: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          providerId: z.string(),
+          modelId: z.string(),
+          // The preset read outputs stay `z.string()` on purpose: the storage
+          // CHECK is what guarantees the stored value, and narrowing a read
+          // path breaks every existing client for no safety gain.
+          reasoningLevel: z.string(),
+          // Whether the host's provider roster says that provider declares this
+          // level. `null` is the honest third state — roster unreadable, or a
+          // provider that declares no ladder — and it is deliberately not
+          // collapsed into `true`, or a list would render an unverified level
+          // as a supported one.
+          reasoningLevelSupported: z.boolean().nullable(),
+          permissionMode: z.string(),
+          environmentKind: z.string(),
+          baseBranch: z.string().nullable(),
+          machineId: z.string().nullable(),
+          instructions: z.string(),
+          isDefault: z.boolean(),
+          builtIn: z.boolean(),
+        }),
+      ),
+    }),
+  },
+  upsertPreset: {
+    experimental_description: "Create or update an agent preset; built-ins protected",
+    input: z
+      .object({
+        id: z.string().min(1).nullable().optional(),
+        name: z.string().min(1).max(60),
+        providerId: z.string().min(1).max(60),
+        modelId: z.string().min(1).max(120),
+        reasoningLevel: z.enum(PRESET_REASONING_LEVELS),
+        permissionMode: z.enum(["accept-edits", "auto", "full"]),
+        environmentKind: z.enum(["project-default", "new-worktree"]).default("project-default"),
+        baseBranch: z.string().nullable().optional(),
+        machineId: z.string().nullable().optional(),
+        instructions: z.string().max(8_000).default(""),
+      })
+      .strict(),
+    output: z.object({ preset: z.object({ id: z.string(), name: z.string() }) }),
+  },
+  deletePreset: {
+    experimental_description: "Delete a custom agent preset",
+    input: z.object({ id: z.string() }).strict(),
+    output: z.object({ deleted: z.boolean(), error: z.string().nullable() }),
+  },
+  listBandPresets: {
+    experimental_description: "Per-phase worker preset routing with stage lists",
+    input: NO_INPUT,
+    output: z.object({
+      bands: z.array(z.object({ band: z.string(), presetId: z.string().nullable(), stages: z.array(z.string()) })),
+    }),
+  },
+  setBandPreset: {
+    experimental_description: "Pin a preset to a workflow band; null inherits",
+    input: z.object({ band: z.string(), presetId: z.string().nullable() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  getReviewPreset: {
+    experimental_description: "Designated independent reviewer preset, if any",
+    input: NO_INPUT,
+    output: z.object({
+      preset: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          providerId: z.string(),
+          modelId: z.string(),
+          reasoningLevel: z.string(),
+          permissionMode: z.string(),
+        })
+        .nullable(),
+    }),
+  },
+  assignReviewPreset: {
+    experimental_description: "Designate the reviewer preset; null clears",
+    input: z.object({ presetId: z.string().nullable() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  getGenerationPreset: {
+    experimental_description: "Designated draft-generation preset, if any",
+    input: NO_INPUT,
+    output: z.object({
+      preset: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          providerId: z.string(),
+          modelId: z.string(),
+          reasoningLevel: z.string(),
+          permissionMode: z.string(),
+        })
+        .nullable(),
+    }),
+  },
+  assignGenerationPreset: {
+    experimental_description: "Designate the draft-generation preset; null clears",
+    input: z.object({ presetId: z.string().nullable() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  getReliablePreset: {
+    experimental_description: "Board-level reliable-tier preset override, if any",
+    input: NO_INPUT,
+    output: z.object({
+      preset: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          providerId: z.string(),
+          modelId: z.string(),
+          reasoningLevel: z.string(),
+          permissionMode: z.string(),
+        })
+        .nullable(),
+    }),
+  },
+  assignReliablePreset: {
+    experimental_description: "Set the reliable-tier preset override; null clears",
+    input: z.object({ presetId: z.string().nullable() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  assignPreset: {
+    experimental_description: "Pin a preset to one card; takes effect on restart",
+    input: z.object({ cardId: z.string(), presetId: z.string().nullable() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  setDefaultPreset: {
+    experimental_description: "Set the board default agent preset",
+    input: z.object({ id: z.string() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  listProviderModels: {
+    experimental_description: "VesnALIA provider catalog with model availability for preset pickers",
+    input: NO_INPUT,
+    output: z.object({
+      providers: z.array(z.object({ id: z.string(), displayName: z.string(), modelsAvailable: z.boolean() })),
+      models: z.array(z.object({ providerId: z.string(), model: z.string(), displayName: z.string() })),
+    }),
+  },
+  buildInfo: {
+    experimental_description: "Plugin and upstream versions, skills, and update verdicts",
+    input: NO_INPUT,
+    output: z.object({
+      version: z.string(),
+      builtAt: z.string().nullable(),
+      stelowVersion: z.string().nullable(),
+      skills: z.array(z.string()),
+      pluginUpdate: pluginUpdateSchema,
+      githubRelease: githubReleaseSchema.nullable(),
+    }),
+  },
+  applyPluginUpdate: {
+    experimental_description: "Apply a ALIA-offered plugin update behind explicit confirmation",
+    input: NO_INPUT,
+    output: z.object({
+      applied: z.boolean(),
+      outcome: z.enum(["rolled-back", "current", "updated", "unavailable"]),
+      detail: z.string().nullable(),
+      from: z.string().nullable(),
+      to: z.string().nullable(),
+    }),
+  },
+  checkPluginUpdate: {
+    experimental_description: "Force a fresh plugin update check: VesnALIA plus GitHub release",
+    input: NO_INPUT,
+    output: z.object({ pluginUpdate: pluginUpdateSchema, githubRelease: githubReleaseSchema.nullable() }),
+  },
+  aboutLogo: {
+    experimental_description: "Product identity mark as a data URI; VesnALIA serves no static files",
+    input: NO_INPUT,
+    output: z.object({ dataUri: z.string().nullable() }),
+  },
+  toolStatus: {
+    experimental_description: "Host binaries the workflow can use: the optional tools the About panel lists",
+    input: NO_INPUT,
+    output: z.object({
+      tools: z.array(z.object({ id: z.string(), present: z.boolean(), version: z.string().nullable() })),
+    }),
+  },
+  diagramRendererStatus: {
+    experimental_description: "Bundled pele renderer: whether diagrams render inline in this install",
+    input: NO_INPUT,
+    output: z.object({
+      present: z.boolean(),
+      version: z.string().nullable(),
+      detail: z.string(),
+    }),
+  },
+  workflowDependencyStatus: {
+    experimental_description: "Report whether VesnALIA Workflows is installed, enabled, and available for Stelow execution",
+    input: NO_INPUT,
+    output: workflowDependencyStatusSchema,
+  },
+  installWorkflowDependency: {
+    experimental_description: "Install the built-in VesnALIA Workflows plugin on explicit user request",
+    input: NO_INPUT,
+    output: z.object({ ok: z.boolean(), error: z.string().nullable(), status: workflowDependencyStatusSchema }),
+  },
+  enableWorkflowDependency: {
+    experimental_description: "Enable the installed VesnALIA Workflows plugin on explicit user request",
+    input: NO_INPUT,
+    output: z.object({ ok: z.boolean(), error: z.string().nullable(), status: workflowDependencyStatusSchema }),
+  },
+  agentGraphStatus: {
+    experimental_description: "Report whether Agent Graph is installed, enabled, and running for the card live-graph action",
+    input: NO_INPUT,
+    output: agentGraphCapabilityStatusSchema,
+  },
+  installTool: {
+    experimental_description: "Install one optional host tool with the official installer",
+    input: z.object({ id: z.enum(HOST_TOOL_IDS) }).strict(),
+    output: z.object({ ok: z.boolean(), version: z.string().nullable(), log: z.string() }),
+  },
+  uiDesignMcpStatus: {
+    experimental_description:
+      "Per-agent-CLI registration state for the optional UI design reference MCP, against VesnALIA's provider registry",
+    input: NO_INPUT,
+    output: uiDesignMcpStatusSchema,
+  },
+  registerUiDesignMcp: {
+    experimental_description:
+      "Run the design reference MCP's own installer against every detected agent CLI",
+    input: z.object({ serverId: z.enum(["inspo"]) }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable(), status: uiDesignMcpStatusSchema }),
+  },
+  previewState: {
+    experimental_description: "Dev-server preview state: address, command, log, share hints",
+    input: z.object({ cardId: z.string(), appOrigin: z.string().nullable().optional() }).strict(),
+    output: z.object({
+      available: z.boolean(),
+      error: z.string().nullable(),
+      checkout: z.string().nullable(),
+      source: z.string().nullable(),
+      label: z.string().nullable(),
+      evidence: z.string().nullable(),
+      state: z.enum([...PREVIEW_STATES]),
+      command: z.string().nullable(),
+      port: z.number().nullable(),
+      url: z.string().nullable(),
+      provider: z.string().nullable(),
+      reason: z.string().nullable(),
+      frame: z.enum(["frame", "open", "copy"]).nullable(),
+      frameReason: z.string().nullable(),
+      paired: z.boolean(),
+      hints: z.array(
+        z.object({
+          tone: z.enum(["info", "warn"]),
+          text: z.string(),
+          action: z.string().nullable(),
+          href: z.string().nullable(),
+        }),
+      ),
+      log: z.string(),
+      startedAt: z.number().nullable(),
+    }),
+  },
+  previewStart: {
+    experimental_description: "Start the card workspace's dev server on loopback",
+    input: z.object({ cardId: z.string() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  previewStop: {
+    experimental_description: "Stop the card workspace's dev server",
+    input: z.object({ cardId: z.string() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+  previewShare: {
+    experimental_description: "Retry the Connect share URL for a live preview",
+    input: z.object({ cardId: z.string() }).strict(),
+    output: z.object({ ok: z.boolean(), error: z.string().nullable() }),
+  },
+};

@@ -95,6 +95,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "agent-checklists": {
+    "id": "agent-checklists",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "agent-graph": {
     "id": "agent-graph",
     "builds": true,
@@ -150,6 +166,22 @@
     "warnings": [
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration."
     ],
+    "residualBbRefs": 0
+  },
+  "agent-plugins": {
+    "id": "agent-plugins",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "agent-proxy": {
@@ -272,6 +304,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "aif-chat": {
+    "id": "aif-chat",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "airbender": {
     "id": "airbender",
     "builds": true,
@@ -323,6 +371,22 @@
     ],
     "residualBbRefs": 0
   },
+  "antigravity": {
+    "id": "antigravity",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "antigravity-cli": {
     "id": "antigravity-cli",
     "builds": false,
@@ -337,6 +401,41 @@
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "app-preview": {
+    "id": "app-preview",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "arc-switcher": {
+    "id": "arc-switcher",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "переименовано файлов с bb в имени: 2"
+    ],
+    "problems": [
+      "сборка не проверялась"
     ],
     "warnings": [],
     "residualBbRefs": 0
@@ -369,6 +468,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "artifacts": {
+    "id": "artifacts",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "asana": {
     "id": "asana",
     "builds": true,
@@ -384,6 +499,22 @@
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-",
       "app.tsx:20: experimental_useAppPanel().experimental_openTab is retired. Use experimental_useAppPanel().openTab({ tab, target, params, title }) without surface. It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
     ],
+    "residualBbRefs": 0
+  },
+  "asciimoji": {
+    "id": "asciimoji",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "attention-sidebar": {
@@ -556,6 +687,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "automation-palette": {
+    "id": "automation-palette",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 4
+  },
   "autoresearch-self-loop": {
     "id": "autoresearch-self-loop",
     "builds": true,
@@ -570,6 +717,22 @@
     "warnings": [
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration."
     ],
+    "residualBbRefs": 0
+  },
+  "autorouter": {
+    "id": "autorouter",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "aws-activate-usage": {
@@ -617,6 +780,54 @@
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ],
+    "residualBbRefs": 0
+  },
+  "ballast": {
+    "id": "ballast",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "bang-shell": {
+    "id": "bang-shell",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "battery": {
+    "id": "battery",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "bb-agent-toolbox": {
@@ -887,6 +1098,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "beacon": {
+    "id": "beacon",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "beads": {
     "id": "beads",
     "builds": true,
@@ -947,6 +1174,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "bookmarks": {
+    "id": "bookmarks",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "bots": {
     "id": "bots",
     "builds": true,
@@ -958,6 +1201,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "bots-sidebar": {
+    "id": "bots-sidebar",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -986,6 +1245,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "browser-annotate": {
+    "id": "browser-annotate",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -1079,6 +1354,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "bureaucat": {
+    "id": "bureaucat",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "burn": {
     "id": "burn",
     "builds": true,
@@ -1115,6 +1406,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "callstack": {
+    "id": "callstack",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "calm": {
     "id": "calm",
     "builds": true,
@@ -1133,6 +1440,22 @@
     ],
     "residualBbRefs": 0
   },
+  "canvas": {
+    "id": "canvas",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "captains-deck": {
     "id": "captains-deck",
     "builds": true,
@@ -1144,6 +1467,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "career-hub": {
+    "id": "career-hub",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -1219,6 +1558,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "chat-search": {
+    "id": "chat-search",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "chat-sidebar": {
     "id": "chat-sidebar",
     "builds": true,
@@ -1250,6 +1605,24 @@
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ],
+    "residualBbRefs": 0
+  },
+  "chatgpt-skin": {
+    "id": "chatgpt-skin",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "chief": {
@@ -1298,6 +1671,38 @@
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ],
+    "residualBbRefs": 0
+  },
+  "claude-accounts": {
+    "id": "claude-accounts",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "claude-auth": {
+    "id": "claude-auth",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "claude-switcher": {
@@ -1374,6 +1779,54 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "close-tab": {
+    "id": "close-tab",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "cloud-sandbox": {
+    "id": "cloud-sandbox",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "code-review": {
+    "id": "code-review",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "code-review-workspace": {
     "id": "code-review-workspace",
     "builds": true,
@@ -1385,6 +1838,25 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "codex-migrate": {
+    "id": "codex-migrate",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bb >=0.44 <0.45 -> engines.alia >=0.49 (alia-core 0.49.0)",
+      "переименовано файлов с bb в имени: 2"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -1432,6 +1904,40 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "color-swatches": {
+    "id": "color-swatches",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "command-center": {
+    "id": "command-center",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "command-code": {
     "id": "command-code",
     "builds": false,
@@ -1461,6 +1967,38 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "compact-panes": {
+    "id": "compact-panes",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "compact-rail": {
+    "id": "compact-rail",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -1553,6 +2091,22 @@
     ],
     "residualBbRefs": 0
   },
+  "context-meter": {
+    "id": "context-meter",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "copilot-aic-usage": {
     "id": "copilot-aic-usage",
     "builds": true,
@@ -1582,6 +2136,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "copy-session-id": {
+    "id": "copy-session-id",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -1616,6 +2186,22 @@
       "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
       "app.tsx:33: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contr"
     ],
+    "residualBbRefs": 0
+  },
+  "ctrl-enter-send": {
+    "id": "ctrl-enter-send",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "cua-driver": {
@@ -1664,6 +2250,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "decisions": {
+    "id": "decisions",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -1726,6 +2328,40 @@
       "убрана зависимость bb-app (devDependencies)"
     ],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "devin": {
+    "id": "devin",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "diagram-fences": {
+    "id": "diagram-fences",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -1814,6 +2450,57 @@
       "src/app/index.tsx:7: environments.diffPatch is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"patches\", input: { keys } }). See alia-plugin-authoring, git-reads.md.",
       "src/app/index.tsx:18: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#p"
     ],
+    "residualBbRefs": 0
+  },
+  "diff-viewed": {
+    "id": "diff-viewed",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 4
+  },
+  "diffdad": {
+    "id": "diffdad",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "discord": {
+    "id": "discord",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "убрана зависимость bb-app (devDependencies)",
+      "переименовано файлов с bb в имени: 2"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "disk-usage": {
@@ -1942,6 +2629,24 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "emoji-react": {
+    "id": "emoji-react",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "переименовано файлов с bb в имени: 2"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "env-catalog": {
     "id": "env-catalog",
     "builds": true,
@@ -1981,6 +2686,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "factory-droid": {
+    "id": "factory-droid",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -2028,6 +2749,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "feature-flags": {
+    "id": "feature-flags",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "feed": {
     "id": "feed",
     "builds": true,
@@ -2043,6 +2780,22 @@
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
       "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
     ],
+    "residualBbRefs": 0
+  },
+  "file-explorer": {
+    "id": "file-explorer",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "file-gateway": {
@@ -2080,6 +2833,22 @@
     ],
     "residualBbRefs": 0
   },
+  "file-pins": {
+    "id": "file-pins",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 10
+  },
   "file-pretty": {
     "id": "file-pretty",
     "builds": true,
@@ -2091,6 +2860,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "file-tree": {
+    "id": "file-tree",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -2138,6 +2923,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "finder": {
+    "id": "finder",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -2528,6 +3329,24 @@
     ],
     "residualBbRefs": 0
   },
+  "git-worktrees": {
+    "id": "git-worktrees",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "gitea": {
     "id": "gitea",
     "builds": true,
@@ -2610,6 +3429,38 @@
     ],
     "residualBbRefs": 0
   },
+  "github-folder": {
+    "id": "github-folder",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "github-projects": {
+    "id": "github-projects",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "gitlab": {
     "id": "gitlab",
     "builds": true,
@@ -2638,6 +3489,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "glass": {
+    "id": "glass",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -2708,6 +3575,22 @@
       "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
       "app.tsx:5: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contro"
     ],
+    "residualBbRefs": 0
+  },
+  "graphite-mono": {
+    "id": "graphite-mono",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "graphite-stack": {
@@ -2809,6 +3692,38 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "hands-free": {
+    "id": "hands-free",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "handsfree": {
+    "id": "handsfree",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "harness": {
     "id": "harness",
     "builds": true,
@@ -2826,6 +3741,22 @@
       "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
       "app.tsx:7: useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-contro"
     ],
+    "residualBbRefs": 0
+  },
+  "hashstash": {
+    "id": "hashstash",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "hats": {
@@ -2867,6 +3798,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "headroom": {
+    "id": "headroom",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -3017,6 +3964,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "host-pulse": {
+    "id": "host-pulse",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "hotspot": {
     "id": "hotspot",
     "builds": true,
@@ -3059,6 +4022,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "image-preview": {
+    "id": "image-preview",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "image-studio": {
     "id": "image-studio",
     "builds": true,
@@ -3072,6 +4051,22 @@
     "problems": [],
     "warnings": [],
     "residualBbRefs": 0
+  },
+  "impromptu-ui": {
+    "id": "impromptu-ui",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 8
   },
   "inbox": {
     "id": "inbox",
@@ -3112,6 +4107,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "inline-terminal": {
+    "id": "inline-terminal",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -3495,6 +4506,25 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "limits": {
+    "id": "limits",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "переименовано файлов с bb в имени: 2"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "linear": {
     "id": "linear",
     "builds": true,
@@ -3659,6 +4689,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "machine-monitor": {
+    "id": "machine-monitor",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "machine-sidebar": {
     "id": "machine-sidebar",
     "builds": true,
@@ -3729,6 +4775,38 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "markdown-editor": {
+    "id": "markdown-editor",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "markdown-reader": {
+    "id": "markdown-reader",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "matt-pocock-skills-for-bb": {
     "id": "matt-pocock-skills-for-bb",
     "builds": true,
@@ -3743,6 +4821,70 @@
       "переименовано файлов с bb в имени: 1"
     ],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "mattermost": {
+    "id": "mattermost",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "maxwell": {
+    "id": "maxwell",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "mcp-hub": {
+    "id": "mcp-hub",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "mcp-manager": {
+    "id": "mcp-manager",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -3831,6 +4973,25 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "message-timestamps": {
+    "id": "message-timestamps",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "переименовано файлов с bb в имени: 2"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -4026,6 +5187,24 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "muse": {
+    "id": "muse",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "SDK нужен установленным при сборке: @vesnalia/plugin-sdk в dependencies, установка ждёт публикации SDK в npm"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "my-jira": {
     "id": "my-jira",
     "builds": true,
@@ -4087,6 +5266,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "nested-sidebar": {
+    "id": "nested-sidebar",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "next-prompt": {
     "id": "next-prompt",
     "builds": true,
@@ -4112,6 +5307,38 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "noema": {
+    "id": "noema",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "noisegate": {
+    "id": "noisegate",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -4236,6 +5463,38 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "oddship-gitea": {
+    "id": "oddship-gitea",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "oddship-gitlab": {
+    "id": "oddship-gitlab",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "office-viewer": {
     "id": "office-viewer",
     "builds": true,
@@ -4294,6 +5553,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "omp-agents": {
+    "id": "omp-agents",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -4483,6 +5758,54 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "pane-workspaces": {
+    "id": "pane-workspaces",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "password-gate": {
+    "id": "password-gate",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "peek": {
+    "id": "peek",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "pets": {
     "id": "pets",
     "builds": true,
@@ -4562,6 +5885,38 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "plan-mode": {
+    "id": "plan-mode",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "plan-progress": {
+    "id": "plan-progress",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "play-continue": {
     "id": "play-continue",
     "builds": true,
@@ -4589,6 +5944,22 @@
       "переименовано файлов с bb в имени: 2"
     ],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "plugin-vault": {
+    "id": "plugin-vault",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -4673,6 +6044,38 @@
     ],
     "problems": [
       "нужен опубликованный в npm @vesnalia/plugin-sdk: сервер ставит зависимости git-плагина из npm, а SDK там пока нет; с пакетом SDK из alia-core собирается"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "pool-usage": {
+    "id": "pool-usage",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "pr-manager": {
+    "id": "pr-manager",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
     ],
     "warnings": [],
     "residualBbRefs": 0
@@ -4790,6 +6193,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "project-colors": {
+    "id": "project-colors",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "project-explorer": {
     "id": "project-explorer",
     "builds": true,
@@ -4886,6 +6305,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "prolepsia": {
+    "id": "prolepsia",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "prompt-enhancer": {
     "id": "prompt-enhancer",
     "builds": true,
@@ -4900,6 +6335,41 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "prompt-log": {
+    "id": "prompt-log",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "prompt-shaper": {
+    "id": "prompt-shaper",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.16 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "prompts": {
     "id": "prompts",
     "builds": true,
@@ -4911,6 +6381,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "provider-authentication": {
+    "id": "provider-authentication",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -4990,6 +6476,25 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "pstack-for-bb": {
+    "id": "pstack-for-bb",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "имя пакета alia-plugin-pstack-for-alia даёт id \"pstack-for-alia\", переименовано в alia-plugin-pstack-for-bb",
+      "переименовано файлов с bb в имени: 1"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "pulse": {
     "id": "pulse",
     "builds": true,
@@ -5003,6 +6508,40 @@
       "переименовано файлов с bb в имени: 1"
     ],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "px0": {
+    "id": "px0",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "убрана зависимость bb-app (devDependencies)"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "px0-review": {
+    "id": "px0-review",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -5196,6 +6735,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "references": {
+    "id": "references",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "rephrase": {
     "id": "rephrase",
     "builds": true,
@@ -5242,6 +6797,22 @@
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ],
+    "residualBbRefs": 0
+  },
+  "reveal-in-finder": {
+    "id": "reveal-in-finder",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "rewind": {
@@ -5291,6 +6862,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "rtk": {
+    "id": "rtk",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "save-my-model": {
     "id": "save-my-model",
     "builds": true,
@@ -5334,6 +6921,22 @@
       "переименовано файлов с bb в имени: 1"
     ],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "screenshot": {
+    "id": "screenshot",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -5471,6 +7074,22 @@
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
       "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
     ],
+    "residualBbRefs": 0
+  },
+  "shipyard": {
+    "id": "shipyard",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "shop-kanban": {
@@ -5632,6 +7251,38 @@
     ],
     "residualBbRefs": 0
   },
+  "skiff": {
+    "id": "skiff",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "skill-library": {
+    "id": "skill-library",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "skill-manager": {
     "id": "skill-manager",
     "builds": true,
@@ -5677,6 +7328,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "smart-queue": {
+    "id": "smart-queue",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -5779,6 +7446,24 @@
     ],
     "residualBbRefs": 0
   },
+  "stelow": {
+    "id": "stelow",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "переименовано файлов с bb в имени: 7"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "sticky-prompt": {
     "id": "sticky-prompt",
     "builds": true,
@@ -5821,6 +7506,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "subscriptions": {
+    "id": "subscriptions",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "subthread-columns": {
     "id": "subthread-columns",
     "builds": true,
@@ -5836,6 +7537,22 @@
     "problems": [],
     "warnings": [],
     "residualBbRefs": 0
+  },
+  "super-diff": {
+    "id": "super-diff",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 4
   },
   "switchboard": {
     "id": "switchboard",
@@ -6078,6 +7795,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "theme-glass": {
+    "id": "theme-glass",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "theme-toggle": {
     "id": "theme-toggle",
     "builds": true,
@@ -6089,6 +7822,40 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "thread-glow": {
+    "id": "thread-glow",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "thread-hover-cards": {
+    "id": "thread-hover-cards",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -6136,6 +7903,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "thread-nicknames": {
+    "id": "thread-nicknames",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "thread-pages": {
     "id": "thread-pages",
     "builds": true,
@@ -6161,6 +7944,38 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "thread-reveal": {
+    "id": "thread-reveal",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "thread-switcher": {
+    "id": "thread-switcher",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -6208,6 +8023,38 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "thread-tree": {
+    "id": "thread-tree",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "threadline": {
+    "id": "threadline",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "threadspace": {
     "id": "threadspace",
     "builds": true,
@@ -6222,6 +8069,22 @@
     "warnings": [
       "src/ThreadPreview.tsx:4: environments.status is retired from the alia SDK typings and keeps working only for existing plugins. Use the Git plugin instead: alia.sdk.plugins.callRpc({ pluginId: \"alia--git\", method: \"workspaceStatus\", input: { environmentId, mergeBaseBranch } }). See alia-plugin-author"
     ],
+    "residualBbRefs": 0
+  },
+  "timer": {
+    "id": "timer",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "tinted-threads": {
@@ -6282,6 +8145,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "tokenomics": {
+    "id": "tokenomics",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 12
+  },
   "tokyo-night": {
     "id": "tokyo-night",
     "builds": true,
@@ -6341,6 +8220,40 @@
     "warnings": [
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration."
     ],
+    "residualBbRefs": 0
+  },
+  "traces": {
+    "id": "traces",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.8 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "tracing": {
+    "id": "tracing",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "tree-sidebar": {
@@ -6429,6 +8342,22 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "turn-tps": {
+    "id": "turn-tps",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -6522,6 +8451,38 @@
       "useAliaNavigate().openThreadPanel is retired. Use experimental_useAppPanel().openTab({ tab: { id: actionId, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller.",
       "ctx.openPanel is retired. Use ctx.experimental_panel.openTab({ tab: { id, context: { kind: \"thread\" }, availability: \"action\" }, params, title }). It keeps working only for existing plugins. See alia-plugin-authoring, frontend-hooks-and-ui.md#panel-controller."
     ],
+    "residualBbRefs": 0
+  },
+  "unified-inbox": {
+    "id": "unified-inbox",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "unslop": {
+    "id": "unslop",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "uptime": {
@@ -6750,6 +8711,22 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "vim": {
+    "id": "vim",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "visual-workflows": {
     "id": "visual-workflows",
     "builds": true,
@@ -6764,6 +8741,22 @@
     "warnings": [
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ],
+    "residualBbRefs": 0
+  },
+  "voice-input": {
+    "id": "voice-input",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "voice-mode": {
@@ -6839,6 +8832,42 @@
     "warnings": [],
     "residualBbRefs": 0
   },
+  "web-push-notify": {
+    "id": "web-push-notify",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "engines.bbPluginSdk ^0.4.1 -> engines.aliaPluginSdk >=0.6 (SDK 0.6.143)",
+      "убрана зависимость bb-app (devDependencies)",
+      "переименовано файлов с bb в имени: 2"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "wiki": {
+    "id": "wiki",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "wikilinks": {
     "id": "wikilinks",
     "builds": true,
@@ -6854,6 +8883,24 @@
       "threadPanelAction is retired from SDK typings. Use app.slots.experimental_tab({ context: { kind: \"thread\" }, availability: \"action\", id, title, icon, component, run }). Existing bundles remain supported. See alia-plugin-authoring, frontend-registration.md#tab-api-migration.",
       "experimental_threadHeaderAction is retired from SDK typings. Register a thread action with placement \"header\" instead: app.slots.experimental_threadAction({ id, title, icon, group, placement: \"header\", item }). Existing plugins remain supported. See alia-plugin-authoring, frontend-registration.md#a-"
     ],
+    "residualBbRefs": 0
+  },
+  "wizbar": {
+    "id": "wizbar",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "убрана зависимость bb-app (devDependencies)"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
     "residualBbRefs": 0
   },
   "work-map": {
@@ -6906,6 +8953,22 @@
     ],
     "residualBbRefs": 0
   },
+  "workspace-skills": {
+    "id": "workspace-skills",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
   "workspaces": {
     "id": "workspaces",
     "builds": true,
@@ -6933,6 +8996,24 @@
     },
     "fixes": [],
     "problems": [],
+    "warnings": [],
+    "residualBbRefs": 0
+  },
+  "worktree-setup": {
+    "id": "worktree-setup",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [
+      "убрана зависимость bb-app (devDependencies)"
+    ],
+    "problems": [
+      "сборка не проверялась"
+    ],
     "warnings": [],
     "residualBbRefs": 0
   },
@@ -7002,6 +9083,22 @@
     "problems": [],
     "warnings": [],
     "residualBbRefs": 0
+  },
+  "xlsx-preview": {
+    "id": "xlsx-preview",
+    "builds": false,
+    "state": "broken",
+    "parts": {
+      "app": null,
+      "server": null,
+      "host": null
+    },
+    "fixes": [],
+    "problems": [
+      "сборка не проверялась"
+    ],
+    "warnings": [],
+    "residualBbRefs": 22
   },
   "zcode": {
     "id": "zcode",

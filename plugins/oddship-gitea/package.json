@@ -1,0 +1,59 @@
+{
+  "name": "alia-plugin-oddship-gitea",
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
+  },
+  "alia": {
+    "name": "Gitea CLI",
+    "description": "Browse Gitea repositories, issues and pull requests using your existing tea CLI login.",
+    "branding": {
+      "icon": "GitPullRequest"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "host": "./host.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0",
+    "tsx": "^4.20.0",
+    "jsdom": "^26.1.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/jsdom": "^21.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "tsx --test *.test.ts *.test.tsx"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/oddship-gitea#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/oddship-gitea"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

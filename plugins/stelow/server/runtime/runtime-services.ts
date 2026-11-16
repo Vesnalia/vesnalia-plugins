@@ -1,0 +1,108 @@
+/**
+ * The services every surface shares: the card store, the preset server, the
+ * inbox, and the two card writers built on top of them.
+ *
+ * These are constructed once and reached for by name, which is what keeps a
+ * card's "not found", "archived", and "workspace unavailable" refusals — and
+ * its preset resolution — identical on every surface that reports them.
+ */
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { PresetRow } from "../presets.js";
+import { createPresetJudgeRunner } from "../decisions/preset-judge-runner.js";
+import { createArtifactCriteriaJudge } from "../decisions/artifact-criteria-judge.js";
+import { createScoredBatchJudge } from "../decisions/scored-batch-judge.js";
+import { createCoreDependencies } from "./composition.js";
+import { createCardUpdater, createClaimWaiterNotifier } from "./card-state.js";
+import { ERRORS } from "./card-errors.js";
+import type { ActionRecorder } from "./action-log-runtime.js";
+
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
+
+export type RuntimeServiceDeps = {
+  alia: AliaPluginApi;
+  db: Db;
+  now: () => number;
+  randomId: (prefix: string) => string;
+  /** The flight recorder. Optional so a narrow test can build services without
+   * a log; every production surface passes the core's one instance. */
+  actions?: ActionRecorder;
+};
+
+/** The two writers every surface mutates cards through. */
+function createCardWriters(
+  deps: RuntimeServiceDeps,
+  core: ReturnType<typeof createCoreDependencies>,
+) {
+  return {
+    updateCard: createCardUpdater({
+      db: deps.db,
+      alia: deps.alia,
+      now: deps.now,
+      getCard: core.cardStore.getCard,
+      recordInbox: core.inbox.record,
+      recordErrorInbox: core.inbox.recordError,
+      resolveInbox: core.inbox.resolve,
+      resolveAllInbox: core.inbox.resolveAll,
+      actions: deps.actions,
+    }),
+    // A claim waiter resumes a specific PAUSE, so it needs the action
+    // resolver, not the terminal one: a card freed from a wait is going back
+    // to work, and the completion that closed its card is not its business.
+    notifyClaimWaiters: createClaimWaiterNotifier({
+      db: deps.db,
+      alia: deps.alia,
+      now: deps.now,
+      getCard: core.cardStore.getCard,
+      resolveInbox: core.inbox.resolve,
+    }),
+  };
+}
+
+/**
+ * The preset judges. One runner feeds all three entry points — a criteria
+ * judge and a scored-batch judge are the same runner with a different rubric
+ * — so they cannot drift into two different preset call shapes.
+ */
+function createJudges(
+  alia: AliaPluginApi,
+  getPresetById: (id: string) => PresetRow | null,
+) {
+  const judgeViaPreset = createPresetJudgeRunner({ alia, getPresetById });
+  return {
+    judgeViaPreset,
+    judgePresetCriteria: createArtifactCriteriaJudge(judgeViaPreset),
+    judgeScoredBatch: createScoredBatchJudge(judgeViaPreset),
+  };
+}
+
+export function createRuntimeServices(deps: RuntimeServiceDeps) {
+  const core = createCoreDependencies(deps);
+  const { cardStore, presetServer, inbox } = core;
+  const writers = createCardWriters(deps, core);
+  return {
+    cardStore,
+    presetServer,
+    inbox,
+    getCard: cardStore.getCard,
+    cardWorkspace: cardStore.cardWorkspace,
+    recordInboxEvent: inbox.record,
+    upsertPausedEvent: inbox.upsertPaused,
+    resolveInboxEvents: inbox.resolve,
+    markInboxQuestionsAnswered: (
+      cardId: string,
+      interactionIds: string[],
+    ) => inbox.markAnswered(cardId, interactionIds),
+    syncPendingQuestionInbox: (
+      card: { id: string },
+      interactionIds: string[],
+      question?: { summary?: string | null; count?: number | null; kind?: string | null },
+    ) => inbox.syncPendingQuestion(card.id, interactionIds, deps.now(), question),
+    presetParams: (preset: unknown) =>
+      presetServer.presetAttachmentParams(preset as PresetRow),
+    ...writers,
+    ...createJudges(deps.alia, presetServer.getPresetById),
+    ERRORS,
+  };
+}
+
+export type RuntimeServices = ReturnType<typeof createRuntimeServices>;

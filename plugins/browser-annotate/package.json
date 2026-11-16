@@ -1,0 +1,71 @@
+{
+  "name": "alia-plugin-browser-annotate",
+  "version": "0.1.1",
+  "description": "Annotate elements in a VesnALIA Browser tab and send comments with per-element screenshots to the current chat.",
+  "type": "module",
+  "files": [
+    "dist",
+    "src/app.tsx",
+    "src/composer.ts",
+    "src/contracts.ts",
+    "src/editor-placement.ts",
+    "src/host.ts",
+    "src/server.ts",
+    "README.md",
+    "PLUGIN_OVERVIEW.md"
+  ],
+  "scripts": {
+    "build": "alia plugin build",
+    "check": "tsc --noEmit && tsc --project tsconfig.test.json --noEmit && bun test",
+    "test": "bun test",
+    "typecheck:test": "tsc --project tsconfig.test.json --noEmit"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.19",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/jsdom": "^27.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "bun-types": "^1.4.2",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "jsdom": "^29.0.1",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "alia": ">=0.43.4",
+    "aliaPluginSdk": ">=0.5.9"
+  },
+  "alia": {
+    "name": "Browser Annotate",
+    "description": "Annotate elements in a VesnALIA Browser tab and send the comments with per-element screenshots to the current chat.",
+    "branding": {
+      "icon": "MessageSquare"
+    },
+    "server": "./src/server.ts",
+    "host": "./src/host.ts",
+    "app": "./src/app.tsx"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/browser-annotate#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/browser-annotate"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

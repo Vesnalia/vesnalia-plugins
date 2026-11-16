@@ -1,0 +1,205 @@
+/**
+ * Self-update mapping for the ALIA-native plugin check. The SDK call itself
+ * lives in server.ts (it needs the live `alia.sdk`); everything decidable is
+ * here so it stays testable and out of the handlers.
+ *
+ * Wire outcomes (`PluginUpdateCheckEntry.outcome`): update-available,
+ * current, incompatible, pinned, unavailable. "checking" is our local
+ * pre-first-check state only — never from VesnALIA.
+ */
+
+const WIRE_OUTCOMES = ["update-available", "current", "incompatible", "pinned", "unavailable"];
+
+/** This plugin's entry among every installed plugin's check result. */
+export function selectOwnEntry(entries, pluginId) {
+  if (!Array.isArray(entries)) return null;
+  return entries.find((entry) => entry !== null && typeof entry === "object" && entry.id === pluginId) ?? null;
+}
+
+/** Reduce one wire entry to panel state. Never throws; unknown shapes read as unavailable. */
+export function mapUpdateEntry(entry) {
+  const empty = { outcome: "unavailable", installed: null, installedDisplay: null, candidate: null, candidateDisplay: null, detail: null };
+  if (entry === null || typeof entry !== "object") {
+    return { ...empty, detail: "VesnALIA returned no update status for this plugin." };
+  }
+  const outcome = WIRE_OUTCOMES.includes(entry.outcome) ? entry.outcome : "unavailable";
+  const installed = entry.installed && typeof entry.installed.version === "string" ? entry.installed.version : null;
+  const installedDisplay = entry.installed && typeof entry.installed.display === "string" ? entry.installed.display : null;
+  const candidate = outcome === "update-available" && entry.candidate && typeof entry.candidate.version === "string" ? entry.candidate.version : null;
+  const candidateDisplay = candidate !== null && typeof entry.candidate.display === "string" ? entry.candidate.display : null;
+  const blockedReason = entry.blocked && Array.isArray(entry.blocked.reasons) && typeof entry.blocked.reasons[0] === "string" ? entry.blocked.reasons[0] : null;
+  const detail = typeof entry.detail === "string" ? entry.detail : blockedReason ?? (outcome === "unavailable" ? "VesnALIA returned no update status for this plugin." : null);
+  return { outcome, installed, installedDisplay, candidate, candidateDisplay, detail };
+}
+
+/**
+ * Whether VesnALIA installed this plugin from a local path. Only path installs
+ * take the manual update path (checkout pull + rebuild + reload); every
+ * other source is ALIA-managed, so update copy must never send those users
+ * to a checkout they do not have.
+ */
+export function isPathInstall(display) {
+  return typeof display === "string" && display.trim().toLowerCase().startsWith("path:");
+}
+
+/**
+ * The one definition of "an update is available" for every surface: the
+ * sidebar accessory, the About tab badge, the About header, and the status
+ * box must agree, so they all read this — never an inline expression per
+ * call site (a forced check that lit only one of them was that drift).
+ * A ALIA-managed candidate or a newer GitHub release behind an unmanaged
+ * install both count; an unknown shape reads as no update, never a throw.
+ */
+export function updateAvailableFrom(info) {
+  if (info === null || typeof info !== "object") return false;
+  const pluginUpdate = info.pluginUpdate !== null && typeof info.pluginUpdate === "object" ? info.pluginUpdate : null;
+  const githubRelease = info.githubRelease !== null && typeof info.githubRelease === "object" ? info.githubRelease : null;
+  return pluginUpdate?.outcome === "update-available" || githubRelease?.newer === true;
+}
+
+const UPDATE_RELOAD_NOTICE = "Update applied — Stelow is reloading; the new version appears shortly.";
+
+function lifecycleError(cause, fallback) {
+  return cause instanceof Error ? cause.message : fallback;
+}
+
+export function initialPluginUpdateState() {
+  return { confirming: false, updating: false, checking: false, error: null, notice: null };
+}
+
+export function beginPluginUpdateCheck(previous) {
+  return { ...previous, confirming: false, checking: true, error: null, notice: null };
+}
+
+export function completePluginUpdateCheck(previous, buildInfo, result) {
+  const updateAvailable = updateAvailableFrom(result);
+  return {
+    ...previous,
+    buildInfo: buildInfo ? { ...buildInfo, ...result } : buildInfo,
+    checking: false,
+    error: null,
+    notice: null,
+    updateAvailable,
+  };
+}
+
+export function failPluginUpdateCheck(previous, cause) {
+  return {
+    ...previous,
+    checking: false,
+    error: lifecycleError(cause, "Update check failed."),
+    notice: null,
+  };
+}
+
+export function beginPluginUpdateApply(previous) {
+  if (!previous.confirming || previous.updating) return previous;
+  return { ...previous, updating: true, error: null, notice: null };
+}
+
+export function completePluginUpdateApply(previous, result, buildInfo) {
+  if (!result.applied) {
+    return {
+      ...previous,
+      confirming: false,
+      updating: false,
+      error: result.detail ?? "VesnALIA did not apply an update.",
+      notice: null,
+    };
+  }
+  return {
+    ...previous,
+    buildInfo: buildInfo ?? previous.buildInfo,
+    confirming: false,
+    updating: false,
+    error: null,
+    notice: buildInfo ? null : UPDATE_RELOAD_NOTICE,
+    updateAvailable: updateAvailableFrom(buildInfo),
+  };
+}
+
+export function failPluginUpdateApply(previous, cause, applied) {
+  return {
+    ...previous,
+    confirming: false,
+    updating: false,
+    error: applied ? null : lifecycleError(cause, "Plugin update failed."),
+    notice: applied ? UPDATE_RELOAD_NOTICE : null,
+  };
+}
+
+export function timeOutPluginUpdateApply(previous) {
+  return { ...previous, confirming: false, updating: false, notice: UPDATE_RELOAD_NOTICE };
+}
+
+/**
+ * Merge a failed refresh into the last known verdict. A transient check
+ * failure (network, VesnALIA registry blip) must never erase a verdict that was
+ * already shown: the candidate button disappears and the panel reads
+ * "nothing available" while the release is real. So keep the previous
+ * outcome and fields, stamp the failure as the detail, and only fall back
+ * to "unavailable" when there was no previous verdict yet ("checking").
+ */
+export function applyFailedCheck(previous, reason, checkedAt = Date.now()) {
+  const keep = previous !== null && typeof previous === "object" && previous.outcome !== "checking";
+  return {
+    ...(keep
+      ? previous
+      : { outcome: "unavailable", installed: null, installedDisplay: null, candidate: null, candidateDisplay: null }),
+    detail: `Update check failed: ${reason}`,
+    checkedAt,
+  };
+}
+
+/**
+ * Human label for a wire version. Git installs report commit shas, so prefer
+ * the tag VesnALIA prints in the display string ("…git@v0.18.47 (4450336f…)"),
+ * then a short sha, then the raw value. The tag is the last @-segment
+ * without slashes, so userinfo hosts earlier in the display never win.
+ */
+export function shortRef(version, display) {
+  if (typeof display === "string") {
+    const tag = display.match(/@([^/\s(]+)\s*(\(|$)/);
+    if (tag) return tag[1];
+  }
+  if (typeof version === "string" && /^[0-9a-f]{40}$/i.test(version)) return version.slice(0, 12);
+  return version ?? null;
+}
+
+function bareVersion(value) {
+  return typeof value === "string" && value.length > 0 ? value.replace(/^v/, "") : null;
+}
+
+function versionParts(version) {
+  const match = bareVersion(version)?.match(/^(\d+)\.(\d+)\.(\d+)/);
+  return match ? match.slice(1, 3).map(Number) : null;
+}
+
+/**
+ * The one comparison every surface renders: what is RUNNING next to what is
+ * PUBLISHED.
+ *
+ * Context: the About panel shows the running build in the header, but the
+ * unmanaged-update line underneath used to name only the published tag ("v0.51
+ * is published on GitHub"). With the two versions out of step that line read
+ * like a claim about the install, and a person could not tell that the running
+ * checkout was older. Naming both versions in one sentence is the fix, so the
+ * difference is legible without arithmetic.
+ *
+ * State is "current", "behind", "ahead", or "unknown" — an unparseable or
+ * missing version compares as unknown, never as current. "unknown" is not an
+ * excuse to say "up to date".
+ */
+export function updateComparison(version, githubRelease) {
+  const installed = bareVersion(version);
+  const published = githubRelease !== null && typeof githubRelease === "object" ? bareVersion(githubRelease.tag) : null;
+  if (installed === null || published === null || installed === "dev" || published === "dev") {
+    return { installed: version ?? null, published, state: "unknown" };
+  }
+  if (installed === published) return { installed, published, state: "current" };
+  const mine = versionParts(installed);
+  const theirs = versionParts(published);
+  if (mine === null || theirs === null) return { installed, published, state: "unknown" };
+  const order = mine[0] - theirs[0] || mine[1] - theirs[1];
+  return { installed, published, state: order < 0 ? "behind" : "ahead" };
+}

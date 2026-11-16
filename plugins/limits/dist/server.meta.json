@@ -1,0 +1,11 @@
+{
+  "sdkMajor": 0,
+  "sdkVersion": "0.6.132",
+  "artifactFormatVersion": 1,
+  "pluginId": "limits",
+  "pluginVersion": "1.1.8",
+  "builtWith": {
+    "aliaVersion": "0.49.0",
+    "pluginSdkVersion": "0.6.132"
+  }
+}

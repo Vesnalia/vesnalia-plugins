@@ -1,0 +1,171 @@
+/**
+ * Workers: the thread lifecycle, plus the two surfaces that spawn their own.
+ *
+ * Construction order is the contract. The respawn preparation must exist
+ * before the workers that call it, and the workers must exist before the
+ * drafting server (which resumes into their environment) or the gate
+ * pre-review (which stops their threads). Drafts and gate reviews are
+ * disposable spawns, so they die with the card's worker rather than
+ * outliving it.
+ */
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createWorkers } from "../workers.js";
+import { createDraftingServer } from "../drafting.js";
+import { createGatePreReview } from "../review-preflight.js";
+import { createWorkerRespawnPreparation } from "./worker-respawn-preparation.js";
+import { createDisposableSpawner } from "./disposable-spawn.js";
+import { createBriefingRuntime } from "./card-briefing-runtime.js";
+import { bandForCardKindStage } from "../../lib/preset-staleness.mjs";
+import { strategyList, strategyRounds } from "./track-projection.js";
+import { text } from "./values.js";
+import { roundRelPath } from "./card-seams.js";
+import { workspaceRelative } from "./card-files.js";
+import { boardFromRoot } from "./board-read.js";
+import { workflowStateDir } from "./workflow-state.js";
+import { isArchivedCard } from "../../lib/worker-action-policy.mjs";
+import { resetAutoContinue } from "../../lib/auto-continue.mjs";
+import { roundTimestamp } from "../../lib/research-rounds.mjs";
+import { ERRORS } from "./card-errors.js";
+import { WORKER_PROTOCOL_CLAUSES } from "./worker-protocol-clauses.js";
+import type { RuntimeServices } from "./runtime-services.js";
+import type { CardLedger } from "./card-ledger.js";
+import type { TrackPrompts } from "./track-prompts.js";
+import type { ActionRecorder } from "./action-log-runtime.js";
+
+export type WorkerRuntimeDeps = {
+  alia: AliaPluginApi;
+  db: ReturnType<AliaPluginApi["storage"]["database"]>;
+  now: () => number;
+  services: RuntimeServices;
+  ledger: CardLedger;
+  prompts: TrackPrompts;
+  /** The flight recorder shared by every surface; optional in narrow tests. */
+  actions?: ActionRecorder;
+};
+
+export function createWorkerRuntime(deps: WorkerRuntimeDeps) {
+  const spawnDisposable = createDisposableSpawner(deps.alia);
+  const { services, ledger, prompts } = deps;
+  // Filled by the composition root once the drafting server exists (it owns
+  // suggestCardName but is constructed after the workers). See SCOPE-1 spike
+  // notes: a holder breaks the cycle without reordering construction.
+  const titleRefresh: { request: ((cardId: string) => void) | null } = { request: null };
+  const workers = createWorkers({
+    db: deps.db,
+    alia: deps.alia,
+    now: deps.now,
+    actions: deps.actions,
+    getCard: services.getCard,
+    updateCard: services.updateCard,
+    comment: (cardId, body) =>
+      ledger.logCardComment(cardId, "card", cardId, "agent", body),
+    getPreset: (presetId) => services.presetServer.getPresetById(presetId),
+    getReliablePreset: services.presetServer.getReliablePresetForBand,
+    presetParams: services.presetParams,
+    prepareRespawn: createWorkerRespawnPreparation({
+      alia: deps.alia,
+      presetParams: services.presetParams,
+      cardWorkspace: services.cardWorkspace,
+      workflowStateDir,
+      strategyList,
+      strategyRounds,
+      researchWorkerPrompt: prompts.researchWorkerPrompt,
+      exploreWorkerPrompt: prompts.exploreWorkerPrompt,
+      roundRelPath,
+      text,
+      protocols: WORKER_PROTOCOL_CLAUSES,
+    }),
+    resetAutoContinue,
+    titleRefresh,
+    errors: {
+      cardNotFound: ERRORS.cardNotFound,
+      cardArchived: ERRORS.cardArchived,
+      presetNotFound: ERRORS.presetNotFound,
+    },
+  });
+  return { workers, spawnDisposable, titleRefresh };
+}
+
+export function createDraftRuntime(
+  deps: WorkerRuntimeDeps & {
+    workers: ReturnType<typeof createWorkers>;
+    spawnDisposable: ReturnType<typeof createDisposableSpawner>;
+  },
+) {
+  const { services, ledger, workers, spawnDisposable } = deps;
+  return createDraftingServer({
+    db: deps.db,
+    alia: deps.alia,
+    now: deps.now,
+    timestamp: roundTimestamp,
+    getCard: services.getCard,
+    getCardByWorkerThread: ledger.getCardByWorkerThread,
+    isArchivedCard,
+    cardWorkspace: services.cardWorkspace,
+    continuingEnvironment: workers.continuingEnvironment,
+    getPreset: (presetId) => services.presetServer.getPresetById(presetId),
+    getPresetForBand: services.presetServer.getPresetForBand,
+    getGenerationPresetId: services.presetServer.getGenerationPresetId,
+    presetParams: services.presetParams,
+    spawnDisposable,
+    stopThread: (threadId) => workers.stop(threadId),
+    comment: (cardId, body) =>
+      ledger.logCardComment(cardId, "card", cardId, "agent", body),
+    publish: (event, payload) => deps.alia.realtime.publish(event, payload),
+    stateDir: (card, workspace) =>
+      workflowStateDir(deps.alia, workspace.path, card.id, card.dir_hash!),
+    workspaceRelative,
+  });
+}
+
+/**
+ * The briefing surface: a disposable generation-tier spawn that may only
+ * rephrase the deterministic fact list. It lives here, beside the other two
+ * spawn-owning surfaces, because it shares their environment builder and their
+ * disposable spawner — and because a surface that spawns belongs with the
+ * workers that own the spawn path.
+ */
+export function createBriefingSurface(
+  deps: WorkerRuntimeDeps & {
+    workers: ReturnType<typeof createWorkers>;
+    spawnDisposable: ReturnType<typeof createDisposableSpawner>;
+  },
+) {
+  const { services, workers, spawnDisposable } = deps;
+  return createBriefingRuntime({
+    db: deps.db,
+    alia: deps.alia,
+    getCard: services.getCard,
+    isArchivedCard,
+    getPreset: (presetId) => services.presetServer.getPresetById(presetId),
+    getPresetForBand: services.presetServer.getPresetForBand,
+    getGenerationPresetId: services.presetServer.getGenerationPresetId,
+    presetParams: services.presetParams,
+    bandForCard: (card) => bandForCardKindStage(card.kind, card.stage),
+    cardWorkspace: services.cardWorkspace,
+    continuingEnvironment: workers.continuingEnvironment,
+    spawnDisposable,
+    stopThread: (threadId) => workers.stop(threadId),
+  });
+}
+
+export function createGatePreReviewRuntime(
+  deps: WorkerRuntimeDeps & {
+    spawnDisposable: ReturnType<typeof createDisposableSpawner>;
+    workers: ReturnType<typeof createWorkers>;
+  },
+) {
+  const { services, ledger, spawnDisposable, workers } = deps;
+  return createGatePreReview({
+    alia: deps.alia,
+    getCard: services.getCard,
+    getReviewPresetId: services.presetServer.getReviewPresetId,
+    getPresetById: services.presetServer.getPresetById,
+    presetAttachmentParams: services.presetServer.presetAttachmentParams,
+    cardWorkspace: services.cardWorkspace,
+    boardFromRoot,
+    spawnDisposable,
+    stopThread: (threadId) => workers.stop(threadId),
+    logCardComment: ledger.logCardComment,
+  });
+}

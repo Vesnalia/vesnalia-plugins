@@ -1,0 +1,389 @@
+/* The host owns typography and color. This surface adds only density and hierarchy. */
+.mcp-simple {
+  --mcp-columns: minmax(180px, 1fr) 132px minmax(140px, 190px) 128px;
+  --mcp-hover: color-mix(in srgb, var(--muted) 55%, transparent);
+  height: 100%;
+  overflow: auto;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.mcp-simple * {
+  box-sizing: border-box;
+}
+.mcp-simple main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 28px 20px;
+}
+.mcp-simple header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.mcp-simple h1 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.mcp-simple h1 span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
+}
+.mcp-simple button,
+.mcp-simple input,
+.mcp-simple select {
+  font: inherit;
+  color: inherit;
+}
+.mcp-simple button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+.mcp-simple button:hover:not(:disabled) {
+  background: var(--mcp-hover);
+}
+.mcp-simple button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.mcp-simple :is(button, input, select, a):focus-visible {
+  outline: 2px solid var(--ring, var(--foreground));
+  outline-offset: 3px;
+}
+.mcp-simple input::placeholder {
+  color: var(--muted-foreground);
+}
+.mcp-simple select,
+.mcp-search {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  min-width: 0;
+  padding: 6px 9px;
+}
+.mcp-simple .mcp-refresh {
+  font-size: 12px;
+  min-height: 30px;
+}
+
+/* Harness navigation stays on one line; counts are secondary to identity. */
+.mcp-harnesses {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+  scrollbar-width: thin;
+}
+.mcp-harnesses button {
+  position: relative;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0 1px 13px;
+  gap: 9px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.mcp-harnesses button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--foreground);
+}
+.mcp-harnesses button[aria-pressed="true"] {
+  color: var(--foreground);
+  box-shadow: inset 0 -2px var(--foreground);
+}
+.mcp-harnesses button:focus-visible {
+  outline-offset: -3px;
+}
+.mcp-harness-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.mcp-harnesses svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.mcp-count {
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+
+/* One toolbar; filters never become another dashboard. */
+.mcp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.mcp-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 240px;
+  max-width: 380px;
+}
+.mcp-search-field > svg {
+  position: absolute;
+  left: 10px;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+.mcp-search {
+  width: 100%;
+  height: 32px;
+  padding-left: 31px;
+}
+
+/* A single shared column definition keeps headings and every row aligned. */
+.mcp-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.mcp-list-heading,
+.mcp-row {
+  display: grid;
+  grid-template-columns: var(--mcp-columns);
+  column-gap: 16px;
+  align-items: center;
+}
+.mcp-list-heading {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  padding: 0 8px 9px;
+  border-bottom: 1px solid var(--border);
+}
+.mcp-row {
+  padding: 9px 8px;
+  min-height: 44px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.mcp-row:hover {
+  background: var(--mcp-hover);
+}
+.mcp-row[hidden] {
+  display: none;
+}
+.mcp-identity,
+.mcp-name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+.mcp-name {
+  flex-wrap: wrap;
+}
+.mcp-name strong {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mcp-server-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.mcp-server-icon svg {
+  width: 17px;
+  height: 17px;
+}
+.mcp-simple .mcp-scope-select {
+  max-width: 130px;
+  font-size: 11px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+}
+.mcp-row-harness {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.mcp-row-harness svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.mcp-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.mcp-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+.mcp-status-connected {
+  background: #35b879;
+  opacity: 1;
+}
+.mcp-status-auth-required,
+.mcp-status-failed {
+  background: #d99543;
+  opacity: 1;
+}
+.mcp-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+}
+.mcp-actions button {
+  font-size: 11px;
+  padding: 4px 7px;
+  line-height: 1.35;
+}
+.mcp-actions .mcp-delete {
+  padding: 5px;
+  color: var(--muted-foreground);
+  border-color: transparent;
+}
+.mcp-actions .mcp-delete:hover:not(:disabled) {
+  color: var(--destructive, var(--foreground));
+}
+
+.mcp-message {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0 4px 28px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  cursor: default;
+}
+.mcp-message code {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.mcp-empty {
+  padding: 30px 8px;
+  color: var(--muted-foreground);
+}
+.mcp-simple footer,
+.mcp-note {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-top: 16px;
+}
+.mcp-spinner {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--foreground);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: mcp-spin 0.8s linear infinite;
+}
+@keyframes mcp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcp-spinner {
+    animation: none;
+    border-right-color: var(--foreground);
+  }
+}
+@media (max-width: 850px) {
+  .mcp-simple {
+    --mcp-columns: minmax(150px, 1fr) 108px minmax(100px, 145px) 122px;
+  }
+  .mcp-simple main {
+    padding: 20px 18px;
+  }
+  .mcp-row,
+  .mcp-list-heading {
+    column-gap: 10px;
+  }
+  .mcp-harnesses {
+    gap: 16px;
+  }
+}
+@media (max-width: 640px) {
+  .mcp-simple {
+    --mcp-columns: minmax(0, 1fr) auto;
+  }
+  .mcp-simple main {
+    padding: 18px 14px;
+  }
+  .mcp-simple h1 {
+    font-size: 16px;
+  }
+  .mcp-list-heading {
+    display: none;
+  }
+  .mcp-list {
+    border-top: 1px solid var(--border);
+  }
+  .mcp-row {
+    row-gap: 6px;
+    padding: 10px 2px;
+  }
+  .mcp-identity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .mcp-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .mcp-row-harness {
+    grid-column: 1;
+    grid-row: 2;
+    padding-left: 28px;
+  }
+  .mcp-status {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    font-size: 11px;
+    max-width: 135px;
+  }
+  .mcp-search-field {
+    max-width: none;
+    flex-basis: 100%;
+  }
+}

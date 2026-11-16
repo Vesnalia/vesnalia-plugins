@@ -1,0 +1,106 @@
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+
+export type WorkerCard = {
+  id: string;
+  project_id: string;
+  name: string;
+  display_name: string | null;
+  prompt: string;
+  intent: string;
+  status: string;
+  stage: string;
+  activity: string;
+  worker_thread_id: string | null;
+  worker_preset_id: string | null;
+  preset_restart_pending: number | null;
+  dir_hash: string | null;
+  auto_continue_count: number | null;
+  auto_continue_stage: string | null;
+  spawn_retry_count: number | null;
+  spawn_retry_thread: string | null;
+  attachments: string;
+  /**
+   * Which checkout the card works in.
+   *
+   * `worktree` is a recorded linked checkout (an operator points a card at the
+   * tree that holds its work). The resolver has always honoured it; the type did
+   * not, and the RPC contracts below enumerate the same three, because a value
+   * the DB can hold but a contract refuses is a 500 on every board read — which
+   * is exactly what happened on 2026-10-28.
+   */
+  workspace_kind: "project" | "exploratory" | "worktree";
+  workspace_path: string | null;
+  workspace_host_id: string | null;
+  kind: "build" | "research" | "explore";
+  research_strategy: string | null;
+  research_strategies: string | null;
+  explore_stage: string | null;
+  last_error: string | null;
+  last_assistant_text: string | null;
+  /** The running turn's text at the last idle edge. The resume rule's baseline:
+   * written only when the card parks or resumes, never by a running sync, so a
+   * card-detail read cannot consume the "this turn produced something new"
+   * signal. See lib/auto-continue.mjs. */
+  last_idle_text: string | null;
+  last_idle_at: number | null;
+  /** When the host stopped answering this card's state read, or null. The
+   * measurement itself lives in the streak table; this is the latch the reader
+   * sees, and it is never a verdict about the card. See lib/host-read-streak. */
+  read_miss_since: number | null;
+  /** The human acceptance receipt, or null when nobody has recorded one. A
+   * stamp and nothing else — the host SDK exposes no operator identity, so a
+   * name field would be free text wearing attribution's clothes.
+   * See lib/card-acceptance.mjs. */
+  accepted_at: number | null;
+  environment_label: string | null;
+  created_at: number;
+  updated_at: number;
+};
+
+type SpawnArgs = Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0];
+
+export type WorkerScheduler = {
+  setTimeout: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
+  clearTimeout: (timer: ReturnType<typeof setTimeout>) => void;
+};
+
+export type WorkerSpawnArgs = SpawnArgs;
+
+/** The preset a card's worker runs on, as the spawn sites read it. */
+export type Preset = {
+  id: string;
+  name: string;
+  provider_id: string;
+  model_id: string;
+  reasoning_level: string;
+  permission_mode: string;
+  environment_kind: string;
+  base_branch: string | null;
+  machine_id: string | null;
+  instructions: string;
+};
+
+/**
+ * What a respawn is being asked to do beyond "start a worker".
+ *
+ * These live here rather than in `workers.ts` so the replacement module can
+ * name them without importing the composition root back — which is a cycle,
+ * and the architecture gate is right to refuse one.
+ */
+export type RespawnOptions = {
+  strategyId?: string;
+  flavor?: "restart" | "append";
+  roundNo?: number;
+  roundStamp?: string;
+  roundFile?: string;
+  previousProjectId?: string | null;
+};
+
+export type RespawnPreparation =
+  | { error: string }
+  | {
+    prompt: string;
+    input?: SpawnArgs["input"];
+    projectPath: string;
+    workspace: { path: string; hostId: string | null } | null;
+  };

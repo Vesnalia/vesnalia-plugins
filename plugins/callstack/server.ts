@@ -1,0 +1,621 @@
+// alia-plugin-callstack — call-stack-driven development.
+//
+// The agent publishes "flow" documents (call stacks with types moving through
+// them) via the callstack_publish tool; the thread panel renders them. Flows
+// are keyed (threadId, name): one chat owns its own set of call stacks.
+//
+// Drift tracking: at publish time we snapshot a content hash per file named in
+// frame locs. When the thread goes idle (the agent just finished a turn — the
+// moment code may have changed) we re-hash and mark files whose content
+// changed, so stale frames are flagged in the panel automatically.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { z } from "zod";
+import {
+  collectChanges,
+  collectFilePaths,
+  collectFns,
+  flowToolSchema,
+  locFilePath,
+  locLine,
+  reanchorLocs,
+  storedFlowSchema,
+  type Flow,
+  type Frame,
+  type StoredFlow,
+} from "./flow-schema";
+
+export const rpcContract = defineRpcContract({
+  listFlows: {
+    input: z.object({ threadId: z.string() }).strict(),
+    output: z.object({ flows: z.array(storedFlowSchema) }),
+  },
+  setArchived: {
+    input: z
+      .object({
+        threadId: z.string(),
+        name: z.string(),
+        archived: z.boolean(),
+      })
+      .strict(),
+    output: z.object({ found: z.boolean() }),
+  },
+  snippet: {
+    input: z.object({ threadId: z.string(), loc: z.string() }).strict(),
+    output: z.object({
+      path: z.string().nullable(),
+      startLine: z.number().nullable(),
+      targetLine: z.number().nullable(),
+      lines: z.array(z.string()),
+      error: z.string().nullable(),
+    }),
+  },
+  diffHunk: {
+    input: z.object({ threadId: z.string(), path: z.string() }).strict(),
+    output: z.object({
+      patch: z.string().nullable(),
+      error: z.string().nullable(),
+    }),
+  },
+});
+
+const channel = (threadId: string) => `flows:${threadId}`;
+
+const SNIPPET_CONTEXT_LINES = 8;
+
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
+    autoArchiveDays: {
+      type: "select",
+      label: "Auto-archive flows not updated for",
+      options: ["off", "7 days", "14 days", "30 days"],
+      default: "14 days",
+    },
+  });
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
+    `CREATE TABLE IF NOT EXISTS flows (
+      thread_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      data TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (thread_id, name)
+    )`,
+    `ALTER TABLE flows ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE flows ADD COLUMN file_hashes TEXT`,
+    `ALTER TABLE flows ADD COLUMN drifted TEXT`,
+  ]);
+
+  const listFlows = (threadId: string): StoredFlow[] =>
+    (
+      db
+        .prepare(
+          `SELECT data, updated_at, archived, drifted FROM flows WHERE thread_id = ? ORDER BY updated_at`,
+        )
+        .all(threadId) as {
+        data: string;
+        updated_at: number;
+        archived: number;
+        drifted: string | null;
+      }[]
+    ).map((row) => ({
+      ...JSON.parse(row.data),
+      updatedAt: row.updated_at,
+      archived: row.archived === 1,
+      driftedPaths: row.drifted ? JSON.parse(row.drifted) : [],
+    }));
+
+  const setArchived = (threadId: string, name: string, archived: boolean) => {
+    const result = db
+      .prepare(`UPDATE flows SET archived = ? WHERE thread_id = ? AND name = ?`)
+      .run(archived ? 1 : 0, threadId, name);
+    alia.realtime.publish(channel(threadId), { threadId });
+    return result.changes > 0;
+  };
+
+  /** Resolve the thread's workspace (host + root) for file access. */
+  async function workspaceFor(
+    threadId: string,
+  ): Promise<{ hostId: string; root: string; environmentId: string } | null> {
+    const thread = await alia.sdk.threads.get({ threadId });
+    if (!thread.environmentId) return null;
+    const environment = await alia.sdk.environments.get({
+      environmentId: thread.environmentId,
+    });
+    if (!environment.path) return null;
+    return {
+      hostId: environment.hostId,
+      root: environment.path,
+      environmentId: environment.id,
+    };
+  }
+
+  const decodeContent = (file: { content: string; contentEncoding: string }) =>
+    file.contentEncoding === "base64"
+      ? Buffer.from(file.content, "base64").toString("utf8")
+      : file.content;
+
+  /** Workspace file contents + hashes; null value = unreadable file, null
+      result = no workspace. */
+  async function readFiles(
+    threadId: string,
+    paths: string[],
+  ): Promise<Record<string, { sha256: string; content: string } | null> | null> {
+    if (paths.length === 0) return {};
+    const workspace = await workspaceFor(threadId);
+    if (!workspace) return null;
+    const files: Record<string, { sha256: string; content: string } | null> = {};
+    for (const path of paths) {
+      try {
+        const file = await alia.sdk.files.read({
+          hostId: workspace.hostId,
+          path: `${workspace.root}/${path}`,
+          rootPath: workspace.root,
+        });
+        files[path] = { sha256: file.sha256, content: decodeContent(file) };
+      } catch {
+        files[path] = null;
+      }
+    }
+    return files;
+  }
+
+  /** Content hash per relative path; null marks a file we could not read. */
+  async function hashFiles(
+    threadId: string,
+    paths: string[],
+  ): Promise<Record<string, string | null> | null> {
+    const files = await readFiles(threadId, paths);
+    if (!files) return null;
+    return Object.fromEntries(
+      Object.entries(files).map(([path, file]) => [path, file?.sha256 ?? null]),
+    );
+  }
+
+  /**
+   * Re-hash a flow's files, store which paths changed since publish, and
+   * re-anchor loc line numbers in drifted files so snippet clicks stay
+   * accurate. The drift flag stays set until the agent reconciles.
+   */
+  async function refreshDrift(threadId: string): Promise<void> {
+    const rows = db
+      .prepare(
+        `SELECT name, data, file_hashes, drifted FROM flows
+         WHERE thread_id = ? AND archived = 0 AND file_hashes IS NOT NULL`,
+      )
+      .all(threadId) as {
+      name: string;
+      data: string;
+      file_hashes: string;
+      drifted: string | null;
+    }[];
+    let changed = false;
+    for (const row of rows) {
+      const baseline = JSON.parse(row.file_hashes) as Record<
+        string,
+        string | null
+      >;
+      const files = await readFiles(threadId, Object.keys(baseline));
+      if (!files) continue;
+      const drifted = Object.keys(baseline)
+        .filter((path) => baseline[path] !== (files[path]?.sha256 ?? null))
+        .sort();
+      const flowData = JSON.parse(row.data) as Flow;
+      let reanchored = false;
+      for (const path of drifted) {
+        const content = files[path]?.content;
+        if (content)
+          reanchored = reanchorLocs(flowData.frames, path, content) || reanchored;
+      }
+      const next = JSON.stringify(drifted);
+      if (reanchored || next !== (row.drifted ?? "[]")) {
+        db.prepare(
+          `UPDATE flows SET drifted = ?, data = ? WHERE thread_id = ? AND name = ?`,
+        ).run(next, JSON.stringify(flowData), threadId, row.name);
+        changed = true;
+      }
+    }
+    if (changed) alia.realtime.publish(channel(threadId), { threadId });
+  }
+
+  alia.events.on("thread.idle", ({ thread }) =>
+    refreshDrift(thread.id).catch((error) => {
+      alia.log.warn(`drift check failed for ${thread.id}: ${error}`);
+    }),
+  );
+
+  // Flows follow their thread's lifecycle: archive with it, delete with it.
+  alia.events.on("thread.archived", ({ thread }) => {
+    const result = db
+      .prepare(`UPDATE flows SET archived = 1 WHERE thread_id = ? AND archived = 0`)
+      .run(thread.id);
+    if (result.changes > 0)
+      alia.realtime.publish(channel(thread.id), { threadId: thread.id });
+  });
+  alia.events.on("thread.deleted", ({ thread }) => {
+    db.prepare(`DELETE FROM flows WHERE thread_id = ?`).run(thread.id);
+  });
+
+  // Age policy: archive flows nobody has touched in N days (daily sweep).
+  alia.background.schedule("auto-archive", "0 3 * * *", async () => {
+    const { autoArchiveDays } = await settings.get();
+    const days = Number.parseInt(autoArchiveDays, 10);
+    if (!Number.isFinite(days) || days <= 0) return;
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    const stale = db
+      .prepare(
+        `SELECT DISTINCT thread_id FROM flows WHERE archived = 0 AND updated_at < ?`,
+      )
+      .all(cutoff) as { thread_id: string }[];
+    const result = db
+      .prepare(`UPDATE flows SET archived = 1 WHERE archived = 0 AND updated_at < ?`)
+      .run(cutoff);
+    if (result.changes > 0) {
+      alia.log.info(`auto-archived ${result.changes} flow(s) older than ${days}d`);
+      for (const row of stale)
+        alia.realtime.publish(channel(row.thread_id), { threadId: row.thread_id });
+    }
+  });
+
+  alia.rpc.register(rpcContract, {
+    listFlows: ({ threadId }) => ({ flows: listFlows(threadId) }),
+    setArchived: ({ threadId, name, archived }) => ({
+      found: setArchived(threadId, name, archived),
+    }),
+    async snippet({ threadId, loc }) {
+      const empty = { path: null, startLine: null, targetLine: null, lines: [] };
+      const path = locFilePath(loc);
+      if (!path) return { ...empty, error: "Location has no file path." };
+      const workspace = await workspaceFor(threadId);
+      if (!workspace) return { ...empty, error: "Thread has no workspace." };
+      try {
+        const file = await alia.sdk.files.read({
+          hostId: workspace.hostId,
+          path: `${workspace.root}/${path}`,
+          rootPath: workspace.root,
+        });
+        const allLines = decodeContent(file).split("\n");
+        const targetLine = locLine(loc);
+        const center = targetLine ?? 1;
+        const startLine = Math.max(1, center - SNIPPET_CONTEXT_LINES);
+        const endLine = Math.min(
+          allLines.length,
+          center + SNIPPET_CONTEXT_LINES,
+        );
+        return {
+          path,
+          startLine,
+          targetLine,
+          lines: allLines.slice(startLine - 1, endLine),
+          error: null,
+        };
+      } catch {
+        return { ...empty, path, error: `Could not read ${path}.` };
+      }
+    },
+    async diffHunk({ threadId, path }) {
+      if (locFilePath(path) !== path)
+        return { patch: null, error: "Invalid path." };
+      const workspace = await workspaceFor(threadId);
+      if (!workspace) return { patch: null, error: "Thread has no workspace." };
+      try {
+        const environment = await alia.sdk.environments.get({
+          environmentId: workspace.environmentId,
+        });
+        const targets: ({ type: "uncommitted" } | { type: "all"; mergeBaseBranch: string })[] =
+          [{ type: "uncommitted" }];
+        if (environment.mergeBaseBranch)
+          targets.push({
+            type: "all",
+            mergeBaseBranch: environment.mergeBaseBranch,
+          });
+        for (const target of targets) {
+          const result = await alia.sdk.environments.diffPatch({
+            environmentId: workspace.environmentId,
+            target,
+            paths: [path],
+          });
+          if (result.outcome === "available") {
+            const patch = result.patches.find((entry) => entry.path === path);
+            if (patch && patch.patch.trim()) return { patch: patch.patch, error: null };
+          }
+        }
+        return { patch: null, error: `No pending diff for ${path}.` };
+      } catch (error) {
+        return { patch: null, error: `Diff failed: ${error}` };
+      }
+    },
+  });
+
+  alia.agents.registerTool({
+    name: "callstack_publish",
+    description:
+      "Publish or replace a call-stack flow diagram for this thread's Call Stacks panel. " +
+      "A flow is a named call tree: each frame has fn, optional loc (file:line), " +
+      "in/out types, cond (condition guarding the call), loop context, a change " +
+      "marker (same|added|modified|removed) for before/after views, and nested calls. " +
+      "The flow-level types map (typeName → definition) makes type pills expandable. " +
+      "Republishing the same name replaces it.",
+    instructions:
+      "When working call-stack-first (see the call-stack-driven-development skill), " +
+      "publish flows with callstack_publish after tracing code and whenever the " +
+      "planned or actual call path changes, so the user's panel stays current.",
+    experimental_statusLabels: {
+      pending: "Publishing call stack",
+      completed: "Published call stack",
+    },
+    parameters: flowToolSchema,
+    async execute(flow, { threadId }) {
+      if (!threadId) return "No thread context; flow not stored.";
+      const paths = collectFilePaths(flow.frames);
+      const files = await readFiles(threadId, paths).catch(() => null);
+      const hashes = files
+        ? Object.fromEntries(
+            Object.entries(files).map(([path, file]) => [
+              path,
+              file?.sha256 ?? null,
+            ]),
+          )
+        : null;
+
+      // Lint the flow against reality so the agent can self-correct now
+      // rather than the user discovering a wrong picture later.
+      const warnings: string[] = [];
+      if (files) {
+        const missing = Object.entries(files)
+          .filter(([, file]) => file === null)
+          .map(([path]) => path);
+        if (missing.length > 0)
+          warnings.push(
+            `loc paths not readable in the workspace (are they workspace-relative and spelled right?): ${missing.join(", ")}`,
+          );
+
+        // fn should exist in its loc file; loc lines should exist at all.
+        const fnMissing: string[] = [];
+        const staleLines: string[] = [];
+        const identifierFn = /^[A-Za-z_$][\w$]*([.#][A-Za-z_$][\w$]*)*$/;
+        const checkFrame = (frame: Frame) => {
+          const path = locFilePath(frame.loc);
+          const file = path ? files[path] : undefined;
+          if (file && frame.loc) {
+            const lineCount = file.content.split("\n").length;
+            const line = locLine(frame.loc);
+            if (line !== null && line > lineCount)
+              staleLines.push(`${frame.loc} (file has ${lineCount} lines)`);
+            if (identifierFn.test(frame.fn)) {
+              const segment = frame.fn.split(/[.#]/).pop()!;
+              if (!file.content.includes(segment))
+                fnMissing.push(`${frame.fn} (${frame.loc})`);
+            }
+          }
+          frame.calls?.forEach(checkFrame);
+        };
+        flow.frames.forEach(checkFrame);
+        if (fnMissing.length > 0)
+          warnings.push(
+            `fn not found in its loc file (renamed, moved, or wrong file?): ${fnMissing.join(", ")}`,
+          );
+        if (staleLines.length > 0)
+          warnings.push(
+            `loc line numbers past the end of the file: ${staleLines.join(", ")}`,
+          );
+      } else if (paths.length > 0) {
+        warnings.push(
+          "no workspace resolved for this thread — drift tracking and code preview are disabled for this flow.",
+        );
+      }
+
+      // current = verified reality; proposed = has a delta. Enforce both.
+      const changes = collectChanges(flow.frames);
+      if (flow.status === "current" && changes.length > 0)
+        warnings.push(
+          `status "current" but change markers present (${changes.join(", ")}) — current means verified reality; use status "proposed" or drop the markers.`,
+        );
+      if (flow.status === "proposed" && changes.length === 0)
+        warnings.push(
+          'status "proposed" but no frame carries a change marker — mark what changes, or publish as "current".',
+        );
+
+      // Convergence (⇄) keys on exact fn strings; near-misses are typos.
+      const normalizeFn = (fn: string) =>
+        fn.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const otherRows = db
+        .prepare(
+          `SELECT name, data FROM flows WHERE thread_id = ? AND archived = 0 AND name != ?`,
+        )
+        .all(threadId, flow.name) as { name: string; data: string }[];
+      const byNormalized = new Map<string, { fn: string; flowName: string }[]>();
+      for (const row of otherRows) {
+        for (const fn of collectFns((JSON.parse(row.data) as Flow).frames)) {
+          const key = normalizeFn(fn);
+          const list = byNormalized.get(key) ?? [];
+          list.push({ fn, flowName: row.name });
+          byNormalized.set(key, list);
+        }
+      }
+      const nearMisses: string[] = [];
+      for (const fn of collectFns(flow.frames)) {
+        for (const other of byNormalized.get(normalizeFn(fn)) ?? []) {
+          if (other.fn !== fn)
+            nearMisses.push(
+              `"${fn}" vs "${other.fn}" in flow "${other.flowName}"`,
+            );
+        }
+      }
+      if (nearMisses.length > 0)
+        warnings.push(
+          `fn names that nearly match another flow's (⇄ convergence requires exact names): ${nearMisses.join("; ")}`,
+        );
+      const edgeText: string[] = [];
+      const walkEdges = (frames: typeof flow.frames) => {
+        for (const frame of frames) {
+          if (frame.in) edgeText.push(frame.in);
+          if (frame.out) edgeText.push(frame.out);
+          if (frame.calls) walkEdges(frame.calls);
+        }
+      };
+      walkEdges(flow.frames);
+      const edges = edgeText.join(" ");
+      const unusedTypes = Object.keys(flow.types ?? {}).filter(
+        (name) => !edges.includes(name),
+      );
+      if (unusedTypes.length > 0)
+        warnings.push(
+          `types defined but never referenced by any frame's in/out: ${unusedTypes.join(", ")}`,
+        );
+      // concurrent marks a group of siblings that start together; a lone
+      // concurrent frame in a sibling list usually means one of the group was
+      // nested under the wrong parent.
+      const loneConcurrent: string[] = [];
+      const walkSiblings = (frames: typeof flow.frames) => {
+        frames.forEach((frame, index) => {
+          if (
+            frame.concurrent &&
+            !frames[index - 1]?.concurrent &&
+            !frames[index + 1]?.concurrent
+          )
+            loneConcurrent.push(frame.fn);
+          if (frame.calls) walkSiblings(frame.calls);
+        });
+      };
+      walkSiblings(flow.frames);
+      if (loneConcurrent.length > 0)
+        warnings.push(
+          `concurrent frames with no adjacent concurrent sibling (check nesting — the rest of the group may be under the wrong parent): ${loneConcurrent.join(", ")}`,
+        );
+
+      db.prepare(
+        `INSERT INTO flows (thread_id, name, data, updated_at, archived, file_hashes, drifted)
+         VALUES (?, ?, ?, ?, 0, ?, '[]')
+         ON CONFLICT(thread_id, name) DO UPDATE SET
+           data = excluded.data, updated_at = excluded.updated_at,
+           archived = 0, file_hashes = excluded.file_hashes, drifted = '[]'`,
+      ).run(
+        threadId,
+        flow.name,
+        JSON.stringify(flow),
+        Date.now(),
+        hashes ? JSON.stringify(hashes) : null,
+      );
+      alia.realtime.publish(channel(threadId), { threadId });
+
+      // Thread state summary keeps the agent aware of the whole panel.
+      const activeRows = db
+        .prepare(
+          `SELECT name, drifted FROM flows WHERE thread_id = ? AND archived = 0`,
+        )
+        .all(threadId) as { name: string; drifted: string | null }[];
+      const driftedFlows = activeRows
+        .filter((row) => row.drifted && JSON.parse(row.drifted).length > 0)
+        .map((row) => `"${row.name}"`);
+      let summary = `Thread state: ${activeRows.length} active flow(s)`;
+      if (driftedFlows.length > 0)
+        summary += `; drift needs reconciling in ${driftedFlows.join(", ")}`;
+
+      const base = `Published flow "${flow.name}". The user can view it in the Call Stacks thread panel.\n${summary}.`;
+      return warnings.length > 0
+        ? `${base}\nWarnings — fix and republish if these are mistakes:\n${warnings.map((warning) => `- ${warning}`).join("\n")}`
+        : base;
+    },
+  });
+
+  alia.agents.registerTool({
+    name: "callstack_archive",
+    description:
+      "Archive a call-stack flow (moves it to the panel's History section) or restore it with archived: false. " +
+      "Prefer archiving over deleting once a flow is superseded, so the before/after trail is preserved. " +
+      "Republishing an archived name reactivates it.",
+    parameters: z.object({
+      name: z.string().min(1),
+      archived: z.boolean().default(true),
+    }),
+    async execute({ name, archived }, { threadId }) {
+      if (!threadId) return "No thread context.";
+      return setArchived(threadId, name, archived)
+        ? `${archived ? "Archived" : "Restored"} flow "${name}".`
+        : `No flow named "${name}".`;
+    },
+  });
+
+  alia.agents.registerTool({
+    name: "callstack_delete",
+    description:
+      "Delete a previously published call-stack flow from this thread's panel by name.",
+    parameters: z.object({ name: z.string().min(1) }),
+    async execute({ name }, { threadId }) {
+      if (!threadId) return "No thread context.";
+      const result = db
+        .prepare(`DELETE FROM flows WHERE thread_id = ? AND name = ?`)
+        .run(threadId, name);
+      alia.realtime.publish(channel(threadId), { threadId });
+      return result.changes > 0 ? `Deleted flow "${name}".` : `No flow named "${name}".`;
+    },
+  });
+
+  alia.cli.register({
+    name: "callstack",
+    summary: "Inspect call-stack flows published to threads",
+    commands: [
+      {
+        name: "list",
+        summary: "List flows for a thread",
+        usage: "alia callstack list [--thread <threadId>]",
+      },
+      {
+        name: "show",
+        summary: "Print one flow as JSON",
+        usage: "alia callstack show <name> [--thread <threadId>]",
+      },
+      {
+        name: "clear",
+        summary: "Delete one flow, or all flows for the thread",
+        usage: "alia callstack clear [<name>] [--thread <threadId>]",
+      },
+    ],
+    async run(argv, ctx) {
+      const threadFlag = argv.indexOf("--thread");
+      const threadId =
+        threadFlag >= 0 ? argv[threadFlag + 1] : ctx.threadId ?? undefined;
+      if (!threadId)
+        return {
+          exitCode: 1,
+          stderr: "No thread context; pass --thread <threadId>.",
+        };
+      const args = argv.filter(
+        (a, i) => a !== "--thread" && i !== threadFlag + 1,
+      );
+      const [cmd, name] = args;
+      if (cmd === "list") {
+        const flows = listFlows(threadId);
+        return {
+          exitCode: 0,
+          stdout:
+            flows
+              .map(
+                (f) =>
+                  `${f.name}${f.status ? ` [${f.status}]` : ""}${f.archived ? " [archived]" : ""}${f.driftedPaths.length > 0 ? ` [drifted: ${f.driftedPaths.length}]` : ""}`,
+              )
+              .join("\n") || "(no flows)",
+        };
+      }
+      if (cmd === "show") {
+        if (!name) return { exitCode: 1, stderr: "Usage: VesnALIA callstack show <name>" };
+        const flow = listFlows(threadId).find((f) => f.name === name);
+        if (!flow) return { exitCode: 1, stderr: `No flow named "${name}".` };
+        return { exitCode: 0, stdout: JSON.stringify(flow, null, 2) };
+      }
+      if (cmd === "clear") {
+        const result = name
+          ? db
+              .prepare(`DELETE FROM flows WHERE thread_id = ? AND name = ?`)
+              .run(threadId, name)
+          : db.prepare(`DELETE FROM flows WHERE thread_id = ?`).run(threadId);
+        alia.realtime.publish(channel(threadId), { threadId });
+        return { exitCode: 0, stdout: `Deleted ${result.changes} flow(s).` };
+      }
+      return {
+        exitCode: 1,
+        stderr: "Usage: VesnALIA callstack <list|show|clear> — see VesnALIA callstack help",
+      };
+    },
+  });
+}

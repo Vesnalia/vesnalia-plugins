@@ -1,0 +1,174 @@
+import { readdirSync } from "node:fs";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { z } from "zod";
+import { loadAboutLogo } from "../../lib/about-logo.mjs";
+import { PELE_INSTALL, PELE_PIN } from "../../lib/diagram-strategy.mjs";
+import { installTool, toolStatus } from "./tool-installers.js";
+import { createDiagramRendererHandlers } from "./diagram-renderer.js";
+import type { ToolProbeResult, ToolRunResult } from "./tool-installers.js";
+import { createUiDesignMcpHandlers } from "./ui-design-mcp.js";
+import { createAgentGraphCapabilityHandlers } from "./agent-graph-capability.js";
+import {
+  createWorkflowDependencyHandlers,
+  runHostAliaCli,
+} from "./workflow-dependency.js";
+import type { rpcContract } from "../rpc-contract.js";
+
+export type PluginUpdateState = {
+  outcome: "checking" | "update-available" | "current" | "incompatible" | "pinned" | "unavailable";
+  installed: string | null;
+  installedDisplay: string | null;
+  candidate: string | null;
+  candidateDisplay: string | null;
+  detail: string | null;
+  checkedAt: number | null;
+};
+
+export type GithubRelease = {
+  tag: string;
+  url: string;
+  checkedAt: number;
+  newer: boolean;
+};
+
+type PlatformDeps = {
+  alia: AliaPluginApi;
+  pluginDir: string;
+  pluginSkillsDir: string;
+  buildInfo: { version: string; builtAt: string | null };
+  readPinnedStelowVersion: () => string | null;
+  refreshPluginUpdate: (force?: boolean) => Promise<void>;
+  getPluginUpdate: () => PluginUpdateState;
+  getGithubRelease: () => GithubRelease | null;
+  resolveLocalBin: (name: string) => string;
+  homeDir: string;
+  localBinDir: string;
+  preview: {
+    view: (cardId: string, appOrigin?: string | null) => Promise<z.infer<typeof rpcContract.previewState.output>>;
+    start: (cardId: string) => Promise<z.infer<typeof rpcContract.previewStart.output>>;
+    stop: (cardId: string) => Promise<z.infer<typeof rpcContract.previewStop.output>>;
+    share: (cardId: string) => Promise<z.infer<typeof rpcContract.previewShare.output>>;
+  };
+  probeTool?: (bin: string) => Promise<ToolProbeResult>;
+  runTool?: (command: string, args: string[], env?: Record<string, string>) => Promise<ToolRunResult>;
+};
+
+const PI_BIFROST_PRESET_MODELS = [
+  { model: "bifrost/harness-coding", displayName: "Harness Coding (Bifrost)" },
+  { model: "bifrost/gpt-5.6-sol", displayName: "GPT-5.6 Sol (ChatGPT via Bifrost)" },
+  { model: "bifrost/gpt-5.6-terra", displayName: "GPT-5.6 Terra (ChatGPT via Bifrost)" },
+  { model: "bifrost/gpt-5.6-luna", displayName: "GPT-5.6 Luna (ChatGPT via Bifrost)" },
+] as const;
+
+async function buildInfo(deps: PlatformDeps) {
+  await deps.refreshPluginUpdate();
+  let skills: string[] = [];
+  try {
+    skills = readdirSync(deps.pluginSkillsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith("stelow-"))
+      .map((entry) => entry.name)
+      .sort();
+  } catch { /* the panel shows an empty list */ }
+  return {
+    version: deps.buildInfo.version,
+    builtAt: deps.buildInfo.builtAt,
+    stelowVersion: deps.readPinnedStelowVersion(),
+    skills,
+    pluginUpdate: deps.getPluginUpdate(),
+    githubRelease: deps.getGithubRelease(),
+  };
+}
+
+async function applyPluginUpdate(deps: PlatformDeps) {
+  try {
+    const result = await deps.alia.sdk.plugins.applyUpdate({ pluginId: deps.alia.pluginId });
+    await deps.refreshPluginUpdate(true);
+    return {
+      applied: result.applied,
+      outcome: result.outcome,
+      detail: result.detail ?? null,
+      from: result.from.version,
+      to: result.to?.version ?? null,
+    };
+  } catch (error) {
+    return {
+      applied: false,
+      outcome: "unavailable" as const,
+      detail: error instanceof Error ? error.message : String(error),
+      from: null,
+      to: null,
+    };
+  }
+}
+
+function createAboutLogoHandler(deps: PlatformDeps) {
+  let cached: string | null | undefined;
+  return async () => {
+    if (cached === undefined) cached = loadAboutLogo(deps.pluginDir);
+    return { dataUri: cached ?? null };
+  };
+}
+
+async function listProviderModels(deps: PlatformDeps) {
+  const providers = await deps.alia.sdk.providers.list().catch(() => []);
+  const models: Array<{ providerId: string; model: string; displayName: string }> = [];
+  const availability = new Map<string, boolean>();
+  for (const provider of providers) {
+    const result = await deps.alia.sdk.providers.models({ providerId: provider.id }).catch(() => null);
+    availability.set(provider.id, result !== null);
+    if (provider.id === "pi") {
+      const catalog = new Map((result?.models ?? []).map((model) => [model.model, model.displayName]));
+      for (const model of PI_BIFROST_PRESET_MODELS) {
+        models.push({ providerId: "pi", model: model.model, displayName: catalog.get(model.model) ?? model.displayName });
+      }
+      continue;
+    }
+    for (const model of result?.models ?? []) {
+      models.push({ providerId: provider.id, model: model.model, displayName: model.displayName });
+    }
+  }
+  return {
+    providers: providers.map((provider) => ({
+      id: provider.id,
+      displayName: provider.displayName,
+      modelsAvailable: availability.get(provider.id) ?? false,
+    })),
+    models,
+  };
+}
+
+export function createPlatformHandlers(deps: PlatformDeps) {
+  const workflowDependency = createWorkflowDependencyHandlers({ runAliaCli: runHostAliaCli });
+  const agentGraphCapability = createAgentGraphCapabilityHandlers({ runAliaCli: runHostAliaCli });
+  const uiDesignMcp = createUiDesignMcpHandlers({ homeDir: deps.homeDir, alia: deps.alia });
+  const diagramRenderer = createDiagramRendererHandlers({
+    loadPele: () => import("pele"),
+    pinned: PELE_PIN,
+    installCommand: PELE_INSTALL,
+  });
+  return {
+    buildInfo: () => buildInfo(deps),
+    diagramRendererStatus: () => diagramRenderer.diagramRendererStatus(),
+    applyPluginUpdate: () => applyPluginUpdate(deps),
+    checkPluginUpdate: async () => {
+      await deps.refreshPluginUpdate(true);
+      return { pluginUpdate: deps.getPluginUpdate(), githubRelease: deps.getGithubRelease() };
+    },
+    aboutLogo: createAboutLogoHandler(deps),
+    listProviderModels: () => listProviderModels(deps),
+    toolStatus: () => toolStatus(deps),
+    installTool: ({ id }: { id: string }) => installTool(deps, id),
+    uiDesignMcpStatus: () => uiDesignMcp.uiDesignMcpStatus(),
+    registerUiDesignMcp: ({ serverId }: { serverId: string }) =>
+      uiDesignMcp.registerUiDesignMcp({ serverId }),
+    workflowDependencyStatus: () => workflowDependency.workflowDependencyStatus(),
+    installWorkflowDependency: () => workflowDependency.installWorkflowDependency(),
+    enableWorkflowDependency: () => workflowDependency.enableWorkflowDependency(),
+    agentGraphStatus: () => agentGraphCapability.agentGraphStatus(),
+    previewState: ({ cardId, appOrigin }: { cardId: string; appOrigin?: string | null }) =>
+      deps.preview.view(cardId, appOrigin ?? null),
+    previewStart: ({ cardId }: { cardId: string }) => deps.preview.start(cardId),
+    previewStop: ({ cardId }: { cardId: string }) => deps.preview.stop(cardId),
+    previewShare: ({ cardId }: { cardId: string }) => deps.preview.share(cardId),
+  };
+}

@@ -1,0 +1,540 @@
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
+import { z } from 'zod';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { createInboxCache, migrateGmailAccountIds, pauseAccountWrites, resumeAccountWrites } from './src/inbox-cache';
+import { createGmailFaceStore, createGmailFaces, type GmailFaces } from './src/gmail-faces';
+import { createPeopleClient } from './src/google-people';
+import { createWhatsAppStore } from './src/whatsapp/store';
+import { createWhatsAppLifecycle } from './src/whatsapp/lifecycle';
+import { clearCachedMedia, whatsAppDataDir } from './src/whatsapp/media';
+import { createWhatsAppTransport } from './src/whatsapp/transport';
+import { attachIngest } from './src/whatsapp/ingest';
+import { createSearchIndex, createSearchStore } from './src/search-index';
+import { createSendAudit } from './src/send-audit';
+import { ImsgClient } from './src/imsg-client';
+import {
+  armLinkedInWriteRecorder, clickNamedControl, evaluateInLinkedInProfile, evaluateLinkedInListRead, inspectLinkedInPage, linkedinProfileDir, openInLinkedInProfile,
+  openLinkedInSignIn, prewarmLinkedInBrowser, pressKeyInLinkedInPage, readSendTarget,
+  stopLinkedInBrowser, typeIntoNamedControl,
+} from './src/linkedin-chrome';
+import { createLinkedInPageSession } from './src/linkedin-page-session';
+import { cachedMentionRows, inboxMentionContext, MENTION_PROVIDER, mentionId, parseMentionId, rankedMentionRows, setLegacyAccountMap, type MentionMessage } from './src/inbox-mention';
+import { message, rpcContract } from './src/rpc-contract';
+import { createRegistry } from './src/adapters/index';
+import { toProviderError } from './src/adapters/provider-error';
+import { createSendGate } from './src/adapters/policy';
+import { createGateway } from './src/gateway';
+import { createGmailClient } from './src/gmail-client';
+import { createGmailCredentials, listGmailCredentialStates, settleLegacyGmailAccounts } from './src/gmail-oauth';
+import { cancelGmailLogin, connectGmailMailbox, openSystemBrowser } from './src/gmail-login';
+import { gmailAccounts, isLegacyGmailAccount, legacyGmailAccounts, type GmailAccount } from './src/adapters/types';
+import { importGwsAccount } from './src/account-import';
+import { refreshServiceName, runInboxRefresh } from './src/inbox-refresh';
+import { registerInboxAgentTools } from './src/inbox-agent-tools';
+import { parseMailKeyIds, type MailMode } from './src/mail-approval';
+import { createAttentionStore, decisionToShow, watchNewConversations } from './src/attention';
+
+// The wiring: this module builds one instance's storage, gate, registry and page, hands them to
+// the gateway (src/gateway.ts) as one plain object, and registers the result with the host. The
+// handler table itself is that module, so a test calls a handler without a host API or a browser.
+// How a source lists, opens, serves media and acts lives in src/adapters/ — never here.
+
+
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  const whatsappStore = createWhatsAppStore(db);
+  // Where a Gmail row's contact photo is cached (INBOX-38): one table in the same database, so
+  // `clear_cache` takes it with everything else — a photo is the contacts' data, not the cache's.
+  const gmailFaceStore = createGmailFaceStore(db);
+  // A clear covers what this plugin stored for WhatsApp: the rows and the media bytes they name.
+  // The account state is not here and is not touched — forgetting it is a re-pair.
+  const cache = createInboxCache(db, { alsoClear: [() => whatsappStore.clear(), () => clearCachedMedia(whatsAppDataDir()), () => gmailFaceStore.clear()] });
+  const attention = createAttentionStore(db);
+  let decisionsInstalled = false;
+  async function rememberDecisions<T>(call: () => Promise<T>): Promise<T> {
+    try {
+      const result = await call();
+      decisionsInstalled = true;
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/not installed/i.test(message)) decisionsInstalled = false;
+      throw error;
+    }
+  }
+  const attentionWatch = watchNewConversations({
+    cache,
+    store: attention,
+    muted: (account, id) => cache.muted(account, id),
+    log: line => alia.log.warn(line),
+    ask: input => rememberDecisions(() => alia.sdk.plugins.callRpc({
+      pluginId: 'decisions',
+      method: 'ask',
+      input: JSON.parse(JSON.stringify(input)),
+      outputSchema: z.object({
+        model: z.string(),
+        answers: z.record(z.string(), z.unknown()),
+        usage: z.object({
+          input_tokens: z.number().nullable(),
+          output_tokens: z.number().nullable(),
+        }).strict(),
+      }).strict(),
+    })),
+    wording: () => rememberDecisions(() => alia.sdk.plugins.callRpc({
+      pluginId: 'decisions',
+      method: 'wording',
+      input: null,
+      outputSchema: z.object({
+        question: z.string(),
+        yes: z.string(),
+        no: z.string(),
+      }).strict(),
+    })),
+    notify: input => alia.sdk.plugins.callRpc({
+      pluginId: 'push-notifications',
+      method: 'notifications.send',
+      input,
+      outputSchema: z.object({
+        ok: z.literal(true),
+        channels: z.array(z.enum(['web', 'desktop', 'mobile'])),
+      }),
+    }),
+    recentLines: (account, id) => {
+      if (account !== 'whatsapp') return null;
+      return whatsappStore.listRecentMessages(id, 64).flatMap(message => {
+        const text = message.text?.trim() ?? '';
+        if (!text) return [];
+        return [{ sender: message.from_me ? 'You' : (message.sender ?? ''), text, fromMe: message.from_me }];
+      });
+    },
+  });
+  alia.onDispose(() => attentionWatch.stop());
+  // The plugin's own WhatsApp socket, when one is open. Absent is the normal state for a stranger —
+  // and reads still answer, because the store holds what already arrived. The lifecycle, not this
+  // module, decides when that is and why a start failed; `src/whatsapp/lifecycle.ts` says how.
+  const whatsappLifecycle = createWhatsAppLifecycle({
+    // Baileys is 7.9 MB of bundle and most starts never open a socket, so the client loads with the
+    // first ask; the store answers `getMessage` and receives what arrives through the same ingest.
+    create: async () => {
+      const { WhatsAppConnection } = await import('./src/whatsapp/connection');
+      return new WhatsAppConnection({
+        getMessage: whatsappStore.storedMessageLoader(),
+        bindSocket: socket => attachIngest(socket.ev, whatsappStore, {
+          meJid: () => socket.user?.id,
+          onMessageIngested: message => attentionWatch.arrived('whatsapp', message.chat_jid, {
+            sender: message.sender ?? '',
+            text: message.text ?? '',
+            fromMe: message.from_me,
+          }),
+        }),
+      });
+    },
+    // One line per socket opened, closed or refused: a dead source is otherwise only visible as a
+    // lie on the pairing card, and a repeat has to be diagnosable without a reload and a guess.
+    note: (level, line) => alia.log[level](line),
+  });
+
+  const whatsappTransport = createWhatsAppTransport({
+    store: whatsappStore,
+    connection: () => whatsappLifecycle.current(),
+    // A read never needs a socket; a download and a send do, and a linked account is reopened on
+    // demand rather than left dead because no timer or service happened to hold it.
+    ensure: () => whatsappLifecycle.ensure(),
+  });
+  // Every send attempt is written here: one table in the plugin's own database.
+  const sendAudit = createSendAudit(db);
+  const now = () => Date.now();
+  // The pairing state machine is the socket's only public story, and it is loaded with the socket:
+  // a read of the card is the first thing that needs 7.9 MB of client, and most starts never pair.
+  let pairingModule: Promise<import('./src/whatsapp/pairing.ts').WhatsAppPairing> | undefined;
+  const whatsappPairing = () => (pairingModule ??= import('./src/whatsapp/pairing').then(({ createWhatsAppPairing }) =>
+    createWhatsAppPairing({
+      open: () => whatsappLifecycle.open(),
+      current: () => whatsappLifecycle.current(),
+      close: reason => whatsappLifecycle.close(reason),
+      failure: () => whatsappLifecycle.failure(),
+      opening: () => whatsappLifecycle.opening(),
+      now,
+    })));
+
+  const mailSettings = alia.settings.define({
+    mailApprovalMode: { type: 'select', label: 'Mail approval rollout', options: ['prepare', 'compatibility', 'require'], default: 'compatibility' },
+    mailApprovalKeyIds: { type: 'string', label: 'Enrolled mail signing key ids', default: '', experimental_multiline: true,
+      description: 'Deliberately configure trusted SHA-256 key ids. Empty authorizes no signing keys.',
+      experimental_schema: z.string().refine(value => { try { parseMailKeyIds(value); return true; } catch { return false; } }, 'Use lowercase SHA-256 ids separated by commas or whitespace') },
+    gmailClientId: { type: 'string', label: 'Gmail OAuth client id', default: '',
+      description: 'Desktop OAuth client id from your own Google Cloud project.' },
+    gmailClientSecret: { type: 'string', label: 'Gmail OAuth client secret', secret: true,
+      description: 'Desktop OAuth client secret. It stays on this server.' },
+  });
+  alia.onDispose(() => cancelGmailLogin());
+  const mailboxes = new Set<string>();
+  const sendGate = createSendGate({ now, store: sendAudit, mailboxes: () => mailboxes, mail: { db, lastRefusal: sendAudit.lastMailRefusal, policy: async () => {
+    const settings = await mailSettings.get();
+    return { mode: settings.mailApprovalMode as MailMode, allowedKeyIds: parseMailKeyIds(settings.mailApprovalKeyIds) };
+  } } });
+  const imsgPath = [join(homedir(), '.local/bin/imsg'), '/opt/homebrew/bin/imsg', '/usr/local/bin/imsg'].find(path => existsSync(path)) ?? 'imsg';
+  const imsg = new ImsgClient(imsgPath);
+  alia.onDispose(() => imsg.dispose());
+  // The socket started by the pairing card is nobody's background service, so a reload has to
+  // close it here: the lock is held for the life of the socket, and a second socket on one device
+  // identity is the failure WhatsApp answers with a re-pair.
+  alia.onDispose(() => { void whatsappLifecycle.close('the plugin was disposed'); });
+  alia.onDispose(() => { void stopLinkedInBrowser(); });
+  // Chrome's start is the slow part of a LinkedIn read; load the page once the profile exists.
+  if (existsSync(linkedinProfileDir())) void prewarmLinkedInBrowser();
+
+  // Profile reads finish before any refresh service is registered. A legacy id whose profile
+  // failed keeps its service. A renamed mailbox gets a service for the email id in this same load.
+  // The host starts only the services registered before this factory returns.
+  const gmailCredentials = createGmailCredentials();
+  await (async () => {
+    let settlement: { accounts: string[]; legacy: Record<string, string>; conflicts: { account: string; address: string }[] } = {
+      accounts: [...legacyGmailAccounts], legacy: {}, conflicts: [],
+    };
+    try {
+      settlement = await settleLegacyGmailAccounts({
+        moveRows: (from, to) => migrateGmailAccountIds(db, { [from]: to }),
+        pause: pauseAccountWrites,
+        resume: resumeAccountWrites,
+      });
+    } catch (error) {
+      alia.log.warn(`Gmail mailbox setup failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    mailboxes.clear();
+    for (const id of settlement.accounts) mailboxes.add(id);
+    setLegacyAccountMap(settlement.legacy);
+    const gmailIds = settlement.accounts;
+    const gmailFaces = Object.fromEntries(gmailIds.map(account => [account, createGmailFaces({
+      account,
+      store: gmailFaceStore,
+      people: createPeopleClient({ account, credentials: gmailCredentials }),
+      note: (line: string) => alia.log.warn(line),
+      now,
+    })])) as Record<GmailAccount, GmailFaces>;
+    const registry = createRegistry({
+      cache,
+      gmail: account => createGmailClient({ account, credentials: gmailCredentials }),
+      gmailFaces: account => gmailFaces[account],
+      whatsapp: whatsappTransport,
+      imsg,
+      linkedInPage: createLinkedInPageSession(evaluateInLinkedInProfile, evaluateLinkedInListRead),
+      armLinkedInRecorder: armLinkedInWriteRecorder,
+      providerError: toProviderError,
+    }, gmailIds);
+    const registered = new Set(Object.keys(registry));
+    const searchIndex = createSearchIndex({
+      corpus: async account => {
+        const own = registry[account]?.searchCorpus;
+        if (own) return own();
+        return cache.list().filter(row => row.account === account).map(item => ({ item }));
+      },
+      readThread: (account, id) => cache.readThread(account, id),
+      onChange: listener => cache.onChange(listener),
+    }, createSearchStore(db), Object.keys(registry));
+    const gateway = createGateway({
+      cache,
+      search: searchIndex,
+      audit: sendAudit,
+      gate: sendGate,
+      registry,
+      now,
+      mailboxes: settlement,
+      pairing: async request => (await whatsappPairing()).handle(request),
+      resolveWhatsApp: digits => whatsappTransport.resolvePhone(digits),
+      note: (level, line) => alia.log[level](line),
+      gmail: {
+        clientConfigured: async () => {
+          const settings = await mailSettings.get();
+          return settings.gmailClientId.trim() !== '' && (settings.gmailClientSecret ?? '').trim() !== '';
+        },
+        mailboxes: () => listGmailCredentialStates(),
+        cancel: () => { cancelGmailLogin(); },
+        connect: async ({ replace }) => {
+          const settings = await mailSettings.get();
+          const result = await connectGmailMailbox({
+            clientId: settings.gmailClientId,
+            clientSecret: settings.gmailClientSecret ?? '',
+            replace,
+            open: openSystemBrowser,
+          });
+          if (!result.alreadyConnected) mailboxes.add(result.account);
+          // shortcut: the live registry is built at startup, a mailbox added here is listed after the next start.
+          return result;
+        },
+        remove: async account => {
+          await createGmailCredentials().remove(account);
+          mailboxes.delete(account);
+          delete registry[account];
+        },
+      },
+      attentionOf: (account, id) => decisionToShow(decisionsInstalled, attention.get(account, id)?.verdict ?? null),
+      attentionDismissed: (account, id) => attention.get(account, id)?.dismissed === true,
+      clearAttention: (account, id) => { attention.dismiss(account, id); },
+      restoreAttention: (account, id) => attention.restore(account, id),
+      // Unmute clears the flag in the gateway, then this schedules one classification when the row is still cached. That call is not a push.
+      classifyUnmuted: (account, id) => { attentionWatch.arrived(account, id); },
+      driver: {
+        openInLinkedInProfile,
+        inspectLinkedInPage,
+        evaluateInLinkedInProfile,
+        pressKeyInLinkedInPage,
+        readSendTarget,
+        clickNamedControl,
+        typeIntoNamedControl,
+        openLinkedInSignIn,
+      },
+    });
+    alia.rpc.register(rpcContract, gateway);
+    registerInboxAgentTools(alia, gateway);
+    for (const account of Object.keys(registry)) {
+      alia.background.service(refreshServiceName(account), {
+        start: signal => runInboxRefresh(async () => gateway.sync({ account }), registry[account].source.pollIntervalMs, signal),
+      });
+    }
+    alia.ui.registerMentionProvider({
+      id: MENTION_PROVIDER,
+      label: 'Inbox',
+      triggers: ['#'],
+      async search({ query }) {
+        const known = (account: string) => registered.has(account);
+        const lookup = (account: string, id: string) =>
+          cache.list().find(item => item.account === account && item.id === id) ?? searchIndex.row(account, id);
+        const ranked = await searchIndex.search(query);
+        const fromIndex = rankedMentionRows(ranked, lookup, known);
+        const rows = fromIndex.length > 0
+          ? fromIndex
+          : cachedMentionRows(cache.list().filter(item => known(item.account)), query);
+        return rows.map(item => {
+          const preview = item.preview.trim();
+          return {
+            id: mentionId(item.account, item.id),
+            title: item.title || item.sender || 'Untitled conversation',
+            ...(preview ? { subtitle: preview.slice(0, 140) } : {}),
+            icon: `${alia.pluginId}/${registry[item.account].source.icon}`,
+          };
+        });
+      },
+      async resolve(mention) {
+        const { account, id } = parseMentionId(mention, registered);
+        const listed = cache.list().find(item => item.account === account && item.id === id);
+        const cached = z.array(message).safeParse(cache.readThread(account, id) ?? []);
+        let messages: MentionMessage[] = cached.success ? cached.data : [];
+        if (!messages.length) {
+          try { messages = (await registry[account].open(id)).messages; } catch { /* the mention still names the conversation */ }
+        }
+        return { context: inboxMentionContext({ account, label: registry[account].source.label, id, title: listed?.title, preview: listed?.preview, messages }) };
+      },
+    });
+  })();
+  // The socket is the other half of the WhatsApp transport: it ingests what arrives, so the next
+  // read has something to answer from. Opened at boot only when an account state exists — an
+  // unpaired source is a state, not a socket waiting on a QR (R5), and the pairing card opens it when
+  // the owner asks. Stopped when the host reloads, and the pairing state follows it: a stopped
+  // socket is a socket whose QR and code are gone.
+  //
+  // A start that is refused leaves the failure with the lifecycle, where the pairing card draws it.
+  // Nothing retries here: re-pairing is the ban lever, so the next attempt is the owner's, and holding
+  // this service open after a refusal would only hide the reason from the card.
+  alia.background.service('whatsapp-connection', {
+    async start(signal) {
+      const { whatsAppAccountExists } = await import('./src/whatsapp/auth');
+      if (!whatsAppAccountExists()) return;
+      try {
+        await whatsappLifecycle.open();
+      } catch {
+        return;
+      }
+      try {
+        await untilAborted(signal);
+      } finally {
+        // Every way a socket ends here is written down: without this line the owner, and the next
+        // reader, cannot tell a host that stopped the service from a source that never had a socket.
+        await whatsappLifecycle.close('the host stopped the whatsapp-connection service');
+      }
+    },
+  });
+
+  alia.cli.register({
+    name: 'unified-inbox',
+    summary: 'Unified Inbox helpers: the one-time LinkedIn sign-in, the Gmail credential import, the WhatsApp pairing, and the send gate audit',
+    commands: [
+      { name: 'linkedin-signin', summary: 'Open the inbox LinkedIn profile so you can sign in once', usage: 'alia unified-inbox linkedin-signin' },
+      { name: 'import-gws-account', summary: 'Copy one Gmail account out of its gws config into the plugin credential store, once', usage: 'alia unified-inbox import-gws-account <gmail-personal|gmail-business> [--force]' },
+      { name: 'send-audit', summary: 'Show what the send gate allowed or refused, newest first', usage: 'alia unified-inbox send-audit [limit]' },
+      { name: 'whatsapp-link', summary: "Open the plugin's own WhatsApp socket and pair it; without a number it only proves the socket", usage: 'alia unified-inbox whatsapp-link [phone-number] [--wait <seconds>]' },
+    ],
+    async run(argv) {
+      if (argv[0] === 'linkedin-signin') {
+        const profile = await openLinkedInSignIn();
+        return { exitCode: 0, stdout: `Sign in to LinkedIn in the window that just opened, then close it. Profile: ${profile}\n` };
+      }
+      if (argv[0] === 'import-gws-account') {
+        const account = argv[1];
+        if (!account || !isLegacyGmailAccount(account)) {
+          return { exitCode: 1, stderr: `Usage: VesnALIA unified-inbox import-gws-account <${gmailAccounts.join('|')}> [--force]\n` };
+        }
+        try {
+          const imported = await importGwsAccount({ account, force: argv.includes('--force') });
+          return { exitCode: 0, stdout: `${imported.replaced ? 'Replaced' : 'Imported'} ${imported.account} from gws into ${imported.path} (source gws-import).\n` };
+        } catch (error) {
+          // Every message the import throws is already secret-free; it names the account, not the token.
+          return { exitCode: 1, stderr: `${error instanceof Error ? error.message : String(error)}\n` };
+        }
+      }
+      if (argv[0] === 'send-audit') {
+        const rows = sendAudit.list(Number(argv[1] ?? 20));
+        if (!rows.length) return { exitCode: 0, stdout: 'No send attempts recorded yet.\n' };
+        return { exitCode: 0, stdout: rows.map(row => `${new Date(row.at).toISOString()} ${row.decision.padEnd(7)} ${row.account} ${row.conversationId}${row.bcc ? ` bcc ${row.bcc}` : ''}${row.reason ? ` — ${row.reason}` : ''}\n`).join('') };
+      }
+      if (argv[0] === 'whatsapp-link') {
+        // The pairing proof, run by a human with a phone: this plugin's own socket over its own
+        // account state, with the ingest bound, so what it receives is stored and the panel has
+        // something to show afterwards. Without a number it connects, reports what the socket said,
+        // and stops before asking WhatsApp for anything — which is how the socket is proven on a
+        // machine that has never been paired. With a number it requests a pairing code, and the code
+        // is the only thing printed: no body, no bytes, no auth state.
+        const parsed = parseWhatsAppLinkArgs(argv.slice(1));
+        if ('error' in parsed) return { exitCode: 1, stderr: `${parsed.error}\n` };
+        return await runWhatsAppLink(parsed.phone, parsed.waitSeconds, whatsappStore);
+      }
+      return { exitCode: 1, stderr: 'Usage: VesnALIA unified-inbox <linkedin-signin|import-gws-account|send-audit|whatsapp-link>' };
+    },
+  });
+}
+
+/**
+ * `whatsapp-link [phone-number] [--wait <seconds>]`, parsed at the boundary so the socket never sees
+ * a number-shaped mistake as a country code. A number is optional: without one the command proves the
+ * socket and stops at the pairing prompt.
+ */
+function parseWhatsAppLinkArgs(args: string[]): { phone?: string; waitSeconds: number } | { error: string } {
+  let waitSeconds = 180;
+  let phone: string | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === '--wait') {
+      const seconds = Number(args[index + 1]);
+      if (!Number.isFinite(seconds) || seconds <= 0) {
+        return { error: 'Usage: VesnALIA unified-inbox whatsapp-link [phone-number] [--wait <seconds>]' };
+      }
+      waitSeconds = seconds;
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith('--')) return { error: `Unknown option ${argument}` };
+    if (phone !== undefined) return { error: 'One phone number per run: pairing is one deliberate act' };
+    phone = argument;
+  }
+  if (phone !== undefined) {
+    // WhatsApp wants the international number without punctuation; this refuses a truncated one before
+    // a socket is opened, because a wrong number burns a pairing request on the server.
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 7 || digits.length > 15) {
+      return { error: 'A full international phone number is required, for example 31612345678' };
+    }
+  }
+  return { phone, waitSeconds };
+}
+
+/**
+ * `alia unified-inbox whatsapp-link [phone-number]` — the proof that this plugin, alone, has WhatsApp.
+ * Every line it prints is a fact about the socket: the state it moved to, what WhatsApp offered, and
+ * the metadata of each message that arrived. It never prints a message body, an auth byte, or a path
+ * inside the account state beyond the directory's own name, mode and file count.
+ *
+ * What arrives goes through the same ingest the background socket uses, so a message received here
+ * is stored and readable in the panel afterwards — the run is not a preview of the transport, it is
+ * the transport.
+ *
+ * Without a phone number it stops at the pairing prompt, so the socket can be proven live without
+ * asking WhatsApp to pair anything. With one, the eight characters are the only output that matters.
+ */
+async function runWhatsAppLink(
+  phone: string | undefined,
+  waitSeconds: number,
+  store: ReturnType<typeof createWhatsAppStore>,
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  // A deliberate pairing touches the owner's own device slots, so it happens only when they run this
+  // with their number. The plugin never pairs on its own.
+  const { WhatsAppConnection } = await import('./src/whatsapp/connection');
+  const connection = new WhatsAppConnection({
+    ...(phone ? { pairingPhone: phone } : {}),
+    getMessage: store.storedMessageLoader(),
+    bindSocket: socket => attachIngest(socket.ev, store),
+  });
+  const state = connection.accountState();
+  const output: string[] = [
+    `Account state ${state.dir}: mode ${state.dirMode ? state.dirMode.toString(8).padStart(4, '0') : 'absent'}, ${state.fileCount} files\n`,
+  ];
+  const recent: string[] = [];
+  let dropped = 0;
+  let settle: (code: number) => void = () => {};
+  const settled = new Promise<number>((resolve) => { settle = resolve; });
+
+  const record = (line: string) => {
+    recent.push(line);
+    // Bounded output: a busy account can deliver messages faster than a terminal can scroll.
+    if (recent.length > 50) {
+      recent.shift();
+      dropped += 1;
+    }
+  };
+
+  const timer = setTimeout(() => settle(1), Math.max(5, waitSeconds) * 1_000);
+  const off = connection.onEvent((event) => {
+    switch (event.type) {
+      case 'connection':
+        record(`connection ${event.state}\n`);
+        if (event.state === 'connected') settle(0);
+        break;
+      case 'pairing-needed':
+        record(`pairing-needed: WhatsApp offered a QR${phone ? '' : '; rerun with your phone number for a pairing code instead'}\n`);
+        break;
+      case 'pairing-code':
+        record(`pairing code ${event.code} — enter it on your phone under Linked devices\n`);
+        break;
+      case 'message':
+        record(`message ${event.id} chat=${event.chatId}${event.fromMe ? ' fromMe' : ''}\n`);
+        break;
+      case 'logged-out':
+        record('logged out: this device was unlinked; pair again with whatsapp-link <phone-number>\n');
+        settle(1);
+        break;
+      case 'error':
+        record(`error${event.fatal ? ' (fatal)' : ''}: ${event.error.message}\n`);
+        break;
+    }
+  });
+
+  try {
+    await connection.start();
+  } catch (error) {
+    clearTimeout(timer);
+    off();
+    return { exitCode: 1, stdout: output.join(''), stderr: `${error instanceof Error ? error.message : String(error)}\n` };
+  }
+
+  const exitCode = await settled;
+  clearTimeout(timer);
+  off();
+  await connection.stop();
+  if (dropped) output.push(`(${dropped} earlier lines dropped)\n`);
+  output.push(...recent);
+  const after = connection.accountState();
+  output.push(exitCode === 0
+    ? `connected; account state now mode ${after.dirMode.toString(8)} with ${after.fileCount} files\n`
+    : 'not connected\n');
+  return { exitCode, stdout: output.join(''), stderr: '' };
+}
+
+/**
+ * Resolves when the host asks a background service to stop. A service's `start` must resolve on
+ * dispose, reload or shutdown, and the socket is stopped in the `finally` either way.
+ */
+function untilAborted(signal: AbortSignal): Promise<void> {
+  if (signal.aborted) return Promise.resolve();
+  return new Promise((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }));
+}

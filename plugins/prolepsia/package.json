@@ -1,0 +1,58 @@
+{
+  "name": "alia-plugin-prolepsia",
+  "version": "0.1.1",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
+  },
+  "alia": {
+    "name": "Prolepsia",
+    "description": "Create probabilistic forecasts and check their progress from VesnALIA with your Prolepsia account.",
+    "branding": {
+      "icon": "./assets/icon.svg",
+      "logo": {
+        "light": "./assets/logo.png"
+      }
+    },
+    "server": "./server.ts",
+    "skills": [
+      "skills"
+    ]
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "tsx": "^4.20.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test *.test.ts",
+    "build": "alia plugin build"
+  },
+  "author": {
+    "name": "Daniel Proskurka",
+    "url": "https://github.com/danielproj"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/prolepsia#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/prolepsia"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

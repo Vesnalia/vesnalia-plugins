@@ -1,0 +1,433 @@
+import Database from "better-sqlite3";
+import { appendFile, mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { compactStorage, ensureSchema, TraceIndexer, type RootSpec } from "./indexer";
+
+const databases: Database.Database[] = [];
+const temporaryDirectories: string[] = [];
+
+afterEach(async () => {
+  for (const database of databases.splice(0)) database.close();
+  for (const directory of temporaryDirectories.splice(0)) await rm(directory, { recursive: true, force: true });
+});
+
+describe("TraceIndexer", () => {
+  it("sorts the full indexed session set by collection sort", () => {
+    const database = new Database(":memory:");
+    databases.push(database);
+    ensureSchema(database);
+    database.prepare(
+      "INSERT INTO trace_sessions (id, source_id, title, file_path, started_at, updated_at, event_count, duration_ms, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed')",
+    ).run("short", "codex", "Short", "/tmp/short.jsonl", 300, 200, 2, 100);
+    database.prepare(
+      "INSERT INTO trace_sessions (id, source_id, title, file_path, started_at, updated_at, event_count, duration_ms, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed')",
+    ).run("busy", "claude", "Busy", "/tmp/busy.jsonl", 100, 100, 8, 2_000);
+
+    const indexer = new TraceIndexer(database, true);
+    expect(indexer.listSessions({ sort: "events", limit: 1, offset: 0 }).sessions[0]?.id).toBe("busy");
+    expect(indexer.listSessions({ sort: "duration", limit: 1, offset: 0 }).sessions[0]?.id).toBe("busy");
+    expect(indexer.listSessions({ sort: "started", limit: 1, offset: 0 }).sessions[0]?.id).toBe("short");
+  });
+
+  it("filters sessions and trajectory events from indexed facets", () => {
+    const database = new Database(":memory:");
+    databases.push(database);
+    ensureSchema(database);
+    database.prepare(
+      "INSERT INTO trace_sessions (id, source_id, title, file_path, event_count, tool_count, error_count, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    ).run("errors", "codex", "Errors", "/tmp/errors.jsonl", 4, 2, 1, "completed");
+    database.prepare(
+      "INSERT INTO trace_sessions (id, source_id, title, file_path, event_count, tool_count, error_count, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    ).run("clean", "dsh", "Clean", "/tmp/clean.jsonl", 2, 0, 0, "active");
+    const insertEvent = database.prepare(
+      "INSERT INTO trace_events (id, session_id, line_number, type, kind, role, title, summary, raw_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    );
+    insertEvent.run("user", "errors", 1, "user/message", "message", "user", "User", "Investigate the failing command", "{}");
+    insertEvent.run("exec", "errors", 2, "tool/call", "tool", "tool", "exec", "Run the command", "{}");
+    insertEvent.run("exec-result", "errors", 3, "tool/result", "tool", "tool_result", "exec", "Permission denied", "{}");
+    insertEvent.run("assistant", "errors", 4, "assistant/message", "message", "assistant", "Assistant", "The command failed", "{}");
+    insertEvent.run("clean-user", "clean", 1, "user/message", "message", "user", "User", "A clean request", "{}");
+    insertEvent.run("clean-assistant", "clean", 2, "assistant/message", "message", "assistant", "Assistant", "A clean response", "{}");
+
+    const indexer = new TraceIndexer(database, false);
+    expect(indexer.listSessions({ errorFilter: "only", limit: 10, offset: 0 }).sessions.map((item) => item.id)).toEqual(["errors"]);
+    expect(indexer.listSessions({ status: "active", hasTools: true, limit: 10, offset: 0 }).total).toBe(0);
+    expect(indexer.listSessions({ sort: "errors", limit: 1, offset: 0 }).sessions[0]?.id).toBe("errors");
+
+    expect(indexer.getSession("errors", 10, 0, { categories: ["tool"] }).totalEvents).toBe(2);
+    expect(indexer.getSession("errors", 10, 0, { toolTypes: ["exec"] }).totalEvents).toBe(2);
+    expect(indexer.getSession("errors", 10, 0, { errorFilter: "only" }).totalEvents).toBe(1);
+    expect(indexer.getSession("errors", 10, 0, { query: "permission denied" }).totalEvents).toBe(1);
+
+    const facets = indexer.getSessionFacets("errors");
+    expect(facets.totalEvents).toBe(4);
+    expect(facets.errorCount).toBe(1);
+    expect(facets.categories).toEqual(expect.arrayContaining([{ value: "tool", count: 2 }, { value: "user", count: 1 }, { value: "assistant", count: 1 }]));
+    expect(facets.toolTypes).toContainEqual({ value: "exec", count: 2 });
+  });
+
+  it("indexes local sessions, reloads source payloads, and rescans appends", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "alia-traces-"));
+    temporaryDirectories.push(directory);
+
+    const sessionPath = join(directory, "session.jsonl");
+    await writeFile(
+      sessionPath,
+      [
+        {
+          type: "user/message",
+          timestamp: "2026-08-17T12:00:00.000Z",
+          data: { role: "user", content: "Investigate local traces" },
+        },
+        {
+          type: "tool/call",
+          timestamp: "2026-08-17T12:00:01.000Z",
+          data: { turn: 1, step: 1, name: "exec", arguments: '{"command":"pwd"}' },
+        },
+        {
+          type: "assistant/message",
+          timestamp: "2026-08-17T12:00:02.000Z",
+          data: { role: "assistant", content: "The local index is working.", usage: { input_tokens: 10, output_tokens: 4 } },
+        },
+      ]
+        .map((record) => JSON.stringify(record))
+        .join("\n") + "\n",
+      "utf8",
+    );
+    const database = new Database(":memory:");
+    databases.push(database);
+    const indexer = new TraceIndexer(database, ensureSchema(database));
+    const sessionRoot: RootSpec = {
+      id: "fixture-sessions",
+      source: "custom",
+      label: "Fixture sessions",
+      path: directory,
+      kind: "session",
+      format: "jsonl",
+    };
+    await indexer.scan([sessionRoot]);
+
+    expect(indexer.roots().map((root) => root.id)).toEqual(["fixture-sessions"]);
+
+    const first = indexer.listSessions({ limit: 10, offset: 0 });
+    expect(first.total).toBe(1);
+    expect(first.sessions[0]).toMatchObject({
+      source: "custom",
+      title: "Investigate local traces",
+      eventCount: 3,
+      userCount: 1,
+      assistantCount: 1,
+      toolCount: 1,
+      inputTokens: 10,
+      outputTokens: 4,
+    });
+    const sessionId = first.sessions[0]!.id;
+    const detail = indexer.getSession(sessionId, 10, 0);
+    expect(detail.totalEvents).toBe(3);
+    expect(detail.events[1]).toMatchObject({
+      kind: "tool",
+      title: "exec",
+      depth: 1,
+      summary: '{"command":"pwd"}',
+    });
+    expect((await indexer.rawEvent(detail.events[1]!.id)).raw).toContain('"tool/call"');
+    expect(indexer.listSessions({ query: "Investigate", limit: 10, offset: 0 }).total).toBe(1);
+    expect(indexer.listSessions({ query: "pwd", limit: 10, offset: 0 }).total).toBe(1);
+    expect(indexer.getSession(encodeURIComponent(sessionId), 10, 0).session?.id).toBe(sessionId);
+    expect(indexer.getSession(encodeURIComponent(encodeURIComponent(sessionId)), 10, 0).session?.id).toBe(sessionId);
+
+    const indexedAt = database.prepare("SELECT indexed_at FROM trace_files WHERE path = ?").get(sessionPath) as { indexed_at: number };
+    database.prepare("UPDATE trace_files SET parser_version = 1 WHERE path = ?").run(sessionPath);
+    await indexer.scan([sessionRoot]);
+    expect((database.prepare("SELECT indexed_at FROM trace_files WHERE path = ?").get(sessionPath) as { indexed_at: number }).indexed_at).toBe(indexedAt.indexed_at);
+
+    await appendFile(
+      sessionPath,
+      JSON.stringify({
+        type: "turn/end",
+        timestamp: "2026-08-17T12:00:03.000Z",
+        data: { turn: 1 },
+      }) + "\n",
+      "utf8",
+    );
+    await indexer.scan([sessionRoot]);
+    expect(indexer.getSession(sessionId, 10, 0).totalEvents).toBe(4);
+    expect(indexer.listSessions({ limit: 10, offset: 0 }).sessions[0]?.status).toBe("completed");
+
+    await appendFile(sessionPath, JSON.stringify({ type: "user/message", data: { content: "partial" } }), "utf8");
+    await indexer.scan([sessionRoot]);
+    expect(indexer.getSession(sessionId, 10, 0).totalEvents).toBe(4);
+    await appendFile(sessionPath, "\n", "utf8");
+    await indexer.scan([sessionRoot]);
+    expect(indexer.getSession(sessionId, 10, 0).totalEvents).toBe(5);
+
+    await rm(directory, { recursive: true, force: true });
+    await indexer.scan([sessionRoot]);
+    expect(indexer.listSessions({ limit: 10, offset: 0 }).total).toBe(1);
+    await mkdir(directory, { recursive: true });
+    await indexer.scan([sessionRoot]);
+    expect(indexer.listSessions({ limit: 10, offset: 0 }).total).toBe(0);
+
+    await indexer.scan([]);
+    expect(indexer.roots()).toEqual([]);
+  });
+
+  it("keeps indexed payloads compact while reloading the full source line", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "alia-traces-raw-preview-"));
+    temporaryDirectories.push(directory);
+    const sessionPath = join(directory, "session.jsonl");
+    const payload = "x".repeat(2_000);
+    await writeFile(
+      sessionPath,
+      JSON.stringify({ type: "tool/call", data: { name: "large", arguments: payload } }) + "\n",
+      "utf8",
+    );
+
+    const database = new Database(":memory:");
+    databases.push(database);
+    const indexer = new TraceIndexer(database, ensureSchema(database));
+    const root: RootSpec = {
+      id: "raw-preview-sessions",
+      source: "custom",
+      label: "Raw preview sessions",
+      path: directory,
+      kind: "session",
+      format: "jsonl",
+    };
+    await indexer.scan([root]);
+
+    const session = indexer.listSessions({ limit: 1, offset: 0 }).sessions[0]!;
+    const event = indexer.getSession(session.id, 1, 0).events[0]!;
+    expect(event.rawJson).toBe("");
+    expect(event.rawTruncated).toBe(true);
+    const raw = await indexer.rawEvent(event.id);
+    expect(raw.raw).toContain(payload);
+    expect(raw.raw?.length).toBeGreaterThan(512);
+    expect(raw.truncated).toBe(false);
+  });
+
+  it("removes legacy derived payload and full-text storage during compaction", () => {
+    const database = new Database(":memory:");
+    databases.push(database);
+    ensureSchema(database);
+    database.exec("CREATE VIRTUAL TABLE trace_event_fts USING fts5(event_id UNINDEXED, session_id UNINDEXED, content);");
+    database.prepare(
+      "INSERT INTO trace_sessions (id, source_id, title, file_path, status) VALUES ('compact', 'custom', 'Compact', '/tmp/compact.jsonl', 'completed')",
+    ).run();
+    database.prepare(
+      "INSERT INTO trace_events (id, session_id, line_number, type, kind, title, summary, raw_json) VALUES ('compact:0', 'compact', 0, 'user/message', 'message', 'User', 'hello', ?)",
+    ).run('{"type":"user/message","data":{"content":"hello"}}');
+
+    const first = compactStorage(database);
+    expect(first.changed).toBe(true);
+    expect(database.prepare("SELECT name FROM sqlite_master WHERE name = 'trace_event_fts'").get()).toBeUndefined();
+    expect((database.prepare("SELECT raw_json, raw_truncated FROM trace_events WHERE id = 'compact:0'").get() as { raw_json: string; raw_truncated: number })).toEqual({
+      raw_json: "",
+      raw_truncated: 1,
+    });
+    expect(compactStorage(database).changed).toBe(false);
+  });
+
+  it("advances a bounded scan batch without restarting discovery", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "alia-traces-batch-"));
+    temporaryDirectories.push(directory);
+    await Promise.all(
+      ["one", "two", "three"].map((title) =>
+        writeFile(
+          join(directory, title + ".jsonl"),
+          JSON.stringify({ type: "user/message", data: { role: "user", content: title } }) + "\n",
+          "utf8",
+        ),
+      ),
+    );
+
+    const database = new Database(":memory:");
+    databases.push(database);
+    const indexer = new TraceIndexer(database, ensureSchema(database));
+    const root: RootSpec = {
+      id: "bounded-sessions",
+      source: "custom",
+      label: "Bounded sessions",
+      path: directory,
+      kind: "session",
+      format: "jsonl",
+    };
+
+    const first = await indexer.scan([root], undefined, { maxFiles: 1 });
+    const second = await indexer.scan([root], undefined, { maxFiles: 1 });
+    const third = await indexer.scan([root], undefined, { maxFiles: 1 });
+
+    expect(first.complete).toBe(false);
+    expect(second.complete).toBe(false);
+    expect(third.complete).toBe(true);
+    expect(indexer.listSessions({ limit: 10, offset: 0 }).total).toBe(3);
+  });
+
+  it("fingerprints completed files and replaces stale rows when a session is rewritten", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "alia-traces-fingerprint-"));
+    temporaryDirectories.push(directory);
+    const sessionPath = join(directory, "session.jsonl");
+    const root: RootSpec = {
+      id: "fingerprint-sessions",
+      source: "custom",
+      label: "Fingerprint sessions",
+      path: directory,
+      kind: "session",
+      format: "jsonl",
+    };
+    const writeRecords = async (records: unknown[]) => {
+      await writeFile(sessionPath, records.map((record) => JSON.stringify(record)).join("\n") + "\n", "utf8");
+    };
+    await writeRecords([
+      { type: "user/message", data: { role: "user", content: "old request" } },
+      { type: "assistant/message", data: { role: "assistant", content: "old response" } },
+      { type: "tool/call", data: { name: "old-tool", arguments: "{}" } },
+    ]);
+
+    const database = new Database(":memory:");
+    databases.push(database);
+    const indexer = new TraceIndexer(database, ensureSchema(database));
+    expect((await indexer.scan([root])).changed).toBe(true);
+
+    const firstFile = database.prepare("SELECT indexed_at, mtime_ms, content_hash FROM trace_files WHERE path = ?").get(sessionPath) as {
+      indexed_at: number;
+      mtime_ms: number;
+      content_hash: string | null;
+    };
+    expect(firstFile.content_hash).toMatch(/^[0-9a-f]{64}$/);
+    database.prepare("UPDATE trace_files SET content_hash = NULL WHERE path = ?").run(sessionPath);
+    expect((await indexer.scan([root], undefined, { forceFingerprintAll: true })).changed).toBe(true);
+    expect((database.prepare("SELECT content_hash FROM trace_files WHERE path = ?").get(sessionPath) as {
+      content_hash: string | null;
+    }).content_hash).toMatch(/^[0-9a-f]{64}$/);
+    const fingerprintedFile = database.prepare("SELECT indexed_at, mtime_ms FROM trace_files WHERE path = ?").get(sessionPath) as {
+      indexed_at: number;
+      mtime_ms: number;
+    };
+    const touchedMtime = fingerprintedFile.mtime_ms + 5_000;
+    await utimes(sessionPath, new Date(touchedMtime), new Date(touchedMtime));
+    expect((await indexer.scan([root])).changed).toBe(false);
+    const afterTouch = database.prepare("SELECT indexed_at, mtime_ms FROM trace_files WHERE path = ?").get(sessionPath) as {
+      indexed_at: number;
+      mtime_ms: number;
+    };
+    expect(afterTouch.indexed_at).toBe(fingerprintedFile.indexed_at);
+    expect(afterTouch.mtime_ms).toBe(touchedMtime);
+
+    await writeRecords([
+      { type: "user/message", data: { role: "user", content: "new request" } },
+      { type: "assistant/message", data: { role: "assistant", content: "new response" } },
+      { type: "tool/call", data: { name: "new-tool", arguments: "{}" } },
+    ]);
+    await utimes(sessionPath, new Date(touchedMtime), new Date(touchedMtime));
+    const sessionId = indexer.listSessions({ limit: 10, offset: 0 }).sessions[0]!.id;
+    expect((await indexer.scan([root], undefined, { forceFingerprintPaths: new Set([sessionPath]) })).changed).toBe(true);
+    expect(indexer.getSession(sessionId, 10, 0).events.map((event) => event.summary)).toEqual([
+      "new request",
+      "new response",
+      "{}",
+    ]);
+    expect(indexer.listSessions({ query: "old-tool", limit: 10, offset: 0 }).total).toBe(0);
+
+    await writeRecords([
+      { type: "user/message", data: { role: "user", content: "alt request" } },
+      { type: "assistant/message", data: { role: "assistant", content: "alt response" } },
+      { type: "tool/call", data: { name: "alt-tool", arguments: "{}" } },
+    ]);
+    await utimes(sessionPath, new Date(touchedMtime + 5_000), new Date(touchedMtime + 5_000));
+    expect((await indexer.scan([root])).changed).toBe(true);
+    expect(indexer.getSession(sessionId, 10, 0).events.map((event) => event.summary)).toEqual([
+      "alt request",
+      "alt response",
+      "{}",
+    ]);
+
+    const detail = indexer.getSession(sessionId, 10, 0);
+    expect(detail.totalEvents).toBe(3);
+    expect(indexer.listSessions({ query: "new request", limit: 10, offset: 0 }).total).toBe(0);
+
+    await writeRecords([
+      { type: "user/message", data: { role: "user", content: "short replacement request" } },
+      { type: "assistant/message", data: { role: "assistant", content: "short replacement response" } },
+    ]);
+    await utimes(sessionPath, new Date(touchedMtime + 7_500), new Date(touchedMtime + 7_500));
+    expect((await indexer.scan([root])).changed).toBe(true);
+    expect(indexer.getSession(sessionId, 10, 0).events.map((event) => event.summary)).toEqual([
+      "short replacement request",
+      "short replacement response",
+    ]);
+
+    await writeRecords([
+      { type: "user/message", data: { role: "user", content: "larger replacement request" } },
+      { type: "assistant/message", data: { role: "assistant", content: "larger replacement response" } },
+      { type: "tool/call", data: { name: "new-tool", arguments: '{"command":"ls"}' } },
+    ]);
+    await utimes(sessionPath, new Date(touchedMtime + 10_000), new Date(touchedMtime + 10_000));
+    expect((await indexer.scan([root])).changed).toBe(true);
+    const largerDetail = indexer.getSession(sessionId, 10, 0);
+    expect(largerDetail.totalEvents).toBe(3);
+    expect(largerDetail.events.map((event) => event.summary)).toEqual([
+      "larger replacement request",
+      "larger replacement response",
+      '{"command":"ls"}',
+    ]);
+    expect(indexer.listSessions({ query: "old response", limit: 10, offset: 0 }).total).toBe(0);
+  });
+
+  it("replaces stale prefixes when an incomplete JSONL file is rewritten", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "alia-traces-partial-rewrite-"));
+    temporaryDirectories.push(directory);
+    const sessionPath = join(directory, "session.jsonl");
+    const root: RootSpec = {
+      id: "partial-rewrite-sessions",
+      source: "custom",
+      label: "Partial rewrite sessions",
+      path: directory,
+      kind: "session",
+      format: "jsonl",
+    };
+    const database = new Database(":memory:");
+    databases.push(database);
+    const indexer = new TraceIndexer(database, ensureSchema(database));
+    await writeFile(
+      sessionPath,
+      [
+        { type: "user/message", data: { role: "user", content: "original request" } },
+        { type: "assistant/message", data: { role: "assistant", content: "original response" } },
+      ].map((record) => JSON.stringify(record)).join("\n") + "\n",
+      "utf8",
+    );
+    expect((await indexer.scan([root])).changed).toBe(true);
+    const sessionId = indexer.listSessions({ limit: 10, offset: 0 }).sessions[0]!.id;
+
+    await appendFile(sessionPath, JSON.stringify({ type: "user/message", data: { content: "unfinished original" } }), "utf8");
+    await indexer.scan([root]);
+    expect(indexer.getSession(sessionId, 10, 0).totalEvents).toBe(2);
+    const partialFile = database.prepare("SELECT indexed_bytes, size_bytes FROM trace_files WHERE path = ?").get(sessionPath) as {
+      indexed_bytes: number;
+      size_bytes: number;
+    };
+    expect(partialFile.indexed_bytes).toBeLessThan(partialFile.size_bytes);
+    expect((await indexer.scan([root], undefined, { forceFingerprintPaths: new Set([sessionPath]) })).changed).toBe(true);
+    expect(indexer.getSession(sessionId, 10, 0).totalEvents).toBe(2);
+
+    await writeFile(
+      sessionPath,
+      [
+        { type: "user/message", data: { role: "user", content: "replacement request" } },
+        { type: "assistant/message", data: { role: "assistant", content: "replacement response" } },
+        { type: "tool/call", data: { name: "replacement-tool", arguments: "{}" } },
+      ].map((record) => JSON.stringify(record)).join("\n") + "\n",
+      "utf8",
+    );
+    expect((await indexer.scan([root])).changed).toBe(true);
+    expect(indexer.getSession(sessionId, 10, 0).events.map((event) => event.summary)).toEqual([
+      "replacement request",
+      "replacement response",
+      "{}",
+    ]);
+    expect(indexer.listSessions({ query: "original request", limit: 10, offset: 0 }).total).toBe(0);
+  });
+});

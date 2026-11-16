@@ -1,0 +1,54 @@
+{
+  "name": "alia-plugin-thread-nicknames",
+  "version": "0.2.1",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
+  },
+  "alia": {
+    "name": "Thread nicknames",
+    "description": "Adds persistent unique numbers to thread titles, such as @27.",
+    "server": "./server.ts",
+    "skills": [],
+    "branding": {
+      "icon": "ListTodo"
+    },
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "better-sqlite3": "^12.0.0",
+    "react": "^19.0.0",
+    "hono": "^4.11.9",
+    "cron-parser": "^5.5.0"
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test server.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-nicknames#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-nicknames"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

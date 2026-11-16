@@ -1,0 +1,53 @@
+{
+  "name": "alia-plugin-decisions",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
+  },
+  "alia": {
+    "name": "Decisions",
+    "description": "Ask a TypeSafe decision model, such as Jev, from any VesnALIA plugin or thread.",
+    "branding": {
+      "icon": "Scale"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test ask.test.ts usage.test.ts backfill.test.ts wording.test.ts",
+    "build": "alia plugin build ."
+  },
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.7.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/decisions#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/decisions"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

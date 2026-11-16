@@ -1,0 +1,206 @@
+/* Shared, namespaced accent tokens. Either plugin works on its own.
+   Relative color clamps keep very dark/light custom accents legible.
+   Light theme keeps the accent's own chroma and only lowers lightness (0.9.4/0.2.6). */
+html {
+  --alia-workspace-tint: var(--alia-workspace-accent, var(--success));
+  --alia-workspace-foreground: light-dark(oklch(from var(--alia-workspace-tint) min(l, 0.50) c h), oklch(from var(--alia-workspace-tint) max(l, 0.70) c h));
+  --alia-workspace-indicator: light-dark(oklch(from var(--alia-workspace-tint) min(l, 0.56) c h), oklch(from var(--alia-workspace-tint) max(l, 0.70) c h));
+}
+
+/* Attribute-only rules intentionally reach the host heading outside plugin scope.
+ * Keep alia's sticky positioning and both shield pseudo-elements intact. */
+[data-sidebar-sticky-tier="label"][data-workspace-active] {
+  /* Left rail, right rail, then the tinted fill. */
+  background-image:
+    linear-gradient(var(--alia-workspace-indicator),
+                    var(--alia-workspace-indicator)),
+    linear-gradient(var(--alia-workspace-indicator),
+                    var(--alia-workspace-indicator)),
+    linear-gradient(color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent),
+                    color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent));
+  background-size: 2.5px calc(100% - 6px), 2.5px calc(100% - 6px), 100% 100%;
+  background-position: left center, right center, 0 0;
+  background-repeat: no-repeat;
+}
+
+[data-sidebar-sticky-tier="label"][data-workspace-active] > span > span[title] {
+  color: var(--alia-workspace-foreground);
+  font-weight: 600;
+}
+
+/* 0.3.4: the built-in Threads section (proj_personal) as a workspace. Its
+   heading has no [data-sidebar-project-id] ancestor, so Compact UI 0.7.4's
+   built-in heading rule (html[..] [stack] > [group-content] > div > [group] >
+   [tier] > span > span[title], (0,6,4)) would outrank the (0,3,2) active title
+   rule above. Same direct-child path, attribute repeated: (0,8,3). The rails
+   and fill above are attribute-only and already reach this heading. Per-project
+   accents are set inline on project items; the section inherits the window
+   fallback (--alia-workspace-accent on html, else --success). */
+[data-sidebar-sticky-stack] > [data-sidebar="group-content"] > div > [data-sidebar-sticky-group] > [data-sidebar-sticky-tier="label"][data-workspace-active][data-workspace-active][data-workspace-active] > span > span[title] {
+  color: var(--alia-workspace-foreground);
+  font-weight: 600;
+}
+
+/* Non-active project headings take the accent as text only, so headings read
+   apart from thread rows; background, rail and icon stay with the active one.
+   Specificity (0,7,3) outranks Compact UI's full-ink heading rule.
+   0.2.3: honours Compact UI's Project headings toggle, which sets
+   html[data-alia-accent-headings="off"] while off. Absent attribute = on, so
+   the rule is unchanged when Workspaces runs alone. */
+html:not([data-alia-accent-headings="off"]) [data-sidebar-sticky-stack] [data-sidebar-sticky-project-item][data-sidebar-project-id] [data-sidebar-sticky-tier="label"]:not([data-workspace-active]) > span > span[title] {
+  color: var(--alia-workspace-foreground);
+}
+
+/* 0.2.3: Compact UI's Active workspace rails toggle. With the rails off the
+   active heading keeps only the 13% fill layer; the grid icon and the
+   heading text are unaffected. Specificity (0,4,1) outranks the rule above. */
+html[data-alia-accent-rails="off"] [data-sidebar-sticky-tier="label"][data-workspace-active] {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent),
+                    color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent));
+  background-size: 100% 100%;
+  background-position: 0 0;
+}
+
+[data-workspace-grid][aria-pressed="true"] {
+  color: var(--alia-workspace-indicator);
+}
+
+/* A shaded header reads as a handle without changing drag regions or borders.
+   The ink gradient on every pane is not accent-colored and is never gated. */
+[data-split-pane-id] header:has(> [data-testid="app-page-header-content-row"]) {
+  background-image: linear-gradient(color-mix(in oklab, var(--ink) 16%, transparent),
+                                    color-mix(in oklab, var(--ink) 10%, transparent));
+}
+/* 0.2.5: the focused-pane accent gradient and the tinted title surface honor
+   Compact UI's Pane header color toggle (html[data-alia-accent-header="off"]
+   while off); off leaves the ink gradient above and alia's own title surface.
+   Absent attribute = on, so Workspaces alone is unchanged. */
+html:not([data-alia-accent-header="off"]) [data-split-pane-id][data-focused="true"] header:has(> [data-testid="app-page-header-content-row"]) {
+  background-image: linear-gradient(color-mix(in oklab, var(--alia-workspace-tint) 30%, transparent),
+                                    color-mix(in oklab, var(--alia-workspace-tint) 20%, transparent));
+}
+/* The title's existing focused surface should not obscure the green header. */
+html:not([data-alia-accent-header="off"]) [data-split-pane-id][data-focused="true"] [data-pane-header-focus-tab] {
+  background-color: color-mix(in oklab, var(--alia-workspace-tint) 14%, transparent);
+}
+/* Paint the text-entry surface inside the opaque prompt box, not its outer shell.
+ * Only the actual editor focus activates this; toolbar/search focus does not.
+ * 0.2.5: honors Compact UI's Text input glow toggle (html[data-alia-accent-input="off"]
+ * while off). alia sets no shadow, gradient or radius on this element, so off
+ * simply leaves the stock focused editor. */
+html:not([data-alia-accent-input="off"]) [data-split-pane-id] [data-promptbox-editor-scroll]:has([data-promptbox-editor-content] [contenteditable="true"]:focus) {
+  /* Match rounded-xl, inset by the prompt box’s 1px border. */
+  border-radius: calc(var(--radius) + 3px) calc(var(--radius) + 3px) 0 0;
+  background-image: none;
+  box-shadow: inset 0 0 14px color-mix(in oklab, var(--alia-workspace-tint) 14%, transparent),
+              inset 0 0 0 1px color-mix(in oklab, var(--alia-workspace-tint) 28%, transparent);
+}
+
+/* The grid owns the rightmost slot. Keep alia's collapsed activity glyph over
+ * its original action slot immediately to the left, rather than over our grid.
+ * alia makes the glyph static below md, so this offset has no mobile effect. */
+[data-sidebar-trailing-controls]:has(> [data-workspace-mount]) > [data-sidebar-collapsed-activity-edge] {
+  right: 1.75rem;
+}
+
+/* Single-pane parity (alia 0.42.1). With one pane open there is no
+   [data-split-pane-id] wrapper (SplitThreadArea.tsx:603-625); the thread
+   header and [data-thread-window] are direct children of SecondaryPanelLayout's
+   [data-conversation-collapsed] main slot (SecondaryPanelLayout.tsx:298-311).
+   The single pane is always the focused pane, so it takes the focused header
+   gradient and the editor focus glow. The ancestor guard keeps split panes,
+   and the secondary panel that also emits pane markers, on the rules above.
+   0.2.5: both mirrors carry the same Pane header color / Text input glow
+   gates as the split rules. */
+html:not([data-alia-accent-header="off"]) [data-conversation-collapsed]:not([data-split-pane-id] *):has(> [data-thread-window]) > header:has(> [data-testid="app-page-header-content-row"]) {
+  background-image: linear-gradient(color-mix(in oklab, var(--alia-workspace-tint) 30%, transparent),
+                                    color-mix(in oklab, var(--alia-workspace-tint) 20%, transparent));
+}
+html:not([data-alia-accent-input="off"]) [data-conversation-collapsed]:not([data-split-pane-id] *):has(> header > [data-testid="app-page-header-content-row"]) > [data-thread-window] [data-promptbox-editor-scroll]:has([data-promptbox-editor-content] [contenteditable="true"]:focus) {
+  border-radius: calc(var(--radius) + 3px) calc(var(--radius) + 3px) 0 0;
+  background-image: none;
+  box-shadow: inset 0 0 14px color-mix(in oklab, var(--alia-workspace-tint) 14%, transparent),
+              inset 0 0 0 1px color-mix(in oklab, var(--alia-workspace-tint) 28%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+ * 0.3.0: thread workspaces.
+ *
+ * Row control. The grid button is mounted at the end of the row's title span
+ * (a[data-sidebar-thread-id] + span), left of alia's status/hover-action slot.
+ * Rows without a workspace reveal it on row hover / focus only; workspace rows
+ * keep it visible. The row container carries data-workspace-thread and, for
+ * the workspace on screen, data-workspace-active-thread. Plain :hover is used
+ * on purpose (Tailwind's hover: variants sit behind @media (hover: hover)). */
+[data-workspace-thread="candidate"] [data-workspace-thread-button] {
+  opacity: 0;
+  transition: opacity 0ms;
+}
+[data-workspace-thread="candidate"]:is(:hover, :has(:focus-visible)) [data-workspace-thread-button],
+[data-workspace-thread="candidate"] [data-workspace-thread-button]:focus-visible {
+  opacity: 1;
+}
+[data-workspace-thread="workspace"] [data-workspace-thread-button] {
+  opacity: 1;
+}
+[data-workspace-thread-button][data-state="active"] {
+  color: var(--alia-workspace-indicator);
+}
+
+/* Active thread-workspace row: the same treatment as the active project
+ * heading (left + right rails, 13% fill, accent semibold title), on the row
+ * container so alia's own selection surface and sticky shields are untouched.
+ * The attribute is repeated to outrank Compact UI's thread-title tint
+ * (html[..]:not([..]) [..] a[..]:not([..]) + span > span[title] = (0,6,4))
+ * and its group washes; this title rule is (0,7,4). */
+[data-workspace-active-thread] {
+  background-image:
+    linear-gradient(var(--alia-workspace-indicator), var(--alia-workspace-indicator)),
+    linear-gradient(var(--alia-workspace-indicator), var(--alia-workspace-indicator)),
+    linear-gradient(color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent),
+                    color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent));
+  background-size: 2.5px calc(100% - 6px), 2.5px calc(100% - 6px), 100% 100%;
+  background-position: left center, right center, 0 0;
+  background-repeat: no-repeat;
+}
+/* 0.3.4: :is() keeps the specificity and also reaches rows in the built-in Threads section. */
+html:not([data-alia-accent-headings="off"]) :is([data-sidebar-project-id], [data-sidebar-sticky-group]) [data-workspace-active-thread][data-workspace-active-thread] > a[data-sidebar-thread-id] + span > span[title] {
+  color: var(--alia-workspace-foreground);
+  font-weight: 600;
+}
+/* Compact UI's Active workspace rails toggle: fill only, like the heading. */
+html[data-alia-accent-rails="off"] [data-workspace-active-thread] {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent),
+                    color-mix(in oklab, var(--alia-workspace-tint) 13%, transparent));
+  background-size: 100% 100%;
+  background-position: 0 0;
+}
+
+/* Switch preview (0.3.2): "who is in this workspace?". Hovering a thread
+ * workspace's anchor row (anywhere on it) or its icon marks the anchor plus
+ * every rendered descendant at any depth; hovering a project heading's grid
+ * button marks the whole group. Marked rows take an opaque 22% wash (Compact
+ * UI's group hover is 7%, its resting shade 4%), a continuous 3px left rail,
+ * and the anchor title the accent foreground, semibold. Sticky tiers and their
+ * ::before/::after shields take the same wash so a stuck heading/parent row
+ * reads as part of the group. Gated by Compact UI's Hover wash toggle.
+ * Specificity: the preview attribute is repeated so each rule reaches
+ * (0,11,1)+, above Compact UI's strongest competing rule (0,9,3). 0.3.4: the
+ * group selector is :is(project item, sticky group) so the built-in Threads
+ * section previews too; :is() keeps the specificity. */
+html:not([data-alia-accent-hover="off"]) :is([data-sidebar-project-id], [data-sidebar-sticky-group]) [data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview],
+html:not([data-alia-accent-hover="off"]) :is([data-sidebar-project-id], [data-sidebar-sticky-group]) [data-sidebar-sticky-tier][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview]::before,
+html:not([data-alia-accent-hover="off"]) :is([data-sidebar-project-id], [data-sidebar-sticky-group]) [data-sidebar-sticky-tier][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview]::after {
+  background-color: color-mix(in oklab, var(--alia-workspace-tint) 22%, var(--sidebar));
+}
+html:not([data-alia-accent-hover="off"]) :is([data-sidebar-project-id], [data-sidebar-sticky-group]) [data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview][data-workspace-preview] {
+  box-shadow: inset 3px 0 0 0 var(--alia-workspace-indicator);
+}
+/* Anchor title: (0,11,4) outranks Compact UI's thread tint (0,6,4). */
+html:not([data-alia-accent-hover="off"]) :is([data-sidebar-project-id], [data-sidebar-sticky-group]) [data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor] > a[data-sidebar-thread-id] + span > span[title],
+html:not([data-alia-accent-hover="off"]) :is([data-sidebar-project-id], [data-sidebar-sticky-group]) [data-sidebar-sticky-tier="label"][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor][data-workspace-preview-anchor] > span > span[title] {
+  color: var(--alia-workspace-foreground);
+  font-weight: 600;
+}

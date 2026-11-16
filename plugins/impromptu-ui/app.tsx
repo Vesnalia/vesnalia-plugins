@@ -1,0 +1,390 @@
+// alia-plugin-impromptu-ui — a thread's view, above its composer and in its side
+// panel.
+//
+// Every view a thread published and has not hidden shows as a compact list
+// right above the composer, newest first: one row per item, with a chevron.
+// Clicking a row opens that item in the side panel, with its details and
+// every button. The panel keeps
+// one tab per view and switches the item it shows as rows are clicked. A view
+// with the "list" layout shows whole in the panel instead, as one list.
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  definePluginApp,
+  useAliaNavigate,
+  useComposerView,
+  useRealtime,
+  useRpc,
+  type PluginThreadPanelProps,
+} from "@vesnalia/plugin-sdk/app";
+import { toast } from "sonner";
+import type { rpcContract } from "./server";
+import { allHandled, ViewBanner } from "./view/banner.js";
+import { alreadyAutoOpened, markAutoOpened, publishStamp } from "./view/auto-open.js";
+import { focusOf, setFocus, useFocus } from "./view/focus.js";
+import { threadElsewhere, type Item } from "./view/schema.js";
+import type { StoredView } from "./view/store.js";
+import { firstOpenItem, nextOpenItem, ViewPanel, type LinkedThread } from "./view/view-panel.js";
+import { ListPanel } from "./view/list-panel.js";
+import { StartThreadDialog, announceStartedThread, type StartThreadSeed } from "@danielbachhuber/bb-plugin-component-library/start-thread";
+import * as dialogParts from "@/components/ui/dialog";
+import { viewFor } from "./view/store.js";
+
+const PANEL_ACTION = "view";
+
+function viewIdFrom(params: unknown): number | null {
+  if (typeof params !== "object" || params === null) return null;
+  const value = (params as { viewId?: unknown }).viewId;
+  return typeof value === "number" ? value : null;
+}
+
+function useFail() {
+  return useCallback((error: unknown) => {
+    toast.error(error instanceof Error ? error.message : String(error));
+  }, []);
+}
+
+/** Refetches whenever the server says something in this thread's views changed. */
+function useThreadSignal(threadId: string | null, refetch: () => void) {
+  const onSignal = useCallback(
+    (payload: unknown) => {
+      if (threadId !== null && (payload as { threadId?: string } | null)?.threadId === threadId) refetch();
+    },
+    [threadId, refetch],
+  );
+  useRealtime("impromptu-ui-changed", onSignal);
+  useRealtime("impromptu-ui-published", onSignal);
+}
+
+/** Runs one of an item's actions and reports a failure it records. */
+function useRunAction(setStored: (view: StoredView) => void) {
+  const rpc = useRpc<typeof rpcContract>();
+  const fail = useFail();
+  const [busyItem, setBusyItem] = useState<string | null>(null);
+  const run = useCallback(
+    (stored: StoredView, item: Item, index: number, draft?: string, note?: string) => {
+      setBusyItem(item.id);
+      rpc
+        .call("action_run", {
+          viewId: stored.id,
+          itemId: item.id,
+          index,
+          ...(draft === undefined ? {} : { draft }),
+          ...(note === undefined ? {} : { note }),
+        })
+        .then((updated) => {
+          setStored(updated);
+          const result = updated.items[item.id]?.result;
+          if (result?.error !== undefined) toast.error(result.error);
+        }, fail)
+        .finally(() => setBusyItem(null));
+    },
+    [rpc, fail, setStored],
+  );
+  return { busyItem, setBusyItem, run };
+}
+
+/**
+ * A visual review's images, fetched once per view and item as the panel shows
+ * them. Keyed by publish time too, so a republish with new images refetches.
+ */
+function useReviewImages(stored: StoredView | null | undefined, itemId: string | null) {
+  const rpc = useRpc<typeof rpcContract>();
+  const [urls, setUrls] = useState<Record<string, string | null>>({});
+  const item =
+    stored && itemId ? stored.view.sections.flatMap((section) => section.items).find((candidate) => candidate.id === itemId) : undefined;
+  const prefix = stored && item ? `${stored.id}@${stored.publishedAt}:${item.id}:` : null;
+  const count = item?.variations.length ?? 0;
+  useEffect(() => {
+    if (!stored || !item || prefix === null) return;
+    item.variations.forEach((_, index) => {
+      const key = prefix + index;
+      rpc.call("image_get", { viewId: stored.id, itemId: item.id, index }).then(
+        ({ dataUrl }) => setUrls((current) => (key in current ? current : { ...current, [key]: dataUrl })),
+        () => setUrls((current) => ({ ...current, [key]: null })),
+      );
+    });
+    // The prefix names the view, its publish, and the item.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rpc, prefix, count]);
+  return useCallback(
+    (forItem: string, index: number) => (prefix !== null && forItem === itemId ? urls[prefix + index] : undefined),
+    [urls, prefix, itemId],
+  );
+}
+
+/** The titles of the other threads a view's buttons send to, looked up again on each publish and each button pressed. */
+function useLinkedThreads(stored: StoredView | null | undefined): Record<string, LinkedThread> | undefined {
+  const rpc = useRpc<typeof rpcContract>();
+  const [threads, setThreads] = useState<Record<string, LinkedThread> | undefined>(undefined);
+  const viewId = stored?.id;
+  // A failed send, such as to a thread archived since, is a reason to look again.
+  const stamp =
+    stored === null || stored === undefined
+      ? null
+      : [stored.publishedAt, ...Object.values(stored.items).map((record) => record.result?.at ?? "")].join(":");
+  useEffect(() => {
+    if (viewId === undefined) return;
+    let current = true;
+    // Only a label; if it fails, the panel names the thread by its id.
+    rpc.call("view_threads", { viewId }).then(({ threads }) => current && setThreads(threads), () => undefined);
+    return () => {
+      current = false;
+    };
+  }, [rpc, viewId, stamp]);
+  return threads;
+}
+
+function ViewTab({ threadId, params }: PluginThreadPanelProps) {
+  const rpc = useRpc<typeof rpcContract>();
+  const navigate = useAliaNavigate();
+  const fail = useFail();
+  const focus = useFocus(threadId);
+  const [stored, setStoredAsIs] = useState<StoredView | null | undefined>(undefined);
+  // In a thread the view's items show in, only those items.
+  const setStored = useCallback((view: StoredView | null) => setStoredAsIs(view === null ? null : viewFor(view, threadId)), [threadId]);
+  const { busyItem, setBusyItem, run } = useRunAction(setStored);
+  const wanted = viewIdFrom(params) ?? focus?.viewId ?? null;
+
+  const refetch = useCallback(() => {
+    // Opened from the launcher without params: the thread's newest view.
+    const load =
+      wanted === null
+        ? rpc.call("thread_views", { threadId }).then(({ views }) => views[0] ?? null)
+        : rpc.call("view_get", { viewId: wanted });
+    load.then(setStored, fail);
+  }, [rpc, threadId, wanted, fail]);
+  useEffect(refetch, [refetch]);
+  useThreadSignal(threadId, refetch);
+
+  const focusHere = stored && focus?.viewId === stored.id ? focus : undefined;
+  const shownItem = focusHere?.itemId ?? (stored ? (firstOpenItem(stored, threadId)?.id ?? null) : null);
+  const imageUrl = useReviewImages(stored, shownItem);
+  const threads = useLinkedThreads(stored);
+  // The item whose new-thread composer is open, with what it starts with.
+  const [starting, setStarting] = useState<{ item: Item; seed: StartThreadSeed } | null>(null);
+
+  if (stored === undefined) return null;
+  if (stored === null) {
+    return <div className="px-4 py-6 text-sm text-muted-foreground">This thread has not published a view.</div>;
+  }
+
+  if (stored.view.layout === "list") {
+    return (
+      <ListPanel
+        stored={stored}
+        busyItem={busyItem}
+        onRun={(item, index, draft) => run(stored, item, index, draft)}
+        onDismiss={(item, dismissed) => {
+          setBusyItem(item.id);
+          rpc
+            .call("item_dismiss", { viewId: stored.id, itemId: item.id, dismissed })
+            .then(setStored, fail)
+            .finally(() => setBusyItem(null));
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      <ViewPanel
+        stored={stored}
+        busyItem={busyItem}
+        focusItemId={focusHere?.itemId ?? null}
+        confirming={
+          focusHere?.itemId && focusHere.confirmIndex !== undefined ? `${focusHere.itemId}:${focusHere.confirmIndex}` : undefined
+        }
+        onGoToThread={(id) => navigate.toThread(id)}
+        threads={threads}
+        currentThreadId={threadId}
+        imageUrl={imageUrl}
+        onSubmitReview={(item, feedback) => {
+          setBusyItem(item.id);
+          rpc
+            .call("review_submit", { viewId: stored.id, itemId: item.id, ...feedback })
+            .then((updated) => {
+              setStored(updated);
+              const result = updated.items[item.id]?.result;
+              if (result?.error !== undefined) toast.error(result.error);
+            }, fail)
+            .finally(() => setBusyItem(null));
+        }}
+        onRun={(item, index, draft, note) => run(stored, item, index, draft, note)}
+        onDismiss={(item, dismissed) => {
+          setBusyItem(item.id);
+          rpc
+            .call("item_dismiss", { viewId: stored.id, itemId: item.id, dismissed })
+            .then((updated) => {
+              setStored(updated);
+              // Dismissing moves on to the next open item; undoing stays put.
+              const next = dismissed ? nextOpenItem(updated, item.id, threadId) : null;
+              if (next) setFocus(threadId, { viewId: updated.id, itemId: next.id });
+            }, fail)
+            .finally(() => setBusyItem(null));
+        }}
+        onStartThread={(item) => {
+          rpc.call("item_thread_seed", { viewId: stored.id, itemId: item.id }).then((seed) => setStarting({ item, seed }), fail);
+        }}
+        onRunRelated={(item, entryId) => {
+          setBusyItem(item.id);
+          rpc
+            .call("related_run", { viewId: stored.id, itemId: item.id, entryId })
+            .then((updated) => {
+              setStored(updated);
+              const result = updated.items[item.id]?.related?.[entryId];
+              if (result?.error !== undefined) toast.error(result.error);
+            }, fail)
+            .finally(() => setBusyItem(null));
+        }}
+        onOpenItem={(item) => {
+          // An item worked in its own thread opens there, from the map as from the list.
+          const elsewhere = threadElsewhere(item, threadId);
+          if (elsewhere === null) setFocus(threadId, { viewId: stored.id, itemId: item.id });
+          else navigate.toThread(elsewhere);
+        }}
+      />
+      <StartThreadDialog
+        dialog={dialogParts}
+        heading={`Start a thread: ${starting?.item.title ?? ""}`}
+        draftKey={starting ? `impromptu-ui:${stored.id}:${stored.publishedAt}:${starting.item.id}` : ""}
+        seed={starting?.seed ?? null}
+        onClose={() => setStarting(null)}
+        onSubmit={async (request) => {
+          if (starting === null) return;
+          try {
+            const { threadId: started } = await rpc.call("item_thread_start", {
+              viewId: stored.id,
+              itemId: starting.item.id,
+              request: request as never,
+            });
+            setStarting(null);
+            announceStartedThread(navigate, started);
+          } catch (error) {
+            fail(error);
+            // Thrown so the composer keeps the draft rather than clearing it.
+            throw error;
+          }
+        }}
+      />
+    </>
+  );
+}
+
+/**
+ * Opens the side panel on a view's first open item, unless the item already
+ * picked in it is still open: a republish after the user acts moves on to the
+ * next item, but does not pull them away from one they are reading.
+ */
+function showFirstOpen(threadId: string, stored: StoredView, navigate: ReturnType<typeof useAliaNavigate>): boolean {
+  const current = focusOf(threadId);
+  const keep =
+    current?.viewId === stored.id &&
+    current.itemId !== null &&
+    (stored.items[current.itemId]?.state ?? "open") === "open";
+  if (!keep) {
+    const first = firstOpenItem(stored, threadId);
+    if (first === null) return false;
+    setFocus(threadId, { viewId: stored.id, itemId: first.id });
+  }
+  return navigate.openThreadPanel({ actionId: PANEL_ACTION, params: { viewId: stored.id }, title: stored.view.title }) !== false;
+}
+
+function Banner() {
+  const composer = useComposerView();
+  const threadId = composer.scope.kind === "thread" ? composer.scope.threadId : null;
+  const rpc = useRpc<typeof rpcContract>();
+  const navigate = useAliaNavigate();
+  // Every view the thread has not hidden, newest first. Views published under
+  // different keys show together, one header each.
+  const [views, setViews] = useState<StoredView[]>([]);
+  // Per view: unset, a list collapses by itself once every item is handled; a
+  // click on its header overrides that until it is next published.
+  const [collapsedByUser, setCollapsedByUser] = useState<Record<number, boolean>>({});
+  const focus = useFocus(threadId ?? "");
+  // Read through a ref so the fetch below does not re-run whenever the host
+  // hands back a new navigate object.
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
+  const refetch = useCallback(() => {
+    if (threadId === null) return;
+    rpc.call("thread_views", { threadId }).then(({ views: all }) => {
+      const shown = all.filter((candidate) => candidate.hiddenAt === null);
+      setViews(shown);
+      // The first load after each publish opens the side panel on the newest
+      // view's first open item, whether the publish happened while the thread
+      // was on screen or before it was visited.
+      const newest = shown[0];
+      if (newest === undefined) return;
+      const stamp = publishStamp(newest.id, newest.publishedAt);
+      if (alreadyAutoOpened(threadId, stamp)) return;
+      if (showFirstOpen(threadId, newest, navigateRef.current)) markAutoOpened(threadId, stamp);
+    }, () => undefined);
+  }, [rpc, threadId]);
+  useEffect(refetch, [refetch]);
+  useThreadSignal(threadId, refetch);
+  // A newly published view opens expanded, even if it was collapsed before.
+  useRealtime(
+    "impromptu-ui-published",
+    useCallback((payload: unknown) => {
+      const { threadId: published, viewId } = (payload ?? {}) as { threadId?: string; viewId?: number };
+      if (published !== threadId || viewId === undefined) return;
+      setCollapsedByUser(({ [viewId]: _, ...rest }) => rest);
+    }, [threadId]),
+  );
+
+  // Rendering nothing lets the host's card hide itself.
+  if (threadId === null || views.length === 0) return null;
+  const focusedView = views.some((stored) => stored.id === focus?.viewId) ? focus!.viewId : views[0]!.id;
+
+  return (
+    <div className="divide-y divide-border">
+      {views.map((stored) => {
+        const collapsed = collapsedByUser[stored.id] ?? allHandled(stored);
+        const openView = () =>
+          navigate.openThreadPanel({ actionId: PANEL_ACTION, params: { viewId: stored.id }, title: stored.view.title });
+        return (
+          <ViewBanner
+            key={stored.id}
+            stored={stored}
+            collapsed={collapsed}
+            onToggle={() => setCollapsedByUser((current) => ({ ...current, [stored.id]: !collapsed }))}
+            onHide={() => {
+              rpc.call("view_hide", { viewId: stored.id, hidden: true, threadId }).then(refetch, (error: unknown) => {
+                toast.error(error instanceof Error ? error.message : String(error));
+              });
+            }}
+            busyItem={null}
+            focusedItem={
+              stored.id !== focusedView
+                ? null
+                : ((focus?.viewId === stored.id ? focus.itemId : null) ?? firstOpenItem(stored, threadId)?.id ?? null)
+            }
+            currentThreadId={threadId}
+            onOpenItem={(item) => {
+              setFocus(threadId, { viewId: stored.id, itemId: item.id });
+              // Same params as an open tab focuses that tab, which then shows the item.
+              openView();
+            }}
+            onGoToThread={(id) => navigate.toThread(id)}
+            onOpenView={openView}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+export default definePluginApp((app) => {
+  app.slots.threadPanelAction({
+    id: PANEL_ACTION,
+    title: "Impromptu UI view",
+    layout: "flush",
+    component: ViewTab,
+  });
+  app.composer.customize({
+    id: "view",
+    scopes: ["thread"],
+    banners: [{ id: "view", component: Banner }],
+  });
+});

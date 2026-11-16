@@ -1,0 +1,146 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// The option's section lookup is covered behaviourally in
+// tests/option-anchor.test.mjs, against the real brief that started this. What
+// cannot be tested there is the WIRING: the label has to travel from the option
+// row, through the open-artifact callback, into the viewer state, or the lookup
+// never runs and the reader lands on the document's first line — which is
+// exactly the bug it fixes, silently.
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const read = (relative) => readFileSync(join(root, relative), "utf8");
+const batch = read("components/conversation/question-batch.tsx");
+// The option row and the option list moved out of the stepper, and the shared
+// question shapes with them: six components take the open-artifact callback, so
+// the pins below name the module each one now lives in.
+const optionRows = read("components/conversation/batch-options.tsx");
+const batchTypes = read("components/conversation/batch-types.ts");
+const sections = read("components/detail/detail-question-sections.tsx");
+const inventory = read("components/artifacts/artifact-inventory.tsx");
+const detailBody = read("components/detail/build-detail-body.tsx");
+// The ViewerFile type moved out of the body into the view slice that owns the
+// card's presentation state, so the declaration is pinned where it now lives.
+const detailView = read("components/detail/build-detail-view.ts");
+const dialog = read("components/detail/artifact-viewer-dialog.tsx");
+const artifactContent = read("components/detail/artifact-content.tsx");
+const optionSection = read("components/detail/option-section.tsx");
+
+// The call site must pass the label it is rendering. A callback that drops it
+// types fine — a function taking fewer parameters is assignable — so this
+// breaks silently and only shows up as the old behaviour. The option row
+// moved out of the stepper into the module that renders the options, where the
+// label reaches the handler as a named prop: the row binds the option's own
+// label to it, and the control forwards that same label.
+assert.match(
+  optionRows,
+  /onOpenArtifact\(artifact, artifactViewerModeForOption\(optionLabel\), optionLabel\)/,
+  "the option row opens the document WITH its own label, or the section lookup never runs",
+);
+assert.match(
+  optionRows,
+  /optionLabel=\{option\.label\}/,
+  "the label the control forwards is the option's own label, not a constant",
+);
+
+// One signature end to end. A narrower callback is assignable, so a dropped
+// parameter at any hop typechecks; the pin is what catches it.
+//
+// SIX hops now: the six components in the option list and the stepper that
+// accept the handler (the layout function forwards what it used to inline).
+// The three keyboard-layer hops were removed with the accelerator on
+// 2026-10-27; opening a document is the option row's button, not a keystroke.
+// Every hop takes the NAMED type, which is the property this pin guards: the
+// count moves when a hop is added, and a hop added with a two-parameter
+// signature is the regression it catches.
+assert.equal(
+  [...optionRows.matchAll(/onOpenArtifact\?: OpenArtifactHandler/g)].length
+  + [...batch.matchAll(/onOpenArtifact\?: OpenArtifactHandler/g)].length,
+  6,
+  "every component that accepts the callback takes the named type, so no hop can narrow it back to two parameters",
+);
+assert.match(
+  batchTypes,
+  /export type OpenArtifactHandler = \(\s*artifact: AskArtifact,\s*mode: ArtifactViewerMode,\s*optionLabel: string,\s*\) => void;/,
+  "the shared type carries the label — an inline two-parameter signature would typecheck and drop it silently",
+);
+assert.match(sections, /optionLabel: Parameters<typeof openAskArtifact>\[5\]/, "the card's open handler forwards the label");
+assert.match(inventory, /optionLabel\?: string,/, "openAskArtifact accepts the label");
+assert.match(inventory, /\n    optionLabel,\n  \}\);/, "and stores it on the viewer state");
+
+// State to render. A ViewerFile that drops the field would typecheck the read
+// as `undefined` and quietly disable the feature.
+assert.match(detailView, /optionLabel\?: string;/, "the card's viewer state carries the label");
+assert.match(detailBody, /optionLabel=\{view\.viewerFile\?\.optionLabel\}/, "and the dialog receives it");
+// The tag is read as one element and each prop is asserted on it, so a
+// legitimate refactor (destructuring `viewer`, reordering props) is not a
+// failure while dropping a prop still is.
+const sectionTag = dialog.match(/<OptionSection\b[\s\S]*?\/>/)?.[0] ?? "";
+assert.ok(sectionTag, "the dialog renders the option's section");
+assert.match(sectionTag, /content=\{[^}]*\}/,
+  "the section receives the document, or the lookup has nothing to search");
+assert.match(sectionTag, /optionLabel=\{optionLabel\}/,
+  "the section receives the label the viewer was opened for");
+assert.match(sectionTag, /containerRef=\{[^}]*\}/,
+  "and the scroll container it must search, or there is nothing to scroll");
+
+// The option is scrolled to INSIDE the document, not quoted above it. Lifting
+// the section duplicates the reader's own text and makes the brief read as two
+// documents; the host already rendered the headings inside a scroll container
+// this component owns, so one scrollIntoView is enough.
+assert.match(
+  optionSection,
+  /target\.scrollIntoView\(\{ block: "start" \}\)/,
+  "the reader is taken to the option's heading inside the document",
+);
+assert.match(
+  dialog,
+  /scrollRef=\{(?:viewer\.)?scrollRef\}/,
+  "the document's scroll container is handed to the option lookup, or there is nothing to scroll",
+);
+assert.match(
+  artifactContent,
+  /<div ref=\{scrollRef\} className="max-h-\[46dvh\] overflow-auto/,
+  "the container the headings live in is the one that scrolls",
+);
+
+// The DOM comparison reuses the pure matcher's key. A second, looser copy in
+// the UI is how the scroll starts disagreeing with the anchor.
+assert.match(
+  optionSection,
+  /import \{ optionSectionExcerpt, sectionHeadingsMatch \} from "\.\.\/\.\.\/lib\/option-anchor\.mjs";/,
+  "the UI calls the pure matcher instead of restating its rule inline",
+);
+// The import alone is not enough: an inline predicate leaves the import in
+// place while the comparison stops being the tested one. Pin the call, with
+// both operands, so replacing it with any local heuristic fails here. The DOM
+// path itself cannot be unit-tested, so this is the only place the two can be
+// caught drifting apart.
+assert.match(
+  optionSection,
+  /\.find\(\(node\) => sectionHeadingsMatch\(node\.textContent, section\.heading\)\)/,
+  "the rendered heading is compared with the SHARED matcher, on the heading the scan resolved",
+);
+
+// The lifted section is the FALLBACK, not the primary: shown only when the
+// heading is absent from the rendered DOM, never on top of a working scroll,
+// and never a wrong section under this option's name.
+assert.match(
+  optionSection,
+  /if \(!target\) \{\s*setNeedsFallback\(true\);/,
+  "a missing heading is what promotes the excerpt, not the default path",
+);
+assert.match(
+  optionSection,
+  /if \(!section \|\| !needsFallback\) return null;/,
+  "a working scroll shows nothing extra — the document is not quoted twice",
+);
+assert.match(
+  optionSection,
+  /Your selection · \{optionLabel\}/,
+  "the fallback says which option it is quoting, so it is never read as the whole document",
+);
+
+console.log("option section wiring ok: the label reaches the viewer, the option is scrolled to, and the excerpt is only a fallback");

@@ -1,0 +1,20 @@
+export const STORAGE_KEYS = {
+  boardColumns: "stelow-columns-collapsed-v1",
+  researchColumns: "stelow-research-columns-collapsed-v1",
+  exploreColumns: "stelow-explore-columns-collapsed-v1",
+  reviewGates: "stelow-review-gates-v1",
+  onboardBuild: "stelow-onboard-build-v1",
+  onboardResearch: "stelow-onboard-research-v1",
+  onboardExplore: "stelow-onboard-explore-v1",
+  onboardPresets: "stelow-onboard-presets-v1",
+  buildListGroups: "stelow-build-list-groups-collapsed-v1",
+  researchListGroups: "stelow-research-list-groups-collapsed-v1",
+  exploreListGroups: "stelow-explore-list-groups-collapsed-v1",
+  buildView: "stelow-build-view-v1",
+  researchView: "stelow-research-view-v1",
+  exploreView: "stelow-explore-view-v1",
+  lastProject: "stelow-last-project-v1",
+  // Whether the review queue rail is open. A reading surface's open state is a
+  // preference like a collapsed column, not a navigation fact.
+  reviewQueue: "stelow-review-queue-v1",
+};

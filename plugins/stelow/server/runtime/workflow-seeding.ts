@@ -1,0 +1,333 @@
+/**
+ * Seeding a workflow: the one writer of a card's state dir and its stelow.json
+ * entry.
+ *
+ * The identity rule is what makes a reseed safe. A name is a label, not an
+ * identity, so reuse is reserved for this exact immutable owner (a card id)
+ * and requires the index entry AND the state file to agree. An entry with no
+ * owner id is never adopted, and neither is a state file naming someone else.
+ * The path shape itself is derived by one function (`workflowStateRelativeDir`),
+ * so what is written here is exactly what the reader later resolves, and
+ * `created` pins the date segment to the first seed so a reseed never moves a
+ * directory out from under a running worker.
+ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { STATE_TEMPLATE } from "../../lib/state-template.mjs";
+import { withRuntimeIgnoreEntry } from "../../lib/card-seed-guard.mjs";
+import {
+  ownsWorkflowState,
+  upsertWorkflowEntry,
+  workflowDirHash,
+  workflowEntryForOwner,
+  workflowStateRelativeDir,
+} from "../../lib/workflow-state-identity.mjs";
+import {
+  formatReviewGates,
+  legacyLabelForGates,
+  normalizeReviewGates,
+} from "../../lib/review-gates.mjs";
+import { TRANSITIONS_REF } from "../plugin-paths.js";
+import { record, text, type LooseRecord } from "./values.js";
+import { dirname } from "node:path";
+import { join } from "./root-paths.js";
+
+export type SeedResult = {
+  statePath: string | null;
+  stateDir: string | null;
+  dirHash: string | null;
+  error: string | null;
+};
+
+const ORCHESTRATOR_REFERENCES =
+  "skills/stelow-workflow-orchestrator/references";
+
+/** Directories every seeded workspace needs before any state is written. */
+function prepareWorkspace(rootPath: string): void {
+  mkdirSync(join(rootPath, ".stelow/approvals"), { recursive: true });
+  mkdirSync(join(rootPath, ORCHESTRATOR_REFERENCES), { recursive: true });
+}
+
+/**
+ * Keep live runs out of git: a worker `git add -A` must never sweep
+ * `.stelow/` into the project history — the committed record is the exported
+ * docs/runs/<card>/ bundle. Best-effort, git checkouts only, never blocks
+ * seeding.
+ */
+function ignoreRuntimeState(rootPath: string): void {
+  try {
+    if (!existsSync(join(rootPath, ".git"))) return;
+    const ignorePath = join(rootPath, ".gitignore");
+    let current = "";
+    try {
+      current = readFileSync(ignorePath, "utf8");
+    } catch {
+      /* created below */
+    }
+    const next = withRuntimeIgnoreEntry(current);
+    if (next !== null) writeFileSync(ignorePath, next, "utf8");
+  } catch {
+    /* hygiene never blocks seeding */
+  }
+}
+
+/** The workspace's tracking file, or an empty one to create. */
+function readTracking(trackingPath: string): LooseRecord {
+  let trackingData: LooseRecord = {};
+  try {
+    trackingData = JSON.parse(readFileSync(trackingPath, "utf8")) as LooseRecord;
+  } catch {
+    /* create fresh */
+  }
+  if (!Array.isArray(trackingData.workflows)) trackingData.workflows = [];
+  return trackingData;
+}
+
+/**
+ * The paths of an already-seeded owner, or null when this seed must (re)write
+ * one. Seeding an owner that is already seeded is otherwise a no-op: it
+ * returns the workflow's own paths and leaves its entry, stage, and progress
+ * alone.
+ */
+async function existingSeed(
+  alia: AliaPluginApi,
+  rootPath: string,
+  workflowId: string,
+  entry: unknown,
+  fresh: boolean,
+): Promise<SeedResult | null> {
+  const entryDir = workflowStateRelativeDir(entry);
+  const reusable =
+    !fresh &&
+    entry &&
+    entryDir &&
+    (await alia.sdk.files
+      .read({ path: join(rootPath, `${entryDir}/state.md`) })
+      .then((file) => ownsWorkflowState(file.content, workflowId))
+      .catch(() => false));
+  if (reusable && entryDir) {
+    const existingDir = join(rootPath, entryDir);
+    return {
+      statePath: join(existingDir, "state.md"),
+      stateDir: existingDir,
+      dirHash: text(record(entry).dirHash),
+      error: null,
+    };
+  }
+  return null;
+}
+
+/**
+ * Write a canonical state file, unless one already holds a stage and names
+ * this owner.
+ *
+ * Canonical storage is the gate set (`review_gates: [spec, …]`, empty ≡ Auto).
+ * The legacy `review_mode:` ladder label is kept for upstream readers; novel
+ * sets have no rung, so they read back as Auto there — the worker prompt
+ * names `review_gates` first.
+ */
+export type RunKnobs = {
+  quality: string;
+  explorationCount: number;
+  explorationHybrid: boolean;
+  /** Explicit red-first mode; absent means the quality-derived default
+   * applies downstream (absent is "derive me", never a mode). */
+  redFirst?: string;
+};
+
+async function writeStateFile(
+  alia: AliaPluginApi,
+  statePath: string,
+  workflowId: string,
+  name: string,
+  intent: string,
+  knobs: RunKnobs,
+  reviewMode: string | string[],
+): Promise<void> {
+  const stateBlob = await alia.sdk.files
+    .read({ path: statePath })
+    .then((file) => file.content)
+    .catch(() => "");
+  if (stateBlob.includes("current_stage:") && ownsWorkflowState(stateBlob, workflowId)) {
+    return;
+  }
+  const gates = normalizeReviewGates(reviewMode);
+  const rung = legacyLabelForGates(gates) ?? "Auto";
+  const redFirstLine = typeof knobs.redFirst === "string" && knobs.redFirst
+    ? `  red_first: ${knobs.redFirst}\n`
+    : "";
+  const body = STATE_TEMPLATE.replace("<workflow-id>", workflowId)
+    .replace("<workflow-name>", name)
+    .replace(
+      "<new-product|feature|bugfix|refactor|investigate|unknown>",
+      intent,
+    );
+  writeFileSync(
+    statePath,
+    body
+      .replace("quality: production", `quality: ${knobs.quality}`)
+      .replace("exploration_count: 3", `exploration_count: ${knobs.explorationCount}`)
+      .replace("exploration_hybrid: true", `exploration_hybrid: ${knobs.explorationHybrid}`)
+      .replace("  review_mode: Auto", `${redFirstLine}\n  review_mode: Auto`)
+      .replace(
+        "review_mode: Auto",
+        `review_gates: ${formatReviewGates(gates)}\n  review_mode: ${rung}`,
+      ),
+    "utf8",
+  );
+}
+
+/**
+ * Refresh the workspace's copy of the transitions contract.
+ *
+ * The copy used to be installed ONCE, only when the workspace lacked it. A
+ * workspace seeded before an upstream sync kept the OLD contract forever,
+ * while the panel read the new catalog: the two disagreed about the graph,
+ * and a card that reached a stage the old contract did not have (the
+ * `architecture` stage) could not advance at all — "no transition defined
+ * from stage 'architecture'", with no way out.
+ *
+ * The file is GENERATED upstream ("do not edit this file manually"), so a
+ * copy that differs from the plugin's is stale, not edited. It is
+ * overwritten on every seed.
+ */
+function syncTransitions(transitionsPath: string): void {
+  const current = readFileSync(TRANSITIONS_REF, "utf8");
+  if (existsSync(transitionsPath) && readFileSync(transitionsPath, "utf8") === current) {
+    return;
+  }
+  mkdirSync(dirname(transitionsPath), { recursive: true });
+  writeFileSync(transitionsPath, current, "utf8");
+}
+
+/** Point the tracking entry at the fresh triage stage and persist it. */
+function trackSeededWorkflow(
+  trackingData: LooseRecord,
+  rootPath: string,
+  workflowId: string,
+  name: string,
+  dirHash: string,
+  created: string,
+  knobs: RunKnobs,
+  reviewMode: string | string[],
+): void {
+  const at = new Date().toISOString();
+  const gates = normalizeReviewGates(reviewMode);
+  trackingData.workflows = upsertWorkflowEntry(
+    trackingData.workflows as unknown[],
+    {
+      workflowId,
+      name,
+      description: "",
+      status: "in-progress",
+      cwd: rootPath,
+      dirHash,
+      created,
+      updated: at,
+      stage: {
+        current_stage: "triage",
+        previous_stage: null,
+        transitioned_at: at,
+        history: [{ stage: "triage", entered_at: at }],
+      },
+      phases: [],
+      config: {
+        quality: knobs.quality,
+        exploration_count: knobs.explorationCount,
+        exploration_hybrid: knobs.explorationHybrid,
+        ...(typeof knobs.redFirst === "string" && knobs.redFirst ? { red_first: knobs.redFirst } : {}),
+        review_mode: legacyLabelForGates(gates) ?? "Auto",
+        review_gates: gates,
+      },
+    },
+  );
+}
+
+export async function seedWorkflow(
+  alia: AliaPluginApi,
+  rootPath: string,
+  workflowId: string,
+  name: string,
+  intent: string,
+  knobs: RunKnobs = { quality: "production", explorationCount: 3, explorationHybrid: true },
+  reviewMode: string | string[] = "Auto",
+  fresh = false,
+): Promise<SeedResult> {
+  const transitionsPath = join(rootPath, `${ORCHESTRATOR_REFERENCES}/transitions.md`);
+  const trackingPath = join(rootPath, "stelow.json");
+  try {
+    // Before the early return: a workspace seeded before an upstream sync
+    // must not keep the old contract just because it is already seeded.
+    prepareSeedWorkspace(rootPath, transitionsPath);
+    const trackingData = readTracking(trackingPath);
+    const workflows = trackingData.workflows as unknown[];
+    const entry = workflowEntryForOwner(workflows, workflowId);
+    const existing = await existingSeed(
+      alia,
+      rootPath,
+      workflowId,
+      entry,
+      fresh,
+    );
+    if (existing) return existing;
+    const placement = placeWorkflowState(rootPath, workflowId, entry, fresh);
+    if (!placement) return seedFailure("Unable to derive the workflow state directory.");
+    const { dirHash, created, stateDir, statePath } = placement;
+    await writeStateFile(alia, statePath, workflowId, name, intent, knobs, reviewMode);
+    trackSeededWorkflow(
+      trackingData,
+      rootPath,
+      workflowId,
+      name,
+      dirHash,
+      created,
+      knobs,
+      reviewMode,
+    );
+    writeFileSync(trackingPath, JSON.stringify(trackingData, null, 2), "utf8");
+    return { statePath, stateDir, dirHash, error: null };
+  } catch (error) {
+    return seedFailure(error instanceof Error ? error.message : "Unable to seed workflow.");
+  }
+}
+
+/**
+ * The workspace a seed lands in: prepared, carrying the CURRENT contract,
+ * and with the runtime's own files ignored.
+ *
+ * The contract is refreshed HERE, before the early return for an already
+ * seeded workflow: a workspace seeded before an upstream sync must not keep
+ * the old graph just because it is already seeded.
+ */
+function prepareSeedWorkspace(rootPath: string, transitionsPath: string): void {
+  prepareWorkspace(rootPath);
+  syncTransitions(transitionsPath);
+  ignoreRuntimeState(rootPath);
+}
+
+/** A seed that could not happen, in the shape every caller expects. */
+function seedFailure(error: string): SeedResult {
+  return { statePath: null, stateDir: null, dirHash: null, error };
+}
+
+/**
+ * Where this workflow's state lives, and the identity its directory carries.
+ *
+ * The hash is the card's own; the creation time is the card's own when it
+ * has one, so a re-seed lands in the same directory instead of stranding
+ * the previous state beside a new one.
+ */
+function placeWorkflowState(
+  rootPath: string,
+  workflowId: string,
+  entry: unknown,
+  fresh: boolean,
+): { dirHash: string; created: string; stateDir: string; statePath: string } | null {
+  const dirHash = workflowDirHash(workflowId, fresh);
+  const created = text(record(entry).created) || new Date().toISOString();
+  const relativeDir = workflowStateRelativeDir({ created, dirHash });
+  if (!relativeDir) return null;
+  const stateDir = join(rootPath, relativeDir);
+  mkdirSync(stateDir, { recursive: true });
+  return { dirHash, created, stateDir, statePath: join(stateDir, "state.md") };
+}

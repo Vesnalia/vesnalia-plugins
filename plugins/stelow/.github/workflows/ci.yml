@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run quality:shape
+      - run: npm run quality:report
+      - run: npm run architecture
+      - run: npm test
+      # One command for the whole upstream boundary: the tree matches the pin,
+      # the pin was released, the pin answers every declared verb, and the
+      # transition projection agrees with the helper. The audit that produced
+      # this step found two blockers caught by instruments that existed and were
+      # never run together.
+      - run: npm run stelow-audit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: npm run security:production

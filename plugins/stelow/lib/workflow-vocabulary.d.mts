@@ -1,0 +1,27 @@
+export type WorkflowPhase = "analysis" | "planning" | "execution" | "review";
+export declare const WORKFLOW_PHASES: Array<{ id: WorkflowPhase; label: string }>;
+export declare const STELOW_UPSTREAM_BASE: string;
+export declare const STELOW_UPSTREAM_BLOB: string;
+export declare const WORKFLOW_STAGES: Array<{ id: string; label: string; phase: WorkflowPhase; skill: string; doc: string | null; docSkill?: string; produces: string; execution?: Record<string, unknown> }>;
+export declare const STAGE_BY_ID: Record<string, { id: string; label: string; phase: WorkflowPhase; skill: string; playbook: string | null; execution: { mode: string; recipe: string | null; required_capabilities: string[]; preferred_capabilities: string[]; write_policy: string; partition: string; permission_profile: string } }>;
+export declare const STAGE_SEQUENCE: string[];
+export declare const STAGE_LABELS: Record<string, string>;
+export declare const STAGE_PRODUCES: Record<string, string>;
+export declare const STAGE_SKILL: Record<string, string>;
+export declare const STAGE_DOC: Record<string, string | null>;
+export declare const PHASE_LABELS: Record<string, string>;
+export declare const BUILD_BOARD_TERMINALS: string[];
+export declare const BUILD_BOARD_INBOX: string;
+export declare const BUILD_BOARD_COLUMNS: string[];
+export declare const BUILD_BOARD_VISIBLE_COLUMNS: string[];
+export declare const BUILD_BOARD_COLUMN_LABELS: Record<string, string>;
+export declare const PHASE_ENTRY_STAGES: Record<WorkflowPhase, string>;
+export declare const STAGE_BANDS: Record<string, string[]>;
+export declare const STAGE_TO_BAND: Record<string, string>;
+/** The recipe a stage's execution runs, or null for direct execution. */
+export declare function stageRecipeId(stage: string): string | null;
+export declare function buildBoardColumnFor(card: { status: string; stage: string; workerThreadId?: string | null }): string;
+export declare function stageLabel(stage: string): string;
+export declare function stageSkill(stage: string): string | null;
+export declare function stageSkillUrl(stage: string): string | null;
+export declare function stageInfoUrl(stage: string): string | null;

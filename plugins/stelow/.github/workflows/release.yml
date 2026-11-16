@@ -1,0 +1,66 @@
+name: release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      # Cut a release by hand when a change is correctly typed but still has
+      # to ship. `refactor:` is documented as never bumping the version, which
+      # is right for a tidy-up and wrong for a 246-commit restructuring that
+      # moves artifact reads and preset migration. Such a merge would leave
+      # every install on the old version with no release to move to, and the
+      # only escape would be a fabricated commit whose type lies about intent.
+      release-as:
+        description: "Version to release, e.g. 0.52.0. Empty behaves as a normal run."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The guard reads the newest tag merged into HEAD; a shallow clone
+          # cannot see it and would report a healthy release as stranded.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: googleapis/release-please-action@v4
+        with:
+          release-type: node
+          # Empty string is release-please's own "no opinion"; passing an empty
+          # input keeps the automatic path identical to having no input at all.
+          release-as: ${{ inputs.release-as }}
+      # Release-please can fail to recognise that its own release pull request
+      # was merged — it then reports no baseline, diffs from the start of
+      # history, and opens a new release pull request re-listing months of
+      # shipped work, while saying nothing actionable. On v0.57.0 that left
+      # master bumped with no tag and every build green, so installs could not
+      # move forward. This step fails the run instead, naming the stranded
+      # version. Every ordinary push is `released` and an in-flight release
+      # pull request is `pending`, so only the broken state is red.
+      - name: Assert the version on master is published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-release-published.mjs
+      # A `BREAKING CHANGE:` on a 0.x line computes 1.0.0, and a 1.0.0 tag is a
+      # claim about API stability that nobody on this line has made. It cannot
+      # be softened from a config file: `release-type` is passed above, and that
+      # sends release-please down a path which never reads the config file. So
+      # the claim is refused here instead, naming the `release-as` input as the
+      # way through rather than leaving a human to notice the number.
+      - name: Refuse an unearned major version on the pre-1.0 line
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-release-major-claim.mjs

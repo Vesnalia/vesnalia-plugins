@@ -1,0 +1,34 @@
+/**
+ * Deliberately small first architecture gate. `app.tsx` uses server's RPC
+ * type contract, so a blanket app→server ban would fail honestly today.
+ * These rules instead enforce the boundaries that are already real and safe.
+ */
+module.exports = {
+  forbidden: [
+    {
+      name: "no-circular-dependencies",
+      comment: "Cycles make worker and UI changes harder for both humans and agents to reason about.",
+      severity: "error",
+      from: {},
+      to: { circular: true },
+    },
+    {
+      name: "server-slices-do-not-import-composition-root",
+      comment: "Feature slices must depend downward on contracts and libraries, never back into the host composition root.",
+      severity: "error",
+      from: { path: "^server/" },
+      to: { path: "^server\\.ts$" },
+    },
+    {
+      name: "lib-stays-host-neutral",
+      comment: "Shared library code must not reach into the VesnALIA server or React app layers (including server/ slices).",
+      severity: "error",
+      from: { path: "^lib/" },
+      to: { path: "^(app\\.tsx|server\\.ts|server/|components/|hooks/)" },
+    },
+  ],
+  options: {
+    doNotFollow: { path: "node_modules" },
+    tsConfig: { fileName: "tsconfig.json" },
+  },
+};

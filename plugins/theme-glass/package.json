@@ -1,0 +1,58 @@
+{
+  "name": "alia-plugin-theme-glass",
+  "version": "0.1.2",
+  "description": "Apple-style translucent glass theme for VesnALIA.",
+  "type": "module",
+  "private": true,
+  "keywords": [
+    "alia-plugin",
+    "theme",
+    "glass",
+    "translucent"
+  ],
+  "license": "MIT",
+  "alia": {
+    "name": "Theme Glass",
+    "description": "An Apple-style translucent glass palette: blurred chrome over a soft mesh wallpaper, for light and dark mode.",
+    "branding": {
+      "icon": "Layers"
+    },
+    "server": "./server.ts",
+    "skills": [
+      "skills"
+    ],
+    "themes": [
+      {
+        "id": "glass",
+        "name": "Glass",
+        "description": "Translucent glass chrome over a soft mesh wallpaper",
+        "css": "./themes/glass.css"
+      }
+    ]
+  },
+  "engines": {
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/theme-glass#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/theme-glass"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

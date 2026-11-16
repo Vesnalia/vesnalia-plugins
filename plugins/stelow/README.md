@@ -1,0 +1,68 @@
+# Stelow for VesnALIA
+
+Visualize and control [Stelow](https://github.com/calionauta/stelow) workflows inside VesnALIA. Created by the original [author of Stelow](https://github.com/calionauta).
+
+One board, one quiet inbox: shape proposals, explore interface directions,
+plan typed scopes, and execute with gated reviews and agent workers — with
+blocking questions, agent presets, and GitHub issue automation on top.
+
+> [!TIP]
+> Install now: [https://getbb.app/marketplace/stelow](https://getbb.app/marketplace/stelow)
+
+## Docs (single source of truth)
+
+The manual lives on the Stelow site, not here:
+
+- [Overview + getting started](https://calionauta.github.io/stelow/docs/)
+- [What the plugin adds](https://calionauta.github.io/stelow/docs/plugin/what-plugin-adds/) (core vs plugin)
+- [Install on VesnALIA](https://calionauta.github.io/stelow/docs/plugin/install-bb/)
+- [Board and inbox](https://calionauta.github.io/stelow/docs/plugin/board-and-inbox/) ·
+  [Agent presets](https://calionauta.github.io/stelow/docs/plugin/agent-presets/) ·
+  [Automation rules](https://calionauta.github.io/stelow/docs/plugin/automation-rules/) ·
+  [GitHub issues](https://calionauta.github.io/stelow/docs/plugin/github-issues/) ·
+  [Team playbook](https://calionauta.github.io/stelow/docs/plugin/team-playbook/) (experimental)
+
+`stelow.json` and `.stelow/` remain the source of truth for the workflow
+itself — the board reads them, never replaces them.
+
+## Requirements
+
+1. VesnALIA desktop ≥ 0.43 ([getbb.app](https://getbb.app)).
+2. A normal VesnALIA project backed by a local workspace source.
+3. Stelow skills: **bundled with the plugin** (shipped in `skills/`), no
+   separate install step.
+
+## Install
+
+Marketplace (Extensions → Plugins → Stelow), or:
+
+```bash
+alia plugin install "git:https://github.com/calionauta/bb-plugin-stelow.git@<tag>" --yes
+```
+
+(check the [releases](https://github.com/calionauta/bb-plugin-stelow/releases)
+for the latest tag). Third-party plugins are full-trust server code:
+install only sources you trust.
+
+## Use
+
+1. Open **Stelow** in VesnALIA's left navigation, select a project, choose
+   run knobs (quality defaults to production,
+   exploration to 3 + hybrid, acceptance tests to Strict) and **Review mode** (default Auto), and
+   submit a request. The card starts in Triage and the agent begins there.
+2. Answer structured questions in the form, the thread, or the card. The
+   agent waits instead of guessing.
+3. Open specs, plans, and diffs from the board; approve gates to record
+   portable receipts.
+4. Cards: **Enter** opens, **W** opens the worker thread, **Esc** goes back.
+
+CLI essentials: `alia stelow status`, `ask`, `advance`, `verify`, `review`,
+`preset list|add|assign` (full surface in [FEATURES.md](./FEATURES.md)).
+
+## For maintainers
+
+- [FEATURES.md](./FEATURES.md) — internal feature inventory (job-grouped).
+- [docs/README.md](./docs/README.md) — maintainer docs index and policy.
+- [CHANGELOG.md](./CHANGELOG.md) — per-release changes.
+- After any change: `npm run build:reload`. Never restart the host daemon
+  as a deploy step (it kills every running thread).

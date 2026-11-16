@@ -1,0 +1,59 @@
+---
+name: thread-switcher
+description: Explains the Thread Switcher plugin, the Control+Tab overlay (or a two-finger pinch on a phone) that previews recent VesnALIA threads and switches between them, and its hotkey, thread-count, ordering and pinch settings. Use when the user asks how to switch threads from the keyboard or on mobile, wants to change the switcher's shortcut or card count, or reports that Control+Tab or a pinch does something unexpected.
+---
+
+# Thread Switcher
+
+Holding the hotkey (Control+Tab by default) opens a row of cards over the VesnALIA window, one per recent
+thread, each with a preview of that chat's latest messages. Pressing the key again moves right,
+Shift moves left, arrow keys work too. Letting go of the modifier opens the selected thread; Enter
+does the same and Esc cancels. A quick tap goes back to the previous thread. The current thread comes
+first; with `attentionFirst` on (the default) threads waiting for input come next, then failed ones;
+the rest are ordered by when the user last opened each thread in this browser, then by latest
+activity. Archived and hidden threads are skipped.
+
+Under each preview: the title (up to two lines), the project with the time since last activity, and
+the branch. Each card has a status dot: amber needs input (a pending question or approval), red failed, blue
+pulsing working, green done — the same rules and colors as Thread Tree's sidebar. A card whose thread
+needs input also has an amber outline, and its preview shows the pending question prompts, the
+command or tool waiting for approval, or the form title instead of the latest messages. A card whose thread has subthreads (VesnALIA child threads,
+at any depth) ends its preview with a recap in Thread Tree's style, "8 subthreads ● 3 running": the
+total plus any that need input, failed or are running; the hover text adds the done count. Without
+subthreads, the same line counts the provider subagents in the thread's recent turns. The switcher
+deliberately doesn't show what a thread or subagent is doing.
+
+## On a touch screen
+
+Pinching two fingers together, as when zooming out of a photo, opens a full-screen grid of the same
+cards, two per row (three on a wide screen), with the current thread highlighted. Tap a card to open
+it. Spreading two fingers over the grid closes it, as do ✕, a tap on an empty spot, and Esc; the
+page doesn't zoom while the grid is open, and the keyboard hides when it opens.
+
+The pinch opens the grid only on a thread's chat or over the open thread list, and only when the
+page is at its normal zoom when the pinch starts. It does nothing on the new-thread screen, settings
+and other pages, with the right side panel open, under an opened photo, dialog or menu, or when the
+pinch is zooming a zoomed-in page back out.
+
+## Settings
+
+```sh
+alia plugin config thread-switcher                       # show values
+alia plugin config thread-switcher set hotkey "Option+Tab"
+alia plugin config thread-switcher set threadCount 8     # 2–20, default 6
+alia plugin config thread-switcher set attentionFirst false   # recency only
+alia plugin config thread-switcher set pinchToOpen false      # no pinch gesture
+```
+
+- `hotkey`: modifiers and one key joined by `+`. Modifiers: `Control`/`Ctrl`, `Option`/`Alt`,
+  `Command`/`Cmd`, `Shift`. At least one of Control, Option or Command is required. Keys: letters,
+  digits, `Tab`, `Space`, `` ` ``, `[`, `]`, `,`, `.`, `/`, `;`, `'`, `-`, `=`, `\`, arrows, `F1`–`F24`.
+  If the hotkey includes Shift, Shift no longer reverses direction.
+- The plugin's settings page also has **Record shortcut**, which saves whatever the user presses.
+
+## Limits
+
+- The recent-thread order lives in the browser's local storage, so each window or device keeps its
+  own.
+- The switcher catches the hotkey before VesnALIA does. If the user picks a combination VesnALIA or the OS uses,
+  the switcher wins inside VesnALIA, and the OS wins before the key reaches VesnALIA (Command+Tab never arrives).

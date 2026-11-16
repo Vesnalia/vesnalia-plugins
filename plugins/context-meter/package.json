@@ -1,0 +1,59 @@
+{
+  "name": "alia-plugin-context-meter",
+  "version": "0.1.6",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
+  },
+  "alia": {
+    "name": "Context Meter",
+    "description": "Keeps threads in the smart zone, by tracking context against a limit you set rather than the provider's full window.",
+    "branding": {
+      "icon": "./icon.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0"
+  },
+  "description": "Keeps threads in the smart zone, by tracking context against a limit you set rather than the provider's full window.",
+  "license": "MIT",
+  "files": [
+    "dist/",
+    "server.ts",
+    "app.tsx",
+    "icon.svg",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/context-meter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/context-meter"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

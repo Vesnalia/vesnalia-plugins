@@ -1,0 +1,56 @@
+Browse, edit, and save the files of a project, environment, or thread workspace
+without leaving VesnALIA.
+
+## What you get
+
+- A **Finder** page in the sidebar with a workspace picker, and a **Finder**
+  tab beside every thread, toggled by the folder button in the thread header.
+- A file tree with a dotfile toggle, a path filter, expand/collapse all,
+  refresh, new file, new folder, upload, rename, and delete. Right-click a row
+  for the same actions plus copy-path.
+- An **Outline** under the tree: the symbol tree of the file in front — classes,
+  functions, methods, headings, keys — read from the same grammar the editor
+  highlights with. Clicking a symbol puts the caret on it, and the panel's
+  height is resizable and remembered.
+- **Uncommitted changes**, read from git: a status letter on each changed file
+  in the tree, a count on every folder that holds one, and one list of the whole
+  change set. A click opens that file's diff, unified or side by side, and the
+  layout you pick is remembered.
+- Search in files: reads file contents across the whole workspace or one
+  folder, with match case, regexp, and whole-word toggles. Results group under
+  a sticky file header and a hit opens the file at its line.
+- A CodeMirror editor with syntax highlighting in your VesnALIA code theme, find in
+  file, go to line, multi-cursor, and code folding.
+- **Auto-save** (off by default) and a **line-wrap** toggle, both remembered
+  between sessions.
+- A markdown preview that renders **Mermaid** diagrams with VesnALIA's own message
+  renderer, so it looks like the rest of VesnALIA.
+- Copy the file's contents or its path in one click.
+- **Add a file, or just the selected lines, to the prompt**: it becomes an `@`
+  mention whose contents are resolved when the message is sent, so the agent
+  reads the file — or exactly those lines — as they are then. Select lines in
+  the editor and the toolbar button narrows to that range; Mod-Alt-A does the
+  same from the keyboard.
+- File references VesnALIA opens from chat render in this editor instead of VesnALIA's
+  read-only preview, with line targeting, find, edit, and save. Markdown keeps
+  VesnALIA's preview.
+
+## How it works
+
+The plugin resolves a workspace to a directory and a machine, then reads and
+writes through VesnALIA's host-aware file API, so a workspace on another machine
+works the same way. Paths are confined to the workspace root.
+
+Every save carries the hash the edit was based on. If an agent changed the file
+while you were typing, the save stops with a conflict notice and offers Reload
+or Save again rather than overwriting the agent's work.
+
+A write from anywhere, another tab, another device, or the plugin's CLI,
+refreshes every open tree over realtime.
+
+## For agents
+
+The bundled skill teaches an agent to resolve the workspace with `alia finder
+root` before touching paths, list it with `alia finder tree`, and read a file with
+`alia finder read <path>`. That matters because the workspace is not always on the
+machine the agent runs on.

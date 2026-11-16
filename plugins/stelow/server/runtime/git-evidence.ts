@@ -1,0 +1,374 @@
+/**
+ * Git and host-command evidence.
+ *
+ * Every surface that reports "what does this workspace look like right now"
+ * — card detail staleness, the verify judges, the diff RPC, the working-tree
+ * evidence snapshot, discard eligibility — reads the same commands through
+ * this module, so the answers cannot disagree about HEAD, dirty files, or
+ * which test command a checkout runs.
+ *
+ * Every read is fail-soft. A non-Git workspace or a git error reads as "no
+ * evidence", never as an error, because these surfaces report and the caller
+ * names the fix; the only exception is a worktree drop, which must fail
+ * loudly or a stale checkout would leak.
+ */
+import { execFile } from "node:child_process";
+import { verifyCommandEnv } from "../../lib/audit-verification.mjs";
+import { createHash } from "node:crypto";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+} from "node:fs";
+import { isAbsolute, join as nodeJoin } from "node:path";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { detectedTestCommand } from "../../lib/audit-verification.mjs";
+import type { WorkerCard } from "../workers-types.js";
+import { createDiscardEvidence } from "./discard-evidence.js";
+
+export type RecoveryGitEvidence = {
+  isGit: boolean;
+  gitRoot: string | null;
+  /** Repository identity, shared by a checkout and its linked worktrees. */
+  commonDir: string | null;
+  branch: string | null;
+  headSha: string | null;
+  changedFiles: number;
+};
+
+export type DetectedTestCommand = {
+  command: string;
+  args: string[];
+  display: string;
+};
+
+// Stelow's own machinery never makes a plan stale: filter it from the
+// touched-paths a staleness notice names.
+const STALENESS_NOISE_PREFIXES = [
+  "skills/",
+  "data/",
+  ".stelow/",
+  "stelow.json",
+];
+
+export type GitEvidenceDeps = {
+  alia: AliaPluginApi;
+  db: ReturnType<AliaPluginApi["storage"]["database"]>;
+  cardWorkspace: (card: WorkerCard) => Promise<{ path: string; hostId: string | null } | null>;
+};
+
+/** Run a git command in a directory; failures read as an empty stdout. */
+function runGitIn(
+  cwd: string,
+  args: string[],
+  maxBuffer = 1024 * 1024,
+): Promise<{ ok: boolean; stdout: string }> {
+  return new Promise((done) => {
+    execFile(
+      "git",
+      args,
+      { cwd, timeout: 15_000, maxBuffer },
+      (error, stdout) => {
+        done({
+          ok: !error,
+          stdout: typeof stdout === "string" ? stdout : "",
+        });
+      },
+    );
+  });
+}
+
+/** Remove a card's linked worktree and the branch it carried. */
+async function dropLinkedWorktree(
+  runGit: typeof runGitIn,
+  checkoutPath: string,
+  branch: string,
+): Promise<void> {
+  const common = await runGit(checkoutPath, [
+    "rev-parse",
+    "--git-common-dir",
+  ]);
+  const mainDir = common.ok ? common.stdout.trim() : "";
+  const mainPath = mainDir
+    ? isAbsolute(mainDir)
+      ? mainDir
+      : nodeJoin(checkoutPath, mainDir)
+    : "";
+  if (!mainPath) throw new Error("Cannot locate the main checkout.");
+  await runGit(mainPath, ["worktree", "unlock", checkoutPath]);
+  const removed = await runGit(mainPath, [
+    "worktree",
+    "remove",
+    "--force",
+    checkoutPath,
+  ]);
+  if (!removed.ok) throw new Error("Could not remove the worktree.");
+  const pruned = await runGit(mainPath, ["branch", "-D", branch]);
+  if (!pruned.ok) throw new Error("Worktree removed, but the branch survived.");
+  if (existsSync(checkoutPath)) {
+    throw new Error("The worktree folder survived removal.");
+  }
+}
+
+/**
+ * The one porcelain invocation every surface reads a working tree through.
+ *
+ * `-z` so a path is NUL-delimited and a path containing a space or a quote
+ * needs no unquoting, `core.quotepath=false` so a non-ASCII name arrives as
+ * itself, and `status.relativePaths=false` so paths are relative to the
+ * repository root — which is the same shape the claim ledger stores, so the
+ * two halves of "which files are mine" cannot disagree about what a file is
+ * called. Two definitions of this command is how that would happen.
+ */
+export function porcelainStatusArgs(): string[] {
+  return [
+    "-c",
+    "core.quotepath=false",
+    "-c",
+    "status.relativePaths=false",
+    "status",
+    "--porcelain=v1",
+    "-z",
+    "--untracked-files=all",
+  ];
+}
+
+/**
+ * The dirty paths of a working tree, raw — parsing belongs to the caller,
+ * because only the caller knows whether it wants counts, patches or names.
+ *
+ * Fail-soft: a non-Git path or a git error reads as no files and `ok: false`,
+ * never as a thrown error, because every surface here reports and the caller
+ * names the fix. The `ok` flag exists for the caller that has to tell "clean"
+ * apart from "could not be read": collapsing those two is a confident lie about
+ * somebody's working tree, and it is why this returns a result rather than a
+ * bare string.
+ */
+async function dirtyStatusResult(
+  runGit: typeof runGitIn,
+  checkoutPath: string,
+): Promise<{ ok: boolean; status: string }> {
+  try {
+    const result = await runGit(checkoutPath, porcelainStatusArgs(), 4 * 1024 * 1024);
+    return { ok: result.ok, status: result.ok ? result.stdout : "" };
+  } catch {
+    return { ok: false, status: "" };
+  }
+}
+
+/**
+ * The repository a path belongs to, independent of which directory the path
+ * is. `--git-common-dir` resolves to the main checkout's `.git` for the project
+ * checkout *and* for every linked worktree, so two directories of one
+ * repository agree here while two unrelated repositories never do.
+ *
+ * A linked worktree is the same repository; comparing directory paths was what
+ * made a card working in a worktree unable to reach Done.
+ */
+async function gitCommonDir(
+  runGit: typeof runGitIn,
+  path: string,
+): Promise<string | null> {
+  const common = await runGit(path, ["rev-parse", "--git-common-dir"]);
+  if (!common.ok) return null;
+  const dir = common.stdout.trim();
+  if (!dir) return null;
+  // Git resolves a relative answer against the directory it was invoked in, not
+  // against the path we asked about: in a project checkout it answers `.git`,
+  // in one of its worktrees an absolute path to the same place. Both shapes are
+  // valid, and `path.join` does not reset on an absolute second argument — it
+  // concatenates — so the absolute form must not be joined or it becomes
+  // `<checkout>/home/deploy/...`. realpath then normalizes the relative form and
+  // the symlinked temporary roots that mkdtemp and Tailscale hand out.
+  const absolute = isAbsolute(dir) ? dir : nodeJoin(path, dir);
+  return realpathSync(absolute);
+}
+
+/** What git can say about a path: root, branch, HEAD, dirty file count. */
+async function recoveryGitEvidence(
+  runGit: typeof runGitIn,
+  path: string,
+): Promise<RecoveryGitEvidence> {
+  const root = await runGit(path, ["rev-parse", "--show-toplevel"]);
+  if (!root.ok || !root.stdout.trim()) {
+    return {
+      isGit: false,
+      gitRoot: null,
+      commonDir: null,
+      branch: null,
+      headSha: null,
+      changedFiles: 0,
+    };
+  }
+  const [branch, head, status, common] = await Promise.all([
+    runGit(path, ["branch", "--show-current"]),
+    runGit(path, ["rev-parse", "HEAD"]),
+    runGit(path, ["status", "--porcelain=v1", "--untracked-files=all"]),
+    gitCommonDir(runGit, path),
+  ]);
+  return {
+    isGit: true,
+    gitRoot: root.stdout.trim(),
+    commonDir: common,
+    branch: branch.ok ? branch.stdout.trim() || null : null,
+    headSha: head.ok ? head.stdout.trim() || null : null,
+    changedFiles: status.ok
+      ? status.stdout.split("\n").filter(Boolean).length
+      : 0,
+  };
+}
+
+/**
+ * Files a checkout gained since an ask-time HEAD: what the human needs to
+ * judge whether a waiting question's plan still matches the code.
+ * Fail-soft — staleness is advisory, and an unreadable history must never
+ * break cardDetail.
+ */
+async function gitTouchedSince(
+  runGit: typeof runGitIn,
+  gitRoot: string,
+  fromHead: string,
+): Promise<{ commitCount: number; paths: string[] }> {
+  const empty = { commitCount: 0, paths: [] as string[] };
+  try {
+    const [count, log] = await Promise.all([
+      runGit(gitRoot, ["rev-list", "--count", `${fromHead}..HEAD`]),
+      runGit(
+        gitRoot,
+        ["log", "--name-only", "--pretty=format:", `${fromHead}..HEAD`, "--"],
+        4 * 1024 * 1024,
+      ),
+    ]);
+    if (!count.ok || !log.ok) return empty;
+    const seen = new Set<string>();
+    for (const line of log.stdout.split("\n")) {
+      const path = line.trim();
+      if (!path || seen.has(path) || isStelowNoise(path)) continue;
+      seen.add(path);
+    }
+    return {
+      commitCount: Number(count.stdout.trim()) || 0,
+      paths: [...seen].slice(0, 6),
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/** Stelow's own files never count as "the user changed the plan". */
+function isStelowNoise(path: string): boolean {
+  return STALENESS_NOISE_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(prefix),
+  );
+}
+
+/** Digest a host file, or null when it cannot be read. */
+async function sha256OfHostFile(
+  alia: AliaPluginApi,
+  path: string,
+): Promise<string | null> {
+  try {
+    const file = (await alia.sdk.files.read({ path }).catch(() => null)) as {
+      content?: unknown;
+    } | null;
+    if (!file || typeof file.content !== "string") return null;
+    return createHash("sha256").update(file.content, "utf8").digest("hex");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The checkout's safe conventional test command, detected from its own repo
+ * markers. Null means "no command this host can run", and the caller says so
+ * instead of inventing one.
+ */
+function testCommandForCheckout(path: string): DetectedTestCommand | null {
+  try {
+    const entries = readdirSync(path);
+    const packageJson = entries.includes("package.json")
+      ? JSON.parse(readFileSync(nodeJoin(path, "package.json"), "utf8"))
+      : null;
+    return detectedTestCommand(entries, packageJson);
+  } catch {
+    return null;
+  }
+}
+
+/** Run a host test command, reporting its exit code and combined output. */
+function runHostTests(
+  path: string,
+  command: DetectedTestCommand,
+): Promise<{ exitCode: number; output: string }> {
+  return new Promise((done) => {
+    execFile(
+      command.command,
+      command.args,
+      // Same rule as cli-verify-tasks: never inherit NODE_ENV. Under
+      // production react-dom resolves its production build, `React.act` does
+      // not exist, and every rendering band fails - which parks every build
+      // card at `audit`. This was the SECOND runner with the defect; fixing
+      // only the first left the card red.
+      { cwd: path, env: verifyCommandEnv(), timeout: 10 * 60_000, maxBuffer: 4 * 1024 * 1024 },
+      (error, stdout, stderr) => {
+        const code =
+          error && typeof (error as { code?: unknown }).code === "number"
+            ? (error as { code: number }).code
+            : error
+              ? 1
+              : 0;
+        const output =
+          `${typeof stdout === "string" ? stdout : ""}${typeof stderr === "string" ? `\n${stderr}` : ""}`.trim();
+        done({ exitCode: code, output });
+      },
+    );
+  });
+}
+
+/**
+ * Working-tree patch text for the advisory verify-* judges: raw evidence to
+ * judge against, capped by the caller's own budget. Fail-soft for the same
+ * reason as every other read here.
+ */
+function workingDiffFor(
+  workspacePath: string,
+  cap: number,
+): Promise<string> {
+  return new Promise((resolveDiff) => {
+    execFile(
+      "git",
+      ["diff", "HEAD", "--no-color", "--unified=1", "--", "."],
+      { cwd: workspacePath, timeout: 15000, maxBuffer: 4 * 1024 * 1024 },
+      (error, stdout) => {
+        resolveDiff(
+          !error && typeof stdout === "string" ? stdout.slice(0, cap) : "",
+        );
+      },
+    );
+  });
+}
+
+export function createGitEvidence(deps: GitEvidenceDeps) {
+  return {
+    runGitIn,
+    workingDiffFor,
+    testCommandForCheckout,
+    runHostTests,
+    sha256OfHostFile: (path: string) => sha256OfHostFile(deps.alia, path),
+    dropLinkedWorktree: (checkoutPath: string, branch: string) =>
+      dropLinkedWorktree(runGitIn, checkoutPath, branch),
+    recoveryGitEvidence: (path: string) =>
+      recoveryGitEvidence(runGitIn, path),
+    gitTouchedSince: (gitRoot: string, fromHead: string) =>
+      gitTouchedSince(runGitIn, gitRoot, fromHead),
+    dirtyStatusResultIn: (checkoutPath: string) => dirtyStatusResult(runGitIn, checkoutPath),
+    discardEvidence: createDiscardEvidence({
+      db: deps.db,
+      cardWorkspace: deps.cardWorkspace,
+      runGitIn,
+    }),
+  };
+}
+
+export type GitEvidence = ReturnType<typeof createGitEvidence>;

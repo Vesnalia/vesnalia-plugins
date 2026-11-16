@@ -1,0 +1,216 @@
+/**
+ * Explore/build stage contracts. The same eight entries serve Explore cards
+ * (`explore-<stage>.md`, keyed by technique id) and Build documents (matched
+ * by filename/title via contractForBuildArtifact): a spec-product.md IS the
+ * Shape Up proposal structure, a spec-tech.md IS the tech plan output.
+ * Interpreted by lib/artifact-validation.mjs.
+ */
+import { findByKey } from "./artifact-contract-lookup.mjs";
+
+const SHAPE_UP_SECTIONS = [
+  "unanswered questions",
+  "alternatives",
+  "problem",
+  "solution",
+  "dangers",
+  "out of scope",
+  "Scope Table",
+];
+
+const INTERFACE_SECTIONS = ["Work Pattern", "Philosophy", "Trade-Off", "State Coverage"];
+
+const ARCHITECTURE_SECTIONS = ["Construction Pattern", "Trade-Off", "Scope Compatibility"];
+
+const EXECUTION_SECTIONS = ["Summary", "Gap Registry", "Lessons Learned", "Decision"];
+
+// Interface Contrast is a bounded comparison, not a wireframe library, so its
+// rendering is short and table-free: the real one is 380 words with no tables.
+// Copying interface-alternatives' 800 words and 2 table rows would fail a
+// faithful contrast and stamp "missing or thin" on a document that is neither.
+// The sections below are the ones the method requires by name -- fixed
+// constraints, provenance, and a named exit -- plus the per-option headings
+// that make a comparison readable at all.
+const CONTRAST_SECTIONS = ["Fixed constraints", "Evidence", "Next action"];
+
+export const EXPLORE_CONTRACTS = [
+  {
+    id: "shape-up",
+    ref: "skills/stelow-workflow-shape-up/SKILL.md",
+    minWords: 800,
+    checks: [
+      { kind: "named-headings", level: null, names: SHAPE_UP_SECTIONS, match: "contains" },
+      { kind: "table-rows", min: 2 },
+      { kind: "contains", needles: ["quality:", "product_type:"] },
+    ],
+  },
+  {
+    id: "interface-alternatives",
+    ref: "skills/stelow-workflow-interface-alternatives/SKILL.md",
+    minWords: 800,
+    checks: [
+      { kind: "named-headings", level: null, names: INTERFACE_SECTIONS, match: "contains" },
+      { kind: "table-rows", min: 2 },
+      { kind: "contains", needles: ["ASCII"] },
+    ],
+  },
+  {
+    id: "interface-contrast",
+    ref: "skills/stelow-workflow-interface-contrast/SKILL.md",
+    // Below the real rendering's 380 words, and far above a stub: the method
+    // caps the comparison at a handful of options, so a high floor would
+    // reject correct work.
+    minWords: 250,
+    checks: [
+      { kind: "named-headings", level: null, names: CONTRAST_SECTIONS, match: "contains" },
+      // A comparison with no options is not a comparison. The stems are the
+      // names real briefs give them -- "Option A" and "Proposal A" both occur,
+      // in the same document set. Requiring one spelling failed a faithful
+      // contrast that used the other.
+      { kind: "headings", level: 2, min: 2, startsWithAny: ["Option", "Proposal", "Alternative", "Direction", "Variant"] },
+    ],
+  },
+  {
+    id: "architecture-alternatives",
+    ref: "skills/stelow-workflow-architecture-alternatives/SKILL.md",
+    minWords: 600,
+    checks: [
+      { kind: "named-headings", level: null, names: ARCHITECTURE_SECTIONS, match: "contains" },
+      { kind: "table-rows", min: 2 },
+      { kind: "contains", needles: ["Trade-Off"] },
+    ],
+  },
+  {
+    id: "architecture-contrast",
+    ref: "skills/stelow-workflow-architecture-contrast/SKILL.md",
+    minWords: 250,
+    checks: [
+      { kind: "named-headings", level: null, names: CONTRAST_SECTIONS, match: "contains" },
+      // Same rule as interaction contrast: a comparison with no options is
+      // not a comparison. Direction stems included for construction briefs.
+      { kind: "headings", level: 2, min: 2, startsWithAny: ["Option", "Proposal", "Alternative", "Direction", "Variant"] },
+    ],
+  },
+  {
+    id: "plan-critique",
+    ref: "skills/stelow-workflow-plan-critique/SKILL.md",
+    minWords: 600,
+    checks: [
+      { kind: "contains", needles: ["gaps:", "Executive Summary", "Strengths", "verdict"] },
+    ],
+  },
+  {
+    id: "tech-planning",
+    ref: "skills/stelow-workflow-tech-planning/SKILL.md",
+    minWords: 800,
+    checks: [
+      { kind: "named-headings", level: null, names: ["Identified Scopes", "Sequence"], match: "contains" },
+      { kind: "table-rows", min: 2 },
+      { kind: "table-columns", names: ["Task", "Done Criterion"] },
+      { kind: "contains", needles: ["Dependencies", "Done Criterion"] },
+    ],
+  },
+  {
+    id: "codebase-critique",
+    ref: "skills/stelow-workflow-codebase-critique/SKILL.md",
+    minWords: 600,
+    checks: [
+      { kind: "contains", needles: ["Executive Summary", "Strengths"] },
+    ],
+  },
+  {
+    id: "ux-critique",
+    ref: "skills/stelow-workflow-ux-critique/SKILL.md",
+    minWords: 600,
+    checks: [
+      { kind: "contains", needles: ["Executive Summary", "Strengths", "accessibility"] },
+    ],
+  },
+  {
+    id: "testing-ai-code",
+    ref: "skills/stelow-workflow-testing-ai-code/SKILL.md",
+    minWords: 600,
+    checks: [
+      { kind: "table-rows", min: 4 },
+      { kind: "contains", needles: ["product_type", "Test Scopes", "CI/CD Gates"] },
+    ],
+  },
+  {
+    id: "execution-critique",
+    ref: "skills/stelow-workflow-execution-critique/SKILL.md",
+    minWords: 800,
+    checks: [
+      { kind: "named-headings", level: null, names: EXECUTION_SECTIONS, match: "contains" },
+      { kind: "table-rows", min: 4 },
+      { kind: "gap-registry" },
+    ],
+  },
+];
+
+/** Explore contract by technique id, or null when unmigrated. */
+export function contractForExplore(stageId) {
+  return findByKey(EXPLORE_CONTRACTS, "id", stageId);
+}
+
+const BUILD_PATH_RULES = [
+  { match: "spec-product", contract: "shape-up" },
+  { match: "spec-tech", contract: "tech-planning" },
+  { match: "selected-interface", contract: "interface-alternatives" },
+  { match: "selected-architecture", contract: "architecture-alternatives" },
+  { match: "architecture_", contract: "architecture-alternatives" },
+  { match: "direction-", contract: "architecture-alternatives" },
+  { match: "interfaces_", contract: "interface-alternatives" },
+  { match: "proposal-", contract: "interface-alternatives" },
+  { match: "testing-strategy", contract: "testing-ai-code" },
+  { match: "codebase", contract: "codebase-critique" },
+  { match: "live-audit", contract: "ux-critique" },
+  { match: "screenshot-audit", contract: "ux-critique" },
+  { match: "critique-report", contract: "plan-critique" },
+];
+
+const BUILD_TITLE_RULES = [
+  { match: "Execution Critique Report", contract: "execution-critique" },
+];
+
+/** Markdown basename; every Build match keys off the name, not the directory. */
+function buildBaseName(filePath) {
+  return String(filePath ?? "").split("/").pop() ?? "";
+}
+
+/** Documents that are bookkeeping, not deliverables — they never block. */
+function isExcludedBase(base) {
+  return base === "audit.md" || base === "state.md" || base.endsWith("-approved.md");
+}
+
+/** Explicit critique directories win over the generic `critique-report` rule. */
+function critiqueByPath(lower, fullLower) {
+  if (fullLower.includes("codebase-critique") || lower.includes("codebase")) return "codebase-critique";
+  const auditMarkers = ["ux-critique", "live-audit", "screenshot-audit"];
+  if (auditMarkers.some((marker) => fullLower.includes(marker))) return "ux-critique";
+  return null;
+}
+
+function firstRuleMatch(rules, haystack) {
+  for (const rule of rules) {
+    if (haystack.includes(rule.match)) return rule.contract;
+  }
+  return null;
+}
+
+/**
+ * Stage contract for a Build document by filename, falling back to title
+ * markers. Returns null for unknown shapes (audit.md, receipts, state
+ * bookkeeping): unrecognized documents never block completion.
+ */
+export function contractForBuildArtifact(filePath, content) {
+  const base = buildBaseName(filePath);
+  if (!base.endsWith(".md")) return null;
+  if (isExcludedBase(base)) return null;
+  const lower = base.toLowerCase();
+  const critique = critiqueByPath(lower, String(filePath ?? "").toLowerCase());
+  if (critique) return contractForExplore(critique);
+  const byName = firstRuleMatch(BUILD_PATH_RULES, lower);
+  if (byName) return contractForExplore(byName);
+  const body = typeof content === "string" ? content : "";
+  const byTitle = firstRuleMatch(BUILD_TITLE_RULES, body);
+  return byTitle ? contractForExplore(byTitle) : null;
+}

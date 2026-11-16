@@ -1,0 +1,54 @@
+{
+  "name": "alia-plugin-compact-rail",
+  "version": "0.1.3",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
+  },
+  "alia": {
+    "name": "Compact Rail",
+    "description": "Make more room on a small desktop screen with a 40 px navigation rail and frame gutters at 60% of their default size.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "skills": [],
+    "themes": [
+      {
+        "id": "compact-rail",
+        "name": "Compact Rail",
+        "description": "Compact desktop navigation and reduced frame gutters with default VesnALIA colors.",
+        "css": "./themes/compact-rail.css"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "19.3.0",
+    "hono": "4.13.13",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/compact-rail#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/compact-rail"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

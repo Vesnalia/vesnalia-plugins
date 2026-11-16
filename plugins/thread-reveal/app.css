@@ -1,0 +1,22 @@
+.alia-thread-reveal-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.alia-thread-reveal-button svg { width: 16px; height: 16px; }
+.alia-thread-reveal-button:hover { background: var(--state-hover); color: var(--foreground); }
+.alia-thread-reveal-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+[data-thread-reveal-highlight] { outline: 2px solid var(--ring); outline-offset: -2px; border-radius: 5px; }
+@media (pointer: coarse) {
+  .alia-thread-reveal-button { width: 36px; height: 36px; }
+}

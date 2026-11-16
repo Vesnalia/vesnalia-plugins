@@ -1,0 +1,53 @@
+{
+  "name": "alia-plugin-super-diff",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.4.34"
+  },
+  "alia": {
+    "name": "Super Diff",
+    "description": "Group a thread's diff by concern in the Diff tab, with an explanation for each group and notes under the lines that need them.",
+    "branding": {
+      "icon": "Layers"
+    },
+    "app": "./app.tsx",
+    "server": "./server.ts"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.12"
+  },
+  "dependencies": {
+    "@danielbachhuber/bb-plugin-component-library": "^1.5.0",
+    "zod": "^4.6.5"
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/super-diff#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/super-diff"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

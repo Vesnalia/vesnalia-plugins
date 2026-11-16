@@ -1,0 +1,168 @@
+/**
+ * The runtime core: every seam a surface may reach for, built once.
+ *
+ * The composition root used to spell this out inline, hand-copying twenty-odd
+ * arguments into every factory. Here the shared seams are constructed in
+ * dependency order and handed to each surface as one object, so a new
+ * surface takes what it needs instead of an argument list that can silently
+ * drift from the factory's contract.
+ *
+ * Order is the reason this is a function and not a bag of consts: the
+ * services must exist before the workers that respawn into them, the workers
+ * before the checkout seam, and the checkout seam before the ask seam that
+ * reads the stage through it.
+ */
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createTrackCapabilities } from "./track-capabilities.js";
+import { createTrackPrompts } from "./track-prompts.js";
+import { createDecisionSurface } from "./decision-surface.js";
+import { createRuntimeServices } from "./runtime-services.js";
+import { startRuntimeServices } from "./lifecycle-startup.js";
+import { createCardLedger, randomId } from "./card-ledger.js";
+import { createReadRuntime } from "./read-runtime.js";
+import {
+  createBriefingSurface,
+  createDraftRuntime,
+  createGatePreReviewRuntime,
+  createWorkerRuntime,
+  type WorkerRuntimeDeps,
+} from "./runtime-workers.js";
+import { loadBoard, boardFromRoot } from "./board-read.js";
+import { roundRelPath } from "./card-seams.js";
+import { strategyList, strategyRounds } from "./track-projection.js";
+import { stripMessageDirectives } from "./message-text.js";
+import {
+  resolveWorkflowStateDir,
+  workflowStateDir,
+  ensureProjectArtifacts,
+} from "./workflow-state.js";
+import { runHelper } from "./helper-script.js";
+import { projectRoot } from "./root-paths.js";
+import { BUILD_INFO } from "../plugin-paths.js";
+import { TRACK_PROTOCOL_CLAUSES } from "./track-protocol-clauses.js";
+import { createAskTimeoutSetting } from "./ask-timeout-setting.js";
+import { createActionRecorder } from "./action-log-runtime.js";
+import type { ActionRecorder } from "./action-log-runtime.js";
+
+export type RuntimeCore = ReturnType<typeof createRuntimeCore>;
+
+function startPluginUpdates(
+  alia: AliaPluginApi,
+  db: ReturnType<AliaPluginApi["storage"]["database"]>,
+  now: () => number,
+) {
+  return startRuntimeServices({
+    alia,
+    db,
+    now,
+    installedVersion: BUILD_INFO.version,
+  }).updates;
+}
+
+export function createRuntimeCore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  const now = () => Date.now();
+  const { askTimeoutMs } = createAskTimeoutSetting(alia);
+  // Runner order matters: `startPluginUpdates` opens the migration pass, and
+  // the recorder must exist after it so its table is already there. The
+  // recorder is built before services because every surface below receives it.
+  const pluginUpdates = startPluginUpdates(alia, db, now);
+  const actions: ActionRecorder = createActionRecorder({
+    db,
+    now,
+    onFailure: (message) => alia.log.warn(message),
+  });
+  const ledger = createCardLedger({ db, now, actions });
+  const services = createRuntimeServices({ alia, db, now, randomId, actions });
+  // The tracks carry the NARROWER bag: no stages and no gates means no stage,
+  // advance, split, recon or seed clause, and the track half of the completion
+  // rule instead of the build-only payload. Named as a bag so the set is
+  // declared in one place rather than assembled at this call site.
+  const prompts = createTrackPrompts(TRACK_PROTOCOL_CLAUSES);
+  const workers = createWorkerRuntime({ alia, db, now, services, ledger, prompts, actions });
+  const deps = { alia, db, now, services, ledger, prompts, actions };
+  return {
+    alia,
+    db,
+    now,
+    randomId,
+    askTimeoutMs,
+    actions,
+    ledger,
+    prompts,
+    pluginUpdates,
+    ...services,
+    ...workers,
+    ...createSpawnSurfaces(deps, workers),
+    ...createReadRuntime({
+      ...deps,
+      workerEnvironmentOf: workers.workers.workerEnvironmentOf,
+    }),
+    ...createDecisionAndTrackCore(alia, db, now, services),
+    ...staticSeams(),
+  };
+}
+
+/** The seams with no state of their own: pure reads and paths a surface needs
+ * without a factory. Collected here so the core's construction stays a list of
+ * *things that are built*, in the order they must be built. */
+function staticSeams() {
+  return {
+    roundRelPath,
+    strategyList,
+    strategyRounds,
+    stripMessageDirectives,
+    // Unbound, so a call site that already holds the host keeps passing it.
+    loadBoard,
+    boardFromRoot,
+    workflowStateDir,
+    resolveWorkflowStateDir,
+    ensureProjectArtifacts,
+    runHelper,
+    projectRoot,
+  };
+}
+
+/**
+ * The three surfaces that spawn their own threads: drafts, briefings and gate
+ * pre-reviews. They share an environment builder and a disposable spawner, so
+ * they are constructed together rather than three times inline — the inline
+ * version is what pushed the composition root past its function budget.
+ */
+function createSpawnSurfaces(
+  deps: WorkerRuntimeDeps,
+  workers: ReturnType<typeof createWorkerRuntime>,
+) {
+  const shared = { ...deps, ...workers };
+  const drafting = createDraftRuntime(shared);
+  // Late-bind the Start-time title hook: workers were constructed before
+  // drafting existed, so the holder waited empty until now. Same
+  // fire-and-forget shape as creation (cards-create-persist.ts).
+  workers.titleRefresh.request = (cardId) => {
+    void drafting.suggestCardName(cardId).catch(() => undefined);
+  };
+  return {
+    drafting,
+    briefings: createBriefingSurface(shared),
+    requestGatePreReview: createGatePreReviewRuntime(shared),
+  };
+}
+
+/** The decision client and the track catalog the surfaces reach for. */
+function createDecisionAndTrackCore(
+  alia: AliaPluginApi,
+  db: ReturnType<AliaPluginApi["storage"]["database"]>,
+  now: () => number,
+  services: ReturnType<typeof createRuntimeServices>,
+) {
+  return {
+    decision: createDecisionSurface({
+      db,
+      alia,
+      now,
+      judgeViaPreset: services.judgeViaPreset,
+      presetExists: (id: string) => services.presetServer.getPresetById(id) !== null,
+    }),
+    trackCapabilities: createTrackCapabilities(),
+  };
+}

@@ -1,0 +1,94 @@
+// Policy only: VesnALIA owns Git/forge execution. Keeping these decisions pure makes
+// the panel and the server agree about what is safe to offer.
+
+export function publicationBlocker(status) {
+  if (!status || status.outcome !== "available") {
+    return status?.outcome === "not_applicable"
+      ? "This workspace is not a Git repository."
+      : status?.failure?.message ?? "This workspace is unavailable on its host.";
+  }
+  const { checkout } = status.workspace;
+  if (checkout.kind !== "branch" || !checkout.branchName) return "Publishing requires a checked-out branch.";
+  return null;
+}
+
+/**
+ * A default branch is a deliberate publishing destination, not an invalid
+ * checkout. The caller uses this signal to require an unambiguous confirmation
+ * and to keep pull-request-only actions on feature branches.
+ */
+export function isDefaultBranchCheckout(status) {
+  if (!status || status.outcome !== "available") return false;
+  const { checkout, branch } = status.workspace;
+  return checkout.kind === "branch" && Boolean(checkout.branchName) && checkout.branchName === branch.defaultBranch;
+}
+
+export function canCommitPublication(status) {
+  const blocker = publicationBlocker(status);
+  if (blocker) return { ok: false, reason: blocker };
+  return status.workspace.workingTree.hasUncommittedChanges
+    ? { ok: true, reason: null }
+    : { ok: false, reason: "The working tree is clean — there is nothing to commit." };
+}
+
+export function canSquashMerge(status) {
+  const blocker = publicationBlocker(status);
+  if (blocker) return { ok: false, reason: blocker };
+  if (isDefaultBranchCheckout(status)) {
+    return { ok: false, reason: "This checkout is already on the default branch. Save its local commit instead." };
+  }
+  const base = status.workspace.mergeBase;
+  if (!base?.hasCommittedUnmergedChanges) return { ok: false, reason: "There are no committed branch changes to squash into the base branch." };
+  if (status.workspace.workingTree.hasUncommittedChanges) return { ok: false, reason: "Commit or discard working-tree changes before a local squash merge." };
+  return { ok: true, reason: null };
+}
+
+function pullRequestBlocker(status, pullRequest) {
+  const blocker = publicationBlocker(status);
+  if (blocker) return blocker;
+  if (isDefaultBranchCheckout(status)) return "Pull-request actions require a feature branch. This card is using the default branch selected in VesnALIA.";
+  if (!pullRequest || pullRequest.outcome !== "available") {
+    return pullRequest?.outcome === "absent" ? "There is no pull request for this branch." : pullRequest?.message ?? "Pull-request status is unavailable.";
+  }
+  return null;
+}
+
+// Ready and draft are one predicate with the two states swapped. Written
+// twice they drift: the blocker chain is the safety rule, and a fix has to
+// land in both or the panel and the server disagree about what is safe to
+// offer. The caller names the direction and the "already there" message.
+function pullRequestStateChange(status, pullRequest, { from, to, already }) {
+  const blocker = pullRequestBlocker(status, pullRequest);
+  if (blocker) return { ok: false, reason: blocker };
+  const pr = pullRequest.pullRequest;
+  if (pr.state === from) return { ok: true, reason: null };
+  if (pr.state === to) return { ok: false, reason: already };
+  return { ok: false, reason: `This pull request is ${pr.state}.` };
+}
+
+export function canMarkPullRequestReady(status, pullRequest) {
+  return pullRequestStateChange(status, pullRequest, { from: "draft", to: "open", already: "This pull request is already ready for review." });
+}
+
+export function canMarkPullRequestDraft(status, pullRequest) {
+  return pullRequestStateChange(status, pullRequest, { from: "open", to: "draft", already: "This pull request is already a draft." });
+}
+
+export function canMergePullRequest(status, pullRequest) {
+  const blocker = pullRequestBlocker(status, pullRequest);
+  if (blocker) return { ok: false, reason: blocker };
+  const pr = pullRequest.pullRequest;
+  if (pr.state !== "open") return { ok: false, reason: `This pull request is ${pr.state}.` };
+  if (pr.review.state !== "approved") return { ok: false, reason: "An approving review is still required." };
+  if (pr.checks.state !== "passing") return { ok: false, reason: "Required checks are not passing." };
+  if (pr.mergeability.state !== "mergeable") return { ok: false, reason: "GitHub has not confirmed that this pull request is mergeable." };
+  return { ok: true, reason: null };
+}
+
+export function publicationSource(environment) {
+  if (!environment) return "Project source";
+  if (environment.isWorktree || environment.workspaceProvisionType === "managed-worktree") {
+    return environment.branchName ? `Worker worktree · ${environment.branchName}` : "Worker worktree";
+  }
+  return "Worker checkout";
+}

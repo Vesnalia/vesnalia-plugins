@@ -1,0 +1,49 @@
+{
+  "name": "alia-plugin-image-preview",
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
+  },
+  "alia": {
+    "name": "Image Preview",
+    "description": "Turn chat images into compact previews with an accessible click-to-expand lightbox.",
+    "branding": {
+      "icon": "Image"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "^29.0.1",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.1"
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/image-preview#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/image-preview"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

@@ -1,0 +1,137 @@
+import assert from "node:assert/strict";
+import {
+  researchRoundMirrorsIndex,
+  isValidRoundContent,
+  isValidExploreContent,
+  exploreArtifactFile,
+  findInvalidRounds,
+  findInvalidSubsteps,
+  substepQuality,
+  researchVerifyReport,
+  researchVerifyText,
+  exploreVerifyReport,
+  exploreVerifyText,
+} from "../lib/research-artifacts.mjs";
+
+const INDEX = "# Research index\n\n## Opportunities\n\n- [ ] Something\n";
+const ROUND = `# Opportunity mapping — round 1\n\n${"Real playbook output with substance. ".repeat(20)}`;
+
+// Mirroring: identical content or the index heading shape means the playbook
+// output never landed in the round file.
+assert.equal(researchRoundMirrorsIndex(INDEX, INDEX), true, "identical content mirrors");
+assert.equal(researchRoundMirrorsIndex("# Research index\n\nmy notes", INDEX), true, "index heading mirrors");
+assert.equal(researchRoundMirrorsIndex(ROUND, INDEX), false, "real output does not mirror");
+assert.equal(researchRoundMirrorsIndex(null, INDEX), false, "missing content does not mirror");
+assert.equal(researchRoundMirrorsIndex(ROUND, null), false, "no index means no mirror verdict");
+
+// Validity: non-empty + minimum substance + not a mirror.
+assert.equal(isValidRoundContent(ROUND, INDEX), true, "real round is valid");
+assert.equal(isValidRoundContent("", INDEX), false, "empty round is invalid");
+assert.equal(isValidRoundContent("short", INDEX), false, "thin round is invalid");
+assert.equal(isValidRoundContent(INDEX, INDEX), false, "mirrored round is invalid");
+assert.equal(isValidRoundContent(null, INDEX), false, "missing round is invalid");
+
+// Explore: single file, no index to mirror — presence + substance only.
+assert.equal(isValidExploreContent("# Shape Up\n\n" + "x".repeat(300)), true, "real explore artifact is valid");
+assert.equal(isValidExploreContent(""), false, "empty explore artifact is invalid");
+assert.equal(isValidExploreContent("   \n\t"), false, "whitespace-only explore artifact is invalid");
+assert.equal(isValidExploreContent("thin"), false, "thin explore artifact is invalid");
+assert.equal(isValidExploreContent("", null), false, "explicit null threshold still invalid");
+assert.equal(exploreArtifactFile("shape-up"), "explore-shape-up.md", "explore file convention");
+
+// Scan: every invalid round is named in order; valid rounds never surface.
+const history = [
+  { id: "a", at: "t1", file: "rounds/a-r1.md" },
+  { id: "b", at: "t2", file: "rounds/b-r2.md" },
+  { id: "c", at: "t3", file: "rounds/c-r3.md" },
+];
+const files = { "rounds/a-r1.md": ROUND, "rounds/b-r2.md": INDEX, "rounds/c-r3.md": "" };
+const invalid = findInvalidRounds(history, (path) => files[path] ?? null, INDEX, (id) => ({ a: "A", b: "B", c: "C" })[id] ?? null);
+assert.deepEqual(invalid, [{ n: 2, label: "B" }, { n: 3, label: "C" }], "invalid rounds named in order");
+assert.deepEqual(findInvalidRounds([], () => null, INDEX, null), [], "empty history is clean");
+
+// Verify reports: PASS needs a reviewable index AND zero invalid rounds —
+// the same verdict the sync gate, the CLI, and the prompt all share.
+const passReport = researchVerifyReport("card_1", 2, true, []);
+assert.equal(passReport.pass, true, "clean rounds pass");
+assert.deepEqual(researchVerifyText(passReport), { exitCode: 0, stdout: "PASS: research card_1 — index reviewable, all 2 round file(s) valid." }, "pass text");
+assert.deepEqual(researchVerifyReport("card_1", 2, true, [{ n: 2, label: "B" }]).pass, false, "invalid round fails even with reviewable index");
+const failRounds = researchVerifyText(researchVerifyReport("card_1", 2, true, [{ n: 2, label: "B" }]));
+assert.equal(failRounds.exitCode, 1, "round failure exits 1");
+assert.match(failRounds.stderr, /FAIL round 2 \(B\)/, "round failure names the round");
+const failIndex = researchVerifyText(researchVerifyReport("card_1", 0, false, []));
+assert.equal(failIndex.exitCode, 1, "unreviewable index exits 1");
+assert.match(failIndex.stderr, /not reviewable yet/, "index failure names the index");
+
+// Evidence honesty: a structurally passing card that declared web research
+// unavailable carries hypothesis-only, never reads as complete research.
+const hypoPass = researchVerifyText(researchVerifyReport("card_1", 1, true, [], "hypothesis-only"));
+assert.equal(hypoPass.exitCode, 0, "hypothesis-only still passes structurally");
+assert.match(hypoPass.stdout, /hypothesis-only/, "pass names hypothesis-only");
+const verifiedPass = researchVerifyText(researchVerifyReport("card_1", 1, true, []));
+assert.doesNotMatch(verifiedPass.stdout ?? "", /hypothesis-only/, "verified pass carries no note");
+
+const explorePass = exploreVerifyReport("card_9", "shape-up", true);
+assert.equal(explorePass.pass, true, "real explore artifact passes");
+assert.deepEqual(exploreVerifyText(explorePass), { exitCode: 0, stdout: "PASS: explore card_9 — explore-shape-up.md holds the stage deliverable." }, "explore pass text");
+const exploreFail = exploreVerifyText(exploreVerifyReport("card_9", "shape-up", false));
+assert.equal(exploreFail.exitCode, 1, "thin explore artifact exits 1");
+assert.match(exploreFail.stderr, /explore-shape-up\.md is missing or thin/, "explore failure names the file");
+
+// Substeps: each registered file gates completion on its own — a valid
+// primary with a thin substep still fails, naming the substep and reason.
+const subs = [
+  { n: 1, label: "Jobs to be done", slug: "functional-needs", path: "rounds/jtbd-functional-needs-r1.md" },
+  { n: 1, label: "Jobs to be done", slug: "financial-needs", path: "rounds/jtbd-financial-needs-r1.md" },
+  { n: 1, label: "Jobs to be done", slug: "job-map-steps", path: "rounds/jtbd-job-map-steps-r1.md" },
+];
+const subFiles = {
+  "rounds/jtbd-functional-needs-r1.md": ROUND,
+  "rounds/jtbd-financial-needs-r1.md": "short",
+  "rounds/jtbd-job-map-steps-r1.md": null,
+};
+assert.deepEqual(
+  findInvalidSubsteps(subs, (path) => subFiles[path] ?? null, INDEX),
+  [
+    { n: 1, label: "Jobs to be done", slug: "financial-needs", reason: "thin" },
+    { n: 1, label: "Jobs to be done", slug: "job-map-steps", reason: "missing" },
+  ],
+  "thin and missing substeps named with reasons",
+);
+assert.deepEqual(findInvalidSubsteps([], () => null, INDEX), [], "no substeps is clean");
+assert.deepEqual(
+  findInvalidSubsteps(
+    [{ n: 2, label: "B", slug: "x", path: "f.md" }],
+    () => INDEX,
+    INDEX,
+  ),
+  [{ n: 2, label: "B", slug: "x", reason: "mirrors-index" }],
+  "mirrored substep fails",
+);
+// Gate composition: primary valid + substep thin means the round is NOT done.
+assert.equal(findInvalidRounds([{ id: "a", at: "t", file: "p.md" }], () => ROUND, INDEX, () => "A").length, 0, "primary valid alone");
+assert.equal(findInvalidSubsteps(subs, (path) => subFiles[path] ?? null, INDEX).length, 2, "but its substeps still block");
+const subFailText = researchVerifyText(researchVerifyReport("card_1", 1, true, [{ n: 1, label: "Jobs to be done", slug: "financial-needs", reason: "thin" }]));
+assert.equal(subFailText.exitCode, 1, "substep failure exits 1");
+assert.match(subFailText.stderr, /financial-needs/, "substep failure names the slug");
+
+// Display quality: every expected slug reports missing/invalid/needs-depth/ready.
+const quality = substepQuality(
+  ["a", "b", "c"],
+  [{ slug: "a", content: ROUND }, { slug: "b", content: "short" }],
+  INDEX,
+  (slug, content) => (content.length > 100 ? ["needs more"] : []),
+);
+assert.deepEqual(quality, [
+  { slug: "a", status: "needs-depth" },
+  { slug: "b", status: "invalid" },
+  { slug: "c", status: "missing" },
+], "per-substep statuses");
+assert.deepEqual(substepQuality([], [{ slug: "a", content: ROUND }], INDEX), [], "no expected slugs means no rows");
+assert.deepEqual(
+  substepQuality(["a"], [{ slug: "a", content: ROUND }], INDEX),
+  [{ slug: "a", status: "ready" }],
+  "no depthCheck keeps presence-only display",
+);
+
+console.log("research artifacts test ok: mirror detection, validity, integrity scan, verify reports");

@@ -1,0 +1,111 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { ownsWorkflowState, stateWorkflowId, upsertWorkflowEntry, workflowDirHash, workflowEntryForOwner, workflowIdForName, workflowStateRelativeDir } from "../lib/workflow-state-identity.mjs";
+
+const oldSameName = { name: "jogo-da-velha", dirHash: "sw-old", created: "2026-09-04T17:14:57.065Z" };
+const firstCard = { workflowId: "card_first", name: "jogo-da-velha", dirHash: "sw-first", created: "2026-09-12T20:00:00.000Z" };
+const secondCard = { workflowId: "card_second", name: "jogo-da-velha", dirHash: "sw-second", created: "2026-09-12T20:01:00.000Z" };
+
+// A row with a name but no owner is intentionally unclaimable: guessing is how cards
+// used to inherit each other's state.
+assert.equal(workflowEntryForOwner([oldSameName], "card_first"), null);
+
+const afterFirst = upsertWorkflowEntry([oldSameName], firstCard);
+const afterSecond = upsertWorkflowEntry(afterFirst, secondCard);
+assert.equal(afterSecond.length, 3, "same-name cards coexist instead of replacing each other");
+assert.equal(workflowEntryForOwner(afterSecond, "card_first", "sw-first"), firstCard);
+assert.equal(workflowEntryForOwner(afterSecond, "card_second", "sw-second"), secondCard);
+assert.equal(workflowEntryForOwner(afterSecond, "card_second", "sw-first"), null, "dir hashes cannot cross owners");
+assert.equal(workflowStateRelativeDir(firstCard), ".stelow/2026-09-12/sw-first");
+assert.equal(workflowDirHash("card_first", false, 1), "sw-card_first");
+assert.equal(workflowDirHash("card_first", true, 36), "sw-card_first-10");
+assert.notEqual(workflowDirHash("card_first"), workflowDirHash("card_second"), "different cards have different state directories");
+
+const firstState = "---\nworkflow_id: card_first\nname: jogo-da-velha\ncurrent_stage: triage\n---\n";
+assert.equal(stateWorkflowId(firstState), "card_first");
+assert.equal(ownsWorkflowState(firstState, "card_first"), true);
+assert.equal(ownsWorkflowState(firstState, "card_second"), false, "a state file never belongs to a same-name card");
+
+const updatedFirst = { ...firstCard, dirHash: "sw-reseed" };
+const afterReseed = upsertWorkflowEntry(afterSecond, updatedFirst);
+assert.equal(afterReseed.length, 3, "reseed replaces only the same owner");
+assert.equal(workflowEntryForOwner(afterReseed, "card_first", "sw-reseed")?.dirHash, "sw-reseed");
+
+// Seeding by name is idempotent: the same name yields the same owner, so a
+// second seed reuses one entry and one directory instead of adding a twin.
+assert.equal(workflowIdForName("Auth refactor"), "sw_auth-refactor", "a seeded owner reads as a stelow workflow");
+assert.equal(workflowIdForName("  auth  refactor "), workflowIdForName("Auth refactor"), "the same name always yields the same owner");
+assert.notEqual(workflowIdForName("auth"), workflowIdForName("auth-2"), "different names stay different workflows");
+assert.match(workflowIdForName("!!!"), /^sw_[a-z]/, "an unsluggable name still yields an owner");
+assert.ok(!workflowIdForName("auth").startsWith("card_"), "a seeded owner can never collide with a card owner");
+
+// A re-seed keeps the workflow's first `created`: the state path
+// (.stelow/<created>/<dirHash>) must never move, or it strands the old dir.
+const reseededLater = upsertWorkflowEntry(afterSecond, { ...firstCard, dirHash: "sw-second-gen", created: "2026-10-01T00:00:00.000Z" });
+const keptEntry = workflowEntryForOwner(reseededLater, "card_first");
+assert.equal(keptEntry?.created, firstCard.created, "a re-seed keeps the first created date");
+assert.equal(workflowStateRelativeDir(keptEntry), ".stelow/2026-09-12/sw-second-gen", "the state dir stays under the original date");
+
+// Server contract: a third same-name card reads no scopes — the same rule that
+// keeps state.md apart applies to the board's scope progress.
+assert.equal(workflowEntryForOwner([firstCard, secondCard], "card_third"), null, "an unknown owner reads no scopes");
+const serverSource = [
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../server.ts"), "utf8"),
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "../server/plugin-runtime.ts"),
+    "utf8",
+  ),
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../server/cards-create.ts"), "utf8"),
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../server/cards.ts"), "utf8"),
+  // The seed owns its own module; the wiring layers only call it.
+  readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "../server/runtime/workflow-seeding.ts"),
+    "utf8",
+  ),
+  ...[
+    "card-surfaces",
+    "card-creator",
+    "gate-surfaces",
+    "execution-surfaces",
+    "host-surfaces",
+    "cli-surfaces",
+    "rpc-surfaces",
+  ].map((name) =>
+    readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        `../server/runtime/wiring/${name}.ts`,
+      ),
+      "utf8",
+    ),
+  ),
+].join("\n");
+const scopeReads = [...serverSource.matchAll(/(?<!function )loadCardScopes\(([^,]+),\s*([^,)]+)/g)].map((match) => match[2].trim());
+assert.ok(scopeReads.length > 0, "the card-scope read sites are covered by this contract");
+for (const owner of scopeReads) {
+  assert.match(owner, /\.id$/, `card scopes resolve by owner id, got ${owner}`);
+}
+
+// Server contract: whatever seeds, seeds an owner. Card work binds the card id;
+// human-seeded work derives a stable owner from its name. A freshly minted id
+// here is how a second, unresolvable state directory gets created.
+const normalizedServerSource = serverSource.replace(/\s+/g, " ");
+const seedOwners = [...normalizedServerSource.matchAll(/seedWorkflow\( ?(?:alia|deps\.alia), [^,]+, ([^,]+),/g)].map((match) => match[1].trim());
+assert.ok(seedOwners.length >= 4, "every seed call site is covered by this contract");
+for (const owner of seedOwners) {
+  assert.ok(
+    /(\.id|Id|cardId)$/.test(owner) || owner.startsWith("workflowIdForName("),
+    `seeding binds an owner, got seedWorkflow(VesnALIA, rootPath, ${owner}, ...)`,
+  );
+}
+
+// Server contract: the seed writes the state path through the resolver that
+// readers use, keeps the workflow's first `created`, and re-seeds by returning
+// the existing directory — never by deriving a path of its own or adding a twin.
+assert.match(serverSource, /workflowStateRelativeDir\(\{ created, dirHash \}\)/, "the seed derives its state dir through the same resolver readers use");
+assert.match(serverSource, /if \(reusable && entryDir\)/, "re-seeding an owned workflow is a no-op");
+assert.ok(!/const date = new Date\(\)\.toISOString\(\)\.slice/.test(serverSource), "the seed no longer derives the path date segment itself");
+
+console.log("workflow state identity test ok: immutable owner, owner-bound seeding, stable state path, idempotent re-seed, owner-only scope reads");

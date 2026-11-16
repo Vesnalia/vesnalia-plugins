@@ -1,0 +1,310 @@
+import type { ReactNode } from "react";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
+import { INTENT_LABEL } from "../detail/card-detail-route";
+import { kanbanGridColumns } from "../../lib/kanban-layout.mjs";
+import {
+  BUILD_BOARD_COLUMN_LABELS,
+  BUILD_BOARD_VISIBLE_COLUMNS,
+} from "../../lib/workflow-vocabulary.mjs";
+import { BuildControlStrip } from "./build-control-strip";
+import { BoardScrollHint, PanelHeader } from "./panel-header";
+import { BuildList } from "../board/track-lists";
+import { BoardColumn } from "../board/board-column";
+import { BuildHeaderActions } from "./build-header-actions";
+import { archivedDeleteProps } from "../board/archived-delete-props";
+import { useDeleteArchivedCards } from "../board/use-delete-archived-cards";
+import { BoardCard } from "../board/board-cards";
+import { FlowStrip } from "../board/flow-strip";
+import { ReviewQueue } from "../board/review-queue";
+import { HillBoard } from "../board/hill-board";
+import { BulkBarSlot } from "../board/build-bulk-bar";
+import { boardBottomPadding } from "../../lib/bulk-bar-placement.mjs";
+import { Button } from "../ui/button";
+import type { BuildPanelState } from "./build-panel-types";
+
+
+type Props = {
+  state: BuildPanelState;
+  dialogs: ReactNode;
+  onNewIssue: () => void;
+  onOpenPresets: () => void;
+  onOpenGithub: () => void;
+  onOpenCard: (
+    card: { kind: "build" | "research" | "explore" },
+    cardId: string,
+  ) => void;
+  onOpenThread: (threadId: string) => void;
+};
+
+type BuildHeaderProps = {
+  attentionCount: number;
+  groupedInbox: BuildPanelState["grouped"]["inbox"];
+  githubAutomationEnabled: boolean;
+  onNewIssue: () => void;
+  onOpenCard: Props["onOpenCard"];
+  onAttention: () => void;
+  onOpenPresets: () => void;
+  onOpenGithub: () => void;
+};
+
+/**
+ * The header's copy. The sentence is the track's own explanation, so it keeps
+ * the full width of a narrow panel instead of being folded beside the actions.
+ */
+const BUILD_BLURB =
+  "An AI agent carries each card through a structured workflow—from triage to "
+  + "scope-by-scope execution—pausing for your decisions wherever your review "
+  + "mode requires it.";
+
+function BuildHeader(props: BuildHeaderProps) {
+  return (
+    <PanelHeader
+      title="Build"
+      blurb={BUILD_BLURB}
+      attentionCount={props.attentionCount}
+      onAttention={props.onAttention}
+      actions={<BuildHeaderActions {...props} />}
+    />
+  );
+}
+
+function GithubAuthNotice({ enabled }: { enabled: boolean }) {
+  if (!enabled) return null;
+  return (
+    <div className="mb-3 flex flex-col gap-1 rounded-md border p-2 text-xs sm:flex-row sm:items-center sm:gap-2">
+      <span className="text-amber-700 dark:text-amber-300">
+        Import issues needs a GitHub account linked in the{" "}
+        <span className="font-medium">github</span> plugin.
+      </span>
+      <a
+        className="text-primary underline underline-offset-2"
+        href="https://github.com/settings/tokens"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Set up GitHub auth
+      </a>
+    </div>
+  );
+}
+
+function EmptyBuildState({ onNewIssue }: { onNewIssue: () => void }) {
+  return (
+    <section className="rounded-md border border-dashed bg-muted/30 p-6 text-center">
+      <h2 className="text-sm font-semibold text-foreground">
+        Product work, guided end to end
+      </h2>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+        Stelow is an opinionated product workflow for humans and AI agents.
+        Start with an outcome or problem; it guides the work through framing,
+        critique, planning, execution, and review.
+      </p>
+      <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
+        <Button onClick={onNewIssue}>Start new issue</Button>
+        <UrlLink
+          href="https://github.com/calionauta/stelow"
+          className="text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          Learn about Stelow <span aria-hidden="true">↗</span>
+        </UrlLink>
+      </div>
+    </section>
+  );
+}
+
+function BuildBoardView({
+  state,
+  onOpenCard,
+  onOpenThread,
+}: Omit<Props, "dialogs" | "attentionCount" | "onNewIssue">) {
+  return (
+    <>
+      {/* The bar lives HERE, not inside the kanban. The select mode reaches two
+          surfaces — the board and the list — and the bar is the only visible exit
+          from it. Rendered from inside `BuildBoardKanban`, selecting in list view
+          armed the mode with no bar, no `Done` and no `Select all`: the exit
+          existed only on the one view the reader had just left. */}
+      <BulkBarSlot state={state} />
+      <BuildSurface state={state} onOpenCard={onOpenCard} onOpenThread={onOpenThread} />
+    </>
+  );
+}
+
+/** Which view renders, and what it needs to reserve for the bar above. */
+function BuildSurface({
+  state,
+  onOpenCard,
+  onOpenThread,
+}: {
+  state: BuildPanelState;
+  onOpenCard: Props["onOpenCard"];
+  onOpenThread: Props["onOpenThread"];
+}) {
+  if (state.viewMode === "list") {
+    return (
+      // The list reserves the same strip the kanban does. The bar floats over
+      // whatever is under it, and without this it covered the last rows of a list
+      // the reader had just selected from.
+      <div className={boardBottomPadding(state.selectMode)}>
+        <BuildList
+          groups={state.grouped}
+          collapsed={state.collapsedListGroups}
+          onToggle={state.toggleListGroup}
+          onOpenCard={(card) => onOpenCard(card, card.id)}
+          onOpenThread={onOpenThread}
+          selection={{
+            selectMode: state.selectMode,
+            selectedIds: state.selectedIds,
+            onToggleSelection: state.toggleSelection,
+          }}
+        />
+      </div>
+    );
+  }
+  if (state.viewMode === "hill") {
+    // The hill renders neither a checkbox nor the bar's verbs, so the mode is
+    // disarmed on arrival. The bar is still mounted above, so the two surfaces
+    // cannot disagree about whether an exit exists.
+    return (
+      <HillBoard
+        cards={Object.values(state.grouped).flat()}
+        onOpenCard={(card) => onOpenCard(card, card.id)}
+      />
+    );
+  }
+  return <BuildBoardKanban state={state} onOpenCard={onOpenCard} />;
+}
+
+/**
+ * The kanban grid itself. View routing and the selection bar above it live in
+ * `BuildBoardView`, because the bar belongs to the MODE and the mode reaches more
+ * than this view.
+ */
+function BuildBoardKanban({ state, onOpenCard }: {
+  state: BuildPanelState;
+  onOpenCard: (card: { kind: "build" | "research" | "explore" }, cardId: string) => void;
+}) {
+  const onConfirm = useDeleteArchivedCards(state.rpc);
+  return (
+    <>
+      <div
+        data-testid="kanban-board"
+        // Two layouts, chosen by breakpoint — see lib/kanban-layout.mjs for why a phone
+        // needs a second one rather than a narrower first one.
+        className={[
+          // The bottom padding reserves the strip the floating bulk bar occupies, and only
+          // while it is present: an unselected board keeps its full height.
+          `flex snap-x snap-mandatory justify-start gap-3 overflow-x-auto overscroll-x-contain ${boardBottomPadding(state.selectMode)}`,
+          // A tablet gets the grid, but not the fixed height: the header above it
+          // is stacked until `lg`, so reserving a viewport height here would make
+          // the page scroll and the columns scroll at once. Natural height until
+          // `lg`, then the bounded column scroller the desktop board is.
+          "md:grid md:snap-none lg:h-[clamp(20rem,calc(100dvh-17rem),48rem)] lg:overflow-y-hidden",
+        ].join(" ")}
+        style={{
+          // The mobile tracks are applied as explicit widths on the children instead of a
+          // grid template, because a snap container needs its items to be the snap points
+          // and a grid template cannot express `scroll-snap-align`.
+          gridTemplateColumns: kanbanGridColumns(
+            BUILD_BOARD_VISIBLE_COLUMNS,
+            state.collapsedColumns,
+          ),
+        }}
+      >
+        {BUILD_BOARD_VISIBLE_COLUMNS.map((column) => (
+          <BuildBoardColumn
+            key={column}
+            column={column}
+            state={state}
+            onOpenCard={onOpenCard}
+            onConfirm={onConfirm}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+/**
+ * One column of the build board, with its delete-all derived here rather than
+ * in the column component — the blast radius is `state.grouped[column]`, the
+ * cards the active filter resolved, and the confirmation has to name that same
+ * filter. Deriving it in one place per board is what stops the two from
+ * disagreeing about what is about to be destroyed.
+ */
+function BuildBoardColumn(props: {
+  column: string;
+  state: BuildPanelState;
+  onOpenCard: Props["onOpenCard"];
+  onConfirm: (cardIds: string[]) => Promise<void>;
+}) {
+  const { column, state, onOpenCard, onConfirm } = props;
+  return (
+    <BoardColumn
+      column={column}
+      cards={state.grouped[column]}
+      collapsed={Boolean(state.collapsedColumns[column])}
+      onToggleCollapsed={() => state.toggleColumn(column)}
+      labels={BUILD_BOARD_COLUMN_LABELS}
+      renderCard={(card) => (
+        <BoardCard
+          card={card}
+          onOpen={() => onOpenCard(card, card.id)}
+          selected={state.selectedIds.has(card.id)}
+          selectMode={state.selectMode}
+          onToggleSelection={state.toggleSelection}
+        />
+      )}
+      deleteAll={archivedDeleteProps({
+        column,
+        cards: state.grouped[column],
+        filters: state,
+        labels: { ...INTENT_LABEL, ...BUILD_BOARD_COLUMN_LABELS },
+        projects: state.projects,
+        onConfirm,
+      })}
+    />
+  );
+}
+
+export function BuildPanelView(props: Props) {
+  const { state } = props;
+  const attentionCount = state.cards.filter(
+    (card) => card.needsAttention && card.status !== "archived",
+  ).length;
+  return (
+    <>
+      {props.dialogs}
+      <BuildHeader
+        attentionCount={attentionCount}
+        groupedInbox={state.grouped.inbox}
+        githubAutomationEnabled={state.githubAutomationEnabled}
+        onNewIssue={props.onNewIssue}
+        onOpenPresets={props.onOpenPresets}
+        onOpenGithub={props.onOpenGithub}
+        onOpenCard={props.onOpenCard}
+        onAttention={() => state.setAttention(true)}
+      />
+      <GithubAuthNotice enabled={state.githubAuthMissing} />
+      <BuildControlStrip state={state} onAttention={() => state.setAttention(true)} />
+      {state.cards.length === 0 && !state.loading ? (
+        <EmptyBuildState onNewIssue={props.onNewIssue} />
+      ) : null}
+      {state.viewMode === "board" ? <BoardScrollHint /> : null}
+      <FlowStrip
+        rpc={state.rpc}
+        projectId={state.projectIds.length === 1 ? state.projectIds[0] ?? null : null}
+        onOpenCard={(kind, cardId) => props.onOpenCard({ kind }, cardId)}
+      />
+      {/* The queue reads the same cards the board renders, so it sits beside the
+          flow line in the chrome rather than inside a column: what it answers is
+          about the whole board, and no single column owns it. */}
+      <ReviewQueue
+        rpc={state.rpc}
+        cards={state.cards}
+        onOpenCard={(cardId) => props.onOpenCard({ kind: "build" }, cardId)}
+      />
+      <BuildBoardView {...props} />
+    </>
+  );
+}

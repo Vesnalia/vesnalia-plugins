@@ -1,0 +1,58 @@
+{
+  "name": "alia-plugin-traces",
+  "version": "0.1.1",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0",
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.6"
+  },
+  "alia": {
+    "name": "Traces",
+    "description": "Index local agent sessions and trajectories in one private explorer.",
+    "branding": {
+      "icon": "Activity"
+    },
+    "server": "./server.ts",
+    "host": "./host.ts",
+    "app": "./app.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.mts",
+    "build": "alia plugin build ."
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "jsdom": "29.0.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "^5.7.0",
+    "vitest": "4.1.1"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.8"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/traces#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/traces"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

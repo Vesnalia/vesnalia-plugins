@@ -1,0 +1,91 @@
+import assert from "node:assert/strict";
+import {
+  buildReviewPrompt,
+  extractJsonBlock,
+  isContradictoryApproval,
+  parseReviewOutput,
+  reviewCoversFingerprint,
+  reviewSummary,
+  MAX_REVIEW_CHARS,
+} from "../lib/review-verdict.mjs";
+
+const ARTIFACT = "## Top 10:\n#### 1/10 Ensure outcome one\n- Alternative: achieve result one\n";
+
+// Prompt carries the contract, the request, and the truncation note. The
+// builder returns { prompt, excerpt }: the excerpt report is what lets a caller
+// record WHICH excerpt the reviewer saw, not merely that there was one.
+const { prompt, excerpt } = buildReviewPrompt({
+  cardName: "Card",
+  request: "Map jobs",
+  contractLabel: "functional-needs: 10 criteria",
+  artifactContent: ARTIFACT,
+  deterministicFailures: [],
+  evidence: "verified",
+});
+assert.match(prompt, /functional-needs: 10 criteria/, "prompt names the contract");
+assert.match(prompt, /Map jobs/, "prompt names the request");
+assert.match(prompt, /verbatim/, "prompt demands quotes");
+assert.ok(!prompt.includes("truncated"), "short artifact carries no truncation note");
+assert.equal(excerpt.selected, "whole", "a fitting artifact is reported as sent whole");
+assert.equal(excerpt.truncated, false, "and not as truncated");
+const long = buildReviewPrompt({ cardName: "C", request: "R", contractLabel: "L", artifactContent: "x".repeat(MAX_REVIEW_CHARS + 1) });
+assert.match(long.prompt, /truncated/, "long artifact is marked truncated");
+assert.equal(long.excerpt.selected, "head", "with no contract the head slice is the honest report");
+assert.equal(long.excerpt.originalChars, MAX_REVIEW_CHARS + 1, "the original size is reported");
+const hypo = buildReviewPrompt({ cardName: "C", request: "R", contractLabel: "L", artifactContent: "x", evidence: "hypothesis-only" });
+assert.match(hypo.prompt, /do not penalize missing external sources/, "hypothesis-only adjusts the rubric");
+
+// Valid verdict with an exact quote passes; fabricated quotes drop the finding.
+const good = '```json\n{"verdict": "needs-revision", "findings": [{"criterion": "scope fits", "quote": "#### 1/10 Ensure outcome one", "verdict": "FAIL", "repair": "add metrics"}]}\n```';
+const parsed = parseReviewOutput(good, ARTIFACT);
+assert.equal(parsed.status, "needs-revision", "verdict kept");
+assert.equal(parsed.findings.length, 1, "exact quote kept");
+assert.equal(parsed.dropped, 0, "nothing dropped");
+const forged = '```json\n{"verdict": "pass", "findings": [{"criterion": "scope fits", "quote": "a sentence never written", "verdict": "PASS", "repair": "none"}]}\n```';
+const forgedParsed = parseReviewOutput(forged, ARTIFACT);
+assert.equal(forgedParsed.findings.length, 0, "fabricated quote dropped");
+assert.equal(forgedParsed.dropped, 1, "drop counted");
+assert.equal(forgedParsed.status, "pass", "status survives dropped findings");
+
+// Malformed output degrades to human-review, never throws.
+assert.equal(parseReviewOutput("no json here", ARTIFACT).status, "human-review", "missing block is human-review");
+assert.equal(parseReviewOutput("```json\nnot json\n```", ARTIFACT).status, "human-review", "bad json is human-review");
+assert.equal(parseReviewOutput('```json\n{"verdict": "superb"}\n```', ARTIFACT).status, "human-review", "unknown verdict is human-review");
+assert.equal(extractJsonBlock("nothing"), null, "no block is null");
+
+// Summary names verdict, counts, and drops.
+assert.match(reviewSummary(parsed), /needs-revision.*1 finding\(s\), 1 failing/, "summary counts");
+assert.match(reviewSummary(forgedParsed), /1 finding\(s\) dropped/, "summary names drops");
+
+// Policy gate: only a passing review stamped with this fingerprint counts.
+const reviews = [
+  { name: "review-b.md", content: "Status: pass\nFingerprint: 3\n" },
+  { name: "review-a.md", content: "Status: needs-revision\nFingerprint: 2\n" },
+];
+assert.equal(reviewCoversFingerprint(reviews, "3"), true, "passing review covers its fingerprint");
+assert.equal(reviewCoversFingerprint(reviews, "2"), false, "failing review never covers");
+assert.equal(reviewCoversFingerprint(reviews, "9"), false, "stale fingerprint is uncovered");
+assert.equal(reviewCoversFingerprint([], "3"), false, "no reviews means uncovered");
+assert.equal(reviewCoversFingerprint([{ name: "x.md", content: "free prose" }], "3"), false, "unshaped files never satisfy");
+
+// A pass that carries FAIL findings is discarded: the approval contradicts
+// its own quoted evidence, so it degrades to human-review and never covers.
+const contradictionFinding = '{"criterion": "scope fits",'
+  + ' "quote": "#### 1/10 Ensure outcome one",'
+  + ' "verdict": "FAIL", "repair": "narrow scope"}';
+const contradiction = '```json\n{"verdict": "pass",'
+  + ` "findings": [${contradictionFinding}]}\n\`\`\``;
+const contradicted = parseReviewOutput(contradiction, ARTIFACT);
+assert.equal(contradicted.status, "human-review", "contradictory pass is thrown out");
+assert.equal(contradicted.contradictory, true, "contradiction flagged");
+assert.equal(contradicted.findings.length, 1, "evidence preserved for the human");
+assert.match(reviewSummary(contradicted), /Contradictory pass discarded/, "summary names the discard");
+assert.equal(isContradictoryApproval(contradicted), false, "a degraded verdict is no longer a pass");
+assert.equal(isContradictoryApproval({ status: "pass", findings: [{ verdict: "FAIL" }] }), true, "pass with FAIL is contradictory");
+assert.equal(isContradictoryApproval({ status: "pass", findings: [{ verdict: "PASS" }] }), false, "clean pass stands");
+assert.equal(isContradictoryApproval({ status: "needs-revision", findings: [{ verdict: "FAIL" }] }), false, "non-pass never contradicts");
+assert.equal(isContradictoryApproval(null), false, "malformed input is not contradictory");
+assert.equal(parsed.contradictory, false, "ordinary verdict carries a false flag");
+assert.equal(forgedParsed.contradictory, false, "dropped-quote pass carries a false flag");
+
+console.log("review verdict test ok: prompt shaping, quote verification, graceful degradation");

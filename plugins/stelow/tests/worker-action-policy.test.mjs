@@ -1,0 +1,53 @@
+import assert from "node:assert/strict";
+import { isArchivedCard, stripArchivedResuscitation, workerActionPolicy, workerSectionPolicy } from "../lib/worker-action-policy.mjs";
+
+assert.deepEqual(
+  workerActionPolicy({ status: "in-progress", activity: "running" }),
+  {
+    archived: false, hasActiveWorker: true, showPresetControls: true,
+    showRestartFresh: false, showArchive: true, showDelete: false,
+    showRestore: false, showDiscard: true,
+  },
+  "a healthy worker has no recovery action",
+);
+assert.equal(workerActionPolicy({ status: "in-progress", activity: "error" }).showRestartFresh, true, "worker error can recover");
+assert.equal(workerActionPolicy({ status: "in-progress", activity: "idle" }, true).showRestartFresh, true, "attention-needed idle worker can recover");
+assert.equal(workerActionPolicy({ status: "completed", activity: "idle" }).showRestartFresh, false, "completed card is not a recovery case");
+assert.equal(isArchivedCard({ status: "archived" }), true, "archived status is terminal");
+assert.equal(isArchivedCard({ status: "completed" }), false, "completed is not archived");
+assert.deepEqual(
+  workerActionPolicy({ status: "archived", activity: "error" }, true),
+  {
+    archived: true, hasActiveWorker: false, showPresetControls: false,
+    showRestartFresh: false, showArchive: false, showDelete: true,
+    showRestore: true, showDiscard: true,
+  },
+  "archived cards are terminal",
+);
+assert.equal(workerSectionPolicy({ status: "archived", activity: "idle" }, false, { historyCount: 0 }).showSection, false, "an archived card with no worker context omits the Worker section");
+assert.equal(workerSectionPolicy({ status: "archived", activity: "idle" }, false, { historyCount: 1 }).showSection, true, "worker history keeps the archived Worker section useful");
+assert.equal(workerSectionPolicy({ status: "archived", activity: "idle" }, false, { hasGithubLink: true }).showSection, true, "a GitHub link keeps the archived Worker section useful");
+assert.equal(workerSectionPolicy({ status: "in-progress", activity: "idle" }).showSection, true, "live cards retain their preset controls");
+
+assert.deepEqual(
+  stripArchivedResuscitation("archived", { status: "completed", activity: "idle" }),
+  { activity: "idle" },
+  "a settling worker cannot flip an archived card back to completed",
+);
+assert.deepEqual(
+  stripArchivedResuscitation("archived", { status: "archived", activity: "idle" }),
+  { status: "archived", activity: "idle" },
+  "archiving itself always passes through",
+);
+assert.deepEqual(
+  stripArchivedResuscitation("completed", { status: "archived" }),
+  { status: "archived" },
+  "live cards archive normally",
+);
+assert.deepEqual(
+  stripArchivedResuscitation("archived", { activity: "error" }),
+  { activity: "error" },
+  "non-status writes are untouched",
+);
+
+console.log("worker action policy test ok: lifecycle actions and Worker visibility stay coherent");

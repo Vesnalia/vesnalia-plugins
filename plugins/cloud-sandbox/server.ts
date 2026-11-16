@@ -1,0 +1,2097 @@
+// alia-plugin-cloud-sandbox — cloud machines backed by Vercel Sandboxes.
+//
+// A "cloud machine" is a Vercel Sandbox that has enrolled itself as a VesnALIA
+// machine, so it shows up alongside local machines and can run threads. The
+// interface is entirely graphical: a Vercel Sandboxes page and a settings
+// section for connecting a Vercel account over OAuth.
+import { randomUUID } from "node:crypto";
+import { tmpdir } from "node:os";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { z } from "zod";
+import { inferScope } from "@vercel/sandbox/dist/auth/index.js";
+import {
+  pollForSession,
+  refreshSession,
+  revokeToken,
+  startDeviceAuthorization,
+  type AuthSession,
+  type DeviceAuthorization,
+} from "./auth.js";
+import {
+  createMachine,
+  destroyMachine,
+  fetchSessionStarts,
+  listMachines,
+  describeSandboxError,
+  stopMachine,
+  wakeMachine,
+  THREAD_MACHINE_PREFIX,
+  type EnrollmentDetails,
+  type MachineSandbox,
+  type SandboxCredentials,
+} from "./machines.js";
+import { AGENT_PROVIDERS, type AgentCredential } from "./agents.js";
+import {
+  isThreadMachineProvider,
+  parseThreadMachineResource,
+  registerThreadMachine,
+  type ThreadMachineDeps,
+  type ThreadMachineResource,
+} from "./machine-provider.js";
+import {
+  GH_TOKEN,
+  GIT_AUTHOR_EMAIL,
+  GIT_AUTHOR_NAME,
+  GitHubImportError,
+  importLocalGitHubIdentity,
+  readProfile,
+  withDerivedGitIdentity,
+} from "./github.js";
+import {
+  assertSafeEnvKey,
+  buildImage,
+  DEFAULT_REPOSITORY,
+  deleteImagesForTag,
+  findPreset,
+  TEMPLATE_PRESETS,
+  pruneUntaggedImages,
+  type RegistryCleanupResult,
+} from "./templates.js";
+
+/** Debug events kept for troubleshooting. Bounded to stay under the kv cap. */
+const MAX_EVENTS = 200;
+const MACHINES_CHANGED = "machines-changed";
+const TEMPLATES_CHANGED = "templates-changed";
+const AUTH_CHANGED = "auth-changed";
+const REFRESH_SKEW_MS = 60_000;
+/** Vercel's sandbox lifetime ceilings, per plan, as the setting stores them. */
+const HOBBY_TIMEOUT_SECONDS = "2700";
+const PRO_TIMEOUT_SECONDS = "86400";
+
+const teamBillingSchema = z.object({
+  billing: z.object({ plan: z.string() }),
+});
+
+/**
+ * The billing plan ("hobby", "pro", "enterprise") of the team sandboxes run
+ * in, or null if Vercel will not say. This is the same field inferScope
+ * reads to pick a team, so the sign-in token is known to be allowed to read it.
+ */
+async function fetchTeamPlan(
+  token: string,
+  teamId: string,
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.vercel.com/v2/teams/${encodeURIComponent(teamId)}`,
+      { headers: { authorization: `Bearer ${token}` } },
+    );
+    if (!response.ok) return null;
+    const parsed = teamBillingSchema.safeParse(await response.json());
+    return parsed.success ? parsed.data.billing.plan : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The machine lifetime to switch to for `plan`, or null to leave the setting
+ * alone. Only a value that is still one of the plan ceilings is replaced: a
+ * custom lifetime is the user's choice, and signing in must not overwrite it.
+ */
+function timeoutForPlan(current: string, plan: string | null): string | null {
+  if (plan === null) return null;
+  const trimmed = current.trim();
+  if (
+    trimmed !== "" &&
+    trimmed !== HOBBY_TIMEOUT_SECONDS &&
+    trimmed !== PRO_TIMEOUT_SECONDS
+  ) {
+    return null;
+  }
+  const target = plan === "hobby" ? HOBBY_TIMEOUT_SECONDS : PRO_TIMEOUT_SECONDS;
+  return target === trimmed ? null : target;
+}
+
+const storedSessionSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string().nullable(),
+  expiresAt: z.number(),
+  teamId: z.string(),
+  projectId: z.string(),
+  teamSlug: z.string().nullable(),
+  projectSlug: z.string().nullable(),
+});
+type StoredSession = z.infer<typeof storedSessionSchema>;
+
+const authStatusSchema = z.object({
+  state: z.enum(["signed-out", "pending", "signed-in"]),
+  verificationUriComplete: z.string().nullable(),
+  userCode: z.string().nullable(),
+  teamSlug: z.string().nullable(),
+  projectSlug: z.string().nullable(),
+  error: z.string().nullable(),
+});
+export type AuthStatus = z.infer<typeof authStatusSchema>;
+
+/**
+ * A debug event. This is the plugin's record of what it asked Vercel and VesnALIA
+ * to do and when — it is not user-facing product state, and nothing reads it
+ * to make decisions.
+ */
+const eventSchema = z.object({
+  id: z.string(),
+  at: z.string(),
+  kind: z.enum([
+    "create.requested",
+    "create.sandbox-ready",
+    "create.enrolled",
+    "create.failed",
+    "machine.disconnected",
+    "machine.stopped",
+    "machine.deleted",
+    "image.registry-pruned",
+    "machine.woken",
+    "wake.requested",
+    "wake.failed",
+    "delete.requested",
+  ]),
+  /** Sandbox name, once one exists. */
+  machine: z.string().nullable(),
+  detail: z.string(),
+});
+export type DebugEvent = z.infer<typeof eventSchema>;
+
+/** Local record of a machine this plugin created. */
+const machineRecordSchema = z.object({
+  /** Sandbox name; the stable key across Vercel and this plugin. */
+  name: z.string(),
+  /** VesnALIA host id this sandbox enrolled as. */
+  hostId: z.string(),
+  createdAt: z.number(),
+  /** Epoch ms the machine was first observed to be no longer running. */
+  disconnectedAt: z.number().nullable(),
+  /** The template this machine was created from, if any. */
+  templateId: z.string().nullable(),
+  templateName: z.string().nullable(),
+});
+type MachineRecord = z.infer<typeof machineRecordSchema>;
+
+const machineViewSchema = z.object({
+  name: z.string(),
+  hostId: z.string().nullable(),
+  /** VesnALIA's name for the machine, once it has connected. */
+  hostName: z.string().nullable(),
+  state: z.enum(["connecting", "running", "inactive", "error"]),
+  /** Human-readable status line for the list. */
+  status: z.string(),
+  /** Milliseconds the sandbox has been up, when running. */
+  uptimeMs: z.number().nullable(),
+  createdAt: z.number(),
+  /**
+   * When the VM currently backing this machine started. Null when it is not
+   * running. Distinct from createdAt, which is when the sandbox first existed.
+   */
+  sessionStartedAt: z.number().nullable(),
+  /**
+   * When VesnALIA last heard from the machine, falling back to when Vercel last
+   * changed the sandbox's state for a machine that never connected.
+   */
+  lastUsedAt: z.number().nullable(),
+  /** True while this machine is being woken. */
+  waking: z.boolean(),
+  /** Name of the template this machine was created from, if any. */
+  templateName: z.string().nullable(),
+  /** True for a machine VesnALIA created for a thread and will delete with it. */
+  ephemeral: z.boolean(),
+  error: z.string().nullable(),
+});
+export type MachineView = z.infer<typeof machineViewSchema>;
+
+const templateStatusSchema = z.enum(["pending", "building", "ready", "error"]);
+
+/**
+ * The git identity and GitHub token every machine is given.
+ *
+ * Account-level rather than per-template: one person has one git identity.
+ * The token is never returned, only whether one is stored.
+ */
+const githubStatusSchema = z.object({
+  name: z.string().nullable(),
+  email: z.string().nullable(),
+  tokenSet: z.boolean(),
+  /** The account the stored token belongs to, once it has been resolved. */
+  login: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+  /** The GitHub account an import came from, when the values came from one. */
+  importedFrom: z.string().nullable(),
+  importedAt: z.number().nullable(),
+});
+export type GitHubStatus = z.infer<typeof githubStatusSchema>;
+
+/** One variable of a template's environment, as the page sees it. */
+const templateVarSchema = z.object({
+  key: z.string(),
+  secret: z.boolean(),
+  /** The stored value, or null when it is a secret and stays hidden. */
+  value: z.string().nullable(),
+});
+export type TemplateVar = z.infer<typeof templateVarSchema>;
+
+const templateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  commands: z.string(),
+  status: templateStatusSchema,
+  /** Reference to pass to Sandbox.create, once a build has succeeded. */
+  imageRef: z.string().nullable(),
+  lastError: z.string().nullable(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+export type PluginTemplate = z.infer<typeof templateSchema>;
+
+const buildSchema = z.object({
+  id: z.string(),
+  templateId: z.string(),
+  status: z.enum(["building", "ready", "error"]),
+  startedAt: z.number(),
+  finishedAt: z.number().nullable(),
+  imageRef: z.string().nullable(),
+  error: z.string().nullable(),
+});
+export type PluginBuild = z.infer<typeof buildSchema>;
+
+export const rpcContract = defineRpcContract({
+  auth_status: { input: z.null(), output: authStatusSchema },
+  auth_start: { input: z.null(), output: authStatusSchema },
+  auth_cancel: { input: z.null(), output: authStatusSchema },
+  auth_sign_out: { input: z.null(), output: authStatusSchema },
+  machines_list: {
+    /** `force` bypasses the cache, for the page's manual Refresh. */
+    input: z.object({ force: z.boolean() }),
+    output: z.object({
+      machines: z.array(machineViewSchema),
+      signedIn: z.boolean(),
+      /** True while a create is in flight, so the page can show a spinner. */
+      creating: z.boolean(),
+      /** Deep link to this project's sandboxes on vercel.com, when derivable. */
+      vercelUrl: z.string().nullable(),
+      /** Templates that have been built, for the create button's picker. */
+      readyTemplates: z.array(z.object({ id: z.string(), name: z.string() })),
+      /** Which of those the create button uses unless told otherwise. */
+      defaultTemplateId: z.string().nullable(),
+      /** When the returned data was actually fetched from Vercel. */
+      fetchedAt: z.number(),
+      /** True when this answer is stale and a refresh is already running. */
+      refreshing: z.boolean(),
+      /**
+       * The last background machine operation that failed. Create and wake
+       * run detached, so without this their errors reach only the debug log
+       * and the button appears to do nothing.
+       */
+      lastFailure: z
+        .object({
+          action: z.enum(["create", "wake"]),
+          message: z.string(),
+          /** HTTP status when Vercel rejected it; null for local failures. */
+          status: z.number().nullable(),
+          at: z.number(),
+        })
+        .nullable(),
+    }),
+  },
+  machines_create: {
+    input: z.object({ templateId: z.string().nullable() }),
+    output: z.object({ started: z.boolean() }),
+  },
+  /** Resume a stopped machine and bring its VesnALIA daemon back. */
+  machines_wake: {
+    input: z.object({ name: z.string().min(1) }),
+    output: z.object({ started: z.boolean() }),
+  },
+  machines_dismiss_failure: {
+    input: z.null(),
+    output: z.object({ dismissed: z.boolean() }),
+  },
+  /** End the sandbox but keep the machine listed, so it can be woken later. */
+  machines_stop: {
+    input: z.object({ name: z.string().min(1) }),
+    output: z.object({ stopped: z.boolean() }),
+  },
+  /** Forget the machine entirely and hide its row. */
+  machines_remove: {
+    input: z.object({ name: z.string().min(1) }),
+    output: z.object({ removed: z.boolean() }),
+  },
+  templates_list: {
+    input: z.null(),
+    output: z.object({
+      templates: z.array(templateSchema),
+      /** The repository's images on vercel.com, when derivable. */
+      registryUrl: z.string().nullable(),
+      /** Starting points offered by the Create image button. */
+      presets: z.array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+          description: z.string(),
+        }),
+      ),
+    }),
+  },
+  templates_create: {
+    input: z.object({ presetId: z.string() }),
+    output: templateSchema,
+  },
+  templates_update: {
+    input: z.object({
+      id: z.string(),
+      name: z.string().min(1).max(80).optional(),
+      commands: z.string().max(50_000).optional(),
+    }),
+    output: templateSchema,
+  },
+  templates_delete: {
+    input: z.object({ id: z.string() }),
+    output: z.object({ deleted: z.boolean() }),
+  },
+  /** Agent providers a template can hold credentials for. */
+  agent_providers: {
+    input: z.null(),
+    output: z.object({
+      providers: z.array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+          description: z.string(),
+          hint: z.string(),
+          credentials: z.array(
+            z.object({
+              key: z.string(),
+              label: z.string(),
+              secret: z.boolean(),
+            }),
+          ),
+        }),
+      ),
+    }),
+  },
+  /**
+   * The variables a template injects when a machine is created. A secret's
+   * value is never returned, only the fact that it is set.
+   */
+  templates_env_list: {
+    input: z.object({ templateId: z.string() }),
+    output: z.object({ vars: z.array(templateVarSchema) }),
+  },
+  /** Set or, with an empty value, clear one of a template's variables. */
+  templates_env_set: {
+    input: z.object({
+      templateId: z.string(),
+      key: z.string().min(1).max(200),
+      value: z.string().max(20_000),
+      /** Ignored for a key a provider owns: the provider decides. */
+      secret: z.boolean(),
+    }),
+    output: z.object({ vars: z.array(templateVarSchema) }),
+  },
+  /** The git identity and token every machine is created with. */
+  github_status: { input: z.null(), output: githubStatusSchema },
+  /** Read the VesnALIA host's own `gh` login into that identity. */
+  github_import: { input: z.null(), output: githubStatusSchema },
+  /** Correct one field by hand; an empty value clears it. */
+  github_set: {
+    input: z.object({
+      key: z.enum([GIT_AUTHOR_NAME, GIT_AUTHOR_EMAIL, GH_TOKEN]),
+      value: z.string().max(20_000),
+    }),
+    output: githubStatusSchema,
+  },
+  /** Forget the identity entirely. */
+  github_clear: { input: z.null(), output: githubStatusSchema },
+  templates_build: {
+    input: z.object({ id: z.string() }),
+    output: z.object({ started: z.boolean() }),
+  },
+  builds_list: {
+    input: z.object({ templateId: z.string() }),
+    output: z.object({ builds: z.array(buildSchema) }),
+  },
+  build_log: {
+    input: z.object({ id: z.string() }),
+    output: z.object({ log: z.string() }),
+  },
+  events_list: {
+    input: z.null(),
+    output: z.object({ events: z.array(eventSchema) }),
+  },
+  events_clear: { input: z.null(), output: z.object({ cleared: z.number() }) },
+});
+
+/** "12h 34m", "7m", "<1m" — always reads correctly after "Running for". */
+function formatUptime(ms: number): string {
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 1) return "<1m";
+  const hours = Math.floor(minutes / 60);
+  const remaining = minutes % 60;
+  if (hours === 0) return `${remaining}m`;
+  return `${hours}h ${remaining}m`;
+}
+
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
+
+  const settings = alia.settings.define({
+    vercelSession: {
+      type: "string",
+      label: "Vercel session (managed by Sign in with Vercel)",
+      secret: true,
+    },
+    // Vercel caps sandbox lifetime at 45 minutes on Hobby and 24 hours on
+    // Pro/Enterprise; exceeding it fails sandbox creation outright. Default
+    // to the Hobby ceiling, which every plan accepts; signing in raises it to
+    // the Pro ceiling when the team's plan allows (see timeoutForPlan).
+    machineTimeoutSeconds: {
+      type: "string",
+      label: "Machine lifetime (seconds; max 2700 on Hobby, 86400 on Pro)",
+      default: HOBBY_TIMEOUT_SECONDS,
+    },
+    // The environment a template injects when a machine is created, as JSON
+    // keyed by template id. It lives in a secret setting so it lands in the
+    // plugin's 0600 secrets directory rather than its database, and it is
+    // injected per machine rather than built into an image, so a credential
+    // never ends up in a layer anyone who can pull the image could read.
+    templateSecrets: {
+      type: "string",
+      label: "Template environment (managed by the Templates tab)",
+      secret: true,
+    },
+    // The git identity and GitHub token every machine is created with, as
+    // JSON. Secret for the token it carries, and account-level because one
+    // person has one git identity.
+    githubIdentity: {
+      type: "string",
+      label: "Git identity and GitHub token (managed by the Authentication tab)",
+      secret: true,
+    },
+    machineVcpus: {
+      type: "select",
+      label: "vCPUs per machine (2 GB memory each)",
+      options: ["1", "2", "4", "8"],
+      default: "2",
+    },
+  });
+
+  let pending: {
+    authorization: DeviceAuthorization;
+    controller: AbortController;
+  } | null = null;
+  let lastAuthError: string | null = null;
+  let refreshInFlight: Promise<StoredSession> | null = null;
+  /** In-flight machine creations, by a temporary id until the sandbox exists. */
+  const creating = new Set<string>();
+  /** Sandbox names currently being woken. */
+  const waking = new Set<string>();
+  /** The last detached machine operation that failed, for the page to show. */
+  let lastFailure: {
+    action: "create" | "wake";
+    message: string;
+    status: number | null;
+    at: number;
+  } | null = null;
+
+  // Images and their build logs live in the plugin's own SQLite rather than
+  // kv: a build log routinely exceeds the 256KB kv value cap.
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
+    `CREATE TABLE IF NOT EXISTS images (
+       id TEXT PRIMARY KEY,
+       name TEXT NOT NULL,
+       commands TEXT NOT NULL DEFAULT '',
+       env TEXT NOT NULL DEFAULT '[]',
+       status TEXT NOT NULL DEFAULT 'pending',
+       image_ref TEXT,
+       last_error TEXT,
+       created_at INTEGER NOT NULL,
+       updated_at INTEGER NOT NULL
+     )`,
+    `CREATE TABLE IF NOT EXISTS builds (
+       id TEXT PRIMARY KEY,
+       image_id TEXT NOT NULL,
+       status TEXT NOT NULL,
+       started_at INTEGER NOT NULL,
+       finished_at INTEGER,
+       image_ref TEXT,
+       error TEXT,
+       log TEXT NOT NULL DEFAULT ''
+     )`,
+    `CREATE INDEX IF NOT EXISTS builds_by_image ON builds (image_id, started_at DESC)`,
+    // An image became a template: the OCI image is now one part of it,
+    // alongside secrets injected when a machine is created.
+    `ALTER TABLE images RENAME TO templates`,
+    `ALTER TABLE builds RENAME COLUMN image_id TO template_id`,
+    // Table is deprecated, env vars no longer live in the image.
+    `ALTER TABLE templates DROP COLUMN env`,
+  ]);
+
+  interface TemplateRow {
+    id: string;
+    name: string;
+    commands: string;
+    status: string;
+    image_ref: string | null;
+    last_error: string | null;
+    created_at: number;
+    updated_at: number;
+  }
+
+  function toTemplate(row: TemplateRow): PluginTemplate {
+    return {
+      id: row.id,
+      name: row.name,
+      commands: row.commands,
+      status: templateStatusSchema.parse(row.status),
+      imageRef: row.image_ref,
+      lastError: row.last_error,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  function listTemplates(): PluginTemplate[] {
+    return db
+      .prepare("SELECT * FROM templates ORDER BY created_at DESC")
+      .all()
+      .map((row) => toTemplate(row as TemplateRow));
+  }
+
+  function getTemplate(id: string): PluginTemplate | null {
+    const row = db.prepare("SELECT * FROM templates WHERE id = ?").get(id);
+    return row === undefined ? null : toTemplate(row as TemplateRow);
+  }
+
+  function setTemplateStatus(
+    id: string,
+    status: PluginTemplate["status"],
+    fields: { imageRef?: string | null; lastError?: string | null } = {},
+  ): void {
+    db.prepare(
+      `UPDATE templates SET status = ?, updated_at = ?,
+         image_ref = COALESCE(?, image_ref),
+         last_error = ?
+       WHERE id = ?`,
+    ).run(
+      status,
+      Date.now(),
+      fields.imageRef ?? null,
+      fields.lastError ?? null,
+      id,
+    );
+    alia.realtime.publish(TEMPLATES_CHANGED, {});
+  }
+
+  /** Templates whose build is running in this plugin generation. */
+  const building = new Set<string>();
+
+  /**
+   * One variable as it is stored.
+   *
+   * A bare string is how every variable was stored when they were all
+   * secrets; it still reads as one. Anything written since carries whether it
+   * is secret, which is what decides if its value is ever handed back.
+   */
+  const storedVarSchema = z.union([
+    z.string().transform((value) => ({ value, secret: true })),
+    z.object({ value: z.string(), secret: z.boolean() }),
+  ]);
+  const templateVarsSchema = z.record(
+    z.string(),
+    z.record(z.string(), storedVarSchema),
+  );
+
+  interface StoredVar {
+    value: string;
+    secret: boolean;
+  }
+
+  async function readAllVars(): Promise<Record<string, Record<string, StoredVar>>> {
+    const { templateSecrets } = await settings.get();
+    if (templateSecrets === undefined || templateSecrets.trim() === "") return {};
+    const parsed = templateVarsSchema.safeParse(
+      JSON.parse(templateSecrets) as unknown,
+    );
+    return parsed.success ? parsed.data : {};
+  }
+
+  async function readVars(templateId: string): Promise<Record<string, StoredVar>> {
+    return (await readAllVars())[templateId] ?? {};
+  }
+
+  /**
+   * Every variable lives in the same 0600 secret setting, secret or not.
+   * Splitting the non-secret ones into the database would buy nothing — they
+   * are injected together and read back together — and would leave two places
+   * for one key to be defined in.
+   */
+  async function writeVars(
+    templateId: string,
+    vars: Record<string, StoredVar>,
+  ): Promise<void> {
+    const all = await readAllVars();
+    if (Object.keys(vars).length === 0) delete all[templateId];
+    else all[templateId] = vars;
+    await alia.sdk.plugins.updateSettings({
+      pluginId: alia.pluginId,
+      values: { templateSecrets: JSON.stringify(all) },
+    });
+  }
+
+  /** A settings value that will not parse is treated as one never written. */
+  function safeJson(text: string): unknown {
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      return null;
+    }
+  }
+
+  const storedGitHubSchema = z.object({
+    name: z.string().nullish(),
+    email: z.string().nullish(),
+    token: z.string().nullish(),
+    login: z.string().nullish(),
+    avatarUrl: z.string().nullish(),
+    importedFrom: z.string().nullish(),
+    importedAt: z.number().nullish(),
+  });
+  type StoredGitHub = z.infer<typeof storedGitHubSchema>;
+
+  async function readGitHub(): Promise<StoredGitHub> {
+    const { githubIdentity } = await settings.get();
+    if (githubIdentity === undefined || githubIdentity.trim() === "") return {};
+    const parsed = storedGitHubSchema.safeParse(safeJson(githubIdentity));
+    return parsed.success ? parsed.data : {};
+  }
+
+  async function writeGitHub(identity: StoredGitHub): Promise<void> {
+    await alia.sdk.plugins.updateSettings({
+      pluginId: alia.pluginId,
+      values: { githubIdentity: JSON.stringify(identity) },
+    });
+  }
+
+  function toGitHubStatus(identity: StoredGitHub): GitHubStatus {
+    return {
+      name: identity.name ?? null,
+      email: identity.email ?? null,
+      tokenSet: (identity.token ?? "") !== "",
+      login: identity.login ?? null,
+      avatarUrl: identity.avatarUrl ?? null,
+      importedFrom: identity.importedFrom ?? null,
+      importedAt: identity.importedAt ?? null,
+    };
+  }
+
+  /**
+   * Set once a lookup has failed, so a token GitHub will not answer for is not
+   * re-checked on every status call. Cleared whenever the token changes.
+   */
+  let profileUnresolvable = false;
+
+  /**
+   * Fill in the account a stored token belongs to.
+   *
+   * A token typed in by hand arrives with no account attached, and the page
+   * wants a name and an avatar for it. Doing this lazily keeps the cost off
+   * the paths that only need to know whether a token is set, and a failure
+   * here is never fatal: an identity that cannot be resolved is simply shown
+   * without a face.
+   */
+  async function resolveGitHubProfile(): Promise<StoredGitHub> {
+    const identity = await readGitHub();
+    const token = identity.token ?? "";
+    if (token === "" || identity.login != null || profileUnresolvable) {
+      return identity;
+    }
+    try {
+      const profile = await readProfile(token);
+      const next: StoredGitHub = {
+        ...identity,
+        login: profile.login,
+        avatarUrl: profile.avatarUrl,
+        // A hand-typed token carries no name of its own; the account's is a
+        // better default than nothing, and stays editable.
+        name: identity.name ?? profile.name,
+      };
+      await writeGitHub(next);
+      return next;
+    } catch (error) {
+      profileUnresolvable = true;
+      alia.log.warn(
+        `could not resolve the GitHub account behind the stored token: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return identity;
+    }
+  }
+
+  /** The identity as environment variables, skipping whatever is unset. */
+  function gitHubEnv(identity: StoredGitHub): Record<string, string> {
+    const env: Record<string, string> = {};
+    if ((identity.name ?? "") !== "") env[GIT_AUTHOR_NAME] = identity.name!;
+    if ((identity.email ?? "") !== "") env[GIT_AUTHOR_EMAIL] = identity.email!;
+    if ((identity.token ?? "") !== "") env[GH_TOKEN] = identity.token!;
+    return env;
+  }
+
+  /** The stored variables as the page sees them: secret values withheld. */
+  function toTemplateVars(vars: Record<string, StoredVar>): TemplateVar[] {
+    return Object.entries(vars)
+      .map(([key, { value, secret }]) => ({
+        key,
+        secret,
+        value: secret ? null : value,
+      }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }
+
+  /** What a provider declares about a key, when a provider owns it at all. */
+  function providerCredential(key: string): AgentCredential | null {
+    for (const provider of AGENT_PROVIDERS) {
+      const credential = provider.credentials.find((c) => c.key === key);
+      if (credential !== undefined) return credential;
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------- events
+
+  async function readEvents(): Promise<DebugEvent[]> {
+    return (await alia.storage.kv.get<DebugEvent[]>("events")) ?? [];
+  }
+  async function record(
+    kind: DebugEvent["kind"],
+    machine: string | null,
+    detail: string,
+  ): Promise<void> {
+    const event: DebugEvent = {
+      id: randomUUID().slice(0, 8),
+      at: new Date().toISOString(),
+      kind,
+      machine,
+      detail: detail.slice(0, 2000),
+    };
+    const events = [event, ...(await readEvents())].slice(0, MAX_EVENTS);
+    await alia.storage.kv.set("events", events);
+    alia.log.info(`${kind}${machine === null ? "" : ` ${machine}`}: ${detail}`);
+  }
+
+  // ------------------------------------------------------------------ auth
+
+  async function readStoredSession(): Promise<StoredSession | null> {
+    const { vercelSession } = await settings.get();
+    if (vercelSession === undefined || vercelSession.trim() === "") return null;
+    const parsed = storedSessionSchema.safeParse(
+      JSON.parse(vercelSession) as unknown,
+    );
+    return parsed.success ? parsed.data : null;
+  }
+
+  async function writeStoredSession(
+    session: StoredSession | null,
+    extra: Record<string, string> = {},
+  ) {
+    await alia.sdk.plugins.updateSettings({
+      pluginId: alia.pluginId,
+      values: {
+        ...extra,
+        vercelSession: session === null ? "" : JSON.stringify(session),
+      },
+    });
+  }
+
+  async function describeAuth(): Promise<AuthStatus> {
+    const stored = await readStoredSession();
+    if (stored !== null) {
+      return {
+        state: "signed-in",
+        verificationUriComplete: null,
+        userCode: null,
+        teamSlug: stored.teamSlug,
+        projectSlug: stored.projectSlug,
+        error: null,
+      };
+    }
+    if (pending !== null) {
+      return {
+        state: "pending",
+        verificationUriComplete: pending.authorization.verificationUriComplete,
+        userCode: pending.authorization.userCode,
+        teamSlug: null,
+        projectSlug: null,
+        error: lastAuthError,
+      };
+    }
+    return {
+      state: "signed-out",
+      verificationUriComplete: null,
+      userCode: null,
+      teamSlug: null,
+      projectSlug: null,
+      error: lastAuthError,
+    };
+  }
+
+  /**
+   * `cwd` is pinned to a temp directory on purpose: inferScope otherwise reads
+   * `.vercel/project.json` relative to `process.cwd()`, which is wherever the
+   * VesnALIA server happened to be launched.
+   */
+  async function resolveScope(session: AuthSession): Promise<StoredSession> {
+    const scope = await inferScope({
+      token: session.accessToken,
+      cwd: tmpdir(),
+    });
+    return {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      expiresAt: session.expiresAt,
+      teamId: scope.teamId,
+      projectId: scope.projectId,
+      teamSlug: scope.teamSlug ?? null,
+      projectSlug: scope.projectSlug ?? null,
+    };
+  }
+
+  async function ensureFreshSession(): Promise<StoredSession | null> {
+    const stored = await readStoredSession();
+    if (stored === null) return null;
+    if (stored.expiresAt - REFRESH_SKEW_MS > Date.now()) return stored;
+    if (stored.refreshToken === null) return stored;
+
+    refreshInFlight ??= (async () => {
+      const refreshed = await refreshSession(stored.refreshToken!);
+      const next: StoredSession = { ...stored, ...refreshed };
+      await writeStoredSession(next);
+      return next;
+    })().finally(() => {
+      refreshInFlight = null;
+    });
+    return refreshInFlight;
+  }
+
+  /** Credentials when signed in, null otherwise. */
+  async function optionalCredentials(): Promise<SandboxCredentials | null> {
+    const session = await ensureFreshSession();
+    return session === null
+      ? null
+      : {
+          token: session.accessToken,
+          teamId: session.teamId,
+          projectId: session.projectId,
+        };
+  }
+
+  /**
+   * Registry housekeeping. Never throws: a manifest that will not delete is
+   * worth recording but must not fail the operation that triggered it.
+   */
+  async function recordCleanup(
+    label: string,
+    run: (credentials: SandboxCredentials) => Promise<RegistryCleanupResult>,
+  ): Promise<void> {
+    const credentials = await optionalCredentials();
+    if (credentials === null) return;
+    try {
+      const result = await run(credentials);
+      if (result.deleted.length === 0 && result.failures.length === 0) return;
+      await record(
+        "image.registry-pruned",
+        null,
+        `${label}: deleted ${result.deleted.length} manifest(s), freed ${(result.freedBytes / 1e6).toFixed(0)}MB` +
+          (result.failures.length === 0
+            ? ""
+            : `; ${result.failures.length} failed: ${result.failures.join("; ")}`),
+      );
+    } catch (error) {
+      alia.log.warn(
+        `${label} failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  async function requireCredentials(): Promise<SandboxCredentials> {
+    const session = await ensureFreshSession();
+    if (session === null) {
+      throw new Error(
+        "Not signed in to Vercel. Use Sign in with Vercel on this plugin's settings page.",
+      );
+    }
+    return {
+      token: session.accessToken,
+      teamId: session.teamId,
+      projectId: session.projectId,
+    };
+  }
+
+  function beginSignIn(authorization: DeviceAuthorization) {
+    const controller = new AbortController();
+    pending = { authorization, controller };
+    lastAuthError = null;
+
+    void (async () => {
+      try {
+        const session = await pollForSession(
+          authorization,
+          undefined,
+          controller.signal,
+        );
+        const stored = await resolveScope(session);
+        const plan = await fetchTeamPlan(stored.accessToken, stored.teamId);
+        const timeout = timeoutForPlan(
+          (await settings.get()).machineTimeoutSeconds,
+          plan,
+        );
+        if (timeout !== null) {
+          alia.log.info(
+            `team plan is ${plan}; machine lifetime set to ${timeout}s`,
+          );
+        }
+        pending = null;
+        // Written last, and in one write: persisting while the plugin is in
+        // needs-configuration makes VesnALIA retry the load, which replaces this
+        // generation.
+        await writeStoredSession(
+          stored,
+          timeout === null ? {} : { machineTimeoutSeconds: timeout },
+        );
+      } catch (error) {
+        pending = null;
+        lastAuthError = error instanceof Error ? error.message : String(error);
+        alia.log.warn(`sign-in failed: ${lastAuthError}`);
+      }
+      try {
+        alia.realtime.publish(AUTH_CHANGED, {});
+      } catch {
+        // Generation replaced by the settings write above.
+      }
+    })();
+  }
+
+  async function startSignIn(): Promise<AuthStatus> {
+    if (pending !== null) return describeAuth();
+    if ((await readStoredSession()) !== null) return describeAuth();
+    const authorization = await startDeviceAuthorization();
+    beginSignIn(authorization);
+    return describeAuth();
+  }
+
+  async function signOut(): Promise<AuthStatus> {
+    pending?.controller.abort();
+    pending = null;
+    lastAuthError = null;
+    const stored = await readStoredSession();
+    if (stored !== null) {
+      await revokeToken(stored.accessToken).catch(() => undefined);
+      await writeStoredSession(null);
+    }
+    return describeAuth();
+  }
+
+  // -------------------------------------------------------------- machines
+
+  async function readDismissed(): Promise<string[]> {
+    return (await alia.storage.kv.get<string[]>("dismissed")) ?? [];
+  }
+  async function dismiss(name: string): Promise<void> {
+    const dismissed = await readDismissed();
+    if (dismissed.includes(name)) return;
+    // Bounded: Vercel never stops listing a stopped sandbox, but the set only
+    // needs to cover what it still returns.
+    await alia.storage.kv.set("dismissed", [name, ...dismissed].slice(0, 200));
+  }
+
+  /**
+   * Deep link to the project's sandboxes on vercel.com.
+   *
+   * inferScope returns a slug-shaped projectId for the default project
+   * ("vercel-sandbox-default-project"), which is what the dashboard path
+   * wants; an explicitly linked project supplies a real projectSlug instead.
+   * Without a team slug there is no path to build, so this returns null rather
+   * than guessing.
+   */
+  function buildVercelUrl(session: StoredSession): string | null {
+    return vercelProjectUrl(session, "sandboxes");
+  }
+
+  /** `https://vercel.com/<team>/<project>/<section>`, or null without a slug. */
+  function vercelProjectUrl(
+    session: StoredSession,
+    section: string,
+  ): string | null {
+    if (session.teamSlug === null || session.teamSlug === "") return null;
+    const project = session.projectSlug ?? session.projectId;
+    if (project === "") return null;
+    return `https://vercel.com/${encodeURIComponent(session.teamSlug)}/${encodeURIComponent(project)}/${section}`;
+  }
+
+  async function readRecords(): Promise<MachineRecord[]> {
+    return (await alia.storage.kv.get<MachineRecord[]>("machines")) ?? [];
+  }
+  async function writeRecords(records: MachineRecord[]): Promise<void> {
+    await alia.storage.kv.set("machines", records);
+    invalidateMachines();
+    alia.realtime.publish(MACHINES_CHANGED, { count: records.length });
+  }
+
+  /**
+   * Ask VesnALIA for a join code and VesnALIA connect for a machine code.
+   *
+   * The connect machine code is what makes this work at all: it carries the
+   * publicly reachable tunnel URL. VesnALIA listens on loopback by default, and a
+   * sandbox on the public internet cannot dial 127.0.0.1.
+   */
+  async function mintEnrollment(): Promise<EnrollmentDetails> {
+    const join = await alia.sdk.hosts.createJoinCode();
+    const machine = await alia.sdk.plugins.callRpc({
+      pluginId: "connect",
+      method: "createMachineCode",
+      input: null,
+      outputSchema: z.object({
+        code: z.string(),
+        expiresAt: z.number(),
+        serverUrl: z.string(),
+      }),
+    });
+    return {
+      joinCode: join.joinCode,
+      hostId: join.hostId,
+      serverUrl: machine.serverUrl,
+      machineCode: machine.code,
+    };
+  }
+
+  /** Derive the list the page renders, from Vercel plus VesnALIA's host registry. */
+  /**
+   * Listing machines costs a Vercel round trip for the sandbox list plus two
+   * more per running machine for its session start, so it runs over a second
+   * and grows with the fleet. The page mounts fresh every time its panel is
+   * opened, which made every visit pay that again.
+   *
+   * Answers are cached and served stale while a refresh runs behind them, so
+   * a revisit paints immediately and the page says it is refreshing.
+   */
+  const MACHINES_TTL_MS = 30_000;
+  type MachinesSnapshot = Awaited<ReturnType<typeof describeMachines>>;
+  let machinesCache: { value: MachinesSnapshot; at: number } | null = null;
+  let machinesRefresh: Promise<void> | null = null;
+
+  /** Drop the cache so the next read reflects a change this plugin just made. */
+  function invalidateMachines(): void {
+    machinesCache = null;
+  }
+
+  function refreshMachinesInBackground(): void {
+    machinesRefresh ??= describeMachines()
+      .then((value) => {
+        machinesCache = { value, at: Date.now() };
+        alia.realtime.publish(MACHINES_CHANGED, {});
+      })
+      .catch((error: unknown) => {
+        // Keep serving the previous answer; the next read tries again.
+        alia.log.warn(
+          `machine refresh failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      })
+      .finally(() => {
+        machinesRefresh = null;
+      });
+  }
+
+  async function readMachines(force: boolean) {
+    if (force || machinesCache === null) {
+      const value = await describeMachines();
+      machinesCache = { value, at: Date.now() };
+      return { ...value, fetchedAt: machinesCache.at, refreshing: false };
+    }
+    const age = Date.now() - machinesCache.at;
+    if (age > MACHINES_TTL_MS) refreshMachinesInBackground();
+    return {
+      ...machinesCache.value,
+      fetchedAt: machinesCache.at,
+      refreshing: age > MACHINES_TTL_MS,
+    };
+  }
+
+  type HostEntry = Awaited<ReturnType<typeof alia.sdk.hosts.list>>[number];
+  interface ThreadMachineOwner {
+    host: HostEntry;
+    resource: ThreadMachineResource;
+  }
+
+  /**
+   * The machines VesnALIA created from this plugin's providers, keyed by the sandbox
+   * behind each one.
+   *
+   * These have no entry in the plugin's own records: VesnALIA owns them, so its host
+   * registry and the resource it persists for each are the only places that
+   * know which sandbox belongs to which machine.
+   */
+  async function threadMachineOwners(
+    hosts: HostEntry[],
+  ): Promise<Map<string, ThreadMachineOwner>> {
+    const owners = new Map<string, ThreadMachineOwner>();
+    for (const host of hosts) {
+      if (!isThreadMachineProvider(host.machineProviderId)) continue;
+      const resource = parseThreadMachineResource(
+        await alia.experimental_machines.getResource(host.id),
+      );
+      if (resource === null) continue;
+      owners.set(resource.sandboxName, { host, resource });
+    }
+    return owners;
+  }
+
+  /** The VesnALIA machine behind a sandbox name, or null for the user's own machines. */
+  async function threadMachineHostId(name: string): Promise<string | null> {
+    const owners = await threadMachineOwners(await alia.sdk.hosts.list());
+    return owners.get(name)?.host.id ?? null;
+  }
+
+  /**
+   * Rows for the machines VesnALIA made for threads.
+   *
+   * VesnALIA's lifecycle phase outranks the sandbox's own status: a machine VesnALIA has
+   * suspended reads as Suspended, not merely stopped, because that is the
+   * state its thread will resume it from.
+   */
+  async function threadMachineViews(
+    sandboxes: MachineSandbox[],
+    hosts: HostEntry[],
+    sessionStarts: Map<string, number>,
+  ): Promise<MachineView[]> {
+    const owners = await threadMachineOwners(hosts);
+    return sandboxes.flatMap((sandbox) => {
+      const owner = owners.get(sandbox.name);
+      // A sandbox VesnALIA has no machine for is VesnALIA's to sweep, and every action on
+      // one of these rows goes through VesnALIA, so there is nothing to offer.
+      if (owner === undefined) return [];
+      const { host, resource } = owner;
+      const phase = host.lifecycle.phase;
+      const sessionStartedAt = sessionStarts.get(sandbox.name) ?? null;
+      const live = sandbox.status === "running" || sandbox.status === "pending";
+      const failed = sandbox.status === "failed" || sandbox.status === "aborted";
+      const suspended = phase === "suspended" || phase === "suspending";
+      const state: MachineView["state"] = failed
+        ? "error"
+        : suspended || !live
+          ? "inactive"
+          : host.status === "connected"
+            ? "running"
+            : "connecting";
+      const uptimeMs =
+        state === "running" && sessionStartedAt !== null
+          ? Date.now() - sessionStartedAt
+          : null;
+      const status = failed
+        ? `Error (sandbox ${sandbox.status})`
+        : phase === "suspending"
+          ? "Suspending"
+          : phase === "suspended"
+            ? "Suspended"
+            : phase === "resuming"
+              ? "Resuming"
+              : phase === "removing"
+                ? "Removing"
+                : state === "running"
+                  ? uptimeMs === null
+                    ? "Running"
+                    : `Running for ${formatUptime(uptimeMs)}`
+                  : state === "connecting"
+                    ? "Connecting"
+                    : "Inactive";
+      return [
+        {
+          name: sandbox.name,
+          hostId: host.id,
+          hostName: host.name,
+          state,
+          status,
+          uptimeMs,
+          createdAt: sandbox.createdAt,
+          sessionStartedAt,
+          lastUsedAt: host.lastSeenAt ?? sandbox.updatedAt,
+          waking: waking.has(sandbox.name),
+          templateName:
+            resource.templateId === null
+              ? null
+              : (getTemplate(resource.templateId)?.name ?? null),
+          ephemeral: true,
+          error: failed ? `Sandbox ${sandbox.status}` : null,
+        },
+      ];
+    });
+  }
+
+  async function describeMachines(): Promise<{
+    machines: MachineView[];
+    signedIn: boolean;
+    creating: boolean;
+    vercelUrl: string | null;
+    readyTemplates: { id: string; name: string }[];
+    defaultTemplateId: string | null;
+    lastFailure: typeof lastFailure;
+  }> {
+    const session = await ensureFreshSession();
+    // Anything that has ever built successfully can still create a machine.
+    // Keying this off status would strand a working image the moment a later
+    // rebuild failed, even though its published manifest is untouched.
+    const readyTemplates = listTemplates()
+      .filter((image) => image.imageRef !== null)
+      .map((image) => ({ id: image.id, name: image.name }));
+    const defaultTemplateId = await resolveDefaultTemplateId(readyTemplates);
+
+    if (session === null) {
+      return {
+        machines: [],
+        signedIn: false,
+        creating: creating.size > 0,
+        vercelUrl: null,
+        readyTemplates,
+        defaultTemplateId,
+        lastFailure,
+      };
+    }
+    const credentials: SandboxCredentials = {
+      token: session.accessToken,
+      teamId: session.teamId,
+      projectId: session.projectId,
+    };
+
+    const [allSandboxes, threadSandboxes, records, hosts, dismissed] =
+      await Promise.all([
+        listMachines(credentials),
+        listMachines(credentials, THREAD_MACHINE_PREFIX),
+        readRecords(),
+        alia.sdk.hosts.list(),
+        readDismissed(),
+      ]);
+    // Vercel keeps listing stopped sandboxes forever, so a removed machine
+    // only disappears because this filter hides it.
+    const dismissedNames = new Set(dismissed);
+    const sandboxes = allSandboxes.filter(
+      (sandbox) => !dismissedNames.has(sandbox.name),
+    );
+    const recordByName = new Map(records.map((r) => [r.name, r]));
+    const hostById = new Map(hosts.map((h) => [h.id, h]));
+    // Only machines that are up have a session worth asking about, which also
+    // keeps this to one extra request per running machine rather than per row.
+    const sessionStarts = await fetchSessionStarts(
+      credentials,
+      [...sandboxes, ...threadSandboxes].filter(
+        (sandbox) => sandbox.status === "running" || sandbox.status === "pending",
+      ),
+    );
+
+    const views: MachineView[] = sandboxes.map((sandbox) => {
+      const record = recordByName.get(sandbox.name) ?? null;
+      const host = record === null ? null : (hostById.get(record.hostId) ?? null);
+      const sessionStartedAt = sessionStarts.get(sandbox.name) ?? null;
+      // Uptime is measured from the current session, not from when the sandbox
+      // first existed: waking boots a new VM, so createdAt would count the time
+      // the machine spent stopped.
+      const uptimeMs =
+        sessionStartedAt === null ? null : Date.now() - sessionStartedAt;
+      // VesnALIA's view of when the machine was last alive is more meaningful than
+      // Vercel's, but only exists once the daemon has connected at least once.
+      const lastUsedAt = host?.lastSeenAt ?? sandbox.updatedAt;
+
+      if (sandbox.status === "failed" || sandbox.status === "aborted") {
+        return {
+          name: sandbox.name,
+          hostId: record?.hostId ?? null,
+          hostName: host?.name ?? null,
+          state: "error" as const,
+          status: `Error (sandbox ${sandbox.status})`,
+          uptimeMs: null,
+          createdAt: sandbox.createdAt,
+          sessionStartedAt,
+          lastUsedAt,
+          waking: waking.has(sandbox.name),
+          ephemeral: false,
+          templateName: record?.templateName ?? null,
+          error: `Sandbox ${sandbox.status}`,
+        };
+      }
+      if (sandbox.status !== "running" && sandbox.status !== "pending") {
+        return {
+          name: sandbox.name,
+          hostId: record?.hostId ?? null,
+          hostName: host?.name ?? null,
+          state: "inactive" as const,
+          status: "Inactive",
+          uptimeMs: null,
+          createdAt: sandbox.createdAt,
+          sessionStartedAt,
+          lastUsedAt,
+          waking: waking.has(sandbox.name),
+          ephemeral: false,
+          templateName: record?.templateName ?? null,
+          error: null,
+        };
+      }
+      // The sandbox is up. It is only a usable machine once its daemon has
+      // dialled home, so VesnALIA's host registry is the authority on "running".
+      if (host?.status === "connected") {
+        return {
+          name: sandbox.name,
+          hostId: record?.hostId ?? null,
+          hostName: host.name,
+          state: "running" as const,
+          status:
+            uptimeMs === null
+              ? "Running"
+              : `Running for ${formatUptime(uptimeMs)}`,
+          uptimeMs,
+          createdAt: sandbox.createdAt,
+          sessionStartedAt,
+          lastUsedAt,
+          waking: waking.has(sandbox.name),
+          ephemeral: false,
+          templateName: record?.templateName ?? null,
+          error: null,
+        };
+      }
+      return {
+        name: sandbox.name,
+        hostId: record?.hostId ?? null,
+        hostName: host?.name ?? null,
+        state: "connecting" as const,
+        status: "Connecting",
+        uptimeMs: null,
+        createdAt: sandbox.createdAt,
+        sessionStartedAt,
+        lastUsedAt,
+        waking: waking.has(sandbox.name),
+        ephemeral: false,
+        templateName: record?.templateName ?? null,
+        error: null,
+      };
+    });
+
+    // Detect machines that dropped off since the last look. There is no push
+    // event for a sandbox ending, so a poll-time transition is the only signal.
+    for (const view of views) {
+      if (view.state !== "inactive" && view.state !== "error") continue;
+      if (!recordByName.has(view.name)) continue;
+      await noteDisconnect(view);
+    }
+
+    return {
+      machines: [
+        ...views,
+        ...(await threadMachineViews(threadSandboxes, hosts, sessionStarts)),
+      ],
+      signedIn: true,
+      creating: creating.size > 0,
+      vercelUrl: buildVercelUrl(session),
+      readyTemplates,
+      defaultTemplateId,
+      lastFailure,
+    };
+  }
+
+  /**
+   * Note a machine's first observed disconnect. The record is deliberately
+   * KEPT: it is how the row holds on to its VesnALIA host id, how Remove finds the
+   * host to delete, and — once waking a machine exists — how a resumed
+   * sandbox is recognised as the same machine.
+   *
+   * The VesnALIA host is deliberately NOT deleted either. The daemon's durable
+   * hostId/hostKey live in the sandbox filesystem, so removing the host here
+   * would invalidate them; a `disconnected` host is the correct state for a
+   * machine that is off but can come back, exactly like a sleeping laptop.
+   */
+  async function noteDisconnect(view: MachineView): Promise<void> {
+    const records = await readRecords();
+    const target = records.find((r) => r.name === view.name) ?? null;
+    if (target === null || target.disconnectedAt !== null) return;
+    await record(
+      "machine.disconnected",
+      view.name,
+      `Machine is no longer running (${view.status}).`,
+    );
+    await writeRecords(
+      records.map((r) =>
+        r.name === view.name ? { ...r, disconnectedAt: Date.now() } : r,
+      ),
+    );
+  }
+
+  /**
+   * The environment a machine is created with: the account's git identity,
+   * then whatever its template adds.
+   *
+   * These are environment variables on the sandbox rather than anything built
+   * into its image: an image is a shared artifact that anyone able to pull it
+   * can read, so a long-lived credential must not end up in one of its layers.
+   *
+   * A template's own variables win, so a template that deliberately sets one
+   * of the git keys is not overruled by the account-level identity. The git
+   * identity applies even with no template at all, which is why it is not
+   * folded into the template lookup.
+   */
+  async function machineEnv(
+    templateId: string | null,
+  ): Promise<Record<string, string>> {
+    const identity = gitHubEnv(await readGitHub());
+    const vars =
+      templateId === null
+        ? {}
+        : Object.fromEntries(
+            Object.entries(await readVars(templateId)).map(([key, stored]) => [
+              key,
+              stored.value,
+            ]),
+          );
+    return withDerivedGitIdentity({ ...identity, ...vars });
+  }
+
+  /**
+   * The image the create button uses by default: the one most recently used to
+   * create a machine, falling back to the newest built image when that one is
+   * gone or nothing has been created yet.
+   */
+  async function resolveDefaultTemplateId(
+    readyTemplates: { id: string }[],
+  ): Promise<string | null> {
+    if (readyTemplates.length === 0) return null;
+    const last = await alia.storage.kv.get<string>("lastTemplateId");
+    if (
+      typeof last === "string" &&
+      readyTemplates.some((image) => image.id === last)
+    ) {
+      return last;
+    }
+    return readyTemplates[0]?.id ?? null;
+  }
+
+  /** Sandbox lifetime and size from settings, with the Hobby-safe fallbacks. */
+  async function machineLimits(): Promise<{ timeoutMs: number; vcpus: number }> {
+    const values = await settings.get();
+    const seconds = Number.parseInt(values.machineTimeoutSeconds, 10);
+    const vcpus = Number.parseInt(values.machineVcpus, 10);
+    return {
+      timeoutMs:
+        Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 2_700_000,
+      vcpus: Number.isFinite(vcpus) ? vcpus : 2,
+    };
+  }
+
+  async function startCreate(templateId: string | null): Promise<boolean> {
+    const credentials = await requireCredentials();
+    const template = templateId === null ? null : getTemplate(templateId);
+    if (templateId !== null && (template === null || template.imageRef === null)) {
+      throw new Error(
+        `Template ${templateId} has not been built, so no machine can be created from it.`,
+      );
+    }
+    const { timeoutMs, vcpus } = await machineLimits();
+
+    // A new attempt supersedes whatever the last one reported.
+    lastFailure = null;
+    const ticket = randomUUID().slice(0, 8);
+    creating.add(ticket);
+    invalidateMachines();
+    alia.realtime.publish(MACHINES_CHANGED, {});
+
+    void (async () => {
+      try {
+        await record(
+          "create.requested",
+          null,
+          template === null
+            ? "Creating a cloud machine from the default sandbox image."
+            : `Creating a cloud machine from template "${template.name}".`,
+        );
+        // Remember the choice so the button defaults to it next time.
+        if (template !== null)
+          await alia.storage.kv.set("lastTemplateId", template.id);
+        const enrollment = await mintEnrollment();
+        const result = await createMachine({
+          credentials,
+          enrollment,
+          env: await machineEnv(template?.id ?? null),
+          ...(template?.imageRef == null ? {} : { image: template.imageRef }),
+          timeoutMs,
+          vcpus,
+          onCreated: async (name) => {
+            // The list can show a "Connecting" row from here, well before the
+            // multi-minute enrollment finishes.
+            await writeRecords([
+              {
+                name,
+                hostId: enrollment.hostId,
+                createdAt: Date.now(),
+                disconnectedAt: null,
+                templateId: template?.id ?? null,
+                templateName: template?.name ?? null,
+              },
+              ...(await readRecords()),
+            ]);
+            await record("create.sandbox-ready", name, "Sandbox created.");
+          },
+        });
+        await record(
+          "create.enrolled",
+          result.name,
+          "Machine enrolled and connected to VesnALIA.",
+        );
+      } catch (error) {
+        const failure = describeSandboxError(error);
+        lastFailure = { action: "create", ...failure, at: Date.now() };
+        await record(
+          "create.failed",
+          null,
+          failure.status === null
+            ? failure.message
+            : `[${failure.status}] ${failure.message}`,
+        );
+      } finally {
+        creating.delete(ticket);
+        invalidateMachines();
+        alia.realtime.publish(MACHINES_CHANGED, {});
+      }
+    })();
+
+    return true;
+  }
+
+  /**
+   * Resume a stopped machine in the background. The page shows the row as
+   * waking meanwhile; the machine returns to Running once its daemon has
+   * reconnected, which the ordinary status derivation picks up.
+   */
+  async function startWake(name: string): Promise<boolean> {
+    if (waking.has(name)) return false;
+    // A machine VesnALIA owns is resumed through VesnALIA, which restores the sandbox and
+    // restarts its daemon. The plugin's own wake script belongs to the
+    // machines it enrolled itself, and expects the supervisor those carry.
+    const threadHostId = await threadMachineHostId(name);
+    if (threadHostId === null) await requireCredentials();
+    lastFailure = null;
+    waking.add(name);
+    invalidateMachines();
+    alia.realtime.publish(MACHINES_CHANGED, {});
+
+    void (async () => {
+      try {
+        await record("wake.requested", name, "Waking machine.");
+        if (threadHostId !== null) {
+          await alia.sdk.hosts.experimental_resume({ hostId: threadHostId });
+          await record("machine.woken", name, "alia resumed the machine.");
+        } else {
+          // The machine is handed the environment it would get if it were
+          // created now, not the one it was created with: an identity imported
+          // or a token rotated since then belongs on it too.
+          const templateId =
+            (await readRecords()).find((r) => r.name === name)?.templateId ??
+            null;
+          const detail = await wakeMachine(
+            await requireCredentials(),
+            name,
+            await machineEnv(templateId),
+          );
+          // A resumed machine is live again, so clear the disconnect marker.
+          const records = await readRecords();
+          await writeRecords(
+            records.map((r) =>
+              r.name === name ? { ...r, disconnectedAt: null } : r,
+            ),
+          );
+          await record("machine.woken", name, detail);
+        }
+      } catch (error) {
+        const failure = describeSandboxError(error);
+        lastFailure = { action: "wake", ...failure, at: Date.now() };
+        await record(
+          "wake.failed",
+          name,
+          failure.status === null
+            ? failure.message
+            : `[${failure.status}] ${failure.message}`,
+        );
+      } finally {
+        waking.delete(name);
+        invalidateMachines();
+        alia.realtime.publish(MACHINES_CHANGED, {});
+      }
+    })();
+    return true;
+  }
+
+  /**
+   * End the sandbox, but keep the record and the VesnALIA host so the machine stays
+   * listed as Inactive and can be woken later.
+   */
+  async function stopMachineByName(name: string): Promise<boolean> {
+    const threadHostId = await threadMachineHostId(name);
+    if (threadHostId !== null) {
+      // Suspending through VesnALIA is what lets the thread resume this machine
+      // later; stopping its sandbox behind VesnALIA's back would leave VesnALIA thinking
+      // the machine is still there.
+      await record("delete.requested", name, "Stopping machine.");
+      await alia.sdk.hosts.experimental_suspend({ hostId: threadHostId });
+      await record("machine.stopped", name, "alia suspended the machine.");
+      invalidateMachines();
+      alia.realtime.publish(MACHINES_CHANGED, {});
+      return true;
+    }
+    const credentials = await requireCredentials();
+    await record("delete.requested", name, "Stopping machine.");
+    try {
+      await stopMachine(credentials, name);
+    } catch (error) {
+      // Already stopped is the common case and not a failure.
+      alia.log.info(
+        `stop ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    const records = await readRecords();
+    await writeRecords(
+      records.map((r) =>
+        r.name === name && r.disconnectedAt === null
+          ? { ...r, disconnectedAt: Date.now() }
+          : r,
+      ),
+    );
+    await record("machine.stopped", name, "Machine stopped.");
+    return true;
+  }
+
+  /**
+   * Delete the sandbox and its snapshots, drop its VesnALIA host
+   * registration, drop the local record, and hide the row. Nothing here is
+   * reversible.
+   */
+  async function removeMachineByName(name: string): Promise<boolean> {
+    const threadHostId = await threadMachineHostId(name);
+    if (threadHostId !== null) {
+      // VesnALIA deletes the sandbox through the provider that made it, and refuses
+      // outright while a thread is still live on the machine.
+      await record("delete.requested", name, "Removing machine.");
+      await alia.sdk.hosts.delete({ hostId: threadHostId });
+      await record(
+        "machine.deleted",
+        name,
+        "alia removed the machine and its sandbox.",
+      );
+      invalidateMachines();
+      alia.realtime.publish(MACHINES_CHANGED, {});
+      return true;
+    }
+    const credentials = await requireCredentials();
+    await record("delete.requested", name, "Removing machine.");
+    try {
+      const { snapshotsDeleted, snapshotFailures } = await destroyMachine(
+        credentials,
+        name,
+      );
+      await record(
+        "machine.deleted",
+        name,
+        snapshotFailures.length === 0
+          ? `Sandbox deleted with ${snapshotsDeleted} snapshot(s).`
+          : `Sandbox deleted with ${snapshotsDeleted} snapshot(s); ${snapshotFailures.length} snapshot(s) could not be deleted: ${snapshotFailures.join("; ")}`,
+      );
+    } catch (error) {
+      // The alia-side cleanup below still runs: a sandbox that cannot be deleted
+      // must not strand the machine in the list forever.
+      await record(
+        "machine.deleted",
+        name,
+        `Could not delete the sandbox: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    const records = await readRecords();
+    const target = records.find((r) => r.name === name) ?? null;
+    if (target !== null) {
+      await alia.sdk.hosts
+        .delete({ hostId: target.hostId })
+        .catch(() => undefined);
+      await writeRecords(records.filter((r) => r.name !== name));
+    }
+    await dismiss(name);
+    invalidateMachines();
+    alia.realtime.publish(MACHINES_CHANGED, {});
+    return true;
+  }
+
+  // Being signed out is deliberately NOT reported as needs-configuration. VesnALIA
+  // only loads a plugin's frontend while its status is exactly "running"
+  // (apps/app/src/lib/plugin-frontend.ts), so that status would remove the
+  // Vercel Sandboxes nav entry and every other slot — including the settings
+  // section holding the Sign in with Vercel button, which is the one thing a
+  // signed-out user needs to reach. The page reports the signed-out state
+  // itself and links to that settings tab.
+
+  /**
+   * Run a build to completion in the background.
+   *
+   * The log is written to the build row as it streams, so the UI can follow a
+   * running build instead of waiting for the whole thing.
+   */
+  async function startBuild(templateId: string): Promise<boolean> {
+    if (building.has(templateId)) return false;
+    const template = getTemplate(templateId);
+    if (template === null) throw new Error(`No template with id ${templateId}`);
+
+    const session = await ensureFreshSession();
+    if (session === null) {
+      throw new Error(
+        "Not signed in to Vercel. Use Sign in with Vercel on this plugin's settings page.",
+      );
+    }
+    if (session.teamSlug === null || session.teamSlug === "") {
+      throw new Error(
+        "Vercel team slug is unknown, so the registry path cannot be built. Sign out and back in.",
+      );
+    }
+
+    const buildId = randomUUID().slice(0, 8);
+    db.prepare(
+      "INSERT INTO builds (id, template_id, status, started_at, log) VALUES (?, ?, 'building', ?, '')",
+    ).run(buildId, templateId, Date.now());
+    building.add(templateId);
+    setTemplateStatus(templateId, "building", { lastError: null });
+
+    void (async () => {
+      const appendLog = (chunk: string) => {
+        db.prepare("UPDATE builds SET log = log || ? WHERE id = ?").run(
+          chunk,
+          buildId,
+        );
+        alia.realtime.publish(TEMPLATES_CHANGED, {});
+      };
+      try {
+        const result = await buildImage({
+          credentials: {
+            token: session.accessToken,
+            teamId: session.teamId,
+            projectId: session.projectId,
+          },
+          teamSlug: session.teamSlug!,
+          projectId: session.projectId,
+          // The tag is the template id, so rebuilding replaces its image in
+          // place rather than accumulating tags nobody can tell apart.
+          tag: template.id,
+          commands: template.commands,
+          onLog: appendLog,
+        });
+        db.prepare(
+          "UPDATE builds SET status = 'ready', finished_at = ?, image_ref = ? WHERE id = ?",
+        ).run(Date.now(), result.imageRef, buildId);
+        setTemplateStatus(templateId, "ready", { imageRef: result.imageRef });
+        registerThreadMachine(alia, threadMachines, templateId);
+        alia.log.info(`template ${template.name} built its image as ${result.imageRef}`);
+        // Rebuilding a tag leaves the manifest it replaced untagged and full
+        // size, so only the latest hash for each image is kept.
+        await recordCleanup("prune after build", pruneUntaggedImages);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        db.prepare(
+          "UPDATE builds SET status = 'error', finished_at = ?, error = ? WHERE id = ?",
+        ).run(Date.now(), message, buildId);
+        setTemplateStatus(templateId, "error", { lastError: message });
+        alia.log.warn(`template ${template.name} build failed: ${message}`);
+      } finally {
+        building.delete(templateId);
+        alia.realtime.publish(TEMPLATES_CHANGED, {});
+      }
+    })();
+    return true;
+  }
+
+  // The environment picker's Vercel Sandbox entries: one for Vercel's default
+  // image and one per template that has built. A template built or renamed
+  // later registers again; a deleted one keeps its entry until the plugin
+  // next loads, and refuses to launch meanwhile.
+  const threadMachines: ThreadMachineDeps = {
+    credentials: optionalCredentials,
+    limits: machineLimits,
+    machineEnv,
+    template: getTemplate,
+  };
+  registerThreadMachine(alia, threadMachines, null);
+  for (const template of listTemplates()) {
+    if (template.imageRef !== null) {
+      registerThreadMachine(alia, threadMachines, template.id);
+    }
+  }
+
+  // Vercel stops a sandbox when its lifetime runs out and tells VesnALIA nothing, so
+  // VesnALIA goes on believing the machine is active and its thread fails on the
+  // next message instead of recovering. Recording the machine as suspended is
+  // what makes that message resume the sandbox and carry on: Vercel keeps the
+  // filesystem, and VesnALIA restarts the daemon when it resumes a machine.
+  alia.background.schedule(
+    "suspend-stopped-thread-machines",
+    "* * * * *",
+    async () => {
+      const credentials = await optionalCredentials();
+      if (credentials === null) return;
+      const owners = await threadMachineOwners(await alia.sdk.hosts.list());
+      if (owners.size === 0) return;
+      const live = new Set(
+        (await listMachines(credentials, THREAD_MACHINE_PREFIX))
+          .filter(
+            (sandbox) =>
+              sandbox.status === "running" || sandbox.status === "pending",
+          )
+          .map((sandbox) => sandbox.name),
+      );
+      for (const [name, owner] of owners) {
+        if (owner.host.lifecycle.phase !== "active" || live.has(name)) continue;
+        try {
+          await alia.sdk.hosts.experimental_suspend({ hostId: owner.host.id });
+          await record(
+            "machine.stopped",
+            name,
+            "Vercel stopped the sandbox; recorded as suspended so its thread can resume it.",
+          );
+        } catch (error) {
+          // Refused while the machine is provisioning a thread; the next tick
+          // tries again.
+          alia.log.warn(
+            `could not suspend ${name}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+    },
+  );
+
+  alia.rpc.register(rpcContract, {
+    auth_status: () => describeAuth(),
+    auth_start: () => startSignIn(),
+    auth_cancel: async () => {
+      pending?.controller.abort();
+      pending = null;
+      return describeAuth();
+    },
+    auth_sign_out: () => signOut(),
+    machines_list: ({ force }) => readMachines(force),
+    machines_create: async ({ templateId }) => ({
+      started: await startCreate(templateId),
+    }),
+    machines_wake: async ({ name }) => ({ started: await startWake(name) }),
+    machines_dismiss_failure: () => {
+      const dismissed = lastFailure !== null;
+      lastFailure = null;
+      return { dismissed };
+    },
+    machines_stop: async ({ name }) => ({
+      stopped: await stopMachineByName(name),
+    }),
+    machines_remove: async ({ name }) => ({
+      removed: await removeMachineByName(name),
+    }),
+    templates_list: async () => {
+      const session = await readStoredSession();
+      return {
+        templates: listTemplates(),
+        presets: TEMPLATE_PRESETS.map(({ id, label, description }) => ({
+          id,
+          label,
+          description,
+        })),
+        registryUrl:
+          session === null
+            ? null
+            : vercelProjectUrl(session, `images/${DEFAULT_REPOSITORY}`),
+      };
+    },
+    templates_create: ({ presetId }) => {
+      const preset = findPreset(presetId);
+      if (preset === null) throw new Error(`No image preset "${presetId}"`);
+      const now = Date.now();
+      const id = randomUUID().slice(0, 8);
+      const count = (
+        db.prepare("SELECT COUNT(*) AS n FROM templates").get() as { n: number }
+      ).n;
+      // A preset only seeds the row; it is ordinary editable configuration
+      // from here, not a link that keeps updating.
+      db.prepare(
+        `INSERT INTO templates (id, name, commands, status, created_at, updated_at)
+         VALUES (?, ?, ?, 'pending', ?, ?)`,
+      ).run(
+        id,
+        count === 0 ? preset.name : `${preset.name} ${count + 1}`,
+        preset.commands,
+        now,
+        now,
+      );
+      alia.realtime.publish(TEMPLATES_CHANGED, {});
+      const created = getTemplate(id);
+      if (created === null) throw new Error("Image was not created.");
+      return created;
+    },
+    templates_update: ({ id, name, commands }) => {
+      const existing = getTemplate(id);
+      if (existing === null) throw new Error(`No image with id ${id}`);
+      db.prepare(
+        `UPDATE templates SET name = ?, commands = ?, updated_at = ? WHERE id = ?`,
+      ).run(name ?? existing.name, commands ?? existing.commands, Date.now(), id);
+      alia.realtime.publish(TEMPLATES_CHANGED, {});
+      const updated = getTemplate(id);
+      if (updated === null) throw new Error(`No image with id ${id}`);
+      if (updated.imageRef !== null) registerThreadMachine(alia, threadMachines, id);
+      return updated;
+    },
+    templates_delete: async ({ id }) => {
+      db.prepare("DELETE FROM builds WHERE template_id = ?").run(id);
+      const result = db.prepare("DELETE FROM templates WHERE id = ?").run(id);
+      // A template's environment has no meaning without it.
+      await writeVars(id, {});
+      alia.realtime.publish(TEMPLATES_CHANGED, {});
+      // The tag is the image id, so this removes exactly this image's
+      // manifest; the prune then catches anything it superseded.
+      await recordCleanup("delete image from registry", (credentials) =>
+        deleteImagesForTag(credentials, id),
+      );
+      await recordCleanup("prune after delete", pruneUntaggedImages);
+      return { deleted: result.changes > 0 };
+    },
+    github_status: async () => toGitHubStatus(await resolveGitHubProfile()),
+    github_import: async () => {
+      try {
+        const identity = await importLocalGitHubIdentity();
+        const stored: StoredGitHub = {
+          name: identity.name,
+          email: identity.email,
+          token: identity.token,
+          login: identity.login,
+          avatarUrl: identity.avatarUrl,
+          importedFrom: identity.login,
+          importedAt: Date.now(),
+        };
+        await writeGitHub(stored);
+        profileUnresolvable = false;
+        alia.realtime.publish(AUTH_CHANGED, {});
+        alia.log.info(`imported the git identity of @${identity.login} from gh`);
+        return toGitHubStatus(stored);
+      } catch (error) {
+        // Every import failure is something the user can act on, and none of
+        // them should reach the page as a stack trace.
+        if (error instanceof GitHubImportError) throw new Error(error.message);
+        throw error;
+      }
+    },
+    github_set: async ({ key, value }) => {
+      const identity = await readGitHub();
+      const trimmed = value.trim();
+      const field = (
+        {
+          [GIT_AUTHOR_NAME]: "name",
+          [GIT_AUTHOR_EMAIL]: "email",
+          [GH_TOKEN]: "token",
+        } as const
+      )[key];
+      const next: StoredGitHub = {
+        ...identity,
+        [field]: trimmed === "" ? undefined : trimmed,
+      };
+      // Edited by hand is no longer what `gh` reported, and saying otherwise
+      // would misattribute whatever is now stored.
+      if (identity.importedFrom != null) {
+        next.importedFrom = undefined;
+        next.importedAt = undefined;
+      }
+      // A new token belongs to whoever issued it, so the account shown beside
+      // it has to be worked out again rather than carried over.
+      if (key === GH_TOKEN) {
+        next.login = undefined;
+        next.avatarUrl = undefined;
+        profileUnresolvable = false;
+      }
+      await writeGitHub(next);
+      alia.realtime.publish(AUTH_CHANGED, {});
+      return toGitHubStatus(await resolveGitHubProfile());
+    },
+    github_clear: async () => {
+      await writeGitHub({});
+      profileUnresolvable = false;
+      alia.realtime.publish(AUTH_CHANGED, {});
+      return toGitHubStatus({});
+    },
+    templates_build: async ({ id }) => ({ started: await startBuild(id) }),
+    agent_providers: () => ({ providers: AGENT_PROVIDERS }),
+    templates_env_list: async ({ templateId }) => ({
+      vars: toTemplateVars(await readVars(templateId)),
+    }),
+    templates_env_set: async ({ templateId, key, value, secret }) => {
+      // Any name a shell can export: this store holds both the agent
+      // credentials the providers list and whatever else a template needs in
+      // its machines' environment.
+      assertSafeEnvKey(key);
+      const vars = await readVars(templateId);
+      if (value.trim() === "") delete vars[key];
+      else {
+        // A provider's own key is secret or not by the provider's definition,
+        // whatever the page asked for: a token must not become readable
+        // because a request said so.
+        const credential = providerCredential(key);
+        vars[key] = {
+          value: value.trim(),
+          secret: credential?.secret ?? secret,
+        };
+      }
+      await writeVars(templateId, vars);
+      return { vars: toTemplateVars(vars) };
+    },
+    builds_list: ({ templateId }) => ({
+      builds: db
+        .prepare(
+          "SELECT id, template_id, status, started_at, finished_at, image_ref, error FROM builds WHERE template_id = ? ORDER BY started_at DESC LIMIT 50",
+        )
+        .all(templateId)
+        .map((row) => {
+          const build = row as {
+            id: string;
+            template_id: string;
+            status: string;
+            started_at: number;
+            finished_at: number | null;
+            image_ref: string | null;
+            error: string | null;
+          };
+          return {
+            id: build.id,
+            templateId: build.template_id,
+            status: build.status as PluginBuild["status"],
+            startedAt: build.started_at,
+            finishedAt: build.finished_at,
+            imageRef: build.image_ref,
+            error: build.error,
+          };
+        }),
+    }),
+    build_log: ({ id }) => {
+      const row = db.prepare("SELECT log FROM builds WHERE id = ?").get(id);
+      return { log: row === undefined ? "" : ((row as { log: string }).log ?? "") };
+    },
+    events_list: async () => ({ events: await readEvents() }),
+    events_clear: async () => {
+      const cleared = (await readEvents()).length;
+      await alia.storage.kv.set("events", []);
+      return { cleared };
+    },
+  });
+
+  alia.onDispose(() => {
+    pending?.controller.abort();
+    alia.log.info("disposed");
+  });
+}

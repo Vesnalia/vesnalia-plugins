@@ -1,0 +1,378 @@
+// The Needs you queue: what waits on the user, in the order the spec gives, with snooze "until it changes".
+import { threadDotState } from "./tree.ts";
+import type { FilterThread } from "./statusFilters.ts";
+import { PR_REASON_LOOK, prActionReason, type FolderAttention, type PrReason } from "./prAttention.ts";
+import { excludeDescendantPullRequests, type ThreadPullRequest } from "./threadPullRequests.ts";
+import { ATTENTION_LABEL, prOpenTarget, type GithubFolderItem } from "./githubFolder.ts";
+import { automationDot, type AutomationSummary } from "./automations.ts";
+import type { NeedsYouPullRequests } from "./settings.ts";
+import { failureNote, isStuck, silentSince, type ThreadSignals } from "./threadSignals.ts";
+import { formatAge } from "./time.ts";
+import { repoSlugFromPrUrl } from "./pullRequestActions.ts";
+
+export type ThreadItemKind = "input" | "failed" | "queued-failed" | "stuck" | "unread";
+export type NeedsYouKind = ThreadItemKind | "pr" | "automation";
+
+export interface NeedsYouThread extends FilterThread {
+  queuedWork: string;
+}
+
+interface BaseItem {
+  /** Stable per thing, so a snooze finds it again. */
+  key: string;
+  /** Changes when the item does; a snooze lasts until then. */
+  signature: string;
+  title: string;
+  reason: string;
+  /** The thread a click opens; null opens the item's own page. */
+  threadId: string | null;
+}
+
+export interface ThreadItem extends BaseItem {
+  kind: ThreadItemKind;
+  threadId: string;
+  /** When a question was asked, or when a stuck thread last made progress. */
+  since: number | null;
+  orchestration: string | null;
+  /** The thread's turn failed and can be re-submitted; an unread failure may have moved on. */
+  canRetry: boolean;
+}
+
+export interface PullRequestItem extends BaseItem {
+  kind: "pr";
+  url: string;
+  number: number;
+  /** `owner/repo`; empty when the URL names none. */
+  repo: string;
+  /** GitHub Folder's signals for it; empty when that plugin doesn't list it. */
+  attention: readonly string[];
+  tone: PrReason | null;
+}
+
+export interface AutomationItem extends BaseItem {
+  kind: "automation";
+  automationId: string;
+}
+
+export type NeedsYouItem = ThreadItem | PullRequestItem | AutomationItem;
+
+/** Which thread item a thread is, if any: a question outranks a failure, a failure a failed queued message, and those a result to read. */
+export function threadItemKind(thread: NeedsYouThread): ThreadItemKind | null {
+  if (thread.isHidden || thread.isArchived) return null;
+  if (thread.hasPendingInteraction || thread.indicator === "waiting-for-input") return "input";
+  if (thread.status === "error" || thread.indicator === "unread-error") return "failed";
+  if (thread.indicator === "queued-failed" || thread.queuedWork === "failed") return "queued-failed";
+  if (thread.isUnread && threadDotState(thread) === "done") return "unread";
+  return null;
+}
+
+/** The part of a pending interaction the queue reads; VesnALIA's records are parsed loosely. */
+export interface PendingInteraction {
+  createdAt: number;
+  status: string;
+  payload: {
+    kind: string;
+    title?: string;
+    questions?: readonly { prompt: string }[];
+    subject?: { kind: string; command?: string; presentation?: { label?: { pending?: string } } };
+  };
+}
+
+export interface ThreadQuestion {
+  text: string | null;
+  since: number | null;
+}
+
+const APPROVAL_TEXT: Record<string, string> = {
+  file_change: "Approve file changes",
+  permission_grant: "Grant permissions",
+  plan: "Approve the plan",
+};
+
+/** The oldest pending request's words, and when it was asked. */
+export function describeQuestion(interactions: readonly PendingInteraction[]): ThreadQuestion {
+  const pending = interactions.filter((entry) => entry.status === "pending").sort((a, b) => a.createdAt - b.createdAt);
+  const first = pending[0];
+  if (!first) return { text: null, since: null };
+  const { payload } = first;
+  let text: string | null = null;
+  if (payload.kind === "user_question") text = payload.questions?.[0]?.prompt ?? null;
+  else if (payload.kind === "approval") {
+    const subject = payload.subject;
+    text = subject?.kind === "command" && subject.command
+      ? `Approve: ${subject.command}`
+      : subject?.kind === "tool_use" && subject.presentation?.label?.pending
+        ? `Approve: ${subject.presentation.label.pending}`
+        : APPROVAL_TEXT[subject?.kind ?? ""] ?? "Approve a request";
+  } else if (payload.title) text = payload.title;
+  const extra = pending.length - 1;
+  return { text: text && extra > 0 ? `${text} (+${extra} more)` : text, since: first.createdAt };
+}
+
+const THREAD_REASON: Record<Exclude<ThreadItemKind, "input" | "stuck">, string> = {
+  failed: "Last turn failed",
+  "queued-failed": "A queued message failed to send",
+  unread: "Finished · review the result",
+};
+
+export interface ThreadItemsInput<T extends NeedsYouThread> {
+  threads: readonly T[];
+  questions: ReadonlyMap<string, ThreadQuestion>;
+  /** When the client first saw a thread need input; the fallback wait for a question VesnALIA gave no time for. */
+  firstSeen: ReadonlyMap<string, number>;
+  orchestrationOf: (threadId: string) => string | null;
+  /** The thread's turn signals from its event log; without them nothing is called stuck. */
+  signalsOf?: (threadId: string) => ThreadSignals | undefined;
+  /** A result's diff in one line, when the thread's worktree is its own. */
+  diffStatOf?: (threadId: string) => string | null;
+  now?: number;
+}
+
+const KIND_ORDER: readonly ThreadItemKind[] = ["input", "failed", "queued-failed", "stuck", "unread"];
+
+function threadReason(kind: Exclude<ThreadItemKind, "input">, signals: ThreadSignals | undefined, diffStat: string | null, now: number): string {
+  if (kind === "unread" && diffStat) return `Finished · ${diffStat}`;
+  if (kind === "stuck") return `Running, no progress for ${formatAge(silentSince(signals!)!, now)}`;
+  const note = kind === "failed" ? failureNote(signals) : null;
+  return note ? `${THREAD_REASON[kind]} · ${note}` : THREAD_REASON[kind];
+}
+
+/** Questions first, longest wait first; then failures and failed queued messages, most recent first; stuck threads, longest silence first; then results. */
+export function threadItems<T extends NeedsYouThread>({ threads, questions, firstSeen, orchestrationOf, signalsOf = () => undefined, diffStatOf = () => null, now = Date.now() }: ThreadItemsInput<T>): ThreadItem[] {
+  const items: (ThreadItem & { latestAttentionAt: number })[] = [];
+  for (const thread of threads) {
+    const signals = signalsOf(thread.id);
+    const kind = threadItemKind(thread) ?? (!thread.isHidden && !thread.isArchived && isStuck(thread, signals, now) ? "stuck" : null);
+    if (!kind) continue;
+    const question = kind === "input" ? questions.get(thread.id) : undefined;
+    const silent = kind === "stuck" ? silentSince(signals!) : null;
+    items.push({
+      kind,
+      key: `thread:${thread.id}`,
+      signature: kind === "stuck" ? `stuck:${silent}` : `${kind}:${thread.updatedAt}`,
+      threadId: thread.id,
+      title: thread.displayTitle,
+      reason: kind === "input" ? question?.text ?? "Needs your input" : threadReason(kind, signals, kind === "unread" ? diffStatOf(thread.id) : null, now),
+      since: kind === "input" ? question?.since ?? firstSeen.get(thread.id) ?? null : silent,
+      orchestration: orchestrationOf(thread.id),
+      canRetry: kind === "failed" && thread.status === "error",
+      latestAttentionAt: thread.latestAttentionAt,
+    });
+  }
+  items.sort((a, b) =>
+    KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) ||
+    (a.kind === "input" || a.kind === "stuck" ? (a.since ?? Infinity) - (b.since ?? Infinity) : b.latestAttentionAt - a.latestAttentionAt) ||
+    a.key.localeCompare(b.key));
+  return items.map(({ latestAttentionAt: _latestAttentionAt, ...item }) => item);
+}
+
+/** Waiting threads whose pending requests weren't read at their current update. */
+export function questionsToRead(waiting: readonly { id: string; updatedAt: number }[], readAt: ReadonlyMap<string, number>): string[] {
+  return waiting.filter((thread) => readAt.get(thread.id) !== thread.updatedAt).map((thread) => thread.id);
+}
+
+/** Today's first-seen times for threads that need input: kept while they wait, dropped once they don't. */
+export function trackFirstSeen(previous: ReadonlyMap<string, number>, waitingIds: readonly string[], now: number): Map<string, number> {
+  return new Map(waitingIds.map((id) => [id, previous.get(id) ?? now]));
+}
+
+/** Agents can act on these; Ready to merge stays a row icon. */
+const QUEUE_PR_REASONS = new Set<PrReason>(["failing", "conflicts", "changes"]);
+
+export interface LinkedPullRequests {
+  threadId: string;
+  /** The thread's own PRs, without the ones a subthread also links. */
+  pullRequests: readonly ThreadPullRequest[];
+}
+
+export function linkedPullRequests(
+  threadIds: readonly string[],
+  pullRequestsOf: (threadId: string) => readonly ThreadPullRequest[],
+  descendantIdsOf: (threadId: string) => readonly string[],
+): LinkedPullRequests[] {
+  return threadIds.flatMap((threadId) => {
+    const own = pullRequestsOf(threadId);
+    return own.length === 0 ? [] : [{ threadId, pullRequests: excludeDescendantPullRequests(own, descendantIdsOf(threadId).flatMap(pullRequestsOf)) }];
+  });
+}
+
+/** Lowercased PR URL → the first thread that links it. */
+export function linkedThreadByUrl(linked: readonly LinkedPullRequests[]): Map<string, string> {
+  const threadOf = new Map<string, string>();
+  for (const { threadId, pullRequests } of linked) {
+    for (const pr of pullRequests) if (!threadOf.has(pr.url.toLowerCase())) threadOf.set(pr.url.toLowerCase(), threadId);
+  }
+  return threadOf;
+}
+
+export function pullRequestItems(
+  mode: NeedsYouPullRequests,
+  linked: readonly LinkedPullRequests[],
+  folder: FolderAttention,
+  folderItems: readonly GithubFolderItem[],
+  threadOf: ReadonlyMap<string, string> = linkedThreadByUrl(linked),
+): PullRequestItem[] {
+  if (mode === "none") return [];
+  const linkedPr = new Map<string, ThreadPullRequest>();
+  for (const { pullRequests } of linked) {
+    for (const pr of pullRequests) if (!linkedPr.has(pr.url.toLowerCase())) linkedPr.set(pr.url.toLowerCase(), pr);
+  }
+  if (mode === "all") {
+    return folderItems.map((item) => {
+      const attention = item.attention[0];
+      return {
+        kind: "pr",
+        key: `pr:${item.pr.url.toLowerCase()}`,
+        signature: prSignature(folder.get(item.pr.url.toLowerCase()) ?? item.attention, linkedPr.get(item.pr.url.toLowerCase())),
+        threadId: threadOf.get(item.pr.url.toLowerCase()) ?? null,
+        title: item.pr.title,
+        reason: `#${item.pr.number} · ${attention ? ATTENTION_LABEL[attention] : item.pr.repo}`,
+        url: item.pr.url,
+        number: item.pr.number,
+        repo: item.pr.repo,
+        attention: folder.get(item.pr.url.toLowerCase()) ?? item.attention,
+        tone: null,
+      };
+    });
+  }
+  const items = new Map<string, PullRequestItem & { rank: number }>();
+  for (const { threadId, pullRequests } of linked) {
+    for (const pr of pullRequests) {
+      const url = pr.url.toLowerCase();
+      const reason = prActionReason(pr, folder);
+      if (!reason || !QUEUE_PR_REASONS.has(reason) || items.has(url)) continue;
+      items.set(url, {
+        kind: "pr",
+        key: `pr:${url}`,
+        signature: prSignature(folder.get(url) ?? [], pr),
+        threadId,
+        title: pr.title,
+        reason: `#${pr.number} · ${PR_REASON_LOOK[reason].label}`,
+        url: pr.url,
+        number: pr.number,
+        repo: repoSlugFromPrUrl(pr.url) ?? "",
+        attention: folder.get(url) ?? [],
+        tone: reason,
+        rank: [...QUEUE_PR_REASONS].indexOf(reason),
+      });
+    }
+  }
+  return [...items.values()].sort((a, b) => a.rank - b.rank || a.number - b.number).map(({ rank: _rank, ...item }) => item);
+}
+
+/** The same in either PR setting, so switching it keeps a snooze. */
+function prSignature(attention: readonly string[], pr: ThreadPullRequest | undefined): string {
+  const signals = new Set(attention);
+  if (pr && pr.state !== "unknown" && pr.checks.state === "failing") signals.add("checks_failing");
+  if (pr?.attention === "conflicts") signals.add("conflicts");
+  return `pr:${[...signals].sort().join(",")}`;
+}
+
+/** Enabled automations whose last run failed, most recent first; paused ones stay in their section. */
+export function automationItems(automations: readonly AutomationSummary[]): AutomationItem[] {
+  return automations
+    .filter((automation) => automation.enabled && automationDot(automation) === "error")
+    .sort((a, b) => (b.lastRunAt ?? 0) - (a.lastRunAt ?? 0) || a.name.localeCompare(b.name))
+    .map((automation) => ({
+      kind: "automation",
+      key: `automation:${automation.id}`,
+      signature: `automation:${automation.lastRunAt ?? ""}`,
+      threadId: automation.lastRunThreadId,
+      automationId: automation.id,
+      title: automation.name,
+      reason: automation.lastError ? `Last run failed: ${automation.lastError}` : "Last run failed",
+    }));
+}
+
+export type Snoozes = Readonly<Record<string, string>>;
+
+/** Folder items exist before the thread list loads, but their linked PR's checks don't. */
+export function pullRequestSourcesSettled({ threadsStatus, folderLoaded, pullRequestsLoading }: { threadsStatus: string; folderLoaded: boolean; pullRequestsLoading: boolean }): boolean {
+  return threadsStatus === "ready" && folderLoaded && !pullRequestsLoading;
+}
+
+/** Whether an item's sources have all loaded, so its signature is final; until then its snooze holds. */
+export type SettledCheck = (item: NeedsYouItem) => boolean;
+const ALWAYS_SETTLED: SettledCheck = () => true;
+
+export function isSnoozed(item: NeedsYouItem, snoozes: Snoozes, settled: SettledCheck = ALWAYS_SETTLED): boolean {
+  if (!(item.key in snoozes)) return false;
+  return !settled(item) || snoozes[item.key] === item.signature;
+}
+
+/** Drops snoozes whose item changed, so a later return of the same signature isn't hidden. */
+export function pruneSnoozes(snoozes: Snoozes, items: readonly NeedsYouItem[], { limit = 200, settled = ALWAYS_SETTLED }: { limit?: number; settled?: SettledCheck } = {}): Snoozes {
+  const current = new Map(items.filter(settled).map((item) => [item.key, item.signature]));
+  const kept = Object.entries(snoozes).filter(([key, signature]) => (current.get(key) ?? signature) === signature);
+  return Object.fromEntries(kept.slice(-limit));
+}
+
+export function readSnoozes(raw: unknown): Snoozes {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return Object.fromEntries(Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+}
+
+export interface QueuedMessageRow {
+  id: string;
+  state: string;
+  createdAt: number;
+}
+
+export function failedQueuedMessage<T extends QueuedMessageRow>(rows: readonly T[]): T | null {
+  return rows.filter((row) => row.state.startsWith("failed_")).sort((a, b) => a.createdAt - b.createdAt)[0] ?? null;
+}
+
+export type ItemTarget = { kind: "thread"; threadId: string } | { kind: "pr"; url: string } | { kind: "automations" };
+
+export function itemTarget(item: NeedsYouItem): ItemTarget {
+  if (item.threadId) return { kind: "thread", threadId: item.threadId };
+  return item.kind === "pr" ? { kind: "pr", url: item.url } : { kind: "automations" };
+}
+
+/** The thread in view after opening `target`: a PR in a new tab leaves `viewThreadId` on screen. */
+export function cursorThreadId(target: ItemTarget, viewThreadId: string | null): string | null {
+  if (target.kind === "thread") return target.threadId;
+  if (target.kind === "pr") return prOpenTarget(target.url)?.kind === "folder" ? null : viewThreadId;
+  return null;
+}
+
+/** Where the last ⇧⌘I left off; it holds while the user stays where it took them. */
+export interface InboxCursor {
+  key: string;
+  index: number;
+  threadId: string | null;
+}
+
+/** ⇧⌘I: the item after the last one opened, else after the open thread's items, wrapping and skipping the open thread's; null when only it needs you. */
+export function nextItem(items: readonly NeedsYouItem[], activeThreadId: string | null, cursor: InboxCursor | null = null): NeedsYouItem | null {
+  let start = 0;
+  if (cursor && cursor.threadId === activeThreadId) {
+    const at = items.findIndex((item) => item.key === cursor.key);
+    start = at >= 0 ? at + 1 : cursor.index;
+  } else {
+    items.forEach((item, index) => {
+      if (activeThreadId && item.threadId === activeThreadId) start = index + 1;
+    });
+  }
+  for (let step = 0; step < items.length; step++) {
+    const item = items[(start + step) % items.length]!;
+    if (!activeThreadId || item.threadId !== activeThreadId) return item;
+  }
+  return null;
+}
+
+export const QUEUE_PREVIEW = 5;
+
+export function queuePreview<T>(items: readonly T[], expanded: boolean, limit = QUEUE_PREVIEW): { shown: readonly T[]; hidden: number } {
+  if (expanded || items.length <= limit) return { shown: items, hidden: 0 };
+  return { shown: items.slice(0, limit), hidden: items.length - limit };
+}
+
+export const NEXT_ITEM_SHORTCUT = { key: "i", mod: true, shift: true } as const;
+
+/** VesnALIA's default binding as macOS or other platforms write it; the SDK does not expose a rebinding. */
+export function shortcutLabel(shortcut: { key: string; mod?: boolean; shift?: boolean }, isMac: boolean): string {
+  const key = shortcut.key.toUpperCase();
+  if (isMac) return `${shortcut.shift ? "⇧" : ""}${shortcut.mod ? "⌘" : ""}${key}`;
+  return [shortcut.mod ? "Ctrl" : null, shortcut.shift ? "Shift" : null, key].filter(Boolean).join("+");
+}

@@ -1,0 +1,50 @@
+{
+  "name": "alia-plugin-arc-switcher",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "alia": ">=0.35",
+    "aliaPluginSdk": ">=0.6"
+  },
+  "alia": {
+    "name": "Arc Switcher",
+    "description": "Cycle through your seven most recent VesnALIA chats with Command-D.",
+    "branding": {
+      "icon": "Layers"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/arc-switcher#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/arc-switcher"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

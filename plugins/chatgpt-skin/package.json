@@ -1,0 +1,77 @@
+{
+  "name": "alia-plugin-chatgpt-skin",
+  "version": "0.2.0",
+  "description": "A VesnALIA palette that reproduces the ChatGPT desktop app's surfaces, typography, and component states.",
+  "keywords": [
+    "alia",
+    "alia-plugin",
+    "theme",
+    "palette",
+    "chatgpt"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
+  },
+  "alia": {
+    "name": "ChatGPT Skin",
+    "description": "Reproduces the ChatGPT desktop app's look: its surface ramp, text ladder, accent, and the hover/active/focus/disabled states of its buttons, menus, tooltips, and switches.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "themes": [
+      {
+        "id": "chatgpt",
+        "name": "ChatGPT",
+        "description": "ChatGPT desktop palette: its surface ramp, text ladder, accent, superellipse corners, and the hover/active/focus/disabled states of its buttons, menus, tooltips and switches. Light and dark.",
+        "css": "./themes/chatgpt.css",
+        "codeTheme": {
+          "dark": "./themes/chatgpt-code-dark.json",
+          "light": "./themes/chatgpt-code-light.json"
+        }
+      }
+    ],
+    "skills": []
+  },
+  "files": [
+    "dist/server.js",
+    "dist/server.meta.json",
+    "themes/",
+    "assets/",
+    "README.md",
+    "SELECTOR_AUDIT.md",
+    "scripts/",
+    "test/",
+    "server.ts"
+  ],
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "audit:source": "node scripts/audit-alia-source.mjs",
+    "build": "alia plugin build",
+    "test": "node --test test/*.test.mjs"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/chatgpt-skin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/chatgpt-skin"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

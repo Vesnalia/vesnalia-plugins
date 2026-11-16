@@ -1,0 +1,394 @@
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join as nodeJoin } from "node:path";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { resolveWithinRoot } from "../lib/path-jail.mjs";
+import { parseScopeArgs } from "../lib/scope-command.mjs";
+import { workspaceUnavailable } from "../lib/workspace-refusal.mjs";
+import {
+  sanitizeEvidenceRecord,
+  type EvidenceCondition,
+  type EvidenceContract,
+  type EvidenceRecord,
+} from "../lib/trackable-evidence.mjs";
+import { isSpecTechFile, plansRelDir } from "../lib/tracking-paths.mjs";
+import { mergePlannedTasks } from "../lib/spec-scope-reader.mjs";
+import { workflowEntryForOwner, workflowStateRelativeDir } from "../lib/workflow-state-identity.mjs";
+import { array, record, text, type LooseRecord } from "./runtime/values.js";
+import { scopeDoneGate, scopeStartGate } from "./scope-batch-gates.js";
+import type { ScopeBatchDb } from "./scope-batch.js";
+import { trailScopeSteals } from "../lib/lock-blocked.mjs";
+
+export type ScopeStatus =
+  | "pending"
+  | "in-progress"
+  | "blocked"
+  | "done"
+  | "completed"
+  | "skipped"
+  | "failed"
+  | "escalated";
+
+
+export interface ScopeTask {
+  id: string;
+  name: string;
+  kind: "task";
+  status: ScopeStatus;
+  source?: string;
+  note?: string;
+  blockedBy?: string[];
+  dependsOn?: string[];
+  conditions: EvidenceCondition[];
+}
+
+export interface WorkflowScope {
+  [key: string]: unknown;
+  id: string;
+  name: string;
+  kind: "scope";
+  type?: string;
+  status: ScopeStatus;
+  source?: string;
+  gap?: string;
+  blockedBy?: string[];
+  dependsOn?: string[];
+  record?: EvidenceRecord;
+  startedAt?: string;
+  targetFiles?: string[];
+  contract?: EvidenceContract;
+  conditions: EvidenceCondition[];
+  claimed: boolean | null;
+  tasks: ScopeTask[];
+}
+
+const STATUSES: ReadonlySet<string> = new Set<string>([
+  "pending",
+  "in-progress",
+  "blocked",
+  "done",
+  "completed",
+  "skipped",
+  "failed",
+  "escalated",
+]);
+
+function strings(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.map((entry) => typeof entry === "string" ? entry : String(entry));
+}
+
+export function normalizeStatus(value: unknown): ScopeStatus {
+  const candidate = text(value, "pending");
+  return STATUSES.has(candidate) ? candidate as ScopeStatus : "pending";
+}
+
+function projectTask(
+  value: unknown,
+  index: number,
+): Omit<ScopeTask, "conditions"> {
+  const task = record(value);
+  const blockedBy = strings(task.blockedBy) ?? strings(task.blocked_by);
+  const dependsOn = strings(task.dependsOn) ?? strings(task.depends_on);
+  return {
+    id: text(task.id, `task-${index + 1}`),
+    name: text(task.name, text(task.title, `Task ${index + 1}`)),
+    kind: "task",
+    status: normalizeStatus(task.status),
+    ...(typeof task.source === "string" ? { source: task.source } : {}),
+    ...(typeof task.note === "string" ? { note: task.note } : {}),
+    ...(blockedBy ? { blockedBy } : {}),
+    ...(dependsOn ? { dependsOn } : {}),
+  };
+}
+
+export function workflowScopes(raw: LooseRecord): WorkflowScope[] {
+  return array(raw.scopes).map((entry, index) => {
+    const scope = record(entry);
+    const evidence = sanitizeEvidenceRecord(scope.record);
+    const blockedBy = strings(scope.blockedBy);
+    const dependsOn = strings(scope.depends_on);
+    const targetFiles = strings(scope.targetFiles)?.filter(Boolean);
+    return {
+      id: text(scope.id, `scope-${index + 1}`),
+      name: text(scope.name, text(scope.title, `Scope ${index + 1}`)),
+      kind: "scope",
+      ...(typeof scope.type === "string" ? { type: scope.type } : {}),
+      status: normalizeStatus(scope.status),
+      ...(typeof scope.source === "string" ? { source: scope.source } : {}),
+      ...(typeof scope.gap === "string" ? { gap: scope.gap } : {}),
+      ...(blockedBy ? { blockedBy } : {}),
+      ...(dependsOn ? { dependsOn } : {}),
+      ...(evidence ? { record: evidence } : {}),
+      ...(typeof scope.started_at === "string" && scope.started_at
+        ? { startedAt: scope.started_at }
+        : {}),
+      ...(targetFiles ? { targetFiles } : {}),
+      tasks: array(scope.tasks).map(projectTask),
+    } as unknown as WorkflowScope;
+  });
+}
+
+export function trackingEntryForCard(
+  rootPath: string,
+  workflowId: string,
+): LooseRecord | null {
+  try {
+    // The tracking file is always the workspace's own: resolve through the
+    // jail so a hostile rootPath (or a symlink game above it) cannot point
+    // this read at another checkout's state.
+    const trackingPath = resolveWithinRoot(rootPath, "stelow.json");
+    if (!trackingPath) return null;
+    const tracking = JSON.parse(
+      readFileSync(trackingPath, "utf8"),
+    ) as LooseRecord;
+    return workflowEntryForOwner(array(tracking.workflows), workflowId) as LooseRecord | null;
+  } catch {
+    return null;
+  }
+}
+
+export function latestSpecTech(
+  rootPath: string,
+  workflowId: string,
+): { file: string; content: string } | null {
+  try {
+    const match = trackingEntryForCard(rootPath, workflowId);
+    if (!match) return null;
+    const plansRel = plansRelDir(workflowStateRelativeDir(match));
+    if (!plansRel) return null;
+    // plansRel derives from workflow state, not from a caller — but the
+    // state file is agent-influenced, so the joined dir still proves its
+    // containment before a readdir walks it.
+    const plans = resolveWithinRoot(rootPath, plansRel);
+    if (!plans) return null;
+    const files = readdirSync(plans).filter(isSpecTechFile).sort();
+    const file = files.at(-1);
+    if (!file) return null;
+    const full = resolveWithinRoot(rootPath, nodeJoin(plansRel, file));
+    return full ? { file, content: readFileSync(full, "utf8") } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function loadCardScopes(
+  rootPath: string | null,
+  workflowId: string,
+  opts?: { mergePlanned?: boolean },
+): WorkflowScope[] {
+  if (!rootPath) return [];
+  const tracking = resolveWithinRoot(rootPath, "stelow.json");
+  if (!tracking || !existsSync(tracking)) return [];
+  let trackingData: LooseRecord;
+  try {
+    trackingData = JSON.parse(readFileSync(tracking, "utf8")) as LooseRecord;
+  } catch {
+    return [];
+  }
+  const match = workflowEntryForOwner(
+    array(trackingData.workflows),
+    workflowId,
+  ) as LooseRecord | null;
+  if (!match) return [];
+  const tracked = workflowScopes(match);
+  if (opts?.mergePlanned === false) return tracked;
+  const spec = latestSpecTech(rootPath, workflowId)?.content ?? null;
+  return mergePlannedTasks(tracked, spec) as WorkflowScope[];
+}
+
+export interface CliResult {
+  exitCode: number;
+  stdout?: string;
+  stderr?: string;
+}
+
+interface ScopeCliCard {
+  id: string;
+  dir_hash: string | null;
+}
+
+interface ScopeCommandContext {
+  threadId?: string | null;
+  projectId?: string | null;
+}
+
+interface ScopeCommandDeps<TCard extends ScopeCliCard> {
+  alia: Pick<AliaPluginApi, "realtime">;
+  getCardByWorkerThread: (threadId: string) => TCard | undefined;
+  cardWorkspace: (card: TCard) => Promise<{ path?: string } | null>;
+  projectRoot: (projectId: string | null) => Promise<string | null>;
+  workflowStateDir: (
+    rootPath: string,
+    card: TCard,
+  ) => Promise<string | null>;
+  ensureProjectArtifacts: (
+    rootPath: string,
+    stateDir: string | null,
+    requireOwnedState: boolean,
+  ) => Promise<string | null>;
+  runHelper: (
+    args: string[],
+    rootPath: string,
+    stateDir?: string,
+  ) => Promise<{ code: number | null; stdout: string; stderr: string }>;
+  recordTrackableEvent: (event: {
+    cardId: string;
+    kind: "scope";
+    trackableId: string;
+    transition: "started" | "tasks-seeded" | "completed";
+    actor: "worker";
+    evidence: string;
+  }) => void;
+  /**
+   * Scope-batch coordination hooks. Absent in unit harnesses and legacy
+   * callers: without a database the command passes through untouched.
+   * When present and the card holds batch-namespaced claims, `start`
+   * admits + claims before the helper runs and `done` proves + releases
+   * after it succeeds.
+   */
+  db?: ScopeBatchDb;
+  /**
+   * Trail writer for a claim that was taken out of a lapsed lease. Optional:
+   * the ledger owns comments, and a harness without one still gets the claim
+   * and still gets the steal in its gate result — what it cannot do is leave
+   * the card a record of it.
+   */
+  logCardComment?: (
+    cardId: string,
+    target: string,
+    targetId: string,
+    author: "user" | "agent",
+    body: string,
+  ) => string;
+}
+
+const SCOPE_TRANSITIONS = {
+  start: "started",
+  "seed-tasks": "tasks-seeded",
+  done: "completed",
+} as const;
+
+async function resolveScopeContext<TCard extends ScopeCliCard>(
+  ctx: ScopeCommandContext,
+  projectId: string | null,
+  deps: ScopeCommandDeps<TCard>,
+) {
+  const card = ctx.threadId ? deps.getCardByWorkerThread(ctx.threadId) : undefined;
+  const workspace = card ? await deps.cardWorkspace(card) : null;
+  const rootPath = workspace?.path ?? await deps.projectRoot(
+    projectId ?? ctx.projectId ?? null,
+  );
+  if (!rootPath) {
+    return {
+      card,
+      rootPath: null,
+      stateDir: null,
+      guard: workspaceUnavailable("alia stelow scope --project <proj_id>"),
+    };
+  }
+  const stateDir = card?.dir_hash ? await deps.workflowStateDir(rootPath, card) : null;
+  const guard = await deps.ensureProjectArtifacts(
+    rootPath,
+    stateDir,
+    Boolean(card?.dir_hash),
+  );
+  return { card, rootPath, stateDir, guard };
+}
+
+/**
+ * A start-gate refusal, formatted once.
+ *
+ * The `done` gate's refusal is deliberately not folded in: it carries the
+ * helper's stdout forward, and a formatter that could produce either shape
+ * would be the thing it replaced. The conflicts slice is bounded because a
+ * refusal is read on one screen, and the alternative to a bound is a wall.
+ */
+function scopeGateRefusal(gate: { code: string; reason: string; conflicts?: unknown }) {
+  const conflicts = gate.conflicts ? ` ${JSON.stringify(gate.conflicts).slice(0, 500)}` : "";
+  return { exitCode: 1, stderr: `${gate.code}: ${gate.reason}${conflicts}` };
+}
+
+export async function runScopeCommand<TCard extends ScopeCliCard>(
+  argv: string[],
+  ctx: ScopeCommandContext,
+  deps: ScopeCommandDeps<TCard>,
+): Promise<CliResult> {
+  const parsed = parseScopeArgs(argv.slice(1));
+  if (parsed.error) return { exitCode: 2, stderr: parsed.error };
+  const context = await resolveScopeContext(ctx, parsed.projectId ?? null, deps);
+  if (!context.rootPath) {
+    return {
+      exitCode: 1,
+      stderr: context.guard ?? workspaceUnavailable("alia stelow scope --project <proj_id>"),
+    };
+  }
+  if (context.guard) return { exitCode: 1, stderr: context.guard };
+  const { card, rootPath, stateDir } = context;
+  // Scope-batch start gate (admission + spawn): dormant unless the card
+  // holds batch-namespaced claims. A refused batch never reaches the
+  // helper, so no partial dispatch can happen.
+  if (card && parsed.op === "start" && deps.db) {
+    try {
+      const gate = scopeStartGate(deps.db, {
+        cardId: card.id,
+        scopeId: parsed.scopeId!,
+        workspacePath: rootPath,
+        scopes: loadCardScopes(rootPath, card.id),
+      });
+      if (!gate.ok) return scopeGateRefusal(gate);
+      trailScopeSteals(deps.logCardComment, card.id, gate.stolen);
+    } catch {
+      // Gate infrastructure failures fail open: a broken registry must
+      // never park a worker behind a scope it could run.
+    }
+  }
+  const result = await deps.runHelper(
+    ["scope", ...parsed.passthrough!],
+    rootPath,
+    stateDir ?? undefined,
+  );
+  if (result.code !== 0) {
+    return {
+      exitCode: 1,
+      stderr: result.stderr || "scope transition failed",
+      stdout: result.stdout,
+    };
+  }
+  // Scope-batch done gate (pre-write proof + cleanup): dormant unless the
+  // card holds batch-namespaced claims. The completing scope must still
+  // hold live claims on its target files, then releases exactly its own.
+  if (card && parsed.op === "done" && deps.db) {
+    try {
+      const finishing = loadCardScopes(rootPath, card.id).find((scope) => scope.id === parsed.scopeId!);
+      const gate = scopeDoneGate(deps.db, {
+        cardId: card.id,
+        scopeId: parsed.scopeId!,
+        workspacePath: rootPath,
+        targetFiles: finishing?.targetFiles ?? [],
+      });
+      if (!gate.ok) return { exitCode: 1, stdout: result.stdout, stderr: `${gate.code}: ${gate.reason}` };
+    } catch {
+      // Release failures never undo a committed helper transition.
+    }
+  }
+  if (card) {
+    try {
+      deps.recordTrackableEvent({
+        cardId: card.id,
+        kind: "scope",
+        trackableId: parsed.scopeId!,
+        transition: SCOPE_TRANSITIONS[
+          parsed.op as keyof typeof SCOPE_TRANSITIONS
+        ] ?? "completed",
+        actor: "worker",
+        evidence: result.stdout.slice(0, 200),
+      });
+    } catch {
+      // The trail is durable evidence, but it must not undo a committed transition.
+    }
+    deps.alia.realtime.publish("card-state", { cardId: card.id });
+    deps.alia.realtime.publish("board-changed", { cardId: card.id });
+  }
+  return { exitCode: 0, stdout: result.stdout };
+}
+

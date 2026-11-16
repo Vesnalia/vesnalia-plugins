@@ -1,0 +1,57 @@
+{
+  "name": "alia-plugin-color-swatches",
+  "version": "0.1.1",
+  "type": "module",
+  "private": true,
+  "files": [
+    "assets",
+    "dist",
+    "docs",
+    "README.md"
+  ],
+  "engines": {
+    "alia": ">=0.0.34",
+    "aliaPluginSdk": ">=0.6"
+  },
+  "alia": {
+    "name": "Color Swatches",
+    "description": "Makes CSS color literals visible at a glance in thread code and submitted user messages — hex, rgb(), hsl(), oklch() and more.",
+    "branding": {
+      "icon": "./assets/color-chip.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "scripts": {
+    "build": "node ../../tooling/build-plugin.mjs",
+    "check": "npm run typecheck && npm run build && npm test",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "jsdom": "^29.0.1",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.143"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/color-swatches#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/color-swatches"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

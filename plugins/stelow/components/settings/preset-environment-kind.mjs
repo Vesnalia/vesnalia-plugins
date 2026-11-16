@@ -1,0 +1,69 @@
+/**
+ * A preset's environment control: whether it may be touched, and the one
+ * sentence that explains the current state.
+ *
+ * Pure, and a module rather than part of the field component, so each rule has
+ * an executor. A source-text pin can only prove a sentence is present; it
+ * cannot prove the sentence a person actually reads matches the state the
+ * control is in, and that correspondence is the whole point of a help line.
+ *
+ * The vocabulary itself is re-exported from `lib/preset-environment-seed.mjs`,
+ * where the mapper and the card-override writer both read it. This module owns
+ * only what the control does.
+ */
+
+export {
+  DEFAULT_ENVIRONMENT_KIND,
+  ENVIRONMENT_KINDS,
+  isKnownEnvironmentKind,
+  WORKTREE_ENVIRONMENT_KIND,
+} from "../../lib/preset-environment-seed.mjs";
+
+import {
+  isKnownEnvironmentKind as isKnownKind,
+  WORKTREE_ENVIRONMENT_KIND,
+} from "../../lib/preset-environment-seed.mjs";
+
+/**
+ * Editing a built-in keeps its own environment. Flipping the built-in default's
+ * kind would re-route every auto-started worker through `firstWorktreePreset`,
+ * un-park the automation gate, and become the inherited kind of every preset
+ * created afterwards — a cascade so consequential that the control is disabled
+ * rather than left silent.
+ *
+ * A new preset (`id` null) is not a built-in edit: there is nothing to protect
+ * yet, and disabling every fresh form would make the feature unauthorable.
+ */
+export function isBuiltInPresetEdit(presets, formId) {
+  if (!formId) return false;
+  return presets.some((preset) => preset.id === formId && preset.builtIn);
+}
+
+/**
+ * One sentence per state, each saying what actually happens. The off state says
+ * what VesnALIA does, not what the card will get: VesnALIA resolves its own default, and
+ * that default is not this plugin's to promise.
+ *
+ * The unrecognised case names the stored value and the way out, because both
+ * facts exist nowhere else — the field renders unchecked and the refusal
+ * happens on save.
+ */
+export function environmentKindExplanation({ kind, builtIn }) {
+  if (builtIn) {
+    return "Built-in presets keep their own environment. Duplicate it via "
+      + "New preset above — it starts from these settings — flip the worktree "
+      + "option there, then Set default to make it board-wide.";
+  }
+  if (!isKnownKind(kind)) {
+    return `This preset stores an unrecognised environment ("${kind}"), so it is treated as VesnALIA's default. Saving rewrites it as the default environment.`;
+  }
+  if (kind === WORKTREE_ENVIRONMENT_KIND) {
+    return "Cards start with this preset open a worktree of their own. You can still change it when creating a card.";
+  }
+  return "Off: cards start in whatever environment VesnALIA picks for the project.";
+}
+
+/** Whether the control accepts input right now. */
+export function isEnvironmentKindEditable({ busy, builtIn }) {
+  return busy !== true && builtIn !== true;
+}

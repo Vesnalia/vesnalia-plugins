@@ -1,0 +1,45 @@
+{
+  "name": "alia-plugin-workspace-skills",
+  "version": "0.1.2",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
+  },
+  "alia": {
+    "name": "Workspace Skills",
+    "description": "Configurable filesystem paths scanner for project and global skills in VesnALIA.",
+    "branding": {
+      "icon": "FolderKanban"
+    },
+    "server": "./server.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/workspace-skills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/workspace-skills"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

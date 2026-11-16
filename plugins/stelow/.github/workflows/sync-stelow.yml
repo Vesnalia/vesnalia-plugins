@@ -1,0 +1,71 @@
+name: sync Stelow
+
+on:
+  repository_dispatch:
+    types: [stelow-release]
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-stelow
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: calionauta/stelow
+          ref: ${{ github.event.client_payload.commit || 'main' }}
+          path: upstream
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Synchronize one immutable upstream revision
+        run: |
+          test -z "$(git -C upstream status --porcelain)"
+          test -f upstream/scripts/stelow
+          test -f upstream/product-strategies.json
+          test -f upstream/package.json
+          test "$(find upstream/skills -mindepth 1 -maxdepth 1 -type d -name 'stelow-*' | wc -l)" -gt 0
+          # One implementation, shared with the manual path. This used to be a
+          # hand-copied block in YAML and had already drifted: it refreshed
+          # skills, the helper and the catalogs but never data/stelow-assets
+          # (the vendored recipes and schemas the contracts are checked
+          # against). The script pins the revision and syncs everything the
+          # pin names, including the execution assets.
+          node scripts/sync-stelow-assets.mjs --from-checkout upstream
+      - name: Verify the candidate
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm pack --dry-run --json >/dev/null
+      - name: Open or update the synchronization pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then exit 0; fi
+          SHA="$(node -p 'require("./data/stelow-source.json").commit')"
+          VERSION="$(node -p 'require("./data/stelow-source.json").version')"
+          BRANCH="automation/stelow-${SHA:0:12}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add data skills
+          git commit -m "chore: sync Stelow ${VERSION}"
+          git push --force-with-lease origin "$BRANCH"
+          if [ "$(gh pr list --head "$BRANCH" --state open --json number --jq 'length')" = "0" ]; then
+            gh pr create --base master --head "$BRANCH" --title "chore: sync Stelow ${VERSION}" --body "Automated, immutable sync from calionauta/stelow@${SHA}. The workflow ran typecheck, tests, and package verification. Review and merge; releases remain explicit."
+          fi

@@ -1,0 +1,373 @@
+/**
+ * The execution layer: the run loop, and the thread-state projection it feeds.
+ *
+ * A card's worker runs because something spawns it, something reconciles it
+ * when the host disagrees with the database, and something re-synchronises
+ * every card's thread state on boot. All three are the same concern seen from
+ * three angles, and all three must agree on one lifecycle — so they are wired
+ * here, in order: the native record, then the lifecycle that writes it, then
+ * the reconciler that repairs it, then the advance that moves a card on.
+ *
+ * The layer depends on the gate surfaces only for the question contract an
+ * advance must clear, and on nothing else: it never creates a card and never
+ * reads a card's artifacts, so it can be built before either exists.
+ */
+import { createExecutionNative } from "../../execution-native.js";
+import { createBoundaryVersionReader } from "../../execution-boundary.js";
+import { createExecutionLifecycle } from "../../execution-lifecycle.js";
+import { createExecutionReconcile } from "../../execution-reconcile.js";
+import { createPublicationReconcile } from "../../publication-reconcile.js";
+import { createExecutionAdvance } from "../../execution-advance.js";
+import { createScopeMapReader } from "../../scope-map-reader.js";
+import { createWorktreeCleanup } from "../../worktree-cleanup.js";
+import { approveScopeMapOnCard, type ScopeMapApprovalDeps } from "../../scope-map-approval.js";
+import { createResearchTrackSync } from "../research-track-sync.js";
+import type { HostReadStreak } from "../../../lib/host-read-streak.mjs";
+import { createBuildThreadSync } from "../build-thread-sync.js";
+import { readHostHold } from "../worker-hold.js";
+import { registerRuntimeLifecycle } from "../composition.js";
+import { recordTrackableEvent } from "../../../lib/trackable-events.mjs";
+import { isDoneStatus, isSkippedStatus } from "../../../lib/trackables.mjs";
+import { isArchivedCard } from "../../../lib/worker-action-policy.mjs";
+import type { WorkerCard } from "../../workers-types.js";
+import { readCardStatus } from "../../../lib/card-status.mjs";
+import { cardLiveRuns } from "../card-live-runs.js";
+import { IDLE_ATTENTION_MS, AUDIT_DONE_NUDGE } from "../attention-window.js";
+import { createReadStreaks } from "../read-streak-wiring.js";
+import { INTERFACE_PICK } from "../plugin-protocols.js";
+import type { AnswerBoundaryPort } from "../answer-resume.js";
+import type { RuntimeCore } from "../runtime-core.js";
+import type { GateSurfaces } from "./gate-surfaces.js";
+import type { Deferred } from "./deferred.js";
+
+export type ExecutionSurfaces = ReturnType<typeof createExecutionSurfaces>;
+
+export type ExecutionSurfaceDeps = {
+  core: RuntimeCore;
+  gates: GateSurfaces;
+  /**
+   * Where the answer doors read the boundary port from. This layer binds it as
+   * soon as the lifecycle exists, which is what lets an answer that names a
+   * run's boundary resume the run rather than the worker thread.
+   */
+  boundary: Deferred<AnswerBoundaryPort>;
+};
+
+export function createExecutionSurfaces(deps: ExecutionSurfaceDeps) {
+  const { core, gates, boundary } = deps;
+  const executionNative = buildNative(core);
+  const scopeMaps = createScopeMapReader(core.alia);
+  const executionLifecycle = buildLifecycle(core, executionNative);
+  boundary.bind({
+    routeAnswerContinuation: executionLifecycle.routeAnswerContinuation,
+    resumeAfterAnswers: executionLifecycle.resumeAfterAnswers,
+  });
+  const executionReconcile = buildReconcile(core, executionNative, executionLifecycle);
+  return {
+    executionNative,
+    executionLifecycle,
+    executionReconcile,
+    executionAdvance: buildAdvance(core, gates, executionNative, scopeMaps.scopeMapApproved),
+    scopeMaps,
+    approval: buildScopeMapApproval(core),
+    worktreeCleanup: buildWorktreeCleanup(core),
+    ...buildThreadSync(core),
+  };
+}
+
+/** Approving a scope map: the host-side door that stamps the worker's draft. */
+function buildScopeMapApproval(core: RuntimeCore) {
+  const deps: ScopeMapApprovalDeps = {
+    alia: core.alia,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    workflowStateDir: (rootPath, card) =>
+      core.workflowStateDir(core.alia, rootPath, card.id, card.dir_hash!),
+    randomId: core.randomId,
+    logCardComment: (cardId, target, targetId, author, body) =>
+      core.ledger.logCardComment(cardId, target, targetId, author, body),
+    publish: (cardId) => core.alia.realtime.publish("card-state", { cardId }),
+    errors: {
+      cardNotFound: core.ERRORS.cardNotFound,
+      cardArchived: core.ERRORS.cardArchived,
+      workspaceUnavailable: core.ERRORS.workspaceUnavailable,
+    },
+  };
+  return {
+    approveScopeMap: ({ cardId }: { cardId: string }) =>
+      approveScopeMapOnCard(deps, cardId),
+  };
+}
+
+/** The execution rows themselves: one card's run, recorded in the database. */
+function buildNative(core: RuntimeCore) {
+  const { alia, db, randomId, cardWorkspace } = core;
+  return createExecutionNative({
+    db,
+    alia,
+    randomId,
+    cardWorkspace,
+    stateDir: (card, rootPath) =>
+      core.workflowStateDir(alia, rootPath, card.id, card.dir_hash!),
+    logComment: (cardId, targetId, body) =>
+      core.ledger.logCardComment(cardId, "card", targetId, "agent", body),
+    actions: core.actions,
+  });
+}
+
+/** Spawn and stop: the two calls that change whether a worker exists. */
+function buildLifecycle(
+  core: RuntimeCore,
+  native: ReturnType<typeof buildNative>,
+) {
+  const { alia, db, randomId, getCard, cardWorkspace } = core;
+  return createExecutionLifecycle({
+    db,
+    alia,
+    randomId,
+    getCard,
+    logComment: (cardId, targetId, body) =>
+      core.ledger.logCardComment(cardId, "card", targetId, "agent", body),
+    native,
+    // A boundary answer is only an answer if the card's shape has not moved
+    // since the question was asked; the reader compares the run's contract
+    // against what the card holds now.
+    boundaryVersions: createBoundaryVersionReader({
+      alia,
+      getCard,
+      cardWorkspace,
+      stateDir: (card, rootPath) =>
+        core.workflowStateDir(alia, rootPath, card.id, card.dir_hash!),
+    }),
+  });
+}
+
+/**
+ * The reconciler. It runs at boot and after every spawn: the host knows which
+ * threads exist, the database knows what they were doing, and the difference
+ * is a card whose state is now a guess.
+ */
+function buildReconcile(
+  core: RuntimeCore,
+  native: ReturnType<typeof buildNative>,
+  lifecycle: ReturnType<typeof buildLifecycle>,
+) {
+  const { alia, db, now, randomId, getCard, cardWorkspace, git } = core;
+  const publication = createPublicationReconcile({
+    db, alia, now, randomId, cardNotFound: core.ERRORS.cardNotFound,
+    getCard, runGitIn: git.runGitIn,
+    discardEvidence: (card) => git.discardEvidence(card as WorkerCard),
+    checkout: (card) => core.seams.cardCheckout(card as WorkerCard),
+    cardStatusOf: readCardStatus,
+  });
+  return createExecutionReconcile({
+    reconcilePublications: publication.reconcilePublications,
+    db, alia, now, randomId, actions: core.actions,
+    getCard,
+    cardWorkspace,
+    fetchPendingQuestions: core.fetchPendingQuestions,
+    logComment: (cardId, targetId, body) =>
+      core.ledger.logCardComment(cardId, "card", targetId, "agent", body),
+    publishCard: (cardId) => alia.realtime.publish("card-state", { cardId }),
+    native,
+    lifecycle,
+  });
+}
+
+/** The advance: the transition, and the evidence it leaves on the card. */
+function buildAdvance(
+  core: RuntimeCore,
+  gates: GateSurfaces,
+  native: ReturnType<typeof buildNative>,
+  scopeMapApproved: (stateDir: string | null) => Promise<boolean>,
+) {
+  const { alia, db, getCard, cardWorkspace, updateCard, presetServer, workers } = core;
+  const ERRORS = core.ERRORS;
+  return createExecutionAdvance({
+    errors: {
+      cardNotFound: ERRORS.cardNotFound,
+      cardArchived: ERRORS.cardArchived,
+      workspaceUnavailable: ERRORS.workspaceUnavailable,
+    },
+    db,
+    getCard,
+    getCardByWorkerThread: core.ledger.getCardByWorkerThread,
+    cardWorkspace,
+    projectRoot: (projectId) => core.projectRoot(alia, projectId),
+    stateDir: (card, rootPath) =>
+      core.workflowStateDir(alia, rootPath, card.id, card.dir_hash!),
+    // A broad refactor may not enter execution on scope blocks alone: it needs
+    // a recorded, approved map of what it delivers.
+    scopeMapApproved,
+    ensureArtifacts: (rootPath, stateDir, requireOwnedState) =>
+      core.ensureProjectArtifacts(alia, rootPath, stateDir, requireOwnedState),
+    questionGate: gates.questionContractsGate,
+    runHelper: core.runHelper,
+    native,
+    reworkNote: (card) => auditReworkNote(card, gates.critiqueGapState),
+    updateCard: (cardId, fields) =>
+      updateCard(cardId, fields as Parameters<typeof updateCard>[1]),
+    recordStageEvent: core.ledger.recordStageEvent,
+    recordExecutionEntry: (cardId, evidence, transition) =>
+      recordExecutionEntry(core.db, cardId, evidence, transition),
+    getReliablePreset: presetServer.getReliablePresetForBand,
+    getCardPresetId: (cardId) => presetServer.getPresetForCard(cardId).id,
+    scheduleRespawn: (cardId, presetId) => workers.scheduleRespawn(cardId, presetId),
+    suggestTier: (card, stage) => core.decision.suggestTierShadow(card, stage),
+    requestGatePreReview: core.requestGatePreReview,
+    publishCard: (cardId) => alia.realtime.publish("card-state", { cardId }),
+    isArchivedCard,
+  });
+}
+
+/** Cleanup: drop a worktree the card is done with, and say so on the card. */
+function buildWorktreeCleanup(core: RuntimeCore) {
+  const { alia, getCard, workers } = core;
+  return createWorktreeCleanup({
+    getCard,
+    evidence: (card) => core.git.discardEvidence(card as never),
+    dropWorktree: core.git.dropLinkedWorktree,
+    stopWorker: (threadId) => workers.stop(threadId),
+    log: core.ledger.commentCard,
+    publish: (event, payload) => alia.realtime.publish(event, payload),
+  });
+}
+
+/**
+ * The build thread's sync, and the research/explore sync it owns.
+ *
+ * A track's completion contract differs from a build's (a valid index versus
+ * a valid stage artifact), so each has its own projection and they agree only
+ * on the lifecycle they share. The track sync is built ONCE and handed to the
+ * build sync: building it twice gave the two projections separate instances of
+ * the same readers.
+ */
+function buildThreadSync(core: RuntimeCore) {
+  return {
+    syncThreadState: buildBuildSync(core, buildTrackSync(core)),
+  };
+}
+
+function buildTrackSync(core: RuntimeCore) {
+  const { alia, db, now, getCard, updateCard, workers } = core;
+  return createResearchTrackSync({
+    alia,
+    db,
+    now,
+    getCard,
+    updateCard,
+    recordInboxEvent: core.recordInboxEvent,
+    upsertPausedEvent: core.upsertPausedEvent,
+    resolvePausedEvents: (cardId, at) =>
+      core.resolveInboxEvents(cardId, at, ["paused"], "completed"),
+    recordStageEvent: core.ledger.recordStageEvent,
+    markThreadRunning: core.trackProjection.markThreadRunning,
+    syncQuestions: core.questions.syncOpenQuestionInbox,
+    readHold: (card) => Promise.resolve(
+      card.worker_thread_id ? readHostHold(alia, card.worker_thread_id) : null,
+    ),
+    noteAgentOutput: core.trackProjection.noteAgentOutput,
+    applyFailed: (cardId, threadId, error) =>
+      workers.applyFailed(cardId, threadId, error),
+    escalateIfStalled: core.claims.escalateIfStalled,
+    researchReadiness: core.researchArtifacts.researchReadiness,
+    exploreArtifact: core.researchArtifacts.exploreArtifact,
+    idleAttentionMs: IDLE_ATTENTION_MS,
+  });
+}
+
+/** The build-card sync's deps, named in one place so `buildBuildSync` reads as a
+ * list of collaborators rather than a wall of wiring. */
+function buildBuildSync(core: RuntimeCore, trackSync: ReturnType<typeof buildTrackSync>) {
+  const { alia, db, now, getCard, cardWorkspace, updateCard, workers } = core;
+  const readStreaks = createReadStreaks(alia, core.actions);
+  return createBuildThreadSync({
+    alia,
+    db,
+    now,
+    getCard,
+    cardWorkspace,
+    workflowStateDir: core.workflowStateDir,
+    resolveWorkflowStateDir: core.resolveWorkflowStateDir,
+    updateCard,
+    syncResearch: trackSync.syncResearch,
+    syncExplore: trackSync.syncExplore,
+    syncQuestions: core.questions.syncOpenQuestionInbox,
+    readHold: (card) => Promise.resolve(
+      card.worker_thread_id ? readHostHold(alia, card.worker_thread_id) : null,
+    ),
+    liveRuns: (card) => cardLiveRuns(db, card.id),
+    applyFailed: (cardId, threadId, error) =>
+      workers.applyFailed(cardId, threadId, error),
+    logComment: core.ledger.commentCard,
+    recordInbox: core.recordInboxEvent,
+    vetContinuation: core.decision.vetAutoContinue,
+    escalateIfStalled: core.claims.escalateIfStalled,
+    stripMessageDirectives: core.stripMessageDirectives,
+    interfacePick: INTERFACE_PICK,
+    auditDoneNudge: AUDIT_DONE_NUDGE,
+    idleAttentionMs: IDLE_ATTENTION_MS,
+    noteUnreadable: readStreaks.unreadable,
+    noteReadable: readStreaks.readable,
+    forgetUnreadable: readStreaks.forget,
+  });
+}
+
+/** Register the boot reconcile and the interval that keeps it honest. */
+export function registerExecutionLifecycle(
+  core: RuntimeCore,
+  execution: ExecutionSurfaces,
+): void {
+  const { alia, db, getCard, cardWorkspace, workers } = core;
+  registerRuntimeLifecycle({
+    alia,
+    db,
+    syncThreadState: execution.syncThreadState,
+    applyFailed: (cardId, threadId, error) =>
+      workers.applyFailed(cardId, threadId, error),
+    executionReconcile: execution.executionReconcile,
+    getCard,
+    cardWorkspace,
+    maybeBumpSeverity: core.decision.maybeBumpSeverity,
+    notifyClaimWaiters: core.notifyClaimWaiters,
+    disposeWorkers: () => workers.dispose(),
+    actions: core.actions,
+  });
+}
+
+/** An execution transition recorded on the card's trackable history. */
+function recordExecutionEntry(
+  db: RuntimeCore["db"],
+  cardId: string,
+  evidence: string,
+  transition: string,
+): void {
+  recordTrackableEvent(db, {
+    cardId,
+    kind: "scope",
+    trackableId: "all",
+    transition,
+    actor: "host",
+    evidence,
+  });
+}
+
+/**
+ * Why an audit card went back to execution instead of forward. Only an audit
+ * card with a matched gap set says anything; a gap read that fails is silence,
+ * not a false claim that the audit found nothing.
+ */
+async function auditReworkNote(
+  card: Parameters<GateSurfaces["critiqueGapState"]>[0],
+  critiqueGapState: GateSurfaces["critiqueGapState"],
+): Promise<string> {
+  if (card.stage !== "audit") return "";
+  const gaps = await critiqueGapState(card).catch(() => null);
+  if (!gaps?.matched) return "";
+  const open = (gaps.auditGapScopes ?? []).filter(
+    (scope) => !isDoneStatus(scope.status) && !isSkippedStatus(scope.status),
+  );
+  return open.length > 0
+    ? `\n(rework loop: back to execution from audit — picking up ${open.length} open audit-gap scope(s): ${open.map((scope) => scope.id).join(", ")})`
+    : "\n(rework loop: back to execution from audit — no open audit-gap scopes)";
+}

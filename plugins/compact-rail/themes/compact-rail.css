@@ -1,0 +1,64 @@
+/* Compact desktop navigation rail. Keep default colors and control sizes.
+   ALIA derives the rail, the sidebar body offset and the footer column from
+   --alia-sidebar-rail-padding, so shrinking it keeps all three aligned. */
+@media (min-width: 768px) and (pointer: fine) {
+  :root {
+    --alia-sidebar-rail-padding: 6px;
+  }
+
+  [data-testid="app-nav-rail"] nav,
+  [data-testid="app-nav-rail"] nav > div {
+    gap: 6px;
+  }
+}
+
+/* Desktop frame gutters: 60% of the default 0.75rem. */
+@media (min-width: 768px) and (pointer: fine) {
+  [data-testid="app-layout-root"][data-framed] {
+    --alia-window-frame-lip: 0.45rem;
+
+    /* Match File Tree's rounded-xl without changing control radii. */
+    --alia-frame-card-radius: calc(var(--radius) + 4px);
+
+  }
+
+  /* Keep ALIA's native rounded border intact. Masking the whole frame clips
+     its antialiased stroke, and square child backgrounds can cover it. */
+  [data-testid="app-layout-root"][data-framed] main[data-sidebar="inset"] {
+    mask: none;
+    clip-path: none;
+  }
+
+  [data-testid="app-layout-root"][data-framed] main[data-sidebar="inset"]::before {
+    border-color: var(--border-seam);
+  }
+
+  /* Clip content to the inside of the 1px border, retaining the title bar
+     above it. Both arcs share the native border's center. */
+  [data-testid="app-layout-root"][data-framed] main[data-sidebar="inset"] > * {
+    --alia-compact-rail-inner-radius: calc(var(--alia-frame-card-radius) - 1px);
+    --alia-compact-rail-inner-top: calc(var(--alia-window-title-bar-height) + 1px);
+    --alia-compact-rail-left-radius: var(--alia-compact-rail-inner-radius);
+    --alia-compact-rail-left-mask: linear-gradient(transparent, transparent);
+    mask:
+      var(--alia-compact-rail-left-mask),
+      linear-gradient(#000 0 0) top / 100% var(--alia-window-title-bar-height) no-repeat,
+      linear-gradient(#000 0 0) center bottom / calc(100% - var(--alia-compact-rail-inner-radius) * 2) calc(100% - var(--alia-compact-rail-inner-top)) no-repeat,
+      linear-gradient(#000 0 0) center bottom / 100% calc(100% - var(--alia-compact-rail-inner-top) - var(--alia-compact-rail-inner-radius)) no-repeat,
+      radial-gradient(circle at var(--alia-compact-rail-inner-radius) calc(var(--alia-compact-rail-inner-top) + var(--alia-compact-rail-inner-radius)), #000 calc(var(--alia-compact-rail-inner-radius) - 0.5px), transparent var(--alia-compact-rail-inner-radius)),
+      radial-gradient(circle at calc(100% - var(--alia-compact-rail-inner-radius)) calc(var(--alia-compact-rail-inner-top) + var(--alia-compact-rail-inner-radius)), #000 calc(var(--alia-compact-rail-inner-radius) - 0.5px), transparent var(--alia-compact-rail-inner-radius));
+    clip-path: inset(0 round 0 0 var(--alia-compact-rail-inner-radius) var(--alia-compact-rail-left-radius));
+  }
+
+  /* ALIA keeps the left edge square while the sidebar adjoins the card. */
+  [data-testid="app-layout-root"][data-framed] main[data-sidebar="inset"][class*="--alia-window-card-mask-square-left"] > * {
+    --alia-compact-rail-left-radius: 0px;
+    --alia-compact-rail-left-mask: linear-gradient(#000 0 0) left bottom / var(--alia-compact-rail-inner-radius) calc(100% - var(--alia-compact-rail-inner-top)) no-repeat;
+  }
+
+  /* The file-tree portal also keeps frame sizes in React inline styles. */
+  aside[aria-label="File tree"][style*="padding-top"] {
+    padding-right: 0.45rem !important;
+    padding-bottom: 0.45rem !important;
+  }
+}

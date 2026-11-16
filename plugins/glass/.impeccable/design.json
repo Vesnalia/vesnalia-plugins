@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-10T09:52:17.468712Z",
+  "title": "Design System: Transparency",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Host primary"
+      },
+      "primary-foreground": {
+        "role": "neutral",
+        "displayName": "Primary foreground"
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Host background"
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Host foreground"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted fill"
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Supporting text"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Host divider"
+      },
+      "destructive": {
+        "displayName": "Destructive feedback"
+      },
+      "artwork-ground": {
+        "role": "neutral",
+        "displayName": "Artwork ground"
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "Inherits VesnALIA typeface."
+      },
+      "title": {
+        "displayName": "Section title",
+        "purpose": "Semibold, same size as body."
+      },
+      "measurement": {
+        "displayName": "Measurement",
+        "purpose": "Status and tabular slider values."
+      },
+      "code": {
+        "displayName": "Shader code",
+        "purpose": "Editable source with preserved whitespace."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "light-rendering",
+        "value": "15 fps / 250000 pixels",
+        "purpose": "Low rendering quality budget."
+      },
+      {
+        "name": "balanced-rendering",
+        "value": "24 fps / 600000 pixels",
+        "purpose": "Default rendering quality budget."
+      },
+      {
+        "name": "detailed-rendering",
+        "value": "30 fps / 1200000 pixels",
+        "purpose": "High rendering quality budget."
+      },
+      {
+        "name": "motion-preference",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Draw still artwork; do not animate grain."
+      },
+      {
+        "name": "hidden-document",
+        "value": "document.hidden",
+        "purpose": "Stop shader frames while hidden."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "inspector-stacked-container",
+        "value": "max-width: 860px"
+      },
+      {
+        "name": "phone-controls-container",
+        "value": "max-width: 500px"
+      },
+      {
+        "name": "compact-host-viewport",
+        "value": "max-width: 767.98px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The explicit action after a successful shader preview.",
+      "html": "<button class=\"ds-primary\">Save &amp; use</button>",
+      "css": ".ds-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--background);color:var(--foreground);font:inherit;font-size:13px;line-height:20px;cursor:pointer;background:var(--primary);color:var(--primary-foreground);border-color:var(--primary)}.ds-primary:hover:not(:disabled){background:color-mix(in srgb,var(--primary) 90%,var(--foreground))}.ds-primary:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:3px;}.ds-primary:disabled{opacity:.45;cursor:not-allowed}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined everyday actions including preview and import.",
+      "html": "<button class=\"ds-secondary\">Preview shader</button>",
+      "css": ".ds-secondary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--background);color:var(--foreground);font:inherit;font-size:13px;line-height:20px;cursor:pointer;}.ds-secondary:hover:not(:disabled){background:var(--muted)}.ds-secondary:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:3px;}.ds-secondary:disabled{opacity:.45;cursor:not-allowed}"
+    },
+    {
+      "name": "Text button",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "Quiet underlined actions in the footer and editor.",
+      "html": "<button class=\"ds-text\">Export code</button>",
+      "css": ".ds-text{border:0;background:none;color:var(--muted-foreground);font:inherit;font-size:13px;padding:4px 0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.ds-text:hover:not(:disabled){color:var(--foreground)}.ds-text:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:3px;}.ds-text:disabled{opacity:.45;cursor:not-allowed}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Visible label and native outlined input.",
+      "html": "<label class=\"ds-field\">Name<input value=\"My shader\" /></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:var(--foreground);font-size:14px;font-weight:500}.ds-field input{min-width:0;width:100%;min-height:36px;border:1px solid var(--border);border-radius:6px;background:var(--background);color:var(--foreground);padding:7px 10px;font:inherit;font-weight:400}.ds-field input:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:3px;}.ds-field input:disabled{opacity:.45;cursor:not-allowed}"
+    },
+    {
+      "name": "Inspector navigation",
+      "kind": "nav",
+      "refersTo": "inspector-navigation",
+      "description": "Four equal-width tabs; the selected tab has a primary rule.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\" aria-label=\"Appearance controls\"><button role=\"tab\" aria-selected=\"true\">Look</button><button role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">Surfaces</button><button role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">Motion</button><button role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">Shader</button></div>",
+      "css": ".ds-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--border);gap:4px}.ds-tabs button{border:0;border-bottom:2px solid transparent;padding:9px 3px 11px;background:none;color:var(--muted-foreground);font:inherit;font-size:13px;cursor:pointer}.ds-tabs button[aria-selected=true]{color:var(--foreground);border-bottom-color:var(--primary)}.ds-tabs button:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:3px;}"
+    },
+    {
+      "name": "Preview mode",
+      "kind": "nav",
+      "refersTo": "preview-mode",
+      "description": "Compact pressed-state treatment for Workspace and Backdrop.",
+      "html": "<div class=\"ds-segment\" role=\"group\" aria-label=\"Preview mode\"><button aria-pressed=\"true\">Workspace</button><button aria-pressed=\"false\">Backdrop</button></div>",
+      "css": ".ds-segment{display:flex;padding:3px;border-radius:7px;background:var(--muted)}.ds-segment button{border:0;background:none;color:var(--muted-foreground);font:inherit;font-size:12px;padding:4px 9px;border-radius:4px;cursor:pointer}.ds-segment button[aria-pressed=true]{color:var(--foreground);background:var(--background)}.ds-segment button:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:3px;}"
+    },
+    {
+      "name": "Backdrop choice",
+      "kind": "card",
+      "refersTo": "backdrop-choice",
+      "description": "Choice shell and vector selection mark; actual shader artwork is rendered by the application.",
+      "html": "<button class=\"ds-scene\" aria-pressed=\"true\"><span class=\"ds-scene-image\" aria-hidden=\"true\"></span><span class=\"ds-scene-name\">Flow<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 4 4L19 6\"/></svg></span></button>",
+      "css": ".ds-scene{padding:4px;min-width:0;width:190px;text-align:left;color:var(--foreground);background:transparent;border:1px solid transparent;border-radius:8px;cursor:pointer;font:inherit}.ds-scene:hover{background:var(--muted)}.ds-scene[aria-pressed=true]{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 5%,transparent)}.ds-scene-image{display:block;height:90px;overflow:hidden;border-radius:4px;background:#10121b}.ds-scene-name{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:7px 4px 3px;font-size:13px}.ds-scene-name svg{color:var(--primary)}.ds-scene:focus-visible{outline:2px solid var(--ring,var(--primary));outline-offset:3px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The native appearance studio",
+    "overview": "Transparency inherits VesnALIA’s visual identity. The host supplies the title, navigation, typeface, and semantic light/dark colors. Rendered artwork demonstrates the effect, and compact controls let users judge it against readable sample content.\n\nThe chrome stays calm and utilitarian. Dividers establish groups, a narrow inspector concentrates decisions, and the artwork carries color and motion. The sample workspace is explicitly labeled and illustrates readability.",
+    "keyCharacteristics": [
+      "Host-owned identity and semantic colors in both themes.",
+      "A rendered preview, visual backdrop library, and focused inspector.",
+      "Flat controls, fine dividers, small radii, and visible selection states.",
+      "Ambient artwork motion with stable controls.",
+      "Solid compact host surfaces that preserve text legibility."
+    ],
+    "rules": [
+      {
+        "name": "The Host Color Rule",
+        "body": "Keep UI colors bound to VesnALIA’s semantic variables; treat shader palette colors as artwork, not new navigation or control tokens.",
+        "section": "colors"
+      },
+      {
+        "name": "The Compact Surface Rule",
+        "body": "Below a 768px viewport, keep host canvas, background, card, sidebar, and popover colors solid, hide the global backdrop, and remove popup blur so mounted shelves cannot show text through the foreground panel.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do inherit VesnALIA’s title, navigation, typeface, and semantic theme colors.",
+      "Do show actual rendered artwork in choices and label the sample workspace.",
+      "Do preserve keyboard focus, selected states, readable errors, and save feedback.",
+      "Do adapt to container width and keep compact host surfaces solid.",
+      "Do keep artwork motion optional, bounded, and responsive to reduced motion and visibility."
+    ],
+    "donts": [
+      "Don't add an independent branding header or centered outer card around the native panel.",
+      "Don't use shader palette colors as a replacement UI theme.",
+      "Don't continuously animate shader thumbnails or add decorative control motion.",
+      "Don't treat miniature sample text sizes as the scale for operating controls.",
+      "Don't replace shared vector icon components with raw text glyphs."
+    ]
+  }
+}

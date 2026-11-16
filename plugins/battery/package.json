@@ -1,0 +1,48 @@
+{
+  "name": "alia-plugin-battery",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
+  },
+  "alia": {
+    "name": "Battery",
+    "description": "Shows the laptop's battery charge in the sidebar footer.",
+    "branding": {
+      "icon": "./icons/battery.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "hono": "^4.13.16",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc -p ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/battery#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/battery"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

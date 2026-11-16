@@ -1,0 +1,45 @@
+{
+  "name": "alia-plugin-devin",
+  "version": "0.2.7",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
+  },
+  "alia": {
+    "name": "Devin",
+    "description": "Use the local Devin CLI as a VesnALIA provider through ACP.",
+    "branding": {
+      "icon": "./icons/devin.svg"
+    },
+    "server": "./server.ts",
+    "host": "./host.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6",
+    "@vesnalia/plugin-sdk": "^0.6.143"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.5.0",
+    "hono": "^4.11.9",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.1"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/devin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/devin"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

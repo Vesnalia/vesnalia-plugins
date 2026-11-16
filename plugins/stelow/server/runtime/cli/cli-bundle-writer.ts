@@ -1,0 +1,368 @@
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import {
+  buildArtifactTrailer,
+  parseArtifactManifest,
+  renderBundleManifest,
+  resolveArtifactPath,
+} from "../../../lib/artifact-manifest.mjs";
+import { parseStageTrail } from "../../../lib/stage-trail.mjs";
+import {
+  assignBundleNames,
+  parseBundleManifest,
+  staleBundleEntries,
+  unbundledSources,
+} from "../../../lib/run-bundle.mjs";
+import { tallyGaps } from "../../../lib/gap-registry.mjs";
+import { readCardStateBlob } from "./cli-card-state.js";
+import { resolveBundleSource } from "../../../lib/bundle-source-path.mjs";
+import { bundleTokenEvidence } from "./cli-bundle-tokens.js";
+import type { CliDeps } from "./cli-deps.js";
+import type { WorkerCard } from "../../workers-types.js";
+
+export type BundleEntry = {
+  name: string;
+  stage: string | null;
+  sha8: string;
+  sourcePath: string;
+};
+
+export type BundleCheck = {
+  ok: true;
+  check: true;
+  dir: string;
+  fresh: boolean;
+  stale: Array<BundleEntry & { reason: string }>;
+  added: string[];
+  missing: string[];
+  committed: boolean | null;
+};
+
+export type BundleWrite = {
+  ok: true;
+  check: false;
+  dir: string;
+  files: BundleEntry[];
+  missing: string[];
+  trailer: string[];
+  wrote: boolean;
+};
+
+export type BundleFailure = { ok: false; error: string };
+
+export type BundleResult = BundleCheck | BundleWrite | BundleFailure;
+
+export type ExportRunBundle = {
+  (card: WorkerCard, opts: { checkOnly: true; dirRel?: string }): Promise<BundleCheck | BundleFailure>;
+  (card: WorkerCard, opts?: { checkOnly?: false; dirRel?: string }): Promise<BundleWrite | BundleFailure>;
+};
+
+type ReadableSource = {
+  stage: string | null;
+  sourcePath: string;
+  content: string;
+  sha8: string;
+};
+
+type BundleSources = {
+  registered: Array<{ path: string; stage?: string | null }>;
+  readable: ReadableSource[];
+  unreadable: string[];
+  targetRel: string;
+  targetAbs: string;
+  workspacePath: string;
+  /** Entry and exit for every stage the card entered, from `state.md` history. */
+  trail: Array<{ stage: string; enteredAt: string | null; leftAt: string | null }>;
+};
+
+/** Shared run-bundle writer: `export` calls it on demand, `done` calls it on
+ * every completion so docs/runs/<card>/ converges to the card's current
+ * artifacts instead of rotting after the first manual export. Idempotent:
+ * stable basenames, overwrite-in-place, manifest rewritten. */
+export function createBundleWriter(deps: CliDeps): ExportRunBundle {
+  async function exportRunBundle(
+    card: WorkerCard,
+    opts?: { checkOnly?: boolean; dirRel?: string },
+  ): Promise<BundleResult> {
+    const sources = await readBundleSources(deps, card, opts);
+    if ("error" in sources) return { ok: false, error: sources.error };
+    if (opts?.checkOnly) return checkBundle(deps, sources);
+    return writeBundle(deps, card, sources);
+  }
+  return exportRunBundle as ExportRunBundle;
+}
+
+/** Reads every registered artifact once: check and write both need the
+ * content and its SHA, and an unreadable source is reported, never copied. */
+async function readBundleSources(
+  deps: CliDeps,
+  card: WorkerCard,
+  opts: { dirRel?: string } | undefined,
+): Promise<BundleSources | { error: string }> {
+  const workspace = await deps.cardWorkspace(card).catch(() => null);
+  if (!workspace?.path)
+    return { error: "The card has no workspace to export into." };
+  const stateDir = await cardStateDir(deps, card, workspace.path);
+  const stateBlob = await readCardStateBlob(deps, card);
+  const registered = stateBlob
+    ? parseArtifactManifest(stateBlob).filter(
+        (fields) => typeof fields.path === "string" && fields.path.length > 0,
+      )
+    : [];
+  const targetRel = opts?.dirRel ?? `docs/runs/${card.id}`;
+  const targetAbs = resolveArtifactPath(workspace.path, targetRel);
+  if (!targetAbs)
+    return {
+      error: `Refusing export dir "${targetRel}": relative path inside the workspace only.`,
+    };
+  const { readable, unreadable } = await readRegisteredSources(deps, workspace.path, stateDir, registered);
+  return {
+    registered,
+    readable,
+    unreadable,
+    targetRel,
+    targetAbs,
+    workspacePath: workspace.path,
+    trail: parseStageTrail(stateBlob ?? ""),
+  };
+}
+
+/** The card's staging dir, which is where artifacts that recorded themselves
+ * against staging actually live. Null when the card has no state dir. */
+async function cardStateDir(
+  deps: CliDeps,
+  card: WorkerCard,
+  workspacePath: string,
+): Promise<string | null> {
+  if (!card.dir_hash) return null;
+  return deps
+    .workflowStateDir(workspacePath, card.id, card.dir_hash)
+    .catch(() => null);
+}
+
+/** Reads each registered artifact once: an empty or unreadable source is
+ * reported, never copied into the bundle. */
+async function readRegisteredSources(
+  deps: CliDeps,
+  workspacePath: string,
+  stateDir: string | null,
+  registered: Array<{ path: string; stage?: string | null }>,
+): Promise<{ readable: ReadableSource[]; unreadable: string[] }> {
+  const readable: ReadableSource[] = [];
+  const unreadable: string[] = [];
+  for (const fields of registered) {
+    const sourcePath = fields.path as string;
+    // Two roots, not one: a card that ran `stelow advance` from inside its own
+    // staging tree recorded staging-relative paths, and those are unreadable
+    // against the project root alone. The state dir is the retry, and the
+    // refusals for absolute paths and traversal apply to it exactly as they do
+    // to the first try — this widens where a source may be found, never what
+    // a manifest may name.
+    const candidates = resolveBundleSource(sourcePath, { projectRoot: workspacePath, stateDir });
+    let content: string | null = null;
+    for (const candidate of candidates) {
+      content = await deps.alia.sdk.files
+        .read({ path: candidate })
+        .then((file) => file.content)
+        .catch(() => null);
+      if (typeof content === "string" && content.trim()) break;
+      content = null;
+    }
+    if (content === null) {
+      unreadable.push(sourcePath);
+      continue;
+    }
+    readable.push({
+      stage: fields.stage ?? null,
+      sourcePath,
+      content,
+      sha8: sha8(content),
+    });
+  }
+  return { readable, unreadable };
+}
+
+function sha8(content: string): string {
+  return createHash("sha256").update(content).digest("hex").slice(0, 8);
+}
+
+/** Drift check: what changed, what is new, what cannot be read, plus the
+ * commit dimension (does the bundle dir match HEAD, or is it uncommitted?). */
+async function checkBundle(
+  deps: CliDeps,
+  sources: BundleSources,
+): Promise<BundleCheck | BundleFailure> {
+  const { registered, readable, unreadable, targetRel, targetAbs } = sources;
+  const manifestContent = await readBundleManifest(deps, targetAbs);
+  const bundled = manifestContent === null ? [] : parseBundleManifest(manifestContent);
+  const shaBySource = new Map(
+    readable.map((entry) => [entry.sourcePath, entry.sha8]),
+  );
+  const stale = staleBundleEntries(bundled, shaBySource);
+  const added = unbundledSources(registered, bundled);
+  const drifted = stale.length > 0 || added.length > 0 || unreadable.length > 0;
+  // Null when there is nothing to compare (no bundle yet) or no git repo to
+  // compare against — the bundle then lives in the workspace only, and the
+  // report says so.
+  const committed = await bundleCommitted(
+    deps,
+    manifestContent,
+    targetRel,
+    sources.workspacePath,
+  );
+  return {
+    ok: true,
+    check: true,
+    dir: targetRel,
+    fresh: !drifted,
+    stale,
+    added,
+    missing: unreadable,
+    committed,
+  };
+}
+
+async function bundleCommitted(
+  deps: CliDeps,
+  manifestContent: string | null,
+  targetRel: string,
+  workspacePath: string,
+): Promise<boolean | null> {
+  if (manifestContent === null) return null;
+  const status = await deps.runGitIn(workspacePath, [
+    "status",
+    "--porcelain",
+    "--",
+    targetRel,
+  ]).catch(() => null);
+  return status && status.ok ? status.stdout.trim().length === 0 : null;
+}
+
+function readBundleManifest(
+  deps: CliDeps,
+  targetAbs: string,
+): Promise<string | null> {
+  return deps.alia.sdk.files
+    .read({ path: join(targetAbs, "manifest.md") })
+    .then((file) => file.content)
+    .catch(() => null);
+}
+
+/** Nothing readable and no bundle yet: writing a manifest of only missing
+ * entries would be noise — skip the write, and say so. The trailer still
+ * comes from the registration, not from the copies: "nothing to bundle" is
+ * a fact about this export, never about what the card produced. */
+async function writeBundle(
+  deps: CliDeps,
+  card: WorkerCard,
+  sources: BundleSources,
+): Promise<BundleWrite | BundleFailure> {
+  const { readable, unreadable, targetRel, targetAbs, workspacePath } = sources;
+  const gapTotals = await bundleGapTotals(deps, card);
+  const trailer = buildArtifactTrailer(card.id, sources.registered, gapTotals);
+  if (readable.length === 0) {
+    const priorManifest = await readBundleManifest(deps, targetAbs);
+    if (priorManifest === null)
+      return {
+        ok: true,
+        check: false,
+        dir: targetRel,
+        files: [],
+        missing: [...unreadable],
+        trailer,
+        wrote: false,
+      };
+  }
+  try {
+    await deps.alia.sdk.files.mkdir({
+      path: targetAbs,
+      rootPath: workspacePath,
+      recursive: true,
+    });
+  } catch {
+    return { ok: false, error: `Could not create ${targetRel} — retry export.` };
+  }
+  const { files, missing } = await writeBundleFiles(deps, sources, workspacePath);
+  const manifest = renderBundleManifest({
+    cardId: card.id,
+    cardName: card.name,
+    stage: card.stage,
+    generatedAt: new Date().toISOString(),
+    files, missing,
+    registered: sources.registered,
+    trail: sources.trail,
+    gapTotals,
+    tokens: await bundleTokenEvidence(deps, card),
+  });
+  try {
+    await deps.alia.sdk.files.write({
+      path: join(targetAbs, "manifest.md"),
+      rootPath: workspacePath,
+      expectedSha256: null,
+      content: manifest,
+    });
+  } catch {
+    return {
+      ok: false,
+      error: `Exported ${files.length} file(s) but could not write manifest.md — retry export.`,
+    };
+  }
+  return {
+    ok: true,
+    check: false,
+    dir: targetRel,
+    files,
+    missing,
+    trailer,
+    wrote: true,
+  };
+}
+
+async function writeBundleFiles(
+  deps: CliDeps,
+  sources: BundleSources,
+  workspacePath: string,
+): Promise<{ files: BundleEntry[]; missing: string[] }> {
+  const { readable, unreadable, targetAbs } = sources;
+  const files: BundleEntry[] = [];
+  const missing = [...unreadable];
+  // `assignBundleNames` speaks the registration's shape (`path`); the readable
+  // source carries the same fact as `sourcePath`. Naming the translation here
+  // is what the writer was missing — it handed over `sourcePath`, every entry
+  // read as junk, and every bundle copied zero files while still claiming a
+  // trailer. A silent zero is how `Stelow-Artifacts: 0` reached real commits.
+  const planned = readable.map((entry) => ({ stage: entry.stage, path: entry.sourcePath }));
+  for (const plan of assignBundleNames(planned)) {
+    const source = readable.find((entry) => entry.sourcePath === plan.sourcePath);
+    if (!source) continue;
+    try {
+      await deps.alia.sdk.files.write({
+        path: join(targetAbs, plan.name),
+        rootPath: workspacePath,
+        expectedSha256: null,
+        content: source.content,
+      });
+    } catch {
+      missing.push(plan.sourcePath);
+      continue;
+    }
+    files.push({
+      name: plan.name,
+      stage: plan.stage,
+      sha8: source.sha8,
+      sourcePath: plan.sourcePath,
+    });
+  }
+  return { files, missing };
+}
+
+async function bundleGapTotals(
+  deps: CliDeps,
+  card: WorkerCard,
+) {
+  const gapState =
+    card.kind === "build" ? await deps.gapState(card).catch(() => null) : null;
+  // The same finding tally `alia stelow gaps` prints, so the bundle's `## Gaps`
+  // line cannot count registry rows while the command counts findings.
+  return gapState?.matched ? tallyGaps(gapState.gaps) : null;
+}

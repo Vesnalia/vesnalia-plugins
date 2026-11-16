@@ -1,0 +1,376 @@
+import { join } from "node:path";
+import { AUDIT_RECEIPT_FILE, auditReceiptReadiness } from "../../../lib/audit-receipt.mjs";
+import { expiredDebts } from "../../../lib/gap-debt.mjs";
+import { FROZEN_ACCEPTANCE_FILE, parseFrozenAcceptance, sameGitEvidence } from "../../../lib/audit-verification.mjs";
+import { parseArtifactManifest } from "../../../lib/artifact-manifest.mjs";
+import { doneBuildGates, frozenAcceptanceGates } from "../../../lib/build-gates.mjs";
+import { doneEligibility } from "../../../lib/completion.mjs";
+import { countScopeDialects } from "../../../lib/spec-scope-reader.mjs";
+import { isDoneStatus, isSkippedStatus } from "../../../lib/trackables.mjs";
+import { frozenGatesEnabled } from "../../scope-batch-gates.js";
+import { OWNERSHIP_UNVERIFIED } from "../../../lib/ownership-refusal.mjs";
+import { recordTrackableEvent } from "../../../lib/trackable-events.mjs";
+import { latestSpecTech, loadCardScopes } from "../../scopes.js";
+import { refuse, type CliResult, type Refusal } from "./cli-contract.js";
+import type { CliDeps, GitEvidence } from "./cli-deps.js";
+import type { ExportRunBundle } from "./cli-bundle-writer.js";
+import { completeCard, doneStdout } from "./cli-done-track.js";
+import { testAndScanEvidence } from "./cli-scan-gate.js";
+import { text } from "../values.js";
+import type { WorkerCard } from "../../workers-types.js";
+import { auditTrailRefusal } from "../card-audit-trail.js";
+import { stateRootOf } from "../workflow-state.js";
+import { parseCurrentStage } from "../../../lib/current-stage.mjs";
+
+const GIT_EVIDENCE_LOST =
+  "Build completion is blocked: the execution checkout no longer has verifiable Git root and HEAD evidence. Restore the intended \
+checkout, re-run audit, then run done.";
+const CHECKOUT_MOVED =
+  "The checkout moved while the portable audit trail was being finalized. Re-run audit, then done.";
+
+export type BuildGates = {
+  projectPath: string | null;
+  currentStage: string;
+  stateDir: string | null;
+  stateBlob: string | null;
+  trackedScopes: ReturnType<typeof loadCardScopes>;
+};
+
+/** Build completion is the longest gate chain of the three tracks: owned
+ * state, eligibility, spec tracking, checkout evidence, document depth, the
+ * rework loop, the test run, the durable receipt, the portable trail, the
+ * post-trail re-sample, then the bundle and the state write. Each stage is one
+ * refusal with the fix; the card only becomes Done when all of them pass. */
+export async function doneBuild(
+  deps: CliDeps,
+  exportRunBundle: ExportRunBundle,
+  card: WorkerCard,
+  questionPending: boolean,
+): Promise<CliResult> {
+  const result = await runDoneBuild(deps, exportRunBundle, card, questionPending);
+  if (result.exitCode === 0) return result;
+  // A refusal with no record is invisible to everyone but the worker's own
+  // turn. card_hh2nwqs4 ran done, was refused, and parked on a card whose
+  // history had no trace of why — so the park sentence had nothing to point
+  // at. One seam covers all eight refusal sites, including the two that return
+  // a `refuse({…})` object rather than a bare exit code.
+  //
+  // Accepted trade-off: a worker looping `done` leaves a comment per attempt.
+  // That is the point — the loop is bounded by MAX_DONE_NUDGES — and a single
+  // summary comment would hide exactly the repetition an operator needs to see.
+  try {
+    deps.logCardComment(
+      card.id,
+      "card",
+      card.id,
+      "agent",
+      `alia stelow done refused: ${result.stderr}`,
+    );
+  } catch {
+    /* a refusal must never be lost because the trail could not take it */
+  }
+  return result;
+}
+
+async function runDoneBuild(
+  deps: CliDeps,
+  exportRunBundle: ExportRunBundle,
+  card: WorkerCard,
+  questionPending: boolean,
+): Promise<CliResult> {
+  const gates = await readBuildGates(deps, card);
+  if ("refusal" in gates) return gates.refusal;
+  const { projectPath, currentStage, stateDir, stateBlob, trackedScopes } = gates;
+  const eligibility = doneEligibility({
+    kind: "build",
+    stage: currentStage,
+    questionPending,
+    scopesOpen: trackedScopes,
+  });
+  if (eligibility) return { exitCode: 1, stderr: eligibility };
+  const specRefusal = specTechRefusal(
+    projectPath,
+    card.id,
+    currentStage,
+    trackedScopes,
+  );
+  if (specRefusal) return { exitCode: 1, stderr: specRefusal };
+  const evidence = await checkoutEvidence(deps, card, stateDir);
+  if ("refusal" in evidence) return evidence.refusal;
+  const shallow = await documentRefusal(deps, card);
+  if (shallow) return { exitCode: 1, stderr: shallow };
+  const rework = await reworkLoopRefusal(deps, card);
+  if (rework) return { exitCode: 1, stderr: rework };
+  const frozen = await frozenAcceptanceRefusal(deps, stateDir, evidence.git?.headSha ?? null);
+  if (frozen) return { exitCode: 1, stderr: frozen };
+  const proof = testAndScanEvidence(deps, card, evidence.git);
+  if ("refusal" in proof) return proof.refusal;
+  const verificationRun = proof.run;
+  const receipt = auditReceiptReadiness(
+    await receiptContent(deps, stateDir),
+    stateBlob ? parseArtifactManifest(stateBlob) : [],
+    evidence.checkoutPath,
+    evidence.git,
+    verificationRun,
+  );
+  if (!receipt.ready) return { exitCode: 1, stderr: receipt.error };
+  return finishBuild(deps, exportRunBundle, card, {
+    projectPath,
+    stateDir,
+    currentStage,
+    git: evidence.git,
+    checkoutPath: evidence.checkoutPath,
+  });
+}
+
+type BuildFinish = {
+  projectPath: string | null;
+  stateDir: string | null;
+  currentStage: string;
+  git: GitEvidence;
+  checkoutPath: string | null;
+};
+
+async function finishBuild(
+  deps: CliDeps,
+  exportRunBundle: ExportRunBundle,
+  card: WorkerCard,
+  finish: BuildFinish,
+): Promise<CliResult> {
+  // The helper reads registered paths against its cwd, so build in the state
+  // root: neither fixed checkout is right for every card. See `stateRootOf`
+  // for why the state dir decides and the checkout is only a fallback.
+  const trailRoot = stateRootOf(finish.stateDir) ?? finish.checkoutPath ?? finish.projectPath;
+  const trailRefusal = await auditTrailRefusal(
+    deps,
+    trailRoot,
+    finish.stateDir,
+    finish.git,
+  );
+  if (trailRefusal) return { exitCode: 1, stderr: trailRefusal };
+  // The audit receipt, portable trail, and final Done transition all name one
+  // checkout. Sample once more immediately before the state write so an
+  // external checkout or commit between `check` and Done cannot leave a
+  // completed card pointing at stale evidence.
+  if (finish.checkoutPath) {
+    const postTrail = await deps.gitEvidence(finish.checkoutPath);
+    if (!sameGitEvidence(finish.git, postTrail))
+      return { exitCode: 1, stderr: CHECKOUT_MOVED };
+  }
+  const bundle = await exportRunBundle(card, {});
+  if (!bundle.ok)
+    return {
+      exitCode: 1,
+      stderr: `Build completion is blocked: run-bundle export failed (${bundle.error}) — retry done.`,
+    };
+  completeCard(deps, card.id, { stage: finish.currentStage });
+  trackableCompletion(deps, card.id, `audit at ${finish.currentStage}`);
+  await deps.releaseCardClaims(card.id);
+  return {
+    exitCode: 0,
+    stdout: doneStdout(`Done. Workflow "${card.name}" completed at audit.`, bundle),
+  };
+}
+
+/** The completion state read once for the build gates: the workspace, the
+ * state dir plus its `state.md`, the slug-truth stage, and the tracked
+ * (unmerged) scopes. Ownership of state is itself a gate — no `state.md`
+ * means no completion. */
+async function readBuildGates(
+  deps: CliDeps,
+  card: WorkerCard,
+): Promise<BuildGates | Refusal> {
+  if (card.workspace_kind === "exploratory")
+    return refuse({
+      exitCode: 1,
+      stderr:
+        "Build completion is blocked: this card runs in an exploratory workspace with no code project or Git history. Restart the work \
+in the intended VesnALIA project; this card's state artifacts remain readable for reference.",
+    });
+  const workspace = await deps.cardWorkspace(card);
+  const projectPath = workspace?.path ?? null;
+  let currentStage = card.stage;
+  let stateBlob: string | null = null;
+  let stateDir: string | null = null;
+  if (projectPath && card.dir_hash) {
+    stateDir = await deps.workflowStateDir(
+      projectPath,
+      card.id,
+      card.dir_hash,
+    );
+    stateBlob = stateDir
+      ? await deps.alia.sdk.files
+          .read({ path: join(stateDir, "state.md") })
+          .then((file) => file.content)
+          .catch(() => null)
+      : null;
+    if (!stateBlob)
+      return refuse({ exitCode: 1, stderr: OWNERSHIP_UNVERIFIED });
+    currentStage = text(parseCurrentStage(stateBlob) ?? undefined) || card.stage;
+  }
+  // Gates read tracked truth (mergePlanned: false): the read-time planned-task
+  // merge is display-only, so pre-merge cards keep completing while tracked
+  // checklists bind.
+  const trackedScopes = projectPath
+    ? loadCardScopes(projectPath, card.id, { mergePlanned: false })
+    : [];
+  return { projectPath, currentStage, stateDir, stateBlob, trackedScopes };
+}
+
+function receiptContent(deps: CliDeps, stateDir: string | null): Promise<string | null> {
+  if (!stateDir) return Promise.resolve(null);
+  return deps.alia.sdk.files
+    .read({ path: join(stateDir, AUDIT_RECEIPT_FILE) })
+    .then((file) => file.content)
+    .catch(() => null);
+}
+
+type CheckoutEvidence = { checkoutPath: string | null; git: GitEvidence };
+
+/** The checkout completion binds to, plus the Git identity it has right now.
+ * Prefer the checkout holding the card's state: a state written into the
+ * project while the managed checkout lives in a worktree (or the reverse)
+ * must be verified where its artifacts were read from, not where the worker
+ * happened to be spawned. A state that cannot be resolved keeps the previous
+ * behaviour: the managed checkout, or no evidence at all. */
+async function checkoutEvidence(
+  deps: CliDeps,
+  card: WorkerCard,
+  stateDir: string | null,
+): Promise<CheckoutEvidence | Refusal> {
+  const checkout = await deps.cardCheckout(card);
+  const root = stateRootOf(stateDir) ?? checkout?.path ?? null;
+  const git = root ? await deps.gitEvidence(root) : null;
+  if (root && (!git?.isGit || !git.gitRoot || !git.headSha))
+    return refuse({ exitCode: 1, stderr: GIT_EVIDENCE_LOST });
+  return { checkoutPath: root, git };
+}
+
+/** Recognized workflow documents (spec-product, spec-tech, interfaces,
+ * testing-strategy, critique reports) must meet their stage contract
+ * (lib/artifact-contracts): unknown files, audit.md, and receipts never block
+ * — only a matched document that fails depth does. */
+async function documentRefusal(
+  deps: CliDeps,
+  card: WorkerCard,
+): Promise<string | null> {
+  const shallow = await deps.docDepths(card).catch(() => []);
+  if (shallow.length === 0) return null;
+  return shallow
+    .map(
+      (doc) =>
+        `FAIL ${doc.label} (${doc.path}): needs depth — ${doc.failures.join("; ")} — rewrite it, then run done again.`,
+    )
+    .join("\n");
+}
+
+/** Gap-registry loop: a matched execution critique with escalate rows must
+ * link every row to an audit-gap scope, and every linked scope must be done —
+ * otherwise done would certify known rework as complete. Documented debt past
+ * its date rejoins the loop the same way: settled until the date, open after
+ * it. No matched critique means no enforcement. */
+async function reworkLoopRefusal(
+  deps: CliDeps,
+  card: WorkerCard,
+): Promise<string | null> {
+  const gapState = await deps.gapState(card).catch(() => null);
+  if (!gapState?.matched) return null;
+  if (gapState.failures.length > 0) return gapState.failures.join("\n");
+  const expired = expiredDebts(gapState.gaps, deps.now());
+  if (expired.length > 0) {
+    return [
+      `Build completion is blocked: ${expired.length} documented debt(s) past their expires date — settled debt is not open debt:`,
+      ...expired.map((debt) => `- ${debt.description} (past ${debt.expires}${debt.owner ? `, owner ${debt.owner}` : ""})`),
+      "Pick one: fix it inline and re-run the critique to reclassify it as fixed;",
+      "change its resolution to escalate and run `alia stelow gap-scopes` to re-scope it;",
+      "or re-date the expires with an owner and re-verify.",
+    ].join("\n");
+  }
+  const linked = new Set(
+    gapState.auditGapScopes
+      .map((scope) => scope.gap)
+      .filter((gap): gap is string => typeof gap === "string"),
+  );
+  const unscoped = gapState.escalated.filter((gap) => !linked.has(gap.description));
+  if (unscoped.length > 0) {
+    return `Build completion is blocked: ${unscoped.length} escalated gap(s) have no rework scope — this card is not done, it loops back: \
+run \`alia stelow gap-scopes\`, \`alia stelow advance execution\`, execute the new scopes, re-run \
+the critique, then run done again:\n${unscoped.map((gap) => `- ${gap.description}`).join("\n")}`;
+  }
+  // A skipped rework scope is resolved, not open: `isSkippedStatus` is the
+  // documented done-gate treatment (lib/trackables.mjs), and the scope-level
+  // gate in lib/completion.mjs already honors it. Without it here, a card that
+  // skips a rework scope can never complete — the refusal below would name
+  // "finish them" for a scope that was deliberately set aside.
+  const pendingRework = gapState.auditGapScopes.filter(
+    (scope) => !isDoneStatus(scope.status) && !isSkippedStatus(scope.status),
+  );
+  if (pendingRework.length === 0) return null;
+  return `Build completion is blocked: ${pendingRework.length} audit-gap rework \
+scope(s) still open — finish them, then run done again:\n${
+    pendingRework.map((scope) => `- ${scope.name} (${scope.status})`).join("\n")
+  }`;
+}
+
+/** Frozen technical acceptance: a present snapshot opts the card into the
+ * lock (baseline, test_map, red_proof, freeze_sha at this HEAD). Absent
+ * means no snapshot was ever taken — old cards fail open. Behind the
+ * STELOW_FROZEN_GATES kill-switch with the batch gates. Runs after the
+ * rework loop (known rework first) and before the live test-run check (the
+ * freeze must name the HEAD the run just verified). */
+async function frozenAcceptanceRefusal(
+  deps: CliDeps,
+  stateDir: string | null,
+  headSha: string | null,
+): Promise<string | null> {
+  if (!frozenGatesEnabled()) return null;
+  if (!stateDir) return null;
+  const raw = await deps.alia.sdk.files
+    .read({ path: join(stateDir, FROZEN_ACCEPTANCE_FILE) })
+    .then((file) => file.content)
+    .catch(() => null);
+  if (raw === null) return null;
+  const snapshot = parseFrozenAcceptance(raw) ?? { baseline: null, testMap: null, redProof: null, freezeSha: null };
+  return frozenAcceptanceGates({ ...snapshot, headSha });
+}
+
+/** Invisible-scopes companion: audit with zero synced scopes but scope
+ * blocks in spec-tech means execution ran untracked — done must not certify
+ * it. Missing/unreadable specs fail open here; thin specs are owned by the
+ * depth gate. Gate order lives in lib/build-gates (first refusal wins). */
+function specTechRefusal(
+  projectPath: string | null,
+  cardId: string,
+  currentStage: string,
+  trackedScopes: ReturnType<typeof loadCardScopes>,
+): string | null {
+  if (!projectPath) return null;
+  const specTech = latestSpecTech(projectPath, cardId);
+  const specCounts = countScopeDialects(specTech?.content ?? null);
+  return doneBuildGates({
+    kind: "build",
+    stage: currentStage,
+    scopes: trackedScopes,
+    specMachine: specCounts.machine,
+    specHuman: specCounts.human,
+    specContent: specTech?.content ?? null,
+  });
+}
+
+/** The done trail event: a completed card without it is invisible to flow
+ * metrics, which is what turned "N finished" into "N in Done". Never
+ * blocks the completion. */
+function trackableCompletion(deps: CliDeps, cardId: string, evidence: string): void {
+  try {
+    recordTrackableEvent(deps.db, {
+      cardId,
+      kind: "build",
+      trackableId: cardId,
+      transition: "completed",
+      actor: "host",
+      evidence,
+    });
+  } catch {
+    /* trail never blocks */
+  }
+}

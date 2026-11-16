@@ -1,0 +1,3763 @@
+#!/usr/bin/env bash
+# scripts/stelow — stelow workflow CLI (status / advance / doctor / seed / schema / check / ask / sync-scopes / lock / config / scope / decide).
+#
+# Passive: reads/writes one workflow state. Hosts may point at a per-workflow
+# directory with STELOW_STATEDIR/STELOW_STATE; root paths are the standalone
+# fallback.
+# Idempotent on bad input (never mutates on invalid candidate). Fail-closed.
+# No npm deps — bash + python3 only.
+#
+# Usage:
+#   scripts/stelow status [--json]
+#   scripts/stelow advance <candidate> [--dry-run] [--json]
+#   scripts/stelow next [--json]
+#   scripts/stelow doctor [--json]
+#   scripts/stelow seed --name <n> --intent <i> [--json]
+#   scripts/stelow schema [command]
+#   scripts/stelow check breadboard <map.json> [--json] [--strict]
+#   scripts/stelow ask ...
+#   scripts/stelow sync-scopes [--name <workflow>] [--json]
+#   scripts/stelow config get <field> [default]
+#   scripts/stelow config set red_first <strict|advisory|off>
+#   scripts/stelow lock acquire|release|check ...
+#   scripts/stelow --help
+
+set -euo pipefail
+
+PROG="${0##*/}"
+# Project workflows derive their root from git. Non-repository workspaces
+# (exploratory dirs, CI checkouts without .git) provide an explicit
+# per-workflow state dir instead: <root>/.stelow/<date>/<dirHash>, so the
+# project root is three levels up.
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$ROOT" ]; then
+  # `check` validates a file and `schema` documents the CLI: neither needs a
+  # workflow, so a plain directory is a fine root for them (and for --help).
+  case "${1:-}" in
+    check|schema|--help|-h|help|"") ROOT="$PWD" ;;
+    *)
+      if [ -n "${STELOW_STATEDIR:-}" ]; then
+        ROOT="$(cd "$STELOW_STATEDIR/../../.." && pwd)"
+      else
+        echo "$PROG: not in a git repo (set STELOW_STATEDIR for a non-repository workspace)" >&2
+        exit 2
+      fi
+      ;;
+  esac
+fi
+# Absolute path to this script, so `advance` can re-enter it for the
+# breadboard check without assuming a PATH entry or a cwd.
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+STATEDIR="${STELOW_STATEDIR:-$ROOT/.stelow}"
+if [ -n "${STELOW_STATE:-}" ]; then
+  STATE="$STELOW_STATE"
+elif [ -n "${STELOW_STATEDIR:-}" ]; then
+  STATE="$STATEDIR/state.md"
+else
+  STATE="$ROOT/state.md"
+fi
+INVARIANTS="$STATEDIR/invariants.json"
+TRANSITIONS="${STELOW_TRANSITIONS:-$ROOT/skills/stelow-workflow-orchestrator/references/transitions.md}"
+LOCKDIR="$STATEDIR/lock"
+LOCK_TTL_SEC="${STELOW_LOCK_TTL_SEC:-120}"
+
+# NOTE: no mkdir here — read-only commands (status, doctor, dry runs) must
+# never mutate the filesystem. Mutating paths create what they need.
+
+# --- shared helpers ---------------------------------------------------------
+
+die() { echo "$PROG: $*" >&2; exit 1; }
+
+# Usage errors exit 2 (worker misuse); runtime failures exit 1. The split is
+# machine-readable contract: hosts retry 1, fix-and-rerun on 2.
+usage_error() { echo "$PROG: $*" >&2; exit 2; }
+
+yaml_get() {
+  local key="$1" file="$2"
+  [ -f "$file" ] || return 1
+  python3 - "$file" "$key" <<'PY'
+import sys, re
+path, key = sys.argv[1], sys.argv[2]
+text = open(path).read()
+m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+if not m: sys.exit(1)
+# First pass: top-level scalar match.
+for line in m.group(1).splitlines():
+    mm = re.match(r"^" + re.escape(key) + r":\s*(.*)$", line)
+    if mm: print(mm.group(1).strip()); sys.exit(0)
+# Second pass: one-level-nested scalar under any "config:" / "stages:" block.
+# Walk lines, track nesting depth of any block the key could live under.
+in_block = None
+for line in m.group(1).splitlines():
+    if re.match(r"^[A-Za-z_][\w-]*:\s*$", line):
+        in_block = line.rstrip(":").strip()
+        continue
+    if in_block == "config":
+        mm = re.match(r"^  " + re.escape(key) + r":\s*(.*)$", line)
+        if mm: print(mm.group(1).strip()); sys.exit(0)
+sys.exit(1)
+PY
+}
+
+# The state's scalars, read in ONE pass.
+#
+# Every key used to cost its own python process: a transition read six of
+# them — the same file, parsed six times — and every host that asks the
+# helper "what is legal from here" paid for all six. One parse, one process.
+#
+# Prints "key<TAB>value" per key that is present; a key that is absent is
+# simply not printed, which is how the callers tell "missing" from "empty".
+yaml_get_all() {
+  local file="$1"; shift
+  [ -f "$file" ] || return 1
+  python3 - "$file" "$@" <<'PYEOF'
+import sys, re
+path, keys = sys.argv[1], sys.argv[2:]
+text = open(path).read()
+m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+if not m: sys.exit(1)
+lines = m.group(1).splitlines()
+for key in keys:
+    pattern = re.compile(r"^" + re.escape(key) + r":\s*(.*)$")
+    nested = re.compile(r"^  " + re.escape(key) + r":\s*(.*)$")
+    value = None
+    # First pass: top-level scalar match.
+    for line in lines:
+        mm = pattern.match(line)
+        if mm:
+            value = mm.group(1).strip()
+            break
+    # Second pass: a scalar one level under a "config:" block.
+    if value is None:
+        in_block = None
+        for line in lines:
+            if re.match(r"^[A-Za-z_][\w-]*:\s*$", line):
+                in_block = line.rstrip(":").strip()
+                continue
+            if in_block == "config":
+                mm = nested.match(line)
+                if mm:
+                    value = mm.group(1).strip()
+                    break
+    if value is not None:
+        print(key + "\t" + value)
+PYEOF
+}
+
+status_text() {
+  local name intent stage status quality exploration_count exploration_hybrid review_mode
+  name=$(yaml_get name "$STATE" 2>/dev/null || echo "?")
+  intent=$(yaml_get intent "$STATE" 2>/dev/null || echo "?")
+  stage=$(yaml_get current_stage "$STATE" 2>/dev/null || echo "?")
+  status=$(yaml_get status "$STATE" 2>/dev/null || echo "?")
+  quality=$(yaml_get quality "$STATE" 2>/dev/null || true)
+  exploration_count=$(yaml_get exploration_count "$STATE" 2>/dev/null || true)
+  exploration_hybrid=$(yaml_get exploration_hybrid "$STATE" 2>/dev/null || true)
+  if [ -z "$quality$exploration_count" ]; then
+    if [ ! -f "$STATE" ]; then
+      quality="?"
+      exploration_count="?"
+      exploration_hybrid="?"
+    else
+      # Deprecated alias: any legacy appetite resolves to production, breadth 2/3/5.
+      legacy_appetite=$(yaml_get appetite "$STATE" 2>/dev/null || true)
+      legacy_note=""
+      [ -n "$legacy_appetite" ] && legacy_note=" (legacy appetite $legacy_appetite)"
+      [ -z "$quality" ] && quality="production$legacy_note"
+    fi
+    if [ -z "$exploration_count" ]; then
+      case "$legacy_appetite" in
+        Lean) exploration_count="2" ;;
+        Complete) exploration_count="5" ;;
+        *) exploration_count="3" ;;
+      esac
+    fi
+    [ -z "$exploration_hybrid" ] && exploration_hybrid="true"
+  fi
+  review_mode=$(yaml_get review_mode "$STATE" 2>/dev/null || echo "?")
+  cat <<EOF
+workflow : $name
+intent   : $intent
+stage    : $stage
+status   : $status
+quality  : $quality
+explore  : count=$exploration_count hybrid=$exploration_hybrid
+review   : $review_mode
+lock     : $(lock_state)
+EOF
+}
+
+status_json() {
+  python3 - "$STATE" "$INVARIANTS" <<'PY'
+import json, os, sys, re
+state, inv = sys.argv[1:3]
+out = {"workflow": None, "intent": None, "current_stage": None, "status": None, "config": {}}
+def get_top(blob, key):
+    m = re.match(r"^---\n(.*?)\n---", blob, re.DOTALL)
+    if not m: return None
+    for line in m.group(1).splitlines():
+        mm = re.match(r"^" + re.escape(key) + r":\s*(.*)$", line)
+        if mm: return mm.group(1).strip()
+    return None
+def get_nested(blob, parent, key):
+    m = re.match(r"^---\n(.*?)\n---", blob, re.DOTALL)
+    if not m: return None
+    in_block = False
+    for line in m.group(1).splitlines():
+        if re.match(r"^" + re.escape(parent) + r":\s*$", line):
+            in_block = True; continue
+        if in_block:
+            mm = re.match(r"^  " + re.escape(key) + r":\s*(.*)$", line)
+            if mm: return mm.group(1).strip()
+            # leaving the block (a new top-level key)
+            if re.match(r"^[A-Za-z_][\w-]*:\s*(.*)$", line) and not line.startswith(" "):
+                in_block = False
+    return None
+if os.path.exists(state):
+    blob = open(state).read()
+    for k in ("name", "intent", "current_stage", "status"):
+        out[k.replace("name", "workflow") if k == "name" else k] = get_top(blob, k)
+    cfg = {}
+    for k in ("quality", "exploration_count", "exploration_hybrid", "appetite", "review_mode", "red_first", "product_type"):
+        v = get_nested(blob, "config", k)
+        if v is not None: cfg[k] = v
+    out["config"] = cfg
+if os.path.exists(inv):
+    try: out["invariants"] = json.loads(open(inv).read())
+    except Exception: out["invariants_error"] = "parse-failed"
+print(json.dumps(out, indent=2, sort_keys=True))
+PY
+}
+
+# --- lock (mkdir, TTL) -------------------------------------------------------
+
+# Portable directory mtime (seconds) for the lock TTL. Unlike `date`/`stat`,
+# python3's st_mtime is identical on GNU/Linux and BSD/macOS (the script
+# already requires python3 for YAML parsing). Falls back to "now" (no
+# staleness) on error.
+lock_mtime() {
+  python3 -c 'import os, sys; print(int(os.stat(sys.argv[1]).st_mtime))' "$LOCKDIR" 2>/dev/null || echo "$(date +%s)"
+}
+
+lock_state() {
+  if [ -d "$LOCKDIR" ]; then
+    local now mtime age
+    now=$(date +%s)
+    mtime=$(lock_mtime)
+    age=$((now - mtime))
+    if [ "$age" -gt "$LOCK_TTL_SEC" ]; then
+      echo "stale (age=${age}s > ttl=${LOCK_TTL_SEC}s)"
+    else
+      local pid host
+      pid=$(cat "$LOCKDIR/pid" 2>/dev/null || echo "?")
+      host=$(cat "$LOCKDIR/host" 2>/dev/null || echo "?")
+      echo "held (pid=$pid host=$host age=${age}s)"
+    fi
+  else
+    echo "free"
+  fi
+}
+
+lock_acquire() {
+  if mkdir "$LOCKDIR" 2>/dev/null; then
+    echo "$$" > "$LOCKDIR/pid"
+    hostname > "$LOCKDIR/host"
+    date -Iseconds > "$LOCKDIR/acquired"
+    trap 'rm -rf "$LOCKDIR" 2>/dev/null || true' EXIT
+    return 0
+  fi
+  local now mtime age pid host
+  now=$(date +%s)
+  mtime=$(lock_mtime)
+  age=$((now - mtime))
+  if [ "$age" -gt "$LOCK_TTL_SEC" ]; then
+    echo "$PROG: stale lock (age=${age}s) — removing" >&2
+    rm -rf "$LOCKDIR" || die "lock remove failed"
+    if mkdir "$LOCKDIR" 2>/dev/null; then
+      echo "$$" > "$LOCKDIR/pid"; hostname > "$LOCKDIR/host"; date -Iseconds > "$LOCKDIR/acquired"
+      trap 'rm -rf "$LOCKDIR" 2>/dev/null || true' EXIT
+      return 0
+    fi
+  fi
+  pid=$(cat "$LOCKDIR/pid" 2>/dev/null || echo "?")
+  host=$(cat "$LOCKDIR/host" 2>/dev/null || echo "?")
+  die "lock held by pid=$pid host=$host (age=${age}s; set STELOW_LOCK_TTL_SEC to override)"
+}
+
+# --- advance -----------------------------------------------------------------
+
+# The transition facts, read from the transitions reference — the one file that
+# carries the graph, the intent routes and the review-mode policy.
+#
+#   transition_facts allowed <stage> <intent> <mode> <quality> <exploration> <appetite>
+#                                                          -> the legal candidates
+#   transition_facts redirect <candidate> <intent> <mode>  -> the successor of a
+#                                                             stage that does not run
+#
+# The review-mode policy used to be a `case` statement here AND a hand-typed
+# table in the transitions template AND a list in stages.yaml: three owners of
+# one fact, and a mode added to stages.yaml left this helper enforcing the
+# old rules. It now parses the generated block, so the helper, the published
+# catalog and the reference table cannot disagree.
+transition_facts() {
+  local query="$1"; shift
+  python3 - "$query" "$TRANSITIONS" "$@" <<'PY'
+import sys, re
+query, path = sys.argv[1], sys.argv[2]
+args = sys.argv[3:]
+
+def fail(message):
+    print(message, file=sys.stderr)
+    sys.exit(1)
+
+try:
+    text = open(path).read()
+except OSError as exc:
+    fail(f"transitions reference not readable at {path}: {exc}")
+
+# --- the review-mode policy ------------------------------------------------
+# Bounded to the generated section, so a stray "skipped:" line anywhere else
+# in the file can never be read as policy.
+def parse_review_modes(text):
+    section = re.search(r"^## Review Modes\s*$(.*?)(?=^## )", text, re.MULTILINE | re.DOTALL)
+    if not section:
+        fail("transitions reference has no '## Review Modes' section — regenerate it "
+             "(python3 scripts/generate-transitions.py)")
+    modes, current = {}, None
+    for line in section.group(1).splitlines():
+        m = re.match(r"^review_mode:\s*(.+)$", line)
+        if m:
+            current = m.group(1).strip()
+            modes[current] = {"skipped": [], "no_human_wait": []}
+            continue
+        if current is None:
+            continue
+        m = re.match(r"^(skipped|no_human_wait):\s*(.*)$", line)
+        if m:
+            value = m.group(2).strip()
+            if value and value != "(none)":
+                modes[current][m.group(1)] = [v.strip() for v in value.split(",") if v.strip()]
+    return modes
+
+def parse_stage_skips(text):
+    """The stage-skip rules, parsed out of the generated block.
+
+    A rule names a stage that does NOT run while its condition holds. The
+    condition is a conjunction of `when` keys plus an optional `any_of`
+    disjunction, and the rule comes from stages.yaml — the same source the
+    published matrix is rendered from, so the gate and the policy cannot
+    disagree.
+    """
+    section = re.search(r"^## Stage Skips\s*$(.*?)(?=^## )", text, re.MULTILINE | re.DOTALL)
+    if not section:
+        fail("transitions reference has no '## Stage Skips' section — regenerate it "
+             "(python3 scripts/generate-transitions.py)")
+    rules, current = [], None
+    for line in section.group(1).splitlines():
+        m = re.match(r"^stage_skip:\s*(\S+)\s*$", line)
+        if m:
+            current = {"id": m.group(1), "stage": None, "when": {}, "any_of": {}}
+            rules.append(current)
+            continue
+        if current is None:
+            continue
+        m = re.match(r"^stage:\s*(\S+)\s*$", line)
+        if m:
+            current["stage"] = m.group(1)
+            continue
+        m = re.match(r"^when:\s*(\S+)\s*(.*)$", line)
+        if m:
+            current["when"][m.group(1)] = [v.strip() for v in m.group(2).split(",") if v.strip()]
+            continue
+        m = re.match(r"^any_of:\s*(\S+)\s*(.*)$", line)
+        if m:
+            current["any_of"][m.group(1)] = [v.strip() for v in m.group(2).split(",") if v.strip()]
+    for rule in rules:
+        if not rule["stage"]:
+            fail(f"stage skip '{rule['id']}' names no stage")
+    return rules
+
+def condition_holds(condition, any_of, knobs):
+    """The condition shape: a conjunction, plus an optional disjunction."""
+    for key, allowed in condition.items():
+        if str(knobs.get(key, "")) not in allowed:
+            return False
+    if not any_of:
+        return True
+    return any(str(knobs.get(key, "")) in allowed for key, allowed in any_of.items())
+
+def absent_by_policy(rules, knobs):
+    """The stages that do not run under the run knobs."""
+    absent = []
+    for rule in rules:
+        if condition_holds(rule["when"], rule["any_of"], knobs):
+            if rule["stage"] not in absent:
+                absent.append(rule["stage"])
+    return absent
+
+def parse_route(text, intent):
+    m = re.search(r"^\*\*" + re.escape(intent) + r":\*\*\s*(.+)$", text, re.MULTILINE)
+    if not m:
+        return None
+    return [part.strip() for part in m.group(1).split("→")]
+
+modes = parse_review_modes(text)
+
+def knobs_from(args):
+    """The run knobs, as the strings the state carries them."""
+    quality = args[3] if len(args) > 3 else ""
+    exploration = args[4] if len(args) > 4 else ""
+    appetite = args[5] if len(args) > 5 else ""
+    return {"quality": quality, "exploration_count": exploration, "appetite": appetite}
+
+def absent_stages(mode, knobs):
+    """The stages that do not run: the mode's own, plus the policy's.
+
+    Two kinds, and the difference matters: a review mode says the stage
+    does not exist in that mode (nobody to approve it), and a stage policy
+    says it does not exist under a condition of the run knobs (the spike
+    has no question to answer). Both leave a hole in the route, and both
+    are answered the same way: the stage is refused, and the stage before
+    it moves straight to the stage after it.
+
+    Returns the stages with the kind that removed each, so the refusal
+    can say WHY.
+    """
+    absent = {stage: "mode" for stage in modes[mode]["skipped"]}
+    # The condition may name the review mode, so the mode is one of the
+    # knobs the rule is evaluated against.
+    scoped = dict(knobs)
+    scoped["review_mode"] = mode
+    for stage in absent_by_policy(parse_stage_skips(text), scoped):
+        absent.setdefault(stage, "policy")
+    return absent
+
+if query == "redirect":
+    candidate, intent, mode = args[0], args[1], args[2]
+    if mode not in modes:
+        fail(f"unknown review_mode '{mode}' (known: {', '.join(modes)})")
+    route = parse_route(text, intent) or []
+    absent = absent_stages(mode, knobs_from(args))
+    if candidate not in absent:
+        sys.exit(0)                      # not refused here
+    successor = "(the stage after it)"
+    if candidate in route:
+        idx = route.index(candidate)
+        if idx + 1 < len(route):
+            successor = route[idx + 1]
+    print(successor + "\t" + absent[candidate])
+    sys.exit(0)
+
+if query not in ("allowed", "forward"):
+    fail(f"transition_facts: unknown query '{query}'")
+
+stage, intent, mode = args[0], args[1], args[2]
+if mode not in modes:
+    fail(f"unknown review_mode '{mode}' (known: {', '.join(modes)})")
+knobs = knobs_from(args)
+skipped = list(absent_stages(mode, knobs))
+
+block = re.search(r"^### " + re.escape(stage) + r"\s*\n(.*?)(?=^### |\Z)", text, re.MULTILINE | re.DOTALL)
+if not block:
+    sys.exit(1)                          # no section for this stage
+# Each candidate keeps its verb, so the caller can tell a move FORWARD
+# (next/accept) from a move BACKWARD (reject/rework). "The first allowed
+# candidate" is the forward one only because the verbs are parsed in that
+# order — a fact the caller must not have to know.
+allowed = []
+for line in block.group(1).splitlines():
+    mm = re.match(r"^(next|accept|reject|rework|annotate):\s*(.*)$", line.strip())
+    if not mm:
+        continue
+    verb = mm.group(1)
+    # Trailing prose comments (e.g. "(full rework path ...)") must never
+    # leak words as candidates: cut the line at the first paren.
+    value = mm.group(2).split("(", 1)[0]
+    for token in re.split(r"[,\s]+", value):
+        token = token.strip("[]\"'")
+        if token and re.match(r"^[a-z][a-z0-9-]*$", token):
+            allowed.append((verb, token))
+
+# Intent routes are projections of the full graph, never extra edges. A
+# route may omit stages, but it may not invent a transition outside the graph.
+route = parse_route(text, intent)
+if route and stage in route:
+    # Scoped by route POSITION, not membership. Every route ends at
+    # `audit`, so "is this stage in my route" admits audit for all
+    # of them and cannot express the investigate shortcut at all.
+    # What distinguishes investigate is that audit is the stage that
+    # FOLLOWS context there.
+    #
+    # Three kinds of move survive, and the asymmetry is the point:
+    #   - forward: only the route's IMMEDIATE next stage. Anything
+    #     further ahead is reached by the review-mode skip
+    #     passthrough, which names the successor of a skipped
+    #     stage; that is what carries verification -> audit when
+    #     diff-gate is skipped. Admitting every later stage here
+    #     would let one graph edge rewrite every other track.
+    #   - backward: any stage already behind, which is what a
+    #     reject/rework needs. Filtering those out would strand a
+    #     card that must go back to setup.
+    #   - itself: re-running the current stage is declared rework
+    #     (`rework: shape` at shape) and is never a route
+    #     violation. Filtering it out refuses `shape -> shape` and
+    #     takes shape rework with it.
+    idx = route.index(stage)
+    reachable = set(route[:idx]) | set(route[idx + 1:idx + 2]) | {stage}
+    allowed = [(verb, c) for verb, c in allowed if c in reachable]
+
+# A stage that does not run in this review mode is not a legal move: it
+# parks the worker waiting for a review nobody configured. The set reported
+# here is what `advance` ACCEPTS, so a skipped stage is not in it — and the
+# refusal below names the successor instead.
+allowed = [(verb, c) for verb, c in allowed if c not in skipped]
+
+# The review-mode passthrough: a stage that does not run in this mode leaves
+# a hole in the route, so the stage BEFORE it may move straight to the stage
+# AFTER it. Without this the worker deadlocks — refused AT the hole by the
+# gate guard, and with no legal way past it. Derived from the generated skip
+# set, so a mode that skips a new stage needs no change here.
+for skipped_stage in skipped:
+    if not route or skipped_stage not in route:
+        continue
+    idx = route.index(skipped_stage)
+    if idx == 0 or idx + 1 >= len(route):
+        continue
+    if route[idx - 1] == stage:
+        allowed.append(("next", route[idx + 1]))
+
+seen = set()
+unique = []
+for verb, candidate in allowed:
+    if candidate in seen:
+        continue
+    seen.add(candidate)
+    unique.append((verb, candidate))
+
+if query == "forward":
+    unique = [(verb, c) for verb, c in unique if verb in ("next", "accept")]
+
+for verb, candidate in unique:
+    print(candidate)
+PY
+}
+
+# The transition context: the stage, the intent and the review mode the
+# transition rule runs against, resolved from the state and validated.
+#
+# One resolution, so `advance` (which enforces) and `next` (which reports)
+# can never disagree about what is legal. The review mode decides which
+# stages exist, and an unknown or missing mode used to skip enforcement
+# silently: the worker walked into a stage that does not run in its mode and
+# parked there. The vocabulary is closed and owned by stages.yaml, so a mode
+# the helper does not know is a bug, not a lenient default.
+TRANSITION_STAGE=""
+TRANSITION_INTENT=""
+TRANSITION_MODE=""
+TRANSITION_QUALITY=""
+TRANSITION_EXPLORATION=""
+TRANSITION_APPETITE=""
+
+resolve_transition_context() {
+  [ -f "$STATE" ] || die "state.md not found at $STATE (run /stelow entry first)"
+  # One parse of the state, not one per key.
+  local knobs
+  knobs=$(yaml_get_all "$STATE" current_stage intent review_mode quality exploration_count appetite) || die "state.md has no readable front-matter"
+  TRANSITION_STAGE=""
+  TRANSITION_INTENT=""
+  TRANSITION_MODE=""
+  TRANSITION_QUALITY=""
+  TRANSITION_EXPLORATION=""
+  TRANSITION_APPETITE=""
+  while IFS="$(printf '\t')" read -r key value; do
+    case "$key" in
+      current_stage) TRANSITION_STAGE="$value" ;;
+      intent) TRANSITION_INTENT="$value" ;;
+      review_mode) TRANSITION_MODE="$value" ;;
+      quality) TRANSITION_QUALITY="$value" ;;
+      exploration_count) TRANSITION_EXPLORATION="$value" ;;
+      appetite) TRANSITION_APPETITE="$value" ;;
+    esac
+  done <<< "$knobs"
+  [ -n "$TRANSITION_STAGE" ] || die "state.md has no current_stage (run /stelow entry first)"
+  [ -n "$TRANSITION_INTENT" ] || TRANSITION_INTENT="unknown"
+  [ -n "$TRANSITION_MODE" ] || die "state.md has no review_mode (run stelow seed, or set config.review_mode)"
+}
+
+# The candidates `advance` accepts from the current stage, under the current
+# review mode. Exits 1 when the stage has no transition at all, and prints
+# the reason on stderr when it is the mode that is wrong (the vocabulary is
+# closed, so an unknown mode is a bug, not a lenient default).
+legal_candidates() {
+  transition_facts allowed \
+    "$TRANSITION_STAGE" "$TRANSITION_INTENT" "$TRANSITION_MODE" \
+    "$TRANSITION_QUALITY" "$TRANSITION_EXPLORATION" "$TRANSITION_APPETITE"
+}
+
+
+do_next() {
+  # The legal moves from the current stage, under the current review mode.
+  #
+  # The router used to re-derive this with its own awk/grep over the
+  # transitions reference: a fourth implementation of the rule, coarser than
+  # the helper's (no intent route, no review mode). It accepted moves the
+  # helper then refused — `diff-gate` in Auto — and the workflow stalled
+  # between the two answers. One owner: the helper asks itself.
+  resolve_transition_context
+  local allowed forward
+  local reason_file
+  reason_file=$(mktemp)
+  local status
+  allowed=$(legal_candidates 2>"$reason_file") && status=0 || status=$?
+  if [ "$status" -ne 0 ]; then
+    local reason
+    reason=$(cat "$reason_file")
+    rm -f "$reason_file"
+    [ -n "$reason" ] && die "$reason"
+    die "no transition defined from stage '$TRANSITION_STAGE'"
+  fi
+  rm -f "$reason_file"
+  forward=$(transition_facts forward \
+    "$TRANSITION_STAGE" "$TRANSITION_INTENT" "$TRANSITION_MODE" \
+    "$TRANSITION_QUALITY" "$TRANSITION_EXPLORATION" "$TRANSITION_APPETITE") || forward=""
+  if [ "${1:-}" = "--json" ]; then
+    python3 - "$TRANSITION_STAGE" "$TRANSITION_INTENT" "$TRANSITION_MODE" "$allowed" "$forward" <<'PY'
+import json, sys
+stage, intent, mode, allowed, forward = sys.argv[1:6]
+print(json.dumps({
+    "stage": stage,
+    "intent": intent,
+    "review_mode": mode,
+    "allowed": [c for c in allowed.split("\n") if c],
+    "forward": [c for c in forward.split("\n") if c],
+}, indent=2))
+PY
+    return 0
+  fi
+  printf '%s\n' "$allowed"
+}
+
+do_advance() {
+  local candidate="$1"
+  [ -n "$candidate" ] || die "advance requires a <candidate> argument"
+  resolve_transition_context
+  local current="$TRANSITION_STAGE" intent="$TRANSITION_INTENT" review_mode="$TRANSITION_MODE" allowed
+  local reason_file
+  reason_file=$(mktemp)
+  local status
+  allowed=$(legal_candidates 2>"$reason_file") && status=0 || status=$?
+  if [ "$status" -ne 0 ]; then
+    local reason
+    reason=$(cat "$reason_file")
+    rm -f "$reason_file"
+    [ -n "$reason" ] && die "$reason"
+    die "no transition defined from stage '$current'"
+  fi
+  rm -f "$reason_file"
+
+  # A stage that does not run in this review mode must never be entered: it
+  # parks the worker waiting for a review nobody configured. Refuse with the
+  # redirect instead of mutating — and say so BEFORE the legality check,
+  # because a skipped stage is not a legal move and the generic "invalid
+  # transition" would hide the reason and the way out.
+  local redirect redirect_kind
+  redirect=$(transition_facts redirect "$candidate" "$intent" "$review_mode" \
+    "$TRANSITION_QUALITY" "$TRANSITION_EXPLORATION" "$TRANSITION_APPETITE") \
+    || die "could not resolve the review-mode policy"
+  if [ -n "$redirect" ]; then
+    redirect_kind="${redirect##*$'\t'}"
+    redirect="${redirect%%$'\t'*}"
+    if [ "$redirect_kind" = "policy" ]; then
+      die "$candidate does not run under this workflow's policy — advance directly to $redirect instead"
+    fi
+    die "$candidate is skipped in '$review_mode' review mode — advance directly to $redirect instead"
+  fi
+
+  echo "$allowed" | grep -qx "$candidate" ||
+    die "invalid transition '$current' -> '$candidate' (allowed: $(echo "$allowed" | paste -sd, -))"
+
+  # pre-condition: required artifacts, resolved against the workflow's own
+  # state dir first, then the repo root.
+  #
+  # The state dir is the directory that HOLDS state.md, not the global
+  # .stelow root: the workflow mints .stelow/<date>/<dirHash>/ and points
+  # STELOW_STATE at the state.md inside it. Globbing only the .stelow root
+  # found nothing for every real workflow, so the guard refused to advance
+  # past shape with "missing required artifact" even though the file was
+  # there. The state dir is derived from STATE; the .stelow root stays as a
+  # fallback for the legacy flat layout.
+  local map_list
+  map_list="$(mktemp)"
+  python3 - "$current" "$ROOT" "$STATEDIR" "$TRANSITIONS" "$STATE" "$map_list" <<'PY' || die "pre-condition check failed"
+import sys, re, os, glob
+current, root, statedir, transitions, state, map_list = sys.argv[1:7]
+trans = open(transitions).read()
+m = re.search(r"^### " + re.escape(current) + r"\s*\n(.*?)(?=^### |\Z)", trans, re.MULTILINE | re.DOTALL)
+# A stage with no section in the transitions reference means the reference is
+# truncated or the stage is not in it. Requiring nothing and allowing the
+# transition is fail-open: the guard that was supposed to check the stage's
+# artifacts checks nothing. It is unreachable today (the candidate check
+# refuses an unknown stage first), and a guard that only works while another
+# guard happens to run first is not a guard.
+if not m:
+    print(f"pre-condition: no section for stage '{current}' in the transitions reference", file=sys.stderr); sys.exit(1)
+
+def is_inside(child, parent):
+    # realpath, not abspath: on macOS tmpdir() is /var/folders/... (a symlink
+    # to /private/var/...), and git reports the physical path. Comparing
+    # abspath made the workflow's own dir look OUTSIDE .stelow, so the guard
+    # fell back to the root and could be satisfied by a DIFFERENT workflow's
+    # artifact — the exact hole the no-fallback rule exists to close.
+    try:
+        return os.path.commonpath([os.path.realpath(child), os.path.realpath(parent)]) == os.path.realpath(parent)
+    except ValueError:
+        return False
+
+state_dir = os.path.dirname(os.path.abspath(state)) if state else ""
+# The directory that HOLDS state.md is the workflow's own directory: the
+# workflow mints .stelow/<date>/<dirHash>/ and points STELOW_STATE at the
+# state.md inside it. Globbing only the .stelow ROOT found nothing for every
+# real workflow, so the guard refused to advance past shape with "missing
+# required artifact" while the file sat right there.
+#
+# When the state dir sits INSIDE the .stelow root, it is authoritative and
+# the root is NOT searched as a fallback: the root may hold a DIFFERENT
+# workflow's artifacts, and finding one there would satisfy this workflow's
+# guard with a file that is not its own.
+bases = []
+if state_dir:
+    bases.append(state_dir)
+    if not is_inside(state_dir, statedir):
+        # Legacy layout: state.md at the repo root, artifacts under .stelow.
+        bases.extend([statedir, root])
+else:
+    bases.extend([statedir, root])
+
+def found_under(base, pat):
+    fullpat = pat if pat.startswith("/") else os.path.join(base, pat)
+    if glob.glob(fullpat):
+        return True
+    if not any(ch in pat for ch in "*?["):
+        suffix = os.sep + pat
+        for candidate in glob.glob(os.path.join(base, "**", "*"), recursive=True):
+            if candidate.endswith(suffix) and os.path.isfile(candidate):
+                return True
+    return False
+
+for line in m.group(1).splitlines():
+    am = re.match(r"^artifact:\s*(\S+)\s*$", line.strip())
+    if am:
+        pat = am.group(1)
+        if not any(found_under(base, pat) for base in bases):
+            print(f"missing required artifact: {pat} (expected under {state_dir or statedir})", file=sys.stderr); sys.exit(1)
+
+# Every breadboard map the precondition would accept, so the transition checks
+# exactly what it demanded. The guard used to resolve two exact paths while
+# the precondition accepted any file ENDING in `interfaces/breadboard.json`, so
+# a map parked in a subdirectory satisfied "the artifact exists" and the check
+# was skipped without a word: a broken map advanced the workflow.
+map_paths = []
+for base in bases:
+    canonical = os.path.join(base, "interfaces", "breadboard.json")
+    if os.path.isfile(canonical):
+        map_paths.append(canonical)
+        continue
+    for path in sorted(glob.glob(os.path.join(base, "**", "interfaces", "breadboard.json"), recursive=True)):
+        if os.path.isfile(path):
+            map_paths.append(path)
+if map_paths:
+    with open(map_list, "w") as handle:
+        handle.write("\n".join(dict.fromkeys(map_paths)) + "\n")
+PY
+
+  # A breadboard is not merely a file that must exist: leaving `selection`
+  # with a map that contradicts its contract or itself would hand Architecture
+  # and Planning a shape nobody can build. The worker can run these rules by
+  # hand (`stelow check breadboard`); here they run at the transition, so a
+  # workflow cannot advance past a broken map by forgetting to check it.
+  #
+  # Gaps are advisory (a display with no source may be a map the writer is
+  # still completing), so only errors refuse. The views carry the gaps.
+  if [ "$current" = "selection" ] && [ -s "$map_list" ]; then
+    local map_path
+    while IFS= read -r map_path; do
+      [ -n "$map_path" ] || continue
+      # `bash "$SELF"`, not `"$SELF"`: hosts sync the helper as a 0644 file and
+      # run it with `bash` (server/runtime/helper-script.ts). Executing it
+      # directly would fail on every host with "Permission denied".
+      bash "$SELF" check breadboard "$map_path" >/dev/null \
+        || die "breadboard check failed for $map_path (fix the errors above; gaps are advisory)"
+    done < "$map_list"
+  fi
+  rm -f "$map_list"
+
+  # dry run validates without side effects (no lock, no mutation)
+  if [ -n "${DRY_RUN:-}" ]; then
+    emit_advanced "$current" "$candidate" "true"
+    return 0
+  fi
+
+  mkdir -p "$STATEDIR"
+  lock_acquire
+
+  # mutate state.md frontmatter
+  python3 - "$current" "$candidate" "$STATE" "$STATEDIR" <<'PY'
+import sys, re, os, datetime, tempfile
+current, candidate, path, statedir = sys.argv[1:5]
+blob = open(path).read()
+m = re.match(r"^(---\n)(.*?)(\n---)(.*)$", blob, re.DOTALL)
+if not m:
+    print("state.md: missing YAML frontmatter", file=sys.stderr); sys.exit(2)
+header_open, fm, header_close, body = m.group(1), m.group(2), m.group(3), m.group(4)
+lines = fm.splitlines()
+
+for index, line in enumerate(lines):
+    if re.match(r"^current_stage:\s*", line):
+        lines[index] = f"current_stage: {candidate}"
+        break
+else:
+    lines.append(f"current_stage: {candidate}")
+
+def block_bounds(key):
+    start = next((i for i, line in enumerate(lines) if line == f"{key}:" or line == f"{key}: []"), None)
+    if start is None:
+        return None, None
+    end = start + 1
+    while end < len(lines) and (lines[end].startswith(" ") or not lines[end]):
+        end += 1
+    return start, end
+
+stage_start, stage_end = block_bounds("stages")
+if stage_start is None:
+    lines.extend(["stages:", f"  {current}: done", f"  {candidate}: in-progress"])
+else:
+    stage_lines = lines[stage_start + 1:stage_end]
+    seen_current = seen_candidate = False
+    for index, line in enumerate(stage_lines):
+        match = re.match(r"^  ([a-z][a-z0-9-]*):\s*", line)
+        if not match:
+            continue
+        if match.group(1) == current:
+            stage_lines[index] = f"  {current}: {'in-progress' if current == candidate else 'done'}"
+            seen_current = True
+        if match.group(1) == candidate:
+            stage_lines[index] = f"  {candidate}: in-progress"
+            seen_candidate = True
+    if not seen_current and current != candidate:
+        stage_lines.append(f"  {current}: done")
+    if not seen_candidate:
+        stage_lines.append(f"  {candidate}: in-progress")
+    lines[stage_start + 1:stage_end] = stage_lines
+
+timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+history_entry = [f"  - stage: {current}", f"    at: {timestamp}", "    status: done"]
+history_start, history_end = block_bounds("history")
+if history_start is None:
+    lines.extend(["history:", *history_entry])
+elif lines[history_start] == "history: []":
+    lines[history_start:history_end] = ["history:", *history_entry]
+else:
+    lines[history_end:history_end] = history_entry
+
+# Advancing is the durable workflow boundary: record every durable output
+# that appeared since an earlier transition as produced by the stage being
+# left. The manifest is a list so a stage can own more than one artifact.
+def parse_artifact_blocks(text):
+    """Every `artifacts:` block in the text, merged into one list.
+
+    The manifest had two writers and two shapes: the helper writes it in the
+    front-matter, and a host prompt tells the worker to append a block of
+    its own. The helper read only the front-matter, so the worker's entry
+    was invisible to it — and the worker's append landed AFTER the
+    front-matter, as a SECOND `artifacts:` key, which is a duplicate key in
+    YAML. The next advance then rewrote the front-matter from the
+    helper's own list and the worker's artifact was silently dropped.
+
+    So: read every block, wherever it is, and merge. One list, one shape,
+    written back in the helper's canonical form.
+    """
+    found = []
+    entry = None
+    inside = False
+    for line in text.splitlines():
+        if re.match(r"^artifacts:\s*(\[\])?\s*$", line):
+            if entry: found.append(entry)
+            entry = None
+            inside = True
+            continue
+        # A new top-level key ends the block. Without this the scan would
+        # read the `history:` list as artifacts — every list in the file
+        # looked like a manifest entry.
+        if inside and re.match(r"^\S", line):
+            if entry: found.append(entry)
+            entry = None
+            inside = False
+        if not inside:
+            continue
+        item = re.match(r"^\s*- ([a-z_]+):\s*(.+)$", line)
+        field = re.match(r"^\s+([a-z_]+):\s*(.+)$", line)
+        if item:
+            if entry: found.append(entry)
+            entry = {item.group(1): item.group(2).strip()}
+        elif field and entry:
+            entry[field.group(1)] = field.group(2).strip()
+    if entry: found.append(entry)
+    return found
+
+def drop_duplicate_artifact_blocks(lines):
+    """Keep the first `artifacts:` block in the front-matter, drop the rest.
+
+    A second `artifacts:` key is a DUPLICATE KEY in YAML: a parser may take
+    the first, the last, or refuse the file. The worker's append landed
+    there, so the file could carry two, and the two readers disagreed about
+    which one was the manifest.
+    """
+    out = []
+    index = 0
+    seen_first = False
+    while index < len(lines):
+        line = lines[index]
+        if re.match(r"^artifacts:\s*(\[\])?\s*$", line):
+            end = index + 1
+            while end < len(lines) and (lines[end].startswith(" ") or not lines[end].strip()):
+                end += 1
+            if not seen_first:
+                seen_first = True
+                out.extend(lines[index:end])
+            index = end
+            continue
+        out.append(line)
+        index += 1
+    return out
+
+def strip_artifact_blocks(text):
+    """The text with every `artifacts:` block removed."""
+    out = []
+    index = 0
+    lines = text.split("\n")
+    while index < len(lines):
+        line = lines[index]
+        if re.match(r"^artifacts:\s*(\[\])?\s*$", line):
+            index += 1
+            while index < len(lines) and (lines[index].startswith(" ") or not lines[index].strip()):
+                index += 1
+            continue
+        out.append(line)
+        index += 1
+    return "\n".join(out)
+
+artifacts = []
+seen_paths = set()
+for item in parse_artifact_blocks(blob):
+    # NOT `path`: that name is the STATE FILE in this scope, and shadowing it
+    # made the advance write the state to the artifact's path instead.
+    item_path = item.get("path")
+    if item_path and item_path in seen_paths:
+        continue
+    if item_path: seen_paths.add(item_path)
+    artifacts.append(item)
+lines = drop_duplicate_artifact_blocks(lines)
+artifact_start, artifact_end = block_bounds("artifacts")
+known_paths = {item.get("path") for item in artifacts}
+CONTROL_FILES = {"state.md", "audit-trail.md", "invariants.json"}
+def workflow_output(absolute):
+    relative = os.path.relpath(os.path.realpath(absolute), os.path.realpath(statedir)).replace(os.sep, "/")
+    first = relative.split("/", 1)[0]
+    return (
+        os.path.isfile(absolute)
+        and relative not in CONTROL_FILES
+        and first != "lock"
+        and not any(part.startswith(".") for part in relative.split("/"))
+    )
+for walk_root, _, files in os.walk(statedir):
+    for filename in files:
+        absolute = os.path.join(walk_root, filename)
+        if not workflow_output(absolute): continue
+        # realpath both sides: os.getcwd() is physical (symlinks resolved)
+        # while statedir may be logical (e.g. /var → /private/var on macOS).
+        # Without this, relpath emits ../.. chains + an absolute remainder.
+        relative = os.path.relpath(os.path.realpath(absolute), os.path.realpath(os.getcwd())).replace(os.sep, "/")
+        if relative in known_paths: continue
+        stem = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ").strip()
+        kind = "document" if filename.endswith(".md") else "artifact"
+        artifacts.append({"stage": current, "kind": kind, "label": stem, "path": relative, "generated_at": timestamp})
+        known_paths.add(relative)
+manifest = ["artifacts:"]
+for item in artifacts:
+    manifest.extend([
+        f"  - stage: {item['stage']}",
+        f"    kind: {item.get('kind', 'document')}",
+        f"    label: {item.get('label', os.path.basename(item['path']))}",
+        f"    path: {item['path']}",
+        f"    generated_at: {item.get('generated_at', timestamp)}",
+    ])
+if artifact_start is None:
+    lines.extend(manifest)
+else:
+    lines[artifact_start:artifact_end] = manifest
+
+new_blob = header_open + "\n".join(lines) + header_close + strip_artifact_blocks(body)
+fd, temporary = tempfile.mkstemp(prefix=".state.", dir=os.path.dirname(path) or ".", text=True)
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(new_blob)
+    os.replace(temporary, path)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+PY
+
+  # append invariants
+  python3 - "$candidate" "$INVARIANTS" <<'PY'
+import sys, os, json, datetime, tempfile
+candidate, inv_path = sys.argv[1:3]
+os.makedirs(os.path.dirname(inv_path), exist_ok=True)
+data = {}
+if os.path.exists(inv_path):
+    try: data = json.loads(open(inv_path).read())
+    except Exception: data = {}
+data.setdefault("history", [])
+data["history"].append({"stage": candidate,
+                         "at": datetime.datetime.now(datetime.timezone.utc).isoformat()})
+data["current_stage"] = candidate
+fd, temporary = tempfile.mkstemp(prefix=".invariants.", dir=os.path.dirname(inv_path), text=True)
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(json.dumps(data, indent=2, sort_keys=True) + "\n")
+    os.replace(temporary, inv_path)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+PY
+
+  rm -rf "$LOCKDIR"
+  emit_advanced "$current" "$candidate" "false"
+}
+
+emit_advanced() {
+  local previous="$1" candidate="$2" dry="$3"
+  if [ -n "${JSON_OUT:-}" ]; then
+    python3 - "$previous" "$candidate" "$dry" <<'PY'
+import sys, json
+previous, candidate, dry = sys.argv[1:4]
+out = {"previous_stage": previous, "advanced_to": candidate}
+if dry == "true":
+    out["dry_run"] = True
+print(json.dumps(out, sort_keys=True))
+PY
+  elif [ "$dry" = "true" ]; then
+    echo "$PROG: would advance $previous -> $candidate"
+  else
+    echo "$PROG: advanced to $candidate"
+  fi
+}
+
+# --- doctor ------------------------------------------------------------------
+
+do_doctor() {
+  python3 - "$ROOT" "$LOCKDIR" "$LOCK_TTL_SEC" "$STATE" "$TRANSITIONS" "${1:-}" <<'PY'
+import sys, os, json, re, time
+root, lockdir, ttl, state_path, trans_path, want_json = sys.argv[1:7]
+findings = []
+def add(severity, klass, msg):
+    findings.append({"severity": severity, "class": klass, "message": msg})
+
+# 1. orphan dir
+if os.path.isdir(lockdir):
+    age = int(time.time() - os.stat(lockdir).st_mtime)
+    if age > int(ttl):
+        add("warn", "stale-lock", f".stelow/lock is stale (age={age}s > ttl={ttl}s)")
+
+# 2. missing dir (intent convention)
+if os.path.exists(state_path):
+    blob = open(state_path).read()
+    mm = re.search(r"^intent:\s*(\S+)", blob, re.MULTILINE)
+    if mm:
+        intent = mm.group(1).strip()
+        if intent not in ("new-product", "feature", "bugfix", "refactor", "investigate"):
+            add("warn", "missing-dir", f"state.md intent '{intent}' has no artifacts dir convention")
+
+# 3. parallel lock (live pid)
+if os.path.isdir(lockdir):
+    pidfile = os.path.join(lockdir, "pid")
+    if os.path.exists(pidfile):
+        try:
+            pid = int(open(pidfile).read().strip())
+            os.kill(pid, 0)
+            add("info", "parallel-lock", f"another live process holds the lock (pid={pid})")
+        except (ValueError, ProcessLookupError, PermissionError):
+            add("warn", "orphan-pid", "lock pid file points at dead pid")
+
+# 4. state<->transitions drift
+# A missing transitions reference is not "no drift": it is the reference the
+# whole state machine reads. A vendored helper without it reports "doctor: ok"
+# and every check that needed it silently did nothing.
+if not os.path.exists(trans_path):
+    add("error", "transitions-missing",
+        f"transitions reference not found at {trans_path} — the state machine cannot be checked")
+elif os.path.exists(state_path):
+    blob = open(state_path).read()
+    cm = re.search(r"^current_stage:\s*(\S+)", blob, re.MULTILINE)
+    if cm:
+        cur = cm.group(1).strip()
+        text = open(trans_path).read()
+        if not re.search(r"^### " + re.escape(cur) + r"\s*$", text, re.MULTILINE):
+            add("error", "state-transitions-drift",
+                f"state.md current_stage '{cur}' not in transitions.md")
+
+if want_json == "--json":
+    print(json.dumps({"findings": findings,
+                       "ok": not any(f["severity"] == "error" for f in findings)},
+                      indent=2, sort_keys=True))
+    if any(f["severity"] == "error" for f in findings):
+        sys.exit(1)
+else:
+    if not findings:
+        print("doctor: ok (no drift)")
+    for f in findings:
+        print(f"{f['severity']:5} {f['class']:24} {f['message']}")
+    if any(f["severity"] == "error" for f in findings):
+        sys.exit(1)
+PY
+}
+
+# --- seed --------------------------------------------------------------------
+
+# Mint a fresh per-workflow state dir (.stelow/<date>/<dirHash>/) with a
+# scaffolded state.md plus a stelow.json tracking entry. Prints the state
+# dir so callers export STELOW_STATEDIR for follow-up commands.
+do_seed() {
+  local name="" intent="" quality="" exploration_count="" exploration_hybrid="" legacy_appetite="" review_mode="Auto" red_first="" guard_judge="" json=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --name) name="${2:-}"; shift 2 ;;
+      --intent) intent="${2:-}"; shift 2 ;;
+      --quality) quality="${2:-}"; shift 2 ;;
+      --exploration-count) exploration_count="${2:-}"; shift 2 ;;
+      --exploration-hybrid) exploration_hybrid="${2:-}"; shift 2 ;;
+      --no-hybrid) exploration_hybrid="false"; shift ;;
+      --appetite) legacy_appetite="${2:-}"; shift 2 ;;
+      --review-mode) review_mode="${2:-}"; shift 2 ;;
+      --red-first) red_first="${2:-}"; shift 2 ;;
+      --guard-judge) guard_judge="${2:-}"; shift 2 ;;
+      --json) json="1"; shift ;;
+      *) usage_error "seed: unknown arg '$1' (try --help)" ;;    esac
+  done
+  [ -n "$name" ] || usage_error "seed requires --name <workflow-name>"
+  case "$intent" in
+    new-product|feature|bugfix|refactor|investigate) ;;
+    *) usage_error "seed requires --intent <new-product|feature|bugfix|refactor|investigate>" ;;
+  esac
+  # Deprecated alias: --appetite maps once (any value → production/high; breadth 2/3/5).
+  if [ -n "$legacy_appetite" ]; then
+    case "$legacy_appetite" in
+      Lean|Core|Complete) ;;
+      *) usage_error "seed: --appetite must be Lean|Core|Complete" ;;
+    esac
+    [ -z "$quality" ] && quality="production"
+    if [ -z "$exploration_count" ]; then
+      case "$legacy_appetite" in
+        Lean) exploration_count="2" ;;
+        Complete) exploration_count="5" ;;
+        *) exploration_count="3" ;;
+      esac
+    fi
+    echo "seed: --appetite is deprecated; mapped $legacy_appetite to quality/exploration knobs." >&2
+  fi
+  [ -z "$quality" ] && quality="production"
+  [ -z "$exploration_count" ] && exploration_count="3"
+  [ -z "$exploration_hybrid" ] && exploration_hybrid="true"
+  # Red-first kill-switch (single source: config.red_first). Explicit flag
+  # wins; otherwise production defaults strict, experimental advisory.
+  case "$red_first" in
+    ""|strict|advisory|off) ;;
+    *) usage_error "seed: --red-first must be strict|advisory|off" ;;
+  esac
+  if [ -z "$red_first" ]; then
+    if [ "$quality" = "experimental" ]; then red_first="advisory"; else red_first="strict"; fi
+  fi
+  # Guard-judge kill-switch (single source: config.guard_judge). Same default rule.
+  case "$guard_judge" in
+    ""|strict|advisory|off) ;;
+    *) usage_error "seed: --guard-judge must be strict|advisory|off" ;;
+  esac
+  if [ -z "$guard_judge" ]; then
+    if [ "$quality" = "experimental" ]; then guard_judge="advisory"; else guard_judge="strict"; fi
+  fi
+  case "$quality" in
+    production|experimental) ;;
+    *) usage_error "seed: --quality must be production|experimental" ;;
+  esac
+  case "$exploration_count" in
+    1|2|3|4|5) ;;
+    *) usage_error "seed: --exploration-count must be 1|2|3|4|5" ;;
+  esac
+  case "$exploration_hybrid" in
+    true|false) ;;
+    *) usage_error "seed: --exploration-hybrid must be true|false" ;;
+  esac
+  if [ "$exploration_count" = "1" ] && [ "$exploration_hybrid" = "true" ]; then
+    exploration_hybrid="false"
+  fi
+  [ -n "$review_mode" ] || usage_error "seed: --review-mode must be non-empty"
+  python3 - "$ROOT" "$STATEDIR" "$TRANSITIONS" "$name" "$intent" "$quality" "$exploration_count" "$exploration_hybrid" "$review_mode" "$red_first" "$guard_judge" "$json" <<'PY' || die "seed failed"
+import sys, os, re, json, secrets, datetime
+root, statedir, trans_path, name, intent, quality, exploration_count, exploration_hybrid, review_mode, red_first, guard_judge, want_json = sys.argv[1:13]
+if not os.path.exists(trans_path):
+    print(f"seed: transitions reference not found at {trans_path}", file=sys.stderr); sys.exit(1)
+text = open(trans_path).read()
+stages = [m.group(1) for m in re.finditer(r"^### (\S+)\s*$", text, re.MULTILINE)]
+if not stages:
+    print("seed: no stages in transitions reference", file=sys.stderr); sys.exit(1)
+# The first stage is the FIRST STAGE OF THE INTENT'S ROUTE, read from the same
+# route the transitions reference declares for it. It used to be hardcoded as
+# "triage" for new-product and "setup" for everything else, which disagreed
+# with every route in `stages.yaml` (all of them start at triage) and with the
+# entry skill that writes the first stage by hand. Two entry paths, two
+# answers, and the test pinned the wrong one.
+route = re.search(r"^\*\*" + re.escape(intent) + r":\*\*\s*(.+)$", text, re.MULTILINE)
+if not route:
+    print(f"seed: no route for intent '{intent}' in the transitions reference", file=sys.stderr); sys.exit(1)
+first = route.group(1).split("→")[0].strip()
+if not first:
+    print(f"seed: empty route for intent '{intent}' in the transitions reference", file=sys.stderr); sys.exit(1)
+if first not in stages:
+    print(f"seed: first stage '{first}' not in transitions reference", file=sys.stderr); sys.exit(1)
+date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+dirhash = "sw-%s-%s" % (secrets.token_hex(3), secrets.token_hex(3))
+statedir = os.path.join(statedir, date, dirhash)
+os.makedirs(statedir, exist_ok=True)
+fm = ["---", f"name: {name}", f"intent: {intent}", f"current_stage: {first}",
+      "status: active", "config:", f"  quality: {quality}",
+      f"  exploration_count: {exploration_count}",
+      f"  exploration_hybrid: {exploration_hybrid}"]
+alias_for = {"1": "Lean", "2": "Lean", "3": "Core", "4": "Complete", "5": "Complete"}.get(exploration_count, "Core")
+fm += ["  appetite: " + alias_for + "  # DEPRECATED alias, knobs above are canonical",
+      f"  review_mode: {review_mode}", f"  red_first: {red_first}", f"  guard_judge: {guard_judge}", "  product_type: software", "stages:"]
+fm += [f"  {s}: pending" for s in stages]
+fm += ["artifacts: []", "history: []", "---", "", f"# {name}", ""]
+with open(os.path.join(statedir, "state.md"), "w") as handle:
+    handle.write("\n".join(fm))
+tracking_path = os.path.join(root, "stelow.json")
+tracking = {}
+if os.path.exists(tracking_path):
+    try: tracking = json.loads(open(tracking_path).read())
+    except Exception: tracking = {}
+if not isinstance(tracking.get("workflows"), list):
+    tracking["workflows"] = []
+alias_for_entry = {"1": "Lean", "2": "Lean", "3": "Core", "4": "Complete", "5": "Complete"}.get(exploration_count, "Core")
+entry = {"name": name, "description": "", "status": "in-progress", "cwd": root,
+         "dirHash": dirhash, "created": now, "updated": now,
+         "config": {"quality": quality,
+                    "exploration_count": exploration_count,
+                    "exploration_hybrid": exploration_hybrid,
+                    # DEPRECATED alias for old hosts; knobs above are canonical.
+                    "appetite": alias_for_entry,
+                    "review_mode": review_mode,
+                    "red_first": red_first,
+                    "guard_judge": guard_judge},
+         "stage": {"current_stage": first, "previous_stage": None,
+                   "transitioned_at": now,
+                   "history": [{"stage": first, "entered_at": now}]},
+         "phases": []}
+tracking["workflows"] = [w for w in tracking["workflows"] if w.get("name") != name]
+tracking["workflows"].append(entry)
+tracking.setdefault("$schema", "https://raw.githubusercontent.com/calionauta/stelow/main/stelow.schema.json")
+tracking.setdefault("version", "1.0")
+tracking.setdefault("created", now)
+tracking["updated"] = now
+fd, temporary = __import__("tempfile").mkstemp(prefix=".stelow.", dir=root)
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(json.dumps(tracking, indent=2, sort_keys=True) + "\n")
+    os.replace(temporary, tracking_path)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+if want_json:
+    print(json.dumps({"state": os.path.join(statedir, "state.md"), "statedir": statedir,
+                      "dirHash": dirhash, "created": now}, indent=2, sort_keys=True))
+else:
+    print(os.path.join(statedir, "state.md"))
+PY
+}
+
+# --- schema ------------------------------------------------------------------
+
+# Runtime introspection: the CLI documents itself as JSON so agents self-serve
+# without pre-stuffed docs. Keep in sync with the dispatch table below (the
+# schema test fails otherwise).
+do_schema() {
+  local want="${1:-}"
+  python3 - "$want" <<'PY'
+import json, sys
+want = sys.argv[1] if len(sys.argv) > 1 else ""
+commands = {
+  "status": {
+    "usage": "stelow status [--json]",
+    "flags": ["--json"],
+    "env": ["STELOW_STATE", "STELOW_STATEDIR", "STELOW_TRANSITIONS"],
+    "exit_codes": {"0": "ok", "1": "unreadable state (still prints ?-rows with exit 0; reserved)"},
+    "output": "text rows or {workflow, intent, current_stage, status, config, artifacts?, invariants?, lock}",
+  },
+  "advance": {
+    "usage": "stelow advance <candidate> [--dry-run] [--json]",
+    "flags": ["--dry-run", "--json"],
+    "env": ["STELOW_STATE", "STELOW_STATEDIR", "STELOW_TRANSITIONS", "STELOW_LOCK_TTL_SEC"],
+    "exit_codes": {"0": "advanced", "1": "invalid transition, pre-condition, lock held, or bad state", "2": "usage"},
+    "output": "'stelow: advanced to <stage>' or {previous_stage, advanced_to} with --json",
+  },
+  "doctor": {
+    "usage": "stelow doctor [--json]",
+    "flags": ["--json"],
+    "env": ["STELOW_STATE", "STELOW_STATEDIR", "STELOW_TRANSITIONS", "STELOW_LOCK_TTL_SEC"],
+    "exit_codes": {"0": "ok or warnings only", "1": "findings with severity error"},
+    "output": "text lines or {findings: [{severity, class, message}], ok}",
+  },
+  "seed": {
+    "usage": "stelow seed --name <n> --intent <i> [--quality production|experimental] [--exploration-count 1-5] [--exploration-hybrid true|false | --no-hybrid] [--review-mode M] [--red-first strict|advisory|off] [--guard-judge strict|advisory|off] [--json]",
+    "flags": ["--name", "--intent", "--quality", "--exploration-count", "--exploration-hybrid", "--no-hybrid", "--appetite", "--review-mode", "--red-first", "--guard-judge", "--json"],
+    "env": ["STELOW_STATEDIR"],
+    "exit_codes": {"0": "seeded (prints state path)", "1": "seed failed", "2": "usage"},
+    "output": "state path or {state, statedir, dirHash, created} with --json",
+  },
+  "ask": {
+    "usage": "stelow ask --question <t> [--contract <id>] [--multiple] --option <label>... [--selected] (repeat --question groups)",
+    "flags": ["--question", "--option", "--multiple", "--contract"],
+    "env": ["STELOW_THREAD_ID", "STELOW_ASK_TIMEOUT_MS"],
+    "exit_codes": {"0": "submitted (answer JSON)", "1": "waiting (persisted) or explicit cancel", "2": "usage or unknown identity"},
+    "output": "answer JSON, or pending.json surviving under ask/ for host fulfillment",
+  },
+  "check": {
+    "usage": "stelow check breadboard <map.json> [--json] [--strict]",
+    "flags": ["--json", "--strict"],
+    "env": [],
+    "exit_codes": {"0": "valid map (gaps may still be reported)", "1": "the map contradicts its contract or itself, or --strict saw a gap; unreadable map", "2": "usage"},
+    "output": "text findings + summary, or {path, ok, counts, contract, problems} with --json",
+  },
+  "sync-scopes": {
+    "usage": "stelow sync-scopes [--name <workflow>] [--json]",
+    "flags": ["--name", "--json"],
+    "env": ["STELOW_STATEDIR"],
+    "exit_codes": {"0": "synced or nothing-to-do (idempotent no-op)", "1": "unreadable state", "2": "usage or ambiguous workflow"},
+    "output": "text summary or {synced, specTechFile, dirHash} with --json",
+  },
+  "scope": {
+    "usage": "stelow scope start|done|seed-tasks --scope <id> [--name <workflow>] [--iteration <n>] [--actual-files <a,b>] [--tasks <json>] [--start-sha <sha>] [--json]",
+    "flags": ["--scope", "--name", "--iteration", "--actual-files", "--tasks", "--start-sha", "--json"],
+    "env": ["STELOW_STATEDIR"],
+    "exit_codes": {"0": "transition committed", "1": "refused (terminal, deps, containment, red-first evidence, open test-* gates, seed validation) or unreadable state", "2": "usage or ambiguous workflow"},
+    "output": "text line or {id, status, started_at} with --json",
+  },
+  "lock": {
+    "usage": "stelow lock acquire|release|check --scope <id> [--file <f>...] [--ttl N] [--json]",
+    "flags": ["--scope", "--file", "--ttl", "--json"],
+    "env": ["STELOW_STATEDIR"],
+    "exit_codes": {"0": "ok / no conflicting locks", "1": "lock conflict or runtime failure", "2": "usage"},
+    "output": "text lines or {acquired|locks} JSON with --json",
+  },
+  "config": {
+    "usage": "stelow config get <field> [default] | stelow config set red_first|guard_judge <strict|advisory|off>",
+    "flags": [],
+    "env": ["STELOW_STATEDIR", "STELOW_STATE", "STELOW_RED_FIRST", "STELOW_GUARD_JUDGE"],
+    "exit_codes": {"0": "prints value or default (missing state yields default); set persists and mirrors to state.md", "2": "usage or invalid mode value"},
+    "output": "scalar value, JSON for arrays/objects",
+  },
+  "guard-judge": {
+    "usage": "stelow guard-judge status|check [--apply] [--json]",
+    "flags": ["--apply", "--json"],
+    "env": ["STELOW_STATEDIR", "STELOW_GUARD_JUDGE"],
+    "exit_codes": {"0": "status printed, or check clean (tripwire not tripped); check --apply persists advisory downgrade when tripped", "1": "check tripped (trailing-30 overturn rate above 0.1) without --apply, or unreadable state", "2": "usage"},
+    "output": "text lines or {judged, overturned, rate, tripped, window, mode, applied} with --json",
+  },
+  "audit-trail": {
+    "usage": "stelow audit-trail build|check|path [--strict] [--json]",
+    "flags": ["--json", "--strict"],
+    "env": ["STELOW_STATEDIR", "STELOW_STATE"],
+    "exit_codes": {"0": "built, valid, or path printed", "1": "missing state/trail, stale trail, unsafe artifact path, or unregistered documents with --strict", "2": "usage"},
+    "output": "canonical audit-trail.md path or {ok, contract, path, artifacts, snapshot}",
+  },
+  "decide": {
+    "usage": "stelow decide --selected <id> [--rejected a,b] [--scopes s1,s2] [--reason <t>] [--by <name>] [--supersedes r-old] [--challenge ch-id] [--json] | stelow decide --open-challenge --against <receipt> --reason <t> [--json]",
+    "flags": ["--selected", "--rejected", "--scopes", "--reason", "--by", "--supersedes", "--challenge", "--open-challenge", "--against", "--json"],
+    "env": ["STELOW_STATEDIR", "STELOW_STATE"],
+    "exit_codes": {"0": "decision recorded", "1": "contradicts a live receipt without --challenge naming it, or runtime failure", "2": "usage"},
+    "output": "text line or {ok, id, selectedId} with --json",
+  },
+}
+if want and want not in commands:
+    print(f"schema: unknown command '{want}' (known: {', '.join(sorted(commands))})", file=sys.stderr)
+    sys.exit(2)
+print(json.dumps(commands[want] if want else commands, indent=2, sort_keys=True))
+PY
+}
+
+# --- ask ---------------------------------------------------------------------
+
+# File-handoff question protocol. Writes ask/pending.json, blocks until
+# ask/answer.json appears or the timeout lapses. Hosts fulfill by rendering
+# their own UI or by watching the directory — the CLI never renders.
+# Identity comes from STELOW_THREAD_ID (fallback BB_THREAD_ID) only; there
+# is no --thread flag (explicit ids get copied wrong — see plugin history).
+do_ask() {
+  local thread_id="${STELOW_THREAD_ID:-${BB_THREAD_ID:-}}"
+  [ -n "$thread_id" ] || usage_error "ask needs a worker identity: export STELOW_THREAD_ID (no --thread flag; identity is never copied by hand)"
+  local timeout_ms="${STELOW_ASK_TIMEOUT_MS:-3600000}"
+  case "$timeout_ms" in ''|*[!0-9]*) usage_error "ask: STELOW_ASK_TIMEOUT_MS must be a millisecond integer" ;; esac
+  local ask_dir="$STATEDIR/ask"
+  mkdir -p "$ask_dir"
+  python3 - "$ask_dir" "$thread_id" "$timeout_ms" "$@" <<'PY' || exit $?
+import sys, os, json, time, datetime, re
+ask_dir, thread_id, timeout_ms = sys.argv[1:4]
+timeout_ms = int(timeout_ms)
+argv = sys.argv[4:]
+
+def fail_usage(msg):
+    print(f"ask: {msg}", file=sys.stderr)
+    print("Usage: stelow ask --question <text> [--contract <id>] [--multiple] --option <label>... [--selected] (repeat --question groups)", file=sys.stderr)
+    sys.exit(2)
+
+# --- parse groups (same grammar as every host adapter) ---
+groups = []
+current = None
+i = 0
+while i < len(argv):
+    arg = argv[i]
+    if arg == "--thread":
+        fail_usage("stelow ask takes no --thread; identity comes from STELOW_THREAD_ID")
+    elif arg == "--question":
+        i += 1
+        if i >= len(argv) or not argv[i].strip():
+            fail_usage("Each --question needs a non-empty text.")
+        current = {"question": argv[i], "multiple": False, "options": [], "contract": None}
+        groups.append(current)
+    elif arg == "--option":
+        i += 1
+        if current is None:
+            fail_usage("Options must follow a --question: --question <text> --option <label>...")
+        if i >= len(argv) or not argv[i].strip():
+            fail_usage("Each --option needs a non-empty label.")
+        current["options"].append({"label": argv[i], "description": "", "selected": False})
+    elif arg == "--selected":
+        if current is None or not current["options"]:
+            fail_usage("--selected must follow a --option: --question <text> --option <label> --selected...")
+        current["options"][-1]["selected"] = True
+    elif arg == "--contract":
+        if current is None:
+            fail_usage("Contract ids follow a --question: --question <text> --contract <id>...")
+        i += 1
+        if i >= len(argv) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,59}", (argv[i] or "").strip()):
+            fail_usage("Each --contract needs a slug id (letters, digits, dashes, up to 60 chars).")
+        current["contract"] = argv[i].strip()
+    elif arg == "--multiple":
+        if current is None:
+            fail_usage("--multiple must follow a --question.")
+        current["multiple"] = True
+    elif arg.startswith("--"):
+        fail_usage(f"unknown flag '{arg}'")
+    else:
+        fail_usage(f"unexpected positional '{arg}' (questions come from --question groups)")
+    i += 1
+if not groups:
+    fail_usage("at least one --question group is required")
+for index, group in enumerate(groups):
+    if len(group["options"]) < 2:
+        fail_usage(f"Question {index + 1} needs at least 2 --option labels.")
+    if not group["multiple"] and any(opt.get("selected") for opt in group["options"]):
+        fail_usage(f"Question {index + 1}: --selected needs --multiple (preselection is an opt-out confirm).")
+
+def pending_path():
+    return os.path.join(ask_dir, "pending.json")
+
+def answer_path():
+    return os.path.join(ask_dir, "answer.json")
+
+def read_json(path):
+    try:
+        with open(path) as handle:
+            return json.load(handle)
+    except Exception:
+        return None
+
+def collect():
+    """Print a valid answer and consume it. Returns True when collected."""
+    answer = read_json(answer_path())
+    if not isinstance(answer, dict):
+        return False
+    if answer.get("cancelled") is True:
+        print(json.dumps(answer, sort_keys=True))
+        try: os.unlink(answer_path())
+        except OSError: pass
+        sys.exit(1)
+    answers = answer.get("answers")
+    if not isinstance(answers, dict) or not answers:
+        return False
+    print(json.dumps({"answers": answers}, sort_keys=True))
+    try: os.unlink(answer_path())
+    except OSError: pass
+    sys.exit(0)
+
+def pending_live():
+    """A pending file that has not timed out yet (or has no deadline)."""
+    pending = read_json(pending_path())
+    if not isinstance(pending, dict) or not isinstance(pending.get("questions"), list):
+        return None
+    asked_at = pending.get("asked_at_ms", 0)
+    timeout = pending.get("timeout_ms", 0)
+    try:
+        expired = timeout > 0 and (int(time.time() * 1000) - int(asked_at)) >= int(timeout)
+    except (TypeError, ValueError):
+        expired = False
+    return None if expired else pending
+
+# Re-run doubles as collect: an arrived answer wins over everything.
+collect()  # exits 0/1 when an answer is present
+live = pending_live()
+if live is not None:
+    asked_ago = int(time.time() - live.get("asked_at_ms", int(time.time() * 1000)) / 1000)
+    print(f"ask: question already pending (asked {asked_ago}s ago) — answer it, then re-run to collect", file=sys.stderr)
+    sys.exit(1)
+
+# Fresh (or expired) pending: stage it, clearing any stale answer.
+now_ms = int(time.time() * 1000)
+now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+pending = {
+    "questions": [{"id": f"q{index + 1}", **group} for index, group in enumerate(groups)],
+    "thread_id": thread_id,
+    "asked_at": now_iso,
+    "asked_at_ms": now_ms,
+    "timeout_ms": timeout_ms,
+}
+try: os.unlink(answer_path())
+except OSError: pass
+with open(pending_path(), "w") as handle:
+    handle.write(json.dumps(pending, indent=2, sort_keys=True) + "\n")
+
+# Block until an answer lands, the timeout lapses, or the pending file vanishes.
+deadline = now_ms + timeout_ms
+interval = 1.0 if timeout_ms >= 10000 else 0.1
+while True:
+    collect()  # exits 0/1 when an answer lands
+    if not os.path.exists(pending_path()):
+        print("ask: pending question was withdrawn; stopping", file=sys.stderr)
+        sys.exit(1)
+    if int(time.time() * 1000) >= deadline:
+        elapsed = max(1, round((int(time.time() * 1000) - now_ms) / 1000))
+        print(f"No response after {elapsed}s. STOP and wait: do NOT proceed with the workflow. "
+              f"The question is still pending (ask/pending.json) and remains answerable. "
+              f"When an answer is recorded, re-run this command to collect it.", file=sys.stderr)
+        sys.exit(1)
+    time.sleep(interval)
+PY
+}
+
+# Shared workflow selection for tracking writers (sync-scopes, scope).
+# Prints `INDEX=<n> KIND=<name|dir|active>` and exits 0, `MISS=<reason>` and
+# exits 1 when nothing is selectable, or a usage message and exit 2 when the
+# selection is ambiguous. Callers re-read stelow.json and re-verify KIND
+# before writing, so a concurrent reseed fails closed instead of clobbering.
+# Fail-open vs fail-closed stays with the caller: sync-scopes turns MISS
+# into a warning + exit 0, mutating commands turn it into exit 1.
+stelow_workflow_index() {
+  local cmd="$1" root="$2" statedir="$3" name="${4:-}"
+  python3 - "$cmd" "$root" "$statedir" "$name" <<'PY'
+import sys, os, json
+cmd, root, statedir, name = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+tracking_path = os.path.join(root, "stelow.json")
+try:
+    tracking = json.loads(open(tracking_path).read())
+except Exception as error:
+    print(f"MISS=could not read {tracking_path}; leaving state unchanged ({error})")
+    sys.exit(1)
+workflows = tracking.get("workflows")
+if not isinstance(workflows, list) or not workflows:
+    print("MISS=no workflows in tracking; leaving state unchanged")
+    sys.exit(1)
+if name:
+    for i, w in enumerate(workflows):
+        if isinstance(w, dict) and w.get("name") == name:
+            print(f"INDEX={i} KIND=name")
+            sys.exit(0)
+    print(f"MISS=no workflow named '{name}'; leaving state unchanged")
+    sys.exit(1)
+leaf = os.path.basename(os.path.normpath(statedir))
+for i, w in enumerate(workflows):
+    if isinstance(w, dict) and w.get("dirHash") == leaf:
+        print(f"INDEX={i} KIND=dir")
+        sys.exit(0)
+active = [i for i, w in enumerate(workflows) if isinstance(w, dict) and w.get("status") == "in-progress"]
+if len(active) == 1:
+    print(f"INDEX={active[0]} KIND=active")
+    sys.exit(0)
+print(f"{cmd}: ambiguous workflow (pass --name) or set STELOW_STATEDIR", file=sys.stderr)
+sys.exit(2)
+PY
+}
+
+# --- sync-scopes -------------------------------------------------------------
+
+# Parse [SCOPE-N] blocks from the latest spec-tech_*.md into wf.scopes[].
+# Single canonical parser: hosts shell out instead of maintaining mirrors
+# (the old compiled-artifact path is gone — this subcommand IS the parser).
+do_sync_scopes() {
+  local name="" json=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --name) name="${2:-}"; shift 2 ;;
+      --json) json="1"; shift ;;
+      *) usage_error "sync-scopes: unknown arg '$1' (try --help)" ;;    esac
+  done
+  selection=$(stelow_workflow_index "sync-scopes" "$ROOT" "$STATEDIR" "$name")
+  sel_code=$?
+  if [ $sel_code -eq 2 ]; then exit 2; fi
+  if [ $sel_code -ne 0 ]; then
+    printf 'sync-scopes: %s\n' "${selection#MISS=}" >&2
+    exit 0
+  fi
+  wf_index="${selection%% *}"
+  wf_index="${wf_index#INDEX=}"
+  wf_kind="${selection##*KIND=}"
+  python3 - "$ROOT" "$STATEDIR" "$name" "$json" "$wf_index" "$wf_kind" <<'PY' || exit $?
+import sys, os, re, json, glob, datetime, tempfile
+root, statedir, name, want_json, wf_index, wf_kind = sys.argv[1:7]
+
+def warn(text):
+    print(f"sync-scopes: {text}", file=sys.stderr)
+
+tracking_path = os.path.join(root, "stelow.json")
+try:
+    tracking = json.loads(open(tracking_path).read())
+except Exception as error:
+    warn(f"could not read {tracking_path}; leaving state unchanged ({error})")
+    sys.exit(0)
+workflows = tracking.get("workflows")
+if not isinstance(workflows, list) or not workflows:
+    warn("no workflows in tracking; leaving state unchanged")
+    sys.exit(0)
+try:
+    workflow = workflows[int(wf_index)]
+except Exception:
+    warn("selected workflow is gone; leaving state unchanged")
+    sys.exit(0)
+if not isinstance(workflow, dict) or not (
+    (wf_kind == "name" and (not name or workflow.get("name") == name))
+    or (wf_kind == "dir" and workflow.get("dirHash") == os.path.basename(os.path.normpath(statedir)))
+    or (wf_kind == "active" and workflow.get("status") == "in-progress")
+):
+    warn("selected workflow changed underfoot; leaving state unchanged")
+    sys.exit(0)
+
+dirhash = workflow.get("dirHash")
+if not dirhash:
+    warn("workflow has no dirHash; leaving state unchanged")
+    sys.exit(0)
+try:
+    created = datetime.datetime.fromisoformat(str(workflow.get("created", "")))
+    date = created.strftime("%Y-%m-%d")
+except Exception:
+    date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+plans = os.path.join(root, ".stelow", date, dirhash, "plans")
+try:
+    files = sorted(f for f in os.listdir(plans) if f.startswith("spec-tech_") and f.endswith(".md"))
+except Exception as error:
+    warn(f"could not read plans dir {plans}; leaving state unchanged ({error})")
+    sys.exit(0)
+if not files:
+    warn(f"no spec-tech_*.md under {plans}; leaving state unchanged")
+    sys.exit(0)
+latest = files[-1]
+if workflow.get("scopes") and workflow.get("specTechFile") == latest:
+    msg = f"scopes already in sync with {latest}"
+    if want_json:
+        print(json.dumps({"synced": 0, "specTechFile": latest, "dirHash": dirhash, "note": msg}))
+    else:
+        print(f"sync-scopes: {msg}")
+    sys.exit(0)
+
+content = open(os.path.join(plans, latest)).read()
+# Human-dialect fallback: planning output may open scopes with markdown
+# headings (`### SCOPE-1: Title`) instead of machine blocks. Normalize to
+# the canonical form before splitting so hosts never sync zero scopes from
+# a spec that clearly names them. The bracket form stays canonical (see
+# tech-output.md); this only refuses to lose work.
+content = re.sub(r"(?m)^#{1,6}\s*SCOPE-(\d+)\s*:?\s*(.*)$", r"[SCOPE-\1] \2", content)
+blocks = re.split(r"(?m)^\[SCOPE-(\d+)\]\s*(.*)$", content)
+# split keeps [full, num, title, body, num, title, body, ...]
+scopes = []
+for i in range(1, len(blocks), 3):
+    num, title, body = blocks[i], blocks[i + 1].strip(), blocks[i + 2]
+    fields: dict = {}
+    targets: list = []
+    in_targets = False
+    for line in body.splitlines():
+        key = re.match(r"^\[([A-Z_]+)\]\s*(.*)$", line.strip())
+        if key:
+            in_targets = key.group(1) == "TARGET_FILES"
+            if not in_targets:
+                fields[key.group(1)] = key.group(2).strip()
+            continue
+        if in_targets:
+            item = re.match(r"^\s*-\s*(.+)$", line)
+            if item:
+                targets.append(item.group(1).strip())
+            elif line.strip():
+                in_targets = False
+    dep_line = ""
+    for line in body.splitlines():
+        dep = re.match(r"^Dependencies:\s*(.+)$", line.strip())
+        if dep:
+            dep_line = dep.group(1)
+            break
+    blocked = [f"scope-{n}" for n in re.findall(r"SCOPE-(\d+)", dep_line)]
+    try:
+        max_iter = int(re.search(r"\d+", fields.get("MAX_ITERATIONS", "3")).group(0))
+    except Exception:
+        max_iter = 3
+    scopes.append({
+        "id": f"scope-{num}",
+        "type": fields.get("TYPE", "feature").strip().lower() or "feature",
+        "name": title,
+        "blockedBy": blocked,
+        "targetFiles": targets,
+        "maxIterations": max_iter,
+        "status": "pending",
+    })
+if not scopes:
+    warn(f"{latest} had no [SCOPE-N] blocks; scopes left as-is")
+    sys.exit(0)
+ids = {s["id"] for s in scopes}
+# Dangling blockedBy references stall the same way (waiting on a scope that
+# will never complete). Warn only — the plan may span multiple spec-tech files.
+dangling = sorted({d for s in scopes for d in s["blockedBy"]} - ids)
+if dangling:
+    warn(f"blockedBy references unknown scopes (ignored for cycle check): {', '.join(dangling)}")
+# blockedBy must be acyclic: a cycle stalls execution silently (each scope
+# waits for the other forever). Fail loud at ingest, naming the cycle —
+# no state is written.
+adj = {s["id"]: [d for d in s["blockedBy"] if d in ids] for s in scopes}
+WHITE, GRAY, BLACK = 0, 1, 2
+color = {i: WHITE for i in ids}
+stack: list = []
+cycle = None
+def visit(node):
+    global cycle
+    color[node] = GRAY
+    stack.append(node)
+    for dep in adj[node]:
+        if color[dep] == GRAY:
+            cycle = stack[stack.index(dep):] + [dep]
+            return True
+        if color[dep] == WHITE and visit(dep):
+            return True
+    stack.pop()
+    color[node] = BLACK
+    return False
+for sid in sorted(ids):
+    if color[sid] == WHITE and visit(sid):
+        break
+if cycle:
+    print(f"sync-scopes: blockedBy cycle detected: {' -> '.join(cycle)}; fix Dependencies: in {latest} (no state written)", file=sys.stderr)
+    sys.exit(1)
+
+# A re-sync re-parses the spec, but worker/host-owned overlay survives it:
+# rework scopes (source audit-gap, created by the host from escalated gaps)
+# and mid-execution discovered tasks (source discovered, appended by the
+# executor) are not in the spec file — dropping them would silently lose
+# the rework loop and the executor's findings on every spec revision.
+previous = workflow.get("scopes") if isinstance(workflow.get("scopes"), list) else []
+by_id = {s["id"]: s for s in scopes}
+taken = set(by_id)
+def _num(sid):
+    try:
+        return int(str(sid).split("scope-")[1])
+    except Exception:
+        return 0
+for old in previous:
+    if not isinstance(old, dict):
+        continue
+    if old.get("source") == "audit-gap" and old.get("id") not in by_id:
+        scopes.append(old)
+        by_id[old["id"]] = old
+        taken.add(old["id"])
+        continue
+    if old.get("source") == "audit-gap" and old.get("id") in by_id:
+        # A revised spec reused the rework scope's number: never drop the
+        # rework silently — rehouse it under the next free number. Gap
+        # matching elsewhere keys on gap text, not scope id, so the loop
+        # stays intact.
+        fresh = max([_num(sid) for sid in taken] + [0]) + 1
+        old["id"] = f"scope-{fresh}"
+        old["supersedes"] = True
+        scopes.append(old)
+        by_id[old["id"]] = old
+        taken.add(old["id"])
+        continue
+    current = by_id.get(old.get("id"))
+    if isinstance(current, dict) and isinstance(old.get("tasks"), list):
+        kept = [t for t in old["tasks"] if isinstance(t, dict) and t.get("source") == "discovered"]
+        if kept:
+            have = {t.get("id") for t in current.get("tasks", []) if isinstance(t, dict)}
+            current.setdefault("tasks", []).extend([t for t in kept if t.get("id") not in have])
+            current["discovered_tasks_count"] = sum(1 for t in current["tasks"] if isinstance(t, dict) and t.get("source") == "discovered")
+workflow["scopes"] = scopes
+workflow["specTechFile"] = latest
+workflow["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+fd, temporary = tempfile.mkstemp(prefix=".stelow.", dir=root)
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(json.dumps(tracking, indent=2, sort_keys=True) + "\n")
+    os.replace(temporary, tracking_path)
+finally:
+    if os.path.exists(temporary):
+        try: os.unlink(temporary)
+        except Exception: pass
+if want_json:
+    print(json.dumps({"synced": len(scopes), "specTechFile": latest, "dirHash": dirhash}))
+else:
+    print(f"sync-scopes: synced {len(scopes)} scopes from {latest}")
+PY
+}
+
+# --- lock-files ------------------------------------------------------------
+
+# File-reservation locks for parallel scope dispatch (opt-in). Deterministic
+# replacement for the old LLM-run bash snippets: no jq, no GNU date, same
+# layout (`<statedir>/locks/<sha1[:12]>.lock`). Atomic create via O_EXCL;
+# stale locks are stolen, live foreign locks refuse with exit 1.
+do_lock() {
+  local op="${1:-}"; shift || true
+  case "$op" in
+    acquire|release|check) ;;
+    *) usage_error "lock needs acquire|release|check (try --help)" ;;
+  esac
+  python3 - "$STATEDIR" "$op" "$@" <<'PY' || exit $?
+import sys, os, json, hashlib, datetime
+statedir, op, argv = sys.argv[1], sys.argv[2], sys.argv[3:]
+DEFAULT_TTL = 1800
+
+def usage(text):
+    print(f"lock {op}: {text} (try --help)", file=sys.stderr)
+    sys.exit(2)
+
+scope = None
+files: list = []
+ttl = DEFAULT_TTL
+want_json = False
+i = 0
+while i < len(argv):
+    arg = argv[i]
+    if arg == "--scope":
+        i += 1
+        if i >= len(argv) or not argv[i].strip(): usage("--scope needs a value")
+        scope = argv[i]
+    elif arg == "--file":
+        i += 1
+        if i >= len(argv) or not argv[i].strip(): usage("--file needs a value")
+        files.append(argv[i])
+    elif arg == "--ttl":
+        i += 1
+        try: ttl = int(argv[i])
+        except Exception: usage("--ttl needs an integer number of seconds")
+        if ttl <= 0: usage("--ttl must be positive")
+    elif arg == "--json":
+        want_json = True
+    elif arg == "--":
+        files.extend(argv[i + 1:])
+        break
+    elif arg.startswith("--"):
+        usage(f"unknown flag '{arg}'")
+    else:
+        files.append(arg)
+    i += 1
+if op in ("acquire", "release") and not scope:
+    usage("acquire/release need --scope <scope-id>")
+if op == "acquire" and not files:
+    usage("acquire needs at least one file (--file or positional)")
+
+def lock_path(root, name):
+    digest = hashlib.sha1(name.encode("utf-8")).hexdigest()[:12]
+    return os.path.join(root, "locks", digest + ".lock")
+
+def now_iso():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+def is_live(entry):
+    try:
+        exp = datetime.datetime.fromisoformat(entry.get("expires_at", ""))
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=datetime.timezone.utc)
+        return exp > datetime.datetime.now(datetime.timezone.utc)
+    except Exception:
+        return False
+
+lockdir = os.path.join(statedir, "locks")
+os.makedirs(lockdir, exist_ok=True)
+
+if op == "acquire":
+    conflicts = []
+    for name in files:
+        path = lock_path(statedir, name)
+        entry = {"scope_id": scope, "file": name, "acquired_at": now_iso(),
+                 "expires_at": (datetime.datetime.now(datetime.timezone.utc)
+                                + datetime.timedelta(seconds=ttl)).isoformat(),
+                 "ttl_seconds": ttl}
+        body = (json.dumps(entry, indent=2, sort_keys=True) + "\n").encode()
+        try:
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            try:
+                current = json.loads(open(path).read())
+            except Exception:
+                current = {}
+            if current.get("scope_id") == scope or not is_live(current):
+                open(path, "w").write(body.decode())
+                continue
+            conflicts.append({"file": name, "held_by": current.get("scope_id"),
+                              "expires_at": current.get("expires_at")})
+            continue
+        with os.fdopen(fd, "w") as handle:
+            handle.write(body.decode())
+    if conflicts:
+        for conflict in conflicts:
+            print(f"LOCK CONFLICT: {conflict['file']} held by {conflict['held_by']}", file=sys.stderr)
+        if want_json:
+            print(json.dumps({"acquired": False, "conflicts": conflicts}, indent=2, sort_keys=True))
+        sys.exit(1)
+    if want_json:
+        print(json.dumps({"acquired": True, "files": files, "scope": scope}))
+    else:
+        for name in files:
+            print(f"LOCK ACQUIRED: {name}")
+    sys.exit(0)
+
+if op == "release":
+    for name in files:
+        path = lock_path(statedir, name)
+        try:
+            current = json.loads(open(path).read())
+        except Exception:
+            continue
+        if current.get("scope_id") == scope or not is_live(current):
+            try: os.unlink(path)
+            except Exception: pass
+    sys.exit(0)
+
+# check: live locks held by OTHER scopes (pre-scope room check)
+held = []
+for name in files:
+    path = lock_path(statedir, name)
+    try:
+        current = json.loads(open(path).read())
+    except Exception:
+        continue
+    if current.get("scope_id") != scope and is_live(current):
+        held.append({"file": name, "held_by": current.get("scope_id"),
+                     "expires_at": current.get("expires_at")})
+if want_json:
+    print(json.dumps({"locks": held}, indent=2, sort_keys=True))
+else:
+    for item in held:
+        print(f"LOCK HELD: {item['file']} by {item['held_by']} until {item['expires_at']}")
+    if not held:
+        print("no conflicting locks")
+sys.exit(0)
+PY
+}
+
+# --- scope -------------------------------------------------------------------
+
+# Single-writer scope transitions for every host. Replaces the old LLM-run
+# `node -e` snippets: workers propose by running these, the CLI validates
+# and commits. Terminal statuses never exit (done/completed refuse with the
+# rework redirect); containment binds (done needs all tasks done/skipped);
+# start needs finished known dependencies (dangling deps warn only).
+do_scope() {
+  local op="${1:-}"; shift || true
+  case "$op" in
+    start|done|seed-tasks) ;;
+    *) usage_error "scope needs start|done|seed-tasks (try --help)" ;;
+  esac
+  case " $* " in
+    *" --scope "*) ;;
+    *) usage_error "scope start|done|seed-tasks need --scope <scope-id> (try --help)" ;;
+  esac
+  _scope_name=""
+  _scope_prev=""
+  for _scope_arg in "$@"; do
+    if [ "$_scope_prev" = "--name" ]; then _scope_name="$_scope_arg"; fi
+    _scope_prev="$_scope_arg"
+  done
+  _scope_sel=$(stelow_workflow_index "scope" "$ROOT" "$STATEDIR" "$_scope_name")
+  _scope_code=$?
+  if [ $_scope_code -eq 2 ]; then exit 2; fi
+  if [ $_scope_code -ne 0 ]; then
+    _scope_reason="${_scope_sel#MISS=}"
+    printf 'scope %s: %s\n' "$op" "${_scope_reason%; leaving state unchanged}" >&2
+    exit 1
+  fi
+  _scope_index="${_scope_sel%% *}"
+  _scope_index="${_scope_index#INDEX=}"
+  _scope_kind="${_scope_sel##*KIND=}"
+  python3 - "$ROOT" "$STATEDIR" "$op" "$_scope_index" "$_scope_kind" "$@" <<'PY' || exit $?
+import sys, os, re, json, datetime, tempfile
+root, statedir, op, wf_index, wf_kind, argv = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6:]
+
+def usage(text):
+    print(f"scope {op}: {text} (try --help)", file=sys.stderr)
+    sys.exit(2)
+
+def fail(text):
+    print(f"scope {op}: {text}", file=sys.stderr)
+    sys.exit(1)
+
+scope_id = None
+name = None
+want_json = False
+iteration = None
+actual_files = None
+tasks_arg = None
+start_sha = None
+i = 0
+while i < len(argv):
+    arg = argv[i]
+    if arg == "--scope":
+        i += 1
+        if i >= len(argv) or not argv[i].strip(): usage("--scope needs a value")
+        scope_id = argv[i]
+    elif arg == "--name":
+        i += 1
+        if i >= len(argv) or not argv[i].strip(): usage("--name needs a value")
+        name = argv[i]
+    elif arg == "--start-sha":
+        i += 1
+        if i >= len(argv) or not argv[i].strip(): usage("--start-sha needs a value")
+        start_sha = argv[i]
+    elif arg == "--iteration":
+        i += 1
+        try: iteration = int(argv[i])
+        except Exception: usage("--iteration needs an integer")
+        if iteration < 0: usage("--iteration must be >= 0")
+    elif arg == "--actual-files":
+        i += 1
+        if i >= len(argv): usage("--actual-files needs a value")
+        actual_files = [f.strip() for f in argv[i].split(",") if f.strip()]
+    elif arg == "--tasks":
+        i += 1
+        if i >= len(argv): usage("--tasks needs a JSON array value")
+        try:
+            tasks_arg = json.loads(argv[i])
+        except Exception: usage("--tasks must be a JSON array")
+        if not isinstance(tasks_arg, list): usage("--tasks must be a JSON array")
+    elif arg == "--json":
+        want_json = True
+    elif arg.startswith("--"):
+        usage(f"unknown flag '{arg}'")
+    else:
+        usage(f"unexpected argument '{arg}'")
+    i += 1
+if not scope_id:
+    usage("start|done|seed-tasks need --scope <scope-id>")
+if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", scope_id):
+    usage("--scope must match [A-Za-z0-9_-]{1,80}")
+OP_FLAGS = {"start": {"--start-sha"}, "done": {"--iteration", "--actual-files"}, "seed-tasks": {"--tasks"}}
+for op_flag in ("--iteration", "--actual-files", "--tasks", "--start-sha"):
+    if op_flag in argv and op_flag not in OP_FLAGS[op]:
+        owner = next(name for name, flags in OP_FLAGS.items() if op_flag in flags)
+        usage(f"{op_flag} only applies to {owner}")
+
+tracking_path = os.path.join(root, "stelow.json")
+try:
+    tracking = json.loads(open(tracking_path).read())
+except Exception as error:
+    fail(f"could not read {tracking_path} ({error})")
+workflows = tracking.get("workflows")
+if not isinstance(workflows, list) or not workflows:
+    fail("no workflows in tracking")
+try:
+    workflow = workflows[int(wf_index)]
+except Exception:
+    fail("selected workflow is gone; retry the command")
+if not isinstance(workflow, dict) or not (
+    (wf_kind == "name" and (not name or workflow.get("name") == name))
+    or (wf_kind == "dir" and workflow.get("dirHash") == os.path.basename(os.path.normpath(statedir)))
+    or (wf_kind == "active" and workflow.get("status") == "in-progress")
+):
+    fail("selected workflow changed underfoot; retry the command")
+
+scopes = workflow.get("scopes")
+if not isinstance(scopes, list):
+    fail("workflow has no scopes; run sync-scopes first")
+scope = next((x for x in scopes if isinstance(x, dict) and x.get("id") == scope_id), None)
+if scope is None:
+    fail(f"unknown scope '{scope_id}'; run sync-scopes first")
+status = scope.get("status", "pending")
+
+def out(payload):
+    if want_json:
+        print(json.dumps(payload))
+    else:
+        print(f"scope {scope_id}: {payload['status']}")
+
+def done_status(value):
+    return value in ("done", "completed")
+
+if op == "start":
+    if done_status(status) or status == "skipped":
+        fail(f"'{scope_id}' is {status}: finished scopes never restart — open a rework scope instead")
+    known = {x.get("id") for x in scopes if isinstance(x, dict)}
+    open_deps = sorted({d for d in scope.get("blockedBy", []) if isinstance(d, str) and d in known
+                        and not done_status(next((x for x in scopes if x.get("id") == d), {}).get("status"))})
+    if open_deps:
+        fail(f"'{scope_id}' waits on unfinished scope(s): {', '.join(open_deps)} — start them first")
+    dangling = sorted({d for d in scope.get("blockedBy", []) if isinstance(d, str) and d not in known})
+    for dep in dangling:
+        print(f"scope: warning: '{scope_id}' references unknown scope '{dep}'", file=sys.stderr)
+    if not scope.get("started_at"):
+        scope["started_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    if start_sha is not None and not scope.get("start_sha"):
+        scope["start_sha"] = start_sha
+    scope["status"] = "in-progress"
+elif op == "seed-tasks":
+    if tasks_arg is None:
+        usage("seed-tasks needs --tasks '<json array>'")
+    if len(tasks_arg) == 0:
+        fail("seed-tasks got an empty task list; the spec-tech table may be malformed")
+    for pos, task in enumerate(tasks_arg):
+        if not isinstance(task, dict) or not task.get("id") or not task.get("name"):
+            fail(f"seed-tasks task[{pos}] needs id and name")
+        if task.get("source", "planned") not in ("planned", "discovered"):
+            fail(f"seed-tasks task[{pos}] source must be planned|discovered")
+        if task.get("status", "pending") not in ("pending", "done", "skipped"):
+            fail(f"seed-tasks task[{pos}] status must be pending|done|skipped")
+        task.setdefault("source", "planned")
+        task.setdefault("status", "pending")
+        if task["source"] == "discovered" and not task.get("note"):
+            fail(f"seed-tasks task[{pos}] discovered tasks need a trigger note")
+    kept = [t for t in scope.get("tasks", []) if isinstance(t, dict) and t.get("source") == "discovered"]
+    have = {t.get("id") for t in tasks_arg}
+    scope["tasks"] = tasks_arg + [t for t in kept if t.get("id") not in have]
+    scope["seeded_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    workflow["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    fd, temporary = tempfile.mkstemp(prefix=".stelow.", dir=root)
+    try:
+        with os.fdopen(fd, "w") as handle:
+            json.dump(tracking, handle, indent=2)
+            handle.write("\n")
+        os.replace(temporary, tracking_path)
+    except Exception as error:
+        try: os.unlink(temporary)
+        except Exception: pass
+        fail(f"could not write {tracking_path} ({error})")
+    if want_json:
+        print(json.dumps({"id": scope_id, "status": scope.get("status", "pending"), "seeded": len(tasks_arg), "kept_discovered": len(scope["tasks"]) - len(tasks_arg)}))
+    else:
+        print(f"scope {scope_id}: seeded {len(tasks_arg)} tasks")
+    sys.exit(0)
+elif op == "done":
+    if done_status(status):
+        fail(f"'{scope_id}' is already {status}: finished scopes never regress — open a rework scope instead")
+    if status not in ("in-progress", "blocked", "failed", "pending"):
+        fail(f"'{scope_id}' is {status}: start it first (`stelow scope start --scope {scope_id}`)")
+    open_tasks = [t.get("id") or t.get("name") for t in scope.get("tasks", [])
+                  if isinstance(t, dict) and t.get("status") not in ("done", "completed", "skipped")]
+    if open_tasks:
+        fail(f"'{scope_id}' holds {len(open_tasks)} open task(s) — mark each done or skipped first: {', '.join(open_tasks[:5])}")
+    record = scope.get("record")
+    if isinstance(record, dict) and record.get("verified") is not True:
+        fail(f"'{scope_id}' carries an unverified Record — complete every verification checklist item and re-run the verify commands first")
+    # Red-first evidence gate (scope-executor Steps 3b-bis / 3e-bis).
+    # Single source: STELOW_RED_FIRST env > Workflow.config.red_first >
+    # quality default (experimental→advisory, else strict).
+    _config = workflow.get("config") if isinstance(workflow.get("config"), dict) else {}
+    _env_mode = (os.environ.get("STELOW_RED_FIRST") or "").strip()
+    if _env_mode in ("strict", "advisory", "off"):
+        _red_first = _env_mode
+    elif _config.get("red_first") in ("strict", "advisory", "off"):
+        _red_first = _config.get("red_first")
+    elif _config.get("quality") == "experimental":
+        _red_first = "advisory"
+    else:
+        _red_first = "strict"
+    def _red_missing():
+        rec = scope.get("record")
+        if not isinstance(rec, dict):
+            return ["record", "red_proof", "freeze_sha", "baseline"]
+        missing = []
+        if rec.get("verified") is not True:
+            missing.append("record.verified")
+        rp = rec.get("red_proof")
+        if (not isinstance(rp, dict) or not rp.get("failed_command")
+                or not isinstance(rp.get("exit_code"), int)
+                or isinstance(rp.get("exit_code"), bool)
+                or rp.get("exit_code") == 0):
+            missing.append("red_proof")
+        if not isinstance(rec.get("freeze_sha"), str) or not rec.get("freeze_sha"):
+            missing.append("freeze_sha")
+        bl = rec.get("baseline")
+        if not isinstance(bl, dict) or len(bl) == 0:
+            missing.append("baseline")
+        return missing
+    _missing = _red_missing()
+    if _missing:
+        _msg = (f"'{scope_id}' refuses close without red-first Record evidence: "
+                f"{', '.join(_missing)} "
+                f"(see scope-executor Step 3e-bis; red_first={_red_first})")
+        if _red_first == "strict":
+            fail(_msg)
+        elif _red_first == "advisory":
+            print(f"scope {op}: warning: {_msg}", file=sys.stderr)
+    # test-* bloqueiam feature: a feature scope only closes after its
+    # guarding test-* scopes are done (fail-observed order: FAIL nos testes
+    # antes do PASSING na feature).
+    _stype = str(scope.get("type") or "feature").lower()
+    if _stype == "feature":
+        _open_tests = sorted(
+            x.get("id") for x in scopes
+            if isinstance(x, dict) and str(x.get("type") or "").lower().startswith("test-")
+            and x.get("id") != scope_id
+            and x.get("status") not in ("done", "completed", "skipped")
+        )
+        if _open_tests:
+            _tmsg = (f"'{scope_id}' (feature) waits on open test scope(s): "
+                     f"{', '.join(_open_tests)} — close test-* scopes first "
+                     f"(test-* bloqueiam feature; red_first={_red_first})")
+            if _red_first == "strict":
+                fail(_tmsg)
+            elif _red_first == "advisory":
+                print(f"scope {op}: warning: {_tmsg}", file=sys.stderr)
+    if iteration is not None:
+        scope["iteration"] = iteration
+    if actual_files is not None:
+        scope["actual_files"] = actual_files
+    scope["status"] = "done"
+workflow["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+fd, temporary = tempfile.mkstemp(prefix=".stelow.", dir=root)
+try:
+    with os.fdopen(fd, "w") as handle:
+        json.dump(tracking, handle, indent=2)
+        handle.write("\n")
+    os.replace(temporary, tracking_path)
+except Exception as error:
+    try: os.unlink(temporary)
+    except Exception: pass
+    fail(f"could not write {tracking_path} ({error})")
+out({"id": scope_id, "status": scope["status"], "started_at": scope.get("started_at")})
+sys.exit(0)
+PY
+}
+
+# --- config ------------------------------------------------------------------
+
+# Read Workflow.config from stelow.json (in-progress workflow only).
+# Same semantics as the read-config.sh fallback: missing file, no active
+# workflow, or null/empty field all yield the default (exit 0).
+do_config() {
+  local sub="${1:-}"; shift || true
+  case "$sub" in
+    get|set) ;;
+    *) usage_error "config needs get|set (try --help)" ;;
+  esac
+  if [ "$sub" = "get" ]; then
+    local field="${1:-}"; shift || true
+    [ -n "$field" ] || usage_error "config get needs <field> [default]"
+    local default="${1:-}"; shift || true
+    [ $# -eq 0 ] || usage_error "config get takes only <field> [default]"
+    python3 - "$ROOT" "$STATE" "$STATEDIR" "$field" "$default" <<'PY' || exit $?
+import sys, os, json, re
+root, state_path, statedir, field, default = sys.argv[1:6]
+tracking_path = os.path.join(root, "stelow.json")
+
+RED_FIRST_MODES = ("strict", "advisory", "off")
+
+
+def state_owner_id(path):
+    """The state's immutable workflow_id, or "" for pre-ownership states."""
+    try:
+        text = open(path).read()
+    except Exception:
+        return ""
+    block = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+    if not block:
+        return ""
+    for line in block.group(1).splitlines():
+        mm = re.match(r"^workflow_id:\s*(.*)$", line)
+        if mm:
+            return mm.group(1).strip().strip("'\"")
+    return ""
+
+
+try:
+    tracking = json.loads(open(tracking_path).read())
+    workflows = tracking.get("workflows") or []
+except Exception:
+    workflows = []
+
+# THIS workflow's entry first: by immutable owner id, then by the state dir the
+# host pointed at. "First in-progress" is the standalone fallback only — with
+# several workflows in flight in one project it hands back whichever entry
+# happens to come first, i.e. another workflow's knobs and review gates.
+owner_id = state_owner_id(state_path)
+dir_hash = os.path.basename(statedir.rstrip("/"))
+workflow = next((w for w in workflows if owner_id and w.get("workflowId") == owner_id), None)
+if workflow is None:
+    workflow = next((w for w in workflows if w.get("dirHash") and w.get("dirHash") == dir_hash), None)
+if workflow is None:
+    workflow = next((w for w in workflows if w.get("status") == "in-progress"), None)
+config = (workflow or {}).get("config") or {}
+if field == "red_first":
+    # Single source resolution: env override > stored > quality default.
+    # strict on production, advisory on experimental, strict when quality
+    # is unknown and no explicit default was passed.
+    env = os.environ.get("STELOW_RED_FIRST", "").strip()
+    if env in RED_FIRST_MODES:
+        print(env)
+    elif isinstance(config.get(field), str) and config.get(field) in RED_FIRST_MODES:
+        print(config.get(field))
+    elif config.get("quality") == "experimental":
+        print("advisory")
+    elif config.get("quality") == "production":
+        print("strict")
+    elif default:
+        print(default)
+    else:
+        print("strict")
+    sys.exit(0)
+if field == "guard_judge":
+    # Single source resolution: env override > stored > quality default.
+    # Mirrors red_first: strict on production, advisory on experimental.
+    env = os.environ.get("STELOW_GUARD_JUDGE", "").strip()
+    if env in RED_FIRST_MODES:
+        print(env)
+    elif isinstance(config.get(field), str) and config.get(field) in RED_FIRST_MODES:
+        print(config.get(field))
+    elif config.get("quality") == "experimental":
+        print("advisory")
+    elif config.get("quality") == "production":
+        print("strict")
+    elif default:
+        print(default)
+    else:
+        print("strict")
+    sys.exit(0)
+value = config.get(field)
+if value is None or value == "":
+    print(default)
+else:
+    print(json.dumps(value) if isinstance(value, (list, dict)) else str(value))
+PY
+    return $?
+  fi
+  # config set red_first|guard_judge <strict|advisory|off> — the only writable fields.
+  # Persists to the resolved stelow.json entry and mirrors into state.md.
+  local field="${1:-}"; shift || true
+  local value="${1:-}"; shift || true
+  [ $# -eq 0 ] || usage_error "config set takes only <field> <value>"
+  [ "$field" = "red_first" ] || [ "$field" = "guard_judge" ] || usage_error "config set supports only red_first|guard_judge (got '$field')"
+  case "$value" in
+    strict|advisory|off) ;;
+    *) usage_error "config set $field must be strict|advisory|off (got '$value')" ;;
+  esac
+  python3 - "$ROOT" "$STATE" "$STATEDIR" "$field" "$value" <<'PY' || exit $?
+import sys, os, re, json, datetime, tempfile
+root, state_path, statedir, field, value = sys.argv[1:6]
+tracking_path = os.path.join(root, "stelow.json")
+try:
+    tracking = json.loads(open(tracking_path).read())
+except Exception as error:
+    print(f"config set: could not read {tracking_path} ({error})", file=sys.stderr)
+    sys.exit(1)
+workflows = tracking.get("workflows")
+if not isinstance(workflows, list) or not workflows:
+    print("config set: no workflows in tracking", file=sys.stderr)
+    sys.exit(1)
+dir_hash = os.path.basename(statedir.rstrip("/"))
+workflow = next((w for w in workflows if w.get("dirHash") and w.get("dirHash") == dir_hash), None)
+if workflow is None:
+    workflow = next((w for w in workflows if w.get("status") == "in-progress"), None)
+if workflow is None or not isinstance(workflow, dict):
+    print("config set: no selectable workflow (pass STELOW_STATEDIR)", file=sys.stderr)
+    sys.exit(1)
+workflow.setdefault("config", {})[field] = value
+workflow["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+tracking["updated"] = workflow["updated"]
+fd, temporary = tempfile.mkstemp(prefix=".stelow.", dir=root)
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(json.dumps(tracking, indent=2, sort_keys=True) + "\n")
+    os.replace(temporary, tracking_path)
+except Exception as error:
+    try: os.unlink(temporary)
+    except Exception: pass
+    print(f"config set: could not write {tracking_path} ({error})", file=sys.stderr)
+    sys.exit(1)
+# Mirror into state.md config: so readers without stelow.json agree.
+try:
+    blob = open(state_path).read()
+except Exception:
+    print(f"config set: {field}={value}")
+    sys.exit(0)
+m = re.match(r"^(---\n)(.*?)(\n---)(.*)$", blob, re.DOTALL)
+if not m:
+    print(f"config set: {field}={value}")
+    sys.exit(0)
+header_open, fm, header_close, body = m.group(1), m.group(2), m.group(3), m.group(4)
+lines = fm.splitlines()
+out, in_config, done = [], False, False
+for line in lines:
+    if line == "config:":
+        in_config = True
+        out.append(line)
+        continue
+    if in_config:
+        if re.match(rf"^  {re.escape(field)}:\s*", line):
+            out.append(f"  {field}: {value}")
+            done = True
+            continue
+        if re.match(r"^[A-Za-z_][\w-]*:", line):
+            if not done:
+                out.append(f"  {field}: {value}")
+                done = True
+            in_config = False
+    out.append(line)
+if in_config and not done:
+    out.append(f"  {field}: {value}")
+if not any(line == "config:" for line in out):
+    out.extend(["config:", f"  {field}: {value}"])
+new_blob = header_open + "\n".join(out) + header_close + body
+fd, temporary = tempfile.mkstemp(prefix=".state.", dir=os.path.dirname(state_path) or ".", text=True)
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(new_blob)
+    os.replace(temporary, state_path)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+print(f"config set: {field}={value}")
+PY
+}
+
+# --- guard-judge ---------------------------------------------------------------
+#
+# Overturn tripwire for the guard-quality judge (see
+# skills/stelow-workflow-testing-execution/references/guard-quality-decision.md).
+# Aggregates Record.guard_verdicts across scopes, evaluates the trailing-30
+# co-reviewed window in both directions, and — with --apply — persists the
+# strict→advisory downgrade when tripped. No training, no calibration step:
+# counters plus a threshold. Pure aggregation here; the verdict logic lives
+# in types/stages.ts so node tests import production code.
+do_guard_judge() {
+  local sub="${1:-}"; shift || true
+  case "$sub" in
+    status|check) ;;
+    *) usage_error "guard-judge needs status|check (try --help)" ;;
+  esac
+  local apply="" json=""
+  for arg in "$@"; do
+    case "$arg" in
+      --apply) apply="1" ;;
+      --json) json="1" ;;
+      *) usage_error "guard-judge: unknown flag '$arg' (try --help)" ;;
+    esac
+  done
+  [ "$sub" = "status" ] && [ -n "$apply" ] && usage_error "guard-judge status takes no --apply (use check --apply)"
+  python3 - "$ROOT" "$STATE" "$STATEDIR" "$sub" "$apply" "$json" <<'PY' || exit $?
+import sys, os, re, json, tempfile, datetime
+root, state_path, statedir, sub, apply, want_json = sys.argv[1:7]
+apply = apply == "1"
+want_json = want_json == "1"
+tracking_path = os.path.join(root, "stelow.json")
+WINDOW = 30
+MAX_RATE = 0.1
+MODES = ("strict", "advisory", "off")
+
+def usage(text):
+    print(f"guard-judge: {text} (try --help)", file=sys.stderr)
+    sys.exit(2)
+
+def fail(text):
+    print(f"guard-judge: {text}", file=sys.stderr)
+    sys.exit(1)
+
+try:
+    tracking = json.loads(open(tracking_path).read())
+    workflows = tracking.get("workflows") or []
+except Exception as error:
+    fail(f"could not read {tracking_path} ({error})")
+if not isinstance(workflows, list) or not workflows:
+    fail("no workflows in tracking")
+dir_hash = os.path.basename((statedir or "").rstrip("/"))
+workflow = next((w for w in workflows if w.get("dirHash") and w.get("dirHash") == dir_hash), None)
+if workflow is None:
+    workflow = next((w for w in workflows if w.get("status") == "in-progress"), None)
+if workflow is None or not isinstance(workflow, dict):
+    fail("no selectable workflow (pass STELOW_STATEDIR)")
+scopes = workflow.get("scopes")
+if not isinstance(scopes, list):
+    scopes = []
+config = workflow.get("config") if isinstance(workflow.get("config"), dict) else {}
+
+def co_reviewed(entry):
+    return (
+        isinstance(entry, dict)
+        and entry.get("verdict") in ("pass", "needs-revision")
+        and entry.get("human_decision") in ("approved", "reworked")
+    )
+
+def overturned(entry):
+    return (
+        (entry.get("verdict") == "needs-revision" and entry.get("human_decision") == "approved")
+        or (entry.get("verdict") == "pass" and entry.get("human_decision") == "reworked")
+    )
+
+reviewed = []
+for scope in scopes:
+    if not isinstance(scope, dict):
+        continue
+    record = scope.get("record")
+    if not isinstance(record, dict):
+        continue
+    verdicts = record.get("guard_verdicts")
+    if not isinstance(verdicts, list):
+        continue
+    reviewed.extend(e for e in verdicts if co_reviewed(e))
+window = reviewed[-WINDOW:]
+judged = len(window)
+over = sum(1 for e in window if overturned(e))
+rate = (over / judged) if judged else 0.0
+tripped = judged >= WINDOW and rate > MAX_RATE
+
+env = os.environ.get("STELOW_GUARD_JUDGE", "").strip()
+if env in MODES:
+    mode = env
+elif isinstance(config.get("guard_judge"), str) and config.get("guard_judge") in MODES:
+    mode = config.get("guard_judge")
+elif config.get("quality") == "experimental":
+    mode = "advisory"
+else:
+    mode = "strict"
+
+applied = False
+if sub == "check" and tripped and apply:
+    if mode == "strict":
+        workflow.setdefault("config", {})["guard_judge"] = "advisory"
+        workflow["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        tracking["updated"] = workflow["updated"]
+        fd, temporary = tempfile.mkstemp(prefix=".stelow.", dir=root)
+        try:
+            with os.fdopen(fd, "w") as handle:
+                handle.write(json.dumps(tracking, indent=2, sort_keys=True) + "\n")
+            os.replace(temporary, tracking_path)
+        except Exception as error:
+            try: os.unlink(temporary)
+            except Exception: pass
+            fail(f"could not write {tracking_path} ({error})")
+        try:
+            blob = open(state_path).read()
+            m = re.match(r"^(---\n)(.*?)(\n---)(.*)$", blob, re.DOTALL)
+            if m:
+                header_open, fm, header_close, body = m.group(1), m.group(2), m.group(3), m.group(4)
+                lines = fm.splitlines()
+                out, in_config, done = [], False, False
+                for line in lines:
+                    if line == "config:":
+                        in_config = True
+                        out.append(line)
+                        continue
+                    if in_config:
+                        if re.match(r"^  guard_judge:\s*", line):
+                            out.append("  guard_judge: advisory  # auto-downgraded: guard-judge overturn tripwire")
+                            done = True
+                            continue
+                        if re.match(r"^[A-Za-z_][\w-]*:", line):
+                            if not done:
+                                out.append("  guard_judge: advisory  # auto-downgraded: guard-judge overturn tripwire")
+                                done = True
+                            in_config = False
+                    out.append(line)
+                if in_config and not done:
+                    out.append("  guard_judge: advisory  # auto-downgraded: guard-judge overturn tripwire")
+                if not any(line == "config:" for line in out):
+                    out.extend(["config:", "  guard_judge: advisory  # auto-downgraded: guard-judge overturn tripwire"])
+                new_blob = header_open + "\n".join(out) + header_close + body
+                fd, temporary = tempfile.mkstemp(prefix=".state.", dir=os.path.dirname(state_path) or ".", text=True)
+                try:
+                    with os.fdopen(fd, "w") as handle:
+                        handle.write(new_blob)
+                    os.replace(temporary, state_path)
+                finally:
+                    if os.path.exists(temporary):
+                        os.unlink(temporary)
+        except Exception as error:
+            print(f"guard-judge: tracking updated; state.md mirror failed ({error})", file=sys.stderr)
+        mode = "advisory"
+        applied = True
+
+if want_json:
+    print(json.dumps({
+        "judged": judged, "overturned": over, "rate": round(rate, 4),
+        "tripped": tripped, "window": WINDOW, "mode": mode, "applied": applied,
+    }))
+else:
+    print(f"guard-judge: judged={judged} overturned={over} rate={rate:.3f} window={WINDOW} tripped={'yes' if tripped else 'no'} mode={mode}"
+          + (" applied=advisory-downgrade" if applied else ""))
+if sub == "check" and tripped and not apply:
+    print(f"guard-judge: overturn rate {rate:.3f} over {judged} co-reviewed guards exceeds {MAX_RATE} — re-run with --apply to downgrade to advisory, or set STELOW_GUARD_JUDGE=off to skip", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+# --- decisions -----------------------------------------------------------------
+#
+# A selection the worker writes down itself is self-attestation, and a receipt
+# nobody reads is decoration. The worker proposes through this verb; the helper
+# mints the host-side record into <statedir>/decision-receipts.json — the same
+# file and schema the BB plugin reads and writes, so the two never diverge.
+# Contradicting a live receipt refuses unless --challenge names it.
+do_decide() {
+  python3 - "$STATEDIR" "$STATE" "$@" <<'PY' || exit $?
+import json, os, re, sys, tempfile, datetime
+statedir, state_path, argv = sys.argv[1], sys.argv[2], sys.argv[3:]
+STORE = os.path.join(statedir, "decision-receipts.json")
+ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
+# Receipt contract v1, shared with the BB plugin (lib/decision-receipts.mjs).
+# A helper that emits anything else breaks every host that reads this file.
+SCHEMA_VERSION = 1
+
+def usage(text):
+    print(f"decide: {text} (try --help)", file=sys.stderr)
+    sys.exit(2)
+
+def fail(text):
+    print(f"decide: {text}", file=sys.stderr)
+    sys.exit(1)
+
+def ids(value):
+    if value is None:
+        return []
+    parts = [p.strip() for p in value.split(",")]
+    out = [p for p in dict.fromkeys(parts) if p]
+    if any(not ID_RE.match(p) for p in out):
+        usage("ids must match [A-Za-z0-9_.-]{1,80}")
+    return out
+
+selected, rejected, scopes, reason, by_name, supersedes, challenge = None, None, None, None, None, None, None
+want_json = False
+open_challenge = False
+against = None
+i = 0
+while i < len(argv):
+    arg = argv[i]
+    def need(val):
+        if val is None or not str(val).strip():
+            usage(f"{arg} needs a value")
+        return str(val)
+    if arg == "--selected":
+        i += 1; selected = need(argv[i] if i < len(argv) else None)
+    elif arg == "--rejected":
+        i += 1; rejected = need(argv[i] if i < len(argv) else None)
+    elif arg == "--scopes":
+        i += 1; scopes = need(argv[i] if i < len(argv) else None)
+    elif arg == "--reason":
+        i += 1; reason = need(argv[i] if i < len(argv) else None)
+    elif arg == "--by":
+        i += 1; by_name = need(argv[i] if i < len(argv) else None)
+    elif arg == "--supersedes":
+        i += 1; supersedes = need(argv[i] if i < len(argv) else None)
+    elif arg == "--challenge":
+        i += 1; challenge = need(argv[i] if i < len(argv) else None)
+    elif arg == "--against":
+        i += 1; against = need(argv[i] if i < len(argv) else None)
+    elif arg == "--open-challenge":
+        open_challenge = True
+    elif arg == "--json":
+        want_json = True
+    elif arg.startswith("--"):
+        usage(f"unknown flag '{arg}'")
+    else:
+        usage(f"unexpected positional '{arg}'")
+    i += 1
+approved_by = by_name if by_name else "operator"
+
+rejected_ids = ids(rejected)
+if selected in rejected_ids:
+    usage("the winning option cannot also be rejected")
+scope_ids = ids(scopes)
+supersede_ids = ids(supersedes)
+
+def valid_challenge(entry):
+    return (isinstance(entry, dict) and isinstance(entry.get("id"), str)
+            and isinstance(entry.get("receiptId"), str) and isinstance(entry.get("reason"), str))
+
+def load_store():
+    """(receipts, challenges), ([], []) when absent, None when corrupt."""
+    try:
+        with open(STORE) as handle:
+            blob = json.load(handle)
+    except FileNotFoundError:
+        return ([], [])
+    except Exception:
+        return None
+    if not isinstance(blob, dict):
+        return None
+    receipts = [r for r in (blob.get("receipts") or []) if isinstance(r, dict)
+                and r.get("schemaVersion") == SCHEMA_VERSION
+                and isinstance(r.get("id"), str) and isinstance(r.get("selectedId"), str)]
+    challenges = [c for c in (blob.get("challenges") or []) if valid_challenge(c)]
+    return (receipts, challenges)
+
+def write_store(receipts, challenges):
+    os.makedirs(statedir, exist_ok=True)
+    body = json.dumps({"version": 1, "receipts": receipts, "challenges": challenges},
+                      indent=2, sort_keys=False) + "\n"
+    fd, temporary = tempfile.mkstemp(prefix=".decisions.", dir=statedir, text=True)
+    try:
+        with os.fdopen(fd, "w") as handle:
+            handle.write(body)
+        os.replace(temporary, STORE)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+def shape_version():
+    try:
+        with open(state_path) as handle:
+            for line in handle.read().splitlines():
+                match = re.match(r"^shape_version:\s*(.+?)\s*$", line)
+                if match and match.group(1):
+                    return match.group(1)
+    except Exception:
+        pass
+    return None
+
+def overlaps(proposal_scopes, receipt_scopes):
+    if not isinstance(receipt_scopes, list):
+        return True
+    if not proposal_scopes:
+        return True
+    return any(s in receipt_scopes for s in proposal_scopes)
+
+def contradiction(proposal_selected, proposal_scopes, receipt):
+    if proposal_selected in (receipt.get("rejectedOptionIds") or []):
+        return f"proposes rejected option {proposal_selected}"
+    own = receipt.get("selectedId")
+    if isinstance(own, str) and own and own != proposal_selected and overlaps(proposal_scopes, receipt.get("scopeIds")):
+        return f"selects {proposal_selected} where receipt selected {own}"
+    if not (receipt.get("rejectedOptionIds") or []) and not isinstance(own, str):
+        if overlaps(proposal_scopes, receipt.get("scopeIds")):
+            return "revisits decided scopes without naming the receipt"
+    return None
+
+store = load_store()
+if store is None:
+    fail("refusing to write: decision-receipts.json is present but unreadable")
+if open_challenge:
+    if selected or rejected or scopes or supersedes or challenge:
+        usage("--open-challenge takes only --against, --reason, and --json")
+    if not against or not reason:
+        usage("--open-challenge needs --against <receipt> and --reason <text>")
+    receipts, challenges = store
+    target = next((r for r in receipts if r.get("id") == against), None)
+    if target is None:
+        fail(f"no decision receipt {against} here")
+    if isinstance(target.get("supersededBy"), str) and target["supersededBy"]:
+        fail(f"receipt {against} is already superseded; contest the live one instead")
+    challenge_id = "chg-" + os.urandom(6).hex()
+    challenges.append({"id": challenge_id, "receiptId": against, "reason": reason,
+                       "openedBy": approved_by,
+                       "openedAt": datetime.datetime.now(datetime.timezone.utc).isoformat()})
+    write_store(receipts, challenges)
+    if want_json:
+        print(json.dumps({"ok": True, "id": challenge_id, "against": against}))
+    else:
+        print(f"Challenge recorded: {challenge_id} contests {against}.")
+    sys.exit(0)
+if not selected or not ID_RE.match(selected):
+    usage("--selected <option-id> names the winning option (or --open-challenge)")
+stored, registered = store
+by_id = {r["id"]: r for r in stored}
+live = [r for r in stored if not (isinstance(r.get("supersededBy"), str) and r["supersededBy"])]
+current_shape = shape_version()
+authoritative = []
+for receipt in live:
+    authorized = (receipt.get("authorizesVersions") or {}).get("shape_version")
+    if authorized is not None and current_shape is not None and authorized != current_shape:
+        continue  # stale: routes to reconfirmation, never to challenge
+    authoritative.append(receipt)
+for receipt in authoritative:
+    hit = contradiction(selected, scope_ids, receipt)
+    if not hit:
+        continue
+    honored = (challenge is not None
+               and any(c["id"] == challenge and c["receiptId"] == receipt["id"] for c in registered))
+    if not honored:
+        fail(f"refused: this {hit} under live receipt {receipt['id']}. "
+             f"Open a challenge first: scripts/stelow decide --open-challenge --against {receipt['id']} --reason <why>, "
+             f"then re-run with --challenge <challenge-id>.")
+
+receipt_id = "dec-" + os.urandom(6).hex()
+now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+receipt = {
+    "schemaVersion": SCHEMA_VERSION,
+    "id": receipt_id,
+    "kind": "selection",
+    "selectedId": selected,
+    "rejectedOptionIds": rejected_ids,
+    "scopeIds": scope_ids,
+    "authorizesVersions": ({"shape_version": current_shape} if current_shape else {}),
+    "supersedes": supersede_ids,
+    "supersededBy": None,
+    "challengeId": challenge,
+    "reason": reason,
+    "approvedBy": approved_by,
+    "approvedAt": now,
+}
+for older in supersede_ids:
+    if older in by_id and not by_id[older].get("supersededBy"):
+        by_id[older]["supersededBy"] = receipt_id
+ordered = [r for r in stored if r["id"] != receipt_id] + [receipt]
+write_store(ordered, registered)
+# A fresh contradiction between two live receipts is a fact the next agent
+# would otherwise pick through at random. It surfaces on stdout where the
+# decision lives — never as a new artifact kind the contracts do not declare.
+def live_ids(entries):
+    return [r for r in entries if not (isinstance(r.get("supersededBy"), str) and r["supersededBy"])]
+
+def overlap(a, b):
+    sa = a.get("scopeIds")
+    sb = b.get("scopeIds")
+    if not isinstance(sa, list) or not isinstance(sb, list) or not sa or not sb:
+        return []
+    return [s for s in sa if s in sb]
+
+def clashes(a, b):
+    if a["id"] == b["id"]:
+        return False
+    if not overlap(a, b):
+        return False
+    if isinstance(a.get("selectedId"), str) and isinstance(b.get("selectedId"), str) and a["selectedId"] != b["selectedId"]:
+        return True
+    ra = set(a.get("rejectedOptionIds") or [])
+    rb = set(b.get("rejectedOptionIds") or [])
+    return bool((isinstance(a.get("selectedId"), str) and a["selectedId"] in rb)
+                or (isinstance(b.get("selectedId"), str) and b["selectedId"] in ra))
+
+mine = next((r for r in ordered if r["id"] == receipt_id), None)
+notes = []
+if mine is not None:
+    for other in live_ids(ordered):
+        if clashes(mine, other):
+            shared = overlap(mine, other)
+            notes.append(f"{mine['id']} vs {other['id']} ({', '.join(shared) if shared else 'shared scopes'})")
+if want_json:
+    out = {"ok": True, "id": receipt_id, "selectedId": selected}
+    if notes:
+        out["conflicts"] = notes
+    print(json.dumps(out))
+else:
+    print(f"Decision recorded: {receipt_id} selects {selected}.")
+    for note in notes:
+        print(f"Warning: this contradicts live decision(s): {note}.")
+PY
+}
+
+# --- dispatch ----------------------------------------------------------------
+
+# --- audit trail -------------------------------------------------------------
+
+# The audit trail is a deterministic projection of durable workflow state.
+# Agents author the work artifacts; this command links and inventories them
+# without trusting conversational memory or a host-specific database.
+do_audit_trail() {
+  local action="${1:-}" json="" strict=""
+  shift || true
+  for arg in "$@"; do
+    case "$arg" in --json) json="1" ;; --strict) strict="1" ;; *) usage_error "audit-trail: unknown arg '$arg'" ;; esac
+  done
+  case "$action" in build|check|path) ;; *) usage_error "audit-trail requires build, check, or path" ;; esac
+  python3 - "$ROOT" "$STATEDIR" "$STATE" "$action" "$json" "$strict" <<'PY'
+import hashlib, json, os, re, subprocess, sys, tempfile
+root, statedir, state_path, action, want_json, strict = sys.argv[1:]
+trail_path = os.path.join(statedir, "audit-trail.md")
+root_real = os.path.realpath(root)
+# `stelow advance` records each artifact as a path relative to the directory it
+# was run from, so the manifest only digests correctly against that same base.
+# The repository snapshot keeps using the Git toplevel, which is what a commit
+# actually identifies; the two differ for a project that is a subdirectory of
+# its repository.
+base_real = os.path.realpath(os.getcwd())
+# Bumped only when this projection's shape changes. Hosts pin it so a helper
+# they do not recognize fails closed instead of completing on an unknown
+# receipt format.
+CONTRACT = "v3"
+
+def result(ok, **fields):
+    print(json.dumps({"ok": ok, "contract": CONTRACT, **fields}, default=str))
+
+def fail(message):
+    if want_json: result(False, path=trail_path, error=message)
+    else: print(f"audit-trail: {message}", file=sys.stderr)
+    sys.exit(1)
+
+def frontmatter(blob):
+    match = re.match(r"^---\n(.*?)\n---", blob, re.S)
+    if not match: return []
+    return match.group(1).splitlines()
+
+if action == "path":
+    print(json.dumps({"path": trail_path, "contract": CONTRACT}) if want_json else trail_path)
+    sys.exit(0)
+if not os.path.isfile(state_path): fail("state.md not found")
+blob = open(state_path, encoding="utf-8").read()
+lines = frontmatter(blob)
+if not lines: fail("state.md has no YAML frontmatter")
+def scalar(key, default="unknown"):
+    for line in lines:
+        m = re.match(r"^" + re.escape(key) + r":\s*(.*)$", line)
+        if m: return m.group(1).strip() or default
+    return default
+name, intent, stage, status = (scalar(k) for k in ("name", "intent", "current_stage", "status"))
+config = {}
+inside = False
+for line in lines:
+    if line == "config:": inside = True; continue
+    if inside and re.match(r"^[A-Za-z_][\w-]*:", line): break
+    if inside:
+        m = re.match(r"^  ([\w-]+):\s*(.*)$", line)
+        if m: config[m.group(1)] = m.group(2).strip()
+artifacts, item = [], None
+inside = False
+for line in lines:
+    if line == "artifacts:" or line == "artifacts: []": inside = line == "artifacts:"; continue
+    if inside and re.match(r"^[A-Za-z_][\w-]*:", line): break
+    m = re.match(r"^  - ([a-z_]+):\s*(.+)$", line) if inside else None
+    field = re.match(r"^    ([a-z_]+):\s*(.+)$", line) if inside else None
+    if m:
+        if item: artifacts.append(item)
+        item = {m.group(1): m.group(2).strip()}
+    elif field and item: item[field.group(1)] = field.group(2).strip()
+if item: artifacts.append(item)
+def safe_path(path, base):
+    """A manifest or git-relative path resolved inside `base`, or None."""
+    if not isinstance(path, str) or not path or os.path.isabs(path): return None
+    normalized = os.path.normpath(path)
+    if normalized in (".", "..") or normalized.startswith(".." + os.sep): return None
+    absolute = os.path.realpath(os.path.join(base, normalized))
+    try:
+        if os.path.commonpath([base, absolute]) != base: return None
+    except ValueError: return None
+    return absolute
+def link(absolute):
+    return os.path.relpath(os.path.realpath(absolute), os.path.realpath(statedir)).replace(os.sep, "/")
+def digest(absolute):
+    if not os.path.isfile(absolute): return "missing"
+    with open(absolute, "rb") as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+registered, invalid_paths = [], []
+for artifact in artifacts:
+    absolute = safe_path(artifact.get("path"), base_real)
+    if not absolute: invalid_paths.append(str(artifact.get("path", "")))
+    elif os.path.realpath(absolute) != os.path.realpath(trail_path):
+        artifact["_absolute"] = absolute
+        registered.append(artifact)
+if invalid_paths: fail("artifact path must stay inside the project: " + ", ".join(invalid_paths))
+artifacts = registered
+CONTROL_FILES = {"state.md", "audit-trail.md", "invariants.json"}
+# Disposable Tier G drafts: worker-judged scratch, recorded via the draft
+# comment + thread output. Never deliverables, so the strict gate (and the
+# host's unregistered list) must not trip on them — a draft burst blocks
+# no completion.
+#
+# `runs` is the same kind of thing for a different reason: it holds one
+# directory per execution, written by the host that ran it. Its reports carry
+# deliverable titles — the native audit stage's report is literally titled
+# "Execution Critique Report" — so a gate that counts them as card documents
+# demands they be registered, and registering one then fails the artifact
+# contracts, which were written for documents a worker authors for review.
+# That dead end (unregistered = refused, registered = malformed) blocked a card
+# whose test run, security scan and PR were all green.
+DISPOSABLE_DIRS = {"drafts", "lock", "runs"}
+def workflow_output(absolute):
+    """A durable workflow output, excluding the CLI's own control files."""
+    relative = os.path.relpath(os.path.realpath(absolute), os.path.realpath(statedir)).replace(os.sep, "/")
+    first = relative.split("/", 1)[0]
+    return (
+        os.path.isfile(absolute)
+        and relative not in CONTROL_FILES
+        and first not in DISPOSABLE_DIRS
+        and not any(part.startswith(".") for part in relative.split("/"))
+    )
+def unregistered_outputs():
+    registered_paths = {artifact["_absolute"] for artifact in artifacts}
+    found = []
+    for directory, _, names in os.walk(statedir):
+        for name in names:
+            absolute = os.path.realpath(os.path.join(directory, name))
+            if workflow_output(absolute) and absolute not in registered_paths: found.append(absolute)
+    return sorted(found)
+unregistered = unregistered_outputs()
+if strict and unregistered:
+    fail("unregistered workflow documents or artifacts: " + ", ".join(link(path) for path in unregistered))
+def git_snapshot():
+    def run(args): return subprocess.run(["git", "-C", root, *args], capture_output=True)
+    head = run(["rev-parse", "HEAD"])
+    if head.returncode != 0:
+        return {"root": "not a Git repository", "head": "not a Git repository", "tracked": "not available", "untracked": "not available", "untracked_count": 0}
+    toplevel = run(["rev-parse", "--show-toplevel"]).stdout.decode().strip() or root_real
+    toplevel_real = os.path.realpath(toplevel)
+    # Repository identity, shared by a checkout and its linked worktrees: git
+    # answers `--git-common-dir` relative to the directory it ran in (`.git`
+    # in the project checkout), so resolve it there and normalize. Hosts use
+    # this to tell "same repository, two directories" from two repositories.
+    common = run(["rev-parse", "--git-common-dir"])
+    common_dir = common.stdout.decode().strip() if common.returncode == 0 else ""
+    if common_dir and not os.path.isabs(common_dir):
+        common_dir = os.path.join(root, common_dir)
+    common_dir = os.path.realpath(common_dir) if common_dir else ""
+    # The projection cannot hash its own tracked diff: rebuilding a stale,
+    # committed receipt changes that diff after it was sampled. Exclude only
+    # this exact file; every other tracked change remains attested.
+    trail_relative = os.path.relpath(os.path.realpath(trail_path), toplevel_real).replace(os.sep, "/")
+    diff_args = ["diff", "--no-ext-diff", "--binary", "HEAD"]
+    if trail_relative != ".." and not trail_relative.startswith("../"):
+        diff_args += ["--", ".", f":(exclude,literal){trail_relative}"]
+    diff = run(diff_args)
+    untracked = run(["ls-files", "--others", "--exclude-standard", "-z"])
+    entries = []
+    if untracked.returncode == 0:
+        for raw in untracked.stdout.split(b"\0"):
+            if not raw: continue
+            path = os.fsdecode(raw)
+            # `git ls-files` yields repository-relative paths, so resolve
+            # against the Git toplevel rather than the project invocation
+            # directory. Those differ when Stelow runs in a monorepo package.
+            absolute = safe_path(path, toplevel_real)
+            if not absolute: fail("untracked path must stay inside the project: " + path)
+            # The trail is written after this digest and must not digest itself:
+            # including it would make every check() of its own output stale.
+            if os.path.realpath(absolute) == os.path.realpath(trail_path): continue
+            entries.append(path.encode("utf-8", "surrogateescape") + b"\0" + digest(absolute).encode() + b"\0")
+    return {
+        "root": toplevel,
+        "head": head.stdout.decode().strip(),
+        "commonDir": common_dir,
+        "tracked": hashlib.sha256(diff.stdout).hexdigest() if diff.returncode == 0 else "not available",
+        "untracked": hashlib.sha256(b"".join(sorted(entries))).hexdigest(),
+        "untracked_count": len(entries),
+        "ignored": "excluded unless registered as an artifact",
+    }
+snapshot = git_snapshot()
+metadata_path = os.path.join(root_real, "stelow.json")
+out = [
+    f"# Audit Trail: {name}",
+    "", f"<!-- stelow-audit-trail: {CONTRACT} -->", "",
+    "## Workflow", "",
+    "| Field | Value |", "| --- | --- |",
+    f"| Intent | {intent} |", f"| Current stage | {stage} |", f"| Status | {status} |",
+    f"| Quality | {config.get('quality', config.get('appetite', 'unknown'))} |", f"| Review mode | {config.get('review_mode', 'unknown')} |",
+    "", "## Repository snapshot", "",
+    "| Field | Value |", "| --- | --- |",
+    f"| Git repository | `{snapshot['root']}` |",
+    f"| Git HEAD | `{snapshot['head']}` |",
+    f"| Tracked worktree diff SHA-256 | `{snapshot['tracked']}` |",
+    f"| Untracked non-ignored files | {snapshot['untracked_count']} |",
+    f"| Untracked non-ignored manifest SHA-256 | `{snapshot['untracked']}` |",
+    "| Ignored files | Excluded unless registered as an artifact |", "", "## Evidence", "",
+    "| Source | Location | SHA-256 |", "| --- | --- | --- |",
+    f"| Workflow state | [state.md](state.md) | `{digest(state_path)}` |",
+    f"| Project metadata | [{os.path.basename(metadata_path)}]({link(metadata_path)}) | `{digest(metadata_path)}` |",
+    "", "## Artifacts", "", "| Stage | Kind | Artifact | SHA-256 |", "| --- | --- | --- | --- |",
+]
+if artifacts:
+    for artifact in sorted(artifacts, key=lambda a: (a.get("stage", ""), a["path"])):
+        label = artifact.get("label") or os.path.basename(artifact["path"])
+        out.append(f"| {artifact.get('stage', 'unknown')} | {artifact.get('kind', 'document')} | [{label}]({link(artifact['_absolute'])}) | `{digest(artifact['_absolute'])}` |")
+else: out.append("| — | — | No registered artifacts | — |")
+out += ["", "## Integrity", "", f"| Contract | `{CONTRACT}` |", f"| Registered artifacts | {len(artifacts)} |", f"| Unregistered workflow files | {len(unregistered)} |", "", "This file is a deterministic projection generated by `scripts/stelow audit-trail build`. The repository snapshot covers committed HEAD plus the tracked worktree diff (excluding only this receipt) and non-ignored untracked files. Register any material ignored output as an artifact. Run `scripts/stelow audit-trail check` after any workflow-state, artifact, or worktree change.", ""]
+expected = "\n".join(out)
+if action == "check":
+    if not os.path.isfile(trail_path): fail("audit-trail.md is missing; run audit-trail build")
+    actual = open(trail_path, encoding="utf-8").read()
+    if actual != expected: fail("audit-trail.md is stale; run audit-trail build")
+    if want_json: result(True, path=trail_path, artifacts=len(artifacts), snapshot=snapshot, unregistered=len(unregistered))
+    else: print(f"audit-trail: PASS ({len(artifacts)} artifact(s))")
+    sys.exit(0)
+os.makedirs(statedir, exist_ok=True)
+fd, temporary = tempfile.mkstemp(prefix=".audit-trail.", dir=statedir, text=True)
+with os.fdopen(fd, "w", encoding="utf-8") as handle: handle.write(expected)
+os.replace(temporary, trail_path)
+if want_json: result(True, path=trail_path, artifacts=len(artifacts), snapshot=snapshot, unregistered=len(unregistered))
+else: print(trail_path)
+PY
+}
+
+# --- check -------------------------------------------------------------------
+
+# `stelow check breadboard <map>` — the executable half of
+# references/breadboard.md, and the rules the `advance` guard runs when a
+# workflow leaves `selection`.
+#
+# Why the rules live here and not in repo-side scripting: this file is the one
+# stelow artifact every execution environment has (the host runs it for
+# `advance`; a checkout runs it directly). A rule that only a repo tool can
+# check is a rule a workflow never reaches.
+#
+# schemas/breadboard.json stays the published contract. The Python below is the
+# ENFORCED copy; tests/integration/breadboard-check.test.ts derives its cases
+# from the schema, so a rule added there fails here until this file learns it.
+do_check() {
+  python3 - "$@" <<'PY'
+import json, re, sys
+
+USAGE = "Usage: stelow check breadboard <map.json> [--json] [--strict]"
+PROG = "check: breadboard"
+
+# --- the contract -------------------------------------------------------------
+#
+# Mirrors schemas/breadboard.json. The schema stays the published contract;
+# this copy is what runs where the map is written. A test derives its cases
+# FROM the schema, so a rule added there fails here until this file learns it.
+
+PLACE_ID = r"^P[0-9]+(\.[0-9]+)?$"
+AFF_ID = r"^[UNS][0-9]+$|^_[A-Za-z][A-Za-z0-9_-]*$"
+WIRE_ID = r"^[UNS][0-9]+$|^_[A-Za-z][A-Za-z0-9_-]*$|^P[0-9]+(\.[0-9]+)?$"
+KINDS = ("ui", "code", "store")
+EFFECTS = ("served", "friction")
+SELECTORS = ("human", "llm")
+
+
+def contract_problems(map):
+    """Everything in the map that contradicts the published schema."""
+    problems = []
+
+    def err(path, message):
+        problems.append({"path": path, "message": message})
+
+    def closed(obj, path, allowed):
+        for key in obj:
+            if key not in allowed:
+                err(path, 'unknown property "%s" (declared: %s)' % (key, ", ".join(sorted(allowed))))
+
+    def require(obj, path, names):
+        for name in names:
+            if name not in obj:
+                err(path, 'missing required property "%s"' % name)
+
+    def string(obj, path, name, pattern=None, min_length=None, enum=None):
+        if name not in obj:
+            return
+        value = obj[name]
+        if not isinstance(value, str):
+            err("%s.%s" % (path, name), "%s where the contract declares string" % type(value).__name__)
+            return
+        if min_length is not None and len(value) < min_length:
+            err("%s.%s" % (path, name), "empty string where the contract requires at least %d character(s)" % min_length)
+        if pattern is not None and not re.fullmatch(pattern, value):
+            err("%s.%s" % (path, name), '"%s" does not match %s' % (value, pattern))
+        if enum is not None and value not in enum:
+            err("%s.%s" % (path, name), '"%s" is not one of %s' % (value, " | ".join('"%s"' % e for e in enum)))
+
+    if not isinstance(map, dict):
+        err("$", "the map is not a JSON object")
+        return problems
+
+    closed(map, "$", {"schemaVersion", "interfaceId", "selectedBy", "scopeCoverage", "places", "affordances"})
+    require(map, "$", ("schemaVersion", "interfaceId", "places", "affordances"))
+
+    if "schemaVersion" in map:
+        version = map["schemaVersion"]
+        # `True != 1` is False in Python, so a boolean passed the old check
+        # while the contract declares a number. JSON Schema's `true` is not a
+        # number, and the two must agree.
+        if isinstance(version, bool) or not isinstance(version, (int, float)) or version != 1:
+            err("$.schemaVersion", "%s is not 1" % json.dumps(version))
+    string(map, "$", "interfaceId", min_length=1)
+    string(map, "$", "selectedBy", enum=SELECTORS)
+
+    coverage = map.get("scopeCoverage")
+    if coverage is not None and not isinstance(coverage, list):
+        err("$.scopeCoverage", "not an array where the contract declares array")
+    for index, entry in enumerate(coverage or []):
+        path = "$.scopeCoverage[%d]" % index
+        if not isinstance(entry, dict):
+            err(path, "the entry is not a JSON object")
+            continue
+        closed(entry, path, {"scopeId", "effect", "note"})
+        require(entry, path, ("scopeId", "effect"))
+        string(entry, path, "scopeId")
+        string(entry, path, "effect", enum=EFFECTS)
+        string(entry, path, "note")
+
+    places = map.get("places")
+    if not isinstance(places, list):
+        err("$.places", "not an array where the contract declares array")
+        places = []
+    elif len(places) < 1:
+        err("$.places", "[] where the contract requires at least 1 item(s)")
+    for index, place in enumerate(places):
+        path = "$.places[%d]" % index
+        if not isinstance(place, dict):
+            err(path, "the entry is not a JSON object")
+            continue
+        closed(place, path, {"id", "name", "description", "system", "mode"})
+        require(place, path, ("id", "name"))
+        string(place, path, "id", pattern=PLACE_ID)
+        string(place, path, "name", min_length=1)
+        for name in ("description", "system", "mode"):
+            string(place, path, name)
+
+    affordances = map.get("affordances")
+    if not isinstance(affordances, list):
+        err("$.affordances", "not an array where the contract declares array")
+        affordances = []
+    elif len(affordances) < 1:
+        err("$.affordances", "[] where the contract requires at least 1 item(s)")
+    for index, item in enumerate(affordances):
+        path = "$.affordances[%d]" % index
+        if not isinstance(item, dict):
+            err(path, "the entry is not a JSON object")
+            continue
+        closed(
+            item,
+            path,
+            {"id", "kind", "name", "place", "component", "control", "wiresOut", "returnsTo", "tentative", "notes"},
+        )
+        require(item, path, ("id", "kind", "name", "place", "control"))
+        string(item, path, "id", pattern=AFF_ID)
+        string(item, path, "kind", enum=KINDS)
+        string(item, path, "name", min_length=1)
+        string(item, path, "place", pattern=PLACE_ID)
+        string(item, path, "component")
+        string(item, path, "control", min_length=1)
+        string(item, path, "notes")
+        if "tentative" in item and not isinstance(item["tentative"], bool):
+            err("%s.tentative" % path, "%s where the contract declares boolean" % type(item["tentative"]).__name__)
+        for field, pattern in (("wiresOut", WIRE_ID), ("returnsTo", AFF_ID)):
+            if field not in item:
+                continue
+            value = item[field]
+            if not isinstance(value, list):
+                err("%s.%s" % (path, field), "not an array where the contract declares array")
+                continue
+            for target_index, target in enumerate(value):
+                target_path = "%s.%s[%d]" % (path, field, target_index)
+                if not isinstance(target, str):
+                    err(target_path, "not a string where the contract declares string")
+                elif not re.fullmatch(pattern, target):
+                    err(target_path, '"%s" does not match %s' % (target, pattern))
+
+    return problems
+
+
+# --- the readable rules -------------------------------------------------------
+#
+# Ryan Singer's breadboarding checks, executable. `error` means the map is
+# wrong (no judgement needed); `gap` means it may be incomplete (the writer
+# decides). The two severities are what make a hard gate possible: `advance`
+# refuses errors and lets gaps travel in the views.
+
+KIND_BY_PREFIX = {"U": "ui", "N": "code", "S": "store"}
+
+PLACEHOLDER_NAMES = {
+    "database", "db", "api", "service", "backend", "frontend", "store", "data",
+    "server", "client", "handler", "logic", "helper", "util", "utils", "model",
+    "component", "module", "system", "thing", "stuff", "tbd", "todo", "n/a", "na",
+}
+
+
+def finding(item, reason):
+    return {"id": item.get("id"), "name": item.get("name"), "reason": reason}
+
+
+def kind_of_id(item_id):
+    if not isinstance(item_id, str) or not item_id:
+        return None
+    if item_id.startswith("_"):
+        return "ui"  # a place reference renders inside its parent place
+    return KIND_BY_PREFIX.get(item_id[0])
+
+
+def check_ids_unique(board):
+    seen, flagged = {}, []
+    for place in board["places"]:
+        if place["id"] in seen:
+            flagged.append(
+                {
+                    "id": place["id"],
+                    "name": place.get("name"),
+                    "reason": "shares its id with %s — two places with one id draw one box in every view, "
+                    "and the map stops saying where the user is" % seen[place["id"]],
+                }
+            )
+            continue
+        seen[place["id"]] = place.get("name")
+    for item in board["affordances"]:
+        if item["id"] in seen:
+            flagged.append(
+                finding(item, "shares its id with %s, so every view merges two affordances into one" % seen[item["id"]])
+            )
+            continue
+        seen[item["id"]] = item.get("name")
+    return flagged
+
+
+def check_id_kind_matches(board):
+    flagged = []
+    for item in board["affordances"]:
+        expected = kind_of_id(item["id"])
+        if expected and item["kind"] != expected:
+            flagged.append(
+                finding(
+                    item,
+                    'is kind "%s" but its id says "%s" — the prefix is what the tables and the diagram divide on'
+                    % (item["kind"], expected),
+                )
+            )
+    return flagged
+
+
+def check_wiring_resolves(board, dangling):
+    flagged = []
+    for item in board["affordances"]:
+        missing = [t for t in (item.get("wiresOut") or []) + (item.get("returnsTo") or []) if t in dangling]
+        if missing:
+            flagged.append(finding(item, "wires to %s, which the map never declares" % ", ".join(missing)))
+    return flagged
+
+
+def check_affordances_have_place(board):
+    place_ids = {p["id"] for p in board["places"]}
+    return [
+        finding(item, "belongs to place %s, which the map never declares" % item["place"])
+        for item in board["affordances"]
+        if item["place"] not in place_ids
+    ]
+
+
+def check_subplaces_have_parent(board):
+    place_ids = {p["id"] for p in board["places"]}
+    flagged = []
+    for place in board["places"]:
+        if "." not in place["id"]:
+            continue
+        parent = place["id"].split(".")[0]
+        if parent not in place_ids:
+            flagged.append(
+                {
+                    "id": place["id"],
+                    "name": place.get("name"),
+                    "reason": "is a subplace of %s, which the map never declares — a widget inside a place that "
+                    "does not exist" % parent,
+                }
+            )
+    return flagged
+
+
+def check_navigation_lands_on_places(board):
+    place_ids = {p["id"] for p in board["places"]}
+    by_id = {item["id"]: item for item in board["affordances"]}
+    flagged = []
+    for item in board["affordances"]:
+        for target in item.get("wiresOut") or []:
+            if target in place_ids:
+                continue
+            target_item = by_id.get(target)
+            # Only a wire to a UI affordance is navigation. A code affordance
+            # calling one in another place is a CALL: the frontend handler
+            # calling the backend resolver does not move the user.
+            if not target_item or target_item["kind"] != "ui":
+                continue
+            if target_item["place"] != item["place"]:
+                flagged.append(
+                    finding(
+                        item,
+                        "wires to %s in place %s, but reaching a screen is navigation — wire to %s itself"
+                        % (target, target_item["place"], target_item["place"]),
+                    )
+                )
+    return flagged
+
+
+def check_places_have_affordances(board):
+    used = {item["place"] for item in board["affordances"]}
+    has_child = lambda pid: any(p["id"].startswith(pid + ".") for p in board["places"])
+    return [
+        {
+            "id": place["id"],
+            "name": place.get("name"),
+            "reason": "a place with no affordances — nothing to act on here, so either it is part of another "
+            "place or its affordances are missing from the map",
+        }
+        for place in board["places"]
+        if place["id"] not in used and not has_child(place["id"])
+    ]
+
+
+def check_displays_have_source(board):
+    fed = set()
+    for item in board["affordances"]:
+        for target in (item.get("wiresOut") or []) + (item.get("returnsTo") or []):
+            if target != item["id"]:
+                fed.add(target)
+    return [
+        finding(
+            item,
+            "a display with nothing feeding it — either the source is missing from the map, or this affordance "
+            "is not real",
+        )
+        for item in board["affordances"]
+        if item["kind"] == "ui" and item["control"] == "render" and item["id"] not in fed
+    ]
+
+
+def check_wiring_not_self(board):
+    """An affordance cannot trigger itself, and a store cannot read itself.
+
+    Self-wires were accepted as real wiring: `N1 wiresOut ["N1"]` counted as
+    "this code affordance connects", and `S1 returnsTo ["S1"]` counted as
+    "this store is read". Both then satisfied the rule with the map's own
+    emptiness — a store that only talks to itself reads nothing, and a code
+    affordance that only calls itself is disconnected. The audit called it a
+    hole and it was one: a map could pass every check while saying nothing.
+    """
+    flagged = []
+    for item in board["affordances"]:
+        for field in ("wiresOut", "returnsTo"):
+            targets = item.get(field) or []
+            if item["id"] in targets:
+                flagged.append(
+                    finding(
+                        item,
+                        "points at itself through %s — an affordance cannot trigger itself, and a store cannot "
+                        "read itself; this wire carries no information" % field,
+                    )
+                )
+                break
+    return flagged
+
+
+def check_code_affordances_connect(board):
+    # A self-wire is not a wire (see check_wiring_not_self), so it must not
+    # satisfy "connects" either.
+    targeted = set()
+    for item in board["affordances"]:
+        for target in (item.get("wiresOut") or []) + (item.get("returnsTo") or []):
+            if target != item["id"]:
+                targeted.add(target)
+    flagged = []
+    for item in board["affordances"]:
+        if item["kind"] != "code":
+            continue
+        wires = [t for t in (item.get("wiresOut") or []) + (item.get("returnsTo") or []) if t != item["id"]]
+        if not wires and item["id"] not in targeted:
+            flagged.append(
+                finding(
+                    item,
+                    "a code affordance with no wire out, no return to, and nothing wiring into it — it is "
+                    "disconnected, so it is either dead code or missing wiring",
+                )
+            )
+    return flagged
+
+
+def check_stores_are_read(board):
+    """A store is read when its data reaches something that is not a store.
+
+    The previous rule asked only "does the store declare a reader?", so a
+    store that returned to itself — or to another store that returned to it —
+    counted as read. A cycle of stores with no display anywhere passes the
+    "read" rule while nothing in the interface ever shows the data. Following
+    the data flow to the first non-store is the same story the prose tells,
+    and it is what "receives its data" means.
+    """
+    by_id = {item["id"]: item for item in board["affordances"]}
+    flagged = []
+    for item in board["affordances"]:
+        if item["kind"] != "store":
+            continue
+        if not item.get("returnsTo"):
+            flagged.append(
+                finding(
+                    item,
+                    "a store nothing reads — no affordance receives its data, so it is unused state or its reader is "
+                    "missing from the map",
+                )
+            )
+            continue
+        seen = set()
+        frontier = [t for t in item["returnsTo"] if t != item["id"]]
+        reaches_reader = False
+        while frontier:
+            target = frontier.pop()
+            if target in seen:
+                continue
+            seen.add(target)
+            reader = by_id.get(target)
+            if reader is None or reader["kind"] != "store":
+                reaches_reader = True
+                break
+            frontier.extend(t for t in (reader.get("returnsTo") or []) if t not in seen)
+        if not reaches_reader:
+            flagged.append(
+                finding(
+                    item,
+                    "a store whose data only circulates between stores — nothing outside the loop receives it, so it "
+                    "is unused state",
+                )
+            )
+    return flagged
+
+
+def check_names_are_real(board):
+    flagged = []
+    for item in board["affordances"]:
+        if item["kind"] != "code":
+            continue
+        bare = re.sub(r"\(\s*\)$", "", item["name"].strip()).strip().lower()
+        if bare in PLACEHOLDER_NAMES:
+            flagged.append(
+                finding(
+                    item,
+                    "names an abstraction instead of a thing you can point at — use the real method or "
+                    "property name",
+                )
+            )
+    return flagged
+
+
+# Order is the order findings are reported: structural errors first, then the
+# design gaps a writer resolves by judgement.
+CHECKS = (
+    ("ids are unique", "error", check_ids_unique),
+    ("id prefix matches kind", "error", check_id_kind_matches),
+    ("wiring resolves", "error", None),  # needs the dangling set; wired below
+    ("wiring does not point at itself", "error", check_wiring_not_self),
+    ("affordance has a declared place", "error", check_affordances_have_place),
+    ("subplace has a declared parent", "error", check_subplaces_have_parent),
+    ("navigation lands on a place", "error", check_navigation_lands_on_places),
+    ("place has affordances", "gap", check_places_have_affordances),
+    ("display has a source", "gap", check_displays_have_source),
+    ("code affordance connects", "gap", check_code_affordances_connect),
+    ("store is read by something", "gap", check_stores_are_read),
+    ("name is a real thing", "gap", check_names_are_real),
+)
+
+
+def run_checks(board):
+    known = {p["id"] for p in board["places"]} | {a["id"] for a in board["affordances"]}
+    referenced = set()
+    for item in board["affordances"]:
+        referenced.update(item.get("wiresOut") or [])
+        referenced.update(item.get("returnsTo") or [])
+    dangling = sorted(referenced - known)
+
+    problems = []
+    for name, severity, run in CHECKS:
+        flagged = check_wiring_resolves(board, set(dangling)) if run is None else run(board)
+        for item in flagged:
+            problems.append(
+                {"check": name, "severity": severity, "id": item["id"], "name": item.get("name"), "reason": item["reason"]}
+            )
+    return {"ids": len(known), "referenced": len(referenced), "dangling": len(dangling)}, problems
+
+
+def main(argv):
+    if not argv or argv[0] != "breadboard":
+        print(USAGE, file=sys.stderr)
+        return 2
+    path, as_json, strict = None, False, False
+    for arg in argv[1:]:
+        if arg == "--json":
+            as_json = True
+        elif arg == "--strict":
+            strict = True
+        elif arg.startswith("--"):
+            print("check: unknown flag '%s'" % arg, file=sys.stderr)
+            print(USAGE, file=sys.stderr)
+            return 2
+        elif path is None:
+            path = arg
+        else:
+            print("check: breadboard takes exactly one map path", file=sys.stderr)
+            print(USAGE, file=sys.stderr)
+            return 2
+    if path is None:
+        print(USAGE, file=sys.stderr)
+        return 2
+
+    try:
+        with open(path) as handle:
+            raw = handle.read()
+        board = json.loads(raw)
+    except OSError as error:
+        print("check: cannot read %s: %s" % (path, error.strerror or error), file=sys.stderr)
+        return 1
+    except json.JSONDecodeError as error:
+        print("check: %s is not valid JSON: %s" % (path, error), file=sys.stderr)
+        return 1
+
+    contract = contract_problems(board)
+    # A map that contradicts the contract is not read by the semantic checks:
+    # they index required fields, and reporting "no display source" for a row
+    # whose `control` is missing would be noise on top of the real finding.
+    # Fix the contract first; the checks run on the next pass.
+    if contract or not isinstance(board, dict):
+        counts, problems = {"ids": 0, "referenced": 0, "dangling": 0}, []
+    else:
+        counts, problems = run_checks(board)
+    errors = len(contract) + sum(1 for p in problems if p["severity"] == "error")
+    gaps = sum(1 for p in problems if p["severity"] == "gap")
+    ok = errors == 0 and (not strict or gaps == 0)
+
+    if as_json:
+        print(
+            json.dumps(
+                {
+                    "path": path,
+                    "ok": ok,
+                    "counts": {"ids": counts["ids"], "referenced": counts["referenced"], "dangling": counts["dangling"],
+                               "contract": len(contract), "errors": errors, "gaps": gaps},
+                    "contract": contract,
+                    "problems": problems,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    else:
+        for problem in contract:
+            print("stelow: %s: contract — %s: %s" % (path, problem["path"], problem["message"]), file=sys.stderr)
+        for problem in problems:
+            print(
+                "stelow: %s: %s — %s (%s): %s: %s"
+                % (path, problem["severity"], problem["id"], problem["name"], problem["check"], problem["reason"]),
+                file=sys.stderr,
+            )
+        print(
+            "stelow: %s: %d id(s), %d referenced, %d dangling, %d contract, %d error(s), %d gap(s)"
+            % (path, counts["ids"], counts["referenced"], counts["dangling"], len(contract), errors, gaps)
+        )
+
+    return 0 if ok else 1
+
+
+sys.exit(main(sys.argv[1:]))
+PY
+}
+
+usage() {
+  cat <<EOF
+$PROG — stelow workflow helper (status / advance / doctor / seed / schema / ask / sync-scopes / lock / config / scope / decide / guard-judge)
+
+Usage:
+  $PROG status [--json]
+  $PROG advance <candidate> [--dry-run] [--json]
+  $PROG next [--json]
+  $PROG doctor [--json]
+  $PROG seed --name <n> --intent <i> [--quality production|experimental] [--exploration-count 1-5] [--exploration-hybrid true|false | --no-hybrid] [--review-mode M] [--red-first strict|advisory|off] [--guard-judge strict|advisory|off] [--json]
+  (--appetite Lean|Core|Complete still accepted as a deprecated alias)
+  $PROG schema [command]
+  $PROG check breadboard <map.json> [--json] [--strict]
+  $PROG ask --question <t> [--multiple] --option <label>... [--selected] (repeat --question groups)
+  $PROG sync-scopes [--name <workflow>] [--json]
+  $PROG config get <field> [default]
+  $PROG config set red_first|guard_judge <strict|advisory|off>
+  $PROG audit-trail build|check|path [--strict] [--json]
+  $PROG decide --selected <id> [--rejected a,b] [--scopes s1,s2] [--reason <t>] [--by <name>] [--supersedes r-old] [--challenge ch-id] [--json]
+  $PROG decide --open-challenge --against <receipt> --reason <t> [--json]
+  $PROG guard-judge status|check [--apply] [--json]
+  $PROG lock acquire --scope <id> --file <f>... [--ttl N] [--json]
+  $PROG lock release --scope <id> --file <f>...
+  $PROG lock check [--scope <id>] [--file <f>...] [--json]
+  $PROG --help
+
+State file:  $STATE
+Transitions: $TRANSITIONS
+Lock dir:    $LOCKDIR (TTL ${LOCK_TTL_SEC}s, override with STELOW_LOCK_TTL_SEC)
+Identity:    STELOW_THREAD_ID (ask only)
+EOF
+}
+
+case "${1:-}" in
+  status)
+    shift
+    case "${1:-}" in
+      --json) status_json ;;
+      "")     status_text ;;
+      *) usage_error "status: unknown arg '$1'" ;;
+    esac
+    ;;
+  advance)
+    shift
+    candidate=""; DRY_RUN=""; JSON_OUT=""
+    for arg in "$@"; do
+      case "$arg" in
+        --dry-run) DRY_RUN="1" ;;
+        --json) JSON_OUT="1" ;;
+        --*) usage_error "advance: unknown flag '$arg'" ;;
+        *) if [ -n "$candidate" ]; then usage_error "advance takes exactly one <candidate>"; fi
+           candidate="$arg" ;;
+      esac
+    done
+    [ -n "$candidate" ] || usage_error "advance requires <candidate>"
+    do_advance "$candidate"
+    ;;
+  next)
+    shift
+    case "${1:-}" in
+      --json) do_next --json ;;
+      "") do_next ;;
+      *) usage_error "next: unknown arg '$1'" ;;
+    esac
+    ;;
+  seed)
+    shift
+    do_seed "$@"
+    ;;
+  schema)
+    shift
+    do_schema "${1:-}"
+    ;;
+  check)
+    shift
+    do_check "$@"
+    ;;
+  ask)
+    shift
+    do_ask "$@"
+    ;;
+  sync-scopes)
+    shift
+    do_sync_scopes "$@"
+    ;;
+  config)
+    shift
+    do_config "$@"
+    ;;
+  lock)
+    shift
+    do_lock "$@"
+    ;;
+  scope)
+    shift
+    do_scope "$@"
+    ;;
+  doctor)
+    shift
+    do_doctor "${1:-}"
+    ;;
+  audit-trail)
+    shift
+    do_audit_trail "$@"
+    ;;
+  decide)
+    shift
+    do_decide "$@"
+    ;;
+  guard-judge)
+    shift
+    do_guard_judge "$@"
+    ;;
+  -h|--help|help|"") usage ;;
+  *) usage_error "unknown subcommand '$1' (try --help)" ;;
+esac

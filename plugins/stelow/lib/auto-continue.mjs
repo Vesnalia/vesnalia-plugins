@@ -1,0 +1,151 @@
+// Bounded auto-continue for build workers that stop mid-workflow.
+// Background: the provider ends a turn whenever the model emits a final
+// text message, so a worker that narrates progress ("Stage done, moving
+// on") idles after every stage even with work remaining. The plugin used
+// to only surface that as a paused inbox event and wait for a human
+// Resume. This module decides when the host may resume the worker itself:
+// exactly one nudge per fresh idle edge, only when the finished turn left
+// new output or stage progress behind, never past a pending question or a
+// terminal stage, and never more than MAX_AUTO_CONTINUES consecutive
+// nudges without a stage advance (a worker that keeps yielding without
+// advancing is stuck, not chatty — it needs the human, not another turn).
+import { ensureColumns } from "./sqlite-columns.mjs";
+import { isQuotaFailure, isRateLimitFailure } from "./rate-limit-refusal.mjs";
+
+export const MAX_AUTO_CONTINUES = 10;
+
+const TERMINAL_STAGES = ["audit"];
+
+// Done-nudge budget for workers idling at the terminal stage. Reaching
+// `audit` is not completing: completion is an explicit worker commit (`VesnALIA
+// stelow done`), verified in code. A worker that narrates completion and
+// stops ("Workflow concluído") without running done would otherwise sit at
+// audit forever — or worse, be auto-completed by inference, making
+// narrate-and-stop indistinguishable from done. The host resumes it with
+// the done instruction instead, at most MAX_DONE_NUDGES times; past that
+// the card pauses with the instruction visible, for the human.
+export const MAX_DONE_NUDGES = 2;
+
+export function shouldDoneNudge({ status, cardStatus, questionPending, transitioningIntoIdle, autoCount, autoStage }) {
+  if (cardStatus === "completed") return { proceed: false, reason: "card already completed" };
+  if (status !== "idle") return { proceed: false, reason: "thread is not idle" };
+  if (questionPending) return { proceed: false, reason: "a question is pending an answer" };
+  if (!transitioningIntoIdle) return { proceed: false, reason: "not a fresh idle edge" };
+  const effectiveCount = autoStage === "audit" ? (autoCount ?? 0) : 0;
+  if (effectiveCount >= MAX_DONE_NUDGES) return { proceed: false, reason: "done-nudge budget exhausted" };
+  return { proceed: true, reason: "audit worker has not committed completion yet" };
+}
+
+export function ensureAutoContinueColumns(db) {
+  ensureColumns(db, "cards", [
+    ["auto_continue_count", "INTEGER NOT NULL DEFAULT 0"],
+    ["auto_continue_stage", "TEXT"],
+    // The text of the turn that was running the last time the card idled. This
+    // is the baseline the resume rule compares against, and it is deliberately
+    // NOT the same column as `last_assistant_text`: the running projection
+    // rewrites that one on every sync, and a sync is reached from a card-detail
+    // READ as well as from a thread event. Comparing against a field a reader
+    // can overwrite made "did this turn produce anything new" depend on whether
+    // anyone happened to look at the card mid-turn. Written only when the card
+    // parks or resumes, so it survives reads.
+    ["last_idle_text", "TEXT"],
+  ]);
+}
+
+export function shouldAutoContinue({ status, stage, questionPending, transitioningIntoIdle, progressed, autoCount, autoStage, lastError = null }) {
+  if (status !== "idle") return { proceed: false, reason: "thread is not idle" };
+  if (questionPending) return { proceed: false, reason: "a question is pending an answer" };
+  // A provider that refused the last turn is not a worker that stopped, and the
+  // nudge text ("Continue the Stelow workflow now…") re-hits the same refusal.
+  // The measured case: an 18-hour-old thread whose turn failed on
+  // `provider.quota` was nudged on its next idle edge, failed the same way, and
+  // counted the failure text as "progress" because the output differed from the
+  // last idle baseline. Waiting for a clock is the right answer for a rate
+  // limit and a top-up for a quota; another turn is the one thing that cannot
+  // work. `progressed` is deliberately not consulted first: the reason the
+  // reader sees should name the provider, not the worker.
+  if (isQuotaFailure(lastError) || isRateLimitFailure(lastError)) {
+    return { proceed: false, reason: "the provider refused the last turn, so another turn would re-hit the same refusal" };
+  }
+  if (TERMINAL_STAGES.includes(stage)) return { proceed: false, reason: "workflow reached its terminal stage" };
+  if (!transitioningIntoIdle) return { proceed: false, reason: "not a fresh idle edge" };
+  if (!progressed) return { proceed: false, reason: "the finished turn left no new output or stage progress" };
+  // The budget counts consecutive nudges without a stage advance: advancing
+  // resets it, so long stages earn more turns while a stuck worker stops.
+  const effectiveCount = stage === autoStage ? (autoCount ?? 0) : 0;
+  if (effectiveCount >= MAX_AUTO_CONTINUES) return { proceed: false, reason: "auto-continue budget exhausted" };
+  return { proceed: true, reason: "idle worker with unfinished work and fresh progress" };
+}
+
+export function nextAutoContinue({ stage, autoCount, autoStage }) {
+  const count = stage === autoStage ? (autoCount ?? 0) + 1 : 1;
+  return { count, stage };
+}
+
+export function resetAutoContinue() {
+  return { count: 0, stage: null };
+}
+
+// A tool-only turn can still move the machine: the worker ran
+// `alia stelow advance` to completion without narrating, so the chat text is
+// unchanged and the text signal reads "no progress". Scan the finished turn
+// (newest-first events between the just-ended turn boundary and the previous
+// one) for a completed advance. Scoping to the last turn matters: an older
+// advance must not earn resumes forever, and a user-stopped thread whose
+// final partial turn advanced nothing stays paused. Never throws on odd
+// shapes — an unreadable history reads as "no advance", which only skips a
+// resume.
+//
+// `done` is scanned in the same window for a different reason: not "should the
+// host resume" but "what is the reader told when it does not". A worker that
+// ran `alia stelow done` and was refused by the gate parked on a sentence naming
+// no refusal, because the refusal lives in the CLI's stderr and nothing put it
+// on the card. `null` events mean "don't know" and read as three falses, which
+// only leaves the existing sentences in place.
+export function lastTurnStelowCalls(events) {
+  const none = { advanced: false, done: false, doneFailed: false };
+  if (!Array.isArray(events)) return none;
+  const calls = { ...none };
+  let sawTurnEnd = false;
+  for (const event of events) {
+    if (!event || typeof event.type !== "string") continue;
+    if (event.type === "turn/completed" || event.type === "turn/started") {
+      if (sawTurnEnd) break;
+      sawTurnEnd = true;
+      continue;
+    }
+    if (!sawTurnEnd) continue;
+    if (event.type !== "item/completed") continue;
+    const raw = event.data;
+    let data = raw;
+    if (typeof raw === "string") {
+      try { data = JSON.parse(raw); } catch { continue; }
+    }
+    const item = data?.item ?? {};
+    if (item?.type !== "commandExecution") continue;
+    // Stage ids are slugs (`alia stelow advance shape`, optionally
+    // `--stage shape`); a `--help` probe or `--dry-run` validation is not an
+    // advance. Naming the verb is the whole rule — matching the whole command
+    // line is how a `alia stelong done` typo comes to count as a completion.
+    const command = item?.command ?? "";
+    if (item?.status === "completed"
+      && !/--dry-run/.test(command)
+      && /alia stelow advance\s+(?:--stage\s+[A-Za-z][\w-]*|[A-Za-z][\w-]*)/.test(command)) calls.advanced = true;
+    if (/--dry-run|--help/.test(command)) continue;
+    if (!/\bbb stelow done\b/.test(command)) continue;
+    calls.done = true;
+    // A non-zero exit or a non-completed status is the gate refusing. Without
+    // this the host would name a completion attempt on a card whose done was
+    // turned down, and the reader could not tell whose verdict it was.
+    if (item?.status !== "completed"
+      || (typeof item?.exitCode === "number" && item.exitCode !== 0)) calls.doneFailed = true;
+  }
+  return calls;
+}
+
+/** Delegated, not reimplemented: the advance rule and its turn window are one
+ * thing, and two loops that both claim to read "the finished turn" is how they
+ * drift apart. */
+export function lastTurnAdvancedStages(events) {
+  return lastTurnStelowCalls(events).advanced;
+}

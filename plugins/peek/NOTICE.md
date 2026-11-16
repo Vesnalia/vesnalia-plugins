@@ -1,0 +1,17 @@
+# Peek
+
+Используется и адаптировано для VesnALIA с разрешения автора (подтверждено владельцем проекта 16.11.2026).
+
+- Оригинальный автор: Valentino Bonato (https://github.com/valentino-bonato)
+- Исходный репозиторий: https://github.com/valentino-bonato/bb-plugin-peek
+- Каталог в репозитории: (корень)
+- Версия: v1.0.1, коммит 2c9f16f09fda6bd9b88d8660ff5e18e68e8b6db3
+- Ссылка на исходник: https://github.com/valentino-bonato/bb-plugin-peek/tree/2c9f16f09fda6bd9b88d8660ff5e18e68e8b6db3
+- Лицензия: лицензия не указана в исходном репозитории
+
+Изменения VesnALIA: манифест и зависимости переведены на движок alia-core
+(раздел `alia`, `@vesnalia/plugin-sdk`), имена bb заменены на имена VesnALIA,
+бренд BB в видимых текстах заменён на VesnALIA. Изменения сделаны скриптом
+`scripts/adapt.mjs`; список ручных правок и состояние сборки - в STATUS.md.
+
+Авторские права на исходный код принадлежат оригинальному автору.

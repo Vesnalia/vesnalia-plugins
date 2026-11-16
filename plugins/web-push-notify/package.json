@@ -1,0 +1,70 @@
+{
+  "name": "alia-plugin-web-push-notify",
+  "version": "0.2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "alia": ">=0.36",
+    "aliaPluginSdk": ">=0.6"
+  },
+  "alia": {
+    "name": "Web Push Notify",
+    "description": "Browser notifications when VesnALIA agents finish or fail.",
+    "branding": {
+      "icon": "Mail"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hugeicons/core-free-icons": "^4.1.3",
+    "@hugeicons/react": "^1.1.6",
+    "@radix-ui/react-slot": "^1.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
+    "web-push": "^3.6.7",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@testing-library/react": "^16.3.2",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/web-push": "^3.6.4",
+    "better-sqlite3": "^12.0.0",
+    "hono": "^4.11.9",
+    "jsdom": "^30.0.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^5.7.0",
+    "vaul": "^1.1.2",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/web-push-notify#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/web-push-notify"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

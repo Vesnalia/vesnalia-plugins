@@ -1,0 +1,307 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  createCardUpdater,
+  createClaimWaiterNotifier,
+} from "../server/runtime/card-state.ts";
+
+function card(overrides = {}) {
+  return {
+    id: "card_1",
+    status: "in-progress",
+    activity: "idle",
+    kind: "build",
+    last_error: null,
+    updated_at: 1,
+    ...overrides,
+  };
+}
+
+function collectingActions() {
+  const recorded = [];
+  return {
+    recorded,
+    record(entry) {
+      recorded.push(entry);
+      return { id: `act_${recorded.length}`, occurrences: 1, deduped: false };
+    },
+  };
+}
+
+function updaterHarness(initial = card(), openQuestion = false, actions = undefined) {
+  let row = initial;
+  const calls = [];
+  const db = {
+    open: true,
+    prepare(sql) {
+      return {
+        get() {
+          if (sql.includes("FROM cards")) return row;
+          if (sql.includes("FROM inbox_events")) {
+            return openQuestion ? { id: "question_1" } : undefined;
+          }
+          return undefined;
+        },
+        run(values) {
+          calls.push(["write", sql, values]);
+          row = { ...row, ...values, updated_at: values.updated_at ?? row.updated_at };
+          return undefined;
+        },
+      };
+    },
+  };
+  const alia = { realtime: { publish: (...args) => calls.push(["publish", ...args]) } };
+  const updateCard = createCardUpdater({
+    db,
+    alia,
+    now: () => 20,
+    getCard: () => row,
+    recordInbox: (...args) => calls.push(["record", ...args]),
+    // A failure need has its own recorder now: it collapses a repeat onto
+    // the open row instead of appending one per episode, which is the defect
+    // this test was unknowingly able to pass before.
+    recordErrorInbox: (...args) => calls.push(["recordError", ...args]),
+    resolveInbox: (...args) => calls.push(["resolve", ...args]),
+    resolveAllInbox: (...args) => calls.push(["resolveAll", ...args]),
+    actions,
+  });
+  return { calls, updateCard, row: () => row };
+}
+
+test("card update preserves no-op and archived terminal guards", () => {
+  const unchanged = updaterHarness();
+  unchanged.updateCard("card_1", { status: "in-progress" });
+  assert.deepEqual(unchanged.calls, []);
+
+  const archived = updaterHarness(card({ status: "archived" }));
+  archived.updateCard("card_1", { status: "in-progress", activity: "running" });
+  assert.equal(archived.calls.length, 3);
+  assert.doesNotMatch(archived.calls[0][1], /status/);
+  assert.equal(archived.row().status, "archived");
+});
+
+test("card update resolves attention before recording completion and publishing", () => {
+  const harness = updaterHarness();
+  harness.updateCard("card_1", { status: "completed" });
+  assert.deepEqual(
+    harness.calls.map(([name]) => name),
+    ["write", "resolve", "record", "publish"],
+  );
+  assert.equal(harness.calls[2][2], "completed");
+});
+
+// Completion is the one transition that must NOT reach the terminal resolver.
+// An unread `completed` row IS the review request for a finished card; closing
+// it on arrival would delete the signal the moment it was written, and the
+// card would sit Done looking reviewed.
+test("completion resolves only the actionable kinds, never the review request", () => {
+  const harness = updaterHarness();
+  harness.updateCard("card_1", { status: "completed" });
+  const resolve = harness.calls.find(([name]) => name === "resolve");
+  const resolveAll = harness.calls.find(([name]) => name === "resolveAll");
+  assert.ok(resolve, "completion closes the open actions");
+  assert.equal(resolveAll, undefined, "completion must not touch the terminal resolver");
+  assert.deepEqual(resolve[3], ["question", "error", "paused"], "only the kinds a person can still act on");
+  assert.equal(resolve[4], "completed", "and it records why they closed");
+});
+
+// Archiving is terminal, so it must close the review request as well. An
+// archived card is off the board and its worker is stopped: an open completion
+// for it asks someone to go look at work reachable from nowhere, and the badge
+// would count that impossible request forever.
+test("archiving closes every open row, completions included", () => {
+  const harness = updaterHarness();
+  harness.updateCard("card_1", { status: "archived" });
+  const names = harness.calls.map(([name]) => name);
+  assert.ok(names.includes("resolveAll"), "archiving uses the terminal resolver");
+  assert.equal(
+    names.includes("resolve"),
+    false,
+    "the terminal resolver already reaches the action kinds; calling both would be redundant",
+  );
+  const resolveAll = harness.calls.find(([name]) => name === "resolveAll");
+  assert.deepEqual(resolveAll.slice(1), ["card_1", 20, "archived"], "and it says the card's life ended it");
+});
+
+test("card update suppresses completion only when explicitly requested", () => {
+  const harness = updaterHarness();
+  harness.updateCard("card_1", { status: "completed" }, { suppressCompletionEvent: true });
+  assert.deepEqual(
+    harness.calls.map(([name]) => name),
+    ["write", "resolve", "publish"],
+  );
+});
+
+test("card update supersedes a fresh error when a question is already open", () => {
+  const harness = updaterHarness(card(), true);
+  harness.updateCard("card_1", { activity: "error", last_error: "Failed" });
+  assert.deepEqual(
+    harness.calls.map(([name]) => name),
+    ["write", "recordError", "resolve", "publish"],
+  );
+  assert.deepEqual(harness.calls[2].slice(1), [
+    "card_1",
+    20,
+    ["error"],
+    "superseded",
+  ]);
+});
+
+test("card update write-time re-check never writes a stripped status key", () => {
+  // Regression control: the changed keys and the written values must come from
+  // the same read. If the values were re-derived from the post-await read, a
+  // card archived mid-call would re-enter the write as status=undefined.
+  let reads = 0;
+  let row = card();
+  const writes = [];
+  const db = {
+    open: true,
+    prepare(sql) {
+      return {
+        get: () => row,
+        run(values) {
+          writes.push({ sql, values });
+          return undefined;
+        },
+      };
+    },
+  };
+  const updateCard = createCardUpdater({
+    db,
+    alia: { realtime: { publish: () => {} } },
+    now: () => 20,
+    getCard: () => {
+      reads += 1;
+      if (reads >= 2) row = card({ status: "archived" });
+      return row;
+    },
+    recordInbox: () => {},
+    resolveInbox: () => {},
+    resolveAllInbox: () => {},
+  });
+
+  updateCard("card_1", { status: "completed", activity: "running" });
+  assert.equal(writes.length, 1);
+  assert.doesNotMatch(writes[0].sql, /status/);
+  assert.equal("status" in writes[0].values, false);
+  assert.equal(writes[0].values.activity, "running");
+});
+
+test("claim waiters resume once and preserve clear, send, publish order", async () => {
+  const calls = [];
+  const notify = createClaimWaiterNotifier({
+    db: {},
+    alia: {
+      sdk: { threads: { send: async (input) => calls.push(["send", input]) } },
+      realtime: { publish: (...args) => calls.push(["publish", ...args]) },
+    },
+    now: () => 30,
+    getCard: () => card({ worker_thread_id: "thread_1" }),
+    resolveInbox: (...args) => calls.push(["resolve", ...args]),
+    findWaiters: () => [
+      { card_id: "card_1", scope: "a.ts" },
+      { card_id: "card_1", scope: "b.ts" },
+    ],
+    clearWaiters: (_db, args) => calls.push(["clear", args]),
+  });
+
+  await notify("/project", ["a.ts"]);
+  assert.deepEqual(
+    calls.map(([name]) => name),
+    ["resolve", "clear", "send", "publish"],
+  );
+  assert.match(calls[2][1].input[0].text, /Files you waited on are now free \(a\.ts\)/);
+});
+
+test("claim waiters share one resume timestamp across the sweep", async () => {
+  // Regression control: cards freed by one release are one event, so a clock
+  // that advances per read would otherwise give each waiter its own stamp.
+  const resolved = [];
+  let clock = 0;
+  const notify = createClaimWaiterNotifier({
+    db: {},
+    alia: {
+      sdk: { threads: { send: async () => {} } },
+      realtime: { publish: () => {} },
+    },
+    now: () => (clock += 5),
+    getCard: (id) => card({ id, worker_thread_id: `thread_${id}` }),
+    resolveInbox: (cardId, at) => resolved.push([cardId, at]),
+    findWaiters: () => [{ card_id: "card_1" }, { card_id: "card_2" }],
+    clearWaiters: () => {},
+  });
+
+  await notify("/project", ["a.ts"]);
+  assert.deepEqual(resolved, [["card_1", 5], ["card_2", 5]]);
+});
+
+test("claim waiter terminal cleanup is a negative control", async () => {
+  const calls = [];
+  const notify = createClaimWaiterNotifier({
+    db: {},
+    alia: {
+      sdk: { threads: { send: async () => calls.push(["send"]) } },
+      realtime: { publish: () => calls.push(["publish"]) },
+    },
+    now: () => 30,
+    getCard: () => card({ status: "completed" }),
+    resolveInbox: () => calls.push(["resolve"]),
+    findWaiters: () => [{ card_id: "card_1", scope: null }],
+    clearWaiters: (_db, args) => calls.push(["clear", args]),
+  });
+  await notify("/project", ["a.ts"]);
+  assert.deepEqual(calls.map(([name]) => name), ["clear"]);
+  assert.deepEqual(calls[0][1], { cardId: "card_1", workspacePath: undefined, files: undefined });
+});
+
+test("explicit restore is the only path that flips an archived card back to live", () => {
+  const flagged = updaterHarness(card({ status: "archived" }));
+  flagged.updateCard("card_1", { status: "in-progress" }, { restoreFromArchive: true });
+  assert.equal(flagged.row().status, "in-progress");
+
+  const unflagged = updaterHarness(card({ status: "archived" }));
+  unflagged.updateCard("card_1", { status: "in-progress" });
+  assert.equal(unflagged.row().status, "archived");
+});
+
+// ── card.updated records state changes, not prose bookkeeping ───────────────
+test("a write that only changes last_assistant_text records no card.updated row", () => {
+  const actions = collectingActions();
+  const harness = updaterHarness(card(), false, actions);
+
+  harness.updateCard("card_1", { last_assistant_text: "still working on it" });
+
+  assert.equal(actions.recorded.length, 0, "prose-only updates are not state changes");
+  assert.equal(
+    harness.row().last_assistant_text,
+    "still working on it",
+    "the write itself still lands; only the log stays quiet",
+  );
+});
+
+test("a status change records one row naming only the meaningful field", () => {
+  const actions = collectingActions();
+  const harness = updaterHarness(card(), false, actions);
+
+  harness.updateCard("card_1", { status: "completed", last_assistant_text: "finished" });
+
+  assert.equal(actions.recorded.length, 1, "one update is one row");
+  const [row] = actions.recorded;
+  assert.equal(row.kind, "card.updated");
+  assert.equal(row.cardId, "card_1");
+  assert.deepEqual(row.detail.fields, ["status"], "only the state field survives the filter");
+  assert.equal("last_assistant_text" in row.detail, false, "the prose is never copied into detail");
+});
+
+test("a stage change still records, with its before and after", () => {
+  const actions = collectingActions();
+  const harness = updaterHarness(card({ stage: "select" }), false, actions);
+
+  harness.updateCard("card_1", { stage: "setup" });
+
+  assert.equal(actions.recorded.length, 1);
+  const [row] = actions.recorded;
+  assert.deepEqual(row.detail.fields, ["stage"]);
+  assert.deepEqual(row.detail.stage, { from: "select", to: "setup" });
+  assert.equal(row.stage, "setup", "the row names the stage it moved to");
+});

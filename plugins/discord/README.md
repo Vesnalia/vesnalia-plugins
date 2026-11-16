@@ -1,0 +1,275 @@
+# Discord for VesnALIA
+
+Run alia agent threads from Discord. Mention your bot to start a dedicated conversation, continue in the Discord thread without mentioning it again, answer VesnALIA questions and approvals, and receive the result where the conversation started.
+
+With optional full server access, VesnALIA agents can also read and manage the paired Discord server through permission-gated tools.
+
+## Demo
+
+### Run alia from a Discord conversation
+
+Mention the bot in a channel to start a dedicated thread, then keep chatting
+there while VesnALIA works and reports back.
+
+![A Discord request opening a dedicated thread and returning a VesnALIA status update](docs/images/test-run-discord.png)
+
+### Pair your Discord server
+
+Create a one-time pairing code in VesnALIA and send it to the bot in the server you
+want to connect.
+
+![A Discord server successfully paired with VesnALIA](docs/images/alia-bot-pair.png)
+
+### Configure everything in VesnALIA
+
+Choose the project, machine, model, permission mode, channels, and Discord
+server access from the plugin settings page.
+
+![Discord plugin configuration in VesnALIA](docs/images/discord-settings.png)
+
+## Install
+
+Discord for VesnALIA requires VesnALIA 0.40.0 or later.
+
+After its marketplace launch, install it from VesnALIA's Extensions page. To install the current repository directly:
+
+```sh
+alia plugin install git:https://github.com/MayankBansal12/bb-plugin-discord.git@main
+```
+
+For development, clone the repository and install the local checkout instead:
+
+```sh
+npm ci
+alia plugin install .
+```
+
+## Set up Discord
+
+Initial pairing happens in VesnALIA and Discord. You do not need Discord Developer Mode or any copied server, channel, or user IDs.
+
+### 1. Create a Discord bot
+
+1. Open the [Discord Developer Portal](https://discord.com/developers/applications) and create an application.
+2. Open **Bot**, create the bot if needed, and copy or reset its token.
+3. Enable **Message Content Intent**.
+4. Optional: enable **Server Members Intent** if you want agents to list server members.
+
+Keep the token private. Anyone with it can operate the bot.
+
+### 2. Add the token in VesnALIA
+
+Open **Settings → Extensions → Plugins → Discord** in VesnALIA, paste the token into **Discord bot token**, and save it. VesnALIA stores the token as a secret and verifies it with Discord before showing the remaining setup steps.
+
+### 3. Invite and pair the bot
+
+Once the token is verified, the **Discord setup** section shows the bot identity and guides you through pairing:
+
+1. Select **Invite to Discord** and add the bot to the server you want to connect.
+2. Copy the one-time pairing command shown in VesnALIA.
+3. Send that exact command in the Discord channel you want to use for status and failure alerts.
+
+The command looks like this, using your bot's real user ID and a six-character code:
+
+```text
+<@123456789012345678> pair ABC-123
+```
+
+The code is single-use and expires after ten minutes. Pairing authorizes the server, the person who sent the command, and that channel as the default home channel. A server cannot claim the bot before an operator creates the code in VesnALIA.
+
+The default invite includes the permissions needed to create and reply inside public Discord threads. If the bot was invited before those permissions were added, use the invite link again or update the bot's Discord role.
+
+### Terminal setup
+
+The same flow is available through the VesnALIA CLI:
+
+```sh
+alia discord pair
+```
+
+The command prints the invite URL and the exact pairing command to send in Discord. Useful follow-up commands:
+
+```sh
+alia discord status
+alia discord invite
+alia discord allow <discord-user-id>
+alia discord revoke <discord-user-id>
+alia discord unpair
+```
+
+`alia discord status` never prints the active pairing code. Run `alia discord pair` when you explicitly need to reveal or refresh it.
+
+## Start a conversation
+
+Mention the bot with a request in a normal channel:
+
+```text
+@your-bot inspect the failing login tests
+```
+
+The plugin creates a dedicated Discord thread and a linked VesnALIA thread. A 🚀 reaction confirms that the session is ready. Continue inside the Discord thread; authorized users do not need to mention the bot again.
+
+Unmentioned messages in parent channels are ignored. Mention the bot again in a parent channel whenever you want a separate conversation. Mentions inside unrelated Discord threads are ignored so the bot does not attach itself to an existing discussion by accident.
+
+### Questions and approvals
+
+When VesnALIA asks one multiple-choice question, Discord shows a native select menu. Pick one option—or several when VesnALIA allows multiple selections—without typing a reply. If the question accepts a custom answer, replying normally remains available.
+
+Questions without options also accept a normal reply. For several questions, use numbered lines:
+
+```text
+1: feature/discord
+2: run the full suite
+```
+
+Approval requests include Discord buttons for every decision VesnALIA offers. Depending on the request, choose **Approve once**, **Allow for session**, or **Deny**. “Allow for session” grants only the requested permission for the current provider session; it does not enable unrestricted full access.
+
+Text replies remain available as a fallback:
+
+```text
+approve
+approve session
+deny
+```
+
+When several approvals are pending, use the buttons on the exact request or open the conversation in VesnALIA. Plain-text replies are intentionally not guessed in that situation.
+
+## Choose where requests run
+
+Open **Settings → Extensions → Plugins → Discord** in VesnALIA after pairing to choose the project, machine, model, permission mode, and channel behavior for new Discord conversations.
+
+Project, machine, and model form one execution choice:
+
+- The project selects the checkout and defaults to your personal project.
+- The machine selects the enrolled computer and defaults to the project's machine.
+- The model list comes from providers available on that machine and defaults to the project's model.
+
+Changing the machine resets a pinned model because model availability belongs to the machine. The plugin validates this choice again for every Discord request. An offline machine, unavailable model, signed-out provider, or missing project checkout produces an actionable error instead of silently switching execution targets.
+
+| Setting | Default | What it controls |
+|---|---|---|
+| Project | Personal project | The checkout and project defaults used by new VesnALIA threads. |
+| Machine | Project default | The enrolled machine that runs new requests. |
+| Model | Project default | The provider, model, reasoning level, and service tier. |
+| VesnALIA permission mode | Machine default | Follows the selected machine's access limit; falls back to `full` if the limit cannot be read. |
+| Discord access | Messages only | Which Discord tools VesnALIA agents receive. |
+| Destructive actions | Off | Whether full-access agents may delete channels or moderate members. |
+| Status and alerts | Pairing channel | Where connection and failure notices are posted. |
+| New conversations | Any channel | Optionally restricts where a mention can start a new session. |
+
+Optional channel overrides use Discord channel IDs. Initial pairing itself does not require them.
+
+## Security model
+
+This plugin can start agent work on a machine running VesnALIA. Treat access to the paired bot like shell access.
+
+- Pairing requires a short-lived code created inside VesnALIA.
+- Only the paired server is accepted.
+- Only the person who paired and explicitly allowlisted users can drive VesnALIA.
+- New conversations require an explicit bot mention.
+- Discord-started threads use the selected machine's access limit by default. If that value cannot be read, the plugin requests `full`; VesnALIA still enforces the machine's permission ceiling when the thread starts.
+- The bot token stays in VesnALIA's permission-restricted plugin secret store. The frontend receives only a fixed mask and the final four characters.
+- Prompts are capped at 8,000 characters, and Discord message IDs are deduplicated.
+- Discord-started threads use the personal project unless you explicitly choose another project. There is no “first available project” fallback.
+
+Permission modes:
+
+- `machine-default` follows the selected machine's access limit and falls back to `full` when that value is unavailable.
+- `auto` keeps workspace sandboxing and lets VesnALIA decide when approval is required.
+- `accept-edits` asks the user to review escalations.
+- `full` bypasses sandboxing and approval prompts when the machine also permits it.
+- `project-default` inherits the project's permission mode.
+
+## Discord tools
+
+Once paired, VesnALIA threads can use tools against the paired server. Tool availability follows the access level saved in the plugin settings.
+
+Discord-backed conversations do not receive `discord_send_message`: their normal assistant reply is already delivered automatically to the dedicated Discord thread. This prevents a reply from being cross-posted to the parent channel and then echoed again in the thread. Other VesnALIA threads can still use the send tool normally.
+
+### Messages only
+
+This least-privilege default can inspect the server and work with messages and threads.
+
+| Tool | Action |
+|---|---|
+| `discord_server_info` | Summarize the paired server. |
+| `discord_list_channels` | List channels, categories, and topics. |
+| `discord_read_channel` | Read recent messages from a channel or thread. |
+| `discord_send_message` | Send a message to a channel or thread. |
+| `discord_create_thread` | Create a public thread under a text channel. |
+
+### Full server access
+
+Full access adds server administration tools:
+
+| Tool | Action |
+|---|---|
+| `discord_list_roles` | List server roles. |
+| `discord_list_members` | List members through Discord's REST API. |
+| `discord_create_channel` | Create text, voice, category, announcement, forum, or stage channels. |
+| `discord_edit_channel` | Rename a channel, update its topic, or set slow mode. |
+| `discord_manage_member_role` | Add or remove a member role. |
+
+Re-invite the bot with `alia discord invite --full` after enabling full access so Discord grants the additional permissions.
+
+### Destructive actions
+
+These tools appear only when **Discord access** is set to **Full server access** and **Destructive actions** is enabled separately:
+
+| Tool | Action |
+|---|---|
+| `discord_delete_channel` | Permanently delete a channel and its history. |
+| `discord_moderate_member` | Kick, ban, or time out a member. |
+
+Destructive calls require an explicit confirmation argument. Administrative calls include the originating VesnALIA thread ID in Discord's audit log.
+
+## Troubleshooting
+
+- **Discord rejects the token:** reset it on the Developer Portal's **Bot** page, then replace it in VesnALIA.
+- **The gateway closes with code 4014:** enable **Message Content Intent** for the application.
+- **Messages arrive without text:** enable **Message Content Intent**, then restart VesnALIA.
+- **Member listing fails:** enable **Server Members Intent**. The gateway does not subscribe to member events, and other tools continue to work.
+- **The bot cannot create or reply in threads:** use the invite link again or grant **Create Public Threads** and **Send Messages in Threads** to the bot's role.
+- **A machine or model is unavailable:** update **Where requests run** in the Discord plugin settings.
+
+Saving a replacement token reconnects the gateway without `alia plugin reload`. Network reconnects use exponential backoff from two seconds up to one minute. Fatal gateway configuration errors show an actionable failure instead of waiting for a connection that cannot resume.
+
+Final answers are queued in the plugin database before sending. Failed deliveries retry while connected and after a reconnect or plugin restart. Long replies resume from the first unacknowledged chunk; each stored VesnALIA output event is delivered independently, including consecutive identical answers. Discord nonces reduce duplicate sends when an acknowledgement is lost, but Discord only deduplicates nonces for a short window, so delivery is not an unlimited exactly-once guarantee.
+
+Pending reply text is retained for up to 30 days and cleared after successful delivery, unpairing, or deletion of its linked VesnALIA thread. Automatically relayed text and tool messages display mentions without notifying users or roles. Thread seeds use the same message-size limits; if a seed fails after thread creation, the tool returns the existing thread ID and a `seedError` so the caller can recover without creating another thread.
+
+Inspect plugin health and logs with:
+
+```sh
+alia discord status
+alia plugin list
+alia plugin logs discord -n 100
+```
+
+## Development
+
+The plugin requires Node.js 22.19 or later for local development.
+
+```sh
+npm ci
+npm run check
+```
+
+`npm run check` typechecks every TypeScript source and test, runs the complete test suite, verifies the vendored declarations against the installed VesnALIA SDK, and builds the server and app artifacts.
+
+For a live development loop:
+
+```sh
+alia plugin install .
+alia plugin dev
+```
+
+The Discord gateway runs as a supervised `alia.background.service`. Pairing state, deduplication records, configuration, and Discord-thread ↔ alia-thread mappings live in the plugin's SQLite database.
+
+## Current limitations
+
+- One paired Discord server per plugin installation.
+- One or more explicitly authorized Discord users.
+- Replies are sent per turn rather than streamed token by token. Long replies are split into consecutive Discord messages without truncating their text.
+- Plain text, VesnALIA questions, and VesnALIA approvals are bridged; other interaction types may still require opening VesnALIA.
+- Per-channel project routing is not available; all new Discord conversations use the plugin's configured project.

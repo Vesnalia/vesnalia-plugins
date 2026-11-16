@@ -1,0 +1,470 @@
+/*! tailwindcss v4.3.0 | MIT License | https://tailwindcss.com */
+@layer properties;
+@layer theme, utilities;
+@layer theme {
+  :root, :host {
+    --font-sans: var(--font-sans);
+    --font-serif: var(--font-serif);
+    --font-mono: var(--font-mono);
+    --shadow-2xs: var(--shadow-2xs);
+    --shadow-xs: var(--shadow-xs);
+    --shadow-sm: var(--shadow-sm);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
+    --shadow-xl: var(--shadow-xl);
+    --shadow-2xl: var(--shadow-2xl);
+    --default-transition-duration: 150ms;
+    --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    --shadow: var(--shadow);
+    --shadow-lift: var(--shadow-lift);
+  }
+}
+@property --tw-animation-delay {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0s;
+}
+@property --tw-animation-direction {
+  syntax: "*";
+  inherits: false;
+  initial-value: normal;
+}
+@property --tw-animation-duration {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-animation-fill-mode {
+  syntax: "*";
+  inherits: false;
+  initial-value: none;
+}
+@property --tw-animation-iteration-count {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-enter-blur {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-enter-opacity {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-enter-rotate {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-enter-scale {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-enter-translate-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-enter-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-exit-blur {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-exit-opacity {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-exit-rotate {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-exit-scale {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-exit-translate-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-exit-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+@layer utilities {
+  @scope ([data-alia-plugin="arc-switcher"], [data-alia-plugin-root]:not([data-alia-plugin])) {
+    .invisible {
+      visibility: hidden;
+    }
+    .visible {
+      visibility: visible;
+    }
+    .absolute {
+      position: absolute;
+    }
+    .relative {
+      position: relative;
+    }
+    .static {
+      position: static;
+    }
+    .container {
+      width: 100%;
+      @media (width >= 40rem) {
+        max-width: 40rem;
+      }
+      @media (width >= 48rem) {
+        max-width: 48rem;
+      }
+      @media (width >= 64rem) {
+        max-width: 64rem;
+      }
+      @media (width >= 80rem) {
+        max-width: 80rem;
+      }
+      @media (width >= 96rem) {
+        max-width: 96rem;
+      }
+    }
+    .block {
+      display: block;
+    }
+    .contents {
+      display: contents;
+    }
+    .grid {
+      display: grid;
+    }
+    .hidden {
+      display: none;
+    }
+    .inline {
+      display: inline;
+    }
+    .truncate {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lowercase {
+      text-transform: lowercase;
+    }
+    .blur {
+      --tw-blur: blur(8px);
+      filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
+    }
+    .filter {
+      filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
+    }
+    .transition {
+      transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
+      transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+      transition-duration: var(--tw-duration, var(--default-transition-duration));
+    }
+    .transition-colors {
+      transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+      transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+      transition-duration: var(--tw-duration, var(--default-transition-duration));
+    }
+    .paused {
+      animation-play-state: paused;
+    }
+    .running {
+      animation-play-state: running;
+    }
+  }
+}
+@property --tw-blur {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-brightness {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-contrast {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-grayscale {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-hue-rotate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-invert {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-opacity {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-saturate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-sepia {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-drop-shadow {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-drop-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-drop-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-drop-shadow-size {
+  syntax: "*";
+  inherits: false;
+}
+@layer properties {
+  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
+    *, ::before, ::after, ::backdrop {
+      --tw-animation-delay: 0s;
+      --tw-animation-direction: normal;
+      --tw-animation-duration: initial;
+      --tw-animation-fill-mode: none;
+      --tw-animation-iteration-count: 1;
+      --tw-enter-blur: 0;
+      --tw-enter-opacity: 1;
+      --tw-enter-rotate: 0;
+      --tw-enter-scale: 1;
+      --tw-enter-translate-x: 0;
+      --tw-enter-translate-y: 0;
+      --tw-exit-blur: 0;
+      --tw-exit-opacity: 1;
+      --tw-exit-rotate: 0;
+      --tw-exit-scale: 1;
+      --tw-exit-translate-x: 0;
+      --tw-exit-translate-y: 0;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
+    }
+  }
+}
+/* app.css */
+.alia-arc-switcher {
+  align-items: flex-start;
+  backdrop-filter: blur(3px);
+  background: color-mix(in srgb, var(--background) 20%, transparent);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: min(18vh, 10rem) 1rem 1rem;
+  pointer-events: none;
+  position: fixed;
+  z-index: 2147483000;
+}
+.alia-arc-switcher--persistent {
+  pointer-events: auto;
+}
+.alia-arc-switcher__panel {
+  background: color-mix(in srgb, var(--popover) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 1.5rem 4.5rem color-mix(in srgb, var(--foreground) 22%, transparent);
+  color: var(--popover-foreground);
+  max-width: 34rem;
+  overflow: hidden;
+  pointer-events: auto;
+  width: 100%;
+}
+.alia-arc-switcher__header,
+.alia-arc-switcher__footer {
+  align-items: center;
+  color: var(--muted-foreground);
+  display: flex;
+  font-size: 0.75rem;
+  justify-content: space-between;
+  letter-spacing: 0.02em;
+}
+.alia-arc-switcher__header {
+  font-weight: 600;
+  padding: 0.8rem 0.9rem 0.45rem;
+  text-transform: uppercase;
+}
+.alia-arc-switcher__header kbd {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  color: var(--foreground);
+  font: inherit;
+  letter-spacing: 0;
+  padding: 0.12rem 0.4rem;
+}
+.alia-arc-switcher__list {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.35rem;
+}
+.alia-arc-switcher__item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.7rem;
+  color: var(--foreground);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 0.75rem;
+  grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+  min-height: 3.65rem;
+  padding: 0.48rem 0.65rem;
+  text-align: left;
+  width: 100%;
+}
+.alia-arc-switcher__item[data-selected=true] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.alia-arc-switcher__marker {
+  align-items: center;
+  background: color-mix(in srgb, var(--muted) 78%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  display: flex;
+  height: 2.35rem;
+  justify-content: center;
+  position: relative;
+  width: 2.35rem;
+}
+.alia-arc-switcher__emoji {
+  font-family:
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Color Emoji",
+    sans-serif;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.alia-arc-switcher__marker-key {
+  align-items: center;
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  bottom: -0.22rem;
+  color: var(--muted-foreground);
+  display: flex;
+  font-size: 0.55rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  height: 0.9rem;
+  justify-content: center;
+  min-width: 0.9rem;
+  padding: 0 0.18rem;
+  position: absolute;
+  right: -0.22rem;
+}
+.alia-arc-switcher__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+.alia-arc-switcher__title {
+  font-size: 0.9rem;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.alia-arc-switcher__detail {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.alia-arc-switcher__status {
+  background: var(--muted-foreground);
+  border-radius: 999px;
+  height: 0.45rem;
+  opacity: 0.48;
+  width: 0.45rem;
+}
+.alia-arc-switcher__status[data-status=active],
+.alia-arc-switcher__status[data-status=starting] {
+  background: var(--primary);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 14%, transparent);
+  opacity: 1;
+}
+.alia-arc-switcher__status[data-status=error] {
+  background: var(--destructive);
+  opacity: 1;
+}
+.alia-arc-switcher__footer {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  justify-content: center;
+  padding: 0.65rem 0.9rem 0.72rem;
+}
+.alia-arc-switcher__error {
+  background: var(--destructive);
+  border-radius: 0.75rem;
+  box-shadow: 0 1rem 3rem color-mix(in srgb, var(--foreground) 18%, transparent);
+  color: var(--destructive-foreground);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.8rem 1rem;
+}
+[data-alia-arc-marker]::before {
+  content: attr(data-alia-arc-marker);
+  font-family:
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Color Emoji",
+    sans-serif;
+  margin-right: 0.35em;
+}
+@media (max-width: 40rem) {
+  .alia-arc-switcher {
+    padding-top: 4rem;
+  }
+  .alia-arc-switcher__footer {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .alia-arc-switcher__panel,
+  .alia-arc-switcher__error {
+    animation: alia-arc-switcher-in 120ms ease-out;
+  }
+}
+@keyframes alia-arc-switcher-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.4rem) scale(0.985);
+  }
+}

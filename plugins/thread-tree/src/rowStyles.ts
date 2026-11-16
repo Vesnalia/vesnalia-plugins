@@ -1,0 +1,18 @@
+/** Shows a hover-only header control, dimmed, on touch screens where hover never happens. */
+export const TOUCH_DIMMED = "[@media(hover:none)]:opacity-60";
+
+/** The hovered row's tint (accent at 60% over what the row sits on) as an opaque color, for overlays. */
+export const ROW_FADE_HOVER = "[--row-fade:color-mix(in_oklab,var(--sidebar-accent)_60%,var(--row-base,var(--sidebar)))]";
+export const ROW_FADE_ACTIVE = "[--row-fade:var(--sidebar-accent)]";
+export const ROW_FADE_GRADIENT = "[background:linear-gradient(to_right,transparent,var(--row-fade))]";
+export const ROW_FADE_SOLID = "bg-[var(--row-fade)]";
+
+/** An inactive row's tint wherever its hover actions show. */
+export const ROW_TINT = "hover:bg-sidebar-accent/60 data-[keyboard-focus]:bg-sidebar-accent/60 data-[menu-open]:bg-sidebar-accent/60";
+
+/** A header chevron appears as fast as the row hover controls but folds at VesnALIA's usual pace. */
+export function headerChevronMotion(reduceMotion: boolean): string {
+  return reduceMotion
+    ? "transition-none"
+    : "[transition:opacity_75ms_ease-out,rotate_150ms_cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none";
+}

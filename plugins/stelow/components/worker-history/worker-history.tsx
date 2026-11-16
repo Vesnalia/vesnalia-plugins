@@ -1,0 +1,255 @@
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
+import { Button } from "@/components/ui/button";
+import { cn } from "../../lib/utils";
+import { DisclosureChevron, SECTION_SURFACE, SUMMARY_ROW } from "../disclosure";
+import { Pill } from "../dashboard/build-status-pills";
+import { workerSectionPolicy } from "../../lib/worker-action-policy.mjs";
+import { relativeTime } from "../../lib/relative-time.mjs";
+import {
+  formatTokenUsage,
+  sumTokenBreakdowns,
+  totalTokenUsage,
+  totalUsageProvenance,
+} from "../../lib/token-usage.mjs";
+import type { UsageProvenance } from "../../lib/token-usage.mjs";
+
+// Worker presence: the thread opener, the history list (archived threads
+// stay readable, provider-reported token totals), and the policy-driven
+// section (preset controls, stale-preset resume, write-back link slot).
+// Times read the shared relative clock (lib). Every detail body renders
+// the same worker truth — one home, not three track copies.
+
+const CHECKOUT_LABEL: Record<string, string> = {
+  worktree: "Isolated worktree",
+  shared: "Shared project checkout",
+  managed: "ALIA-managed checkout",
+  personal: "Personal workspace",
+};
+
+export function checkoutNoteFor(environmentLabel: string | null | undefined, branch?: string | null) {
+  if (!environmentLabel || environmentLabel === "unknown" || environmentLabel === "exploratory") return null;
+  const label = CHECKOUT_LABEL[environmentLabel] ?? environmentLabel;
+  return <>Checkout: {label}{branch ? <> · branch <code>{branch}</code></> : null}</>;
+}
+
+// Every "open the worker thread" affordance: one definition with the
+// inspect-title everywhere (it is always an inspection). Renders nothing
+// without a thread instead of a dead button that swallows clicks.
+export function OpenThreadButton({ threadId }: { threadId: string | null | undefined }) {
+  const navigate = useAliaNavigate();
+  if (!threadId) return null;
+  return <Button size="sm" variant="outline" onClick={() => navigate.toThread(threadId)} title="Open the worker thread to inspect what happened.">Open thread ↗</Button>;
+}
+
+// Structural view of one worker-history row: the list only reads these
+// fields, so detail bodies never import the card contract for this.
+export type WorkerHistoryEntry = {
+  threadId: string;
+  presetName: string | null;
+  startedAt: number;
+  endedAt: number | null;
+  endedReason: string | null;
+  tokenUsage: number | null;
+  /** Where the figure came from. `provider` is a reported total; `context-estimate`
+   * is the context-window reading an ACP agent sends instead of one. The label has
+   * to travel with the number, because presenting an estimate as a measurement is
+   * the same class of error as printing 0 for unknown. */
+  tokenUsageSource?: "provider" | "context-estimate" | null;
+  /** Whether this worker read skills before advancing. Reported, never blocked: the
+   * plugin cannot stop a tool call in flight, and a rule enforced by refusing work
+   * would be a deadlock with a good error message. */
+  firstTurn?: { advanced: boolean; skillsReadBeforeWork: number; violated: boolean } | null;
+  tokenBreakdown: { input: number | null; output: number | null; cached: number | null; reasoning: number | null; total: number | null } | null;
+  children?: Array<{
+    threadId: string;
+    title: string | null;
+    status: string;
+    providerId: string | null;
+    tokenUsage: number | null;
+    tokenBreakdown: { input: number | null; output: number | null; cached: number | null; reasoning: number | null; total: number | null } | null;
+  }>;
+};
+
+// Structural views for the section: the policy reads activity/status,
+// the section reads attention, the preset pair, and the history.
+export type WorkerCardState = { activity: string; status: string };
+export type WorkerDetailState = {
+  workerHistory: WorkerHistoryEntry[];
+  card: { needsAttention: boolean; presetProviderId: string | null; presetModelId: string | null };
+};
+
+/**
+ * A token figure with its provenance, because the two must not be printed alike.
+ *
+ * Extracted rather than inlined for two reasons that both hold: it is the same
+ * markup on the parent row and (neutrally) on a child, and the parent row was over
+ * the repository's fifty-line function budget once the label grew a branch. The
+ * `source` argument is what keeps an estimate from being presented as a
+ * measurement: `undefined` means the caller was not told which it is, so the label
+ * stays neutral rather than claiming a provenance.
+ *
+ * A worker with NO figure gets a dash rather than nothing. Verified against a live
+ * worker: `acp-opencode` emits no usage event of any kind — 88 events, none of them a
+ * token or context reading — so a row that rendered nothing left a reader unable to
+ * tell "this provider reports nothing" from "the card has not run yet". The dash is
+ * the honest third state, and its title names the cause.
+ */
+function TokenFigure({ tokens, source }: { tokens: number | null; source?: "provider" | "context-estimate" | null }) {
+  if (!formatTokenUsage(tokens)) {
+    return (
+      <span className="opacity-60" title="This worker's provider reported no token usage — the ACP-backed providers emit no usage event at all.">
+        {" · "}— tokens
+      </span>
+    );
+  }
+  const estimated = source === "context-estimate";
+  return (
+    <span
+      title={
+        estimated
+          ? `${tokens!.toLocaleString()} tokens estimated from the provider's context-window reading — not a reported total`
+          : source === "provider"
+            ? `${tokens!.toLocaleString()} provider-reported tokens`
+            : `${tokens!.toLocaleString()} tokens`
+      }
+    >
+      {" · "}{formatTokenUsage(tokens)}
+      {estimated ? " tokens (est.)" : " tokens"}
+    </span>
+  );
+}
+
+function WorkerHistoryRow({ entry }: { entry: WorkerHistoryEntry }) {
+  const navigate = useAliaNavigate();
+  return (
+    <div>
+      <div className="flex items-center gap-2 px-2 py-1.5 text-xs">
+        <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${entry.endedAt === null ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+        <span className="min-w-0 flex-1 truncate text-muted-foreground">
+          <span className="font-medium text-foreground">{entry.endedAt === null ? "Current worker" : ({ "band-swap": "Phase preset", restart: "Manual restart", reseed: "Restarted fresh", "strategy-add": "New strategy round", initial: "First worker" } as Record<string, string>)[entry.endedReason ?? ""] ?? "Replaced worker"}</span>
+          {entry.presetName ? <span> · {entry.presetName}</span> : null}
+          <TokenFigure tokens={entry.tokenUsage} source={entry.tokenUsageSource} />
+        {entry.firstTurn?.violated ? (
+          <span
+            className="ml-1 opacity-70"
+            title="This worker read skills before advancing. The stage's reading list comes from `alia stelow playbook`, and skills load on advance."
+          >
+            {" · "}
+            {entry.firstTurn.skillsReadBeforeWork} skill
+            {entry.firstTurn.skillsReadBeforeWork === 1 ? "" : "s"} before work
+          </span>
+        ) : null}
+          <span title={new Date(entry.startedAt).toLocaleString()}> · {relativeTime(entry.startedAt)}</span>
+        </span>
+        <button onClick={() => navigate.toThread(entry.threadId)} title="Open this worker thread (archived threads stay readable)." className="cursor-pointer min-h-11 shrink-0 rounded-md px-2 font-medium text-primary hover:underline">Open ↗</button>
+      </div>
+      {entry.children?.length ? (
+        <div className="space-y-1 border-t border-dashed px-2 py-1.5 pl-6 text-xs">
+          {entry.children.map((child) => (
+            <div key={child.threadId} className="flex items-center gap-2">
+              <span aria-hidden className="size-1 shrink-0 rounded-full bg-muted-foreground/40" />
+              <span className="min-w-0 flex-1 truncate text-muted-foreground" title={child.threadId}>
+                <span className="font-medium text-foreground">{child.title ?? child.threadId.slice(0, 12)}</span>
+                <span> · {child.status}</span>
+                {child.providerId ? <span> · {child.providerId}</span> : null}
+                {/* Neutral label: the child payload does not carry which kind of
+                    figure this is, so provenance is not claimed. */}
+                <TokenFigure tokens={child.tokenUsage} />
+              </span>
+              <button onClick={() => navigate.toThread(child.threadId)} title="Open this child thread." className="cursor-pointer min-h-11 shrink-0 rounded-md px-2 font-medium text-primary hover:underline">Open ↗</button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** The sentence the summary's tooltip shows, which must match what it summed. */
+function totalTitle(total: number, provenance: Exclude<UsageProvenance, null>): string {
+  const count = total.toLocaleString();
+  if (provenance === "provider") return `${count} provider-reported tokens across all workers`;
+  if (provenance === "estimate") return `${count} tokens across all workers, estimated from the providers' context-window readings — no reported totals`;
+  return `${count} tokens across all workers — a mix of reported totals and context-window estimates`;
+}
+
+export function WorkerHistoryList({ history, separated = false }: { history: WorkerHistoryEntry[]; separated?: boolean }) {
+  if (history.length === 0) return null;
+  const total = totalTokenUsage(history);
+  // The provenance is a fact about the SUM, computed in lib/ where it can be tested
+  // against real numbers rather than asserted as a string in this file.
+  const provenance = totalUsageProvenance(history);
+  const breakdown = sumTokenBreakdowns(history.flatMap((entry) => [entry.tokenBreakdown, ...(entry.children ?? []).map((child) => child.tokenBreakdown)]));
+  const legs = breakdown ? [
+    breakdown.input !== null ? `in ${formatTokenUsage(breakdown.input)}` : null,
+    breakdown.output !== null ? `out ${formatTokenUsage(breakdown.output)}` : null,
+    breakdown.cached !== null ? `cached ${formatTokenUsage(breakdown.cached)}` : null,
+    breakdown.reasoning !== null ? `reasoning ${formatTokenUsage(breakdown.reasoning)}` : null,
+  ].filter((part): part is string => part !== null) : [];
+  return (
+    <details className={`group${separated ? " mt-3 border-t pt-2" : ""}`}>
+      <summary className={cn(SUMMARY_ROW, "text-xs font-medium text-muted-foreground")}>
+        <DisclosureChevron />
+        Worker history ({history.length}) — archived threads stay readable
+        {total !== null ? (
+          <span title={totalTitle(total, provenance ?? "estimate")}>
+            {" · "}{formatTokenUsage(total)} tokens total
+            {provenance === "provider" ? null : <span className="ml-1 opacity-70">(est.)</span>}
+          </span>
+        ) : null}
+      </summary>
+      {legs.length > 0 ? <p className="mt-1 text-[11px] text-muted-foreground" title="Provider-reported split across all workers; legs without reports are omitted, never zeroed.">{legs.join(" · ")}</p> : null}
+      <div className="mt-1 divide-y divide-border rounded-md border">
+        {history.map((entry) => (
+          <WorkerHistoryRow key={entry.threadId} entry={entry} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+export function WorkerSection({ card, detail, presetStale, restarting, onRestartWorker, onPreset, presetPill, presetNote, pillTitle, githubLink, checkoutNote }: {
+  card: WorkerCardState | null;
+  detail: WorkerDetailState | null;
+  presetStale: boolean;
+  restarting: boolean;
+  onRestartWorker: () => void;
+  onPreset: () => void;
+  presetPill: React.ReactNode;
+  presetNote: React.ReactNode;
+  pillTitle?: string;
+  githubLink?: React.ReactNode;
+  checkoutNote?: React.ReactNode;
+}) {
+  const hasGithubLink = Boolean(githubLink);
+  const hasHistory = Boolean(detail?.workerHistory.length);
+  const actions = workerSectionPolicy(card, Boolean(detail?.card.needsAttention), { hasGithubLink, historyCount: detail?.workerHistory.length ?? 0 });
+  const hasPreset = actions.showPresetControls;
+  if (!actions.showSection) return null;
+  return (
+    // The card's section surface, from the same token as every other section.
+    // This one wrote its own `rounded-lg border p-3`, so the worker row was the
+    // only sibling on the card with a different weight and background.
+    <section aria-label="Worker" className={`${SECTION_SURFACE} px-3 py-2`}>
+      {actions.showPresetControls ? <div className="flex flex-wrap items-center gap-2">
+        <Pill tone="bg-muted text-muted-foreground" title={pillTitle}>
+          {presetPill}
+          {detail?.card.presetProviderId && detail?.card.presetModelId ? (
+            <span className="ml-1.5 font-mono text-xs text-muted-foreground">{detail.card.presetProviderId}/{detail.card.presetModelId}</span>
+          ) : null}
+        </Pill>
+        <Button size="sm" variant="outline" onClick={onPreset} title="Change which provider and model the next worker uses. Takes effect when a new worker starts.">Change preset…</Button>
+        <span className="text-xs text-muted-foreground">{presetNote}</span>
+      </div> : null}
+      {actions.showPresetControls && presetStale ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
+          <p className="min-w-40 flex-1 text-xs text-muted-foreground">The running worker predates this preset — Resume will not switch provider/model.</p>
+          <Button size="sm" disabled={restarting} onClick={onRestartWorker}>{restarting ? "Restarting…" : "Restart worker…"}</Button>
+        </div>
+      ) : null}
+      {githubLink ? <div className={hasPreset ? "mt-3 border-t pt-3" : ""}>{githubLink}</div> : null}
+      {checkoutNote ? <p className="mt-2 text-xs text-muted-foreground">{checkoutNote}</p> : null}
+      {detail && hasHistory ? <WorkerHistoryList history={detail.workerHistory} separated={hasPreset || hasGithubLink} /> : null}
+    </section>
+  );
+}

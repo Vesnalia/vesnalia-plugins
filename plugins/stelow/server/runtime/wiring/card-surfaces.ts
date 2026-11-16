@@ -1,0 +1,350 @@
+/**
+ * The card surfaces: the card server itself, and the RPC handlers that act on
+ * one card.
+ *
+ * These are the only surfaces that create a card or reach into one another's
+ * record — the workspace recovery imports a card, the detail view reports the
+ * thread the execution layer synchronised, and the promotion restores a
+ * recovered workspace. They are wired in one place because they share those
+ * two dependencies, and because the order is the contract: the card server
+ * exists before the recovery that imports into it, and the execution layer
+ * exists before the detail view that reports what it did.
+ */
+import { PHASE_ENTRY_STAGES, WORKFLOW_STAGES } from "../../../lib/workflow-vocabulary.mjs";
+import {
+  discardConfirm,
+  discardEligibility,
+  discardTrail,
+} from "../../../lib/discard-policy.mjs";
+import { resetAutoContinue } from "../../../lib/auto-continue.mjs";
+import { buildContinueInput } from "../../../lib/worker-continuation.mjs";
+import { createCardsServer } from "../../cards.js";
+import { githubIssuesEnabled, type GithubAutomation } from "../../github-issues.js";
+import { githubUnavailableStatus } from "../../github-status.js";
+import { createWorkspacesRecovery } from "../../workspaces-recovery.js";
+import { cancelScopeBatchRun } from "../../scope-batch.js";
+import { createSharedCheckoutReader, listAliaThreads } from "../shared-checkout.js";
+import { createVerifyBlockageReader } from "../verify-blockage.js";
+import { createCardDetailHandler } from "../card-detail.js";
+import { buildArtifactReviews, artifactReadDeps } from "./artifact-review-surface.js";
+import { createCardMutationHandlers } from "../card-mutations.js";
+import { cancelCardScopeBatches, createCardLifecycleHandlers } from "../card-lifecycle.js";
+import { createCardOperationsHandlers } from "../card-operations.js";
+import { createCardPromotion } from "../card-promotion.js";
+import { createResearchTrackHandlers } from "../research-track-handlers.js";
+import { createCardCreator } from "./card-creator.js";
+import { detectMentionedFiles } from "../mentioned-files.js";
+import { recoveryNudge } from "../card-copy.js";
+import { cardAttachments } from "../card-files.js";
+import { EXPLORATORY_SCOPE } from "../exploratory-scope.js";
+import { IDLE_ATTENTION_MS } from "../attention-window.js";
+import { parseNextStages } from "../workflow-state.js";
+import { INTERFACE_PICK, SPLIT_REQUEST_NUDGE } from "../plugin-protocols.js";
+import type { RuntimeCore } from "../runtime-core.js";
+import type { ExecutionSurfaces } from "./execution-surfaces.js";
+
+export type CardSurfaces = ReturnType<typeof createCardSurfaces>;
+
+export type CardSurfaceDeps = {
+  core: RuntimeCore;
+  execution: ExecutionSurfaces;
+  /**
+   * The issue automation, read late. The host layer builds it, and the host
+   * layer is built after this one, so this is a call rather than a value: the
+   * board's status column is asked per request, long after both are wired.
+   */
+  githubAutomation: () => GithubAutomation | undefined;
+};
+
+export function createCardSurfaces(deps: CardSurfaceDeps) {
+  const { core, execution } = deps;
+  const cards = buildCardsServer(core, deps.githubAutomation);
+  const workspacesRecovery = buildWorkspacesRecovery(core, cards);
+  return {
+    cards,
+    workspacesRecovery,
+    cardDetail: buildCardDetail(core, execution),
+    artifactReviews: buildArtifactReviews(core),
+    sharedCheckoutExposure: buildSharedCheckoutExposure(core),
+    verifyBlockage: buildVerifyBlockage(core),
+    cardMutations: buildCardMutations(core),
+    cardLifecycle: buildCardLifecycle(core, execution),
+    cardOperations: buildCardOperations(core),
+    promoteCard: buildPromotion(core, workspacesRecovery),
+    researchTrack: buildResearchTrack(core, cards),
+  };
+}
+
+/**
+ * The card server: the board's own read of a project, and the one place a card
+ * is created. Its `fetchPendingQuestions` is the core's read, not a local
+ * stub, so the board and the detail view project a worker's questions the
+ * same way.
+ */
+function buildCardsServer(
+  core: RuntimeCore,
+  githubAutomation: () => GithubAutomation | undefined,
+) {
+  const { alia, db, now, presetServer } = core;
+  const ERRORS = core.ERRORS;
+  return createCardsServer({
+    db,
+    alia,
+    now,
+    store: core.cardStore,
+    errors: {
+      cardNotFound: ERRORS.cardNotFound,
+      workspaceUnavailable: ERRORS.workspaceUnavailable,
+    },
+    idleAttentionMs: 90_000,
+    loadBoard: (projectId) => core.loadBoard(alia, projectId),
+    // A board read must answer even when the automation is not there yet, so
+    // the unavailable status is this feature's own, not a literal repeated
+    // per caller. It never throws: the column is a column, not a gate.
+    githubStatus: async () => (await githubAutomation()?.githubStatus()) ?? githubUnavailableStatus(),
+    githubAutomationEnabled: githubIssuesEnabled,
+    strategyList: core.strategyList,
+    getReliablePreset: presetServer.getReliablePresetForBand,
+    fetchPendingQuestions: core.fetchPendingQuestions,
+    openExpiredQuestionIds: core.questions.openExpiredQuestionIds,
+    create: createCardCreator(core),
+  });
+}
+
+/** Recovery: re-attach a card to a checkout the host still has. */
+function buildWorkspacesRecovery(
+  core: RuntimeCore,
+  cards: ReturnType<typeof buildCardsServer>,
+) {
+  const { alia, db, now, ledger } = core;
+  const ERRORS = core.ERRORS;
+  return createWorkspacesRecovery({
+    db,
+    now,
+    publish: (event, payload) => alia.realtime.publish(event, payload),
+    cardNotFound: ERRORS.cardNotFound,
+    cardArchived: ERRORS.cardArchived,
+    cards: {
+      get: core.getCard,
+      create: (args) => cards.createInternal(args),
+      comment: ledger.logCardComment,
+    },
+    gitEvidence: core.git.recoveryGitEvidence,
+    listProjects: () => alia.sdk.projects.list(),
+    getProject: (projectId) => alia.sdk.projects.get({ projectId }),
+    getThreadOutput: async (threadId) => {
+      const result = await alia.sdk.threads.output({ threadId });
+      return result.output ?? "";
+    },
+  });
+}
+
+/** The detail view: everything one card shows, in one read. */
+/**
+ * Who else is working in this card's checkout, and which of the files it holds
+ * are dirty there.
+ *
+ * A reader, not a guard: it refuses nothing and resolves nothing. It exists
+ * because the claim ledger can only see cards, and a card whose preset falls
+ * back to `project-default` shares the project checkout with every other thread
+ * in it. The reader is cached for 30s because the thread list is a host-wide
+ * fact and costs ~0.6s, and it is wired to the one module that reads working
+ * trees so both answers describe the same checkout.
+ */
+function buildSharedCheckoutExposure(core: RuntimeCore) {
+  const reader = createSharedCheckoutReader({
+    db: core.db,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    dirtyStatusResultIn: core.git.dirtyStatusResultIn,
+    listThreads: listAliaThreads,
+    now: core.now,
+  });
+  return ({ cardId }: { cardId: string }) => reader.reportFor(cardId);
+}
+
+/**
+ * Whether the verify failure parking the card is stale. A reader, not a
+ * guard: it refuses nothing and resolves nothing — the decision stays with
+ * the person reading the question. Wired next to the checkout reader because
+ * both answers describe the same working tree.
+ */
+function buildVerifyBlockage(core: RuntimeCore) {
+  const reader = createVerifyBlockageReader({
+    db: core.db,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    runGitIn: core.git.runGitIn,
+  });
+  return ({ cardId }: { cardId: string }) => reader.reportFor(cardId);
+}
+
+function buildCardDetail(core: RuntimeCore, execution: ExecutionSurfaces) {
+  const { db, now, presetServer, workers } = core;
+  return createCardDetailHandler({
+    db,
+    now,
+    idleAttentionMs: IDLE_ATTENTION_MS,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    syncThreadState: execution.syncThreadState,
+    fetchPendingQuestions: core.fetchPendingQuestions,
+    resolveAskOptions: core.asks.resolveAskOptions,
+    cardAttachments,
+    detectMentionedFiles,
+    parseNextStages,
+    getReliablePreset: presetServer.getReliablePresetForBand,
+    strategyList: core.strategyList,
+    flowTimes: core.ledger.flowTimesForCard,
+    verifiedHeadSha: core.ledger.verifiedHeadShaForCard,
+    workers,
+    executionLifecycle: execution.executionLifecycle,
+    stalenessForQuestions: core.stalenessForQuestions,
+    ...artifactReadDeps(core),
+    scopeXray: execution.scopeMaps.scopeXray,
+    scopeDraft: execution.scopeMaps.scopeDraft,
+    cardNotFound: core.ERRORS.cardNotFound,
+  });
+}
+
+/** The mutations: rename, update, and answer on a card's own record. */
+function buildCardMutations(core: RuntimeCore) {
+  const ERRORS = core.ERRORS;
+  return createCardMutationHandlers({
+    db: core.db,
+    alia: core.alia,
+    now: core.now,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    workflowStateDir: core.workflowStateDir,
+    logCardComment: core.ledger.logCardComment,
+    // Accepting a finished result ANSWERS its review request. The completion
+    // row exists to say "audit evidence is ready to review", and a person who
+    // has just said they reviewed and accepted it is not owed that request
+    // again — leaving it open would hold the badge above zero on a card nobody
+    // has anything left to do with.
+    markReviewSatisfied: (cardId: string) =>
+      core.inbox.handlers.markCardNotificationsRead({ cardId, kind: "completed" }),
+    updateCard: core.updateCard,
+    errors: {
+      cardNotFound: ERRORS.cardNotFound,
+      cardArchived: ERRORS.cardArchived,
+    },
+  });
+}
+
+/** The lifecycle: archive, unarchive, and the discard confirmation behind them. */
+function buildCardLifecycle(core: RuntimeCore, execution: ExecutionSurfaces) {
+  const { alia, db, getCard, cardWorkspace, presetServer } = core;
+  return createCardLifecycleHandlers({
+    db,
+    alia,
+    getCard,
+    cardWorkspace,
+    workflowStateDir: core.workflowStateDir,
+    workers: core.workers,
+    stopOwnedRuns: execution.executionLifecycle.stopOwned,
+    cancelScopeBatches: cancelCardScopeBatches(db, (batchId, cardId, reason) => {
+      cancelScopeBatchRun(db, { batchId, cardId, reason });
+    }),
+    updateCard: core.updateCard,
+    releaseClaims: core.claims.releaseCardClaimsAndNotify,
+    removeCardPreset: presetServer.removeCardPreset,
+    logCardComment: core.ledger.logCardComment,
+    runGitIn: core.git.runGitIn,
+    exploratoryScope: EXPLORATORY_SCOPE,
+    discardEvidence: core.git.discardEvidence,
+    discardEligibility,
+    discardConfirm,
+    discardTrail,
+    errors: { cardNotFound: core.ERRORS.cardNotFound },
+  });
+}
+
+/** The operations: nudge, continue, split, and the question the card asks. */
+function buildCardOperations(core: RuntimeCore) {
+  const ERRORS = core.ERRORS;
+  return createCardOperationsHandlers({
+    db: core.db,
+    alia: core.alia,
+    now: core.now,
+    getCard: core.getCard,
+    workers: core.workers,
+    updateCard: core.updateCard,
+    releaseClaims: core.claims.releaseCardClaimsAndNotify,
+    recordStageEvent: core.ledger.recordStageEvent,
+    cardStageSlug: core.seams.cardStageSlug,
+    fetchPendingAsks: core.questions.fetchPendingAsks,
+    openExpiredQuestionIds: core.questions.openExpiredQuestionIds,
+    logCardComment: core.ledger.logCardComment,
+    resetAutoContinue,
+    buildNudge: (card) => recoveryNudge(card, INTERFACE_PICK),
+    buildContinueInput,
+    splitRequestNudge: SPLIT_REQUEST_NUDGE,
+    phaseEntryStages: PHASE_ENTRY_STAGES,
+    stagePhases: Object.fromEntries(WORKFLOW_STAGES.map(({ id, phase }) => [id, phase])),
+    errors: {
+      cardNotFound: ERRORS.cardNotFound,
+      cardArchived: ERRORS.cardArchived,
+    },
+  });
+}
+
+/** The promotion: restore a card that lost its environment to its recovery. */
+function buildPromotion(
+  core: RuntimeCore,
+  recovery: ReturnType<typeof buildWorkspacesRecovery>,
+) {
+  const { alia, db, now, presetServer, workers, ledger } = core;
+  const ERRORS = core.ERRORS;
+  return createCardPromotion({
+    db,
+    alia,
+    now,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    recoverySnapshot: recovery.snapshot,
+    getReliablePreset: presetServer.getReliablePresetForBand,
+    getCardPreset: presetServer.getPresetForCard,
+    respawn: workers.respawn,
+    logComment: ledger.commentCard,
+    errors: {
+      cardNotFound: ERRORS.cardNotFound,
+      cardArchived: ERRORS.cardArchived,
+      workspaceUnavailable: ERRORS.workspaceUnavailable,
+    },
+  });
+}
+
+/** The lightweight track RPCs: a research round, an explore artifact. */
+function buildResearchTrack(
+  core: RuntimeCore,
+  cards: ReturnType<typeof buildCardsServer>,
+) {
+  const { alia, db, now, presetServer, workers, researchArtifacts } = core;
+  const ERRORS = core.ERRORS;
+  return createResearchTrackHandlers({
+    db,
+    alia,
+    now,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    createCard: cards.createInternal,
+    readResearchIndex: researchArtifacts.readResearchIndex,
+    researchRoundFiles: researchArtifacts.researchRoundFiles,
+    strategyRounds: core.strategyRounds,
+    strategyList: core.strategyList,
+    workflowStateDir: (rootPath, workflowId, dirHash) =>
+      core.workflowStateDir(alia, rootPath, workflowId, dirHash),
+    roundRelPath: core.roundRelPath,
+    ensureParent: core.seams.ensureArtifactParent,
+    logCardComment: core.ledger.logCardComment,
+    reliablePreset: presetServer.getReliablePresetForBand,
+    presetName: (presetId) => presetServer.getPresetById(presetId)?.name,
+    respawn: workers.respawn,
+    errors: {
+      cardNotFound: ERRORS.cardNotFound,
+      cardArchived: ERRORS.cardArchived,
+    },
+  });
+}

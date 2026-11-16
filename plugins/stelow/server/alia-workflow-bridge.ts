@@ -1,0 +1,340 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { EMPTY_OUTPUT_ERROR } from "../lib/transient-run-retry.mjs";
+import { ALIA_NATIVE_CAPABILITIES, missingNativeCapabilities } from "../lib/alia-workflow-capabilities.mjs";
+import { recipeConditionHolds } from "../lib/recipe-conditions.mjs";
+
+const execFileAsync = promisify(execFile);
+const aliaBin = process.env.ALIA_CLI || "alia";
+
+/** Availability probes cost two CLI round trips, and the router plus the
+ * launcher plus the 45s reconcile sweep each probe the same thread. Cache
+ * per thread+workspace briefly: availability changes on thread lifecycle
+ * events, never within a minute of steady state. */
+export const NATIVE_PROBE_TTL_MS = 60_000;
+
+type ProbeCacheEntry = { at: number; available: boolean };
+const probeCache = new Map<string, ProbeCacheEntry>();
+
+export function nativeProbeCacheKey(ref: { projectId: string; threadId: string; workspaceId: string }): string {
+  return `${ref.projectId}::${ref.threadId}::${ref.workspaceId}`;
+}
+
+export function isNativeProbeFresh(entry: ProbeCacheEntry | undefined, now: number): boolean {
+  return !!entry && now - entry.at >= 0 && now - entry.at < NATIVE_PROBE_TTL_MS;
+}
+
+export function clearNativeWorkflowCache(): void {
+  probeCache.clear();
+}
+
+export { ALIA_NATIVE_CAPABILITIES, missingNativeCapabilities };
+
+export interface NativeWorkflowRun {
+  runId: string;
+  workspaceId: string;
+  projectId: string;
+  threadId: string;
+  status?: string;
+  previewDirective?: string | null;
+}
+
+export interface NativeWorkflowRef {
+  runId: string;
+  workspaceId: string;
+  projectId: string;
+  threadId: string;
+}
+
+function workflowEnv(projectId: string, threadId: string): NodeJS.ProcessEnv {
+  return { ...process.env, ALIA_PROJECT_ID: projectId, ALIA_THREAD_ID: threadId };
+}
+
+export async function nativeWorkflowAvailable(ref?: { projectId: string; threadId: string; workspaceId: string }): Promise<boolean> {
+  try {
+    if (!ref) {
+      await execFileAsync(aliaBin, ["workflows", "--help"], { timeout: 10_000 });
+      return true;
+    }
+    const key = nativeProbeCacheKey(ref);
+    const cached = probeCache.get(key);
+    if (isNativeProbeFresh(cached, Date.now())) return cached!.available;
+    const available = await probeNativeWorkflow(ref);
+    probeCache.set(key, { at: Date.now(), available });
+    return available;
+  } catch {
+    return false;
+  }
+}
+
+async function probeNativeWorkflow(ref: { projectId: string; threadId: string; workspaceId: string }): Promise<boolean> {
+  try {
+    const { stdout: threadJson } = await execFileAsync(
+      aliaBin,
+      ["thread", "show", ref.threadId, "--json"],
+      { cwd: ref.workspaceId, env: workflowEnv(ref.projectId, ref.threadId), timeout: 10_000 },
+    );
+    const thread = JSON.parse(threadJson).thread as { status?: string; environmentId?: string | null };
+    if (!thread.environmentId || !["active", "idle"].includes(thread.status ?? "")) return false;
+    const source = 'export const meta = { name: "stelow-capability-probe", description: "Stelow capability probe", phases: [{ title: "Probe" }] }; return { state: "succeeded" };';
+    await execFileAsync(aliaBin, ["workflows", "validate", "--script", source, "--json"], { cwd: ref.workspaceId, env: workflowEnv(ref.projectId, ref.threadId), timeout: 10_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function nativeNeedsInput(value: unknown): { question: string; questionId: string | null; [key: string]: unknown } | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const result = record.result;
+  const input = record.needsInput ?? record.needs_input ?? record.input ?? result ?? record;
+  const question = typeof input === "object" && input ? (input as Record<string, unknown>).question ?? (input as Record<string, unknown>).prompt : input;
+  if (typeof question !== "string" || !question.trim()) return null;
+  const fields = input && typeof input === "object" ? input as Record<string, unknown> : {};
+  const id = fields.questionId ?? fields.id ?? null;
+  const boundaryKeys = ["contractId", "boundaryId", "kind", "shapeVersion", "scopeMapVersion", "answerSchema"];
+  const boundary = Object.fromEntries(boundaryKeys.filter((key) => key in fields).map((key) => [key, fields[key]]));
+  return { question: question.trim(), questionId: id == null ? null : String(id), ...boundary };
+}
+
+export async function runNativeWorkflow({ workspaceId, projectId, threadId, source, args, resumeRunId }: { workspaceId: string; projectId: string; threadId: string; source: string; args: Record<string, unknown>; resumeRunId?: string | null }): Promise<NativeWorkflowRun> {
+  const command = ["workflows", "run", "--script", source, "--args", JSON.stringify(args), "--json"];
+  if (resumeRunId) command.push("--resume", resumeRunId);
+  const { stdout } = await execFileAsync(aliaBin, command, { cwd: workspaceId, env: workflowEnv(projectId, threadId), timeout: 30_000, maxBuffer: 2 * 1024 * 1024 });
+  const result = JSON.parse(stdout);
+  const run = result?.run ?? result?.data ?? result;
+  if (!run?.runId) throw new Error("VesnALIA Workflows did not return a run id");
+  return { runId: String(run.runId), status: run.status == null ? undefined : String(run.status), previewDirective: run.previewDirective ?? run.preview_directive ?? null, workspaceId, projectId, threadId };
+}
+
+/** Server-side lifecycle bridge for a run started through the CLI. */
+export async function stopNativeWorkflow({ runId, workspaceId, projectId, threadId }: NativeWorkflowRef): Promise<void> {
+  await execFileAsync(aliaBin, ["workflows", "stop", runId, "--json"], { cwd: workspaceId, env: workflowEnv(projectId, threadId), timeout: 30_000 });
+}
+
+export async function nativeWorkflowStatus({ runId, workspaceId, projectId, threadId }: NativeWorkflowRef): Promise<unknown> {
+  const { stdout } = await execFileAsync(aliaBin, ["workflows", "status", runId, "--json"], { cwd: workspaceId, env: workflowEnv(projectId, threadId), timeout: 30_000 });
+  try {
+    const result = JSON.parse(stdout);
+    return scriptOutcome(result?.run ?? result?.data ?? result);
+  } catch {
+    const status = stdout.match(/\b(queued|running|needs[_ -]?input|succeeded|completed|failed|cancelled|canceled|stopped)\b/i)?.[1];
+    if (status) return { status };
+    throw new Error("VesnALIA Workflows status returned no recognized state");
+  }
+}
+
+/**
+ * Fold the inline script's own return value into the run status.
+ *
+ * Context: the inline recipe script returns `{ state, error, outputs }`, and
+ * until now the host only ever read the WORKFLOW's status. A script that
+ * produced nothing still finished, so VesnALIA reported "succeeded" and the run was
+ * recorded as a plain artifact miss — the real cause never reached the card.
+ * The workflow succeeding only means the script ran to completion; whether
+ * the recipe did its work is the script's answer, so that answer is read.
+ *
+ * A missing or unrecognized result leaves the status untouched: a host that
+ * cannot read an outcome must not invent a failure.
+ */
+export function scriptOutcome(run: unknown): unknown {
+  if (run === null || typeof run !== "object" || Array.isArray(run)) return run;
+  const record = run as Record<string, unknown>;
+  const result = record.result;
+  const runError = typeof record.error === "string" ? record.error.trim() : "";
+  // A workflow that failed before its script returned (an agent call that
+  // could not load the provider catalog, a host timeout) has `result: null`
+  // and the reason on the RUN. Dropping it left the reconciler with "the host
+  // reported a failure without a reason" at the exact moment the host had
+  // said why. The run-level reason is used only when the script did not carry
+  // a more specific one.
+  if (String(record.status ?? "").toLowerCase() === "failed" && runError
+    && (result === null || typeof result !== "object" || Array.isArray(result)
+      || typeof (result as Record<string, unknown>).state !== "string")) {
+    return { ...record, status: "failed", scriptState: "failed", scriptError: runError };
+  }
+  if (result === null || typeof result !== "object" || Array.isArray(result)) return run;
+  const script = result as Record<string, unknown>;
+  const state = typeof script.state === "string" ? script.state : "";
+  if (state === "failed" || state === "error") {
+    const error = typeof script.error === "string" && script.error
+      ? script.error
+      : "the recipe script reported a failure";
+    return { ...record, status: "failed", scriptState: state, scriptError: error };
+  }
+  // A recipe that finished with no task outputs did nothing. That is a silent
+  // no-op, and leaving it as "succeeded" is what turned a real failure into
+  // a missing-file mystery three layers down.
+  if (state === "succeeded" && isEmptyOutputs(script.outputs)) {
+    return { ...record, status: "failed", scriptState: state, scriptError: EMPTY_OUTPUT_ERROR };
+  }
+  return run;
+}
+
+function isEmptyOutputs(outputs: unknown): boolean {
+  if (outputs === null || typeof outputs !== "object" || Array.isArray(outputs)) return false;
+  const values = Object.values(outputs);
+  // Null-valued outputs count as empty: a task that "produced" null produced
+  // no evidence (a swallowed host call resolves nullish), and JSON drops
+  // undefined values on the wire, so {scope-map: undefined} already arrives
+  // here as {}. Either shape means nothing ran.
+  return values.length === 0 || values.every((value) => value === null || value === undefined);
+}
+
+function stripWorkflowSchemaMetadata(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripWorkflowSchemaMetadata);
+  if (!value || typeof value !== "object") return value;
+  // `pattern` is also stripped — but only the keyword form (string value).
+  // The engine's safe schema subset rejects regular expressions outright
+  // (catastrophic-backtracking guard), so a schema carrying `pattern` fails
+  // the agent call before dispatch — and the failure surfaces as an
+  // empty-output no-op, not as the engine's message. A schema property
+  // literally NAMED pattern carries an object, not a regex, and survives:
+  // position plus value type distinguish the keyword from the field name.
+  // Local artifact validation keeps the full contract (with `pattern`); only
+  // the engine-bound copy is sanitized, which is this function's whole job.
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+    .filter(([key, child]) => key !== "$schema" && !(key === "pattern" && typeof child === "string"))
+    .map(([key, child]) => [key, stripWorkflowSchemaMetadata(child)]));
+}
+
+function workflowAgentSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  return stripWorkflowSchemaMetadata(schema) as Record<string, unknown>;
+}
+
+/** One catalog task as the recipe catalog declares it. */
+type CatalogTask = {
+  id: string;
+  skill?: string;
+  output?: string;
+  depends_on?: string[];
+  when?: string;
+  requirements?: string[];
+  failure_policy?: string;
+  human_boundary?: string;
+  output_schema_contract?: Record<string, unknown>;
+};
+
+/**
+ * One catalog task as the workflow's own task shape. The catalog is snake_case
+ * and nullable-by-omission; the generated script is camelCase and explicit, so
+ * the translation happens once here instead of inside the template.
+ */
+function toWorkflowTask(task: CatalogTask) {
+  return {
+    id: task.id,
+    skill: task.skill ?? null,
+    output: task.output ?? null,
+    dependsOn: task.depends_on ?? [],
+    when: task.when ?? "always",
+    requirements: task.requirements ?? [],
+    failurePolicy: task.failure_policy ?? "fail",
+    humanBoundary: task.human_boundary ?? "none",
+    outputSchema: workflowAgentSchema(
+      task.output_schema_contract ?? { type: "object", additionalProperties: true },
+    ),
+  };
+}
+
+/** Embedded run-condition evaluator, shared by every rendered script.
+ *
+ * The evaluator itself is `recipeConditionHolds` — the same function the
+ * route and artifact layers call — and what is embedded is its SOURCE, not a
+ * transcription of it. A rendered script has to be self-contained (plugin-
+ * bundled paths are not origin-workspace paths), which is why it cannot
+ * import; but a hand-written copy is a second implementation, and this file
+ * held one for years. It disagreed with `lib/execution-artifacts.mjs` about
+ * `appetite_supports_fanout` and with the route layer about
+ * `findings_exist`.
+ *
+ * Both fanout gates resolve one rule: an explicit exploration count wins
+ * (hybrid whenever count >= 2); a legacy appetite maps Core/Complete to go. */
+const CONDITION_FN_SOURCE = `const condition = (task) => (${recipeConditionHolds.toString()})(task, input.context, outputs);`;
+
+/** Embedded task executor, shared by every rendered script. An empty agent
+ * resolution gets one bounded retry (a full re-run costs far more); a
+ * rejection is recorded per task so the final check can name the cause
+ * instead of the generic suffix. Kept as a source string for the same
+ * reason as the condition evaluator above: the rendered script must be
+ * self-contained. */
+const EXECUTE_TASK_FN_SOURCE = `const executeTask = async (task) => {
+  if (!condition(task)) { skipped.add(task.id); outputs[task.id] = { skipped: true, reason: "condition-false" }; return; }
+  if (task.dependsOn.some((id) => skipped.has(id))) { skipped.add(task.id); outputs[task.id] = { skipped: true, reason: "dependency-skipped" }; return; }
+  const dependencies = Object.fromEntries(task.dependsOn.map((id) => [id, outputs[id]]));
+  const callAgent = () => agent("Execute this Stelow task in the origin workspace. Read the named skill and inputs, write the required task output at "
+    + "input.context.artifactRoot + '/' + task.output, and return structured evidence. Do not edit state.md, gates, or completion state. Task: "
+    + JSON.stringify({ recipe: input.recipeId, task, dependencies, context: input.context }), { phase: "Execute", schema: task.outputSchema });
+  const recordFailure = (error) => { failures[task.id] = error && error.message ? error.message : String(error); };
+  let result;
+  try {
+    result = await callAgent();
+  } catch (error) {
+    recordFailure(error);
+    return;
+  }
+  if (result === undefined || result === null) {
+    try {
+      result = await callAgent();
+    } catch (error) {
+      recordFailure(error);
+      return;
+    }
+    if (result === undefined || result === null) { failures[task.id] = "agent call resolved empty twice"; return; }
+  }
+  if (result && (result.state === "failed" || result.state === "error")) {
+    if (task.failurePolicy === "skip-with-reason") {
+      skipped.add(task.id);
+      outputs[task.id] = { skipped: true, reason: result.error ?? "task-failed" };
+      return;
+    }
+    throw new Error("Task failed: " + task.id);
+  }
+  if (result && (result.state === "needs_input" || result.needs_input)) {
+    if (task.humanBoundary !== "coordinator") throw new Error("Task requested input without a human boundary: " + task.id);
+    return { needsInput: result };
+  }
+  outputs[task.id] = result;
+};`;
+
+/** Source is inline because plugin-bundled script paths are not origin-workspace paths. */
+export function renderInlineWorkflowScript(
+  recipe: { id: string; tasks?: CatalogTask[] },
+  context: Record<string, unknown>,
+): string {
+  const tasks = (recipe.tasks ?? []).map(toWorkflowTask);
+  const source = `export const meta = { name: ${JSON.stringify(`stelow-${recipe.id}`)}, `
+    + `description: ${JSON.stringify(`Stelow recipe ${recipe.id}`)}, phases: [{ title: "Execute" }] }
+const recipeTasks = ${JSON.stringify(tasks)};
+const input = { ...args, tasks: recipeTasks };
+if (!input || !input.localRunId) return { state: "failed", error: "missing execution identity" };
+const outputs = {};
+const completed = new Set();
+const skipped = new Set();
+const failures = {};
+const DEFAULT_QUESTION = "The workflow needs a human decision.";
+const BOUNDARY_FIELDS = ["questionId", "contractId", "boundaryId", "kind", "shapeVersion", "scopeMapVersion", "answerSchema"];
+const boundaryContract = (n) => ({ question: n.question ?? n.prompt ?? DEFAULT_QUESTION,
+  ...Object.fromEntries(BOUNDARY_FIELDS.map((f) => [f, n[f] ?? null])) });
+${CONDITION_FN_SOURCE}
+${EXECUTE_TASK_FN_SOURCE}
+while (completed.size + skipped.size < input.tasks.length) {
+  const ready = input.tasks.filter((task) => !completed.has(task.id) && !skipped.has(task.id)
+    && task.dependsOn.every((id) => completed.has(id) || skipped.has(id)));
+  if (ready.length === 0) throw new Error("Recipe dependency cycle or unresolved task");
+  const results = await parallel(ready.map((task) => () => executeTask(task)));
+  for (let index = 0; index < ready.length; index += 1) {
+    const result = results[index];
+    if (result?.needsInput) return { state: "needs_input", recipe: input.recipeId, ...boundaryContract(result.needsInput) };
+    if (outputs[ready[index].id] === undefined) throw new Error("Task produced no result: " + ready[index].id
+      + (failures[ready[index].id]
+        ? " — agent call failed: " + failures[ready[index].id]
+        : " (the host call returned nothing — read the run history for the rejected call)"));
+    completed.add(ready[index].id);
+  }
+}
+return { state: "succeeded", recipe: input.recipeId, outputs };
+`;
+  if (Buffer.byteLength(source, "utf8") > 512 * 1024) throw new Error("VesnALIA Workflows source exceeds 512 KiB");
+  return source;
+}

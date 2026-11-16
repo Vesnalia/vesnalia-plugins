@@ -1,0 +1,48 @@
+{
+  "name": "alia-plugin-threadline",
+  "version": "0.1.6",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
+  },
+  "alia": {
+    "name": "Threadline",
+    "description": "A minimap of your prompts — jump to any point in a conversation.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@radix-ui/react-hover-card": "^1.1.19",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/threadline#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/threadline"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

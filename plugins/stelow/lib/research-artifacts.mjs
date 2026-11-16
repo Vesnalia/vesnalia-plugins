@@ -1,0 +1,216 @@
+/**
+ * Research / Explore artifact integrity. The deterministic half of the
+ * artifact guarantee lives here as pure functions (pinned by unit tests);
+ * server.ts only wires them to the filesystem + inbox.
+ *
+ * Contract (convention over configuration):
+ * - every research round owns exactly one deterministic primary-file path.
+ *   The worker creates it only when it has content to publish.
+ * - every explore card owns exactly one file: explore-<stage>.md in its
+ *   state dir, created only when its deliverable exists.
+ * - a file is VALID when it is non-empty, meets a minimum real-content
+ *   threshold, and (research only) does not mirror research-index.md.
+ *   Anything else renders as missing and blocks completion — the worker
+ *   prompt is a pointer to this contract, the code is the enforcer.
+ *
+ * Why code instead of prompt steps: prompt instructions ("Step 3b…") are
+ * advisory — a distracted worker can skip them and the old code only noticed
+ * AFTER marking the card Done. These predicates run on every sync poll, so a
+ * missing/mirrored artifact can never pass silently as a done artifact.
+ */
+
+import { techniqueById } from "./technique-catalog.mjs";
+
+const MIN_ROUND_CHARS = 200;
+const MIN_EXPLORE_CHARS = 200;
+
+/**
+ * True when a round file merely mirrors research-index.md: identical content
+ * or starting with the index heading. Either shape means the playbook output
+ * was never written to the round file.
+ */
+export function researchRoundMirrorsIndex(content, indexBlob) {
+  return (
+    indexBlob !== null &&
+    content !== null &&
+    (content === indexBlob || /^\s*#\s*Research index\b/m.test(content))
+  );
+}
+
+/** True when a research round file holds real playbook output. */
+export function isValidRoundContent(content, indexBlob, minChars = MIN_ROUND_CHARS) {
+  const min = typeof minChars === "number" && minChars > 0 ? minChars : MIN_ROUND_CHARS;
+  if (typeof content !== "string") return false;
+  if (content.trim().length < min) return false;
+  if (researchRoundMirrorsIndex(content, indexBlob)) return false;
+  return true;
+}
+
+/** True when an explore artifact holds a real stage deliverable. */
+export function isValidExploreContent(content, minChars = MIN_EXPLORE_CHARS) {
+  const min = typeof minChars === "number" && minChars > 0 ? minChars : MIN_EXPLORE_CHARS;
+  return typeof content === "string" && content.trim().length >= min;
+}
+
+/**
+ * Canonical explore artifact basename for a stage id.
+ *
+ * The catalog may declare `primaryArtifact`, and when it does THAT is the file
+ * the worker is told to write. This resolver is the single definition, because
+ * four call sites used to disagree with the prompt: the card's declared
+ * capability, the review CLI's subject, and the quality seal all assumed
+ * `explore-<id>.md` while the prompt handed the worker `primaryArtifact`.
+ *
+ * That disagreement was not cosmetic. `scope-mapping` declares
+ * `explore-scope-map.md`, so the worker wrote that name and the seal looked for
+ * `explore-scope-mapping.md`, never matched, and returned no verdict — the
+ * quality seal for that technique was silently dead. Declaring a
+ * `primaryArtifact` disabled the very check it was meant to name.
+ */
+export function exploreArtifactFile(stageId) {
+  const declared = techniqueById(stageId)?.primaryArtifact;
+  return typeof declared === "string" && declared.length > 0
+    ? declared
+    : `explore-${stageId}.md`;
+}
+
+/**
+ * Pure integrity scan over round history. readContent(path) returns the file
+ * content or null; labelById maps a strategy id to its display label;
+ * depthCheck(strategyId, content) returns failure detail lines or [] — null
+ * keeps presence-only gating. Returns [{ n, label, reason?, detail? }] for
+ * every invalid round, in round order.
+ */
+export function findInvalidRounds(history, readContent, indexBlob, labelById, depthCheck = null) {
+  const invalid = [];
+  for (const [index, entry] of history.entries()) {
+    const n = index + 1;
+    const label =
+      (typeof labelById === "function" ? labelById(entry.id) : null) ?? entry.id;
+    const content = readContent(entry.file);
+    if (!isValidRoundContent(content, indexBlob)) {
+      invalid.push({ n, label });
+      continue;
+    }
+    if (typeof depthCheck === "function") {
+      const failures = depthCheck(entry.id, content) ?? [];
+      if (Array.isArray(failures) && failures.length > 0) {
+        invalid.push({ n, label, reason: "needs-depth", detail: failures.slice(0, 3).join("; ") });
+      }
+    }
+  }
+  return invalid;
+}
+
+/**
+ * Pure integrity scan over composite substeps.
+ * substeps is [{ n, label, slug, path }]; readContent(path) returns the file
+ * content or null; depthCheck(slug, content) returns failure detail lines
+ * (from lib/artifact-validation) or [] — null skips depth validation, so
+ * Phase 1 callers keep presence-only gating.
+ * Returns [{ n, label, slug, reason, detail? }] for every invalid substep,
+ * in input order. reason is missing | thin | mirrors-index | needs-depth.
+ * Validity is the same isValidRoundContent predicate primaries use; depth
+ * minima run only after presence passes, so one failure surfaces at a time.
+ */
+export function findInvalidSubsteps(substeps, readContent, indexBlob, depthCheck = null) {
+  const invalid = [];
+  for (const sub of Array.isArray(substeps) ? substeps : []) {
+    if (!sub || typeof sub.path !== "string") continue;
+    const content = typeof readContent === "function" ? readContent(sub.path) : null;
+    if (content == null || (typeof content === "string" && content.trim().length === 0)) {
+      invalid.push({ n: sub.n, label: sub.label, slug: sub.slug, reason: "missing" });
+    } else if (researchRoundMirrorsIndex(content, indexBlob)) {
+      invalid.push({ n: sub.n, label: sub.label, slug: sub.slug, reason: "mirrors-index" });
+    } else if (!isValidRoundContent(content, indexBlob)) {
+      invalid.push({ n: sub.n, label: sub.label, slug: sub.slug, reason: "thin" });
+    } else if (typeof depthCheck === "function") {
+      const failures = depthCheck(sub.slug, content) ?? [];
+      if (Array.isArray(failures) && failures.length > 0) {
+        invalid.push({ n: sub.n, label: sub.label, slug: sub.slug, reason: "needs-depth", detail: failures.slice(0, 3).join("; ") });
+      }
+    }
+  }
+  return invalid;
+}
+
+/**
+ * Per-substep display quality. expected is the slug list (pass
+ * expectedSubsteps); files is [{ slug, content }]; depthCheck returns
+ * failure details or [] (null skips depth). Returns
+ * [{ slug, status }]: missing | invalid (thin/mirror) | needs-depth | ready.
+ */
+export function substepQuality(expected, files, indexBlob, depthCheck = null) {
+  const list = Array.isArray(expected) ? expected.filter((slug) => typeof slug === "string") : [];
+  if (list.length === 0) return [];
+  const bySlug = new Map();
+  for (const file of Array.isArray(files) ? files : []) {
+    if (file && typeof file.slug === "string" && !bySlug.has(file.slug)) bySlug.set(file.slug, file.content ?? null);
+  }
+  return list.map((slug) => {
+    if (!bySlug.has(slug)) return { slug, status: "missing" };
+    const content = bySlug.get(slug);
+    if (!isValidRoundContent(content, indexBlob)) return { slug, status: "invalid" };
+    if (typeof depthCheck === "function") {
+      const failures = depthCheck(slug, content) ?? [];
+      if (Array.isArray(failures) && failures.length > 0) return { slug, status: "needs-depth" };
+    }
+    return { slug, status: "ready" };
+  });
+}
+
+/**
+ * Worker self-check reports (`alia stelow verify`). Pure so the CLI stays a
+ * thin wire to the same predicates the sync gate enforces — prompt, CLI,
+ * and sync can never disagree on what PASS means.
+ */
+export function researchVerifyReport(cardId, roundCount, indexReviewable, invalidRounds, evidence = "verified") {
+  const invalid = Array.isArray(invalidRounds) ? invalidRounds : [];
+  const pass = indexReviewable === true && invalid.length === 0;
+  return { card: cardId, kind: "research", indexReviewable, invalidRounds: invalid, pass, roundCount, evidence };
+}
+
+export function researchVerifyText(report) {
+  const note = report.evidence === "hypothesis-only"
+    ? "\nNOTE: hypothesis-only — web research was unavailable (declared in the index); requires human validation, never cite as complete research."
+    : "";
+  if (report.pass === true) {
+    return { exitCode: 0, stdout: `PASS: research ${report.card} — index reviewable, all ${report.roundCount} round file(s) valid.${note}` };
+  }
+  const invalid = Array.isArray(report.invalidRounds) ? report.invalidRounds : [];
+  if (invalid.length > 0) {
+    return {
+      exitCode: 1,
+      stderr: invalid
+        .map((round) => {
+          const name = round.slug ? `${round.label} — ${round.slug}` : round.label;
+          const reason = round.reason === "missing"
+            ? "missing — write it"
+            : round.reason === "mirrors-index"
+              ? "mirrors the index — write the playbook output"
+              : round.reason === "thin"
+                ? "thin — write the full playbook output"
+                : round.reason === "needs-depth"
+                  ? `needs depth — ${round.detail ?? "see the playbook completeness contract"}`
+                  : "missing, thin, or mirrors the index — rewrite it";
+          return `FAIL round ${round.n} (${name}): ${reason}, then run verify again.`;
+        })
+        .join("\n"),
+    };
+  }
+  return { exitCode: 1, stderr: "FAIL: research-index.md not reviewable yet (no opportunities parsed) — finish the index, then run verify again." };
+}
+
+export function exploreVerifyReport(cardId, stage, ready, failures = null) {
+  const list = Array.isArray(failures) ? failures.filter((failure) => typeof failure === "string" && failure) : [];
+  return { card: cardId, kind: "explore", stage: stage ?? null, pass: ready === true && list.length === 0, failures: list };
+}
+
+export function exploreVerifyText(report) {
+  if (report.pass === true) {
+    return { exitCode: 0, stdout: `PASS: explore ${report.card} — ${exploreArtifactFile(report.stage ?? "")} holds the stage deliverable.` };
+  }
+  const failures = Array.isArray(report.failures) ? report.failures : [];
+  const detail = failures.length > 0 ? ` needs depth — ${failures.join("; ")}` : " is missing or thin";
+  return { exitCode: 1, stderr: `FAIL: ${exploreArtifactFile(report.stage ?? "")}${detail} — write the stage deliverable, then run verify again.` };
+}

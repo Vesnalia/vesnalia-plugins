@@ -1,0 +1,591 @@
+import assert from "node:assert/strict";
+import { spawn, spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import readline from "node:readline";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { buildIntro, parseToolCall, resolveSessionPath, runTool, stripDoneMarker } from "../bridge/acp-tools.mjs";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const agentPath = path.join(here, "..", "bin", "muse-acp.mjs");
+
+function startAgent(env) {
+  const child = spawn(process.execPath, [agentPath], {
+    env: { ...process.env, ...env },
+    stdio: ["pipe", "pipe", "inherit"],
+  });
+  let id = 0;
+  const pending = new Map();
+  const updates = [];
+  const fsRequests = [];
+  const write = (m) => child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", ...m })}\n`);
+  readline.createInterface({ input: child.stdout }).on("line", (line) => {
+    const msg = JSON.parse(line);
+    if (msg.method === "session/update") {
+      updates.push(msg.params.update);
+      return;
+    }
+    if (msg.method === "fs/read_text_file" || msg.method === "fs/write_text_file") {
+      fsRequests.push(msg);
+      const result =
+        msg.method === "fs/read_text_file"
+          ? { content: fs.existsSync(msg.params.path) ? fs.readFileSync(msg.params.path, "utf8") : "" }
+          : {};
+      write({ id: msg.id, result });
+      return;
+    }
+    if (msg.id !== undefined && pending.has(msg.id)) {
+      const p = pending.get(msg.id);
+      pending.delete(msg.id);
+      if (msg.error) p.reject(Object.assign(new Error(msg.error.message), { code: msg.error.code }));
+      else p.resolve(msg.result);
+    }
+  });
+  return {
+    updates,
+    fsRequests,
+    request(method, params) {
+      const i = ++id;
+      return new Promise((resolve, reject) => {
+        pending.set(i, { resolve, reject });
+        write({ id: i, method, params });
+      });
+    },
+    notify(method, params) {
+      write({ method, params });
+    },
+    close() {
+      child.stdin.end();
+      child.kill("SIGTERM");
+    },
+  };
+}
+
+function chunkText(updates, kind = "agent_message_chunk") {
+  return updates
+    .filter((u) => u.sessionUpdate === kind)
+    .map((u) => u.content.text)
+    .join("");
+}
+
+function seedHome() {
+  const home = fs.mkdtempSync("/tmp/muse-acp-tools-");
+  const profile = path.join(home, "profiles", "work");
+  fs.mkdirSync(profile, { recursive: true });
+  const at = "2026-01-01T00:00:00.000Z";
+  fs.writeFileSync(
+    path.join(home, "accounts.json"),
+    `${JSON.stringify(
+      {
+        version: 1,
+        accounts: [
+          { id: "work", label: "Work", profileDir: profile, status: "signed_in", createdAt: at, lastUsedAt: at, lastCheckedAt: at },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return home;
+}
+
+const prompt = (agent, sessionId, text) => agent.request("session/prompt", { sessionId, prompt: [{ type: "text", text }] });
+const block = (o) => `\`\`\`muse-tool\n${JSON.stringify(o)}\n\`\`\``;
+
+function newSession(home, ws, env = {}) {
+  const agent = startAgent({ MUSE_BRIDGE_FAKE: "1", MUSE_BRIDGE_HOME: home, ...env });
+  return agent;
+}
+
+test("parseToolCall: no block, one block, last block wins", () => {
+  assert.equal(parseToolCall("just a reply").kind, "none");
+  const one = parseToolCall(`thinking\n${block({ tool: "read_file", args: { path: "a.txt" } })}`);
+  assert.equal(one.kind, "call");
+  assert.equal(one.name, "read_file");
+  assert.deepEqual(one.args, { path: "a.txt" });
+  assert.equal(one.thought, "thinking");
+  const two = parseToolCall(`${block({ tool: "read_file", args: { path: "a" } })}\nmiddle\n${block({ tool: "bash", args: { command: "ls" } })}`);
+  assert.equal(two.kind, "call");
+  assert.equal(two.name, "bash");
+  assert.equal(two.thought.includes("read_file"), true);
+});
+
+test("buildIntro: the workspace is on the user's machine, reached only via muse-tool", () => {
+  const intro = buildIntro("/w/proj", []);
+  assert.match(intro, /not on your own (computer|machine)/i);
+  assert.match(intro, /never use your own (shell|tools)/i);
+  assert.match(intro, /first step.{0,80}list_dir/i);
+  assert.ok(intro.length <= 8000);
+});
+
+test("parseToolCall: bad JSON is an error, not a crash", () => {
+  const bad = parseToolCall("pre\n```muse-tool\n{not json}\n```");
+  assert.equal(bad.kind, "error");
+  assert.match(bad.error, /invalid muse-tool JSON/);
+  assert.equal(bad.thought, "pre");
+});
+
+test("path guard: ../outside and absolute paths outside cwd are refused", async () => {
+  const cwd = fs.mkdtempSync("/tmp/muse-ws-");
+  assert.throws(() => resolveSessionPath(cwd, "../x"), /outside workspace/);
+  assert.throws(() => resolveSessionPath(cwd, "/etc/passwd"), /outside workspace/);
+  const ctx = { cwd, sessionId: "s", fsRead: false, fsWrite: false, clientRequest: async () => ({}) };
+  const res = await runTool("read_file", { path: "../outside" }, ctx);
+  assert.equal(res.ok, false);
+  assert.match(res.output, /outside workspace/);
+});
+
+test("edit_file: zero or two matches fails, exactly one applies", async () => {
+  const cwd = fs.mkdtempSync("/tmp/muse-ws-");
+  fs.writeFileSync(path.join(cwd, "f.txt"), "dup dup");
+  const ctx = { cwd, sessionId: "s", fsRead: false, fsWrite: false, clientRequest: async () => ({}) };
+  assert.equal((await runTool("edit_file", { path: "f.txt", old: "nope", new: "x" }, ctx)).ok, false);
+  const dup = await runTool("edit_file", { path: "f.txt", old: "dup", new: "x" }, ctx);
+  assert.equal(dup.ok, false);
+  assert.match(dup.output, /2 times/);
+  assert.equal((await runTool("edit_file", { path: "f.txt", old: "dup dup", new: "once" }, ctx)).ok, true);
+  assert.equal(fs.readFileSync(path.join(cwd, "f.txt"), "utf8"), "once");
+});
+
+test("tool loop: write_file then bash run in the session cwd, final reply streams clean", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(
+    script,
+    JSON.stringify([
+      `I will write the file.\n${block({ tool: "write_file", args: { path: "hello.txt", content: "hi from muse\n" } })}`,
+      block({ tool: "bash", args: { command: "cat hello.txt" } }),
+      "All done: hi from muse\n[[done]]",
+    ]),
+  );
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "write hello.txt");
+    assert.equal(result.stopReason, "end_turn");
+    assert.equal(fs.readFileSync(path.join(ws, "hello.txt"), "utf8"), "hi from muse\n");
+    const toolCalls = agent.updates.filter((u) => u.sessionUpdate === "tool_call");
+    assert.equal(toolCalls.length, 2);
+    assert.equal(toolCalls[0].status, "in_progress");
+    assert.equal(toolCalls[0].kind, "edit");
+    assert.equal(toolCalls[1].kind, "execute");
+    assert.ok(agent.updates.some((u) => u.sessionUpdate === "tool_call_update" && u.status === "completed"));
+    assert.equal(chunkText(agent.updates), "All done: hi from muse");
+    assert.equal(chunkText(agent.updates, "agent_thought_chunk"), "I will write the file.");
+    const sentLines = fs.readFileSync(sent, "utf8").trim().split("\n").map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 3);
+    assert.match(sentLines[0], /muse-tool/);
+    assert.match(sentLines[1], /^TOOL RESULT 1\/1 write_file \(ok\):/);
+    assert.match(sentLines[2], /^TOOL RESULT 1\/1 bash \(ok\):\nexit 0\nhi from muse/);
+  } finally {
+    agent.close();
+  }
+});
+
+test("bad JSON block goes back to Muse as TOOL RESULT (error)", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(script, JSON.stringify(["```muse-tool\n{bad json}\n```", "sorry\n[[done]]"]));
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    assert.ok(agent.updates.some((u) => u.sessionUpdate === "tool_call_update" && u.status === "failed"));
+    const sentLines = fs.readFileSync(sent, "utf8").trim().split("\n").map((l) => JSON.parse(l).text);
+    assert.match(sentLines[1], /^TOOL RESULT 1\/1 muse-tool \(error\):\ninvalid muse-tool JSON/);
+    assert.equal(chunkText(agent.updates), "sorry");
+  } finally {
+    agent.close();
+  }
+});
+
+test("client that announced fs.writeTextFile receives fs/write_text_file instead of a local write", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  fs.writeFileSync(script, JSON.stringify([block({ tool: "write_file", args: { path: "via-alia.txt", content: "through client\n" } }), "done\n[[done]]"]));
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: { readTextFile: true, writeTextFile: true } } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    await prompt(agent, created.sessionId, "write a file");
+    assert.equal(agent.fsRequests.length, 1);
+    assert.equal(agent.fsRequests[0].method, "fs/write_text_file");
+    assert.equal(agent.fsRequests[0].params.path, path.join(ws, "via-alia.txt"));
+    assert.equal(agent.fsRequests[0].params.content, "through client\n");
+    assert.equal(agent.fsRequests[0].params.sessionId, created.sessionId);
+    assert.equal(fs.existsSync(path.join(ws, "via-alia.txt")), false);
+  } finally {
+    agent.close();
+  }
+});
+
+test("the loop stops at MUSE_MAX_TOOL_ROUNDS with a message", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  fs.writeFileSync(script, JSON.stringify([block({ tool: "list_dir", args: {} }), block({ tool: "list_dir", args: {} }), block({ tool: "list_dir", args: {} })]));
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_MAX_TOOL_ROUNDS: "2" });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "loop forever");
+    assert.equal(result.stopReason, "end_turn");
+    assert.equal(agent.updates.filter((u) => u.sessionUpdate === "tool_call").length, 2);
+    assert.match(chunkText(agent.updates), /tool round limit/);
+  } finally {
+    agent.close();
+  }
+});
+
+test("block-less replies get three nudges naming the cloud VM; the fourth ends with the stop line", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(
+    script,
+    JSON.stringify(["Читаю math.js.", "still thinking", "one more try", "final words without a marker"]),
+  );
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    const sentLines = fs
+      .readFileSync(sent, "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 4);
+    for (const nudge of sentLines.slice(1)) assert.match(nudge, /cloud VM/);
+    assert.equal(chunkText(agent.updates), "RetriableError: [muse_no_tool] Muse stopped without using a tool");
+    assert.equal(
+      chunkText(agent.updates, "agent_thought_chunk"),
+      "Читаю math.js.still thinkingone more tryfinal words without a marker",
+    );
+  } finally {
+    agent.close();
+  }
+});
+
+test("two block-less replies then a tool block still continues the turn", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(
+    script,
+    JSON.stringify([
+      "Читаю math.js.",
+      "Still checking.",
+      `Writing the file.\n${block({ tool: "write_file", args: { path: "hello.txt", content: "hi from muse\n" } })}`,
+      "All done: hi from muse\n[[done]]",
+    ]),
+  );
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "write hello.txt");
+    assert.equal(result.stopReason, "end_turn");
+    assert.equal(fs.readFileSync(path.join(ws, "hello.txt"), "utf8"), "hi from muse\n");
+    const sentLines = fs
+      .readFileSync(sent, "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 4);
+    assert.match(sentLines[1], /cloud VM/);
+    assert.match(sentLines[2], /cloud VM/);
+    assert.match(sentLines[3], /^TOOL RESULT 1\/1 write_file \(ok\):/);
+    assert.equal(chunkText(agent.updates), "All done: hi from muse");
+    assert.equal(chunkText(agent.updates, "agent_thought_chunk"), "Читаю math.js.Still checking.Writing the file.");
+  } finally {
+    agent.close();
+  }
+});
+
+test("'**[[done]]**' on the last line is accepted and stripped", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(script, JSON.stringify(["all good\n**[[done]]**"]));
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    const sentLines = fs
+      .readFileSync(sent, "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 1);
+    assert.equal(chunkText(agent.updates), "all good");
+  } finally {
+    agent.close();
+  }
+});
+
+test("stripDoneMarker: inline at the end of the last line counts, mid-text does not", () => {
+  assert.equal(stripDoneMarker("All done: hi from muse [[done]]"), "All done: hi from muse");
+  assert.equal(stripDoneMarker("all good\n**[[done]]**"), "all good");
+  assert.equal(stripDoneMarker("final\n[[done]]"), "final");
+  assert.equal(stripDoneMarker("done now [[done]] more"), null);
+  assert.equal(stripDoneMarker("a [[done]] b"), null);
+  assert.equal(stripDoneMarker("plain text"), null);
+});
+
+test("a trailing inline [[done]] ends the turn and is stripped before reaching VesnALIA", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(script, JSON.stringify(["All done: hi from muse [[done]]"]));
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    const sentLines = fs
+      .readFileSync(sent, "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 1);
+    assert.equal(chunkText(agent.updates), "All done: hi from muse");
+  } finally {
+    agent.close();
+  }
+});
+
+test("a [[done]] in mid-text is not a marker and gets the nudge", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(script, JSON.stringify(["working on it [[done]] moving on", "real end\n[[done]]"]));
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    const sentLines = fs
+      .readFileSync(sent, "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 2);
+    assert.match(sentLines[1], /cloud VM/);
+    assert.equal(chunkText(agent.updates), "real end");
+    assert.equal(chunkText(agent.updates, "agent_thought_chunk"), "working on it [[done]] moving on");
+  } finally {
+    agent.close();
+  }
+});
+
+test("parseToolCalls: 0, 1, 3 and 9 blocks; a cut block among valid ones; blocks inside text", async () => {
+  const { parseToolCalls } = await import("../bridge/acp-tools.mjs");
+  assert.equal(parseToolCalls("plain").kind, "none");
+  const one = parseToolCalls(`t\n${block({ tool: "read_file", args: { path: "a" } })}`);
+  assert.equal(one.kind, "calls");
+  assert.equal(one.calls.length, 1);
+  assert.equal(one.calls[0].name, "read_file");
+  const three = parseToolCalls(
+    `${block({ tool: "read_file", args: { path: "a" } })}\nbetween\n${block({ tool: "grep", args: { pattern: "x" } })}\n${block({ tool: "list_dir", args: {} })}`,
+  );
+  assert.equal(three.calls.length, 3);
+  assert.deepEqual(three.calls.map((c) => c.name), ["read_file", "grep", "list_dir"]);
+  assert.match(three.thought, /between/);
+  const nine = parseToolCalls(Array.from({ length: 9 }, (_, i) => block({ tool: "bash", args: { command: `c${i}` } })).join("\n"));
+  assert.equal(nine.calls.length, 8);
+  assert.equal(nine.dropped, 1);
+  const cut = parseToolCalls(
+    `${block({ tool: "read_file", args: { path: "a" } })}\n\`\`\`muse-tool\n{"tool":"bash","args":{"command":"unclosed\n${block({ tool: "list_dir", args: {} })}`,
+  );
+  assert.equal(cut.calls.length, 3);
+  assert.equal(cut.calls[0].kind, "call");
+  assert.equal(cut.calls[1].kind, "error");
+  assert.match(cut.calls[1].error, /cut off inside a string/);
+  assert.equal(cut.calls[2].name, "list_dir");
+});
+
+test("several muse-tool blocks run in order and go back as one message with sections", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(
+    script,
+    JSON.stringify([
+      `${block({ tool: "write_file", args: { path: "a.txt", content: "A" } })}\n${block({ tool: "write_file", args: { path: "b.txt", content: "B" } })}\n${block({ tool: "bash", args: { command: "cat a.txt b.txt" } })}`,
+      "done\n[[done]]",
+    ]),
+  );
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_BRIDGE_FAKE_SENT: sent });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    assert.equal(fs.readFileSync(path.join(ws, "a.txt"), "utf8"), "A");
+    assert.equal(fs.readFileSync(path.join(ws, "b.txt"), "utf8"), "B");
+    const sentLines = fs.readFileSync(sent, "utf8").trim().split("\n").map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 2);
+    const reply = sentLines[1];
+    assert.match(reply, /^TOOL RESULT 1\/3 write_file \(ok\):/);
+    assert.match(reply, /TOOL RESULT 2\/3 write_file \(ok\):/);
+    assert.match(reply, /TOOL RESULT 3\/3 bash \(ok\):\nexit 0\nAB/);
+    assert.equal(agent.updates.filter((u) => u.sessionUpdate === "tool_call").length, 3);
+  } finally {
+    agent.close();
+  }
+});
+
+test("apply_patch: applies a two-file diff, refuses ../, reports a failing hunk", async () => {
+  const cwd = fs.mkdtempSync("/tmp/muse-ws-");
+  const ctx = { cwd, sessionId: "s", fsRead: false, fsWrite: false, clientRequest: async () => ({}) };
+  fs.writeFileSync(path.join(cwd, "a.txt"), "one\n");
+  fs.writeFileSync(path.join(cwd, "b.txt"), "two\n");
+  await spawnSync("git", ["init", "-q"], { cwd });
+  const diff = [
+    "diff --git a/a.txt b/a.txt",
+    "--- a/a.txt",
+    "+++ b/a.txt",
+    "@@ -1 +1 @@",
+    "-one",
+    "+ONE",
+    "diff --git a/b.txt b/b.txt",
+    "--- a/b.txt",
+    "+++ b/b.txt",
+    "@@ -1 +1 @@",
+    "-two",
+    "+TWO",
+    "",
+  ].join("\n");
+  const ok = await runTool("apply_patch", { patch: diff }, ctx);
+  assert.equal(ok.ok, true, ok.output);
+  assert.match(ok.output, /a\.txt/);
+  assert.match(ok.output, /b\.txt/);
+  assert.equal(fs.readFileSync(path.join(cwd, "a.txt"), "utf8"), "ONE\n");
+  assert.equal(fs.readFileSync(path.join(cwd, "b.txt"), "utf8"), "TWO\n");
+  const escape = await runTool(
+    "apply_patch",
+    { patch: "diff --git a/../x b/../x\n--- a/../x\n+++ b/../x\n@@ -1 +1 @@\n-a\n+b\n" },
+    ctx,
+  );
+  assert.equal(escape.ok, false);
+  assert.match(escape.output, /outside workspace/);
+  const bad = await runTool("apply_patch", { patch: diff }, ctx);
+  assert.equal(bad.ok, false);
+  assert.match(bad.output, /apply_patch failed/);
+});
+
+test("glob: matches a pattern and skips node_modules", async () => {
+  const cwd = fs.mkdtempSync("/tmp/muse-ws-");
+  const ctx = { cwd, sessionId: "s", fsRead: false, fsWrite: false, clientRequest: async () => ({}) };
+  fs.mkdirSync(path.join(cwd, "src", "deep"), { recursive: true });
+  fs.mkdirSync(path.join(cwd, "node_modules", "pkg"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, "src", "a.ts"), "");
+  fs.writeFileSync(path.join(cwd, "src", "deep", "b.ts"), "");
+  fs.writeFileSync(path.join(cwd, "src", "c.js"), "");
+  fs.writeFileSync(path.join(cwd, "node_modules", "pkg", "d.ts"), "");
+  const res = await runTool("glob", { pattern: "src/**/*.ts" }, ctx);
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.output.split("\n").sort(), ["src/a.ts", "src/deep/b.ts"]);
+});
+
+test("output cap: 50 KB becomes <= 8 KB with a cut line", async () => {
+  const { cap } = await import("../bridge/acp-tools.mjs");
+  const big = "x".repeat(50 * 1024);
+  const out = cap(big);
+  assert.ok(out.length <= 8 * 1024, `len ${out.length}`);
+  assert.match(out, /… \d+ bytes cut …/);
+  assert.ok(out.startsWith("x".repeat(100)));
+  assert.ok(out.endsWith("x".repeat(100)));
+});
+
+test("two 503s then a normal reply: the same chat is retried and the turn continues", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  const sent = path.join(home, "sent.jsonl");
+  fs.writeFileSync(script, JSON.stringify(["@@error HTTP 503", "@@error HTTP 503", "ok after retry\n[[done]]"]));
+  const agent = newSession(home, ws, {
+    MUSE_BRIDGE_FAKE_SCRIPT: script,
+    MUSE_BRIDGE_FAKE_SENT: sent,
+    MUSE_RETRY_DELAYS_MS: "1,1,1",
+  });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    const sentLines = fs.readFileSync(sent, "utf8").trim().split("\n").map((l) => JSON.parse(l).text);
+    assert.equal(sentLines.length, 3);
+    assert.equal(sentLines[0], sentLines[1]);
+    assert.equal(sentLines[1], sentLines[2]);
+    assert.equal(chunkText(agent.updates), "ok after retry");
+  } finally {
+    agent.close();
+  }
+});
+
+test("persistent 503 ends the turn with a RetriableError answer Lane Pilot can catch", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  fs.writeFileSync(
+    script,
+    JSON.stringify(["@@error HTTP 503 service unavailable", "@@error HTTP 503 service unavailable"]),
+  );
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_RETRY_DELAYS_MS: "1" });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    const answer = chunkText(agent.updates);
+    assert.match(answer, /^(?:Error:\s*)?(?:RetriableError:\s*\[[a-z_]+\]|NonRetriableError:\s*\S)/i);
+    assert.match(answer, /\[muse_unavailable\]/);
+    assert.ok(answer.length <= 400, `len ${answer.length}`);
+  } finally {
+    agent.close();
+  }
+});
+
+test("a socket close ends the turn with the same RetriableError shape", async () => {
+  const home = seedHome();
+  const ws = fs.mkdtempSync("/tmp/muse-ws-");
+  const script = path.join(home, "script.json");
+  fs.writeFileSync(
+    script,
+    JSON.stringify(["@@error Muse gateway socket closed", "@@error Muse gateway socket closed"]),
+  );
+  const agent = newSession(home, ws, { MUSE_BRIDGE_FAKE_SCRIPT: script, MUSE_RETRY_DELAYS_MS: "1" });
+  try {
+    await agent.request("initialize", { protocolVersion: 1, clientCapabilities: { fs: {} } });
+    const created = await agent.request("session/new", { cwd: ws, mcpServers: [] });
+    const result = await prompt(agent, created.sessionId, "go");
+    assert.equal(result.stopReason, "end_turn");
+    const answer = chunkText(agent.updates);
+    assert.match(answer, /^RetriableError: \[muse_unavailable\] Muse gateway socket closed/);
+    assert.ok(answer.length <= 400, `len ${answer.length}`);
+  } finally {
+    agent.close();
+  }
+});

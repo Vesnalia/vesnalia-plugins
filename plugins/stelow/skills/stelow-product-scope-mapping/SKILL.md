@@ -1,0 +1,166 @@
+---
+name: stelow-product-scope-mapping
+description: >
+  [stelow] Break a product proposal into coherent vertical delivery scopes with
+  explicit outcomes, boundaries, dependencies, capabilities, evidence, and open
+  decisions. Use during the Scope stage or standalone from Explore. This skill
+  produces a draft or approved scope map; it does not own execution.
+metadata:
+  frequency: weekly
+  category: product
+  execution:
+    mode: orchestrated
+    recipe: scope-map
+    capabilities: [pipeline, structured-output]
+    write_policy: artifact
+    permission_profile: inherit
+  context-cost: medium
+  author: calionauta
+  author-url: https://github.com/calionauta
+disable-model-invocation: true
+---
+
+# Scope Mapping
+
+Use this skill to turn an approved product proposal, technical plan, or codebase context into a small set of coherent delivery scopes.
+
+The method is product planning: it discovers the boundaries of the work and makes uncertainty visible. It does not create execution tasks, choose a runner, or silently change an approved Shape.
+
+## Required input
+
+Use the available proposal, spec, codebase context, and constraints. If the request is not approved for Scope, stop at the current lifecycle boundary and name the missing gate.
+
+Record the input sources before generating scopes. Do not invent product authority, evidence, or approval.
+
+### Brownfield input (codebase exists)
+
+Ground scopes in the code before drawing boundaries:
+
+- `cymbal structure --json` — entry points and packages the map must respect;
+- `sem entities --json` — domain symbols that anchor IN/OUT items;
+- `ripwire --exemplar "<outcome>"` (or `--lego <Iface>` for a known interface) — reuse-first: imitate the existing block instead of inventing a parallel one.
+
+Record these sources alongside the proposal before generating scopes.
+
+## Method
+
+1. Restate the decision the map must support.
+2. Identify the user-visible or operational outcome of the work.
+3. Split the outcome into vertical scopes that can each deliver a coherent result.
+4. Give every scope a stable ID, outcome, IN items, OUT items, capabilities, and dependencies.
+5. Mark open decisions and evidence gaps explicitly.
+6. Check that the graph is acyclic and that no scope silently owns another scope's boundary.
+7. If a narrow bugfix or mechanical refactor needs no full map, emit a one-scope plan and record why the full map is unnecessary.
+
+## Preview mode (draft for the product gate)
+
+Run with `mode: preview` when the decision-maker needs to SEE the division
+before approving anything — typically ahead of the product gate review:
+
+- Single pass, no parallel scouts, no approval. Read the shaped proposal
+  (approved or not) and emit tentative names, outcomes, and dependencies only.
+  Capabilities and evidence stay explicitly marked as unharvested.
+- Write `scope-map-draft.json` (same contract as the map, `status: "draft"`)
+  plus a readable draft companion (scope names + one-line outcomes + counts,
+  never the full evidence tables).
+- A draft from an unapproved spec is explicitly allowed here and ONLY here:
+  it illustrates the division, it commits to nothing, and it must never be
+  promoted without re-validation once the spec is approved.
+- The gate review renders the draft read-only in a draft tone. Nobody edits
+  the draft at the gate; feedback lands as review annotations, which the
+  scope stage reconciles.
+
+## Promote mode (scope stage)
+
+When a draft exists from preview mode, do not start blank-slate:
+
+1. Re-run the full method against the approved spec, the gate's approval
+   receipt, and the IN/OUT adjustments recorded since.
+2. Record what changed relative to the draft (added/removed/merged scopes,
+   moved boundaries) in the run notes.
+3. Write the approved `scope-map.json` only when the approval receipt for
+   this stage exists. Then the draft is superseded, never edited.
+
+## Output contract
+
+Write `scope-map.json` using the contract in `schemas/scope-map.json`.
+
+The map is a draft until an approval receipt is present. An approved map is immutable for downstream planning. Planning may enrich each approved scope with tasks, risks, NFRs, target files, acceptance criteria, and sequence, but it may not change scope IDs, ownership, IN/OUT boundaries, or dependency meaning.
+
+If later work changes a product commitment, scope boundary, or dependency meaning, emit `scope-map-challenge.json` and route through the canonical Scope or Shape transition. Do not rewrite the approved map in place.
+
+## Standalone use
+
+An Explore caller may invoke this skill without a Build card. The result is a draft map with a readable Markdown companion (`explore-scope-map.md`). JSON evidence is optional and must not replace the primary readable artifact.
+
+### Greenfield input (no codebase yet)
+
+Ground the draft in prior knowledge instead of inventing scopes:
+
+- `ripwire --recall "<domain>"` — prior docs and patterns for this domain;
+- `sem grep --json` on the proposal markdown — candidate concepts from the text;
+- `ripwire --plan-lint` on the draft markdown companion — plan-structure hygiene before returning.
+
+## Quality checks
+
+Before returning the map, verify:
+
+- every scope has a stable ID and observable outcome;
+- every dependency references an existing scope;
+- the dependency graph is acyclic;
+- IN and OUT boundaries are explicit;
+- capabilities and evidence have provenance;
+- open decisions are visible;
+- the current Shape version and map version are recorded;
+- no approval is fabricated.
+
+When a check fails, repair the draft or report the exact missing input. Do not hide uncertainty in prose.
+
+<!-- stelow:scope3:begin -->
+## Entry (mode detection)
+
+When this skill loads, check for the stelow workflow marker:
+
+```bash
+if [ -n "$STELOW_WORKFLOW" ] && [ -n "$STELOW_STATE" ]; then
+  echo "stelow: workflow mode (state=$STELOW_STATE)"
+else
+  echo "stelow: standalone mode (no STELOW_WORKFLOW marker)"
+fi
+```
+
+In **standalone mode** (no marker), run the existing skill body unchanged.
+In **workflow mode**, skip to `### Workflow slice` and emit a complete
+`## Hand-off (workflow mode)` block at the end. See
+`../stelow-workflow-entry/SKILL.md` for the full marker protocol.
+
+## Hand-off (workflow mode)
+
+```
+stage          : scope
+description    : Owns the approved Scope Map for feature routes. Shape may propose candidate slices; this stage finalizes the map without creating a second stage. Narrow mechanical refactors may bypass Scope.
+status         : <done|partial|blocked>
+artifacts      : <paths created or modified>
+next-candidate : <the stage scripts/stelow next reports — run `scripts/stelow next`>
+gate           : none
+rework-on      : gate
+```
+
+Workflow mode: emit the above Hand-off block verbatim, then stop. Fill
+`next-candidate` from `scripts/stelow next`: it is the workflow's own
+answer, already accounting for this run's intent route and review mode.
+The router skill consumes the next-candidate field and calls
+`scripts/stelow advance <next-candidate>` to move state forward.
+
+### Workflow slice
+
+Workflow mode for the **scope** stage. Standalone behavior lives in
+the rest of this file (unchanged). Summary:
+
+> Owns the approved Scope Map for feature routes. Shape may propose candidate slices; this stage finalizes the map without creating a second stage. Narrow mechanical refactors may bypass Scope.
+
+Primary actions (per stages.yaml): `read, write`. Run only the actions that
+produce the artifacts promised in `## Hand-off`; skip anything that does
+not advance the workflow.
+
+<!-- stelow:scope3:end -->

@@ -1,0 +1,757 @@
+// alia-plugin-plan-progress — backend.
+//
+// Registers the plan_progress agent tool. Bars live in this plugin's kv
+// storage, one list per thread; every write publishes a realtime signal so
+// the bar above the thread's composer (app.tsx) refetches.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { z } from "zod";
+import {
+  allSteps,
+  answered,
+  applyOp,
+  BARS_CHANGED,
+  describe,
+  STATE_NAMES,
+  stateOf,
+  setVisibility,
+  STEP_NAMES,
+  type Bar,
+  type Op,
+} from "./engine";
+import { AGENTS_CHANGED, agentFromChild, agentsFromRows, flattenTurnRows, type Agent, type ChildThread } from "./agents";
+import { acceptedHumanRequests, latestChildRun, backgroundEvidence, type EvidenceEvent } from "./evidence";
+import { hostContract } from "./host-contract";
+import { advanceDiagnostic, DIAGNOSTICS_CHANGED, NO_DIAGNOSTIC, type ProgressDiagnostic } from "./diagnostics";
+import { newReminderState, observeWork, type ReminderState } from "./reminders";
+import { visibilityReason } from "./presentation";
+import { version as pluginVersion } from "./package.json";
+
+export type { Bar } from "./engine";
+export type { Agent } from "./agents";
+
+export const rpcContract = defineRpcContract({
+  diagnostics_get: {
+    input: z.object({ threadId: z.string().min(1) }),
+    output: z.object({ diagnostic: z.custom<ProgressDiagnostic>() }),
+  },
+  bars_get: {
+    input: z.object({ threadId: z.string().min(1) }),
+    output: z.object({ bars: z.array(z.custom<Bar>()) }),
+  },
+  agents_get: {
+    input: z.object({ threadId: z.string().min(1) }),
+    output: z.object({ agents: z.array(z.custom<Agent>()) }),
+  },
+  approvals_get: {
+    input: z.object({ threadId: z.string().min(1) }),
+    output: z.object({ count: z.number(), incomplete: z.boolean() }),
+  },
+  bars_dismiss: {
+    input: z.object({ threadId: z.string().min(1), id: z.string().min(1) }),
+    output: z.object({ removed: z.boolean() }),
+  },
+  bars_setVisibility: {
+    input: z.object({ threadId: z.string().min(1), id: z.string().min(1), hidden: z.boolean(), endedAt: z.number().optional() }),
+    output: z.object({ changed: z.boolean() }),
+  },
+});
+
+const stepSchema = z.object({
+  title: z.string().min(1),
+  status: z.enum(STEP_NAMES).optional(),
+});
+
+const opSchema = z.object({
+  id: z.string().min(1).describe('One id per task, e.g. "auth".'),
+  title: z
+    .string()
+    .optional()
+    .describe("Bar title, at most 4 words, in the user's language. Required on create."),
+  kind: z.enum(["plan", "todo"]).optional(),
+  stages: z
+    .array(z.object({ name: z.string(), steps: z.array(stepSchema) }))
+    .optional()
+    .describe("The whole plan: 2-7 stages of short steps. Resend to change the plan."),
+  steps: z.array(stepSchema).optional().describe("A flat list instead of stages."),
+  next: z.boolean().optional().describe("Active step done, next one active."),
+  done: z.array(z.string()).optional().describe("Step titles to mark done."),
+  active: z
+    .string()
+    .optional()
+    .describe("Step title to make current; only previously active steps before it become done."),
+  failed: z.string().optional().describe("Step title that failed; add a note."),
+  note: z.string().optional(),
+  state: z.enum(STATE_NAMES).optional().describe('"needs_input" before asking the user; "done" when finished.'),
+});
+
+const INSTRUCTIONS = `Show progress on multi-step work with VesnALIA's plan_progress tool; the user sees it as a bar above the message box.
+- REQUIRED: for 3 or more requested actions, create the VesnALIA bar BEFORE the first work tool call. Read-only work counts. Reading three files counts. A task finished in one turn still counts. "No subagents" does not forbid a progress bar: the bar is UI bookkeeping, not a subagent or a workspace edit. Do not reinterpret three explicit steps as a one-step answer.
+- In Claude Code, discover and use mcp__alia-bridge__plan_progress (ToolSearch: select:mcp__alia-bridge__plan_progress). Never use mcp__plan-progress__plan_progress: it belongs to the Claude Desktop plugin and cannot display a bar in VesnALIA. Other providers use their advertised VesnALIA plan_progress tool.
+- If the VesnALIA tool is missing or fails, use the same operation with VesnALIA plan-progress op '<json>' in the current thread. If that also fails, report the failure; do not silently use the Desktop plugin.
+- A task of 3+ steps: before starting, create a bar once: {id, title, stages:[{name, steps:[{title}]}]}. 2-7 stages, titles of at most 4 words, in the user's language.
+- Then move it with short ops only: {id, next:true} after each step; {id, done:["A"], active:"B"} to jump.
+- Before asking the user a question: {id, state:"needs_input", note}; an accepted human answer clears it; an explicit op also resumes. On an error: {id, failed:"<step>", note}; the next {id, next:true} closes that step.
+- When the task is finished, mark the completed step titles with done, then state:"done" (these may be one op). state:"done" alone closes the bar but does not mark unfinished steps done; do not leave a completed task at 2/3. Any call without a state works the state out again.
+- If a call result is lost, do not blindly repeat next:true: it advances again. Read VesnALIA plan-progress show --json once, then update named steps using done/active. Never invent tool names.
+- The plan changed: resend stages under the same id and title; finished steps keep their done by title.
+- The result already says done/total, state and the active step; do not call it just to check.
+Skip it for one-step answers and conversation.`;
+
+const barsKey = (threadId: string) => `bars:${threadId}`;
+
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
+    automaticReminders: {
+      type: "boolean", label: "Automatic progress reminders",
+      description: "One attempt per observed root turn after 3 work calls without a bar or 6 without an update. Missing history can suppress it. Never starts a new turn.",
+      default: true,
+    },
+    isolateClaude: {
+      type: "boolean", label: "Isolate Claude Desktop progress",
+      description: "Disable the original zycck progress plugin only in VesnALIA's Claude processes. Desktop settings stay unchanged. Applies to new sessions.",
+      default: true,
+    },
+    claudeExecutable: {
+      type: "string", label: "Claude executable",
+      description: "Optional absolute path on the agent's machine; otherwise use the native Claude executable on PATH.",
+      default: "",
+    },
+    effects: {
+      type: "boolean",
+      label: "Effects",
+      description: "Twinkling dots in the bar.",
+      default: true,
+    },
+    autoClose: {
+      type: "boolean",
+      label: "Auto-close",
+      description: "Hide done plans after the delay and tracked helpers finish; idle alone does not finish a plan. The agent creates plans for tasks with 3+ actions. Restore from Hidden plans.",
+      default: true,
+    },
+    autoCloseSeconds: {
+      type: "select",
+      label: "Stays for",
+      description: "Delay before hiding a finished plan when auto-close is on and tracked helpers have stopped. A restored finish stays visible.",
+      options: ["10", "30", "60"],
+      experimental_optionLabels: { "10": "10 s", "30": "30 s", "60": "60 s" },
+      default: "30",
+    },
+    speed: {
+      type: "boolean",
+      label: "Answer speed",
+      description: "≈ tok/s in the message box, bright while the agent writes: estimated from the text it writes, exact after the turn when VesnALIA reports the tokens.",
+      default: true,
+    },
+    sounds: {
+      type: "boolean",
+      label: "Sounds",
+      description: "A chime on a question, an error and the finish, in an open VesnALIA window.",
+      default: false,
+    },
+  });
+
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  alia.providers.experimental_contributeEnv("claude-code", async ({ hostId, threadId }) => {
+    const config = await settings.get();
+    if (!threadId || !config.isolateClaude) return [];
+    const { launcher } = await host.call("prepareClaude", { executable: config.claudeExecutable }, { hostId });
+    return [{ name: "ALIA_CLAUDE_CODE_EXECUTABLE", value: launcher,
+      reason: "Isolate zycck progress in this VesnALIA process; preserve Claude Desktop settings" }];
+  });
+
+  const diagnostics = new Map<string, ProgressDiagnostic>();
+  const diagnosticCursors = new Map<string, number>();
+  const diagnosticPulls = new Map<string, Promise<void>>();
+  const reminderStates = new Map<string, ReminderState>();
+  const activeThreads = new Set<string>();
+  // Observation only; event history supplies call evidence after plugin reload.
+  const lastOperations = new Map<string, {at: number; route: "native" | "cli"; ok: boolean | null}>();
+  const diagnosticDirty = new Map<string, boolean>();
+  const deletedThreads = new Set<string>();
+  let disposed = false;
+  const live = (id: string) => !disposed && !deletedThreads.has(id);
+  alia.onDispose(async () => {
+    disposed = true;
+    // Finish already-enqueued storage work before another generation starts.
+    await Promise.allSettled([...queues.values()]);
+  });
+  const history = new Map<string, {fromSeq: number | null; throughSeq: number; initialWindowLimited: boolean; caughtUp: boolean; readFailed: boolean}>();
+  const reminderKey = (id: string) => `reminder-v06:${id}`;
+  async function reminderFor(threadId: string): Promise<ReminderState> {
+    let state = reminderStates.get(threadId);
+    if (!state) {
+      const saved = await alia.storage.kv.get<ReminderState>(reminderKey(threadId));
+      state = saved ?? newReminderState(0);
+      reminderStates.set(threadId, state);
+    }
+    return state;
+  }
+  async function persistReminder(threadId: string, reminder: ReminderState): Promise<boolean> {
+    return serial(threadId, async () => {
+      if (!live(threadId)) return false;
+      await alia.storage.kv.set(reminderKey(threadId), {...reminder});
+      return true;
+    });
+  }
+  async function refreshDiagnostic(threadId: string, allowSend = false): Promise<void> {
+    if (!live(threadId)) return;
+    const busy = diagnosticPulls.get(threadId);
+    if (busy) { diagnosticDirty.set(threadId, (diagnosticDirty.get(threadId) ?? false) || allowSend); return busy; }
+    const run = (async () => {
+      const reminder = await reminderFor(threadId);
+      let cursor = diagnosticCursors.get(threadId);
+      const initial = cursor === undefined;
+      const rows: EvidenceEvent[] = [];
+      let initialWindowLimited = false;
+      let caughtUp = false;
+      for (let page = 0; page < 5; page++) {
+        const events = await alia.sdk.threads.events.list({ threadId,
+          types: ["item/completed", "turn/started", "turn/completed"], limit: "100",
+          ...(cursor === undefined ? {order: "desc" as const} : {afterSeq: String(cursor)}) });
+        if (!live(threadId)) return;
+        const first = cursor === undefined;
+        const ordered = first ? [...events].reverse() : events;
+        rows.push(...ordered as EvidenceEvent[]);
+        if (first) initialWindowLimited = events.length >= 100;
+        cursor = Math.max(cursor ?? 0, ...events.map(event => event.seq));
+        // The initial request selects the latest window; incremental reads
+        // must reach its tail before they can justify sending a reminder.
+        if (first || events.length < 100) { caughtUp = true; break; }
+      }
+      if (!live(threadId)) return;
+      const before = JSON.stringify(reminder);
+      const due = observeWork(reminder, rows);
+      const covered = history.get(threadId);
+      history.set(threadId, {fromSeq: covered?.fromSeq ?? rows[0]?.seq ?? null,
+        throughSeq: cursor ?? 0, initialWindowLimited: initial ? initialWindowLimited : covered?.initialWindowLimited ?? true,
+        caughtUp, readFailed: false});
+      if (due && caughtUp && allowSend && activeThreads.has(threadId) && (await settings.get()).automaticReminders) {
+        if (!live(threadId)) return;
+        const bars = await readBars(threadId);
+        if (!live(threadId)) return;
+        const updatedThisTurn = bars.some(bar => bar.updatedAt >= reminder.since);
+        reminder.sent = true;
+        reminder.delivery = "skipped";
+        if (!updatedThisTurn || bars.some(bar => bar.state === "running")) {
+          reminder.delivery = "unknown";
+          reminder.attemptedAt = Date.now();
+          if (!await persistReminder(threadId, reminder) || !live(threadId)) return;
+          try {
+            const delivered = await alia.sdk.threads.send({threadId, mode: "steer", input: [{type: "text",
+              visibility: "agent-only", mentions: [],
+              text: "VesnALIA plan-progress automatic reminder: several work calls have run. Create or update VesnALIA's plan_progress bar now for the remaining work (Claude: mcp__alia-bridge__plan_progress). A bar is UI bookkeeping, not a subagent or file edit. If the task is already finished, do not invent a plan retroactively. Do not repeat completed work. If the tool is unavailable, report that once."}]});
+            if (!live(threadId)) return;
+            reminder.delivery = delivered.delivery === "sent" ? "sent" : "unknown";
+          } catch { if (!live(threadId)) return; reminder.delivery = "send-error"; }
+        }
+      }
+      if (!live(threadId)) return;
+      if (JSON.stringify(reminder) !== before && !await persistReminder(threadId, reminder)) return;
+      if (!live(threadId)) return;
+      const previous = diagnostics.get(threadId) ?? NO_DIAGNOSTIC;
+      const next = advanceDiagnostic(previous, rows);
+      if (next !== previous) {
+        diagnostics.set(threadId, next);
+        if (next.warning && previous.source !== next.source) alia.log.warn(`Progress tool collision in ${threadId}`);
+        alia.realtime.publish(DIAGNOSTICS_CHANGED, {threadId});
+      }
+      diagnosticCursors.set(threadId, cursor ?? 0);
+    })().catch(error => {
+      if (!live(threadId)) return;
+      const old = history.get(threadId);
+      history.set(threadId, {fromSeq: old?.fromSeq ?? null, throughSeq: old?.throughSeq ?? 0,
+        initialWindowLimited: old?.initialWindowLimited ?? true, caughtUp: false, readFailed: true});
+      alia.log.warn(`Progress diagnostics failed for ${threadId}: ${String(error)}`);
+    });
+    diagnosticPulls.set(threadId, run);
+    try { await run; } finally { diagnosticPulls.delete(threadId); }
+    if (diagnosticDirty.has(threadId)) {
+      const againMaySend = diagnosticDirty.get(threadId)!;
+      diagnosticDirty.delete(threadId);
+      await refreshDiagnostic(threadId, againMaySend);
+    }
+  }
+
+  async function readBars(threadId: string): Promise<Bar[]> {
+    const bars = (await alia.storage.kv.get<Bar[]>(barsKey(threadId))) ?? [];
+    // bars stored by 0.1 used "working" and "failed"
+    for (const bar of bars) {
+      bar.state = stateOf(bar.state) ?? "running";
+      for (const step of allSteps(bar)) if ((step.status as string) === "failed") step.status = "error";
+    }
+    return bars;
+  }
+  async function writeBars(threadId: string, bars: Bar[]): Promise<void> {
+    if (bars.length === 0) await alia.storage.kv.delete(barsKey(threadId));
+    else await alia.storage.kv.set(barsKey(threadId), bars);
+    alia.realtime.publish(BARS_CHANGED, { threadId });
+  }
+
+  // One write at a time per thread, so quick successive calls never lose an op.
+  const queues = new Map<string, Promise<unknown>>();
+  function serial<T>(threadId: string, task: () => Promise<T>): Promise<T> {
+    const run = (queues.get(threadId) ?? Promise.resolve()).then(task, task);
+    const tail = run.catch(() => undefined);
+    queues.set(threadId, tail);
+    void tail.then(() => {
+      if (queues.get(threadId) === tail) queues.delete(threadId);
+    });
+    return run;
+  }
+
+  async function apply(threadId: string, op: Op, route: "native" | "cli" = "native"): Promise<{ ok: boolean; text: string }> {
+    return serial(threadId, async () => {
+      const result = applyOp(await readBars(threadId), op, Date.now());
+      if (!result.ok) {
+        lastOperations.set(threadId, {at: Date.now(), route, ok: false});
+        return { ok: false, text: result.error };
+      }
+      lastOperations.set(threadId, {at: Date.now(), route, ok: null});
+      await writeBars(threadId, result.bars);
+      lastOperations.set(threadId, {at: Date.now(), route, ok: true});
+      diagnostics.set(threadId, { source: "alia", lastCallSeq: diagnostics.get(threadId)?.lastCallSeq ?? 0, warning: null });
+      const reminder = reminderStates.get(threadId);
+      if (reminder) { reminder.hasPlan = true; reminder.sinceUpdate = 0; }
+      alia.realtime.publish(DIAGNOSTICS_CHANGED, { threadId });
+      return { ok: true, text: `ALIA/${threadId}: ${describe(result.bar)}` };
+    });
+  }
+
+  // Share in-flight reads and reuse snapshots until that thread changes.
+  const snapshots = new Map<string, Promise<any>>();
+  const childSnapshots = new Map<string, ChildThread[]>();
+  function cached<T>(threadId: string, kind: string, read: () => Promise<T>): Promise<T> {
+    const key = `${threadId}:${kind}`;
+    const previous = snapshots.get(key);
+    if (previous) return previous as Promise<T>;
+    const pending = read().catch(error => { if (snapshots.get(key) === pending) snapshots.delete(key); throw error; });
+    snapshots.set(key, pending);
+    return pending;
+  }
+  function invalidate(threadId: string): void {
+    for (const key of snapshots.keys()) if (key.startsWith(`${threadId}:`)) snapshots.delete(key);
+  }
+  function updateChild(parentId: string, thread: Partial<ChildThread> & {id: string}): void {
+    const children = childSnapshots.get(parentId);
+    if (!children) return;
+    const index = children.findIndex(child => child.id === thread.id);
+    if (index < 0) { snapshots.delete(`${parentId}:children`); childSnapshots.delete(parentId); return; }
+    children[index] = { ...children[index]!, ...thread };
+  }
+
+  // Read bounded pages, in sequence order; event content is not persisted.
+  async function recentEvents(threadId: string, types: Parameters<typeof alia.sdk.threads.events.list>[0]["types"], pages = 5): Promise<EvidenceEvent[]> {
+    return cached(threadId, `events:${types?.join(",")}:${pages}`, async () => {
+    const result: EvidenceEvent[] = [];
+    let beforeSeq: string | undefined;
+    for (let page = 0; page < pages; page++) {
+      const batch = await alia.sdk.threads.events.list({ threadId, types, limit: "100", order: "desc", ...(beforeSeq ? { beforeSeq } : {}) });
+      if (!batch.length) break;
+      result.push(...batch as unknown as EvidenceEvent[]);
+      const min = Math.min(...batch.map(event => event.seq));
+      if (batch.length < 100 || String(min) === beforeSeq) break;
+      beforeSeq = String(min);
+    }
+    return result;
+    });
+  }
+  async function refreshAnswers(threadId: string): Promise<void> {
+    try {
+      const events = await recentEvents(threadId, ["client/turn/requested", "turn/input/accepted"]);
+      const times = acceptedHumanRequests(events);
+      if (!times.length) return;
+      await serial(threadId, async () => {
+        const bars = await readBars(threadId);
+        let changed = false;
+        const next = bars.map(bar => {
+          const answerAt = times.filter(at => at > bar.updatedAt).at(-1);
+          if (bar.state !== "needs_input" || answerAt === undefined) return bar;
+          const result = answered([bar], answerAt);
+          changed = true;
+          return result![0]!;
+        });
+        if (changed) await writeBars(threadId, next);
+      });
+    } catch (error) { alia.log.warn(`answer evidence read failed for ${threadId}: ${String(error)}`); }
+  }
+
+  // Read current timeline and bounded event history; retain a bounded error trace.
+  const agentsByThread = new Map<string, Agent[]>();
+  // RPC observation is independent of whether the last snapshot was empty.
+  const observedAgentThreads = new Set<string>();
+  const refreshing = new Map<string, boolean>();
+  async function listChildren(threadId: string): Promise<ChildThread[]> {
+    return cached(threadId, "children", async () => {
+    const children: ChildThread[] = [];
+    for (let offset = 0; offset < 500; offset += 100) {
+      const page = await alia.sdk.threads.list({ parentThreadId: threadId, limit: 100, offset }) as unknown as ChildThread[];
+      children.push(...page);
+      if (page.length < 100) break;
+    }
+    childSnapshots.set(threadId, children);
+    return children;
+    });
+  }
+  async function readAgents(threadId: string): Promise<Agent[]> {
+    return cached(threadId, "agents", async () => {
+    const [timeline, children, events] = await Promise.all([
+      cached(threadId, "timeline", () => alia.sdk.threads.timeline({ threadId, includeNestedRows: "true", segmentLimit: "1" })),
+      readChildren(threadId),
+      recentEvents(threadId, ["item/completed", "item/backgroundTask/completed", "item/backgroundTask/progress"]),
+    ]);
+    const own = agentsFromRows(timeline.rows, timeline.activeBackgroundCommands);
+    const evidence = backgroundEvidence(events);
+    for (const [id, result] of evidence) {
+      const launch = flattenTurnRows(timeline.rows).find(value => {
+        const row = value as {kind?: string; workKind?: string; childRef?: string};
+        return row.kind === "work" && row.workKind === "delegation" && row.childRef === result.itemId;
+      }) as {callId?: string} | undefined;
+      const agent = own.find(a => [a.id, ...(a.aliases ?? [])].some(alias => result.aliases.includes(alias)) || a.id === launch?.callId);
+      if (agent) {
+        agent.aliases = [...new Set([...(agent.aliases ?? []), ...result.aliases])];
+        const observedAt = agent.observedAt ?? agent.endedAt ?? agent.startedAt;
+        if (result.state !== "unknown" && result.observedAt > observedAt &&
+            !(result.state === "running" && (agent.state === "done" || agent.state === "error"))) {
+          agent.state = result.state; agent.endedAt = result.end; agent.observedAt = result.observedAt;
+          if (agent.state !== "running") agent.tool = null;
+        }
+      } else own.push({ id, aliases: result.aliases, observedAt: result.observedAt, name: result.name, kind: "background agent", model: null,
+        state: result.state, tool: null, startedAt: result.at, endedAt: result.end });
+    }
+    const current = [...own, ...children];
+    // Unknown or stale observations do not erase confirmed errors. A new run
+    // must start after the error; a terminal replacement must be newer.
+    const key = `agent-errors:${threadId}`;
+    const saved = (await alia.storage.kv.get<Agent[]>(key)) ?? [];
+    const same = (a: Agent, b: Agent) => [a.id, ...(a.aliases ?? [])].some(id => [b.id, ...(b.aliases ?? [])].includes(id));
+    const retained: Agent[] = [];
+    for (const old of saved) {
+      const index = current.findIndex(agent => same(agent, old));
+      if (index < 0) { retained.push(old); continue; }
+      const next = current[index]!;
+      const errorAt = old.observedAt ?? old.endedAt ?? old.startedAt;
+      const newerRun = next.state === "running" && next.startedAt > errorAt;
+      const newerTerminal = (next.state === "done" || next.state === "error") && (next.observedAt ?? next.endedAt ?? 0) > errorAt;
+      if (!newerRun && !newerTerminal) current[index] = old;
+    }
+    const errors = [...retained, ...current.filter(agent => agent.state === "error")]
+      .sort((a,b) => (b.observedAt ?? b.endedAt ?? b.startedAt) - (a.observedAt ?? a.endedAt ?? a.startedAt)).slice(0, 100);
+    if (JSON.stringify(saved) !== JSON.stringify(errors)) await alia.storage.kv.set(key, errors);
+    return [...current, ...retained].sort((a, b) => a.startedAt - b.startedAt);
+    });
+  }
+  async function readChildren(threadId: string): Promise<Agent[]> {
+    const children = await listChildren(threadId);
+    return Promise.all(children.map(async child => {
+      try {
+        const events = await recentEvents(child.id, ["client/turn/requested", "turn/started", "turn/input/accepted", "turn/completed", "turn/mainRun/updated"]);
+        const run = latestChildRun(events);
+        const agent = agentFromChild(child, child.status === "idle" && (run.state === "done" || run.state === "error") ? run.execution : null);
+        if (child.status === "idle" && run.state !== "running") agent.state = run.state;
+        if (run.at !== null) agent.startedAt = run.at;
+        return agent;
+      } catch (error) {
+        alia.log.warn(`child event read failed for ${child.id}: ${String(error)}`);
+        return agentFromChild(child, null);
+      }
+    }));
+  }
+  async function refreshAgents(threadId: string): Promise<void> {
+    if (refreshing.has(threadId)) {
+      refreshing.set(threadId, true); // run once more when this pass ends
+      return;
+    }
+    refreshing.set(threadId, false);
+    try {
+      do {
+        refreshing.set(threadId, false);
+        const known = agentsByThread.get(threadId);
+        const agents = await readAgents(threadId);
+        if (known !== undefined && JSON.stringify(agents) === JSON.stringify(known)) continue;
+        agentsByThread.set(threadId, agents);
+        alia.realtime.publish(AGENTS_CHANGED, { threadId, agents });
+      } while (refreshing.get(threadId) === true);
+    } catch (error) {
+      alia.log.warn(`agents refresh failed for ${threadId}: ${String(error)}`);
+    } finally {
+      refreshing.delete(threadId);
+    }
+  }
+  alia.events.on("experimental_thread.events", ({ thread }) => {
+    invalidate(thread.id);
+    if (observedAgentThreads.has(thread.id)) void refreshAgents(thread.id);
+    void readBars(thread.id).then(bars => { if (bars.some(bar => bar.state === "needs_input")) void refreshAnswers(thread.id); });
+    if (thread.parentThreadId) { updateChild(thread.parentThreadId, thread); snapshots.delete(`${thread.parentThreadId}:agents`); void refreshAgents(thread.parentThreadId); }
+  });
+  alia.events.on("experimental_thread.events", ({ thread }) => {
+    if (thread.status === "active") activeThreads.add(thread.id);
+    else if (thread.status) activeThreads.delete(thread.id);
+    if (activeThreads.has(thread.id) || reminderStates.has(thread.id) || diagnostics.has(thread.id)) void refreshDiagnostic(thread.id, true);
+    alia.realtime.publish("approvals-changed", { threadId: thread.id });
+    if (thread.parentThreadId) alia.realtime.publish("approvals-changed", { threadId: thread.parentThreadId });
+  });
+  alia.events.on("interaction.pending", ({ thread }) => {
+    snapshots.delete(`${thread.id}:interactions`);
+    alia.realtime.publish("approvals-changed", { threadId: thread.id });
+    if (thread.parentThreadId) alia.realtime.publish("approvals-changed", { threadId: thread.parentThreadId });
+  });
+  alia.events.on("thread.idle", ({ thread }) => void refreshDiagnostic(thread.id));
+  alia.events.on("thread.idle", ({ thread }) => { activeThreads.delete(thread.id); });
+  alia.events.on("thread.failed", ({ thread }) => {
+    activeThreads.delete(thread.id);
+    invalidate(thread.id);
+    if (observedAgentThreads.has(thread.id)) void refreshAgents(thread.id);
+    if (thread.parentThreadId) { updateChild(thread.parentThreadId, thread); snapshots.delete(`${thread.parentThreadId}:agents`); void refreshAgents(thread.parentThreadId); } // the strip turns red
+  });
+  alia.events.on("thread.idle", ({ thread }) => {
+    invalidate(thread.id);
+    if (observedAgentThreads.has(thread.id)) void refreshAgents(thread.id);
+    if (thread.parentThreadId) { updateChild(thread.parentThreadId, thread); snapshots.delete(`${thread.parentThreadId}:agents`); void refreshAgents(thread.parentThreadId); }
+  });
+  alia.events.on("thread.deleted", ({ thread }) => {
+    deletedThreads.add(thread.id);
+    agentsByThread.delete(thread.id);
+    observedAgentThreads.delete(thread.id);
+    invalidate(thread.id);
+    childSnapshots.delete(thread.id);
+    if (thread.parentThreadId) {
+      snapshots.delete(`${thread.parentThreadId}:children`); snapshots.delete(`${thread.parentThreadId}:agents`);
+      childSnapshots.delete(thread.parentThreadId); void refreshAgents(thread.parentThreadId);
+    }
+    void alia.storage.kv.delete(`agent-errors:${thread.id}`);
+    diagnostics.delete(thread.id);
+    diagnosticCursors.delete(thread.id);
+    reminderStates.delete(thread.id);
+    activeThreads.delete(thread.id);
+    history.delete(thread.id);
+    diagnosticDirty.delete(thread.id);
+    lastOperations.delete(thread.id);
+    void serial(thread.id, async () => {
+      await alia.storage.kv.delete(reminderKey(thread.id));
+      await writeBars(thread.id, []);
+    });
+  });
+  // Activation alone does not establish that a human answered.
+  alia.events.on("thread.active", ({ thread }) => {
+    activeThreads.add(thread.id);
+    void refreshDiagnostic(thread.id, true);
+  });
+
+  async function diagnosticReport(threadId: string) {
+    let thread: Awaited<ReturnType<typeof alia.sdk.threads.get>> | null = null;
+    try { thread = await alia.sdk.threads.get({threadId}); } catch { /* unknown, never infer availability */ }
+    await refreshDiagnostic(threadId);
+    const [config, bars, recent] = await Promise.all([
+      settings.get(), readBars(threadId),
+      recentEvents(threadId, ["client/turn/requested"]).catch(() => []),
+    ]);
+    const agents = await readAgents(threadId).catch(() => null);
+    const request = recent.filter(event => event.data?.execution?.model &&
+      (!event.scope || event.scope.kind === "thread")).sort((a,b) => b.seq - a.seq)[0];
+    const now = Date.now();
+    return {
+      pluginVersion, threadId, providerId: thread?.providerId ?? null,
+      threadStatus: thread?.status ?? null,
+      lastRequestedModel: typeof request?.data?.execution?.model === "string" ? request.data.execution.model : null,
+      modelEvidence: "last client request, not proof of active session model",
+      nativeToolAvailability: "unknown; observed calls are reported separately",
+      isolateClaude: config.isolateClaude, bars: bars.length,
+      ...(diagnostics.get(threadId) ?? NO_DIAGNOSTIC), lastOperation: lastOperations.get(threadId) ?? null,
+      lastOperationScope: "observed in this plugin runtime; event evidence may cover earlier calls",
+      reminder: reminderStates.get(threadId) ?? newReminderState(0),
+      reminderRootEvidence: reminderStates.get(threadId)?.turnId == null ? "unknown or legacy unscoped" :
+        reminderStates.get(threadId)?.rootConfirmed ? "observed-root-start" : "root-mismatch; sending suppressed",
+      history: {...(history.get(threadId) ?? {fromSeq: null, throughSeq: 0, initialWindowLimited: true, caughtUp: false, readFailed: true}),
+        scope: "recent-window", initialLimit: 100, incrementalLimit: 500},
+      snapshotAt: now, settings: {autoClose: config.autoClose, autoCloseSeconds: config.autoCloseSeconds},
+      plans: bars.map(bar => ({id: bar.id, state: bar.state, updatedAt: bar.updatedAt,
+        done: allSteps(bar).filter(step => step.status === "done" || step.status === "skipped").length,
+        total: allSteps(bar).length,
+        visibility: visibilityReason(bar, now, Number(config.autoCloseSeconds),
+          agents === null ? null : agents.some(agent => agent.state === "running"), config.autoClose)})),
+    };
+  }
+
+  alia.agents.registerTool({
+    name: "plan_progress",
+    description:
+      "VesnALIA progress bar above the VesnALIA message box (Claude: mcp__alia-bridge__plan_progress). " +
+      "Separate from the Claude Desktop plan-progress tool. " +
+      "Create once with the whole plan, then send short ops.",
+    instructions: INSTRUCTIONS,
+    presentation: {
+      label: { pending: "Updating progress", completed: "Updated progress" },
+      icon: { glyph: "ListTodo" },
+      suppress: true,
+    },
+    parameters: opSchema,
+    async execute(op, { threadId }) {
+      const result = await apply(threadId, op);
+      return result.ok
+        ? result.text
+        : { content: [{ type: "text", text: result.text }], isError: true };
+    },
+  });
+
+  alia.rpc.register(rpcContract, {
+    diagnostics_get: async ({ threadId }) => {
+      await refreshDiagnostic(threadId);
+      return { diagnostic: diagnostics.get(threadId) ?? NO_DIAGNOSTIC };
+    },
+    bars_get: async ({ threadId }) => { await refreshAnswers(threadId); return { bars: await readBars(threadId) }; },
+    agents_get: async ({ threadId }) => {
+      observedAgentThreads.add(threadId);
+      return { agents: agentsByThread.get(threadId) ?? (await readAgents(threadId).catch(() => [])) };
+    },
+    approvals_get: async ({ threadId }) => {
+      let incomplete = false;
+      const children = await listChildren(threadId).catch(() => { incomplete = true; return []; });
+      if (children.length >= 500) incomplete = true;
+      const lists = await Promise.allSettled([threadId, ...children.map(child => child.id)].map(id =>
+        cached(id, "interactions", () => alia.sdk.threads.interactions.list({ threadId: id }))));
+      let count = 0;
+      for (const list of lists) {
+        if (list.status === "rejected") { incomplete = true; continue; }
+        count += list.value.filter(item => item.payload.kind === "approval" && item.status === "pending").length;
+      }
+      return { count, incomplete };
+    },
+    // Retained for an already-open 0.3 frontend during a live update. Hide, never delete.
+    bars_dismiss: ({ threadId, id }) =>
+      serial(threadId, async () => {
+        const bars = await readBars(threadId);
+        if (!bars.some(bar => bar.id === id)) return { removed: false };
+        await writeBars(threadId, bars.map(bar => bar.id === id ? setVisibility(bar, true) : bar));
+        return { removed: true };
+      }),
+    bars_setVisibility: ({ threadId, id, hidden, endedAt }) =>
+      serial(threadId, async () => {
+        const bars = await readBars(threadId);
+        let changed = false;
+        const next = bars.map(bar => {
+          if (bar.id !== id) return bar;
+          const updated = setVisibility(bar, hidden, endedAt);
+          changed = updated !== bar;
+          return updated;
+        });
+        if (changed) await writeBars(threadId, next);
+        return { changed };
+      }),
+  });
+
+  const usage = [
+    "Usage (inside a thread, or with --thread <id>):",
+    "  VesnALIA plan-progress show [--json]      List this thread's bars",
+    "  VesnALIA plan-progress op '<json>'        Apply one plan_progress op",
+    "  VesnALIA plan-progress agents [--json]    List the subagents of the latest turn",
+    "  VesnALIA plan-progress diagnose [--json]  Check progress routing and isolation",
+    "  VesnALIA plan-progress clear              Remove every bar of the thread",
+  ].join("\n");
+
+  alia.cli.register({
+    name: "plan-progress",
+    summary: "Show, move, or clear the progress bars of a thread",
+    commands: [
+      { name: "diagnose", summary: "Check progress routing and isolation",
+        usage: "alia plan-progress diagnose [--json] [--thread <id>]" },
+      {
+        name: "show",
+        summary: "List the thread's bars",
+        usage: "alia plan-progress show [--json] [--thread <id>]",
+      },
+      {
+        name: "op",
+        summary: "Apply one plan_progress op",
+        usage: "alia plan-progress op '<json>' [--thread <id>]",
+      },
+      {
+        name: "agents",
+        summary: "List the subagents of the latest turn",
+        usage: "alia plan-progress agents [--json] [--thread <id>]",
+      },
+      {
+        name: "clear",
+        summary: "Remove the thread's bars",
+        usage: "alia plan-progress clear [--thread <id>]",
+      },
+    ],
+    async run(argv, ctx) {
+      const json = argv.includes("--json");
+      const flag = argv.indexOf("--thread");
+      const value = flag === -1 ? undefined : argv[flag + 1];
+      if (flag !== -1 && (value === undefined || value.startsWith("--"))) {
+        return { exitCode: 1, stderr: "--thread needs a thread id: --thread <id>." };
+      }
+      const threadId = flag === -1 ? ctx.threadId : value;
+      const rest = argv.filter(
+        (arg, index) => arg !== "--json" && (flag === -1 || (index !== flag && index !== flag + 1)),
+      );
+      const [command, ...params] = rest;
+      if (command === undefined || command === "help" || command === "--help") {
+        return { exitCode: 0, stdout: usage };
+      }
+      if (threadId === undefined || threadId === "") {
+        return { exitCode: 1, stderr: "No thread: run it inside a thread or pass --thread <id>." };
+      }
+      switch (command) {
+        case "diagnose": {
+          const report = await diagnosticReport(threadId);
+          return { exitCode: 0, stdout: json ? JSON.stringify(report) :
+            `ALIA/${threadId}: ${report.bars} bars; provider: ${report.providerId ?? "unknown"}; thread: ${report.threadStatus ?? "unknown"}; last route: ${report.source ?? "no recognized call"}.\n` +
+            `${report.warning ?? "No detected tool collision (not proof the tool is available)."}\n` +
+            `Reminder: ${report.reminder.delivery}; history: recent window (earlier history may be absent), ${report.history.readFailed ? "read failed" : report.history.caughtUp ? "caught up" : "incomplete"}.\n` +
+            report.plans.map(plan => `${plan.id}: ${plan.state}; ${plan.done}/${plan.total} steps; ${plan.visibility}`).join("\n") +
+            "\nAuto-hide conditions describe a server snapshot, not visibility in a particular browser. Use --json for evidence and limits." };
+        }
+        case "show": {
+          const bars = await readBars(threadId);
+          if (json) return { exitCode: 0, stdout: JSON.stringify(bars) };
+          return {
+            exitCode: 0,
+            stdout: bars.length === 0 ? "No bars." : bars.map(describe).join("\n"),
+          };
+        }
+        case "op": {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(params.join(" "));
+          } catch {
+            return { exitCode: 1, stderr: "The op must be one JSON object." };
+          }
+          const op = opSchema.safeParse(parsed);
+          if (!op.success) return { exitCode: 1, stderr: z.prettifyError(op.error) };
+          const result = await apply(threadId, op.data, "cli");
+          return result.ok
+            ? { exitCode: 0, stdout: result.text }
+            : { exitCode: 1, stderr: result.text };
+        }
+        case "raw": {
+          // debugging aid, not in help: the latest timeline segment as VesnALIA hands it over
+          const timeline = await alia.sdk.threads.timeline({ threadId, includeNestedRows: "true", segmentLimit: "1" });
+          return { exitCode: 0, stdout: JSON.stringify(timeline).slice(0, 400_000) };
+        }
+        case "agents": {
+          const agents = await readAgents(threadId);
+          if (json) return { exitCode: 0, stdout: JSON.stringify(agents) };
+          return {
+            exitCode: 0,
+            stdout:
+              agents.length === 0
+                ? "No agents in the latest turn."
+                : agents
+                    .map((agent) =>
+                      [agent.state, agent.name, agent.kind, agent.model, agent.tool]
+                        .filter((part) => part !== null)
+                        .join(" · "),
+                    )
+                    .join("\n"),
+          };
+        }
+        case "clear":
+          await serial(threadId, () => writeBars(threadId, []));
+          return { exitCode: 0, stdout: "Cleared." };
+      }
+      return { exitCode: 1, stderr: usage };
+    },
+  });
+}

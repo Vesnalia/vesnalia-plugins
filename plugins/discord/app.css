@@ -1,0 +1,49 @@
+@keyframes discord-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+
+@keyframes discord-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.discord-status-pulse {
+  animation: discord-status-pulse 1.4s ease-in-out infinite;
+}
+
+.discord-enter {
+  animation: discord-enter 180ms ease-out;
+}
+
+.discord-unsaved-bar {
+  position: fixed;
+  bottom: 1rem;
+  z-index: 50;
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem .875rem .75rem 1rem;
+  border-radius: .75rem;
+  background: var(--card);
+}
+
+@media (max-width: 32rem) {
+  .discord-unsaved-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .discord-unsaved-bar > :last-child {
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discord-status-pulse,
+  .discord-enter {
+    animation: none;
+  }
+}

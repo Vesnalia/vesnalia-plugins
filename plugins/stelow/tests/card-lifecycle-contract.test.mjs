@@ -1,0 +1,9 @@
+import "./card-actions.test.mjs";
+import "./research-contracts.test.mjs";
+import "./detail-contracts.test.mjs";
+import "./manage-build-contracts.test.mjs";
+import "./terminality-contracts.test.mjs";
+import "./board-contracts.test.mjs";
+import "./research-presentation-contracts.test.mjs";
+import "./creation-contracts.test.mjs";
+import "./artifact-contracts.test.mjs";

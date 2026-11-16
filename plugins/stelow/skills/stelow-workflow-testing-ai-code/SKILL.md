@@ -1,0 +1,343 @@
+---
+name: stelow-workflow-testing-ai-code
+description: >
+  [stelow] AI-aware testing strategy skill for software products.
+  Generates AI-aware testing plans, security gates, and risk-based coverage targets.
+  Activated automatically when product_type is "software" or "hybrid"; usable standalone.
+  Based on empirical research: AgentAssay (2026), MSR 2026, Veracode 2025, CodeRabbit 2025,
+  LLM4TDD (2023), TDD-with-AI-Agents (2026).
+metadata:
+  frequency: monthly
+  category: workflow
+  execution:
+    mode: reference
+    recipe: null
+    capabilities: []
+    write_policy: none
+    permission_profile: inherit
+  context-cost: medium
+  author: calionauta
+  author-url: https://github.com/calionauta
+---
+
+# AI-Aware Testing Strategy
+
+> **Based on empirical research:**
+> - AgentAssay (2026): Non-deterministic agent testing framework
+> - MSR 2026: Over-mocking anti-patterns in AI-generated tests
+> - Veracode 2025: 45% of AI code contains vulnerabilities
+> - CodeRabbit 2025: AI code has 1.7x more bugs than human code
+> - CoderEval (2023): 43.1% of AI code is less robust
+> - SWE-Mutation, ACL Findings 2026: LLM suites are superficial; semantic mutants drop detection 71% → 40%
+> - VibeCheck, Sep 2026: execution-adequacy gap — runnable tests lack strong assertions and edge coverage
+> - Hamidi et al., Sep 2026: oracles fail on the faults that matter; assertions need manual reasoning
+> - TDAD 2026: graph test-context beats procedural TDD instructions (−70% regressions); concise skills win
+> - TDFlow, EACL 2026: human-written tests 94.3% vs self-generated 68% — test authorship is the hurdle
+> - Kun Chen ProgramBench (Jun 2026): mandated TDD skill hurt pass rate
+>   (−3.6pp, p<0.0001) at +55% cost — self-written tests lock in incomplete
+>   scope, green reads as done.
+> - Kun Chen DeepSWE (Oct 2026): agent-written unit (65%) + integration (35%)
+>   tests added zero success-rate gain vs writing none; executing existing
+>   suites in-loop also measured ~zero. Human-described cases may still help
+>   (unproven); e2e inconclusive.
+
+**Standalone awareness:** when inside stelow, triggered automatically by `product_type` in spec-product frontmatter. When standalone, invoke directly with a spec-product path (`spec-product*.md`). Appetite defaults to Core if not found — documented in output. All test-breadth tables and quality baselines work identically in both modes.
+
+## Activation
+
+- **Trigger:** `product_type: software` or `product_type: hybrid` in spec-product frontmatter
+- **Phase:** Phase 11 (Tech Planning)
+- **Prerequisite:** approved spec-product with scope defined
+
+### Step 2: Read Appetite and Product Context
+
+Read `quality` from the spec-product file (`spec-product*.md`) before generating test scopes. **When running standalone, quality defaults to `production`** if not found in frontmatter — the skill documents this assumption in the output. A legacy `appetite:` line is accepted and mapped once (any legacy value resolves to `production`; breadth 2/3/5 from Lean/Core/Complete).
+
+Quality controls **test breadth**. Production verifies everything the same way every time; experimental runs lighter and only for probes.
+
+| Quality | Test breadth |
+|----------|-------------|
+| `production` | Behavior/E2E (full coverage + edge cases) + unit + integration + security tests/scans — cases human/fresh-oracle described, never implementing-agent self-certified. |
+| `experimental` | Behavior/E2E (1 happy path) + smoke tests + critical-path unit tests. Add integration only when an external seam is in scope. Never ship as-is. |
+
+**Baseline applies at every setting:** build/test/lint/typecheck always run when available, and a11y checks run whenever UI files exist. Quality changes breadth, not whether gates exist.
+
+Then determine the product context:
+
+**Before generating testing strategy, determine the product context:**
+
+| Context | Description | Testing Approach |
+|---------|-------------|-----------------|
+| **Greenfield** | New product, no existing code | Acceptance-first, quality-specific coverage targets, clean slate |
+| **Brownfield** | Existing product with features | Human-described cases for critical paths, test-after for existing code, regression focus |
+| **Hybrid** | Adding features to existing product | Separate new from existing, protect invariants |
+
+**Based on context from setup or the spec-product file:**
+- `greenfield`: Acceptance-first; unit/integration test-after with fail-observation + freeze. Never mandated fail-pass micro-cycles in-loop for the implementing agent (ProgramBench 2026).
+- `brownfield`: Human-described cases for critical paths only, test-after + regression for existing code
+- `hybrid`: Add `test-regression` scopes for existing functionality
+
+## When to use
+
+Use when planning test strategy for a software product: which test types per scope, how deep per risk level, which CI gates block. Inside stelow it runs at tech planning from an approved spec-product; standalone it works from a spec-product path or a plain feature description (defaults: software, Core, brownfield). Do not use for executing tests or QA review — that is `stelow-workflow-testing-execution`.
+
+## Input Detection (Standalone Mode)
+
+When called **outside the workflow** with no pre-existing spec-product file:
+
+```
+Input:
+  ├── User provided a spec-product*.md path?
+  │   └→ Read product_type, appetite, scope from frontmatter
+  ├── User provided a description of the project?
+  │   └→ Extract: language, product type, risk level
+  └── No structured input?
+      └→ Default: product_type=software, quality=production, context=brownfield
+```
+
+**Graceful degradation:** The skill works standalone. If `product_type` or `quality` cannot be determined from frontmatter, sensible defaults are used (`product_type=software`, `quality=production`, `context=brownfield`). Every step documents its assumptions and flags them in the output.
+
+## Input
+
+From Tech Planning context (or standalone):
+- `spec-product*.md` (frontmatter with product_type, quality)
+- `spec-tech.md` (scopes to add test-* types, if available)
+- Tech stack detection from project files
+
+## Output
+
+| Artifact | Path |
+|----------|------|
+| `testing-strategy.md` | `.stelow/{date}/{_dir}/plans/` |
+
+---
+
+## Process
+
+### Step 1: Detect Tech Stack
+
+Auto-detect testing frameworks from project files:
+
+| Language | Detection File | Unit Framework | Coverage Tool | Security Tool |
+|----------|--------------|---------------|--------------|---------------|
+| Python | `requirements.txt`, `pyproject.toml` | pytest | pytest-cov | Bandit |
+| JavaScript/TypeScript | `package.json` | Vitest, Jest | c8 / V8 coverage | ESLint + SAST |
+| Go | `go.mod` | testing | `go test -cover` | Gosec |
+| Rust | `Cargo.toml` | cargo test | cargo-tarpaulin | cargo-audit |
+| Java | `pom.xml`, `build.gradle` | JUnit | JaCoCo | SpotBugs |
+
+### Step 3: Classify Scope Risk
+
+Based on spec-tech.md scopes:
+
+| Risk Level | Examples | Testing Depth |
+|------------|----------|----------------|
+| **Critical** | Payment, auth, data persistence, security | High coverage + negative cases + security gates |
+| **Standard** | CRUD, UI, API endpoints | Core paths + obvious edge cases |
+| **Experimental** | Prototypes, new features | Smoke tests + regression hooks |
+
+### Step 4-7: Test targets, scope types, mutation fit, CI/CD gates
+
+Generate appetite-specific targets, classify test scope types, score mutation
+fit, and define CI gates. Full tables, heuristics and gate definitions:
+`references/test-targets-and-gates.md`.
+
+## Fail-Observed & Brownfield Guidance (Research-Based)
+
+When to use fail-observed guards, regression/characterization/simulation patterns for existing
+products. Full guidance: `references/fail-observed-and-brownfield.md`.
+
+## Risk-Based Test Feedback Loop
+
+Use this loop when tests miss important behavior or regressions appear after AI changes:
+
+```
+1. Identify the missed behavior or regression
+2. Add a focused test that captures the invariant
+3. Rerun the affected test suite
+4. Feed the invariant back into future test scopes
+```
+
+**Test quality signals (VibeCheck 5-dim rubric, Sep 2026):**
+- Runnability — deterministic, isolated, no order dependence
+- Assertion strength — each assertion captures a failure mode (see oracle rule in Anti-patterns)
+- Edge-case coverage — negative cases on critical paths
+- Isolation/determinism — no shared mutable state, no wall-clock dependence
+- Maintainability — one behavior per test; production code never in test files and vice versa
+
+---
+
+## Output Format
+
+### testing-strategy.md
+
+```markdown
+---
+version: 1
+product_type: software
+generated_by: stelow-workflow-testing-ai-code
+generated_at: {YYYY-MM-DD}
+---
+
+# Testing Strategy for {product_name}
+
+## Tech Stack
+- Language: {language}
+- Unit: {framework}
+- Coverage: {tool}
+- Security: {tool}
+
+## Coverage and Risk Targets
+| Path Type | Required Evidence |
+|-----------|-------------------|
+| Critical | Branch coverage, negative cases, security gates |
+| Standard | Core paths and obvious edge cases |
+| Experimental | Smoke tests and regression hooks |
+
+## Test Scopes
+| Scope | Type | Required Evidence |
+|-------|------|----------------|
+| {feature-name} | test-unit | Critical path + negative cases |
+| {feature-name} | test-integration | External seams covered |
+| {feature-name} | test-security | SAST clean on critical paths |
+
+## CI/CD Gates
+
+Canonical table in `references/guard-contract.md` — summary: BLOCK missing critical tests / AC-sem-teste / security findings; WARN flaky_rate.
+
+## Anti-Patterns
+
+Canonical list in `references/guard-contract.md` — do not copy here.
+```
+
+---
+
+## Success Criteria
+
+- [ ] testing-strategy.md generated
+- [ ] test-* scopes added to spec-tech.md
+- [ ] Coverage and risk targets calibrated per risk level
+- [ ] CI/CD gates documented
+- [ ] Anti-patterns checklist included
+
+Completeness contract (the host validates these minima — never submit fewer):
+YAML frontmatter (`version:`, `product_type:`); Tech Stack, Coverage and
+Risk Targets table, Test Scopes table, CI/CD Gates, Anti-Patterns; at
+least 600 words.
+
+criteria:
+  - id: frontmatter
+    kind: presence
+    text: "YAML frontmatter carries version and product_type"
+  - id: strategy-tables
+    kind: presence
+    text: "Coverage and Risk Targets table, Test Scopes table, CI/CD Gates, Anti-Patterns"
+  - id: word-count
+    kind: count
+    text: "At least 600 words"
+  - id: gate-enforceability
+    kind: semantic
+    text: "CI/CD gates name blocking conditions, not advisory wishes"
+
+---
+
+## Examples
+
+### Example 1: Strategy for a critical scope
+
+**Input:** "Payment retry scope, quality production, Go stack."
+
+**Steps:**
+1. Read quality (production) and classify the scope (critical).
+2. Emit `test-unit` (happy path + negative cases, test-after with red-proof + freeze), `test-integration` (payment seam, test-after), `test-security` (SAST gate). Cases described by the human or a fresh-oracle reviewer — never self-certified by the implementing agent.
+
+**Output:** testing-strategy.md rows for the scope, plus BLOCK gates on missing critical tests and security findings.
+
+### Example 2: Rejecting a presence test
+
+**Input:** "Add a test that the export command exists."
+
+**Steps:**
+1. Apply the presence-test rule: does it constrain topology, counts, or refusals?
+2. No — rewrite as behavior: hand-mutate the export output and require the test to fail.
+
+**Output:** A behavioral test naming its regression, or no test when none exists.
+
+---
+
+## Edge Cases
+
+### No spec-tech scopes to classify
+- Fall back to the feature description; mark assumed risk levels explicitly in the output.
+- Never invent critical paths — when in doubt, standard depth plus a note.
+
+### Untestable handler code
+- Don't assert on source text — extract a pure helper to a testable module (see Brownfield anti-patterns) and test outputs there.
+
+---
+
+## Fallback
+
+If tech stack detection fails:
+- Python → pytest + pytest-cov + Bandit
+- JavaScript/TypeScript → Vitest + c8/V8 coverage + ESLint
+- Go → testing + `go test -cover` + Gosec
+- Rust → cargo test + cargo-tarpaulin + cargo-audit
+
+---
+
+## Related Skills
+
+- **stelow-workflow-tech-planning**: Produces scopes to test
+- **stelow-workflow-scope-executor**: Executes test scopes
+- **stelow-workflow-plan-critique**: Can review testing strategy
+
+<!-- stelow:scope3:begin -->
+## Entry (mode detection)
+
+When this skill loads, check for the stelow workflow marker:
+
+```bash
+if [ -n "$STELOW_WORKFLOW" ] && [ -n "$STELOW_STATE" ]; then
+  echo "stelow: workflow mode (state=$STELOW_STATE)"
+else
+  echo "stelow: standalone mode (no STELOW_WORKFLOW marker)"
+fi
+```
+
+In **standalone mode** (no marker), run the existing skill body unchanged.
+In **workflow mode**, skip to `### Workflow slice` and emit a complete
+`## Hand-off (workflow mode)` block at the end. See
+`../stelow-workflow-entry/SKILL.md` for the full marker protocol.
+
+## Hand-off (workflow mode)
+
+```
+stage          : verification
+description    : Verification. Run full test suite, code review, UI audit, browser testing.
+status         : <done|partial|blocked>
+artifacts      : <paths created or modified>
+next-candidate : <the stage scripts/stelow next reports — run `scripts/stelow next`>
+gate           : none
+rework-on      : execution
+```
+
+Workflow mode: emit the above Hand-off block verbatim, then stop. Fill
+`next-candidate` from `scripts/stelow next`: it is the workflow's own
+answer, already accounting for this run's intent route and review mode.
+The router skill consumes the next-candidate field and calls
+`scripts/stelow advance <next-candidate>` to move state forward.
+
+### Workflow slice
+
+Workflow mode for the **verification** stage. Standalone behavior lives in
+the rest of this file (unchanged). Summary:
+
+> Verification. Run full test suite, code review, UI audit, browser testing.
+
+Primary actions (per stages.yaml): `bash, write`. Run only the actions that
+produce the artifacts promised in `## Hand-off`; skip anything that does
+not advance the workflow.
+
+<!-- stelow:scope3:end -->
+

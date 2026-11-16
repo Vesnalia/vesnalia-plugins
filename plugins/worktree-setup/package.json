@@ -1,0 +1,52 @@
+{
+  "name": "alia-plugin-worktree-setup",
+  "version": "0.1.1",
+  "type": "module",
+  "engines": {
+    "alia": ">=0.35",
+    "aliaPluginSdk": ">=0.4.6"
+  },
+  "alia": {
+    "name": "Worktree Setup",
+    "description": "Per-repo provisioning scripts, logs, and git-hook wiring for fresh VesnALIA worktrees.",
+    "branding": {
+      "icon": "Wrench"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "scripts": {
+    "build": "alia plugin build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "sonner": "^2.0.7",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/worktree-setup#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/worktree-setup"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
+}

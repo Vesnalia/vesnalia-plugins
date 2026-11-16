@@ -1,0 +1,83 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { STATE_TEMPLATE, templateStages } from "../lib/state-template.mjs";
+import { BUILD_BOARD_COLUMNS, BUILD_BOARD_COLUMN_LABELS, BUILD_BOARD_INBOX, BUILD_BOARD_TERMINALS, BUILD_BOARD_VISIBLE_COLUMNS, PHASE_ENTRY_STAGES, PHASE_LABELS, STAGE_BANDS, STAGE_DOC, STAGE_SEQUENCE, STAGE_SKILL, STAGE_TO_BAND, STELOW_UPSTREAM_BASE, STELOW_UPSTREAM_BLOB, WORKFLOW_PHASES, WORKFLOW_STAGES, buildBoardColumnFor, stageInfoUrl, stageLabel, stageSkill, stageSkillUrl } from "../lib/workflow-vocabulary.mjs";
+
+// Workflow contracts: one vocabulary powers template, board, and server.
+// Catches stage additions without template cover or a phase/label mapping.
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const transitions = readFileSync(
+  join(root, "skills/stelow-workflow-orchestrator/references/transitions.md"),
+  "utf8",
+);
+const headers = [...transitions.matchAll(/^### (\S+)\s*$/gm)].map((m) => m[1]);
+assert.equal(headers.length, 18, "transitions contract covers 18 stages");
+
+const template = templateStages();
+assert.equal(template.length, 18, "template covers 18 stages");
+for (const stage of template) {
+  assert.ok(headers.includes(stage), `template stage ${stage} exists in transitions.md`);
+}
+
+assert.deepEqual([...STAGE_SEQUENCE].sort(), [...headers].sort(), "board order matches the transition contract set");
+assert.equal(new Set(STAGE_SEQUENCE).size, STAGE_SEQUENCE.length, "board order has no duplicates");
+assert.ok(STATE_TEMPLATE.includes("current_stage: triage"), "template starts at triage");
+assert.ok(STATE_TEMPLATE.includes("workflow_id: <workflow-id>"), "template carries immutable workflow ownership");
+assert.equal(WORKFLOW_STAGES.length, STAGE_SEQUENCE.length, "one catalog owns the ordered workflow stages");
+for (const stage of WORKFLOW_STAGES) {
+  assert.equal(stageLabel(stage.id), stage.label, `${stage.id} has one display label`);
+  assert.equal(STAGE_TO_BAND[stage.id], stage.phase, `${stage.id} has one phase`);
+  assert.ok(PHASE_LABELS[stage.phase], `${stage.id} phase has a user-facing label`);
+}
+
+const banded = Object.values(STAGE_BANDS).flat();
+for (const stage of STAGE_SEQUENCE) {
+  assert.ok(banded.includes(stage), `banded stage ${stage} exists in STAGE_BANDS`);
+}
+
+// Board topology is derived from the same phase catalog as the stage map;
+// terminal outcomes and manual phase entry checkpoints live beside it.
+assert.deepEqual(BUILD_BOARD_COLUMNS, [BUILD_BOARD_INBOX, ...WORKFLOW_PHASES.map(({ id }) => id), ...BUILD_BOARD_TERMINALS], "Build board is the Bucket, its phase columns, then the terminal outcomes");
+assert.deepEqual(BUILD_BOARD_VISIBLE_COLUMNS, [...WORKFLOW_PHASES.map(({ id }) => id), ...BUILD_BOARD_TERMINALS], "rendered boards hide the Bucket — its button + gallery own it, the column would duplicate them");
+assert.equal(BUILD_BOARD_COLUMN_LABELS[BUILD_BOARD_INBOX], "Bucket", "the Build board's first column reads Bucket (the stored key stays inbox)");
+assert.ok(BUILD_BOARD_COLUMNS.indexOf(BUILD_BOARD_INBOX) < BUILD_BOARD_COLUMNS.indexOf("analysis"), "the Bucket sits before the first phase");
+assert.deepEqual(BUILD_BOARD_TERMINALS, ["completed", "archived"], "Build terminal outcomes have one catalog");
+for (const phase of WORKFLOW_PHASES) {
+  assert.equal(BUILD_BOARD_COLUMN_LABELS[phase.id], phase.label, `${phase.id} board label is its phase label`);
+  assert.equal(STAGE_TO_BAND[PHASE_ENTRY_STAGES[phase.id]], phase.id, `${phase.id} manual entry remains inside that phase`);
+}
+assert.equal(buildBoardColumnFor({ status: "in-progress", stage: "audit" }), "review", "active Audit belongs to Review");
+assert.equal(buildBoardColumnFor({ status: "completed", stage: "audit" }), "completed", "Done is a terminal outcome, not Audit's board phase");
+assert.equal(buildBoardColumnFor({ status: "archived", stage: "execution" }), "archived", "Archived overrides the retained checkpoint");
+// Captured but not started: creation can defer the worker, and a card with no
+// thread has no phase to sit in. An *absent* thread field is not evidence of
+// one — only an explicit null parks the card.
+assert.equal(buildBoardColumnFor({ status: "draft", stage: "triage", workerThreadId: null }), "inbox", "an unstarted Build card waits in the Bucket");
+assert.equal(buildBoardColumnFor({ status: "draft", stage: "triage", workerThreadId: "thr_x" }), "analysis", "a triaging Build card belongs to Analysis, not the Bucket");
+assert.equal(buildBoardColumnFor({ status: "draft", stage: "triage" }), "analysis", "an unreported thread state never parks a card");
+assert.equal(buildBoardColumnFor({ status: "completed", stage: "audit", workerThreadId: null }), "completed", "terminal outcomes still win over the Bucket");
+
+// Upstream transparency: one skill per stage, one URL builder, no drift.
+// Skill-root URLs only — stage docs move, skill dirs are the stable address.
+assert.equal(STELOW_UPSTREAM_BASE, "https://github.com/calionauta/stelow/tree/main/skills", "upstream base has one catalog");
+for (const stage of WORKFLOW_STAGES) {
+  assert.ok(stage.skill, `${stage.id} names its owning upstream skill`);
+  assert.ok(existsSync(join(root, "skills", stage.skill, "SKILL.md")), `${stage.id} skill ${stage.skill} is vendored with SKILL.md`);
+  assert.equal(STAGE_SKILL[stage.id], stage.skill, `${stage.id} skill has one map`);
+  assert.equal(stageSkill(stage.id), stage.skill, `${stage.id} skill accessor agrees`);
+  assert.equal(stageSkillUrl(stage.id), `${STELOW_UPSTREAM_BASE}/${stage.skill}`, `${stage.id} URL derives from base + skill`);
+  assert.equal(STAGE_DOC[stage.id], stage.doc, `${stage.id} doc has one map`);
+  if (stage.doc) {
+    assert.ok(existsSync(join(root, "skills", stage.docSkill ?? stage.skill, stage.doc)), `${stage.id} doc ${stage.docSkill ?? stage.skill}/${stage.doc} is vendored`);
+    assert.equal(stageInfoUrl(stage.id), `${STELOW_UPSTREAM_BLOB}/${stage.docSkill ?? stage.skill}/${stage.doc}`, `${stage.id} info URL points at its behavior doc`);
+  } else {
+    assert.equal(stageInfoUrl(stage.id), stageSkillUrl(stage.id), `${stage.id} info URL falls back to the skill root`);
+  }
+}
+assert.equal(stageSkill("nope"), null, "unknown stage has no skill");
+assert.equal(stageSkillUrl("nope"), null, "unknown stage has no skill URL");
+assert.equal(stageInfoUrl("nope"), null, "unknown stage has no info URL");
+
+console.log("workflow contracts test ok: one vocabulary, template, board topology, bands, skill links, and transitions agree on 18 stages");

@@ -1,0 +1,381 @@
+/**
+ * The CLI surfaces: the `alia stelow` command, and the inspection it dispatches
+ * into.
+ *
+ * One command surface, one context object. The inspection command is built
+ * first because the dispatcher hands it the argv it could not route itself,
+ * and the scope command is a seam of its own because it records trackable
+ * events the CLI does not own. Everything here reads the same core the RPC
+ * surfaces read, so `alia stelow` and the UI can never disagree about a card.
+ */
+import { createStelowCliRun } from "../cli/cli-dispatcher.js";
+import { createInspectionCommand } from "../cli-inspection.js";
+import { registerStelowCli } from "../composition.js";
+import { runScopeCommand } from "../../scopes.js";
+import { seedWorkflow } from "../workflow-seeding.js";
+import { PLUGIN_SKILLS_DIR } from "../../plugin-paths.js";
+import { recordTrackableEvent } from "../../../lib/trackable-events.mjs";
+import { hasRecordedIntegration } from "../../../lib/integration-pending.mjs";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { WorkerCard } from "../../workers-types.js";
+import type { RuntimeCore } from "../runtime-core.js";
+import type { GateSurfaces } from "./gate-surfaces.js";
+import type { ExecutionSurfaces } from "./execution-surfaces.js";
+import type { CardSurfaces } from "./card-surfaces.js";
+
+export type CliSurfaceDeps = {
+  alia: AliaPluginApi;
+  core: RuntimeCore;
+  gates: GateSurfaces;
+  execution: ExecutionSurfaces;
+  cards: CardSurfaces;
+};
+
+/** Register `alia stelow` on the host, wired against the assembled surfaces. */
+export function registerStelowCommand(deps: CliSurfaceDeps): void {
+  const runInspection = createInspectionCommand(inspectionDeps(deps));
+  const run = createStelowCliRun(
+    {
+      ...cliDeps(deps),
+      runInspection,
+      scopeCommand: scopeCommand(deps),
+    },
+    {
+      answerQuestions: deps.gates.answerQuestions,
+      answerExpiredQuestions: deps.gates.answerExpiredQuestions,
+    },
+  );
+  registerStelowCli(deps.alia, (argv, context) => run(argv, context), {
+    actions: deps.core.actions,
+    now: deps.core.now,
+  });
+}
+
+/** The inspection command: reads, never writes, and refuses what it cannot. */
+type InspectionConfig = Parameters<typeof createInspectionCommand>[0];
+
+/**
+ * The files inside one run directory, relative to it.
+ *
+ * The host owns the directory, so it enumerates: the declared outputs say what a
+ * run SHOULD write, this says what it DID. `.registered.json` is filtered out
+ * because it is the host's own receipt, not a run artifact the worker reads.
+ */
+async function listRunFiles(
+  alia: CliSurfaceDeps["alia"],
+  artifactRoot: string,
+): Promise<string[]> {
+  const listed = await alia.sdk.files.listPaths({
+    path: artifactRoot,
+    includeFiles: true,
+    includeDirectories: false,
+  });
+  const prefix = `${artifactRoot.replace(/[/\\]+$/, "")}/`;
+  return (Array.isArray(listed?.paths) ? listed.paths : [])
+    .map((entry: string | { path?: string }) =>
+      typeof entry === "string" ? entry : String(entry?.path ?? ""))
+    .map((path: string) => (path.startsWith(prefix) ? path.slice(prefix.length) : path))
+    .filter((path: string) => path.length > 0 && path !== ".registered.json")
+    .sort();
+}
+
+function inspectionDeps(deps: CliSurfaceDeps): InspectionConfig {
+  const { alia, core } = deps;
+  const ERRORS = core.ERRORS;
+  return {
+    skillsDir: PLUGIN_SKILLS_DIR,
+    errors: {
+      archived: ERRORS.cardArchived,
+      workspace: ERRORS.workspaceUnavailable,
+    },
+    getCard: core.getCard,
+    getCardForThread: core.ledger.getCardByWorkerThread,
+    cardWorkspace: core.cardWorkspace,
+    loadBoard: (projectId) => core.loadBoard(alia, projectId),
+    boardFromRoot: (root, dirHash) => core.boardFromRoot(alia, root, dirHash),
+    openQuestionsByCard: async (cardIds: string[]) => {
+      const cards = cardIds
+        .map((id) => core.getCard(id))
+        .filter((card): card is NonNullable<typeof card> => Boolean(card));
+      return core.questions.countOpenQuestions(cards);
+    },
+    projectRoot: (projectId) => core.projectRoot(alia, projectId),
+    workflowStateDir: (root, cardId, dirHash) =>
+      core.workflowStateDir(alia, root, cardId, dirHash),
+    ensureProjectArtifacts: (root, stateDir, hasOwnedState) =>
+      core.ensureProjectArtifacts(alia, root, stateDir, hasOwnedState),
+    runHelper: (args, root, stateDir) => core.runHelper(args, root, stateDir),
+    readText: (path) =>
+      alia.sdk.files
+        .read({ path })
+        .then((file) => file.content)
+        .catch(() => null),
+    researchStrategySkill: core.trackCapabilities.researchStrategySkill,
+    exploreTechnique: core.trackCapabilities.exploreTechnique,
+    ...runSeams(core),
+  };
+}
+
+/**
+ * The two run seams the playbook reads: the card's latest run for one stage, and
+ * the files inside a run directory.
+ *
+ * Stage-scoped on purpose. The root and the declared outputs are printed as one
+ * answer, so pairing a `verification` directory with `audit` filenames would be
+ * the archaeology this replaces, wearing a confident label.
+ */
+function runSeams(core: CliSurfaceDeps["core"]) {
+  return {
+    // The host lists the run directory so the worker does not `find` it.
+    listRunFiles: (artifactRoot: string) => listRunFiles(core.alia, artifactRoot),
+    latestRunForStage: (cardId: string, stage: string) => {
+      const latest = core.db
+        .prepare(
+          "SELECT artifact_root, recipe_id FROM execution_runs"
+          + " WHERE card_id = ? AND stage = ? ORDER BY created_at DESC LIMIT 1",
+        )
+        .get(cardId, stage) as { artifact_root?: string; recipe_id?: string } | undefined;
+      return latest?.artifact_root
+        ? { artifactRoot: latest.artifact_root, recipeId: latest.recipe_id ?? "" }
+        : null;
+    },
+  };
+}
+
+/** The dispatcher context: every seam the routed command families read. */
+type CliRunConfig = Omit<
+  Parameters<typeof createStelowCliRun>[0],
+  "runInspection" | "scopeCommand"
+>;
+
+function cliDeps(deps: CliSurfaceDeps): CliRunConfig {
+  const { alia, core, execution, cards, gates } = deps;
+  const { seams, cardPreview, workers } = core;
+  return {
+    db: core.db,
+    alia,
+    now: core.now,
+    randomId: core.randomId,
+    actions: core.actions,
+    getCard: core.getCard,
+    cardWorkspace: core.cardWorkspace,
+    updateCard: core.updateCard,
+    logCardComment: core.ledger.logCardComment,
+    recordInboxEvent: core.recordInboxEvent,
+    ...ledgerReads(core),
+    projectRoot: (projectId) => core.projectRoot(alia, projectId),
+    workflowStateDir: (rootPath, workflowId, dirHash) =>
+      core.workflowStateDir(alia, rootPath, workflowId, dirHash),
+    ensureProjectArtifacts: (rootPath, stateDir, requireOwnedState) =>
+      core.ensureProjectArtifacts(alia, rootPath, stateDir, requireOwnedState),
+    runHelper: (args, cwd, stateDir) => core.runHelper(args, cwd, stateDir),
+    seedWorkflow: (rootPath, workflowId, name, intent) =>
+      seedWorkflow(alia, rootPath, workflowId, name, intent),
+    cardCheckout: seams.cardCheckout,
+    ...gitReads(core, worktreeRemover(execution), recordedMerge(core.db)),
+    spawnDisposable: core.spawnDisposable,
+    cardStageSlug: seams.cardStageSlug,
+    docDepths: (card) => seams.buildDocDepthsForCard(card),
+    passingReviewCovers: seams.passingReviewCovers,
+    reviewFilesFor: seams.reviewFilesFor,
+    pendingQuestions: core.fetchPendingQuestions,
+    askTimeoutMs: core.askTimeoutMs,
+    ...questionReads(core),
+    ...researchReads(core),
+    gapState: gates.critiqueGapState,
+    createCard: (input) => cards.cards.createInternal(input),
+    ...claimSeams(core),
+    workers,
+    presets: core.presetServer,
+    ...decisionSeams(core),
+    ...previewSeams(cardPreview),
+    draftingCommand: (argv, threadId) => core.drafting.command(argv, threadId),
+    advanceCli: (argv, context) => execution.executionAdvance.cli(argv, context),
+    retryExecutionRun: (args) => execution.executionLifecycle.handlers.retryExecutionRun(args),
+    scopeMapApproval: (cardId) => execution.approval.approveScopeMap({ cardId }),
+    skillsDir: PLUGIN_SKILLS_DIR,
+  };
+}
+
+/**
+ * The research reads: the round history, the index, and the two lightweight
+ * track artifacts. A CLI readiness verdict reads the same readiness the track
+ * sync writes.
+ */
+function researchReads(core: RuntimeCore) {
+  const { researchArtifacts } = core;
+  return {
+    strategyRounds: core.strategyRounds,
+    readResearchIndex: researchArtifacts.readResearchIndex,
+    researchArtifacts: {
+      researchReadiness: researchArtifacts.researchReadiness,
+      exploreArtifact: researchArtifacts.exploreArtifact,
+    },
+  };
+}
+
+/**
+ * The card ledger reads a CLI command reports against: which stage events
+ * exist, and which card a thread belongs to.
+ */
+function ledgerReads(core: RuntimeCore) {
+  return {
+    recordStageEvent: core.ledger.recordStageEvent,
+    stageEvents: core.ledger.stageEvents,
+    getCardByWorkerThread: core.ledger.getCardByWorkerThread,
+  };
+}
+
+/**
+ * The host-side git a CLI command runs itself: a diff, a test run, a checkout
+ * probe. These are the same functions the host-facing surfaces use, so a CLI
+ * verdict and an RPC verdict about the same tree come from the same run.
+ */
+function gitReads(
+  core: RuntimeCore,
+  cleanupWorktree: CliRunConfig["cleanupWorktree"],
+  hasRecordedMerge?: CliRunConfig["hasRecordedMerge"],
+) {
+  const { git } = core;
+  return {
+    gitEvidence: git.recoveryGitEvidence,
+    runGitIn: git.runGitIn,
+    discardEvidence: git.discardEvidence,
+    cleanupWorktree,
+    hasRecordedMerge,
+    workingDiffFor: git.workingDiffFor,
+    testCommandForCheckout: git.testCommandForCheckout,
+    runHostTests: git.runHostTests,
+  };
+}
+
+/**
+ * The claim seams: release a claim the CLI took, and the summary that explains
+ * why a scope is still waiting on someone else's file.
+ */
+function claimSeams(core: RuntimeCore) {
+  const { claims } = core;
+  return {
+    releaseCardClaims: claims.releaseCardClaimsAndNotify,
+    notifyClaimWaiters: core.notifyClaimWaiters,
+  };
+}
+
+/**
+ * The preview seams: the same three reads the panel and the CLI share, named
+ * once so the CLI bag does not grow a second inline copy of the shape.
+ */
+function previewSeams(cardPreview: RuntimeCore["cardPreview"]) {
+  return {
+    preview: {
+      view: cardPreview.view,
+      start: cardPreview.start,
+      stop: cardPreview.stop,
+    },
+  };
+}
+
+/**
+ * The decision seams: the review policy, the route a decision point resolves
+ * through, and the two preset judges. A CLI verdict and an RPC verdict about
+ * the same artifact must come from the same judge.
+ */
+function decisionSeams(core: RuntimeCore): Pick<
+  CliRunConfig,
+  "reviewPolicy" | "decisionRoute" | "judgeCriteria" | "judgeScoredBatch"
+> {
+  return {
+    reviewPolicy: () => core.decision.reviewPolicy(),
+    decisionRoute: (point, config) => core.decision.routeConfig(point, config),
+    judgeCriteria: core.judgePresetCriteria,
+    judgeScoredBatch: core.judgeScoredBatch,
+  };
+}
+
+/**
+ * The reads a CLI command needs to reason about a card's questions: what is
+ * still open, what was asked, and the evidence the ask captured. They come
+ * from the core rather than from a CLI-local read, so a command that reports
+ * an open question and the card view that shows it cannot disagree.
+ */
+function questionReads(core: RuntimeCore) {
+  const { questions, seams, asks } = core;
+  return {
+    pendingAsks: questions.fetchPendingAsks,
+    openExpiredQuestionIds: questions.openExpiredQuestionIds,
+    askContractChecklist: seams.askContractChecklist,
+    snapshotQuestionEvidence: asks.snapshotQuestionEvidence,
+  };
+}
+
+/**
+ * The scope command, recorded as a trackable event on the card. It is wired
+ * here rather than handed to the dispatcher whole because the event write is
+ * the one thing the CLI does not own the schema for.
+ */
+type ScopeCommand = Parameters<typeof createStelowCliRun>[0]["scopeCommand"];
+
+/**
+ * The scope command reads the same card row every other surface reads. It is
+ * generic over the row so the command family can be driven by a narrow card
+ * in a test; the plugin only ever has the full one.
+ */
+type ScopeCommandDeps = NonNullable<
+  Parameters<typeof runScopeCommand<WorkerCard>>[2]
+>;
+
+function scopeCommand(deps: CliSurfaceDeps): ScopeCommand {
+  const { alia, core } = deps;
+  const scopeDeps: ScopeCommandDeps = {
+    alia,
+    getCardByWorkerThread: core.ledger.getCardByWorkerThread,
+    cardWorkspace: core.cardWorkspace,
+    projectRoot: (projectId) => core.projectRoot(alia, projectId),
+    workflowStateDir: (rootPath, card) =>
+      core.workflowStateDir(alia, rootPath, card.id, card.dir_hash!),
+    ensureProjectArtifacts: (rootPath, stateDir, requireOwnedState) =>
+      core.ensureProjectArtifacts(alia, rootPath, stateDir, requireOwnedState),
+    runHelper: core.runHelper,
+    recordTrackableEvent: (event) => {
+      recordTrackableEvent(core.db, event);
+    },
+    logCardComment: core.ledger.logCardComment,
+    // The scope-batch gates are dormant without a database: unit harnesses and
+    // any caller that has no batch ledger pass through untouched.
+    db: core.db,
+  };
+  return (argv, context) => runScopeCommand(argv, context, scopeDeps);
+}
+
+/**
+ * The one removal path the CLI reaches for.
+ *
+ * `alia stelow gc` must not hold a second opinion about what is safe to delete:
+ * the gate lives in the cleanup service, and this only adapts its result. A
+ * second rule would be a second thing to keep in step with the first.
+ */
+function worktreeRemover(execution: ExecutionSurfaces): CliRunConfig["cleanupWorktree"] {
+  return async (cardId) => {
+    const result = await execution.worktreeCleanup.cleanup(cardId);
+    return { ok: result.ok, error: result.error };
+  };
+}
+
+/**
+ * Has a merge into the base branch ever been recorded for this card?
+ *
+ * The publication ledger is the only record that survives a squash merge. A
+ * squash puts every line of a branch onto the base as one new commit, so the
+ * branch's own commit ids never appear in the base's history — but the panel
+ * recorded that the merge happened, and that is what "integrated" means.
+ *
+ * Only an explicit merge counts. A local squash, a push, or a pull request
+ * marked ready are all recorded actions that do not put the work on the base.
+ */
+function recordedMerge(db: CliRunConfig["db"]): CliRunConfig["hasRecordedMerge"] {
+  // The rule lives with the board chip that reads it (`hasRecordedIntegration`),
+  // so the gate that deletes a worktree and the chip that reports it cannot
+  // drift apart. A missing ledger means "not proven merged", never a reason to
+  // delete: the helper fails closed for the same reason.
+  return (cardId) => hasRecordedIntegration(db, cardId);
+}

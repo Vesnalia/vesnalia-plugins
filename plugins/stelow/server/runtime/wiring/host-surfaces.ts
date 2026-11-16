@@ -1,0 +1,143 @@
+/**
+ * The host surfaces: what the plugin exposes to the IDE and to GitHub.
+ *
+ * These reach outside the card model — the VesnALIA platform (version, update
+ * signals, preview sharing), the GitHub issue automation and its schedule,
+ * artifact publication, and the `::` mention providers. They are wired
+ * together because the scheduler belongs to the feature it drives: disabling
+ * the module (STELOW_GITHUB_ISSUES=0) stops the ticks along with the RPCs.
+ *
+ * This layer sits above the card surfaces because the issue automation it
+ * builds needs the card server, and it is the only thing here that does.
+ * Nothing else depends on a card existing.
+ */
+import { createGithubAutomation } from "../../github-issues.js";
+import { createArtifactsPublication } from "../../artifacts-publication.js";
+import { createPlatformHandlers } from "../platform.js";
+import {
+  registerAutomationSchedule,
+  registerWorkerSkills,
+} from "../composition.js";
+import { registerMentionProviders } from "../mentions.js";
+import { loadCardScopes } from "../../scopes.js";
+import { readCardStatus } from "../../../lib/card-status.mjs";
+import { trackableStatusLabel } from "../../../lib/trackables.mjs";
+import {
+  BUILD_INFO,
+  PLUGIN_SKILLS_DIR,
+  pluginDir,
+  readPinnedStelowVersion,
+} from "../../plugin-paths.js";
+import type { CardSurfaces } from "./card-surfaces.js";
+import type { RuntimeCore } from "../runtime-core.js";
+import type { GithubAutomation } from "../../github-issues.js";
+import type { WorkerCard } from "../../workers-types.js";
+
+export type HostSurfaces = ReturnType<typeof createHostSurfaces>;
+
+export type HostSurfaceDeps = {
+  core: RuntimeCore;
+  cards: CardSurfaces;
+  /** Bind the built automation to the seam the card surfaces read through. */
+  github: (automation: GithubAutomation) => void;
+};
+
+export function createHostSurfaces(deps: HostSurfaceDeps) {
+  const github = buildGithubAutomation(deps);
+  registerAutomationSchedule(deps.core.alia, () => github.runAutomationRules());
+  registerMentionProviders(deps.core.alia, {
+    db: deps.core.db,
+    loadBoard: (projectId) => deps.core.loadBoard(deps.core.alia, projectId),
+  });
+  // Workflow mechanics are private to workers created by the Build panel.
+  // Manifest skills are static registrations in VesnALIA, so configure() is the
+  // boundary that keeps them out of every other thread/session.
+  registerWorkerSkills(deps.core.alia);
+  return {
+    platform: buildPlatform(deps.core),
+    github,
+    artifactsPublication: buildPublication(deps.core),
+  };
+}
+
+/** The platform handlers: version, update signal, and preview sharing. */
+function buildPlatform(core: RuntimeCore) {
+  const { alia, cardPreview, pluginUpdates, previewHost } = core;
+  return createPlatformHandlers({
+    alia,
+    pluginDir,
+    pluginSkillsDir: PLUGIN_SKILLS_DIR,
+    buildInfo: BUILD_INFO,
+    readPinnedStelowVersion,
+    refreshPluginUpdate: pluginUpdates.refresh,
+    getPluginUpdate: pluginUpdates.getState,
+    getGithubRelease: pluginUpdates.getRelease,
+    resolveLocalBin: previewHost.resolveLocalBin,
+    homeDir: previewHost.homeDir,
+    localBinDir: previewHost.localBinDir,
+    preview: {
+      view: cardPreview.view,
+      start: cardPreview.start,
+      stop: cardPreview.stop,
+      share: cardPreview.share,
+    },
+  });
+}
+
+/** The issue automation: tables, backfills, matcher wiring, scheduler, RPCs. */
+function buildGithubAutomation(deps: HostSurfaceDeps) {
+  const { core, cards } = deps;
+  const { alia, db, now, randomId, getCard, cardWorkspace, presetServer } = core;
+  const github = createGithubAutomation({
+    db,
+    alia,
+    now,
+    randomId,
+    presets: {
+      getWorktreePresetId: presetServer.getWorktreePresetId,
+      getEffectiveBuildEnvironmentKind:
+        presetServer.getEffectiveBuildEnvironmentKind,
+      pinCardPreset: presetServer.pinCardPreset,
+    },
+    cards: {
+      get: getCard,
+      create: (args) => cards.cards.createInternal(args),
+      comment: core.ledger.logCardComment,
+      workspace: (card) => cardWorkspace(card as WorkerCard),
+      scopes: (card, rootPath) =>
+        rootPath ? loadCardScopes(rootPath, card.id) : [],
+      // Named for what it reads. Every consumer of this dep is a CARD status —
+      // the GitHub issue flow, issue comments and artifact publication all ask
+      // "is this card archived?", and none of them asks about a scope. It was
+      // wired to the scope normalizer, which only worked because the scope
+      // vocabulary was an inaccurate superset containing every card status.
+      cardStatusOf: (value) => readCardStatus(value),
+      // The TRACKABLE label, and it was a third restatement before: this dep is
+      // called with SCOPE statuses (github-completion renders one line per scope),
+      // and the hand-written function it wrapped passed `blocked`, `failed`,
+      // `skipped` and `escalated` straight through, so a reader on GitHub saw
+      // "env-seed-mapper (blocked)". It also lowercased "Done" and "In progress"
+      // into a spelling no card used.
+      statusLabel: (status) => trackableStatusLabel(status),
+    },
+  });
+  deps.github(github);
+  return github;
+}
+
+/** Publication: turn a merged card into the branch and PR it asked for. */
+function buildPublication(core: RuntimeCore) {
+  const { alia, db, now, randomId, getCard, seams } = core;
+  return createArtifactsPublication({
+    db,
+    alia,
+    now,
+    randomId,
+    cardNotFound: core.ERRORS.cardNotFound,
+    cards: {
+      get: getCard,
+      checkout: (card) => seams.cardCheckout(card as WorkerCard),
+    },
+    cardStatusOf: readCardStatus,
+  });
+}
